@@ -758,3 +758,44 @@
   opacity: 0.5;
   background: var(--color-cream);
 }
+
+/* ── Notification bell hover "ring" (NotificationBell.tsx) — the bell's body
+   and its clapper are two separate SVG paths (see AnimatedBellIcon), each
+   pivoted from where it actually hangs (`transform-box: fill-box` +
+   `transform-origin: 50% 0%` — the top of that path's own bounding box, not
+   the whole 24x24 icon), and swung in opposite directions with a decaying
+   amplitude. Two elements rocking opposite ways, not one flat rotation, is
+   what actually sells "ringing" instead of "tilting". Plain :hover (not
+   JS-driven) so it matches how every other hover micro-interaction in this
+   file works. */
+.bell-icon-body,
+.bell-icon-clapper {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+}
+.group:hover .bell-icon-body {
+  animation: bell-ring-body 650ms var(--ease-out);
+}
+.group:hover .bell-icon-clapper {
+  animation: bell-ring-clapper 650ms var(--ease-out);
+}
+@keyframes bell-ring-body {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(14deg); }
+  30%  { transform: rotate(-11deg); }
+  45%  { transform: rotate(8deg); }
+  60%  { transform: rotate(-5deg); }
+  75%  { transform: rotate(3deg); }
+  90%  { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes bell-ring-clapper {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(-16deg); }
+  30%  { transform: rotate(13deg); }
+  45%  { transform: rotate(-10deg); }
+  60%  { transform: rotate(7deg); }
+  75%  { transform: rotate(-4deg); }
+  90%  { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}

@@ -291,11 +291,19 @@ export const MessageBubble = memo(function MessageBubble({
               </div>
             ) : (
               // ── Normal bubble ──────────────────────────────────────────────
+              // A sent photo skips the solid orange fill + text padding —
+              // that's meant for a text bubble's background, not a frame
+              // around a picture (WhatsApp shows photos edge-to-edge with no
+              // tinted background at all, own or not). Every other message
+              // type is unaffected.
               <div
                 className={clsx(
-                  'relative px-[14px] py-[9px]',
+                  'relative',
+                  message.type !== 'image' && 'px-[14px] py-[9px]',
                   bubbleRadius,
-                  own ? 'bg-brand-orange text-white' : 'bg-white text-charcoal border border-[#eeece4]',
+                  message.type === 'image'
+                    ? 'bg-transparent text-charcoal'
+                    : own ? 'bg-brand-orange text-white' : 'bg-white text-charcoal border border-[#eeece4]',
                   message._failed && 'ring-2 ring-error/50',
                 )}
               >
@@ -349,12 +357,21 @@ export const MessageBubble = memo(function MessageBubble({
                   </div>
                 )}
 
-                {/* Image */}
+                {/* Image — a real border on the photo itself, not the (now
+                    transparent) bubble around it, so it reads as a framed
+                    picture instead of a borderless sticker floating on the
+                    thread background. Same border on both sides. */}
                 {message.type === 'image' && (
                   <div className="flex flex-col gap-1">
                     {(message.attachments ?? []).filter(Boolean).map(a => (
                       <a key={a.url} href={a.url} target="_blank" rel="noreferrer">
-                        <img loading="lazy" decoding="async" src={a.thumbnailUrl ?? a.url} alt={a.fileName ?? ''} className="rounded-[12px] max-w-[240px] max-h-[240px] object-cover" />
+                        <img
+                          loading="lazy"
+                          decoding="async"
+                          src={a.thumbnailUrl ?? a.url}
+                          alt={a.fileName ?? ''}
+                          className="rounded-[12px] border border-[#d8d5c9] max-w-[240px] max-h-[240px] object-cover block"
+                        />
                       </a>
                     ))}
                   </div>

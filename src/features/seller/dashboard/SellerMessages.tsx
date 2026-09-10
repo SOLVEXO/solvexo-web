@@ -10,7 +10,10 @@ import { useMessages } from '@/hooks/messaging/useMessages';
 import { useModeration } from '@/hooks/messaging/useModeration';
 import { usePresence } from '@/hooks/messaging/usePresence';
 import { useRecentSearches } from '@/hooks/messaging/useRecentSearches';
-import { apiUploadAttachment, type Conversation, type MessageType } from '@/api/services/messaging';
+import {
+  apiUploadAttachment, apiPinConversation, apiMuteConversation, apiArchiveConversation,
+  apiRestoreConversation, apiDeleteConversation, type Conversation, type MessageType,
+} from '@/api/services/messaging';
 import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import type { ActionMenuItem } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
@@ -21,7 +24,7 @@ const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
 
 type FilterId = 'all' | 'unread' | 'pinned' | 'archived';
 
-function toEntry(c: Conversation, online: Record<string, boolean>): ChatListEntry {
+function toEntry(c: Conversation, online: Record<string, boolean>, typingIds: Set<string>, menuItems: ActionMenuItem[]): ChatListEntry {
   return {
     id:          c._id,
     name:        c.buyer?.name ?? `Buyer #${c.buyerId?.slice(-6).toUpperCase() ?? '——'}`,
@@ -34,6 +37,8 @@ function toEntry(c: Conversation, online: Record<string, boolean>): ChatListEntr
     muted:       c.isMuted,
     archived:    c.isArchived,
     online:      online[c.buyerId],
+    isTyping:    typingIds.has(c._id),
+    menuItems,
   };
 }
 
@@ -47,7 +52,7 @@ export function SellerMessages() {
 
   const [filter, setFilter] = useState<FilterId>('all');
   // "All" hides archived (matches WhatsApp/Telegram convention); "Archived" shows only those.
-  const { conversations, loading: listLoading, error: listError, refetch: refetchList } =
+  const { conversations, loading: listLoading, error: listError, refetch: refetchList, typingIds } =
     useConversations(storeId ? { storeId, isArchived: filter === 'archived' } : undefined);
   const { results: searchResults, search, loading: searching } = useSearchConversations();
   const { recent, commit, clear } = useRecentSearches(`seller-inbox:${storeId ?? ''}`);
@@ -93,18 +98,39 @@ export function SellerMessages() {
 
   const active = conversation ?? list.find(c => c._id === activeId) ?? null;
 
-  // Mark the latest incoming message as seen once the thread is open.
+  // Mark the conversation as seen once it's open — driven by the
+  // CONVERSATION's own unread counter/lastMessage pointer, not by "who sent
+  // the last loaded message". That second approach silently broke the
+  // moment the seller had already replied at some point: the last message
+  // in the thread was then the seller's own, so the old check always
+  // skipped calling markSeen — even though earlier buyer messages before
+  // that reply had genuinely never been marked seen, leaving the unread
+  // badge permanently stuck (confirmed against real data: sellerUnread > 0
+  // with weeks-old messages still seenBy: []).
+  //
+  // Guarded on `conversation?._id === activeId` specifically (not just
+  // `active`, which can briefly fall back to a stale `list` entry or a
+  // previous conversation's still-cached data right after switching threads)
+  // — using a lastMessageId that doesn't actually belong to the conversation
+  // the request claims is a real, confirmed way for this call to silently
+  // 400 server-side.
   useEffect(() => {
-    if (!activeId || messages.length === 0) return;
-    const last = messages[messages.length - 1];
-    if (last.senderId !== profile?._id) {
+    if (!activeId || !conversation || conversation._id !== activeId) return;
+    const lastMessageId = conversation.lastMessage?.messageId;
+    if ((conversation.sellerUnread ?? 0) > 0 && lastMessageId) {
       // Don't rely solely on the 'conversation:update' socket echo to clear
       // this conversation's unread badge — refetch directly so it's correct
       // even if that event was missed (e.g. a socket reconnect gap).
-      void markSeen(last._id).then(refetchList);
+      void markSeen(lastMessageId)
+        .catch((err: unknown) => {
+          // TEMPORARY diagnostic — surfaced visibly instead of swallowed,
+          // specifically to pin down why this call isn't taking effect.
+          toast.error('markSeen failed: ' + (err instanceof Error ? err.message : String(err)));
+        })
+        .then(refetchList);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId, messages.length]);
+  }, [activeId, conversation?._id, conversation?.sellerUnread, conversation?.lastMessage?.messageId]);
 
   const handleSearch = (v: string) => setQuery(v);
 
@@ -149,6 +175,46 @@ export function SellerMessages() {
     refetchList();
   };
 
+  // Same actions as the open-chat header menu below, but reachable straight
+  // from a list row's own dropdown arrow (WhatsApp-style) without opening
+  // that conversation first — so these hit the API directly by that row's
+  // own id rather than going through the `activeId`-scoped useConversation
+  // hook, then just refetch the list to reflect the result.
+  const buildRowMenu = (c: Conversation): ActionMenuItem[] => [
+    {
+      label: c.isPinned ? 'Unpin conversation' : 'Pin conversation',
+      icon: c.isPinned ? <PinOff size={14} /> : <Pin size={14} />,
+      onClick: () => void apiPinConversation(c._id, !c.isPinned).then(refetchList),
+    },
+    {
+      label: c.isMuted ? 'Unmute notifications' : 'Mute notifications',
+      icon: c.isMuted ? <Bell size={14} /> : <BellOff size={14} />,
+      onClick: () => void apiMuteConversation(c._id, !c.isMuted).then(refetchList),
+    },
+    {
+      label: c.isArchived ? 'Restore chat' : 'Archive chat',
+      icon: c.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />,
+      onClick: () => void (c.isArchived ? apiRestoreConversation(c._id) : apiArchiveConversation(c._id)).then(refetchList),
+    },
+    blockedBuyerId === c.buyerId
+      ? { label: 'Unblock buyer', icon: <Ban size={14} />, onClick: () => void unblock(c.buyerId).then(ok => { if (ok) setBlockedBuyerId(null); }) }
+      : { label: 'Block buyer', icon: <Ban size={14} />, onClick: () => void block({ targetId: c.buyerId, targetRole: 'user', reason: 'Blocked from seller inbox' }).then(ok => { if (ok) setBlockedBuyerId(c.buyerId); }) },
+    {
+      label: 'Report conversation',
+      icon: <Flag size={14} />,
+      onClick: () => void report({ targetType: 'conversation', targetId: c._id, reason: 'inappropriate', details: 'Reported from seller inbox' }),
+    },
+    {
+      label: 'Delete chat',
+      icon: <Trash2 size={14} />,
+      onClick: () => void apiDeleteConversation(c._id).then(() => {
+        if (activeId === c._id) setActiveId(null);
+        refetchList();
+      }),
+      danger: true,
+    },
+  ];
+
   const menuItems: ActionMenuItem[] = active ? [
     { label: active.isPinned ? 'Unpin conversation' : 'Pin conversation', icon: active.isPinned ? <PinOff size={14} /> : <Pin size={14} />, onClick: () => void pin(!active.isPinned) },
     { label: active.isMuted  ? 'Unmute notifications' : 'Mute notifications', icon: active.isMuted ? <Bell size={14} /> : <BellOff size={14} />, onClick: () => void mute(!active.isMuted) },
@@ -161,7 +227,7 @@ export function SellerMessages() {
   ] : [];
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       <SellerPageHeader
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
@@ -172,11 +238,16 @@ export function SellerMessages() {
         }
       />
 
-      <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 108px)' }}>
+      {/* flex-1 + min-h-0 fills whatever space is actually left under the
+          header instead of guessing its pixel height with a calc(100vh - Npx)
+          — that guess was off from the header's real rendered height and
+          left a blank gap under the whole chat panel, including under the
+          composer at the very bottom. */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         <div className={activeId ? 'hidden md:flex md:w-auto md:shrink-0' : 'flex w-full md:w-auto md:shrink-0'}>
           <ChatList
             title="Chats"
-            entries={list.map(c => toEntry(c, online))}
+            entries={list.map(c => toEntry(c, online, typingIds, buildRowMenu(c)))}
             activeId={activeId}
             onSelect={setActiveId}
             query={query}
@@ -226,6 +297,6 @@ export function SellerMessages() {
           error={msgError}
         />
       </div>
-    </>
+    </div>
   );
 }

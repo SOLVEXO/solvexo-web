@@ -35,10 +35,24 @@ export function AtelierMessagesPage() {
 
   const conversationId = conversation?._id ?? null;
   const {
-    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove, hasMore, loadMore,
+    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove, markSeen, hasMore, loadMore,
     otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(conversationId);
   const [uploading, setUploading] = useState(false);
+
+  // Mark the seller's messages as seen once this page is open — this page
+  // never had this at all (unlike the buyer's own /account/messages inbox),
+  // so a buyer messaging a seller straight from the storefront never sent
+  // the seller a read receipt, and their sent messages never showed the
+  // WhatsApp-style double-tick no matter how long the buyer had the thread open.
+  useEffect(() => {
+    if (!conversationId || !conversation || conversation._id !== conversationId) return;
+    const lastMessageId = conversation.lastMessage?.messageId;
+    if ((conversation.buyerUnread ?? 0) > 0 && lastMessageId) {
+      void markSeen(lastMessageId).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, conversation?.buyerUnread, conversation?.lastMessage?.messageId]);
 
   const handleUpload = async (file: File) => {
     if (!conversationId) return;

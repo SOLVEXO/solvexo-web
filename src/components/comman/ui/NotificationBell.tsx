@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
+import { AnimatedBellIcon } from './AnimatedBellIcon';
 import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 
 function formatRelativeTime(dateStr: string): string {
@@ -117,11 +118,11 @@ export function NotificationBell() {
         onClick={handleBellClick}
         aria-label="Notifications"
         className={clsx(
-          'relative w-9 h-9 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer shrink-0 border-none transition-all duration-200 hover:bg-brand-pale-orange hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
+          'group relative w-9 h-9 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer shrink-0 border-none transition-all duration-200 hover:bg-brand-pale-orange hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
           isOpen && 'bg-brand-pale-orange ring-2 ring-brand-orange/30'
         )}
       >
-        <Bell size={16} className="text-brand-orange" />
+        <AnimatedBellIcon size={16} className="text-brand-orange" />
         {unreadCount > 0 && (
           <span className="absolute -top-[3px] -right-[3px] min-w-[15px] h-[15px] bg-[#c0392b] text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[3px] border border-white leading-none">
             {unreadCount > 99 ? '99+' : unreadCount}

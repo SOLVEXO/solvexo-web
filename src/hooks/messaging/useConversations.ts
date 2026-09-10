@@ -10,6 +10,7 @@ export function useConversations(params?: ListConversationsParams) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+  const [typingIds, setTypingIds] = useState<Set<string>>(new Set());
   const requestId = useRef(0);
 
   const storeId    = params?.storeId;
@@ -57,14 +58,31 @@ export function useConversations(params?: ListConversationsParams) {
       });
     }
 
+    // WhatsApp-style "typing…" in the inbox list itself, for a conversation
+    // the recipient hasn't opened — the gateway pushes this to the personal
+    // `user:{id}` room specifically so it reaches this list-level listener,
+    // separately from the conversation-room `typing` event `useMessages`
+    // listens to for an already-open thread.
+    function handleTyping(body: { conversationId: string; userId: string; isTyping: boolean }) {
+      setTypingIds(prev => {
+        const has = prev.has(body.conversationId);
+        if (body.isTyping === has) return prev;
+        const next = new Set(prev);
+        if (body.isTyping) next.add(body.conversationId); else next.delete(body.conversationId);
+        return next;
+      });
+    }
+
     socket.on('conversation:update', handleUpdate);
+    socket.on('conversation:typing', handleTyping);
     return () => {
       socket.off('conversation:update', handleUpdate);
+      socket.off('conversation:typing', handleTyping);
       releaseMessagingSocket();
     };
   }, [storeId, isArchived]);
 
-  return { conversations, loading, error, refetch };
+  return { conversations, loading, error, refetch, typingIds };
 }
 
 export function useSearchConversations() {
