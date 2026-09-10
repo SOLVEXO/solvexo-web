@@ -381,10 +381,32 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
     apiGetStorePlatformPlan(storeId).then(res => { if (!cancelled) setPlatformSub(res.data); }).catch(() => {});
     return () => { cancelled = true; };
   }, [storeId]);
-  const trialDaysLeft = platformSub?.trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(platformSub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+  // Real, live-ticking countdown (re-renders every second) — previously a
+  // static `Math.ceil(... / oneDayMs)` computed once per render, which both
+  // (a) never advanced on its own between re-renders and (b) rounded UP any
+  // partial day, so it kept showing e.g. "3 days left" for nearly the
+  // entire 2nd day of a 3-day trial instead of "2". `Math.floor` per unit
+  // below is the honest "full days/hours/minutes/seconds actually
+  // remaining" breakdown, ticking down in real time like the storefront's
+  // own `DropCountdownSection` countdown.
+  const [trialNow, setTrialNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (platformSub?.status !== 'trialing') return;
+    const id = setInterval(() => setTrialNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [platformSub?.status]);
+  const trialTimeLeft = platformSub?.trialEndsAt
+    ? (() => {
+        const diff = Math.max(0, new Date(platformSub.trialEndsAt).getTime() - trialNow);
+        return {
+          days: Math.floor(diff / 86400000),
+          hours: Math.floor((diff % 86400000) / 3600000),
+          minutes: Math.floor((diff % 3600000) / 60000),
+          seconds: Math.floor((diff % 60000) / 1000),
+        };
+      })()
     : null;
-  const isTrialing = platformSub?.status === 'trialing' && trialDaysLeft !== null;
+  const isTrialing = platformSub?.status === 'trialing' && trialTimeLeft !== null;
   const isTrialEndedSidebar = platformSub?.status === 'trial_ended';
   // Real elapsed-vs-total from the subscription's own `startedAt`/`trialEndsAt`
   // — trial has no plan attached (see PlatformTrialSettings), so this can no
@@ -395,7 +417,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         const end = new Date(platformSub.trialEndsAt!).getTime();
         const total = end - start;
         if (total <= 0) return 0;
-        return Math.min(100, Math.max(0, Math.round(((Date.now() - start) / total) * 100)));
+        return Math.min(100, Math.max(0, Math.round(((trialNow - start) / total) * 100)));
       })()
     : 0;
   // Outside a real trial, this card drops back to a plain plan-name row — no
@@ -570,28 +592,45 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         {open ? (
           <div className="px-4 py-3 border-t border-dark-active shrink-0">
             {isTrialing ? (
-              <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
-                <div className="flex items-center justify-between gap-2 mb-[10px]">
-                  <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
-                    Trial
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-[8px] py-[3px] rounded-full bg-white/15 text-white text-[9.5px] font-semibold shrink-0">
-                    <Clock size={10} className="text-white" />
-                    {trialDaysLeft} day{trialDaysLeft === 1 ? '' : 's'} left
-                  </span>
+              <div className="relative mt-[8px] mb-[10px]">
+                {/* Trial floats half-in/half-out over the card's top-left
+                   corner — smaller than before, and the wrapper now
+                   reserves real space above the card (`mt-[8px]`) for it
+                   to sit in, instead of relying on the outer footer's own
+                   padding (which the sidebar's container was clipping
+                   into). Days-left stays a normal pill inside the card. */}
+                <span className="absolute -top-[7px] left-[10px] z-10 inline-flex items-center px-[7px] py-[3px] rounded-full bg-white text-brand-deep-orange text-[8px] font-extrabold uppercase tracking-[0.05em] shadow-sm">
+                  Trial
+                </span>
+                <div className="bg-brand-orange rounded-[10px] px-3 py-[10px]">
+                  <div className="flex justify-end mb-[10px]">
+                    <span className="inline-flex items-center gap-1 px-[9px] py-[4px] rounded-full bg-white/15 text-white text-[9.5px] font-semibold shrink-0">
+                      <Clock size={10} className="text-white" />
+                      {trialTimeLeft?.days} day{trialTimeLeft?.days === 1 ? '' : 's'} left
+                    </span>
+                  </div>
+                  <div className="h-[5px] bg-white/25 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-white rounded-full transition-[width] duration-300"
+                      style={{ width: `${trialProgressPct}%` }}
+                    />
+                  </div>
+                  {/* Finer hh:mm:ss detail, directly under the bar — lighter,
+                     compact plain text (no pill chrome) so it reads as a
+                     secondary detail under the headline day count above, not
+                     a second competing badge. */}
+                  <div className="flex justify-end mb-[11px] mt-[4px]">
+                    <span className="text-white/65 text-[8.5px] font-medium tabular-nums">
+                      {trialTimeLeft && `${String(trialTimeLeft.hours).padStart(2, '0')}h ${String(trialTimeLeft.minutes).padStart(2, '0')}m ${String(trialTimeLeft.seconds).padStart(2, '0')}s`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+                    className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                  >
+                    Choose a Plan
+                  </button>
                 </div>
-                <div className="h-[5px] bg-white/25 rounded-full overflow-hidden mb-[11px]">
-                  <div
-                    className="h-full bg-white rounded-full transition-[width] duration-300"
-                    style={{ width: `${trialProgressPct}%` }}
-                  />
-                </div>
-                <button
-                  onClick={() => navigate(`/store/${storeId}/plan-billing`)}
-                  className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
-                >
-                  Choose a Plan
-                </button>
               </div>
             ) : isTrialEndedSidebar ? (
               <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
@@ -914,7 +953,10 @@ function PlatformBillingBanner() {
     );
   }
   if (sub.status === 'trialing' && sub.trialEndsAt) {
-    const daysLeft = Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+    // `Math.floor`, not `Math.ceil` — the honest count of full days actually
+    // remaining (ceil was rounding any partial day up, so this over-reported
+    // by up to a full day for almost the entire span of the trial).
+    const daysLeft = Math.max(0, Math.floor((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
     if (daysLeft <= 7) {
       return (
         <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3] cursor-pointer">
