@@ -509,8 +509,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, categoryId, codEnabled, reviewModerationEnabled, lowStockThreshold, taxRate, enabledCurrencies });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, codEnabled, reviewModerationEnabled, lowStockThreshold, taxRate, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
