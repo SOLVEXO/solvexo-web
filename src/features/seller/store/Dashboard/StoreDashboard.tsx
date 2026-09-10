@@ -7,7 +7,7 @@ import {
   ClipboardList, Megaphone, AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
 import { AreaChart } from '@/components/comman/charts';
 import { MetricCard, SkeletonBox, Button, CoverImage } from '@/components/comman/ui';
 import {
@@ -482,6 +482,10 @@ export default function StoreDashboard() {
 
       {loading || metricsLoading ? <DashSkeleton /> : (
         <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
+
+          {/* Shopify-style trial pill — Dashboard-only (not shown on any
+             other page's header), directly above the store hero card. */}
+          <TrialBillingPill />
 
           <StoreHero store={store} />
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import {
@@ -12,8 +13,9 @@ import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
+import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
-import { VariantMatrixEditor } from './VariantMatrixEditor';
+import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
@@ -198,6 +200,14 @@ export default function StoreEditProduct() {
   const [phys,              setPhys]              = useState<PhysForm>(blankPhys);
   const [dig,               setDig]               = useState<DigForm>(blankDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  // Same reasoning as StoreAddProduct.tsx — the real variant option/value
+  // editor + generated table needs real width, so it opens in a wide Modal
+  // instead of living inline in this narrow single-column form, and is
+  // itself a 2-step wizard (Options → Price & Stock) inside that modal.
+  const VARIANT_STEPS = ['Options', 'Price & Stock'] as const;
+  const [variantsModalOpen, setVariantsModalOpen] = useState(false);
+  const [variantStep, setVariantStep] = useState(1);
+  const openVariantsModal = () => { setVariantStep(1); setVariantsModalOpen(true); };
   // Maps a variant's combinationKey -> its real DB _id, populated once
   // `loadPhysicalVariants` resolves — this is what tells `handleSubmit`
   // apart an existing variant (update) from a brand-new one the seller just
@@ -639,26 +649,136 @@ export default function StoreEditProduct() {
             </Card>
           )}
 
+          {/* Explains, rather than just silently omits, why Pricing/Inventory &
+             Shipping aren't shown once variants exist — each variant row in
+             the Variants card below now carries its own price/SKU/stock, so
+             the single product-level fields would be redundant/misleading.
+             Same convention every real platform (Shopify included) uses. */}
+          {pType === 'physical' && hasVariants && (
+            <div className="rounded-[10px] border border-bone bg-cream/40 px-4 py-3">
+              <p className="text-[12px] text-charcoal leading-[1.6]">
+                <strong>Pricing &amp; Inventory moved into Variants below.</strong> Since this product has variants (e.g. {phys.optionTypes.map(t => t.name).join(', ')}),
+                each one gets its own price, SKU, and stock instead of one shared value for the whole product.
+              </p>
+            </div>
+          )}
+
           {/* Variants — always available for physical products. Adding an
               option (Size, Color…) here is what switches Pricing/Inventory
-              above into the per-variant matrix instead. */}
+              above into the per-variant matrix instead. The real editor
+              (option/value builder + generated price/SKU/stock table) opens
+              in a wide Modal instead of living inline — this card is just a
+              compact summary + entry point. */}
           {pType === 'physical' && (
             <Card title="Variants">
               <div className="flex flex-col gap-3">
-                <VariantMatrixEditor
-                  optionTypes={phys.optionTypes}
-                  onOptionTypesChange={v => sp('optionTypes', v)}
-                  rows={phys.variantRows}
-                  onRowsChange={v => sp('variantRows', v)}
-                  currencySymbol={currencySymbol}
-                />
-                {hasVariants && (
-                  <F label="Shipping Weight">
-                    <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
-                  </F>
+                {hasVariants ? (
+                  <>
+                    <div className="flex flex-wrap gap-1.5">
+                      {phys.optionTypes.map(t => (
+                        <span key={t.name} className="bg-cream border border-bone rounded-[6px] px-2.5 py-1 text-[12px] text-charcoal">
+                          <strong>{t.name}:</strong> {t.values.join(', ') || '—'}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-slate">
+                      {phys.variantRows.length} variant{phys.variantRows.length === 1 ? '' : 's'} — each has its own price, SKU, and stock.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[12.5px] text-slate leading-[1.5]">
+                    No variants yet. Add options like Size or Color if you sell multiple versions of this product — each combination gets its own price and stock. Leave this empty for a simple, single-price product.
+                  </p>
                 )}
+                <button
+                  type="button" onClick={openVariantsModal}
+                  className="self-start px-3.5 py-2 rounded-lg border-none text-[12.5px] font-semibold cursor-pointer"
+                  style={{ background: '#D97757', color: '#fff' }}
+                >
+                  {hasVariants ? 'Edit Variants' : '+ Add Variants'}
+                </button>
               </div>
             </Card>
+          )}
+
+          {variantsModalOpen && (
+            <Modal
+              mobileSheet title="Manage Variants" width={800} onClose={() => setVariantsModalOpen(false)}
+              footer={
+                <>
+                  {variantStep > 1 && (
+                    <button type="button" onClick={() => setVariantStep(1)}
+                      className="px-4 py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold cursor-pointer text-charcoal">
+                      Back
+                    </button>
+                  )}
+                  {variantStep < VARIANT_STEPS.length ? (
+                    <button
+                      type="button" onClick={() => setVariantStep(2)} disabled={phys.variantRows.length === 0}
+                      className="px-4 py-2 rounded-lg border-none text-[13px] font-semibold cursor-pointer disabled:cursor-not-allowed"
+                      style={{ background: phys.variantRows.length === 0 ? '#E8E6DC' : '#D97757', color: phys.variantRows.length === 0 ? '#A8A6A0' : '#fff' }}
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      type="button" onClick={() => setVariantsModalOpen(false)}
+                      className="px-4 py-2 rounded-lg border-none text-[13px] font-semibold cursor-pointer"
+                      style={{ background: '#D97757', color: '#fff' }}
+                    >
+                      Done
+                    </button>
+                  )}
+                </>
+              }
+            >
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  {VARIANT_STEPS.map((label, i) => {
+                    const n = i + 1;
+                    const active = n === variantStep;
+                    const done = n < variantStep;
+                    return (
+                      <div key={label} className={clsx('flex items-center gap-2', n < VARIANT_STEPS.length ? 'flex-1' : '')}>
+                        <div className={clsx('flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap', active ? 'text-brand-orange' : done ? 'text-success' : 'text-slate')}>
+                          <span className={clsx(
+                            'size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
+                            active ? 'bg-brand-orange text-white' : done ? 'bg-success text-white' : 'bg-bone text-slate',
+                          )}>
+                            {done ? '✓' : n}
+                          </span>
+                          {label}
+                        </div>
+                        {n < VARIANT_STEPS.length && <div className={clsx('h-px flex-1', done ? 'bg-success' : 'bg-bone')} />}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {variantStep === 1 && (
+                  <VariantOptionsEditor
+                    optionTypes={phys.optionTypes}
+                    onOptionTypesChange={v => sp('optionTypes', v)}
+                    rows={phys.variantRows}
+                    onRowsChange={v => sp('variantRows', v)}
+                  />
+                )}
+                {variantStep === 2 && (
+                  <>
+                    <VariantTableEditor
+                      rows={phys.variantRows}
+                      onRowsChange={v => sp('variantRows', v)}
+                      currencySymbol={currencySymbol}
+                    />
+                    {hasVariants && (
+                      <F label="Shipping Weight">
+                        <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
+                      </F>
+                    )}
+                  </>
+                )}
+              </div>
+            </Modal>
           )}
 
           {/* Listing Status */}

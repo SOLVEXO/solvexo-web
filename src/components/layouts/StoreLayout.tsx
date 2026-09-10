@@ -14,7 +14,7 @@ import {
   Store, TrendingUp,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
-import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
+import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, type StorePlatformSubscription } from '@/api/services/platformPlans';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -781,7 +781,7 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
           {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate">{subtitle}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-[10px] shrink-0">
+      <div className="flex flex-nowrap items-center gap-[10px] shrink-0">
         {actions}
         {/* Shopify-style store switcher — jump to another of this seller's
            stores right from the navbar, on every store page. */}
@@ -952,22 +952,84 @@ function PlatformBillingBanner() {
       </button>
     );
   }
-  if (sub.status === 'trialing' && sub.trialEndsAt) {
-    // `Math.floor`, not `Math.ceil` — the honest count of full days actually
-    // remaining (ceil was rounding any partial day up, so this over-reported
-    // by up to a full day for almost the entire span of the trial).
-    const daysLeft = Math.max(0, Math.floor((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
-    if (daysLeft <= 7) {
-      return (
-        <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3] cursor-pointer">
-          <Clock size={14} className="shrink-0" />
-          Your free trial ends in {daysLeft} day{daysLeft === 1 ? '' : 's'}.
-          <span className="underline font-semibold">Choose a plan</span>
-        </button>
-      );
-    }
-  }
+  // A still-running trial (any days left) is deliberately NOT a full-width
+  // banner here any more — see `TrialBillingPill` in `StorePageHeader`
+  // instead, a small top-right pill matching Shopify's own real dashboard
+  // (a full-width bar for a non-blocking, purely informational state read
+  // as louder/more urgent than the other statuses above it actually are).
   return null;
+}
+
+// ── Trial billing pill — small, Shopify-style ("Get 3 months for
+// $1/month · Select a plan") compact badge, NOT a full-width banner. Lives
+// ONLY on `StoreDashboard.tsx` (rendered explicitly there, above its store-
+// identity card) — deliberately NOT part of the shared `StorePageHeader`
+// (every other page's navbar), at the seller's explicit request, so it
+// doesn't show up workspace-wide. Exported from here (not defined directly
+// in the Dashboard page) since it shares `StorePlatformSubscription`/
+// `PlatformPlan` fetching with `PlatformBillingBanner` below. ──
+export function TrialBillingPill() {
+  const navigate = useNavigate();
+  const { storeId } = useStoreWorkspace();
+  const [sub, setSub] = useState<StorePlatformSubscription | null>(null);
+  // Cheapest currently-active intro offer across the real catalog — shown
+  // instead of a bare day-count when one exists, so the pill reads like
+  // Shopify's own "Get 3 months for $1/month" rather than just a countdown.
+  // Never a specific plan name, since trial has no plan attached yet.
+  const [bestIntroOffer, setBestIntroOffer] = useState<{ priceUSD: number; durationCycles: number } | null>(null);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId)
+      .then(res => { if (!cancelled) setSub(res.data); })
+      .catch(() => {});
+    apiBrowsePlatformPlans()
+      .then(res => {
+        if (cancelled) return;
+        const offers = (res.data ?? [])
+          .filter(p => p.introOfferEnabled && p.introPriceUSD != null && p.introDurationCycles != null)
+          .map(p => ({ priceUSD: p.introPriceUSD!, durationCycles: p.introDurationCycles! }));
+        if (offers.length > 0) {
+          setBestIntroOffer(offers.reduce((best, o) => (o.priceUSD < best.priceUSD ? o : best)));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  if (!sub || sub.status !== 'trialing' || !sub.trialEndsAt) return null;
+  // `Math.floor`, not `Math.ceil` — the honest count of full days actually
+  // remaining (ceil rounds any partial day up, over-reporting by up to a
+  // full day for almost the entire span of the trial).
+  const daysLeft = Math.max(0, Math.floor((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+  if (daysLeft > 7) return null;
+
+  return (
+    <div className="flex justify-end">
+      <motion.button
+        onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full bg-carbon hover:bg-charcoal transition-colors text-white cursor-pointer shrink-0"
+      >
+        <motion.span
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          className="size-[6px] rounded-full bg-success shrink-0"
+        />
+        <span className="text-[12px] font-medium whitespace-nowrap">
+          {bestIntroOffer
+            ? `Get ${bestIntroOffer.durationCycles} month${bestIntroOffer.durationCycles === 1 ? '' : 's'} for $${bestIntroOffer.priceUSD}/mo`
+            : `Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
+        </span>
+        <span className="px-3 py-[6px] rounded-full bg-white text-carbon text-[11.5px] font-semibold whitespace-nowrap">
+          Select a plan
+        </span>
+      </motion.button>
+    </div>
+  );
 }
 
 // Shown instead of the real page when the store fetch itself failed (404,

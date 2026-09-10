@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
+import { apiGetPublicTrialSettings } from '@/api/services/platformPlans';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SplitText } from '@/components/comman/motion/SplitText';
@@ -317,6 +318,15 @@ function AIFlowVisual() {
 export function Homepage() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
+  // Real, admin-configured trial length (`PlatformTrialSettings.durationDays`)
+  // — the hero previously never mentioned a trial at all ("Start Selling
+  // Free" alone doesn't say there's a free trial, let alone how long).
+  const [trialDurationDays, setTrialDurationDays] = useState(3);
+  useEffect(() => {
+    apiGetPublicTrialSettings()
+      .then(res => setTrialDurationDays(res.data.durationDays))
+      .catch(() => {}); // keep the fallback — never block the page over this
+  }, []);
   const reduceMotion = useReducedMotion();
   // Held true immediately when there's no splash to wait for (repeat visit
   // this session, reduced motion); flips true once the one-time brand
@@ -518,7 +528,7 @@ export function Homepage() {
                and a hover brighten, instead of three flat, identically-
                faded text strings that all appeared as one static block. */}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 mt-8">
-              {['Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map((label, i) => (
+              {[`Free ${trialDurationDays}-day trial, no card required`, 'Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map((label, i) => (
                 <Reveal key={label} delay={1.4 + i * 0.1} y={8}>
                   <span className="group flex items-center gap-[7px] text-[11.5px] text-white/40 transition-colors duration-normal hover:text-white/75 cursor-default">
                     <span className="relative flex size-[5px] shrink-0">

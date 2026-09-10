@@ -6,7 +6,7 @@ import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
-import { apiBrowsePlatformPlans, type PlatformPlan } from '@/api/services/platformPlans';
+import { apiBrowsePlatformPlans, apiGetPublicTrialSettings, type PlatformPlan } from '@/api/services/platformPlans';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
@@ -35,7 +35,9 @@ const ADDONS: { Icon: LucideIcon; name: string; price: string; unit: string }[] 
 ];
 
 // ── FAQ fallback (shown until admin adds FAQs under the "pricing" category) ───
-const FALLBACK_FAQS = [
+// A function (not a static array) so the trial-duration answer reflects the
+// real, admin-configured length instead of a vague "a free trial."
+function getFallbackFaqs(trialDurationDays: number) { return [
   {
     q: 'Can I switch plans anytime?',
     a: "Yes. You can upgrade or downgrade your plan at any time. Changes take effect immediately and we'll prorate any billing differences.",
@@ -54,9 +56,9 @@ const FALLBACK_FAQS = [
   },
   {
     q: 'Is there a free trial?',
-    a: "Yes — every new store gets a free trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready, during the trial or after it ends.",
+    a: `Yes — every new store gets a free ${trialDurationDays}-day trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready, during the trial or after it ends.`,
   },
-];
+]; }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function PricingPage() {
@@ -67,18 +69,26 @@ export function PricingPage() {
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  // Real, admin-configured trial length (same public endpoint/fallback
+  // onboarding already uses) — previously this page only ever said generic
+  // "Start Free Trial" with no day count, so an admin-changed trial duration
+  // (`PlatformTrialSettings.durationDays`) never showed up here at all.
+  const [trialDurationDays, setTrialDurationDays] = useState(3);
 
   useEffect(() => {
     apiBrowsePlatformPlans()
       .then(res => setPlans(res.data ?? []))
       .catch(() => {}) // non-critical — page still works, just without live plan cards
       .finally(() => setPlansLoading(false));
+    apiGetPublicTrialSettings()
+      .then(res => setTrialDurationDays(res.data.durationDays))
+      .catch(() => {}); // keep the fallback — never block the page over this
   }, []);
 
   const { faqs: liveFaqs } = useFaqs();
   const faqs = liveFaqs.length > 0
     ? liveFaqs.map(f => ({ q: f.question, a: f.answer }))
-    : FALLBACK_FAQS;
+    : getFallbackFaqs(trialDurationDays);
 
   return (
     <div className="bg-cream min-h-full">
@@ -89,7 +99,7 @@ export function PricingPage() {
         <Reveal delay={0}>
           <div className="inline-flex items-center gap-2 bg-brand-pale-orange border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-5">
             <span className="text-[12px] text-brand-deep-orange font-medium">
-              No credit card required • Cancel anytime
+              Free {trialDurationDays}-day trial • No credit card required • Cancel anytime
             </span>
           </div>
         </Reveal>
@@ -152,7 +162,7 @@ export function PricingPage() {
             key={plan._id}
             plan={plan}
             billing={billing === 'annual' ? 'annual' : 'monthly'}
-            ctaLabel={plan.isCustomPricing ? 'Contact Sales' : plan.isFree ? 'Start Free' : 'Start Free Trial'}
+            ctaLabel={plan.isCustomPricing ? 'Contact Sales' : plan.isFree ? 'Start Free' : `Start ${trialDurationDays}-Day Free Trial`}
             onCta={() => plan.isCustomPricing
               ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
               : sellEntry.go()}
@@ -224,7 +234,7 @@ export function PricingPage() {
         <div className="auth-float absolute rounded-full w-[380px] h-[380px] bg-brand-orange opacity-[0.08] -top-[110px] left-[6%]" aria-hidden />
         <div className="auth-float-slow absolute rounded-full w-[300px] h-[300px] bg-brand-deep-orange opacity-[0.07] -bottom-[90px] right-[10%]" aria-hidden />
         <div className="relative z-[1]">
-          <SectionHeading title="Start selling today — it's free" subtitle="No credit card required. Cancel or upgrade anytime." tone="dark" align="center" size="lg" className="mb-8" />
+          <SectionHeading title="Start selling today — it's free" subtitle={`Free ${trialDurationDays}-day trial. No credit card required. Cancel or upgrade anytime.`} tone="dark" align="center" size="lg" className="mb-8" />
           <Reveal>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <MagneticButton>

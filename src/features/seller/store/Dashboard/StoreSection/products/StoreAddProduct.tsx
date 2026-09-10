@@ -10,8 +10,9 @@ import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
+import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
-import { VariantMatrixEditor } from './VariantMatrixEditor';
+import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
 import { MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductType   = 'physical' | 'digital' | 'educational';
@@ -119,6 +120,21 @@ export default function StoreAddProduct() {
   const [phys,              setPhys]              = useState<PhysForm>(initPhys);
   const [dig,               setDig]               = useState<DigForm>(initDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  // The real option/value editor + generated price-per-variant table needs
+  // real width to be usable (a data table with 7 columns) — cramming it into
+  // the same narrow single-column card every other field lives in truncated
+  // its own headers/inputs and was confirmed confusing. A wide `Modal`
+  // (`Manage Variants`, below) gives it a real page's worth of room; this
+  // card is just a compact summary + entry point into it. Inside the modal,
+  // building options and then setting price/stock per row are two genuinely
+  // different tasks, so they're presented as a 2-step wizard (same
+  // progress-header pattern as the admin Create Plan wizard) instead of one
+  // long scroll — a seller adding "Size: S/M/L, Color: Red/Blue" no longer
+  // has to scroll past a half-built option list to find the price table.
+  const VARIANT_STEPS = ['Options', 'Price & Stock'] as const;
+  const [variantsModalOpen, setVariantsModalOpen] = useState(false);
+  const [variantStep, setVariantStep] = useState(1);
+  const openVariantsModal = () => { setVariantStep(1); setVariantsModalOpen(true); };
 
   const sp = <K extends keyof PhysForm>(k: K, v: PhysForm[K]) => setPhys(f => ({ ...f, [k]: v }));
   const sd = <K extends keyof DigForm> (k: K, v: DigForm[K])  => setDig(f  => ({ ...f, [k]: v }));
@@ -460,26 +476,139 @@ export default function StoreAddProduct() {
             </Card>
           )}
 
+          {/* Explains, rather than just silently omits, why Pricing/Inventory &
+             Shipping aren't shown once variants exist — each variant row in
+             the Variants card below now carries its own price/SKU/stock, so
+             the single product-level fields would be redundant/misleading.
+             Same convention every real platform (Shopify included) uses. */}
+          {pType === 'physical' && hasVariants && (
+            <div className="rounded-[10px] border border-bone bg-cream/40 px-4 py-3">
+              <p className="text-[12px] text-charcoal leading-[1.6]">
+                <strong>Pricing &amp; Inventory moved into Variants below.</strong> Since this product has variants (e.g. {phys.optionTypes.map(t => t.name).join(', ')}),
+                each one gets its own price, SKU, and stock instead of one shared value for the whole product.
+              </p>
+            </div>
+          )}
+
           {/* Variants — always available for physical products. Adding an
               option (Size, Color…) here is what switches Pricing/Inventory
-              above into the per-variant matrix instead. */}
+              above into the per-variant matrix instead. The real editor
+              (option/value builder + generated price/SKU/stock table) opens
+              in a wide Modal (see below this card) instead of living inline
+              — this card is just a compact summary + entry point. */}
           {pType === 'physical' && (
             <Card title="Variants">
               <div className="flex flex-col gap-3">
-                <VariantMatrixEditor
-                  optionTypes={phys.optionTypes}
-                  onOptionTypesChange={v => sp('optionTypes', v)}
-                  rows={phys.variantRows}
-                  onRowsChange={v => sp('variantRows', v)}
-                  currencySymbol={currencySymbol}
-                />
-                {hasVariants && (
-                  <F label="Shipping Weight" >
-                    <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
-                  </F>
+                {hasVariants ? (
+                  <>
+                    <div className="flex flex-wrap gap-1.5">
+                      {phys.optionTypes.map(t => (
+                        <span key={t.name} className="bg-cream border border-bone rounded-[6px] px-2.5 py-1 text-[12px] text-charcoal">
+                          <strong>{t.name}:</strong> {t.values.join(', ') || '—'}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-slate">
+                      {phys.variantRows.length} variant{phys.variantRows.length === 1 ? '' : 's'} generated — each has its own price, SKU, and stock.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[12.5px] text-slate leading-[1.5]">
+                    No variants yet. Add options like Size or Color if you sell multiple versions of this product — each combination gets its own price and stock. Leave this empty for a simple, single-price product.
+                  </p>
                 )}
+                <button
+                  type="button" onClick={openVariantsModal}
+                  className="self-start px-3.5 py-2 rounded-lg border-none text-[12.5px] font-semibold cursor-pointer"
+                  style={{ background: '#D97757', color: '#fff' }}
+                >
+                  {hasVariants ? 'Edit Variants' : '+ Add Variants'}
+                </button>
               </div>
             </Card>
+          )}
+
+          {variantsModalOpen && (
+            <Modal
+              mobileSheet title="Manage Variants" width={800} onClose={() => setVariantsModalOpen(false)}
+              footer={
+                <>
+                  {variantStep > 1 && (
+                    <button type="button" onClick={() => setVariantStep(1)}
+                      className="px-4 py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold cursor-pointer text-charcoal">
+                      Back
+                    </button>
+                  )}
+                  {variantStep < VARIANT_STEPS.length ? (
+                    <button
+                      type="button" onClick={() => setVariantStep(2)} disabled={phys.variantRows.length === 0}
+                      className="px-4 py-2 rounded-lg border-none text-[13px] font-semibold cursor-pointer disabled:cursor-not-allowed"
+                      style={{ background: phys.variantRows.length === 0 ? '#E8E6DC' : '#D97757', color: phys.variantRows.length === 0 ? '#A8A6A0' : '#fff' }}
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      type="button" onClick={() => setVariantsModalOpen(false)}
+                      className="px-4 py-2 rounded-lg border-none text-[13px] font-semibold cursor-pointer"
+                      style={{ background: '#D97757', color: '#fff' }}
+                    >
+                      Done
+                    </button>
+                  )}
+                </>
+              }
+            >
+              <div className="flex flex-col gap-4">
+                {/* Progress header — same visual pattern as the admin Create
+                   Plan wizard: numbered circles, orange = current, green
+                   check = done. */}
+                <div className="flex items-center gap-2">
+                  {VARIANT_STEPS.map((label, i) => {
+                    const n = i + 1;
+                    const active = n === variantStep;
+                    const done = n < variantStep;
+                    return (
+                      <div key={label} className={clsx('flex items-center gap-2', n < VARIANT_STEPS.length ? 'flex-1' : '')}>
+                        <div className={clsx('flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap', active ? 'text-brand-orange' : done ? 'text-success' : 'text-slate')}>
+                          <span className={clsx(
+                            'size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
+                            active ? 'bg-brand-orange text-white' : done ? 'bg-success text-white' : 'bg-bone text-slate',
+                          )}>
+                            {done ? '✓' : n}
+                          </span>
+                          {label}
+                        </div>
+                        {n < VARIANT_STEPS.length && <div className={clsx('h-px flex-1', done ? 'bg-success' : 'bg-bone')} />}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {variantStep === 1 && (
+                  <VariantOptionsEditor
+                    optionTypes={phys.optionTypes}
+                    onOptionTypesChange={v => sp('optionTypes', v)}
+                    rows={phys.variantRows}
+                    onRowsChange={v => sp('variantRows', v)}
+                  />
+                )}
+                {variantStep === 2 && (
+                  <>
+                    <VariantTableEditor
+                      rows={phys.variantRows}
+                      onRowsChange={v => sp('variantRows', v)}
+                      currencySymbol={currencySymbol}
+                    />
+                    {hasVariants && (
+                      <F label="Shipping Weight">
+                        <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
+                      </F>
+                    )}
+                  </>
+                )}
+              </div>
+            </Modal>
           )}
 
           {/* Listing Status */}
