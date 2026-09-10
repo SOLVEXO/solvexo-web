@@ -8,7 +8,7 @@ import { ENDPOINTS } from '../endpoints';
 // ─────────────────────────────────────────────────────────────────────────────
 export type MessageType   = 'text' | 'image' | 'video' | 'pdf' | 'document' | 'voice' | 'product_share';
 export type SenderRole    = 'user' | 'seller' | 'admin';
-export type TargetType    = 'user' | 'message' | 'conversation';
+export type TargetType    = 'user' | 'message' | 'conversation' | 'review';
 export type ReportStatus  = 'pending' | 'reviewed' | 'resolved';
 
 export interface ConversationParticipantPreview {
@@ -120,6 +120,9 @@ export interface Report {
   details?:     string | null;
   status:       ReportStatus;
   adminNotes?:  string | null;
+  resolution?:  'approved' | 'removed' | null;
+  reviewedBy?:  string | null;
+  resolvedAt?:  string | null;
   createdAt:    string;
   updatedAt:    string;
 }
@@ -190,11 +193,16 @@ export function apiRestoreConversation(id: string) {
 }
 
 export function apiPinConversation(id: string, pin = true) {
-  return client.patch<never, { isPinned: boolean }>(ENDPOINTS.MESSAGING.CONVERSATIONS.PIN(id), null, { params: { pin } });
+  // `undefined`, not `null` — a literal `null` body serializes to the JSON
+  // primitive "null", which Express's strict-mode body parser rejects
+  // outright (400) before this ever reaches the controller; same root cause
+  // already fixed for apiMarkMessageSeen. The controller only reads the
+  // `pin` query param anyway, so there's no body to send at all.
+  return client.patch<never, { isPinned: boolean }>(ENDPOINTS.MESSAGING.CONVERSATIONS.PIN(id), undefined, { params: { pin } });
 }
 
 export function apiMuteConversation(id: string, mute = true) {
-  return client.patch<never, { isMuted: boolean }>(ENDPOINTS.MESSAGING.CONVERSATIONS.MUTE(id), null, { params: { mute } });
+  return client.patch<never, { isMuted: boolean }>(ENDPOINTS.MESSAGING.CONVERSATIONS.MUTE(id), undefined, { params: { mute } });
 }
 
 export function apiDeleteConversation(id: string) {
@@ -204,10 +212,14 @@ export function apiDeleteConversation(id: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ATTACHMENTS
 // ─────────────────────────────────────────────────────────────────────────────
-export function apiUploadAttachment(conversationId: string, file: File) {
+export function apiUploadAttachment(conversationId: string, file: File, onProgress?: (percent: number) => void) {
   const fd = new FormData();
   fd.append('file', file);
-  return client.post<never, MessageAttachment>(ENDPOINTS.MESSAGING.ATTACHMENTS.UPLOAD(conversationId), fd);
+  return client.post<never, MessageAttachment>(ENDPOINTS.MESSAGING.ATTACHMENTS.UPLOAD(conversationId), fd, {
+    onUploadProgress: onProgress
+      ? e => onProgress(e.total ? Math.round((e.loaded / e.total) * 100) : 0)
+      : undefined,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -236,7 +248,12 @@ export function apiDeleteMessage(messageId: string) {
 }
 
 export function apiMarkMessageSeen(messageId: string, conversationId: string) {
-  return client.post<never, { seen: boolean }>(ENDPOINTS.MESSAGING.MESSAGES.MARK_SEEN(messageId), null, { params: { conversationId } });
+  // No request body needed (the controller only reads the :id param and the
+  // conversationId query param) — passing `null` here used to serialize to
+  // the literal 4-byte body "null", which Express's strict JSON body-parser
+  // rejects outright (it only accepts an object/array at the top level), so
+  // every call was failing with a 400 before ever reaching the controller.
+  return client.post<never, { seen: boolean }>(ENDPOINTS.MESSAGING.MESSAGES.MARK_SEEN(messageId), undefined, { params: { conversationId } });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -271,4 +288,8 @@ export function apiAdminGetConversationById(id: string) {
 
 export function apiAdminGetReports(params?: GetReportsParams) {
   return client.get<never, Paginated & { reports: Report[] }>(ENDPOINTS.MESSAGING.ADMIN.GET_REPORTS, { params });
+}
+
+export function apiAdminResolveReport(reportId: string, payload: { resolution?: 'approved' | 'removed'; adminNotes?: string } = {}) {
+  return client.patch<never, Report>(ENDPOINTS.MESSAGING.ADMIN.RESOLVE_REPORT(reportId), payload);
 }

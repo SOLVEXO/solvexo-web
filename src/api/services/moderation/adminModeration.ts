@@ -33,6 +33,10 @@ export interface ModerationReportRow {
   itemLabel: string;
   sellerName: string | null;
   createdAt: string;
+  /** Only populated when targetType === 'review'. */
+  reviewRating?: number | null;
+  reviewComment?: string | null;
+  reviewRemoved?: boolean;
 }
 
 export interface ModerationQueueData {

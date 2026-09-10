@@ -115,57 +115,64 @@ export function MessageThread({
   return (
     <div className="relative flex-1 min-h-0">
       <div ref={scrollRef} onScroll={handleScroll} className="h-full overflow-y-auto px-4 py-3">
-        {hasMore && (
-          <div className="flex justify-center mb-3">
-            <button
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              className="flex items-center gap-[6px] px-3 py-[6px] rounded-full border border-bone bg-white text-[11.5px] text-slate cursor-pointer hover:bg-cream disabled:opacity-60"
-            >
-              {loadingMore && <Loader2 size={11} className="animate-spin" />}
-              {loadingMore ? 'Loading…' : 'Load older messages'}
-            </button>
-          </div>
-        )}
+        {/* min-h-full + justify-end anchors a short thread to the bottom
+            (right above the composer) instead of letting it flow from the
+            top and leave a blank gap — same intent as the loading skeleton
+            above, which already does this. Has no effect once content
+            overflows the container; it just scrolls as normal. */}
+        <div className="min-h-full flex flex-col justify-end">
+          {hasMore && (
+            <div className="flex justify-center mb-3">
+              <button
+                onClick={onLoadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-[6px] px-3 py-[6px] rounded-full border border-bone bg-white text-[11.5px] text-slate cursor-pointer hover:bg-cream disabled:opacity-60"
+              >
+                {loadingMore && <Loader2 size={11} className="animate-spin" />}
+                {loadingMore ? 'Loading…' : 'Load older messages'}
+              </button>
+            </div>
+          )}
 
-        {sections.map(section => (
-          <div key={section.dateLabel}>
-            <DateDivider label={section.dateLabel} />
-            {section.groups.map((group, gi) => {
-              const own = group.senderId === currentUserId;
-              return (
-                <div key={gi} className="flex flex-col gap-[2px] mb-[6px]">
-                  {group.messages.map((m, mi) => {
-                    const isLast = mi === group.messages.length - 1;
-                    return (
-                      <MessageBubble
-                        key={m._id}
-                        message={m}
-                        own={own}
-                        isLastInGroup={isLast}
-                        seenByOther={(m.seenBy ?? []).some(s => s.userId === otherPartyId)}
-                        showAvatar={!own && isLast}
-                        avatarName={otherPartyName}
-                        avatarImage={otherPartyImage}
-                        editing={editingId === m._id}
-                        editText={editText}
-                        onEditTextChange={onEditTextChange}
-                        onStartEdit={own ? onStartEdit : undefined}
-                        onCancelEdit={onCancelEdit}
-                        onSaveEdit={onSaveEdit}
-                        onDelete={own ? onDelete : undefined}
-                        onReply={onReply}
-                        onRetry={onRetry}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+          {sections.map(section => (
+            <div key={section.dateLabel}>
+              <DateDivider label={section.dateLabel} />
+              {section.groups.map((group, gi) => {
+                const own = group.senderId === currentUserId;
+                return (
+                  <div key={gi} className="flex flex-col gap-[2px] mb-[6px]">
+                    {group.messages.map((m, mi) => {
+                      const isLast = mi === group.messages.length - 1;
+                      return (
+                        <MessageBubble
+                          key={m._id}
+                          message={m}
+                          own={own}
+                          isLastInGroup={isLast}
+                          seenByOther={(m.seenBy ?? []).some(s => s.userId === otherPartyId)}
+                          showAvatar={!own && isLast}
+                          avatarName={otherPartyName}
+                          avatarImage={otherPartyImage}
+                          editing={editingId === m._id}
+                          editText={editText}
+                          onEditTextChange={onEditTextChange}
+                          onStartEdit={own ? onStartEdit : undefined}
+                          onCancelEdit={onCancelEdit}
+                          onSaveEdit={onSaveEdit}
+                          onDelete={own ? onDelete : undefined}
+                          onReply={onReply}
+                          onRetry={onRetry}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
 
-        {otherTyping && <TypingBubble name={otherPartyName} image={otherPartyImage} />}
+          {otherTyping && <TypingBubble name={otherPartyName} image={otherPartyImage} />}
+        </div>
       </div>
 
       {showJumpToLatest && (

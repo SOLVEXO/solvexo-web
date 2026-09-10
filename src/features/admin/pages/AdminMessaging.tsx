@@ -1,25 +1,30 @@
 import { useId, useRef, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { X, MessageSquare, Flag, Paperclip, Inbox, FlagOff } from 'lucide-react';
+import { X, MessageSquare, Flag, Paperclip, Inbox, FlagOff, Check, Loader2 } from 'lucide-react';
 import { useAdminConversations, useAdminReports, useAdminConversationDetail } from '@/hooks/messaging/useAdminMessaging';
 import { useMessages } from '@/hooks/messaging/useMessages';
-import type { ReportStatus, TargetType, Conversation, Report } from '@/api/services/messaging';
+import { apiAdminResolveReport, type ReportStatus, type TargetType, type Conversation, type Report } from '@/api/services/messaging';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
+import { useToast } from '@/contexts/ToastContext';
 
 type MainTab = 'conversations' | 'reports';
 
 function fmt(iso?: string) { return iso ? new Date(iso).toLocaleString() : '—'; }
 
-// ── Conversation detail drawer (read-only thread view) ─────────────────────────
+// ── Conversation detail drawer (read-only thread view) — admin oversees a
+// buyer↔seller conversation for moderation purposes only; it never posts
+// into it, matching the platform's hands-off stance on merchant↔customer
+// communication (same boundary Shopify itself keeps). ──────────────────────
 function ConversationDrawer({ conversationId, onClose }: { conversationId: string; onClose: () => void }) {
   const { messages, loading } = useMessages(conversationId);
   const { conversation } = useAdminConversationDetail(conversationId);
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useFocusTrap(panelRef, onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="dialog-overlay-enter absolute inset-0 bg-black/40" onClick={onClose} />
@@ -160,11 +165,26 @@ function ReportsPanel() {
   const [status,     setStatus]     = useState<ReportStatus | ''>('');
   const [targetType, setTargetType] = useState<TargetType | ''>('');
   const [page, setPage] = useState(1);
-  const { reports, loading, error } = useAdminReports({
+  const { reports, loading, error, refetch } = useAdminReports({
     status:     status || undefined,
     targetType: targetType || undefined,
     page, limit: 30,
   });
+  const toast = useToast();
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  async function handleResolve(report: Report) {
+    setResolvingId(report._id);
+    try {
+      await apiAdminResolveReport(report._id, { resolution: 'approved' });
+      toast.success('Report resolved');
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to resolve report.');
+    } finally {
+      setResolvingId(null);
+    }
+  }
 
   const columns: TableColumn<Report>[] = [
     { key: '_id', header: 'Report', render: r => <span className="font-bold text-brand-deep-orange whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</span> },
@@ -185,6 +205,18 @@ function ReportsPanel() {
       ),
     },
     { key: 'createdAt', header: 'Created', render: r => <span className="text-slate whitespace-nowrap">{fmt(r.createdAt)}</span> },
+    {
+      key: 'actions', header: '',
+      render: r => r.status === 'resolved' ? null : (
+        <button
+          onClick={() => void handleResolve(r)}
+          disabled={resolvingId === r._id}
+          className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-success flex items-center gap-1 outline-none transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.96] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50"
+        >
+          {resolvingId === r._id ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Resolve
+        </button>
+      ),
+    },
   ];
 
   return (

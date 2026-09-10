@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Ban, Flag, Trash2 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
+import { useConversations, useSearchConversations, useStartConversation } from '@/hooks/messaging/useConversations';
+import { useConversation } from '@/hooks/messaging/useConversation';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useModeration } from '@/hooks/messaging/useModeration';
 import { usePresence } from '@/hooks/messaging/usePresence';
 import { useRecentSearches } from '@/hooks/messaging/useRecentSearches';
 import { apiUploadAttachment, apiDeleteConversation, type Conversation, type MessageType } from '@/api/services/messaging';
-import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
+import { ChatList, ChatWindow, NewChatModal, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import { Card, PageHeader, type ActionMenuItem } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -20,7 +21,7 @@ const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
 // NOTE: buyer role has no archive/pin/mute — those messaging actions are
 // seller-only per the API. Buyer can start/search/delete conversations,
 // send/edit/delete messages, and block/report a seller.
-function toBuyerEntry(c: Conversation, online: Record<string, boolean>): ChatListEntry {
+function toBuyerEntry(c: Conversation, online: Record<string, boolean>, typingIds: Set<string>, menuItems: ActionMenuItem[]): ChatListEntry {
   return {
     id:          c._id,
     name:        c.store?.name ?? `Seller #${c.sellerId?.slice(-6).toUpperCase() ?? '——'}`,
@@ -31,6 +32,8 @@ function toBuyerEntry(c: Conversation, online: Record<string, boolean>): ChatLis
     unread:      c.buyerUnread,
     online:      online[c.sellerId],
     verified:    c.store?.badges?.includes('verified'),
+    isTyping:    typingIds.has(c._id),
+    menuItems,
   };
 }
 
@@ -40,7 +43,7 @@ export function Messages() {
 
   const toast = useToast();
   const { profile } = useGetProfile();
-  const { conversations, loading: listLoading, error: listError, refetch: refetchList } = useConversations();
+  const { conversations, loading: listLoading, error: listError, refetch: refetchList, typingIds } = useConversations();
   const { results: searchResults, search, loading: searching } = useSearchConversations();
   const { recent, commit, clear } = useRecentSearches('buyer-inbox');
   const [query, setQuery] = useState('');
@@ -60,7 +63,8 @@ export function Messages() {
   const online = usePresence(sellerIds);
 
   const [activeId, setActiveId] = useState<string | null>(initialConversationId ?? null);
-  const active = list.find(c => c._id === activeId) ?? conversations.find(c => c._id === activeId) ?? null;
+  const { conversation } = useConversation(activeId);
+  const active = conversation ?? list.find(c => c._id === activeId) ?? conversations.find(c => c._id === activeId) ?? null;
 
   useEffect(() => {
     if (initialConversationId) setActiveId(initialConversationId);
@@ -82,21 +86,38 @@ export function Messages() {
     otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
+  const { execute: startConversation, loading: startingConversation } = useStartConversation();
 
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | undefined>(undefined);
   const [blockedSellerId, setBlockedSellerId] = useState<string | null>(null);
+  const [showNewChat, setShowNewChat] = useState(false);
 
+  // Mark the conversation as seen once it's open — driven by the
+  // CONVERSATION's own unread counter/lastMessage pointer, not by "who sent
+  // the last loaded message". That second approach silently broke the
+  // moment the buyer had already replied at some point: the last message
+  // in the thread was then the buyer's own, so the old check always
+  // skipped calling markSeen — even though earlier seller messages before
+  // that reply had genuinely never been marked seen, leaving the unread
+  // badge permanently stuck (confirmed against real data on the seller side
+  // of this same bug).
+  //
+  // Guarded on `conversation?._id === activeId` specifically (not just
+  // `active`, which can briefly fall back to a stale `list`/`conversations`
+  // entry right after switching threads) — same fix applied to the seller's
+  // inbox, kept consistent here.
   useEffect(() => {
-    if (!activeId || messages.length === 0) return;
-    const last = messages[messages.length - 1];
-    if (last.senderId !== profile?._id) {
+    if (!activeId || !conversation || conversation._id !== activeId) return;
+    const lastMessageId = conversation.lastMessage?.messageId;
+    if ((conversation.buyerUnread ?? 0) > 0 && lastMessageId) {
       // Don't rely solely on the 'conversation:update' socket echo to clear
       // this conversation's unread badge — refetch directly so it's correct
       // even if that event was missed (e.g. a socket reconnect gap).
-      void markSeen(last._id).then(refetchList);
+      void markSeen(lastMessageId).catch(() => {}).then(refetchList);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId, messages.length]);
+  }, [activeId, conversation?._id, conversation?.buyerUnread, conversation?.lastMessage?.messageId]);
 
   const handleSearch = (v: string) => {
     setQuery(v);
@@ -106,13 +127,21 @@ export function Messages() {
   const handleUpload = async (file: File) => {
     if (!activeId) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const attachment = await apiUploadAttachment(activeId, file);
+      const attachment = await apiUploadAttachment(activeId, file, setUploadProgress);
       const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'voice' : file.type === 'application/pdf' ? 'pdf' : 'document';
       await send({ type: kind, attachments: [attachment] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload attachment.');
     } finally {
       setUploading(false);
+      setUploadProgress(undefined);
     }
+  };
+
+  const handleFileTooLarge = (file: File, maxSizeBytes: number) => {
+    toast.error(`"${file.name}" is too large — the limit is ${Math.round(maxSizeBytes / (1024 * 1024))}MB.`);
   };
 
   const handleBlock = () => {
@@ -135,6 +164,18 @@ export function Messages() {
       toast[ok ? 'success' : 'error'](ok ? 'Conversation reported' : 'Failed to report conversation');
     });
   };
+  const handleStartNewChat = async (storeId: string) => {
+    if (!storeId) return;
+    const conv = await startConversation({ storeId });
+    if (conv) {
+      setShowNewChat(false);
+      refetchList();
+      setActiveId(conv._id);
+    } else {
+      toast.error('Failed to start conversation — check the store ID and try again.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!active) return;
     try {
@@ -154,6 +195,35 @@ export function Messages() {
     { label: 'Report conversation', icon: <Flag size={14} />, onClick: handleReport },
     { label: 'Delete chat', icon: <Trash2 size={14} />, onClick: () => void handleDelete(), danger: true },
   ] : [];
+
+  // Same actions as the open-chat header menu above, but reachable straight
+  // from a list row's own dropdown arrow (WhatsApp-style) without opening
+  // that conversation first — hits the API by that row's own id directly
+  // instead of going through the `active`-scoped handlers above.
+  const buildRowMenu = (c: Conversation): ActionMenuItem[] => [
+    blockedSellerId === c.sellerId
+      ? { label: 'Unblock seller', icon: <Ban size={14} />, onClick: () => void unblock(c.sellerId).then(ok => { if (ok) { setBlockedSellerId(null); toast.success('Seller unblocked'); } else toast.error('Failed to unblock seller'); }) }
+      : { label: 'Block seller', icon: <Ban size={14} />, onClick: () => void block({ targetId: c.sellerId, targetRole: 'seller', reason: 'Blocked from buyer inbox' }).then(ok => { if (ok) { setBlockedSellerId(c.sellerId); toast.success('Seller blocked'); } else toast.error('Failed to block seller'); }) },
+    {
+      label: 'Report conversation',
+      icon: <Flag size={14} />,
+      onClick: () => void report({ targetType: 'conversation', targetId: c._id, reason: 'inappropriate', details: 'Reported from buyer inbox' }).then(ok => {
+        toast[ok ? 'success' : 'error'](ok ? 'Conversation reported' : 'Failed to report conversation');
+      }),
+    },
+    {
+      label: 'Delete chat',
+      icon: <Trash2 size={14} />,
+      onClick: () => {
+        void apiDeleteConversation(c._id).then(() => {
+          if (activeId === c._id) setActiveId(null);
+          refetchList();
+          toast.success('Chat deleted');
+        }).catch(err => toast.error(err instanceof Error ? err.message : 'Failed to delete chat'));
+      },
+      danger: true,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-5 h-full">
@@ -175,9 +245,10 @@ export function Messages() {
           <div className={clsx(activeId ? 'hidden md:flex' : 'flex', 'w-full md:w-auto md:shrink-0')}>
             <ChatList
               title="Messages"
-              entries={list.map(c => toBuyerEntry(c, online))}
+              entries={list.map(c => toBuyerEntry(c, online, typingIds, buildRowMenu(c)))}
               activeId={activeId}
               onSelect={setActiveId}
+              onNew={() => setShowNewChat(true)}
               query={query}
               onQueryChange={handleSearch}
               loading={isSearching ? searching : listLoading}
@@ -209,8 +280,10 @@ export function Messages() {
             onLoadMore={loadMore}
             sending={sending}
             uploading={uploading}
+            uploadProgress={uploadProgress}
             onSend={payload => void send(payload)}
             onUpload={file => void handleUpload(file)}
+            onFileTooLarge={handleFileTooLarge}
             onEditMessage={(id, text) => void edit(id, text)}
             onDeleteMessage={id => void remove(id)}
             onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}
@@ -223,6 +296,14 @@ export function Messages() {
           />
         </div>
       </Card>
+
+      {showNewChat && (
+        <NewChatModal
+          onClose={() => setShowNewChat(false)}
+          onStart={handleStartNewChat}
+          starting={startingConversation}
+        />
+      )}
     </div>
   );
 }

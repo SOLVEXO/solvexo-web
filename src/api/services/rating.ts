@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { apiReportEntity } from './messaging';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,8 @@ export interface SellerReply {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ReviewStatus = 'pending' | 'published' | 'rejected';
 
 export interface Review {
   _id:                string;
@@ -28,6 +31,7 @@ export interface Review {
   isVerifiedPurchase:  boolean;
   sellerReply:         SellerReply | null;
   isFlagged:           boolean;
+  status:              ReviewStatus;
   createdAt:           string;
   updatedAt:           string;
 }
@@ -63,6 +67,7 @@ export interface MyReviewEntry {
   media:              string[];
   isVerifiedPurchase: boolean;
   sellerReply:        SellerReply | null;
+  status:             ReviewStatus;
   createdAt:          string;
 }
 
@@ -70,6 +75,7 @@ export interface ProductReviewEntry {
   reviewId:           string;
   customerName:       string;
   isOwn:              boolean;
+  status:             ReviewStatus;
   rating:             number | null;
   comments:           ReviewComment[];
   media:              string[];
@@ -97,6 +103,7 @@ export interface StoreReviewEntry {
   isVerifiedPurchase: boolean;
   sellerReply:        SellerReply | null;
   isFlagged:          boolean;
+  status:             ReviewStatus;
   createdAt:          string;
 }
 
@@ -106,15 +113,21 @@ export interface StoreReviewStats {
   ratingBreakdown:  Record<'1' | '2' | '3' | '4' | '5', string>;
   reviewsThisMonth: number;
   flaggedReviews:   number;
+  pendingReviews:   number;
+  reviewedProducts: { productId: string; name: string }[];
   fiveStarRate:     string;
   responseRate:     string;
   avgResponseTime:  string;
 }
 
+export type StoreReviewReplyStatus = 'replied' | 'unreplied' | 'flagged';
+
 export interface StoreReviewsQuery {
-  page?:      number;
-  rating?:    number | 'all';
-  productId?: string;
+  page?:        number;
+  rating?:      number | 'all';
+  productId?:   string;
+  status?:      ReviewStatus | 'all';
+  replyStatus?: StoreReviewReplyStatus;
 }
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
@@ -180,10 +193,27 @@ export function apiGetStoreReviews(storeId: string, query: StoreReviewsQuery = {
   if (query.page) params.set('page', String(query.page));
   if (query.rating && query.rating !== 'all') params.set('rating', String(query.rating));
   if (query.productId) params.set('productId', query.productId);
+  if (query.status && query.status !== 'all') params.set('status', query.status);
+  if (query.replyStatus) params.set('replyStatus', query.replyStatus);
   const qs = params.toString();
   return client.get<never, ApiResponse<{ stats: StoreReviewStats; pagination: Pagination; reviews: StoreReviewEntry[] }>>(
     `${ENDPOINTS.RATING.STORE_REVIEWS(storeId)}${qs ? `?${qs}` : ''}`,
   );
+}
+
+/** PATCH /api/rating/moderate/:reviewId/approve — publishes a pending review (only meaningful when the store has review moderation enabled). */
+export function apiApproveReview(reviewId: string) {
+  return client.patch<never, MessageResponse>(ENDPOINTS.RATING.MODERATE_APPROVE(reviewId));
+}
+
+/** PATCH /api/rating/moderate/:reviewId/reject — keeps a pending review off the public listing. */
+export function apiRejectReview(reviewId: string) {
+  return client.patch<never, MessageResponse>(ENDPOINTS.RATING.MODERATE_REJECT(reviewId));
+}
+
+/** Reports a review for moderation — routes through the shared messaging report queue (Admin → Moderation), same as reporting a user/message/conversation. */
+export function apiReportReview(reviewId: string, reason: string, details?: string) {
+  return apiReportEntity({ targetType: 'review', targetId: reviewId, reason, details });
 }
 
 /** POST /api/rating/reply/:reviewId */

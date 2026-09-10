@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { Search, SquarePen, X, MessagesSquare, Clock } from 'lucide-react';
-import { EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, type ActionMenuItem } from '@/components/comman/ui';
 import type { MessageType } from '@/api/services/messaging';
 import { ChatListItem } from './ChatListItem';
 
@@ -20,6 +20,13 @@ export interface ChatListEntry {
   archived?:    boolean;
   online?:      boolean;
   verified?:    boolean;
+  /** Replaces the preview line with an italic "typing…" — mirrors WhatsApp's
+   *  inbox-list behavior for a conversation that isn't currently open. */
+  isTyping?:    boolean;
+  /** Pin/mute/archive/block/report/delete, reachable straight from the row
+   *  via a dropdown arrow — the same actions the open chat's header menu
+   *  already exposes, WhatsApp-style. Omit/empty to hide the arrow entirely. */
+  menuItems?:   ActionMenuItem[];
 }
 
 export interface ChatListFilter { id: string; label: string; count?: number }
@@ -251,6 +258,8 @@ export function ChatList({
                 archived={entry.archived}
                 online={entry.online}
                 verified={entry.verified}
+                isTyping={entry.isTyping}
+                menuItems={entry.menuItems}
                 active={entry.id === activeId}
                 onClick={() => onSelect(entry.id)}
               />

@@ -5,6 +5,7 @@ import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axio
 // `TokenStorage`) to avoid a circular import, since `auth.ts` itself imports
 // this `client` module.
 import { getAuthCookie, deleteAuthCookie } from '@/utils/authCookie';
+import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
 // Endpoints where a 401 means "this specific attempt was rejected" (wrong
 // password, invalid/expired OTP, invalid reset token, invalid social token)
@@ -91,11 +92,23 @@ client.interceptors.response.use(
       err.message ||
       'Something went wrong. Please try again.';
 
+    // A storefront subdomain/custom-domain visitor is very often not logged
+    // in at all, or logged in elsewhere without a session shared onto this
+    // exact origin — background personalization calls (notifications,
+    // profile, etc.) 401ing there is completely normal and must fail
+    // silently. Force-navigating to `/login` or `/maintenance` is wrong here
+    // regardless: neither route exists on the storefront's own router tree
+    // (`router/index.tsx`'s storefrontRouter), so the redirect just re-mounts
+    // the same storefront, which re-fires the same background calls, which
+    // 401 again — a real, confirmed infinite reload loop, not a hypothetical
+    // one. `mainRouter`'s own `/login`/`/maintenance` handling is unaffected.
+    const onStorefront = !!getStoreSlugFromHost() || isCustomDomainCandidate();
+
     // Session expired → force logout. Not for the auth-attempt endpoints
     // above — there, a 401 is the expected "wrong credentials/OTP/token"
     // response for that one request, and must show inline on the form.
     const isAuthAttempt = AUTH_ATTEMPT_PATHS.some(p => err.config?.url?.includes(p));
-    if (err.response?.status === 401 && !isAuthAttempt) {
+    if (err.response?.status === 401 && !isAuthAttempt && !onStorefront) {
       deleteAuthCookie('accessToken');
       deleteAuthCookie('refreshToken');
       deleteAuthCookie('user');
@@ -110,7 +123,7 @@ client.interceptors.response.use(
 
     // Platform-wide maintenance mode (see main.ts) — admin/auth routes are
     // exempted server-side, so this only ever fires for buyer/seller calls.
-    if (err.response?.status === 503 && err.response?.data?.maintenanceMode === true) {
+    if (err.response?.status === 503 && err.response?.data?.maintenanceMode === true && !onStorefront) {
       if (window.location.pathname !== '/maintenance') window.location.href = '/maintenance';
     }
 
