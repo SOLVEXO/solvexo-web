@@ -844,15 +844,60 @@ function FlagUS({ className }: { className?: string }) {
 
 // Hand-drawn flags exist only for these two — the platform's real, dynamic
 // Markets list (useCurrencyPreference().enabledCurrencies) can include any
-// admin-enabled currency, and drawing an accurate flag SVG for each one by
-// hand isn't something to fabricate; every other currency renders as a
-// clean text-only row (code + name) instead — an honest simplification, not
-// a missing feature. `CURRENCY_NAMES` covers the common set; anything
-// outside it falls back to just the code.
+// of the 150+ admin-enabled currencies, and a flag doesn't actually map
+// cleanly onto most of them (EUR, USD, XOF, XAF, etc. are each shared by
+// many countries — picking one "representative" country's flag would be
+// arbitrary, and in some cases wrong), so drawing one for every currency
+// isn't something to fabricate. `CURRENCY_NAMES` below is the same full
+// ISO-4217 reference table the backend uses (currency-metadata.const.ts's
+// `CURRENCY_NAMES`, kept in sync by hand since this is static reference
+// data, not business logic) — every currency the platform can enable gets a
+// real, readable name in the dropdown; only the flag icon itself is
+// two-currency-only, an honest simplification, not a missing feature.
 const CURRENCY_FLAGS: Record<string, typeof FlagPK> = { PKR: FlagPK, USD: FlagUS };
 const CURRENCY_NAMES: Record<string, string> = {
-  PKR: 'Pakistani Rupee', USD: 'US Dollar', GBP: 'British Pound', EUR: 'Euro',
-  AED: 'UAE Dirham', INR: 'Indian Rupee', CAD: 'Canadian Dollar', AUD: 'Australian Dollar',
+  AED: 'UAE Dirham', AFN: 'Afghan Afghani', ALL: 'Albanian Lek', AMD: 'Armenian Dram',
+  ANG: 'Netherlands Antillean Guilder', AOA: 'Angolan Kwanza', ARS: 'Argentine Peso',
+  AUD: 'Australian Dollar', AWG: 'Aruban Florin', AZN: 'Azerbaijani Manat',
+  BAM: 'Bosnia-Herzegovina Convertible Mark', BBD: 'Barbadian Dollar', BDT: 'Bangladeshi Taka',
+  BGN: 'Bulgarian Lev', BHD: 'Bahraini Dinar', BIF: 'Burundian Franc', BMD: 'Bermudan Dollar',
+  BND: 'Brunei Dollar', BOB: 'Bolivian Boliviano', BRL: 'Brazilian Real', BSD: 'Bahamian Dollar',
+  BTN: 'Bhutanese Ngultrum', BWP: 'Botswanan Pula', BYN: 'Belarusian Ruble', BZD: 'Belize Dollar',
+  CAD: 'Canadian Dollar', CDF: 'Congolese Franc', CHF: 'Swiss Franc', CLP: 'Chilean Peso',
+  CNY: 'Chinese Yuan', COP: 'Colombian Peso', CRC: 'Costa Rican Colón', CUP: 'Cuban Peso',
+  CVE: 'Cape Verdean Escudo', CZK: 'Czech Koruna', DJF: 'Djiboutian Franc', DKK: 'Danish Krone',
+  DOP: 'Dominican Peso', DZD: 'Algerian Dinar', EGP: 'Egyptian Pound', ERN: 'Eritrean Nakfa',
+  ETB: 'Ethiopian Birr', EUR: 'Euro', FJD: 'Fijian Dollar', FKP: 'Falkland Islands Pound',
+  GBP: 'British Pound', GEL: 'Georgian Lari', GHS: 'Ghanaian Cedi', GIP: 'Gibraltar Pound',
+  GMD: 'Gambian Dalasi', GNF: 'Guinean Franc', GTQ: 'Guatemalan Quetzal', GYD: 'Guyanaese Dollar',
+  HKD: 'Hong Kong Dollar', HNL: 'Honduran Lempira', HRK: 'Croatian Kuna', HTG: 'Haitian Gourde',
+  HUF: 'Hungarian Forint', IDR: 'Indonesian Rupiah', ILS: 'Israeli New Shekel', INR: 'Indian Rupee',
+  IQD: 'Iraqi Dinar', IRR: 'Iranian Rial', ISK: 'Icelandic Króna', JMD: 'Jamaican Dollar',
+  JOD: 'Jordanian Dinar', JPY: 'Japanese Yen', KES: 'Kenyan Shilling', KGS: 'Kyrgystani Som',
+  KHR: 'Cambodian Riel', KMF: 'Comorian Franc', KRW: 'South Korean Won', KWD: 'Kuwaiti Dinar',
+  KYD: 'Cayman Islands Dollar', KZT: 'Kazakhstani Tenge', LAK: 'Laotian Kip', LBP: 'Lebanese Pound',
+  LKR: 'Sri Lankan Rupee', LRD: 'Liberian Dollar', LSL: 'Lesotho Loti', LYD: 'Libyan Dinar',
+  MAD: 'Moroccan Dirham', MDL: 'Moldovan Leu', MGA: 'Malagasy Ariary', MKD: 'Macedonian Denar',
+  MMK: 'Myanma Kyat', MNT: 'Mongolian Tugrik', MOP: 'Macanese Pataca', MUR: 'Mauritian Rupee',
+  MVR: 'Maldivian Rufiyaa', MWK: 'Malawian Kwacha', MXN: 'Mexican Peso', MYR: 'Malaysian Ringgit',
+  MZN: 'Mozambican Metical', NAD: 'Namibian Dollar', NGN: 'Nigerian Naira',
+  NIO: 'Nicaraguan Córdoba', NOK: 'Norwegian Krone', NPR: 'Nepalese Rupee',
+  NZD: 'New Zealand Dollar', OMR: 'Omani Rial', PAB: 'Panamanian Balboa', PEN: 'Peruvian Sol',
+  PGK: 'Papua New Guinean Kina', PHP: 'Philippine Peso', PKR: 'Pakistani Rupee',
+  PLN: 'Polish Zloty', PYG: 'Paraguayan Guarani', QAR: 'Qatari Rial', RON: 'Romanian Leu',
+  RSD: 'Serbian Dinar', RUB: 'Russian Ruble', RWF: 'Rwandan Franc', SAR: 'Saudi Riyal',
+  SBD: 'Solomon Islands Dollar', SCR: 'Seychellois Rupee', SDG: 'Sudanese Pound',
+  SEK: 'Swedish Krona', SGD: 'Singapore Dollar', SHP: 'Saint Helena Pound',
+  SLE: 'Sierra Leonean Leone', SOS: 'Somali Shilling', SRD: 'Surinamese Dollar',
+  SSP: 'South Sudanese Pound', STN: 'São Tomé and Príncipe Dobra', SYP: 'Syrian Pound',
+  SZL: 'Swazi Lilangeni', THB: 'Thai Baht', TJS: 'Tajikistani Somoni', TMT: 'Turkmenistani Manat',
+  TND: 'Tunisian Dinar', TOP: "Tongan Pa'anga", TRY: 'Turkish Lira',
+  TTD: 'Trinidad and Tobago Dollar', TWD: 'New Taiwan Dollar', TZS: 'Tanzanian Shilling',
+  UAH: 'Ukrainian Hryvnia', UGX: 'Ugandan Shilling', USD: 'US Dollar', UYU: 'Uruguayan Peso',
+  UZS: 'Uzbekistan Som', VES: 'Venezuelan Bolívar', VND: 'Vietnamese Dong',
+  VUV: 'Vanuatu Vatu', WST: 'Samoan Tala', XAF: 'Central African CFA Franc',
+  XCD: 'East Caribbean Dollar', XOF: 'West African CFA Franc', XPF: 'CFP Franc',
+  YER: 'Yemeni Rial', ZAR: 'South African Rand', ZMW: 'Zambian Kwacha',
 };
 
 // Currency dropdown, country flag (when a real one exists) + code in the
@@ -883,6 +928,12 @@ export function CurrencySelector({ allowed }: { allowed?: SupportedCurrency[] } 
         </>
       }
       triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal px-1 py-1 bg-transparent hover:text-brand-orange transition-colors cursor-pointer shrink-0"
+      // Searchable once the list can grow past a handful of currencies (the
+      // platform now supports 150+) — scanning/scrolling alone stops being
+      // production-usable well before that. `searchText` matches on both the
+      // ISO code and the display name so "pound" or "GBP" both find it.
+      searchable
+      searchPlaceholder="Search currencies…"
       items={options.map(c => ({
         label: (
           <span className="flex items-center gap-2 flex-1">
@@ -892,6 +943,7 @@ export function CurrencySelector({ allowed }: { allowed?: SupportedCurrency[] } 
         ),
         onClick: () => setCurrency(c.code),
         icon: c.Flag ? <c.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" /> : undefined,
+        searchText: `${c.code} ${c.label}`,
       }))}
     />
   );
