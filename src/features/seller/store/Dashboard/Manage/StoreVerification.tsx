@@ -3,7 +3,6 @@ import { AlertTriangle, Check, Clock, ShieldCheck } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { StatusBadge, SkeletonBox } from '@/components/comman/ui';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUpload } from '@/hooks/upload/useUpload';
 import { useStoreVerification, useVerificationActions, useVerificationRequirementsPreview } from '@/hooks/store/useStoreVerification';
 import type { VerificationDocumentType, VerificationDocumentView } from '@/api/services/storeVerification';
@@ -41,7 +40,6 @@ function isFieldFilled(values: BusinessInfoValues, path: string): boolean {
 }
 
 export function StoreVerification() {
-  usePageTitle('Business Verification');
   const { storeId } = useStoreWorkspace();
   const { data, loading, error: loadError, refetch } = useStoreVerification(storeId);
   const { save, attachDocument, submit, saving, uploadingType, submitting, error, setError } = useVerificationActions(storeId);

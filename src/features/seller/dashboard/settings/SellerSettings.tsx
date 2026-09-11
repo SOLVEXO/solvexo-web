@@ -269,7 +269,7 @@ export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 's
   return (
     <>
       {variant === 'store'
-        ? <StorePageHeader title="Account" subtitle="Manage your personal profile and login details." />
+        ? <StorePageHeader title="Account" subtitle="Manage your personal profile and login details." titleContext="seller" />
         : <SellerPageHeader title="Settings" subtitle="Manage your account preferences." />}
 
       <div className="px-4 lg:px-7 pt-5 pb-8">

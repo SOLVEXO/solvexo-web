@@ -96,6 +96,11 @@ export interface EnabledCurrency {
   code: string;
   sanityBandMin: number | null;
   sanityBandMax: number | null;
+  /** null = never tried yet (the normal state for almost every currency);
+   *  false = Stripe itself rejected an online card charge in this currency
+   *  (learned from a real Stripe error, not a guess) — "Pay Online" is no
+   *  longer offered for it at checkout; true = USD only (the fixed pivot). */
+  stripeCardPaymentSupported: boolean | null;
 }
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
@@ -160,4 +165,10 @@ export function apiRemoveCurrency(code: string) {
 // knows about that isn't already enabled — see AdminConfigService.enableAllCurrencies.
 export function apiEnableAllCurrencies() {
   return client.post<never, ApiResponse<{ added: string[]; alreadyEnabledCount: number }>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCIES_ENABLE_ALL);
+}
+
+// Clears a currency's learned "Stripe rejected this" flag back to unknown —
+// see AdminConfigService.retryStripeCardPaymentSupport.
+export function apiRetryStripeCardPaymentSupport(code: string) {
+  return client.post<never, ApiResponse<void>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCY_RETRY_STRIPE(code));
 }

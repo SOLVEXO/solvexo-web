@@ -76,7 +76,7 @@ export interface FinanceAnalytics {
   currentMonth: { sale: number; fee: number; refund: number; payout: number };
 }
 
-export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'reversed';
 
 export interface Payout {
   _id:            string;
@@ -87,6 +87,9 @@ export interface Payout {
   payoutMethodId: string;
   payoutMethodSnapshot: { type: string; bankName: string | null; accountLast4: string } | null;
   status:         PayoutStatus;
+  /** 'stripe_connect' = actually moved automatically via a real Stripe Transfer — no admin action anywhere in its lifecycle. 'manual' = a rail Solvexo has no API for (JazzCash/Easypaisa/bank wire/PayPal), still admin-approved. */
+  railType:       'stripe_connect' | 'manual';
+  stripeTransferId: string | null;
   scheduledAt:    string | null;
   processedAt:    string | null;
   failureReason:  string | null;
@@ -94,7 +97,7 @@ export interface Payout {
   createdAt:      string;
 }
 
-export type PayoutMethodType = 'bank_transfer' | 'paypal' | 'stripe';
+export type PayoutMethodType = 'bank_transfer' | 'jazzcash' | 'easypaisa' | 'paypal' | 'stripe' | 'stripe_connect';
 
 export interface PayoutMethod {
   _id:               string;
@@ -110,6 +113,8 @@ export interface PayoutMethod {
   routingNumber:     string | null;
   externalAccountId: string | null;
   status:            'active' | 'inactive' | 'pending_verification';
+  /** True only for the system-managed 'stripe_connect' row — kept in sync automatically from the seller's real Stripe Connect account; cannot be edited or deleted directly. */
+  autoManaged:       boolean;
   createdAt:         string;
 }
 

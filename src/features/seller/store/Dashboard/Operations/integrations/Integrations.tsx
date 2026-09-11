@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, Percent, Truck } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
@@ -827,7 +826,6 @@ function ShippingIntegrationCard({ integration, storeId, onChanged }: { integrat
 }
 
 export function StoreIntegrations() {
-  usePageTitle('Integrations');
   const { storeId } = useStoreWorkspace();
   const [data, setData] = useState<StoreIntegrationsList | null>(null);
   const [loading, setLoading] = useState(true);

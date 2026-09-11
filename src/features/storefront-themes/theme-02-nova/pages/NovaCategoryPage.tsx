@@ -25,7 +25,7 @@ export function NovaCategoryPage() {
       .catch(() => setCategory(null));
   }, [store.storeId, slugOrId]);
 
-  useStorefrontSeo({ title: category ? category.name : undefined });
+  useStorefrontSeo({ entityType: 'category', entityId: category?._id, title: category ? category.name : undefined });
 
   if (category === undefined) {
     return <div style={{ padding: '96px 0', textAlign: 'center', fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>Loading…</div>;

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
 import { EmptyState, SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
@@ -44,7 +43,6 @@ const ACTIVITY_LABELS: Record<string, string> = {
 };
 
 export function StoreLoyalty() {
-  usePageTitle('Loyalty');
   const { storeId } = useStoreWorkspace();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 

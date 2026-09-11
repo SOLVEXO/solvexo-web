@@ -11,6 +11,7 @@ import {
   apiAdminApprovePayout,
   apiAdminRejectPayout,
   apiAdminRetryPayout,
+  apiAdminReversePayout,
   apiAdminCreateManualPayout,
   apiAdminProcessClearing,
   apiAdminTriggerScheduledPayouts,
@@ -129,7 +130,21 @@ export function useAdminPayoutActions() {
     }
   }, []);
 
-  return { approvePayout, rejectPayout, retryPayout, processingId, error };
+  const reversePayout = useCallback(async (payoutId: string, reason: string) => {
+    setProcessingId(payoutId);
+    setError('');
+    try {
+      await apiAdminReversePayout(payoutId, reason);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reverse payout.');
+      return false;
+    } finally {
+      setProcessingId(null);
+    }
+  }, []);
+
+  return { approvePayout, rejectPayout, retryPayout, reversePayout, processingId, error };
 }
 
 export function useAdminManualPayout() {

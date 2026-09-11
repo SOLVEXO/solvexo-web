@@ -494,7 +494,7 @@ export default function StoreDashboard() {
              once every task is genuinely done; `totalProducts` is passed in
              from the metrics this page already fetches, so it doesn't
              trigger a second inventory request just to check completion. */}
-          {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} />}
+          {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />}
 
           {metricsError && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">

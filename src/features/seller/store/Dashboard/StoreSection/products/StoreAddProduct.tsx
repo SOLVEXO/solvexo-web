@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreDocumentTitle } from '@/hooks/store/useStoreDocumentTitle';
 import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel, type VariantInput } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
 import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
@@ -99,6 +100,7 @@ type PhysForm = typeof initPhys;
 type DigForm  = typeof initDig;
 
 export default function StoreAddProduct() {
+  useStoreDocumentTitle('Add Product');
   const navigate           = useNavigate();
   const { storeId, store } = useStoreWorkspace();
   // Every price on this form is in the STORE's own currency (locked at

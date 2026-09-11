@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   StarRating, EmptyState, SkeletonBox, Card, Badge,
@@ -23,7 +22,6 @@ function avatarStyle(name: string) {
 const PER_PAGE = 10;
 
 export function StoreReviews() {
-  usePageTitle('Reviews');
   const { storeId, store } = useStoreWorkspace();
   const moderationEnabled = !!store?.reviewModerationEnabled;
 

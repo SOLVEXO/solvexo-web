@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreDocumentTitle } from '@/hooks/store/useStoreDocumentTitle';
 import {
   apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct,
   apiListVariants, apiCreateVariant, apiUpdateVariant, apiDeleteVariant,
@@ -180,6 +181,7 @@ function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
 }
 
 export default function StoreEditProduct() {
+  useStoreDocumentTitle('Edit Product');
   const navigate           = useNavigate();
   const { state }          = useLocation() as { state: { entry?: ProductEntry } | null };
   const { productId = '' } = useParams<{ productId: string }>();

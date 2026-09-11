@@ -3,7 +3,6 @@ import {
   LayoutDashboard, ClipboardCheck, Package, FolderTree, Store as StoreIcon,
   FileText, ArrowRightLeft, Link2, Eye, Search, LineChart, Sparkles,
 } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 
@@ -36,7 +35,6 @@ const TABS: Tab[] = [
 ];
 
 export function StoreSEO() {
-  usePageTitle('SEO');
   const { storeId, store } = useStoreWorkspace();
   const [activeTab, setActiveTab] = useState('overview');
 

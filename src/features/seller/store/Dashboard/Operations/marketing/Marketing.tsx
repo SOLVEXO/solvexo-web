@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Image as ImageIcon, Pause, Play, Trash2, Plus, Star, Bell, ArrowUp, ArrowDown, Rocket, X, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, Input, FileDropSelect } from '@/components/comman/ui';
@@ -389,7 +388,6 @@ function PromotionPaymentModal({ request, onClose, onPaid }: { request: Promotio
 }
 
 export function StoreMarketing() {
-  usePageTitle('Marketing');
   const { store, storeId } = useStoreWorkspace();
   const [tab, setTab] = useState<Tab>('coupons');
 

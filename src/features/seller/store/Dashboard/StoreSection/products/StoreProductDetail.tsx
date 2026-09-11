@@ -5,6 +5,7 @@ import {
   Calendar, CheckCircle, XCircle, Hash,
 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreDocumentTitle } from '@/hooks/store/useStoreDocumentTitle';
 import { apiGetMyProductById } from '@/api/services/product';
 import { getCachedProducts, type ProductEntry } from './_cache';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -54,6 +55,7 @@ function Card({ title, icon: Icon, children }: { title: string; icon?: React.Ele
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreProductDetail() {
+  useStoreDocumentTitle('Product Detail');
   const navigate           = useNavigate();
   const { state }          = useLocation() as { state: { entry?: ProductEntry } | null };
   const { productId = '' } = useParams<{ productId: string }>();

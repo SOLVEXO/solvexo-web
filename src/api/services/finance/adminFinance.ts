@@ -20,7 +20,7 @@ export interface AdminFinanceParams {
 
 export type TransactionType = 'sale' | 'payout' | 'fee' | 'refund' | 'adjustment' | 'platform_subsidy';
 export type TransactionStatus = 'completed' | 'pending' | 'failed';
-export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'reversed';
 
 export interface AdminTransactionsParams extends AdminFinanceParams {
   type?: TransactionType;
@@ -157,6 +157,9 @@ export interface PayoutRow {
   payoutMethodId: string;
   payoutMethodSnapshot: { type: string; bankName: string | null; accountLast4: string } | null;
   status: PayoutStatus;
+  /** 'stripe_connect' = actually moved automatically via a real Stripe Transfer, no admin action involved; 'manual' = a rail Solvexo has no API for (JazzCash/Easypaisa/bank wire/PayPal) — still goes through approve/reject. */
+  railType: 'stripe_connect' | 'manual';
+  stripeTransferId: string | null;
   scheduledAt: string | null;
   processedAt: string | null;
   failureReason: string | null;
@@ -387,6 +390,11 @@ export function apiAdminRejectPayout(payoutId: string, reason: string) {
 
 export function apiAdminRetryPayout(payoutId: string) {
   return client.patch<never, ApiResponse<PayoutRow>>(ENDPOINTS.FINANCE.ADMIN.RETRY_PAYOUT(payoutId));
+}
+
+/** Only valid for a completed `railType:'stripe_connect'` payout — claws the real Stripe transfer back (fraud/dispute on the underlying sale). */
+export function apiAdminReversePayout(payoutId: string, reason: string) {
+  return client.patch<never, ApiResponse<PayoutRow>>(ENDPOINTS.FINANCE.ADMIN.REVERSE_PAYOUT(payoutId), { reason });
 }
 
 export function apiAdminProcessClearing() {

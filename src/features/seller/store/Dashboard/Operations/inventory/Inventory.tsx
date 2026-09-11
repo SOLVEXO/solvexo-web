@@ -37,7 +37,6 @@ import {
   type StoreLocation,
   type VariantLocationBreakdown,
 } from '@/api/services/product';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { currencySymbol } from '@/utils/currency';
 
 const STATUS_META: Record<StockLine['status'], { label: string; color: 'green' | 'orange' | 'red' | 'blue' }> = {
@@ -57,7 +56,6 @@ const REASON_OPTIONS: { value: StockAdjustmentReason; label: string }[] = [
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreInventory() {
-  usePageTitle('Inventory');
   const navigate    = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { clsx } from 'clsx';
-import { ArrowRight, Download, Plus, X, Star, AlertTriangle } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { ArrowRight, Download, Plus, X, Star, AlertTriangle, Zap, CheckCircle2 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -19,7 +18,10 @@ import {
   type FinanceDashboard, type Transaction, type TransactionType, type PayoutMethod,
   type PayoutMethodType, type PayoutSchedule, type TaxReport, type Payout, type PayoutStatus,
 } from '@/api/services/finance';
-import { apiGetStripeConnectStatus } from '@/api/services/stripeConnect';
+import {
+  apiGetStripeConnectStatus, apiCreateStripeConnectOnboardingLink,
+  type StripeConnectStatus,
+} from '@/api/services/stripeConnect';
 
 const TYPE_STYLE: Record<TransactionType, { color: BadgeColor; label: string }> = {
   sale:             { color: 'green',  label: 'Sale' },
@@ -38,7 +40,8 @@ const TYPE_STYLE: Record<TransactionType, { color: BadgeColor; label: string }> 
 const UNKNOWN_TYPE_STYLE = { color: 'gray' as BadgeColor, label: 'Other' };
 
 const METHOD_LABEL: Record<PayoutMethodType, string> = {
-  bank_transfer: 'Bank Transfer', paypal: 'PayPal', stripe: 'Stripe',
+  bank_transfer: 'Bank Transfer', jazzcash: 'JazzCash', easypaisa: 'Easypaisa',
+  paypal: 'PayPal', stripe: 'Stripe', stripe_connect: 'Stripe (Automatic)',
 };
 
 const PAYOUT_STATUS_COLOR: Record<PayoutStatus, BadgeColor> = {
@@ -46,6 +49,7 @@ const PAYOUT_STATUS_COLOR: Record<PayoutStatus, BadgeColor> = {
   processing: 'blue',
   completed:  'green',
   failed:     'red',
+  reversed:   'orange',
 };
 
 // Every wallet/balance/transaction figure must be shown in ITS OWN currency
@@ -154,13 +158,14 @@ function RequestPayoutModal({
   // must always match the wallet it's drawn from (see backend
   // FinanceService.requestPayout, which derives currency from the chosen
   // method itself).
-  const eligibleMethods = methods.filter(m => m.currency === currency);
+  const eligibleMethods = methods.filter(m => m.currency === currency && m.status === 'active');
   const defaultMethod = eligibleMethods.find(m => m.isDefault) ?? eligibleMethods[0] ?? null;
   const [methodId, setMethodId] = useState(defaultMethod?._id ?? '');
   const [amount, setAmount] = useState(String(availableBalance));
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const selectedMethod = eligibleMethods.find(m => m._id === methodId) ?? null;
 
   async function handleSubmit() {
     const amt = parseFloat(amount);
@@ -199,6 +204,13 @@ function RequestPayoutModal({
             </option>
           ))}
         </select>
+        {selectedMethod && (
+          <p className="text-[11px] text-slate leading-[1.4]">
+            {selectedMethod.type === 'stripe_connect'
+              ? 'Sent automatically to your connected Stripe account — usually reflected in your bank within a few business days, no review needed.'
+              : 'This method has no automated rail — an admin sends this transfer manually and marks it complete, which can take a few business days.'}
+          </p>
+        )}
         <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)"
           className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
         <Button size="sm" loading={saving} disabled={!eligibleMethods.length} onClick={handleSubmit}>
@@ -269,9 +281,11 @@ function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void
             ['Amount', fmt(payout.amount, payout.currency)],
             ['Status', payout.status ? payout.status[0].toUpperCase() + payout.status.slice(1) : '—'],
             ['Method', payout.payoutMethodSnapshot ? `${METHOD_LABEL[payout.payoutMethodSnapshot.type as PayoutMethodType] ?? payout.payoutMethodSnapshot.type}${payout.payoutMethodSnapshot.accountLast4 ? ` ••${payout.payoutMethodSnapshot.accountLast4}` : ''}` : '—'],
+            ['Type', payout.railType === 'stripe_connect' ? 'Automatic (Stripe Connect)' : 'Manual'],
             ['Requested', new Date(payout.createdAt).toLocaleString()],
             ['Processed', payout.processedAt ? new Date(payout.processedAt).toLocaleString() : '—'],
             ['Notes', payout.notes ?? '—'],
+            ...(payout.stripeTransferId ? [['Stripe Transfer', payout.stripeTransferId]] : []),
             ...(payout.failureReason ? [['Failure reason', payout.failureReason]] : []),
           ].map(([label, val]) => (
             <div key={label} className="flex justify-between items-start gap-3">
@@ -287,7 +301,6 @@ function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreFinance() {
-  usePageTitle('Finance');
   const { storeId } = useStoreWorkspace();
 
   const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
@@ -307,13 +320,18 @@ export function StoreFinance() {
   const [exporting, setExporting] = useState(false);
   const [generatingTax, setGeneratingTax] = useState(false);
   // Per-SELLER (not per-store — see the Integrations page's Stripe card),
-  // fetched once here too so a Connect-active seller sees why this page's
-  // ledger/wallet numbers look low: `PaymentService.initiatePayment` routes
-  // a single-store, pay-in-full-online sale straight to the seller's own
-  // Stripe account when this is true, and `FinanceService.recordSale` is
-  // deliberately skipped for that sale (see `SellerOrder.settledViaConnect`)
-  // since that money never touches Solvexo's ledger at all.
-  const [stripeConnectActive, setStripeConnectActive] = useState(false);
+  // fetched once here too for TWO reasons: (1) so a Connect-active seller
+  // sees why this page's ledger/wallet numbers look low —
+  // `PaymentService.initiatePayment` routes a single-store, pay-in-full-
+  // online sale straight to the seller's own Stripe account when this is
+  // true, and `FinanceService.recordSale` is deliberately skipped for that
+  // sale (see `SellerOrder.settledViaConnect`) since that money never
+  // touches Solvexo's ledger at all; and (2) the exact same connected
+  // account is also what makes the USD wallet's payouts BELOW actually
+  // automatic — see `FinanceService.ensureStripeConnectPayoutMethod`.
+  const [connectStatus, setConnectStatus] = useState<StripeConnectStatus | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const stripeConnectActive = connectStatus?.status === 'active';
 
   const transactionColumns: TableColumn<Transaction>[] = [
     { key: 'createdAt', header: 'Date', render: t => <span className="text-slate whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</span> },
@@ -382,8 +400,19 @@ export function StoreFinance() {
   useEffect(loadWalletScoped, [loadWalletScoped]);
   useEffect(loadTransactions, [loadTransactions]);
   useEffect(() => {
-    apiGetStripeConnectStatus().then(res => setStripeConnectActive(res.data.status === 'active')).catch(() => {});
+    apiGetStripeConnectStatus().then(res => setConnectStatus(res.data)).catch(() => {});
   }, []);
+
+  async function handleConnectStripe() {
+    setConnecting(true);
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}`;
+      const res = await apiCreateStripeConnectOnboardingLink(returnUrl, returnUrl);
+      window.location.href = res.data.url;
+    } catch {
+      setConnecting(false);
+    }
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -508,6 +537,37 @@ export function StoreFinance() {
           </div>
         )}
 
+        {/* Automatic-payout enablement — same underlying Stripe Connect
+            account as the banner above, different concern: this one is
+            specifically about whatever DOES land in the USD ledger below
+            ever getting paid out without a human sending it. Not shown for
+            a PKR wallet — Stripe doesn't operate in Pakistan, so that wallet
+            has no automatable rail and stays on the manual admin-review flow. */}
+        {activeWallet.currency === 'USD' && connectStatus && (
+          stripeConnectActive ? (
+            <div className="flex items-center gap-2.5 bg-success-bg border border-[#BEE6C9] rounded-[10px] px-4 py-3">
+              <CheckCircle2 size={16} className="text-success shrink-0" />
+              <p className="text-[12.5px] text-[#155724]">
+                <strong>Automatic payouts are active.</strong> Withdrawals from this wallet are sent straight to your bank via Stripe — no admin review needed.
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 flex-wrap bg-brand-pale-orange border border-brand-orange/30 rounded-[10px] px-4 py-3">
+              <div className="flex items-start gap-2.5">
+                <Zap size={16} className="text-brand-deep-orange shrink-0 mt-[1px]" />
+                <p className="text-[12.5px] text-brand-deep-orange leading-[1.5]">
+                  <strong>{connectStatus.connected ? 'Finish connecting Stripe' : 'Get paid automatically'}</strong> — {connectStatus.connected
+                    ? 'your Stripe account setup is incomplete, so payouts from this wallet still need admin review.'
+                    : "connect a Stripe account and USD payouts from this wallet go straight to your bank — no admin review needed."}
+                </p>
+              </div>
+              <Button size="sm" loading={connecting} onClick={handleConnectStripe}>
+                {connectStatus.connected ? 'Continue Setup' : 'Connect with Stripe'}
+              </Button>
+            </div>
+          )
+        )}
+
         {/* Wallet selector — a seller can hold more than one currency
             (e.g. a PKR wallet from bank-transfer/COD sales and a USD wallet
             from Stripe sales); these are NEVER summed into one number. */}
@@ -617,6 +677,14 @@ export function StoreFinance() {
                         <span className="text-xs text-graphite truncate">
                           {METHOD_LABEL[m.type]}{m.accountLast4 ? ` ••${m.accountLast4}` : ''}
                         </span>
+                        {m.autoManaged && (
+                          <span className={clsx(
+                            'text-[9px] font-semibold px-1.5 py-[1px] rounded-full shrink-0',
+                            m.status === 'active' ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning',
+                          )}>
+                            {m.status === 'active' ? 'Connected' : 'Setup incomplete'}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {!m.isDefault && (
@@ -624,12 +692,16 @@ export function StoreFinance() {
                             Set default
                           </button>
                         )}
-                        <button onClick={() => setEditingMethod(m)} className="text-[10px] text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
-                          Edit
-                        </button>
-                        <button onClick={() => { setDeletingMethodId(m._id); setDeleteMethodError(''); }} className="text-slate hover:text-error cursor-pointer bg-transparent border-none">
-                          <X size={12} />
-                        </button>
+                        {!m.autoManaged && (
+                          <>
+                            <button onClick={() => setEditingMethod(m)} className="text-[10px] text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
+                              Edit
+                            </button>
+                            <button onClick={() => { setDeletingMethodId(m._id); setDeleteMethodError(''); }} className="text-slate hover:text-error cursor-pointer bg-transparent border-none">
+                              <X size={12} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}

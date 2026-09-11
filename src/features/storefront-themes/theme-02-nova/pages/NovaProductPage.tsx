@@ -152,6 +152,8 @@ export function NovaProductPage() {
 
   const product = detail?.product ?? null;
   useStorefrontSeo({
+    entityType: 'product',
+    entityId: product?._id,
     title: product?.name,
     description: product?.description || undefined,
     image: product?.images?.[0] || undefined,

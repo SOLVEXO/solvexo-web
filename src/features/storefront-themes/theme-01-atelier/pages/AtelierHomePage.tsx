@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { apiGetPublicHomePage } from '@/api/services/storePages';
+import { apiGetPublicStoreBanners, type StoreBanner, type StoreBannerLinkType } from '@/api/services/storeBanner';
 import type { Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
@@ -22,6 +23,100 @@ function ProductGridSkeleton() {
           <div className="animate-pulse h-3 w-1/3" style={{ background: t.colors.bgAlt }} />
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Resolves a `StoreBanner`'s `linkType`/`linkTarget` (a seller-typed
+ *  product/category/collection id, or a raw external URL — see
+ *  `Marketing.tsx`'s banner form) to a real client-side route or href, the
+ *  same id-or-slug-tolerant routes `/product/:slug`, `/category/:slugOrId`
+ *  and `/collections/:slugOrId` already accept. */
+function resolveBannerLink(banner: StoreBanner): { to?: string; href?: string } {
+  if (!banner.linkTarget) return {};
+  const target = banner.linkTarget;
+  const byType: Record<StoreBannerLinkType, () => { to?: string; href?: string }> = {
+    product: () => ({ to: `/product/${target}` }),
+    category: () => ({ to: `/category/${target}` }),
+    collection: () => ({ to: `/collections/${target}` }),
+    external: () => ({ href: target }),
+  };
+  return byType[banner.linkType]?.() ?? {};
+}
+
+/** One real seller-uploaded promo/hero/season/collection banner (Marketing →
+ *  Store Banners) — the banner IS the image (no separate heading/subheading
+ *  field on the model), with an optional CTA button overlaid centrally.
+ *  `mobileImageUrl` swaps in below the seller's own upload-time breakpoint
+ *  via `<picture>`, matching how the banner form documents that field. */
+function BannerSlide({ banner }: { banner: StoreBanner }) {
+  const [errored, setErrored] = useState(false);
+  const link = resolveBannerLink(banner);
+  const isExternal = !!link.href;
+
+  return (
+    <section className="relative w-full overflow-hidden" style={{ minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
+      {!errored && (
+        <picture>
+          {banner.mobileImageUrl && (
+            <source media="(max-width: 640px)" srcSet={cloudinarySrcSet(banner.mobileImageUrl, [480, 640, 960])} />
+          )}
+          <img
+            src={cloudinaryUrl(banner.imageUrl, 1600)}
+            srcSet={cloudinarySrcSet(banner.imageUrl, [768, 1200, 1600, 2560])}
+            sizes="100vw"
+            alt={banner.ctaLabel ?? ''}
+            onError={() => setErrored(true)}
+            className="w-full h-full object-cover"
+            style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
+            loading="eager"
+            fetchPriority="high"
+          />
+        </picture>
+      )}
+      {banner.ctaLabel && (link.to || link.href) && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {link.to ? (
+            <Link to={link.to} className="no-underline"><AtelierButton>{banner.ctaLabel}</AtelierButton></Link>
+          ) : (
+            <a href={link.href} className="no-underline" target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined}>
+              <AtelierButton>{banner.ctaLabel}</AtelierButton>
+            </a>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Real Store Banners as the storefront's promotional hero — this is the
+ *  seller-facing "Marketing → Store Banners" feature actually reaching a
+ *  buyer for the first time (previously created/scheduled correctly but
+ *  never rendered anywhere on the live storefront). Same manual dot-carousel
+ *  UX as the theme-editor `HeroSection`, kept as its own component since the
+ *  underlying data shape (`StoreBanner` vs. section `Block`) is unrelated. */
+function StoreBannerCarousel({ banners }: { banners: StoreBanner[] }) {
+  const [active, setActive] = useState(0);
+  if (banners.length === 0) return null;
+  const banner = banners[Math.min(active, banners.length - 1)];
+
+  return (
+    <div className="relative">
+      <BannerSlide banner={banner} />
+      {banners.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {banners.map((b, i) => (
+            <button
+              key={b._id}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`Slide ${i + 1}`}
+              className="cursor-pointer border-0 p-0"
+              style={{ width: '8px', height: '8px', borderRadius: '50%', background: i === active ? t.colors.ink : t.colors.border }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -151,13 +246,27 @@ export function AtelierHomePage() {
   const { store } = useStorefront();
   const { hash } = useLocation();
   const [sections, setSections] = useState<Section[] | null>(null);
-  useStorefrontSeo({ description: store.tagline || store.description || undefined, image: store.coverImage || store.logo || undefined });
+  const [banners, setBanners] = useState<StoreBanner[] | null>(null);
+  useStorefrontSeo({
+    entityType: 'store',
+    entityId: store.storeId,
+    description: store.tagline || store.description || undefined,
+    image: store.coverImage || store.logo || undefined,
+  });
 
   useEffect(() => {
     let cancelled = false;
     apiGetPublicHomePage(store.storeId)
       .then(res => { if (!cancelled) setSections(res.data.sections ?? []); })
       .catch(() => { if (!cancelled) setSections([]); });
+    return () => { cancelled = true; };
+  }, [store.storeId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetPublicStoreBanners(store.storeId)
+      .then(res => { if (!cancelled) setBanners(res.data); })
+      .catch(() => { if (!cancelled) setBanners([]); });
     return () => { cancelled = true; };
   }, [store.storeId]);
 
@@ -177,10 +286,17 @@ export function AtelierHomePage() {
   // "duplicate hero" bug found in QA. Stays showing during the initial
   // load (`sections === null`) since we don't yet know either way.
   const hasCustomHero = sections?.some(s => s.type === 'hero') ?? false;
+  // Real Store Banners are this theme's second hero source — a merchant who
+  // built a custom `hero` section in the Page editor still wins (that's a
+  // deliberate content-authoring choice, and stacking two full-bleed heroes
+  // was the exact "duplicate hero" bug the `hasCustomHero` check above
+  // already exists to avoid), but absent that, real banners now show
+  // instead of the bare identity-only default.
+  const hasBanners = (banners?.length ?? 0) > 0;
 
   return (
     <main>
-      {!hasCustomHero && <IdentityHero />}
+      {hasCustomHero ? null : hasBanners ? <StoreBannerCarousel banners={banners!} /> : <IdentityHero />}
       <div id="shop">
         {sections === null ? null : sections.length > 0 ? <AtelierSectionRenderer sections={sections} /> : <DefaultHomeContent />}
       </div>

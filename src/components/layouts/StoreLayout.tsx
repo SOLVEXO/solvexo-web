@@ -18,6 +18,7 @@ import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, type StorePlatformSubs
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
+import { useFavicon } from '@/hooks/useFavicon';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, AnnouncementBanner, Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
@@ -737,12 +738,20 @@ export interface StorePageHeaderProps {
   title:     string;
   subtitle?: string;
   actions?:  ReactNode;
+  /** Browser-tab title source — `'store'` (default) uses this workspace's
+   *  own store name ("{Store Name} - {title}"); `'seller'` uses the seller's
+   *  own account name instead ("{Seller Name} - {title}") — the one
+   *  deliberate exception, for the seller's own Account/profile page that
+   *  happens to live inside a store's URL (`/store/:storeId/account`, see
+   *  SellerSettings' `variant="store"`) — that page is about the SELLER,
+   *  not the store, so its tab title shouldn't claim to be either. */
+  titleContext?: 'store' | 'seller';
 }
 
-export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderProps) {
+export function StorePageHeader({ title, subtitle, actions, titleContext = 'store' }: StorePageHeaderProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
   const { stores: myStores, loading: myStoresLoading } = useMyStores();
   // Same real photo/initials the sidebar footer's own account button already
   // shows (and the same profile source public pages' ProfileAvatar reads) —
@@ -752,6 +761,18 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
   const { profile, loading: profileLoading } = useGetProfile();
   const dashboardPath = `/store/${storeId}/dashboard`;
   const isDashboard = pathname === dashboardPath;
+
+  // Real per-store browser-tab title — every store page renders this shared
+  // header with its own `title`, so setting `document.title` HERE (once)
+  // covers the whole store workspace instead of every individual page
+  // calling the generic app-wide `usePageTitle` (which always said
+  // "Solvexo", never the actual store being managed). Restores "Solvexo" on
+  // unmount, same convention `usePageTitle`/`useStorefrontFavicon` already use.
+  useEffect(() => {
+    const name = titleContext === 'seller' ? (profile?.name || 'Account') : (store?.name || 'Solvexo');
+    document.title = `${name} - ${title}`;
+    return () => { document.title = 'Solvexo'; };
+  }, [titleContext, store?.name, profile?.name, title]);
 
   return (
     <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
@@ -849,6 +870,14 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(() => readCachedStore(storeId) === null);
   const [error,   setError]   = useState('');
   const [tick,    setTick]    = useState(0);
+
+  // Browser tab icon reflects THIS store's own favicon (falling back to its
+  // logo, then Solvexo's default) for as long as the seller is inside this
+  // store's dashboard — same real per-store `faviconUrl`/`logo` fields the
+  // public storefront already uses, reused here via the shared `useFavicon`
+  // hook so a store's own icon shows in the seller's browser tab too, not
+  // just on its public site.
+  useFavicon(store?.faviconUrl, store?.logo);
 
   useEffect(() => {
     if (!storeId) return;

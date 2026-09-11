@@ -1,10 +1,11 @@
 import { Badge } from '@/components/comman/ui';
 
-const COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'red' | 'gray'> = {
+const COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'red' | 'gray' | 'orange'> = {
   completed: 'green',
   pending: 'yellow',
   processing: 'blue',
   failed: 'red',
+  reversed: 'orange',
 };
 
 export function FinanceStatusBadge({ status }: { status: string }) {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta,
@@ -39,7 +38,6 @@ const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green'
 const SEGMENT_OPTIONS = Object.entries(SEGMENT_META).map(([value, m]) => ({ value, label: m.label }));
 
 export default function StoreCustomerList() {
-  usePageTitle('Customers');
   const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 

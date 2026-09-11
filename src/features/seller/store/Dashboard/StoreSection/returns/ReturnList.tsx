@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Modal, Textarea, Button, Table, type TableColumn } from '@/components/comman/ui';
 import {
@@ -102,7 +101,6 @@ function ReturnActionModal({
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreReturnList() {
-  usePageTitle('Returns');
   const { storeId, store } = useStoreWorkspace();
 
   const [returns, setReturns] = useState<SellerReturnItem[]>([]);

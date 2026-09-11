@@ -39,6 +39,7 @@ export const ENDPOINTS = {
     CURRENCIES: '/api/admin/platform-config/currencies',
     CURRENCIES_ENABLE_ALL: '/api/admin/platform-config/currencies/enable-all',
     CURRENCY_BAND: (code: string) => `/api/admin/platform-config/currencies/${code}`,
+    CURRENCY_RETRY_STRIPE: (code: string) => `/api/admin/platform-config/currencies/${code}/retry-stripe`,
   },
 
   // ── EXCHANGE RATE ───────────────────────────────────────────────────────────
@@ -969,6 +970,7 @@ export const ENDPOINTS = {
       APPROVE_PAYOUT:        (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/approve`,
       REJECT_PAYOUT:         (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/reject`,
       RETRY_PAYOUT:          (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/retry`,
+      REVERSE_PAYOUT:        (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/reverse`,
       PROCESS_CLEARING:      '/api/admin/finance/process-clearing',
       PROCESS_SCHEDULED_PAYOUTS: '/api/admin/finance/process-scheduled-payouts',
       PENDING_VERIFICATION_METHODS: '/api/admin/finance/payout-methods/pending-verification',
@@ -1016,6 +1018,15 @@ export const ENDPOINTS = {
 
   // ── SEO (Admin/Platform + Seller/Store) ──────────────────────────────────
   SEO: {
+    // Public, unauthenticated meta-delivery — `SeoMetaController` in
+    // `solvexo-api/src/seo/public/seo-render.controller.ts`. Returns the
+    // real resolved title/description/canonical/OG/Twitter/JSON-LD for a
+    // product, category, or store — consumed by the storefront's
+    // `useStorefrontSeo` hook (both themes) for real per-page SEO.
+    PUBLIC: {
+      GET_META: (entityType: 'product' | 'category' | 'store', entityId: string) => `/api/seo/meta/${entityType}/${entityId}`,
+    },
+
     ADMIN: {
       GET_SETTINGS:   '/api/admin/seo/settings',
       UPDATE_SETTINGS:'/api/admin/seo/settings',

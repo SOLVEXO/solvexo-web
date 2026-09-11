@@ -4,6 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
 import {
   apiGetPlatformConfig, apiUpdateFxConfig, apiGetAdminCurrencies, apiAddCurrency, apiEnableAllCurrencies,
+  apiRetryStripeCardPaymentSupport,
   type FxConfig, type EnabledCurrency,
 } from '@/api/services/config/adminConfig';
 import { apiGetCurrentRates, apiGetFxHistory, apiGetFxStaleness, apiOverrideFxRate, type CurrentRatesMap, type ExchangeRateHistoryRow } from '@/api/services/exchangeRate';
@@ -188,6 +189,7 @@ export function AdminFxSettings() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [enablingAll, setEnablingAll] = useState(false);
   const [enableAllMessage, setEnableAllMessage] = useState('');
+  const [retryingCode, setRetryingCode] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -234,6 +236,22 @@ export function AdminFxSettings() {
       setEnableAllMessage(err instanceof Error ? err.message : 'Failed to enable all currencies.');
     } finally {
       setEnablingAll(false);
+    }
+  }
+
+  // Clears one currency's learned "Stripe rejected this" flag back to
+  // unknown, so the next real checkout attempt tries Stripe fresh — for
+  // after Stripe adds support, or if the original rejection looked like a
+  // one-off Stripe-side issue rather than a genuine unsupported currency.
+  async function retryStripeCardPaymentSupport(code: string) {
+    setRetryingCode(code);
+    try {
+      await apiRetryStripeCardPaymentSupport(code);
+      await load();
+    } catch {
+      // best-effort — chip just stays flagged, admin can try again
+    } finally {
+      setRetryingCode(null);
     }
   }
 
@@ -301,7 +319,26 @@ export function AdminFxSettings() {
           {currencies.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {currencies.map(c => (
-                <span key={c.code} className="px-2 py-[3px] rounded-md bg-bone/60 text-[11px] font-medium text-charcoal border border-bone">{c.code}</span>
+                c.stripeCardPaymentSupported === false ? (
+                  <span
+                    key={c.code}
+                    title="Stripe rejected an online card charge in this currency — buyers only see Cash on Delivery / Bank Transfer for it. Click Retry after Stripe adds support."
+                    className="inline-flex items-center gap-1 px-2 py-[3px] rounded-md bg-error-bg text-[11px] font-medium text-error border border-error/30"
+                  >
+                    <AlertTriangle size={11} />
+                    {c.code} — no card payment
+                    <button
+                      type="button"
+                      onClick={() => retryStripeCardPaymentSupport(c.code)}
+                      disabled={retryingCode === c.code}
+                      className="ml-1 underline bg-transparent border-none p-0 text-error cursor-pointer disabled:opacity-50"
+                    >
+                      {retryingCode === c.code ? '…' : 'Retry'}
+                    </button>
+                  </span>
+                ) : (
+                  <span key={c.code} className="px-2 py-[3px] rounded-md bg-bone/60 text-[11px] font-medium text-charcoal border border-bone">{c.code}</span>
+                )
               ))}
             </div>
           )}

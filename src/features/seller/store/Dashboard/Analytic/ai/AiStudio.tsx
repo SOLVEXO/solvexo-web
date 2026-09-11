@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   PenLine, TrendingUp, BookOpen, Search, Mail, ImagePlus, type LucideIcon,
 } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { useAiStudioCredits } from '@/hooks/seller/useAiStudio';
 import { CreditsHeader } from './components/CreditsHeader';
@@ -24,7 +23,6 @@ const TOOLS: { id: AiToolType; Icon: LucideIcon; title: string; desc: string }[]
 ];
 
 export function StoreAIStudio() {
-  usePageTitle('AI Studio');
   const { storeId } = useStoreWorkspace();
   const [activeTool, setActiveTool] = useState<AiToolType>('listing_writer');
   const { data: credits, loading: creditsLoading, refetch: refetchCredits } = useAiStudioCredits(storeId);

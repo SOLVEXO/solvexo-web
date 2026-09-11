@@ -14,6 +14,7 @@ import {
   type StoreAppRequest, type StoreAppPlatformState, type StoreAppPlatformStatus,
 } from '@/api/services/storeAppRequests';
 import { apiGetPosAppInfo } from '@/api/services/store';
+import { apiGetStorePlatformPlan } from '@/api/services/platformPlans';
 import { GOOGLE_PLAY_URL } from '@/components/comman/ui/AppPromoParts';
 import { currencySymbol } from '@/utils/currency';
 
@@ -534,7 +535,21 @@ const POS_FEATURES: { Icon: typeof Barcode; label: string; desc: string }[] = [
 // lands on that Play Store page, and pays Google directly to install. No
 // Stripe, no PaymentIntent, no "enabled" flag, no Android/iOS split as
 // separate Solvexo products (iOS isn't offered yet — see StoreService.getPosAppInfo).
-function PosAccessSection() {
+function PosAccessSection({ storeId }: { storeId: string }) {
+  // Real sales on the POS app are blocked while this store is still
+  // trialing (see PosController.createSale's `blockDuringTrial` gate) —
+  // the app itself can be downloaded/set up freely during trial, so this
+  // is a heads-up, not a lock on the download flow itself.
+  const [isTrialing, setIsTrialing] = useState(false);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId)
+      .then(res => { if (!cancelled) setIsTrialing(res.data?.status === 'trialing'); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [storeId]);
+
   const [androidUrl, setAndroidUrl] = useState<string | null>(null);
   // Real — null until an admin sets POS_APP_IOS_URL once an actual iOS
   // build/App Store listing exists (see StoreService.getPosAppInfo's own
@@ -591,6 +606,16 @@ function PosAccessSection() {
           <Clock size={11} className="shrink-0" /> Closed testing (not public yet)
         </span>
       </div>
+
+      {isTrialing && (
+        <div className="mt-4 flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-info-bg">
+          <Clock size={14} className="text-[#1a5a8a] shrink-0 mt-0.5" />
+          <p className="text-[12px] text-[#1a5a8a] leading-[1.5]">
+            You're still on your free trial — you can download and set up the POS app now, but real in-person
+            sales won't process until you choose a plan.
+          </p>
+        </div>
+      )}
 
       <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
         {POS_FEATURES.map(f => (
@@ -718,7 +743,7 @@ export default function StoreMobileApp() {
       <StorePageHeader title="Mobile App" subtitle="Your branded app, and Solvexo's ready-made POS app" />
       <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
         <BrandedAppSection storeId={storeId} />
-        <PosAccessSection />
+        <PosAccessSection storeId={storeId} />
       </div>
     </div>
   );

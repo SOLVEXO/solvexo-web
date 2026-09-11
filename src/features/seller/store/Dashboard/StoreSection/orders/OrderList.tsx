@@ -28,7 +28,6 @@ import {
   type SellerOrder,
   type SellerOrderStats,
 } from '@/api/services/product';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
@@ -46,7 +45,6 @@ function CustomerCell({ name, email }: { name: string; email: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreOrderList() {
-  usePageTitle('Orders');
   const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 

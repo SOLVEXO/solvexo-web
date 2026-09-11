@@ -3,13 +3,16 @@ import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct, type PublicStoreProductsParams } from '@/api/services/store';
+import { apiGetPinnedProducts } from '@/api/services/product';
 import { NovaProductCard } from '../components/NovaProductCard';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 
-/** Same disclosed limitation as `AtelierProductCatalogSection`'s equivalent
- *  helper — `pinned`/`manual` have no backing public endpoint today, so both
- *  fall back to `newest` rather than silently rendering nothing. */
+/** Same helper as `AtelierFeaturedProductsSection`'s equivalent — `pinned`/
+ *  `manual` (the section editor's two names for the same seller-curated
+ *  pick list — see `apiGetPinnedProducts`'s own doc comment, "Manual Pin"/
+ *  "Seller Featured") are handled separately in the effect below via that
+ *  dedicated endpoint, not here. */
 function paramsForSource(settings: Section['settings']): PublicStoreProductsParams {
   const limit = Math.min(24, Math.max(1, settings.limit ?? 8));
   switch (settings.source) {
@@ -19,8 +22,6 @@ function paramsForSource(settings: Section['settings']): PublicStoreProductsPara
     case 'bestsellers':
     case 'trending':   return { sort: 'best_rated', limit };
     case 'newArrivals':
-    case 'pinned':
-    case 'manual':
     default:           return { sort: 'newest', limit };
   }
 }
@@ -36,9 +37,12 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
 
   useEffect(() => {
     if (demoProducts) return;
-    apiGetPublicStoreProducts(store.storeId, paramsForSource(section.settings))
-      .then(res => setProducts(res.data?.products ?? []))
-      .catch(() => setProducts([]));
+    const { source, limit: limitSetting } = section.settings;
+    const limit = Math.min(24, Math.max(1, limitSetting ?? 8));
+    const request = source === 'pinned' || source === 'manual'
+      ? apiGetPinnedProducts(store.storeId).then(res => (res.data?.products ?? []).slice(0, limit))
+      : apiGetPublicStoreProducts(store.storeId, paramsForSource(section.settings)).then(res => res.data?.products ?? []);
+    request.then(setProducts).catch(() => setProducts([]));
   }, [store.storeId, section.settings, demoProducts]);
 
   if (products !== null && products.length === 0) return null;
