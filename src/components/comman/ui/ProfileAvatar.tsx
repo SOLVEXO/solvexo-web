@@ -322,11 +322,21 @@ export function ProfileAvatar() {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
     const GAP = 10;
+    const MARGIN = 8;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < PANEL_HEIGHT_ESTIMATE + GAP && rect.top > PANEL_HEIGHT_ESTIMATE;
+    // Right-align the panel to the trigger by default (correct for the
+    // navbar's top-right avatar), but clamp it so the panel's LEFT edge
+    // never goes past the viewport edge — without this, a trigger placed
+    // near the left side of the screen (e.g. the mobile menu's bottom
+    // "Signed in" row) pushed the 272px-wide panel almost entirely
+    // off-screen, since aligning its right edge to a near-left trigger
+    // demands far more room to the left than a small screen has.
+    const desiredRight = window.innerWidth - rect.right;
+    const maxRight = Math.max(MARGIN, window.innerWidth - PANEL_WIDTH - MARGIN);
     setPos({
       [openUpward ? 'bottom' : 'top']: openUpward ? window.innerHeight - rect.top + GAP : rect.bottom + GAP,
-      right: Math.max(8, window.innerWidth - rect.right),
+      right: Math.min(Math.max(desiredRight, MARGIN), maxRight),
     });
   }, []);
 

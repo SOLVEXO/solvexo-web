@@ -16,6 +16,7 @@ import {
 } from '@/api/services/analytics/analytics';
 import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from '@/api/services/product';
 import { apiGetSellerReturns } from '@/api/services/orders';
+import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount } from '@/api/services/payment';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
@@ -31,6 +32,8 @@ interface StoreMetrics {
   lowStockCount: number;
   pendingOrdersCount: number;
   openReturnsCount: number;
+  openDisputeCount: number;
+  highRiskOrderCount: number;
 }
 
 function useStoreDashboardMetrics(storeId: string) {
@@ -54,8 +57,10 @@ function useStoreDashboardMetrics(storeId: string) {
       apiGetLowStockSummary(storeId),
       apiGetSellerOrders(storeId, 1, 1),
       apiGetSellerReturns({ storeId }),
+      apiGetOpenDisputeCount(storeId),
+      apiGetHighRiskOrderCount(storeId),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
@@ -65,6 +70,8 @@ function useStoreDashboardMetrics(storeId: string) {
           lowStockCount: lowStockRes.data.count,
           pendingOrdersCount: ordersRes.data.stats.pending,
           openReturnsCount: returnsRes.data.stats.openRequests,
+          openDisputeCount: disputesRes.data.count,
+          highRiskOrderCount: riskRes.data.count,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -337,12 +344,21 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
 // everything's caught up, rather than an empty placeholder card.
 interface AttentionItem { label: string; count: number; path: string; Icon: LucideIcon; color: string }
 
-function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount }: {
-  storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number;
+function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount }: {
+  storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number;
 }) {
   const navigate = useNavigate();
   const items: AttentionItem[] = [
     { label: 'Order(s) awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6' },
+    // Mirrors Shopify Home's "Review high-risk orders" order task — real
+    // Stripe Radar fraud-risk signal (PaymentService.getHighRiskOrderCount),
+    // not an invented score.
+    { label: 'Order(s) flagged as high-risk — review before shipping', count: highRiskOrderCount, path: 'orders', Icon: AlertTriangle, color: '#B91C1C' },
+    // Mirrors Shopify Home's "Submit evidence for chargebacks" order task —
+    // real Stripe dispute-status tracking (PaymentService.getOpenDisputeCount),
+    // shown only while genuinely awaiting the seller's response (not merely
+    // "under review", where there's nothing left to do).
+    { label: 'Order(s) with an open payment dispute', count: openDisputeCount, path: 'orders', Icon: AlertTriangle, color: '#DC2626' },
     { label: 'Product(s) low on stock', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B' },
     { label: 'Return request(s) awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444' },
   ].filter(i => i.count > 0);
@@ -376,6 +392,105 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
             <ArrowRight size={14} className="text-slate shrink-0" />
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Insights ──────────────────────────────────────────────────────────────────
+// Mirrors Shopify Home's "Insights" section (their own docs describe it as
+// "data-driven observations about your store's performance", capped at a
+// handful shown at once) — deliberately NOT an AI/LLM-generated feature
+// (Solvexo has no dashboard-recommendation engine, and faking one with a
+// canned "Sidekick"-style assistant would be exactly the kind of decorative,
+// non-functional UI this project's standards explicitly reject). Every
+// insight here is a plain rule evaluated against real period-over-period
+// percentages the backend already computes for `SellerOverviewData`
+// (`totalRevenueChangePercent`, `avgOrderValueChangePercent`,
+// `refundRatePercent`, `repeatBuyerTrend`) — nothing new was fetched to
+// build this, and nothing here can ever show a number the seller couldn't
+// already find on the Analytics page themselves.
+interface Insight { text: string; tone: 'positive' | 'negative' | 'neutral'; magnitude: number }
+
+function buildInsights(overview: SellerOverviewData): Insight[] {
+  const insights: Insight[] = [];
+
+  if (overview.totalRevenueChangePercent !== null && Math.abs(overview.totalRevenueChangePercent) >= 5) {
+    const up = overview.totalRevenueChangePercent >= 0;
+    insights.push({
+      tone: up ? 'positive' : 'negative',
+      magnitude: Math.abs(overview.totalRevenueChangePercent),
+      text: `Revenue is ${up ? 'up' : 'down'} ${Math.abs(overview.totalRevenueChangePercent).toFixed(0)}% vs. the previous period.`,
+    });
+  }
+
+  if (overview.avgOrderValueChangePercent !== null && Math.abs(overview.avgOrderValueChangePercent) >= 8) {
+    const up = overview.avgOrderValueChangePercent >= 0;
+    insights.push({
+      tone: up ? 'positive' : 'neutral',
+      magnitude: Math.abs(overview.avgOrderValueChangePercent),
+      text: `Average order value ${up ? 'increased' : 'decreased'} ${Math.abs(overview.avgOrderValueChangePercent).toFixed(0)}% vs. the previous period.`,
+    });
+  }
+
+  if (overview.totalOrders > 0 && overview.refundRatePercent >= 8) {
+    insights.push({
+      tone: 'negative',
+      magnitude: overview.refundRatePercent,
+      text: `Your refund rate is ${overview.refundRatePercent.toFixed(0)}% this period — worth a look at what's driving returns.`,
+    });
+  }
+
+  if (overview.repeatBuyerTrend === 'improving' || overview.repeatBuyerTrend === 'declining') {
+    const up = overview.repeatBuyerTrend === 'improving';
+    insights.push({
+      tone: up ? 'positive' : 'neutral',
+      magnitude: overview.repeatBuyerPercent,
+      text: `Repeat buyers ${up ? 'grew' : 'shrank'} — they now make up ${overview.repeatBuyerPercent.toFixed(0)}% of your orders.`,
+    });
+  }
+
+  if (overview.totalOrders > 0 && overview.newCustomersCount > overview.returningCustomersCount * 2) {
+    insights.push({
+      tone: 'neutral',
+      magnitude: 5,
+      text: `Most of your customers this period are new (${formatNumber(overview.newCustomersCount)} new vs. ${formatNumber(overview.returningCustomersCount)} returning).`,
+    });
+  }
+
+  // Shopify caps this at a handful shown at once so it reads as "worth your
+  // attention," not a wall of stats — same reasoning here, biggest-magnitude first.
+  return insights.sort((a, b) => b.magnitude - a.magnitude).slice(0, 3);
+}
+
+function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
+  const insights = buildInsights(overview);
+  if (insights.length === 0) return null;
+
+  const toneStyle: Record<Insight['tone'], { bg: string; color: string; Icon: LucideIcon }> = {
+    positive: { bg: '#eaf7ef', color: '#1E7A3C', Icon: TrendingUp },
+    negative: { bg: '#fdecec', color: '#C0362C', Icon: TrendingDown },
+    neutral:  { bg: '#eef2fb', color: '#2156A8', Icon: Users },
+  };
+
+  return (
+    <div className="dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden">
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec]">
+        <p className="text-sm font-bold text-charcoal">Insights</p>
+        <p className="text-[11px] text-slate mt-[2px]">A few things worth noticing about the last 30 days</p>
+      </div>
+      <div className="flex flex-col divide-y divide-[#f3f2ec]">
+        {insights.map((insight, i) => {
+          const { bg, color, Icon } = toneStyle[insight.tone];
+          return (
+            <div key={i} className="flex items-center gap-3 px-5 py-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg, color }}>
+                <Icon size={14} />
+              </div>
+              <span className="text-[13px] text-charcoal">{insight.text}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -513,8 +628,12 @@ export default function StoreDashboard() {
               lowStockCount={metrics.lowStockCount}
               pendingOrdersCount={metrics.pendingOrdersCount}
               openReturnsCount={metrics.openReturnsCount}
+              openDisputeCount={metrics.openDisputeCount}
+              highRiskOrderCount={metrics.highRiskOrderCount}
             />
           )}
+
+          {metrics?.overview && <InsightsStrip overview={metrics.overview} />}
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

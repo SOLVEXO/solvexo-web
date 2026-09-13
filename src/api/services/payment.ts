@@ -100,3 +100,18 @@ export function apiInitiatePayment(payload: { checkoutId: string; paymentMode?: 
 export function apiGetPaymentStatus(checkoutId: string) {
   return client.get<never, PaymentStatusResponse>(`${ENDPOINTS.PAYMENT.STATUS}?checkoutId=${checkoutId}`);
 }
+
+/** GET /api/payment/disputes/:storeId/open-count — seller-facing "Needs Attention"
+ *  signal: how many orders currently have an open Stripe dispute genuinely awaiting
+ *  the seller's evidence response (mirrors Shopify Home's "Submit evidence for
+ *  chargebacks" order task) — real Stripe dispute-status tracking, not a cosmetic count. */
+export function apiGetOpenDisputeCount(storeId: string) {
+  return client.get<never, { success: boolean; data: { count: number } }>(ENDPOINTS.PAYMENT.OPEN_DISPUTE_COUNT(storeId));
+}
+
+/** GET /api/payment/risk-orders/:storeId/open-count — mirrors Shopify Home's
+ *  "Review high-risk orders" order task, backed by Stripe Radar's own real
+ *  fraud-risk assessment (PaymentTransaction.riskLevel), not an invented score. */
+export function apiGetHighRiskOrderCount(storeId: string) {
+  return client.get<never, { success: boolean; data: { count: number } }>(ENDPOINTS.PAYMENT.HIGH_RISK_ORDER_COUNT(storeId));
+}

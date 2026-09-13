@@ -479,6 +479,24 @@ export const ENDPOINTS = {
     PURCHASE_INTENT: (storeId: string) => `/api/gift-cards/${storeId}/purchase-intent`,
   },
 
+  // ── ABANDONED CART RECOVERY ───────────────────────────────────────────────
+  ABANDONED_CART: {
+    SETTINGS: (storeId: string) => `/api/abandoned-cart/${storeId}/settings`,
+    STATS:    (storeId: string) => `/api/abandoned-cart/${storeId}/stats`,
+    LIST:     (storeId: string) => `/api/abandoned-cart/${storeId}`,
+  },
+
+  // ── EMAIL CAMPAIGNS ───────────────────────────────────────────────────────
+  EMAIL_CAMPAIGNS: {
+    CREATE:            (storeId: string) => `/api/email-campaigns/${storeId}`,
+    LIST:              (storeId: string) => `/api/email-campaigns/${storeId}`,
+    AUDIENCE_PREVIEW:  (storeId: string) => `/api/email-campaigns/${storeId}/audience-preview`,
+    UPDATE:            (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}`,
+    DELETE:            (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}`,
+    SEND:              (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}/send`,
+    SCHEDULE:          (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}/schedule`,
+  },
+
   // ── AUTOMATIC DISCOUNTS ───────────────────────────────────────────────────
   DISCOUNTS: {
     LIST:   (storeId: string) => `/api/discounts/${storeId}`,
@@ -651,6 +669,8 @@ export const ENDPOINTS = {
     COD:              '/api/payment/cod-payment',
     INITIATE_PAYMENT: '/api/payment/initiate-payment',
     STATUS:           '/api/payment/status',
+    OPEN_DISPUTE_COUNT: (storeId: string) => `/api/payment/disputes/${storeId}/open-count`,
+    HIGH_RISK_ORDER_COUNT: (storeId: string) => `/api/payment/risk-orders/${storeId}/open-count`,
   },
 
   ORDERS: {

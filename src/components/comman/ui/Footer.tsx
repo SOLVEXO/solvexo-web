@@ -153,7 +153,7 @@ function Newsletter() {
           placeholder="Your email address"
           aria-label="Email address"
           disabled={loading}
-          className="flex-1 min-w-0 h-9 bg-transparent text-[13px] text-white placeholder:text-[#7a7873] outline-none border-none disabled:opacity-60"
+          className="flex-1 min-w-0 h-9 bg-transparent text-[13px] text-white placeholder:text-[#7a7873] outline-none border-none disabled:opacity-60 [&:-webkit-autofill]:[-webkit-text-fill-color:white] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_#141413_inset] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
         />
         <MagneticButton className="shrink-0">
           <button
