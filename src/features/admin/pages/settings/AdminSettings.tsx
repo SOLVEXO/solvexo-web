@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  User, KeyRound, ShieldCheck, Bell, Camera, ChevronLeft, ChevronRight,
-  Settings, Check, Loader2, Eye, EyeOff, type LucideIcon,
+  User, KeyRound, Bell, Camera, ChevronLeft, ChevronRight,
+  Check, Loader2, Eye, EyeOff, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -18,7 +18,7 @@ import { formatCurrency, formatNumber } from '@/components/comman/analytics/form
 // backend (usersService.deleteAccount only handles role==='user'|'seller')
 // and isn't intended: removing an admin account needs a separate admin-team
 // management flow (revoke access), not a self-service delete button.
-type Section = 'profile' | 'security' | 'two-factor' | 'notifications';
+type Section = 'profile' | 'security' | 'notifications';
 
 const NAV: { group: string; isDanger?: boolean; items: { id: Section; label: string; Icon: LucideIcon }[] }[] = [
   {
@@ -26,7 +26,6 @@ const NAV: { group: string; isDanger?: boolean; items: { id: Section; label: str
     items: [
       { id: 'profile',       label: 'Profile',          Icon: User       },
       { id: 'security',      label: 'Email & Password', Icon: KeyRound   },
-      { id: 'two-factor',    label: 'Two-Factor Auth',  Icon: ShieldCheck},
       { id: 'notifications', label: 'Notifications',    Icon: Bell       },
     ],
   },
@@ -431,22 +430,6 @@ export function AdminSettings() {
               <NotificationsPanel />
             )}
 
-            {/* Other sections */}
-            {active !== 'profile' && active !== 'security' && active !== 'notifications' && (
-              <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6">
-                <div className="flex flex-col items-center justify-center py-[60px] text-center">
-                  <div className="text-slate mb-[14px]">
-                    {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
-                  </div>
-                  <p className="text-[15px] font-semibold text-charcoal mb-[6px]">
-                    {activeItem?.label ?? 'Settings'}
-                  </p>
-                  <p className="text-[13px] text-slate">
-                    Settings for this section are coming soon.
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ── RIGHT: Nav sidebar — desktop only ── */}

@@ -9,6 +9,7 @@ import {
   getGuestCartItems, addGuestCartItem, updateGuestCartQty, removeGuestCartItem, clearGuestCart,
 } from '@/utils/guestCart';
 import { useToast } from '@/contexts/ToastContext';
+import { trackPixelEvent } from '@/utils/trackingPixels';
 
 // ── localStorage: variantId → type map ────────────────────────────────────────
 const TYPES_KEY = 'solvexo_cart_types';
@@ -195,6 +196,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       await refreshGuestCartDisplay();
       setAdding(null);
       toast.success('Added to cart');
+      trackPixelEvent('AddToCart', { contentIds: [productId] });
       return;
     }
 
@@ -204,6 +206,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       const res = await apiAddToCart(productId, productVariantId, storeId);
       setCart(mergeTypes(res.data));
       toast.success('Added to cart');
+      trackPixelEvent('AddToCart', { contentIds: [productId] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add item to cart.';
       setError(message);

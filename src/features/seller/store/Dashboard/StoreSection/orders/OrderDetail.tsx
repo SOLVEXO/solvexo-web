@@ -10,13 +10,14 @@ import {
   type SellerOrderDetail,
 } from '@/api/services/product';
 import { apiMarkOrderPaid, apiUpdateOrderStatus, apiPurchaseShippingLabel } from '@/api/services/orders';
+import { apiCaptureOrderPayment } from '@/api/services/payment';
 import {
   SkeletonBox, StatusBadge, Button, Modal, Field, Input,
 } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 
-type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | null;
+type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | 'capture' | null;
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -93,6 +94,37 @@ export function StoreOrderDetail() {
     apiMarkOrderPaid(orderId)
       .then(load)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
+      .finally(() => setBusyAction(null));
+  };
+
+  // Real Stripe capture — only ever valid while paymentStatus is
+  // 'authorized' (Store.paymentCaptureMethod === 'manual'). See
+  // PaymentService.captureOrderPayment; auto-captures itself if the seller
+  // ships/completes the order first instead of clicking this. Opens a small
+  // modal instead of firing immediately — a real Stripe partial capture
+  // (Shopify supports this too) needs an amount input; the backend is the
+  // authority on what's actually valid to capture, this is just the entry point.
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [captureAmount, setCaptureAmount] = useState('');
+  const [captureError, setCaptureError] = useState('');
+
+  const openCaptureModal = () => {
+    setCaptureAmount(detail ? String(detail.sellerOrder.subtotal) : '');
+    setCaptureError('');
+    setShowCaptureModal(true);
+  };
+
+  const handleCapturePayment = (full: boolean) => {
+    if (busy) return;
+    const amountToCapture = full ? undefined : parseFloat(captureAmount);
+    if (!full && (!amountToCapture || amountToCapture <= 0)) {
+      setCaptureError('Enter a valid amount.');
+      return;
+    }
+    setBusyAction('capture');
+    apiCaptureOrderPayment(orderId, amountToCapture)
+      .then(() => { setShowCaptureModal(false); load(); })
+      .catch((err: unknown) => setCaptureError(err instanceof Error ? err.message : 'Failed to capture payment.'))
       .finally(() => setBusyAction(null));
   };
 
@@ -261,11 +293,21 @@ export function StoreOrderDetail() {
               <InfoRow label="Status" value={<StatusBadge status={detail.paymentStatus} size="sm" />} />
               <InfoRow label="Currency" value={detail.currency} />
               {detail.paidAt && <InfoRow label="Paid At" value={formatDate(detail.paidAt)} />}
+              {detail.paymentStatus === 'authorized' && (
+                <p className="text-[11px] text-slate mt-2 leading-[1.4]">
+                  Card authorized, not yet charged — capture it below, or it auto-captures the moment you mark this order shipped/completed.
+                </p>
+              )}
             </Card>
 
             <Card title="Actions">
               <div className="flex flex-col gap-2">
-                {!detail.isPaid && (
+                {detail.paymentStatus === 'authorized' && (
+                  <Button size="sm" onClick={openCaptureModal} disabled={busy}>
+                    <CreditCard size={13} /> Capture Payment
+                  </Button>
+                )}
+                {!detail.isPaid && detail.paymentStatus !== 'authorized' && (
                   <Button size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
                     <CheckCheck size={13} /> Mark as Paid
                   </Button>
@@ -324,6 +366,37 @@ export function StoreOrderDetail() {
           <Field label="Tracking Link" hint="Optional — lets the customer open the carrier's tracking page directly.">
             <Input type="url" placeholder="https://…" value={trackingForm.trackingUrl} onChange={e => setTrackingForm(f => ({ ...f, trackingUrl: e.target.value }))} disabled={busy} />
           </Field>
+        </Modal>
+      )}
+
+      {showCaptureModal && detail && (
+        <Modal
+          title={`Capture Payment — ${detail.orderNumber}`}
+          onClose={() => { if (!busy) setShowCaptureModal(false); }}
+          footer={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowCaptureModal(false)} disabled={busy}>Cancel</Button>
+              <Button size="sm" onClick={() => handleCapturePayment(false)} loading={busyAction === 'capture'} disabled={busy}>
+                Capture {currencySymbol(detail.currency)}{captureAmount || '0'}
+              </Button>
+            </>
+          }
+        >
+          {captureError && <p className="text-[12px] text-error mb-3">{captureError}</p>}
+          <p className="text-[12.5px] text-slate mb-4">
+            The card is authorized but hasn't been charged yet. Capture the full amount, or a lesser amount if part of the order can't be fulfilled — the rest is released back to the buyer automatically.
+          </p>
+          <Field label="Amount to capture" hint={`Authorized amount: ${currencySymbol(detail.currency)}${detail.sellerOrder.subtotal.toFixed(2)}`}>
+            <Input type="number" value={captureAmount} onChange={e => setCaptureAmount(e.target.value)} disabled={busy} />
+          </Field>
+          <button
+            type="button"
+            onClick={() => handleCapturePayment(true)}
+            disabled={busy}
+            className="text-[12px] text-brand-orange hover:underline bg-transparent border-none cursor-pointer p-0 mt-1"
+          >
+            Capture full authorized amount instead
+          </button>
         </Modal>
       )}
 

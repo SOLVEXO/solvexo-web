@@ -71,6 +71,8 @@ export interface UpdateStorePayload {
   contactPhone?: string;
   productTypes?: ProductType[];
   codEnabled?:  boolean;
+  paymentCaptureMethod?: 'automatic' | 'manual';
+  dashboardMetrics?: string[] | null;
   reviewModerationEnabled?: boolean;
   lowStockThreshold?: number;
   taxRate?: number;
@@ -114,6 +116,20 @@ export interface StoreData {
    *  by checkout (a multi-vendor cart's COD eligibility isn't scoped per
    *  seller there yet); this only persists the seller's preference so far. */
   codEnabled:   boolean;
+  /** Shopify-equivalent "Payment capture method" — 'automatic' (default,
+   *  every existing store's unchanged behavior) charges the buyer the
+   *  instant checkout succeeds; 'manual' authorizes the card and holds a
+   *  real "Capture Payment" action for the seller (Order.paymentStatus
+   *  'authorized' → 'paid'), auto-captured if the seller ships/completes
+   *  it first (see OrdersService.updateSellerOrderStatus). Only takes
+   *  effect for a single-store checkout. */
+  paymentCaptureMethod: 'automatic' | 'manual';
+  /** Real Shopify-equivalent "customize your dashboard metrics" — which
+   *  metric cards the seller's own Store Dashboard shows, and in what
+   *  order. `null` (every pre-existing store) means "show the default 4"
+   *  — see DASHBOARD_METRIC_CATALOG in dashboardMetrics.const.ts, the one
+   *  place both this default and the full picker list are defined. */
+  dashboardMetrics: string[] | null;
   /** Opt-in review moderation gate — off by default (reviews publish
    *  instantly). On: new reviews start pending and need seller/admin
    *  approval before they're publicly visible. See RatingService. */

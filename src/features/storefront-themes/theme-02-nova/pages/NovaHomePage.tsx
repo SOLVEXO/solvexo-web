@@ -54,10 +54,24 @@ function BannerSlide({ banner }: { banner: StoreBanner }) {
   const [errored, setErrored] = useState(false);
   const link = resolveBannerLink(banner);
   const isExternal = !!link.href;
+  // See AtelierHomePage's identical `BannerSlide` for the full rationale —
+  // both themes share the same `StoreBanner` shape and video/poster contract.
+  const isVideoBanner = banner.type === 'video' && !!banner.videoUrl;
 
   return (
     <section className="relative w-full overflow-hidden" style={{ minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
-      {!errored && (
+      {isVideoBanner ? (
+        <video
+          src={banner.videoUrl!}
+          poster={cloudinaryUrl(banner.imageUrl, 1600)}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+          style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
+        />
+      ) : !errored && (
         <picture>
           {banner.mobileImageUrl && (
             <source media="(max-width: 640px)" srcSet={cloudinarySrcSet(banner.mobileImageUrl, [480, 640, 960])} />

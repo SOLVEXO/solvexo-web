@@ -497,6 +497,24 @@ export const ENDPOINTS = {
     SCHEDULE:          (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}/schedule`,
   },
 
+  // ── AFFILIATE PROGRAM ─────────────────────────────────────────────────────
+  AFFILIATE: {
+    PROGRAM:   (storeId: string) => `/api/affiliate/${storeId}/program`,
+    STATS:     (storeId: string) => `/api/affiliate/${storeId}/stats`,
+    REFERRALS: (storeId: string) => `/api/affiliate/${storeId}/referrals`,
+    CREATE:    (storeId: string) => `/api/affiliate/${storeId}`,
+    LIST:      (storeId: string) => `/api/affiliate/${storeId}`,
+    UPDATE:    (storeId: string, affiliateId: string) => `/api/affiliate/${storeId}/${affiliateId}`,
+    DELETE:    (storeId: string, affiliateId: string) => `/api/affiliate/${storeId}/${affiliateId}`,
+    PAY:       (storeId: string, affiliateId: string) => `/api/affiliate/${storeId}/${affiliateId}/pay`,
+  },
+
+  // ── TRACKING PIXELS (ad-platform connections) ─────────────────────────────
+  TRACKING_PIXELS: {
+    SETTINGS: (storeId: string) => `/api/tracking-pixels/${storeId}`,
+    PUBLIC:   (storeId: string) => `/api/tracking-pixels/${storeId}/public`,
+  },
+
   // ── AUTOMATIC DISCOUNTS ───────────────────────────────────────────────────
   DISCOUNTS: {
     LIST:   (storeId: string) => `/api/discounts/${storeId}`,
@@ -671,6 +689,8 @@ export const ENDPOINTS = {
     STATUS:           '/api/payment/status',
     OPEN_DISPUTE_COUNT: (storeId: string) => `/api/payment/disputes/${storeId}/open-count`,
     HIGH_RISK_ORDER_COUNT: (storeId: string) => `/api/payment/risk-orders/${storeId}/open-count`,
+    CAPTURE_ORDER: (orderId: string) => `/api/payment/orders/${orderId}/capture`,
+    AWAITING_CAPTURE_COUNT: (storeId: string) => `/api/payment/orders/${storeId}/awaiting-capture-count`,
   },
 
   ORDERS: {

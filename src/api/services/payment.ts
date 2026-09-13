@@ -115,3 +115,16 @@ export function apiGetOpenDisputeCount(storeId: string) {
 export function apiGetHighRiskOrderCount(storeId: string) {
   return client.get<never, { success: boolean; data: { count: number } }>(ENDPOINTS.PAYMENT.HIGH_RISK_ORDER_COUNT(storeId));
 }
+
+/** POST /api/payment/orders/:orderId/capture — real "Capture Payment" action for a manual-capture store's authorized order. `amountToCapture` omitted = full authorized amount; passed = a real Stripe partial capture (the remainder is released back to the buyer). */
+export function apiCaptureOrderPayment(orderId: string, amountToCapture?: number) {
+  return client.post<never, { success: boolean; data: { captured: boolean; orderIds: string[]; capturedAmount: number } }>(
+    ENDPOINTS.PAYMENT.CAPTURE_ORDER(orderId),
+    amountToCapture != null ? { amountToCapture } : {},
+  );
+}
+
+/** GET /api/payment/orders/:storeId/awaiting-capture-count — real count for the store dashboard's "Needs Attention" card (Store.paymentCaptureMethod === 'manual' orders still authorized, not yet captured). */
+export function apiGetAwaitingCaptureCount(storeId: string) {
+  return client.get<never, { success: boolean; data: { count: number } }>(ENDPOINTS.PAYMENT.AWAITING_CAPTURE_COUNT(storeId));
+}

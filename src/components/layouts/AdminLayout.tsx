@@ -3,10 +3,10 @@ import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import {
-  LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
-  PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  TrendingUp, ChevronRight, Quote, Truck, Palette, Smartphone,
+  LayoutDashboard, Users, Shield, Store, DollarSign, Settings, UserCog,
+  PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
+  BarChart3, Layers, Search, Sparkles, LogOut, Landmark, Percent, Coins, Activity,
+  TrendingUp, ChevronRight, Truck, Palette, Smartphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -29,16 +29,12 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'users',         Icon: Users,           label: 'Users & Sellers', path: '/admin/users'         },
   { id: 'moderation',    Icon: Shield,          label: 'Moderation',      path: '/admin/moderation'    },
   { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
-  { id: 'messages',      Icon: MessageSquare,   label: 'Messaging',       path: '/admin/messages'      },
-  { id: 'leads',         Icon: UserPlus,        label: 'Leads',           path: '/admin/leads'         },
-  { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
   { id: 'theme-catalog', Icon: Palette,         label: 'Theme Catalog',   path: '/admin/theme-catalog' },
   // Seller white-label branded-app requests — see MobileApp.tsx (seller
   // side) and StoreAppRequestsModule (backend) for the full flow. Distinct
   // from Solvexo's own POS app, which needs no admin review at all.
   { id: 'store-app-requests', Icon: Smartphone, label: 'Store App Requests', path: '/admin/store-app-requests' },
-  { id: 'marketing',     Icon: Tag,             label: 'Marketing',       path: '/admin/marketing'     },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'manual-payments', Icon: Landmark,      label: 'Manual Payments', path: '/admin/manual-payments' },
@@ -47,14 +43,15 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
   { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
-  { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
-  { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },
-  { id: 'contact',       Icon: MessageCircle,   label: 'Contact Messages',path: '/admin/contact'       },
-  { id: 'testimonials',  Icon: Quote,           label: 'Testimonials',   path: '/admin/testimonials'  },
-  { id: 'announcements', Icon: Bell,            label: 'Announcements',   path: '/admin/announcements' },
+  // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
+  // tabbed page — see ADMIN_MODULES' doc comment below for why.
+  { id: 'content',       Icon: ImageIcon,       label: 'Site Content',    path: '/admin/content'       },
   { id: 'config',        Icon: Settings,        label: 'Platform Config', path: '/admin/config'        },
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
 ];
+// Note: 'marketing' (platform sale campaigns/coupons/promotion-request
+// review) was removed from ADMIN_NAV outright — see the doc comment on
+// ADMIN_MODULES below for why.
 
 interface AdminModule {
   id:    string;
@@ -73,19 +70,28 @@ interface AdminModule {
 // StoreLayout/SellerLayout's plain grouped-list sidebar pattern.
 //
 // 'marketplace' (central-listing curation), 'marketing' (cross-store platform
-// sale campaigns), 'messages' (real private buyer-seller chat content — a
-// genuine privacy overreach once there's no admin-curated marketplace to
-// justify it), 'leads' (the pending-store approval queue — dormant for any
-// seller onboarded through the current self-serve flow, only a legacy
-// fallback for a pre-self-serve-activation store), and 'banners' (verified:
-// every real placement — marketplaceHero/categoryHero/educationHero — only
-// ever renders on the now-disconnected Marketplace/EducationMarketplace
-// pages; the remaining placement, homepageHero, is defined but wired to no
-// page at all) are deliberately left OUT of every module below — none of
-// them fit a pure Shopify-style "host many independent, self-serve stores"
-// platform. Their routes/pages/backend endpoints are untouched (same
-// "disconnect, don't delete" convention used throughout this project) —
-// reachable by direct URL only, linked from nowhere in the admin UI.
+// sale campaigns/coupons/promotion-request review), 'messages' (real private
+// buyer-seller chat content — a genuine privacy overreach once there's no
+// admin-curated marketplace to justify it), 'leads' (the pending-store
+// approval queue — dormant for any seller onboarded through the current
+// self-serve flow, only a legacy fallback for a pre-self-serve-activation
+// store), and 'banners' (verified: every real placement —
+// marketplaceHero/categoryHero/educationHero — only ever renders on the now-
+// disconnected Marketplace/EducationMarketplace pages; the remaining
+// placement, homepageHero, is defined but wired to no page at all) — none of
+// these fit a pure Shopify-style "host many independent, self-serve stores"
+// platform, per an explicit product-scope decision (Solvexo stores now work
+// like independent Shopify stores, not a curated central marketplace).
+// Unlike the rest of this file's usual "disconnect, don't delete" convention,
+// these 5 are fully removed: no ADMIN_NAV entry, no router route, no lazy
+// import (see router/index.tsx's own comment on this). Their page files
+// (`AdminMarketplace.tsx`, `AdminMessaging.tsx`, `AdminLeads.tsx`,
+// `AdminBanners.tsx`, `AdminMarketing.tsx`) are left on disk, fully
+// unreferenced, only because this session can't delete files directly —
+// safe to delete outright. Removing 'marketing' also leaves the seller-
+// facing Marketing.tsx's own "Promotion Requests" tab with no admin-side
+// reviewer (it requested paid placement on these same now-gone marketplace-
+// wide surfaces) — flagged to the user, not silently touched here.
 // (`StoreBanner` — the seller's own per-store storefront hero, managed from
 // that store's own Marketing tab — is a completely separate schema/system,
 // unaffected by any of this.)
@@ -105,10 +111,10 @@ interface AdminModule {
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'shipping-zones', 'store-app-requests'] },
-  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'contact'] },
+  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
-  { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['faqs', 'testimonials', 'announcements'] },
+  { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
   { id: 'system',    label: 'System',                Icon: Settings,       ids: ['activity-log', 'config'] },
 ];

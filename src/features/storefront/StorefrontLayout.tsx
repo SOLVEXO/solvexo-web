@@ -11,6 +11,8 @@ import { useCurrencyPreference, CURRENCY_STORAGE_KEY } from '@/contexts/Currency
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { useFavicon } from '@/hooks/useFavicon';
+import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
+import { loadPixelScripts, trackPixelEvent } from '@/utils/trackingPixels';
 
 // Root layout for a store's own subdomain (`hello.solvexo.store`) OR a
 // seller-connected Custom Domain — the router mounts this tree whenever
@@ -80,6 +82,23 @@ export function StorefrontLayout() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [store?.storeId, setCurrency]);
+
+  // Real ad-platform pixels (Facebook/Google/TikTok) — the seller's own ids
+  // from Marketing → Tracking Pixels, fired straight from this buyer's
+  // browser to each platform's own servers. Runs once per store resolution;
+  // `loadPixelScripts` itself guards against double-injecting the scripts.
+  useEffect(() => {
+    if (!store?.storeId) return;
+    let cancelled = false;
+    apiGetPublicTrackingPixelSettings(store.storeId)
+      .then(res => {
+        if (cancelled) return;
+        loadPixelScripts(res.data);
+        trackPixelEvent('PageView');
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [store?.storeId]);
 
   useFavicon(store?.faviconUrl, store?.logo);
 

@@ -117,6 +117,9 @@ const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/O
 // hardcoded-theme bug, just in a different corner of the app.
 const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
+const StoreBanners = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreBanners'));
+const StoreAnnouncementBar = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreAnnouncementBar'));
+const StoreFeaturedCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreFeaturedCollections'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
 const MetaobjectTypesPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/Metaobjects/MetaobjectTypesPage').then(m => ({ default: m.MetaobjectTypesPage })));
@@ -128,24 +131,22 @@ const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics'
 const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers').then(m => ({ default: m.AdminUsers })));
 const AdminModeration = lazy(() => import('@/features/admin/pages/AdminModeration').then(m => ({ default: m.AdminModeration })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
-const AdminMessaging = lazy(() => import('@/features/admin/pages/AdminMessaging').then(m => ({ default: m.AdminMessaging })));
-const AdminMarketplace = lazy(() => import('@/features/admin/pages/AdminMarketplace').then(m => ({ default: m.AdminMarketplace })));
-const AdminLeads = lazy(() => import('@/features/admin/pages/AdminLeads').then(m => ({ default: m.AdminLeads })));
 const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
 const AdminPlatformPlans = lazy(() => import('@/features/admin/pages/AdminPlatformPlans').then(m => ({ default: m.AdminPlatformPlans })));
 const AdminFinance = lazy(() => import('@/features/admin/pages/AdminFinance').then(m => ({ default: m.AdminFinance })));
-const AdminAnnouncements = lazy(() => import('@/features/admin/pages/AdminAnnouncements').then(m => ({ default: m.AdminAnnouncements })));
 const AdminThemeCatalog = lazy(() => import('@/features/admin/pages/AdminThemeCatalog').then(m => ({ default: m.AdminThemeCatalog })));
-const AdminBanners = lazy(() => import('@/features/admin/pages/AdminBanners').then(m => ({ default: m.AdminBanners })));
-const AdminFaqs = lazy(() => import('@/features/admin/pages/AdminFaqs').then(m => ({ default: m.AdminFaqs })));
 const AdminShippingZones = lazy(() => import('@/features/admin/pages/AdminShippingZones').then(m => ({ default: m.AdminShippingZones })));
-const AdminContactMessages = lazy(() => import('@/features/admin/pages/AdminContactMessages').then(m => ({ default: m.AdminContactMessages })));
-const AdminTestimonials = lazy(() => import('@/features/admin/pages/AdminTestimonials').then(m => ({ default: m.AdminTestimonials })));
+// Announcements/FAQs/Testimonials/Contact Messages consolidated into one
+// tabbed page (AdminSiteContent) — all 4 manage Solvexo's own public site
+// content, not seller-facing tooling, so they never needed 4 separate
+// sidebar entries. Each original page component is unchanged and imported
+// directly by AdminSiteContent itself (not lazy from here) — see its own
+// doc comment.
+const AdminSiteContent = lazy(() => import('@/features/admin/pages/AdminSiteContent').then(m => ({ default: m.AdminSiteContent })));
 const AdminManualPayments = lazy(() => import('@/features/admin/pages/AdminManualPayments').then(m => ({ default: m.AdminManualPayments })));
 const AdminCommissionRules = lazy(() => import('@/features/admin/pages/AdminCommissionRules').then(m => ({ default: m.AdminCommissionRules })));
 const AdminConfig = lazy(() => import('@/features/admin/pages/AdminConfig').then(m => ({ default: m.AdminConfig })));
 const AdminFxSettings = lazy(() => import('@/features/admin/pages/AdminFxSettings').then(m => ({ default: m.AdminFxSettings })));
-const AdminMarketing = lazy(() => import('@/features/admin/pages/AdminMarketing').then(m => ({ default: m.AdminMarketing })));
 const AdminSettings = lazy(() => import('@/features/admin/pages/settings/AdminSettings').then(m => ({ default: m.AdminSettings })));
 const AdminSEO = lazy(() => import('@/features/admin/pages/AdminSEO').then(m => ({ default: m.AdminSEO })));
 const AdminAiStudio = lazy(() => import('@/features/admin/pages/AdminAiStudio').then(m => ({ default: m.AdminAiStudio })));
@@ -348,6 +349,9 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/menus',                element: <MenuManagerPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
+          { path: 'online-store/banners',              element: <StoreBanners /> },
+          { path: 'online-store/announcement-bar',     element: <StoreAnnouncementBar /> },
+          { path: 'online-store/featured',             element: <StoreFeaturedCollections /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'seo',                              element: <StoreSEO /> },
           { path: 'ai/studio',                        element: <StoreAIStudio /> },
@@ -392,6 +396,16 @@ const mainRouter = createBrowserRouter([
       { path: '/theme-preview/:storeId/:token', element: <ThemeSharePreviewPage /> },
 
       // ── Admin pages ───────────────────────────────────────────────────
+      // Marketplace, Messaging, Leads, Banners and Marketing were removed
+      // outright (not just hidden from nav, as they were before) — Solvexo
+      // no longer runs as one admin-curated central marketplace, so an
+      // admin-curated listing surface, buyer↔seller admin messaging, a
+      // pending-store leads queue, and platform-wide marketplace-hero
+      // banners/promotions all lost their reason to exist; see
+      // AdminLayout.tsx's own comment for the full reasoning. Their routes,
+      // lazy imports and AdminOverview quick-links are gone from here; the
+      // five `AdminXxx.tsx` page files themselves are left on disk, fully
+      // unreferenced, only because this session can't delete files directly.
       {
         path: '/admin',
         element: <AdminLayout />,
@@ -401,23 +415,22 @@ const mainRouter = createBrowserRouter([
           { path: 'users',        element: <RequireRole role="admin"><AdminUsers /></RequireRole> },
           { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
           { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
-          { path: 'messages',     element: <AdminMessaging /> },
-          { path: 'leads',        element: <RequireRole role="admin"><AdminLeads /></RequireRole> },
-          { path: 'marketplace',  element: <RequireRole role="admin"><AdminMarketplace /></RequireRole> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
           { path: 'manual-payments', element: <RequireRole role="admin"><AdminManualPayments /></RequireRole> },
           { path: 'fx-settings', element: <RequireRole role="admin"><AdminFxSettings /></RequireRole> },
           { path: 'commission-rules', element: <RequireRole role="admin"><AdminCommissionRules /></RequireRole> },
-          { path: 'announcements',element: <RequireRole role="admin"><AdminAnnouncements /></RequireRole> },
-          { path: 'banners',      element: <AdminBanners /> },
-          { path: 'faqs',         element: <AdminFaqs /> },
           { path: 'shipping-zones', element: <AdminShippingZones /> },
-          { path: 'contact',      element: <AdminContactMessages /> },
-          { path: 'testimonials', element: <AdminTestimonials /> },
+          { path: 'content',      element: <RequireRole role="admin"><AdminSiteContent /></RequireRole> },
+          // Old individual URLs redirect to the consolidated page instead of
+          // 404ing for anyone with one bookmarked/linked — same convention as
+          // the store-workspace `verification`/`activity` redirects.
+          { path: 'announcements',element: <Navigate to="../content" replace /> },
+          { path: 'faqs',         element: <Navigate to="../content" replace /> },
+          { path: 'contact',      element: <Navigate to="../content" replace /> },
+          { path: 'testimonials', element: <Navigate to="../content" replace /> },
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },
-          { path: 'marketing',    element: <RequireRole role="admin"><AdminMarketing /></RequireRole> },
           { path: 'settings',     element: <AdminSettings /> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },

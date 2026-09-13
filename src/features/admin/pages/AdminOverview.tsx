@@ -20,9 +20,8 @@ import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 interface QuickLink { Icon: LucideIcon; label: string; desc: string; path: string; gradient: string; iconColor: string }
 const QUICK_LINKS: QuickLink[] = [
   { Icon: Shield,  label: 'Moderation Queue', desc: 'Review flagged listings & reports', path: '/admin/moderation',   gradient: 'from-[#fbe9e7] to-[#fbdfdc]', iconColor: '#B3261E' },
-  { Icon: Store,   label: 'Marketplace',      desc: 'Manage listings platform-wide',     path: '/admin/marketplace',  gradient: 'from-brand-pale-orange to-brand-pale-orange', iconColor: '#D97757' },
   { Icon: Users,   label: 'Users & Sellers',  desc: 'Accounts, suspensions, roles',      path: '/admin/users',        gradient: 'from-[#eaf0fb] to-[#dcebfa]', iconColor: '#2156A8' },
-  { Icon: Bell,    label: 'Announcements',    desc: 'Platform-wide banners & alerts',    path: '/admin/announcements', gradient: 'from-[#f3e8ff] to-[#ede0fe]', iconColor: '#A855F7' },
+  { Icon: Bell,    label: 'Site Content',     desc: 'Announcements, FAQs & testimonials', path: '/admin/content',      gradient: 'from-[#f3e8ff] to-[#ede0fe]', iconColor: '#A855F7' },
 ];
 
 // A fixed-range glance dashboard — a few key numbers, no filter/export chrome.

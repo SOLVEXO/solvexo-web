@@ -16,7 +16,10 @@ import {
 } from '@/api/services/analytics/analytics';
 import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from '@/api/services/product';
 import { apiGetSellerReturns } from '@/api/services/orders';
-import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount } from '@/api/services/payment';
+import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
+import { apiUpdateStore } from '@/api/services/store';
+import { DASHBOARD_METRIC_CATALOG, DEFAULT_DASHBOARD_METRICS } from './dashboardMetrics.const';
+import { Sliders, Check as CheckIcon, ChevronUp, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
@@ -34,6 +37,7 @@ interface StoreMetrics {
   openReturnsCount: number;
   openDisputeCount: number;
   highRiskOrderCount: number;
+  awaitingCaptureCount: number;
 }
 
 function useStoreDashboardMetrics(storeId: string) {
@@ -59,8 +63,9 @@ function useStoreDashboardMetrics(storeId: string) {
       apiGetSellerReturns({ storeId }),
       apiGetOpenDisputeCount(storeId),
       apiGetHighRiskOrderCount(storeId),
+      apiGetAwaitingCaptureCount(storeId),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
@@ -72,6 +77,7 @@ function useStoreDashboardMetrics(storeId: string) {
           openReturnsCount: returnsRes.data.stats.openRequests,
           openDisputeCount: disputesRes.data.count,
           highRiskOrderCount: riskRes.data.count,
+          awaitingCaptureCount: captureRes.data.count,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -344,11 +350,15 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
 // everything's caught up, rather than an empty placeholder card.
 interface AttentionItem { label: string; count: number; path: string; Icon: LucideIcon; color: string }
 
-function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount }: {
-  storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number;
+function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount, awaitingCaptureCount }: {
+  storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number; awaitingCaptureCount: number;
 }) {
   const navigate = useNavigate();
   const items: AttentionItem[] = [
+    // Mirrors Shopify's real manual-capture "Capture a payment" order task —
+    // only ever non-zero for a Store.paymentCaptureMethod === 'manual' store
+    // with a genuinely authorized-but-uncaptured order (PaymentService.getAwaitingCaptureCount).
+    { label: 'Order(s) awaiting payment capture', count: awaitingCaptureCount, path: 'orders', Icon: AlertTriangle, color: '#B45309' },
     { label: 'Order(s) awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6' },
     // Mirrors Shopify Home's "Review high-risk orders" order task — real
     // Stripe Radar fraud-risk signal (PaymentService.getHighRiskOrderCount),
@@ -496,6 +506,178 @@ function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
   );
 }
 
+// ── Metric Cards — customizable, mirrors Shopify's real Home metrics
+// customization (add/remove/reorder cards from a fixed library — confirmed
+// against Shopify's own Help Center). `store.dashboardMetrics` (null for
+// every pre-existing store) picks which of DASHBOARD_METRIC_CATALOG's ids
+// render, and in what order — falls back to the same 4 cards every store
+// has always shown. ──────────────────────────────────────────────────────
+function renderMetricCard(
+  id: string, metrics: StoreMetrics | null, currency: string | null | undefined,
+  totalCustomers: number, revenueSparkline: number[],
+) {
+  switch (id) {
+    case 'revenue_30d':
+      return (
+        <MetricCard key={id}
+          label="Revenue (30 days)" value={formatMoneyCompact(metrics?.overview.totalRevenue ?? 0, currency)}
+          sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} icon={<TrendingUp size={16} />} color="#D97757"
+          sparkline={revenueSparkline}
+        />
+      );
+    case 'orders_30d':
+      return (
+        <MetricCard key={id}
+          label="Orders (30 days)" value={formatNumber(metrics?.overview.totalOrders ?? 0)}
+          sub={metrics?.overview.totalOrders ? `${formatNumber(metrics.overview.cancelledOrders)} cancelled` : 'No orders yet'} icon={<Package size={16} />} color="#8B5CF6"
+        />
+      );
+    case 'active_products':
+      return (
+        <MetricCard key={id}
+          label="Active Products" value={formatNumber(metrics?.totalProducts ?? 0)}
+          sub={metrics?.totalProducts ? 'In your catalog' : 'Add your first product'} icon={<ShoppingBag size={16} />} color="#0EA5E9"
+        />
+      );
+    case 'customers_30d':
+      return (
+        <MetricCard key={id}
+          label="Customers (30 days)" value={formatNumber(totalCustomers)}
+          sub={totalCustomers ? `${formatNumber(metrics?.overview.newCustomersCount ?? 0)} new` : 'No customers yet'} icon={<Users size={16} />} color="#22C55E"
+        />
+      );
+    case 'avg_order_value_30d':
+      return (
+        <MetricCard key={id}
+          label="Avg. Order Value (30 days)" value={formatMoneyCompact(metrics?.overview.avgOrderValue ?? 0, currency)}
+          sub="Per order" icon={<TrendingUp size={16} />} color="#F59E0B"
+        />
+      );
+    case 'refund_rate_30d':
+      return (
+        <MetricCard key={id}
+          label="Refund Rate (30 days)" value={`${(metrics?.overview.refundRatePercent ?? 0).toFixed(1)}%`}
+          sub={`${formatNumber(metrics?.overview.totalRefunds ?? 0)} refund(s)`} icon={<TrendingDown size={16} />} color="#EF4444"
+        />
+      );
+    case 'repeat_buyer_rate_30d':
+      return (
+        <MetricCard key={id}
+          label="Repeat Buyer Rate (30 days)" value={`${(metrics?.overview.repeatBuyerPercent ?? 0).toFixed(0)}%`}
+          sub="Of your orders" icon={<Users size={16} />} color="#7C3AED"
+        />
+      );
+    case 'today_revenue':
+      return (
+        <MetricCard key={id}
+          label="Today's Revenue" value={formatMoneyCompact(metrics?.today.revenue ?? 0, currency)}
+          sub="So far today" icon={<TrendingUp size={16} />} color="#22C55E"
+        />
+      );
+    case 'today_orders':
+      return (
+        <MetricCard key={id}
+          label="Today's Orders" value={formatNumber(metrics?.today.ordersCount ?? 0)}
+          sub="So far today" icon={<Package size={16} />} color="#0EA5E9"
+        />
+      );
+    case 'today_avg_order_value':
+      return (
+        <MetricCard key={id}
+          label="Today's Avg. Order Value" value={formatMoneyCompact(metrics?.today.avgOrderValue ?? 0, currency)}
+          sub="So far today" icon={<TrendingUp size={16} />} color="#D97757"
+        />
+      );
+    default:
+      return null; // an id the current build no longer recognizes — never crash the dashboard over it
+  }
+}
+
+function MetricsCustomizeModal({ storeId, current, onClose, onSaved }: {
+  storeId: string; current: string[]; onClose: () => void; onSaved: () => void;
+}) {
+  const [selected, setSelected] = useState<string[]>(current);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const toggle = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const move = (id: string, dir: -1 | 1) => {
+    setSelected(prev => {
+      const i = prev.indexOf(id);
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = prev.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    if (selected.length === 0) { setError('Choose at least one metric.'); return; }
+    setSaving(true); setError('');
+    try {
+      await apiUpdateStore({ storeId, dashboardMetrics: selected });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-[440px] max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b border-bone flex items-center justify-between">
+          <p className="text-sm font-bold text-charcoal">Customize Metrics</p>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-slate hover:text-charcoal">
+            <XIcon size={16} />
+          </button>
+        </div>
+        <p className="px-5 pt-3 text-[11.5px] text-slate">Choose which cards show on your dashboard, and drag their order with the arrows.</p>
+        <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-1.5">
+          {/* Selected, in order, first — so the reorder arrows have obvious meaning */}
+          {selected.filter(id => DASHBOARD_METRIC_CATALOG.some(m => m.id === id)).map((id, i, arr) => {
+            const def = DASHBOARD_METRIC_CATALOG.find(m => m.id === id)!;
+            return (
+              <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-brand-orange/30 bg-brand-pale-orange">
+                <button onClick={() => toggle(id)} className="w-6 h-6 rounded-md bg-brand-orange text-white flex items-center justify-center shrink-0 border-none cursor-pointer">
+                  <CheckIcon size={13} />
+                </button>
+                <span className="flex-1 text-[12.5px] font-medium text-charcoal">{def.label}</span>
+                <button onClick={() => move(id, -1)} disabled={i === 0} className="text-slate hover:text-charcoal disabled:opacity-30 bg-transparent border-none cursor-pointer p-0.5">
+                  <ChevronUp size={14} />
+                </button>
+                <button onClick={() => move(id, 1)} disabled={i === arr.length - 1} className="text-slate hover:text-charcoal disabled:opacity-30 bg-transparent border-none cursor-pointer p-0.5">
+                  <ChevronDownIcon size={14} />
+                </button>
+              </div>
+            );
+          })}
+          {/* Not-yet-selected options */}
+          {DASHBOARD_METRIC_CATALOG.filter(m => !selected.includes(m.id)).map(def => (
+            <button
+              key={def.id}
+              onClick={() => toggle(def.id)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-bone bg-white cursor-pointer text-left"
+            >
+              <span className="w-6 h-6 rounded-md border border-bone flex items-center justify-center shrink-0" />
+              <span className="flex-1 text-[12.5px] text-charcoal">{def.label}</span>
+            </button>
+          ))}
+        </div>
+        {error && <p className="px-5 text-[11.5px] text-error">{error}</p>}
+        <div className="px-5 py-4 border-t border-bone flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button size="sm" onClick={handleSave} loading={saving}>Save</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Today Snapshot ────────────────────────────────────────────────────────────
 function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; currency?: string | null }) {
   const up = today.revenueChangePercent >= 0;
@@ -573,9 +755,13 @@ function DashSkeleton() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreDashboard() {
-  const { store, storeId, loading } = useStoreWorkspace();
+  const { store, storeId, loading, refetch: refetchStore } = useStoreWorkspace();
   const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
   const testimonialPrompt = useTestimonialPrompt();
+  const [showCustomize, setShowCustomize] = useState(false);
+  const activeMetricIds = (store?.dashboardMetrics && store.dashboardMetrics.length > 0)
+    ? store.dashboardMetrics
+    : DEFAULT_DASHBOARD_METRICS;
 
   const chartData = (metrics?.revenueSeries ?? []).map(p => ({
     month: formatBucketLabel(p.date, 'month'),
@@ -630,30 +816,24 @@ export default function StoreDashboard() {
               openReturnsCount={metrics.openReturnsCount}
               openDisputeCount={metrics.openDisputeCount}
               highRiskOrderCount={metrics.highRiskOrderCount}
+              awaitingCaptureCount={metrics.awaitingCaptureCount}
             />
           )}
 
           {metrics?.overview && <InsightsStrip overview={metrics.overview} />}
 
-          {/* Metric Cards */}
+          {/* Metric Cards — customizable, see MetricsCustomizeModal above */}
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">Metrics</p>
+            <button
+              onClick={() => setShowCustomize(true)}
+              className="flex items-center gap-1.5 text-[11.5px] font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer"
+            >
+              <Sliders size={12} /> Customize
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              label="Revenue (30 days)" value={formatMoneyCompact(metrics?.overview.totalRevenue ?? 0, store?.baseCurrency)}
-              sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} icon={<TrendingUp size={16} />} color="#D97757"
-              sparkline={revenueSparkline}
-            />
-            <MetricCard
-              label="Orders (30 days)" value={formatNumber(metrics?.overview.totalOrders ?? 0)}
-              sub={metrics?.overview.totalOrders ? `${formatNumber(metrics.overview.cancelledOrders)} cancelled` : 'No orders yet'} icon={<Package size={16} />} color="#8B5CF6"
-            />
-            <MetricCard
-              label="Active Products" value={formatNumber(metrics?.totalProducts ?? 0)}
-              sub={metrics?.totalProducts ? 'In your catalog' : 'Add your first product'} icon={<ShoppingBag size={16} />} color="#0EA5E9"
-            />
-            <MetricCard
-              label="Customers (30 days)" value={formatNumber(totalCustomers)}
-              sub={totalCustomers ? `${formatNumber(metrics?.overview.newCustomersCount ?? 0)} new` : 'No customers yet'} icon={<Users size={16} />} color="#22C55E"
-            />
+            {activeMetricIds.map(id => renderMetricCard(id, metrics, store?.baseCurrency, totalCustomers, revenueSparkline))}
           </div>
 
           {/* Revenue Chart + Store Info */}
@@ -679,6 +859,15 @@ export default function StoreDashboard() {
           </div>
 
         </div>
+      )}
+
+      {showCustomize && (
+        <MetricsCustomizeModal
+          storeId={storeId}
+          current={activeMetricIds}
+          onClose={() => setShowCustomize(false)}
+          onSaved={() => { setShowCustomize(false); refetchStore(); }}
+        />
       )}
     </div>
   );

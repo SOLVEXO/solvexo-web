@@ -6,6 +6,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { apiGetPaymentStatus, type PlacedOrder } from '@/api/services/payment';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { trackPixelEvent } from '@/utils/trackingPixels';
 import { NovaButton } from '../components/NovaButton';
 import { novaTheme as t } from '../theme.config';
 
@@ -28,6 +29,7 @@ export function NovaCheckoutReturnPage() {
   const [timedOut, setTimedOut] = useState(false);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cartCleared = useRef(false);
+  const pixelFired = useRef(false);
 
   useEffect(() => {
     if (!checkoutId) return;
@@ -42,6 +44,14 @@ export function NovaCheckoutReturnPage() {
           setStatus('completed');
           setPlacedOrders(res.data.orders);
           if (!cartCleared.current) { cartCleared.current = true; clearCart().catch(() => {}); }
+          if (!pixelFired.current) {
+            pixelFired.current = true;
+            trackPixelEvent('Purchase', {
+              value: res.data.orders.reduce((sum, o) => sum + o.summary.total, 0),
+              currency: res.data.orders[0]?.currency,
+              contentIds: res.data.orders.map(o => o.orderId),
+            });
+          }
           return;
         }
         if (res.data.status === 'failed') {

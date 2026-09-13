@@ -458,6 +458,7 @@ export default function StoreSettings() {
   const [coverImage,   setCoverImage]   = useState('');
   const [faviconUrl,   setFaviconUrl]   = useState('');
   const [codEnabled,   setCodEnabled]   = useState(true);
+  const [paymentCaptureMethod, setPaymentCaptureMethod] = useState<'automatic' | 'manual'>('automatic');
   const [reviewModerationEnabled, setReviewModerationEnabled] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [taxRate, setTaxRate] = useState(0);
@@ -492,6 +493,7 @@ export default function StoreSettings() {
     setCoverImage(store.coverImage ?? '');
     setFaviconUrl(store.faviconUrl ?? '');
     setCodEnabled(store.codEnabled !== false);
+    setPaymentCaptureMethod(store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic');
     setReviewModerationEnabled(!!store.reviewModerationEnabled);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTaxRate(store.taxRate ?? 0);
@@ -509,7 +511,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, codEnabled, reviewModerationEnabled, lowStockThreshold, taxRate, enabledCurrencies });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, codEnabled, paymentCaptureMethod, reviewModerationEnabled, lowStockThreshold, taxRate, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -532,6 +534,7 @@ export default function StoreSettings() {
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()) ||
       codEnabled !== (store.codEnabled !== false) ||
+      paymentCaptureMethod !== (store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic') ||
       reviewModerationEnabled !== !!store.reviewModerationEnabled ||
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
@@ -821,6 +824,33 @@ export default function StoreSettings() {
                     <p className="text-[11px] text-slate">Let buyers pay in cash when their physical order arrives.</p>
                   </div>
                   <Toggle checked={codEnabled} onChange={setCodEnabled} ariaLabel="Enable Cash on Delivery" />
+                </div>
+
+                {/* Payment capture method — Shopify's real "Automatically at
+                   checkout" vs "Manually" setting. Only affects online
+                   Stripe checkouts on a single-store cart — see
+                   PaymentService.initiatePayment. */}
+                <div className="mt-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
+                  <p className="text-[13px] font-medium text-charcoal mb-1">When to capture payment</p>
+                  <p className="text-[11px] text-slate mb-3">Controls when an online card payment is actually charged.</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCaptureMethod('automatic')}
+                      className={`flex-1 text-left px-3 py-2.5 rounded-lg border text-[12px] cursor-pointer ${paymentCaptureMethod === 'automatic' ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white'}`}
+                    >
+                      <span className="block font-semibold text-charcoal">Automatically at checkout</span>
+                      <span className="block text-slate mt-0.5">Charge the buyer the instant checkout succeeds.</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCaptureMethod('manual')}
+                      className={`flex-1 text-left px-3 py-2.5 rounded-lg border text-[12px] cursor-pointer ${paymentCaptureMethod === 'manual' ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white'}`}
+                    >
+                      <span className="block font-semibold text-charcoal">Manually</span>
+                      <span className="block text-slate mt-0.5">Authorize the card, review the order, then capture it yourself before it ships.</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 

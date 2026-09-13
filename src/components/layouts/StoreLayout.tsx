@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, SlidersHorizontal, ListTree, Boxes, MoreHorizontal,
-  Store, TrendingUp,
+  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -98,6 +98,14 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'online-store-menus',     Icon: ListTree,   label: 'Menus',     path: 'online-store/menus'     },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog'      },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files'                  },
+      // Moved out of Marketing.tsx — these three are store-content/design
+      // features (no promotion/targeting/scheduling logic tying them to
+      // Marketing), matching where Shopify itself puts banners/announcement
+      // content: under the storefront's own customization area, not
+      // Marketing. Same APIs/data as before, just relocated.
+      { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners'      },
+      { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar' },
+      { id: 'online-store-featured',     Icon: Pin,               label: 'Featured & Collections', path: 'online-store/featured' },
     ],
   },
   {

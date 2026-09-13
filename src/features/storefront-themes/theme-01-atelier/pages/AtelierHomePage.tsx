@@ -53,10 +53,28 @@ function BannerSlide({ banner }: { banner: StoreBanner }) {
   const [errored, setErrored] = useState(false);
   const link = resolveBannerLink(banner);
   const isExternal = !!link.href;
+  // A "Video" banner whose upload actually succeeded as a video (see
+  // `StoreBannerService.create`'s type/mimetype cross-check) — anything else
+  // (including a mismatched type saved before that validation existed)
+  // falls back to the same image `<picture>` every other banner uses,
+  // reading `imageUrl`, which for a video banner is a real Cloudinary-
+  // generated poster frame rather than a broken/missing image.
+  const isVideoBanner = banner.type === 'video' && !!banner.videoUrl;
 
   return (
     <section className="relative w-full overflow-hidden" style={{ minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
-      {!errored && (
+      {isVideoBanner ? (
+        <video
+          src={banner.videoUrl!}
+          poster={cloudinaryUrl(banner.imageUrl, 1600)}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+          style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
+        />
+      ) : !errored && (
         <picture>
           {banner.mobileImageUrl && (
             <source media="(max-width: 640px)" srcSet={cloudinarySrcSet(banner.mobileImageUrl, [480, 640, 960])} />

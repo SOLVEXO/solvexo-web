@@ -169,7 +169,11 @@ export function FileDropSelect({
     <div className={className}>
       {value ? (
         <div className="flex items-center gap-3 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg">
-          <img loading="lazy" decoding="async" src={URL.createObjectURL(value)} alt="" className="w-10 h-10 rounded-md object-cover shrink-0 border border-bone" />
+          {value.type.startsWith('video/') ? (
+            <video src={URL.createObjectURL(value)} muted className="w-10 h-10 rounded-md object-cover shrink-0 border border-bone" />
+          ) : (
+            <img loading="lazy" decoding="async" src={URL.createObjectURL(value)} alt="" className="w-10 h-10 rounded-md object-cover shrink-0 border border-bone" />
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-medium text-charcoal truncate">{value.name}</p>
             <p className="text-[11px] text-slate mt-[1px]">{formatSize(value.size)}</p>
