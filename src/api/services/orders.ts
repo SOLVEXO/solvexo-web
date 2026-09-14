@@ -142,6 +142,12 @@ export interface ReturnActionPayload {
   itemIds:      string[];
   action:       'approve' | 'reject';
   rejectReason?: string;
+  // Keyed by the same OrderItem ids as `itemIds` — omit entirely (or a
+  // given item's key) to leave stock untouched, exactly like before this
+  // existed. 'restock' credits real sellable stock back; 'damaged' credits
+  // the separate unsellable damagedStock pool instead (still genuinely
+  // on-hand — see ProductVariant.damagedStock).
+  restockDecisions?: Record<string, 'restock' | 'damaged'>;
 }
 interface ReturnActionResponse {
   success: boolean;

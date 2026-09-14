@@ -33,6 +33,10 @@ function ReturnActionModal({
 }) {
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  // Defaults to 'restock' — the common case for a return, but this is a
+  // real per-return decision (a genuinely damaged item shouldn't quietly
+  // go back into sellable stock) so it's always shown, never assumed.
+  const [restockChoice, setRestockChoice] = useState<'restock' | 'damaged' | 'skip'>('restock');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,6 +50,7 @@ function ReturnActionModal({
         itemIds: [item.itemId],
         action: chosen,
         rejectReason: chosen === 'reject' ? rejectReason.trim() : undefined,
+        restockDecisions: chosen === 'approve' && restockChoice !== 'skip' ? { [item.itemId]: restockChoice } : undefined,
       });
       onDone();
       onClose();
@@ -84,7 +89,7 @@ function ReturnActionModal({
           <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-1">Customer's Reason</p>
           <p className="text-[13px] text-charcoal">{item.returnReason}</p>
         </div>
-        {action === 'reject' && (
+        {action === 'reject' ? (
           <Textarea
             label="Rejection reason"
             rows={3}
@@ -92,6 +97,26 @@ function ReturnActionModal({
             value={rejectReason}
             onChange={e => setRejectReason(e.target.value)}
           />
+        ) : (
+          <div>
+            <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-1.5">If approved, this item's stock should</p>
+            <div className="flex gap-1.5">
+              {([
+                { value: 'restock', label: 'Restock' },
+                { value: 'damaged', label: 'Mark Damaged' },
+                { value: 'skip', label: "Don't change stock" },
+              ] as const).map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setRestockChoice(opt.value)}
+                  className={`flex-1 rounded-[8px] py-2 text-[11.5px] font-medium cursor-pointer border transition-colors ${restockChoice === opt.value ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange' : 'bg-white border-bone text-slate hover:bg-cream'}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>

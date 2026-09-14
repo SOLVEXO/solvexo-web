@@ -82,10 +82,11 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
   {
     group: 'Catalog',
     items: [
-      { id: 'products',      Icon: ShoppingBag,   label: 'Products',      path: 'products'     },
-      { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
-      { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
-      { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
+      { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products'        },
+      { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory'       },
+      { id: 'purchase-orders', Icon: Truck,         label: 'Purchase Orders', path: 'purchase-orders' },
+      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories'      },
+      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections'     },
     ],
   },
   {
@@ -783,7 +784,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
+    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a

@@ -99,6 +99,9 @@ const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/Stor
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const DraftOrdersList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList'));
 const DraftOrderForm = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm'));
+const PurchaseOrdersList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/purchaseOrders/PurchaseOrdersList'));
+const PurchaseOrderForm = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/purchaseOrders/PurchaseOrderForm'));
+const ReorderSuggestions = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/purchaseOrders/ReorderSuggestions'));
 const StoreReturnList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList').then(m => ({ default: m.StoreReturnList })));
 const StoreAnalytics = lazy(() => import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics').then(m => ({ default: m.StoreAnalytics })));
 const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio').then(m => ({ default: m.StoreAIStudio })));
@@ -106,6 +109,8 @@ const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/s
 const StoreFinance = lazy(() => import('@/features/seller/store/Dashboard/Operations/finance/Finance').then(m => ({ default: m.StoreFinance })));
 const StoreReviews = lazy(() => import('@/features/seller/store/Dashboard/Operations/reviews/reviews').then(m => ({ default: m.StoreReviews })));
 const StoreInventory = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/Inventory').then(m => ({ default: m.StoreInventory })));
+const StockCountSession = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/StockCountSession'));
+const InventoryReports = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryReports'));
 const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
 const StoreLoyalty = lazy(() => import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty').then(m => ({ default: m.StoreLoyalty })));
 const StoreSubscriptions = lazy(() => import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions').then(m => ({ default: m.StoreSubscriptions })));
@@ -135,7 +140,6 @@ const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscr
 const AdminPlatformPlans = lazy(() => import('@/features/admin/pages/AdminPlatformPlans').then(m => ({ default: m.AdminPlatformPlans })));
 const AdminFinance = lazy(() => import('@/features/admin/pages/AdminFinance').then(m => ({ default: m.AdminFinance })));
 const AdminThemeCatalog = lazy(() => import('@/features/admin/pages/AdminThemeCatalog').then(m => ({ default: m.AdminThemeCatalog })));
-const AdminShippingZones = lazy(() => import('@/features/admin/pages/AdminShippingZones').then(m => ({ default: m.AdminShippingZones })));
 // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
 // tabbed page (AdminSiteContent) — all 4 manage Solvexo's own public site
 // content, not seller-facing tooling, so they never needed 4 separate
@@ -312,6 +316,9 @@ const mainRouter = createBrowserRouter([
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },
           { path: 'draft-orders/:draftId',             element: <DraftOrderForm /> },
+          { path: 'purchase-orders',                  element: <PurchaseOrdersList /> },
+          { path: 'purchase-orders/:poId',             element: <PurchaseOrderForm /> },
+          { path: 'reorder-suggestions',               element: <ReorderSuggestions /> },
           { path: 'products',                         element: <StoreProductList /> },
           { path: 'products/add',                     element: <StoreAddProduct /> },
           { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
@@ -358,6 +365,8 @@ const mainRouter = createBrowserRouter([
           { path: 'reviews',                          element: <StoreReviews /> },
           { path: 'finance',                          element: <StoreFinance /> },
           { path: 'inventory',                        element: <StoreInventory /> },
+          { path: 'inventory/count/:countId',          element: <StockCountSession /> },
+          { path: 'inventory/reports',                 element: <InventoryReports /> },
           { path: 'marketing',                        element: <StoreMarketing /> },
           { path: 'discounts',                        element: <StoreDiscounts /> },
           { path: 'metafields',                       element: <MetafieldDefinitionsPage /> },
@@ -421,7 +430,6 @@ const mainRouter = createBrowserRouter([
           { path: 'manual-payments', element: <RequireRole role="admin"><AdminManualPayments /></RequireRole> },
           { path: 'fx-settings', element: <RequireRole role="admin"><AdminFxSettings /></RequireRole> },
           { path: 'commission-rules', element: <RequireRole role="admin"><AdminCommissionRules /></RequireRole> },
-          { path: 'shipping-zones', element: <AdminShippingZones /> },
           { path: 'content',      element: <RequireRole role="admin"><AdminSiteContent /></RequireRole> },
           // Old individual URLs redirect to the consolidated page instead of
           // 404ing for anyone with one bookmarked/linked — same convention as

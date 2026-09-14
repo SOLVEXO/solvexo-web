@@ -86,6 +86,8 @@ export interface VariantInput {
   sku?:           string;
   barcode?:       string;
   isDefault?:     boolean;
+  reorderPoint?:  number;
+  costPrice?:     number;
 }
 
 export interface StoreProduct {
@@ -375,6 +377,52 @@ export function apiGetLowStockSummary(storeId: string) {
   );
 }
 
+export interface ReorderSuggestionItem {
+  productId: string;
+  variantId: string;
+  productName: string;
+  image: string | null;
+  sku: string;
+  available: number;
+  reorderPoint: number;
+  daysOfStockLeft: number | null;
+}
+
+export interface ReorderSuggestionGroup {
+  supplierId: string | null;
+  supplierName: string;
+  items: ReorderSuggestionItem[];
+}
+
+/** GET /api/inventory/:storeId/reorder-suggestions — every low/out-of-stock
+ *  SKU grouped by its last-received supplier, so one click can generate one
+ *  Purchase Order per supplier instead of one per SKU. */
+export function apiGetReorderSuggestions(storeId: string) {
+  return client.get<never, ApiResponse<{ groups: ReorderSuggestionGroup[] }>>(
+    ENDPOINTS.INVENTORY.REORDER_SUGGESTIONS(storeId),
+  );
+}
+
+export interface DeadStockItem {
+  productId: string; variantId: string; productName: string; sku: string | null; stock: number; value: number | null;
+}
+export interface TopMoverItem {
+  variantId: string; productName: string; sku: string | null; qty: number;
+}
+export interface InventoryValuationData {
+  totalValue: number;
+  valuedSkuCount: number;
+  totalSkuCount: number;
+  deadStock: DeadStockItem[];
+  topMovers: TopMoverItem[];
+}
+
+/** GET /api/inventory/:storeId/valuation — real inventory-value/dead-stock/
+ *  top-movers reporting. */
+export function apiGetInventoryValuation(storeId: string) {
+  return client.get<never, ApiResponse<InventoryValuationData>>(ENDPOINTS.INVENTORY.VALUATION(storeId));
+}
+
 /** GET /api/inventory/export/:storeId — real CSV of the whole store's
  *  inventory (unpaginated), seller/admin only. The Inventory page's
  *  "Export" button previously had no handler at all. */
@@ -384,13 +432,34 @@ export function apiExportInventoryCsv(storeId: string) {
   });
 }
 
+export interface ImportStockCsvResult {
+  updatedCount: number;
+  totalRows: number;
+  updated: { row: number; sku: string }[];
+  failed: { row: number; sku: string; error: string }[];
+}
+
+/** POST /api/inventory/:storeId/import-stock-csv — bulk stock
+ *  RECONCILIATION by SKU (`SKU, Quantity` columns, an absolute count) —
+ *  deliberately separate from `apiImportProductsCsv`, which only ever
+ *  creates new products. */
+export function apiImportStockCsv(storeId: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return client.post<never, ApiResponse<ImportStockCsvResult>>(
+    ENDPOINTS.INVENTORY.IMPORT_STOCK_CSV(storeId),
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+}
+
 // ── Real, variant-level Inventory management ────────────────────────────────
 // The Inventory page previously just re-showed the Products list's own
 // aggregated-per-product data (found during the Catalog deep-audit) — no
 // per-SKU rows, no way to adjust stock without opening the full Edit
 // Product form, no audit trail. This is the real, dedicated stock-line API.
 
-export type StockAdjustmentReason = 'restocked' | 'damaged' | 'return' | 'correction' | 'other';
+export type StockAdjustmentReason = 'restocked' | 'damaged' | 'return' | 'correction' | 'other' | 'purchase_received' | 'write_off';
 
 export interface StockLine {
   variantId:      string;
@@ -402,10 +471,16 @@ export interface StockLine {
   price:          number;
   stock:          number;
   committedStock: number;
+  damagedStock:   number;
+  inTransitStock: number;
   available:      number;
   unlimitedStock: boolean;
   status:         'in_stock' | 'low_stock' | 'out_of_stock' | 'unlimited';
+  reorderPoint:   number | null;
+  costPrice:      number | null;
 }
+
+export type StockLineStatusFilter = 'in_stock' | 'low_stock' | 'out_of_stock' | 'unlimited';
 
 export interface StockLinesData {
   stats: { totalLines: number; inStock: number; lowStock: number; outOfStock: number };
@@ -414,10 +489,13 @@ export interface StockLinesData {
 }
 
 /** GET /api/inventory/:storeId/stock-lines — one row per SKU, not one row
- *  per product summed across its variants. */
-export function apiGetStockLines(storeId: string, page = 1, limit = 20, search = '') {
+ *  per product summed across its variants. Real DB-level pagination —
+ *  `status` narrows to one status bucket (in_stock/low_stock/out_of_stock/
+ *  unlimited), omit for every status. */
+export function apiGetStockLines(storeId: string, page = 1, limit = 20, search = '', status?: StockLineStatusFilter) {
+  const statusParam = status ? `&status=${status}` : '';
   return client.get<never, ApiResponse<StockLinesData>>(
-    `${ENDPOINTS.INVENTORY.STOCK_LINES(storeId)}?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+    `${ENDPOINTS.INVENTORY.STOCK_LINES(storeId)}?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}${statusParam}`,
   );
 }
 
@@ -481,6 +559,7 @@ export interface StoreLocation {
   addressLine1: string | null;
   city:         string | null;
   phone:        string | null;
+  type:         'store' | 'warehouse';
   isDefault:    boolean;
   status:       'active' | 'archived';
 }
@@ -497,11 +576,11 @@ export function apiListLocations(storeId: string) {
   return client.get<never, ApiResponse<StoreLocation[]>>(ENDPOINTS.POS_LOCATIONS.LIST(storeId));
 }
 
-export function apiCreateLocation(storeId: string, payload: { name: string; addressLine1?: string; city?: string; phone?: string }) {
+export function apiCreateLocation(storeId: string, payload: { name: string; addressLine1?: string; city?: string; phone?: string; type?: 'store' | 'warehouse' }) {
   return client.post<never, ApiResponse<StoreLocation>>(ENDPOINTS.POS_LOCATIONS.CREATE(storeId), payload);
 }
 
-export function apiUpdateLocation(storeId: string, locationId: string, payload: Partial<{ name: string; addressLine1: string; city: string; phone: string; status: 'active' | 'archived' }>) {
+export function apiUpdateLocation(storeId: string, locationId: string, payload: Partial<{ name: string; addressLine1: string; city: string; phone: string; type: 'store' | 'warehouse'; status: 'active' | 'archived' }>) {
   return client.patch<never, ApiResponse<StoreLocation>>(ENDPOINTS.POS_LOCATIONS.UPDATE(storeId, locationId), payload);
 }
 
@@ -510,9 +589,11 @@ export function apiArchiveLocation(storeId: string, locationId: string, force = 
 }
 
 export interface VariantLocationBreakdown {
-  variantId:  string;
-  totalStock: number;
-  locations: { locationId: string; locationName: string; isDefault: boolean; stock: number }[];
+  variantId:      string;
+  totalStock:     number;
+  inTransitStock: number;
+  damagedStock:   number;
+  locations: { locationId: string; locationName: string; locationType: 'store' | 'warehouse'; isDefault: boolean; stock: number }[];
 }
 
 /** GET /api/inventory/:storeId/variant/:variantId/locations — real
@@ -523,23 +604,61 @@ export function apiGetVariantLocations(storeId: string, variantId: string) {
   );
 }
 
+export type StockTransferStatus = 'in_transit' | 'partially_received' | 'received' | 'cancelled';
+
 export interface StockTransfer {
   _id: string;
+  variantId: string;
+  productName: string;
+  sku: string | null;
+  fromLocationId: string;
   fromLocationName: string;
+  toLocationId: string;
   toLocationName: string;
   quantity: number;
+  receivedQuantity: number;
+  status: StockTransferStatus;
   note: string | null;
   transferredByName: string | null;
+  receivedByName: string | null;
   createdAt: string;
 }
 
-/** POST /api/inventory/:storeId/variant/:variantId/transfer — real
- *  branch-to-branch stock move (Shopify's own "Transfer" equivalent). */
-export function apiTransferStock(storeId: string, variantId: string, fromLocationId: string, toLocationId: string, quantity: number, note?: string) {
+/** POST /api/inventory/:storeId/variant/:variantId/transfer/ship — real
+ *  branch-to-branch stock move, a genuine 2-step lifecycle (ship now,
+ *  receive later at the destination once it actually arrives) — Shopify's
+ *  own "Transfer" equivalent, not an instant teleport. */
+export function apiShipTransfer(storeId: string, variantId: string, fromLocationId: string, toLocationId: string, quantity: number, note?: string) {
   return client.post<never, ApiResponse<StockTransfer>>(
-    ENDPOINTS.INVENTORY.TRANSFER_STOCK(storeId, variantId),
+    ENDPOINTS.INVENTORY.SHIP_TRANSFER(storeId, variantId),
     { fromLocationId, toLocationId, quantity, note },
   );
+}
+
+/** POST /api/inventory/:storeId/transfer/:transferId/receive — settle some
+ *  or all of an in-transit transfer at its destination; callable more than
+ *  once for a real partial/multi-box delivery. `idempotencyKey` should be
+ *  fresh per distinct receive attempt (a retry of the SAME attempt reuses
+ *  it) so a slow request retried can't double-credit the destination. */
+export function apiReceiveTransfer(storeId: string, transferId: string, receivedQty: number, idempotencyKey: string) {
+  return client.post<never, ApiResponse<StockTransfer>>(
+    ENDPOINTS.INVENTORY.RECEIVE_TRANSFER(storeId, transferId),
+    { receivedQty },
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
+}
+
+/** POST /api/inventory/:storeId/transfer/:transferId/cancel — only while
+ *  still fully in-transit; returns the shipped quantity to the source. */
+export function apiCancelTransfer(storeId: string, transferId: string) {
+  return client.post<never, ApiResponse<StockTransfer>>(ENDPOINTS.INVENTORY.CANCEL_TRANSFER(storeId, transferId), {});
+}
+
+/** GET /api/inventory/:storeId/transfers — in-transit + recent transfer
+ *  history for the whole store. */
+export function apiListTransfers(storeId: string, status?: StockTransferStatus | 'all') {
+  const q = status ? `?status=${status}` : '';
+  return client.get<never, ApiResponse<StockTransfer[]>>(`${ENDPOINTS.INVENTORY.TRANSFERS(storeId)}${q}`);
 }
 
 // ── Seller Orders types ───────────────────────────────────────────────────────

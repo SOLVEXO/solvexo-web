@@ -107,15 +107,20 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
 
   const domainDone = store?.customDomainStatus === 'verified';
 
+  // The exact "N days left" countdown is deliberately NOT repeated here —
+  // `TrialBillingPill` already shows that prominently at the top of this
+  // same page (Dashboard-only, see StoreLayout.tsx) whenever the store is
+  // trialing. This task stays action-focused instead, so the same number
+  // never appears twice on one page.
   const billingLabel = storeLocked
     ? 'Unlock this store'
     : trialDaysLeft !== null
-      ? `Your trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}`
+      ? 'Choose a plan'
       : 'Add a payment method';
   const billingDesc = storeLocked
     ? 'This store is locked (no free trial left on your account) — choose or pay for a plan to resume selling.'
     : trialDaysLeft !== null
-      ? 'Choose a plan before your trial ends so your store keeps selling without interruption.'
+      ? 'Pick a plan before your trial ends so your store keeps selling without interruption.'
       : 'Optional — add a card for your Solvexo subscription after the trial ends.';
 
   const tasks: SetupTask[] = [

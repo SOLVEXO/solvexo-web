@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
-import { AreaChart } from '@/components/comman/charts';
+import { AreaChart, DonutChart, BarChart } from '@/components/comman/charts';
 import { MetricCard, SkeletonBox, Button, CoverImage } from '@/components/comman/ui';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday,
@@ -18,6 +18,7 @@ import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from 
 import { apiGetSellerReturns } from '@/api/services/orders';
 import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
 import { apiUpdateStore } from '@/api/services/store';
+import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { DASHBOARD_METRIC_CATALOG, DEFAULT_DASHBOARD_METRICS } from './dashboardMetrics.const';
 import { Sliders, Check as CheckIcon, ChevronUp, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
@@ -38,6 +39,9 @@ interface StoreMetrics {
   openDisputeCount: number;
   highRiskOrderCount: number;
   awaitingCaptureCount: number;
+  inventoryBreakdown: { inStock: number; lowStock: number; outOfStock: number };
+  weeklyRevenue: RevenuePoint[];
+  entitlements: EntitlementsSummary | null;
 }
 
 function useStoreDashboardMetrics(storeId: string) {
@@ -64,8 +68,17 @@ function useStoreDashboardMetrics(storeId: string) {
       apiGetOpenDisputeCount(storeId),
       apiGetHighRiskOrderCount(storeId),
       apiGetAwaitingCaptureCount(storeId),
+      // Real day-granularity trend (the existing revenueSeries fetch above is
+      // month-granularity, for the 6-month line chart) — powers the new
+      // "Last 7 days" bar chart, same endpoint/hook already used, just
+      // different range/granularity params.
+      apiSellerAnalyticsRevenueOverTime({ storeId, range: '7d', granularity: 'day' }),
+      // Real plan-usage progress bars — same entitlements data Billing
+      // Center already shows, surfaced here too so "what's my overall
+      // status" doesn't require leaving the dashboard.
+      apiGetStoreEntitlements(storeId).catch(() => null),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, weeklyRes, entitlementsRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
@@ -78,6 +91,13 @@ function useStoreDashboardMetrics(storeId: string) {
           openDisputeCount: disputesRes.data.count,
           highRiskOrderCount: riskRes.data.count,
           awaitingCaptureCount: captureRes.data.count,
+          inventoryBreakdown: {
+            inStock: inventoryRes.data.stats.inStock,
+            lowStock: inventoryRes.data.stats.lowStock,
+            outOfStock: inventoryRes.data.stats.outOfStock,
+          },
+          weeklyRevenue: weeklyRes.data.series,
+          entitlements: (entitlementsRes as any)?.data ?? null,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -543,7 +563,10 @@ function renderMetricCard(
       return (
         <MetricCard key={id}
           label="Customers (30 days)" value={formatNumber(totalCustomers)}
-          sub={totalCustomers ? `${formatNumber(metrics?.overview.newCustomersCount ?? 0)} new` : 'No customers yet'} icon={<Users size={16} />} color="#22C55E"
+          // New-vs-returning breakdown lives in the "Customers" donut chart
+          // further down the page now — kept out of this sub-label too, so
+          // the same number isn't shown twice on one page.
+          sub={totalCustomers ? 'Unique buyers' : 'No customers yet'} icon={<Users size={16} />} color="#22C55E"
         />
       );
     case 'avg_order_value_30d':
@@ -674,6 +697,57 @@ function MetricsCustomizeModal({ storeId, current, onClose, onSaved }: {
           <Button size="sm" onClick={handleSave} loading={saving}>Save</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Plan Usage — real progress bars (Shopify/Stripe-style "how much of your
+// plan have you used"), same EntitlementsSummary data Billing Center already
+// shows in full, surfaced here too so a genuine "what's my overall status"
+// glance doesn't require leaving the dashboard. ─────────────────────────────
+function UsageProgressBar({ label, used, max }: { label: string; used: number; max: number }) {
+  const unlimited = max === -1;
+  const pct = unlimited ? 0 : Math.min(100, (used / Math.max(1, max)) * 100);
+  const near = !unlimited && pct >= 85;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11.5px] text-graphite">{label}</span>
+        <span className="text-[11.5px] font-semibold text-carbon">{formatNumber(used)}{unlimited ? '' : ` / ${formatNumber(max)}`}</span>
+      </div>
+      <div className="h-[6px] bg-cream rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: unlimited ? '100%' : `${pct}%`, background: unlimited ? '#22C55E' : (near ? '#C0392B' : '#D97757') }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PlanUsageCard({ entitlements, storeId }: { entitlements: EntitlementsSummary | null; storeId: string }) {
+  const navigate = useNavigate();
+  return (
+    <div className="dash-section-enter bg-white border border-bone rounded-[10px] px-5 py-5 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-bold text-charcoal">Plan Usage</p>
+        <button
+          onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+          className="text-[11px] font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer"
+        >
+          {entitlements?.currentPlanName ?? 'View plan'}
+        </button>
+      </div>
+      {!entitlements ? (
+        <p className="text-[12px] text-slate">Unable to load plan usage.</p>
+      ) : (
+        <div className="flex flex-col gap-3.5 flex-1 justify-center">
+          <UsageProgressBar label="Products" used={entitlements.maxProducts.used} max={entitlements.maxProducts.limit} />
+          <UsageProgressBar label="AI Credits" used={Math.max(0, entitlements.aiCredits.monthlyAllowance - entitlements.aiCredits.balance)} max={entitlements.aiCredits.monthlyAllowance} />
+          <UsageProgressBar label="Staff Accounts" used={entitlements.maxStaffAccounts.used} max={entitlements.maxStaffAccounts.limit} />
+          <UsageProgressBar label="POS Locations" used={entitlements.maxPosLocations.used} max={entitlements.maxPosLocations.limit} />
+        </div>
+      )}
     </div>
   );
 }
@@ -850,6 +924,50 @@ export default function StoreDashboard() {
             />
             <StoreInfoCard />
           </div>
+
+          {/* Store Health — a real, varied mix of chart types (donut, bar,
+             progress bars) alongside the line/area chart above, all from
+             data already being fetched for this page (inventory breakdown
+             and the 30-day customer split were already loaded; only the
+             7-day trend and plan entitlements are new fetches) — mirrors how
+             a real platform dashboard (Shopify/Stripe) never relies on a
+             single chart type to show "what's going on right now." */}
+          {metrics && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <BarChart
+                data={metrics.weeklyRevenue.map(p => ({ day: formatBucketLabel(p.date, 'day'), revenue: p.grossRevenue }))}
+                dataKey="revenue" xKey="day"
+                title="Last 7 Days" subtitle="Daily revenue"
+                height={180}
+                valuePrefix={currencySymbol(store?.baseCurrency)}
+                color="#D97757"
+              />
+              <DonutChart
+                title="Inventory Health" subtitle="Across your catalog"
+                size={150}
+                // No centerLabel — that total would just repeat the "Active
+                // Products" metric card's own number; this chart's only job
+                // is the in/low/out-of-stock proportion, not the total itself.
+                data={[
+                  { label: 'In Stock', value: metrics.inventoryBreakdown.inStock, color: '#22C55E' },
+                  { label: 'Low Stock', value: metrics.inventoryBreakdown.lowStock, color: '#F59E0B' },
+                  { label: 'Out of Stock', value: metrics.inventoryBreakdown.outOfStock, color: '#EF4444' },
+                ]}
+              />
+              <DonutChart
+                title="Customers" subtitle="Last 30 days"
+                size={150}
+                // No centerLabel — that total would just repeat the
+                // "Customers (30 days)" metric card's own number; this
+                // chart's only job is the new-vs-returning proportion.
+                data={[
+                  { label: 'New', value: metrics.overview.newCustomersCount, color: '#8B5CF6' },
+                  { label: 'Returning', value: metrics.overview.returningCustomersCount, color: '#0EA5E9' },
+                ]}
+              />
+              <PlanUsageCard entitlements={metrics.entitlements} storeId={storeId} />
+            </div>
+          )}
 
           {/* Quick Actions — desktop only; on mobile StoreNavMenu above (and
              the bottom-nav's Menu sheet, reachable from any page) already

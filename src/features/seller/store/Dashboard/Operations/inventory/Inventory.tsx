@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingBag, Download,
   AlertCircle, RefreshCw,
   AlertTriangle, History, PlusCircle, MinusCircle,
-  CheckCircle2, XCircle, Package, MapPin, ArrowLeftRight, Trash2,
+  CheckCircle2, XCircle, Package, MapPin, ArrowLeftRight, Trash2, Truck, SlidersHorizontal, ClipboardCheck, TrendingUp,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -29,15 +29,24 @@ import {
   apiCreateLocation,
   apiArchiveLocation,
   apiGetVariantLocations,
-  apiTransferStock,
+  apiShipTransfer,
+  apiReceiveTransfer,
+  apiCancelTransfer,
+  apiListTransfers,
+  apiUpdateVariant,
+  apiImportStockCsv,
   type LowStockSummaryData,
   type StockLine,
   type StockAdjustment,
   type StockAdjustmentReason,
   type StoreLocation,
   type VariantLocationBreakdown,
+  type StockTransfer,
+  type StockLineStatusFilter,
+  type ImportStockCsvResult,
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
+import { apiStartStockCount } from '@/api/services/stockCounts';
 
 const STATUS_META: Record<StockLine['status'], { label: string; color: 'green' | 'orange' | 'red' | 'blue' }> = {
   in_stock:     { label: 'In Stock',     color: 'green'  },
@@ -46,13 +55,30 @@ const STATUS_META: Record<StockLine['status'], { label: string; color: 'green' |
   unlimited:    { label: 'Unlimited',    color: 'blue'   },
 };
 
+// 'purchase_received' isn't listed here — it's written automatically by
+// Purchase Order receiving, never picked manually from this form.
 const REASON_OPTIONS: { value: StockAdjustmentReason; label: string }[] = [
   { value: 'restocked',  label: 'Restocked'          },
   { value: 'damaged',    label: 'Damaged'            },
   { value: 'return',     label: 'Return'             },
   { value: 'correction', label: 'Count Correction'   },
+  { value: 'write_off',  label: 'Write Off (damaged pool)' },
   { value: 'other',      label: 'Other'              },
 ];
+
+// 'damaged' moves units OUT of the sellable pool without changing real
+// on-hand `stock` (they're still physically here, just unsellable);
+// 'write_off' permanently discards units already sitting in that pool.
+// Both are inherently removal-only and apply to the variant as a whole —
+// the backend rejects a positive delta or a locationId for either.
+const BUCKET_ONLY_REASONS: StockAdjustmentReason[] = ['damaged', 'write_off'];
+
+const TRANSFER_STATUS_META: Record<StockTransfer['status'], { label: string; color: 'green' | 'orange' | 'red' | 'blue' }> = {
+  in_transit:         { label: 'In Transit',         color: 'orange' },
+  partially_received: { label: 'Partially Received', color: 'blue'   },
+  received:           { label: 'Received',           color: 'green'  },
+  cancelled:           { label: 'Cancelled',          color: 'red'    },
+};
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreInventory() {
@@ -69,6 +95,7 @@ export function StoreInventory() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [lowStock,   setLowStock]   = useState<LowStockSummaryData | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StockLineStatusFilter | ''>('');
 
   const LIMIT = 20;
 
@@ -81,7 +108,7 @@ export function StoreInventory() {
     if (!storeId) return;
     let cancelled = false;
     setLoading(true);
-    apiGetStockLines(storeId, page, LIMIT, debouncedSearch)
+    apiGetStockLines(storeId, page, LIMIT, debouncedSearch, statusFilter || undefined)
       .then(res => {
         if (cancelled) return;
         setLines(res.data.lines ?? []);
@@ -93,7 +120,7 @@ export function StoreInventory() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, debouncedSearch]);
+  }, [storeId, page, refreshKey, debouncedSearch, statusFilter]);
 
   // Low-stock detail list — independent of pagination, only re-runs on store/refresh.
   useEffect(() => {
@@ -133,6 +160,19 @@ export function StoreInventory() {
     setRefreshKey(k => k + 1);
   };
 
+  const [startingCount, setStartingCount] = useState(false);
+  const handleStartStockCount = async () => {
+    setStartingCount(true);
+    try {
+      const res = await apiStartStockCount(storeId);
+      navigate(`/store/${storeId}/inventory/count/${res.data._id}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to start stock count.');
+    } finally {
+      setStartingCount(false);
+    }
+  };
+
   const [exporting, setExporting] = useState(false);
   const handleExportCsv = () => {
     setExporting(true);
@@ -150,6 +190,29 @@ export function StoreInventory() {
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to export inventory.'))
       .finally(() => setExporting(false));
+  };
+
+  // ── Bulk stock reconciliation via CSV — real per-row result (updated
+  // count + a per-row error list), never all-or-nothing, same UX pattern
+  // the product CSV importer already established.
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [csvImportResult, setCsvImportResult] = useState<ImportStockCsvResult | null>(null);
+  const handleImportCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImportingCsv(true);
+    setError('');
+    try {
+      const res = await apiImportStockCsv(storeId, file);
+      setCsvImportResult(res.data);
+      if (res.data.updatedCount > 0) setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to import stock CSV.');
+    } finally {
+      setImportingCsv(false);
+    }
   };
 
   // ── Real, reason-coded stock adjustment — was missing entirely (the only
@@ -189,6 +252,8 @@ export function StoreInventory() {
     }
   };
 
+  const isBucketOnlyReason = BUCKET_ONLY_REASONS.includes(adjustReason);
+
   const handleAdjustSubmit = async () => {
     if (!adjustTarget) return;
     const qty = parseInt(adjustQty, 10);
@@ -196,15 +261,17 @@ export function StoreInventory() {
       setAdjustError('Enter a quantity greater than 0');
       return;
     }
-    if (hasMultipleLocations && !adjustLocationId) {
+    // 'damaged'/'write_off' apply to the variant as a whole, never one
+    // location — the backend rejects a locationId for either.
+    if (hasMultipleLocations && !isBucketOnlyReason && !adjustLocationId) {
       setAdjustError('Select which location this stock change applies to');
       return;
     }
-    const delta = adjustDirection === 'add' ? qty : -qty;
+    const delta = (isBucketOnlyReason ? false : adjustDirection === 'add') ? qty : -qty;
     setAdjusting(true);
     setAdjustError('');
     try {
-      await apiAdjustStock(storeId, adjustTarget.variantId, delta, adjustReason, adjustNote, hasMultipleLocations ? adjustLocationId : undefined);
+      await apiAdjustStock(storeId, adjustTarget.variantId, delta, adjustReason, adjustNote, hasMultipleLocations && !isBucketOnlyReason ? adjustLocationId : undefined);
       setAdjustTarget(null);
       setRefreshKey(k => k + 1);
     } catch (err: unknown) {
@@ -261,13 +328,86 @@ export function StoreInventory() {
     setTransferring(true);
     setTransferError('');
     try {
-      await apiTransferStock(storeId, transferTarget.variantId, transferFrom, transferTo, qty, transferNote);
+      await apiShipTransfer(storeId, transferTarget.variantId, transferFrom, transferTo, qty, transferNote);
       setTransferTarget(null);
       setRefreshKey(k => k + 1);
     } catch (err: unknown) {
-      setTransferError(err instanceof Error ? err.message : 'Failed to transfer stock.');
+      setTransferError(err instanceof Error ? err.message : 'Failed to ship transfer.');
     } finally {
       setTransferring(false);
+    }
+  };
+
+  // ── In-transit transfers (ship → later, receive) — a real 2-step
+  // lifecycle, not an instant teleport (see StockTransfer schema's doc
+  // comment). This panel is where a seller settles what's currently "on a
+  // truck" once it actually arrives at its destination.
+  const [transfersModalOpen, setTransfersModalOpen] = useState(false);
+  const [transfersList, setTransfersList] = useState<StockTransfer[]>([]);
+  const [transfersLoading, setTransfersLoading] = useState(false);
+  const [transfersError, setTransfersError] = useState('');
+  const [receivingId, setReceivingId] = useState<string | null>(null);
+  const [receiveQtyById, setReceiveQtyById] = useState<Record<string, string>>({});
+  const [transferActionError, setTransferActionError] = useState('');
+  // One idempotency key per transfer, generated lazily and reused across a
+  // retry of the SAME receive attempt — cleared on success so a genuinely
+  // separate later partial-receive on that same transfer gets a fresh key
+  // instead of being (wrongly) deduped against this one.
+  const receiveKeysRef = useRef<Record<string, string>>({});
+  const getReceiveIdempotencyKey = (transferId: string) => {
+    if (!receiveKeysRef.current[transferId]) {
+      receiveKeysRef.current[transferId] = `transfer-receive-${transferId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    return receiveKeysRef.current[transferId];
+  };
+
+  const loadTransfers = () => {
+    setTransfersLoading(true);
+    setTransfersError('');
+    apiListTransfers(storeId)
+      .then(res => setTransfersList((res.data ?? []).filter(t => t.status === 'in_transit' || t.status === 'partially_received')))
+      .catch((err: unknown) => setTransfersError(err instanceof Error ? err.message : 'Failed to load transfers.'))
+      .finally(() => setTransfersLoading(false));
+  };
+
+  const openTransfersModal = () => {
+    setTransfersModalOpen(true);
+    setTransferActionError('');
+    loadTransfers();
+  };
+
+  const handleReceiveTransfer = async (transfer: StockTransfer) => {
+    const remaining = transfer.quantity - transfer.receivedQuantity;
+    const qty = parseInt(receiveQtyById[transfer._id] ?? String(remaining), 10);
+    if (!Number.isFinite(qty) || qty <= 0 || qty > remaining) {
+      setTransferActionError(`Enter a quantity between 1 and ${remaining}`);
+      return;
+    }
+    setReceivingId(transfer._id);
+    setTransferActionError('');
+    try {
+      await apiReceiveTransfer(storeId, transfer._id, qty, getReceiveIdempotencyKey(transfer._id));
+      delete receiveKeysRef.current[transfer._id];
+      loadTransfers();
+      setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setTransferActionError(err instanceof Error ? err.message : 'Failed to receive transfer.');
+    } finally {
+      setReceivingId(null);
+    }
+  };
+
+  const handleCancelTransfer = async (transfer: StockTransfer) => {
+    setReceivingId(transfer._id);
+    setTransferActionError('');
+    try {
+      await apiCancelTransfer(storeId, transfer._id);
+      loadTransfers();
+      setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setTransferActionError(err instanceof Error ? err.message : 'Failed to cancel transfer.');
+    } finally {
+      setReceivingId(null);
     }
   };
 
@@ -280,6 +420,7 @@ export function StoreInventory() {
   const [locationsError, setLocationsError] = useState('');
   const [newLocationName, setNewLocationName] = useState('');
   const [newLocationCity, setNewLocationCity] = useState('');
+  const [newLocationType, setNewLocationType] = useState<'store' | 'warehouse'>('store');
   const [addingLocation, setAddingLocation] = useState(false);
 
   const openLocationsModal = () => {
@@ -300,9 +441,10 @@ export function StoreInventory() {
     setAddingLocation(true);
     setLocationsError('');
     try {
-      await apiCreateLocation(storeId, { name: newLocationName.trim(), city: newLocationCity.trim() || undefined });
+      await apiCreateLocation(storeId, { name: newLocationName.trim(), city: newLocationCity.trim() || undefined, type: newLocationType });
       setNewLocationName('');
       setNewLocationCity('');
+      setNewLocationType('store');
       const res = await apiListLocations(storeId);
       setAllLocations(res.data ?? []);
       setLocationsRefreshKey(k => k + 1);
@@ -343,6 +485,41 @@ export function StoreInventory() {
       .finally(() => setHistoryLoading(false));
   };
 
+  // ── Per-SKU reorder point + cost price — a fast-moving SKU and a
+  // slow-moving one shouldn't share one store-wide low-stock threshold,
+  // and cost is what makes the Inventory Value report (see Reports)
+  // possible at all for a seller who never uses Purchase Orders.
+  const [settingsTarget, setSettingsTarget] = useState<StockLine | null>(null);
+  const [reorderPointInput, setReorderPointInput] = useState('');
+  const [costPriceInput, setCostPriceInput] = useState('');
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+
+  const openSettings = (line: StockLine) => {
+    setSettingsTarget(line);
+    setReorderPointInput(line.reorderPoint != null ? String(line.reorderPoint) : '');
+    setCostPriceInput(line.costPrice != null ? String(line.costPrice) : '');
+    setSettingsError('');
+  };
+
+  const handleSaveSettings = async () => {
+    if (!settingsTarget) return;
+    setSavingSettings(true);
+    setSettingsError('');
+    try {
+      const payload: { reorderPoint?: number; costPrice?: number } = {};
+      if (reorderPointInput.trim() !== '') payload.reorderPoint = Math.max(0, Number(reorderPointInput));
+      if (costPriceInput.trim() !== '') payload.costPrice = Math.max(0, Number(costPriceInput));
+      await apiUpdateVariant(settingsTarget.productId, settingsTarget.variantId, payload);
+      setSettingsTarget(null);
+      setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setSettingsError(err instanceof Error ? err.message : 'Failed to save.');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   // ── Columns ──────────────────────────────────────────────────────────────────
   const columns: TableColumn<StockLine>[] = [
     {
@@ -378,11 +555,16 @@ export function StoreInventory() {
           <span className="text-[13px] text-carbon">
             {l.unlimitedStock ? '∞ Unlimited' : `${l.available} units`}
           </span>
-          {/* Committed only shown when non-zero — the common case (no
-              pending unshipped orders on this SKU) stays exactly as simple
-              as before this existed. */}
-          {!l.unlimitedStock && l.committedStock > 0 && (
-            <p className="text-[10.5px] text-slate">{l.stock} on hand · {l.committedStock} reserved</p>
+          {/* Reserved/damaged/in-transit only shown when non-zero — the
+              common case (nothing pending on this SKU) stays exactly as
+              simple as before any of these existed. */}
+          {!l.unlimitedStock && (l.committedStock > 0 || l.damagedStock > 0 || l.inTransitStock > 0) && (
+            <p className="text-[10.5px] text-slate">
+              {l.stock} on hand
+              {l.committedStock > 0 && ` · ${l.committedStock} reserved`}
+              {l.damagedStock > 0 && ` · ${l.damagedStock} damaged`}
+              {l.inTransitStock > 0 && ` · ${l.inTransitStock} in transit`}
+            </p>
           )}
         </div>
       ),
@@ -407,7 +589,7 @@ export function StoreInventory() {
           {hasMultipleLocations && !l.unlimitedStock && (
             <button
               onClick={() => openTransfer(l)}
-              title="Transfer between locations"
+              title="Ship to another location"
               className="flex items-center justify-center w-[26px] h-[26px] text-slate border border-bone rounded-[6px] cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
             >
               <ArrowLeftRight size={13} />
@@ -420,6 +602,15 @@ export function StoreInventory() {
           >
             <History size={13} />
           </button>
+          {!l.unlimitedStock && (
+            <button
+              onClick={() => openSettings(l)}
+              title="Reorder point & cost"
+              className="flex items-center justify-center w-[26px] h-[26px] text-slate border border-bone rounded-[6px] cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            >
+              <SlidersHorizontal size={13} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -441,6 +632,33 @@ export function StoreInventory() {
               <span className="hidden sm:inline">Locations{activeLocations.length > 0 ? ` (${activeLocations.length})` : ''}</span>
             </button>
             <button
+              title="Inventory Reports"
+              onClick={() => navigate(`/store/${storeId}/inventory/reports`)}
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            >
+              <TrendingUp size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Reports</span>
+            </button>
+            {hasMultipleLocations && (
+              <button
+                title="In-transit transfers"
+                onClick={openTransfersModal}
+                className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+              >
+                <Truck size={14} />
+                <span className="hidden sm:inline">Transfers</span>
+              </button>
+            )}
+            <button
+              title="Start a stock count"
+              onClick={handleStartStockCount}
+              disabled={startingCount}
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
+            >
+              <ClipboardCheck size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">{startingCount ? 'Starting…' : 'Start Stock Count'}</span>
+            </button>
+            <button
               title="Export"
               onClick={handleExportCsv}
               disabled={exporting}
@@ -448,6 +666,16 @@ export function StoreInventory() {
             >
               <Download size={14} className="sm:hidden" />
               <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
+            </button>
+            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleImportCsvFile} className="hidden" />
+            <button
+              title="Import a stock-reconciliation CSV (SKU, Quantity)"
+              onClick={() => csvInputRef.current?.click()}
+              disabled={importingCsv}
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
+            >
+              <Download size={14} className="sm:hidden rotate-180" />
+              <span className="hidden sm:inline">{importingCsv ? 'Importing…' : 'Import CSV'}</span>
             </button>
           </div>
         }
@@ -475,6 +703,12 @@ export function StoreInventory() {
                 {lowStock.count} product{lowStock.count !== 1 ? 's' : ''} running low
               </p>
               <span className="text-[11px] text-slate ml-1">(≤ {lowStock.threshold} units left)</span>
+              <button
+                onClick={() => navigate(`/store/${storeId}/reorder-suggestions`)}
+                className="ml-auto text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer"
+              >
+                Reorder →
+              </button>
             </div>
             <div className="px-5 py-3 flex flex-col divide-y divide-[#f3f2ec]">
               {(lowStock.items ?? []).slice(0, 5).map(item => (
@@ -514,6 +748,17 @@ export function StoreInventory() {
             <div className="px-5 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Stock (per SKU)</p>
               <div className="flex items-center gap-2 sm:ml-auto">
+                <select
+                  value={statusFilter}
+                  onChange={e => { setStatusFilter(e.target.value as StockLineStatusFilter | ''); setPage(1); }}
+                  className="border border-bone rounded-[8px] px-2.5 py-2 text-[12.5px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40 shrink-0"
+                >
+                  <option value="">All Status</option>
+                  <option value="in_stock">In Stock</option>
+                  <option value="low_stock">Low Stock</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                  <option value="unlimited">Unlimited</option>
+                </select>
                 <SearchInput
                   value={search}
                   onChange={value => { setSearch(value); setPage(1); }}
@@ -585,7 +830,25 @@ export function StoreInventory() {
               <p className="text-[12px] text-slate">SKU: {adjustTarget.sku} · Current stock: {adjustTarget.stock} units</p>
             </div>
 
-            {hasMultipleLocations && (
+            <div>
+              <label className="text-[12px] font-medium text-graphite mb-1 block">Reason</label>
+              <select
+                value={adjustReason}
+                onChange={e => setAdjustReason(e.target.value as StockAdjustmentReason)}
+                className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+              >
+                {REASON_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+              {isBucketOnlyReason && (
+                <p className="text-[11px] text-slate mt-1.5">
+                  {adjustReason === 'damaged'
+                    ? 'Moves units out of the sellable pool — on-hand stock stays the same, they just stop counting toward "Available".'
+                    : 'Permanently discards units already in the damaged pool.'}
+                </p>
+              )}
+            </div>
+
+            {hasMultipleLocations && !isBucketOnlyReason && (
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-1 block">Location</label>
                 {adjustBreakdownLoading ? (
@@ -604,23 +867,27 @@ export function StoreInventory() {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => setAdjustDirection('add')}
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-[8px] py-2 text-[13px] font-medium cursor-pointer border transition-colors ${adjustDirection === 'add' ? 'bg-success/10 border-success text-success' : 'bg-white border-bone text-slate hover:bg-cream'}`}
-              >
-                <PlusCircle size={14} /> Add stock
-              </button>
-              <button
-                onClick={() => setAdjustDirection('remove')}
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-[8px] py-2 text-[13px] font-medium cursor-pointer border transition-colors ${adjustDirection === 'remove' ? 'bg-error-bg border-error text-error' : 'bg-white border-bone text-slate hover:bg-cream'}`}
-              >
-                <MinusCircle size={14} /> Remove stock
-              </button>
-            </div>
+            {!isBucketOnlyReason && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAdjustDirection('add')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-[8px] py-2 text-[13px] font-medium cursor-pointer border transition-colors ${adjustDirection === 'add' ? 'bg-success/10 border-success text-success' : 'bg-white border-bone text-slate hover:bg-cream'}`}
+                >
+                  <PlusCircle size={14} /> Add stock
+                </button>
+                <button
+                  onClick={() => setAdjustDirection('remove')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-[8px] py-2 text-[13px] font-medium cursor-pointer border transition-colors ${adjustDirection === 'remove' ? 'bg-error-bg border-error text-error' : 'bg-white border-bone text-slate hover:bg-cream'}`}
+                >
+                  <MinusCircle size={14} /> Remove stock
+                </button>
+              </div>
+            )}
 
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Quantity</label>
+              <label className="text-[12px] font-medium text-graphite mb-1 block">
+                Quantity {isBucketOnlyReason && (adjustReason === 'damaged' ? 'to mark damaged' : 'to write off')}
+              </label>
               <input
                 type="number"
                 min={1}
@@ -629,17 +896,6 @@ export function StoreInventory() {
                 placeholder="e.g. 10"
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
               />
-            </div>
-
-            <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Reason</label>
-              <select
-                value={adjustReason}
-                onChange={e => setAdjustReason(e.target.value as StockAdjustmentReason)}
-                className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
-              >
-                {REASON_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
             </div>
 
             <div>
@@ -705,12 +961,15 @@ export function StoreInventory() {
         </Modal>
       )}
 
-      {/* ── Transfer stock modal (only reachable when 2+ locations) ─────── */}
+      {/* ── Ship transfer modal (only reachable when 2+ locations) — step 1
+           of 2: this only SHIPS the stock (leaves the source right away).
+           It doesn't land at the destination until someone receives it
+           there via the Transfers panel below, once it actually arrives. ── */}
       {transferTarget && (
-        <Modal title="Transfer stock" onClose={() => setTransferTarget(null)} footer={
+        <Modal title="Ship stock to another location" onClose={() => setTransferTarget(null)} footer={
           <>
             <Button variant="ghost" onClick={() => setTransferTarget(null)}>Cancel</Button>
-            <Button variant="primary" onClick={handleTransferSubmit} loading={transferring}>Transfer</Button>
+            <Button variant="primary" onClick={handleTransferSubmit} loading={transferring}>Ship</Button>
           </>
         }>
           <div className="flex flex-col gap-4">
@@ -775,7 +1034,137 @@ export function StoreInventory() {
               </>
             )}
 
+            <p className="text-[11px] text-slate">
+              Shipped stock moves to "in transit" immediately — it won't count toward the destination's
+              stock until someone receives it there from the Transfers panel.
+            </p>
+
             {transferError && <p className="text-[12px] text-error">{transferError}</p>}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Transfers panel — step 2 of 2: everything currently in transit,
+           with Receive (partial or full) and Cancel actions. ─────────────── */}
+      {transfersModalOpen && (
+        <Modal title="In-Transit Transfers" onClose={() => setTransfersModalOpen(false)} footer={
+          <Button variant="ghost" onClick={() => setTransfersModalOpen(false)}>Close</Button>
+        }>
+          <div className="flex flex-col gap-3">
+            {transfersLoading ? (
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 2 }).map((_, i) => <SkeletonBox key={i} height={70} rounded="8px" />)}
+              </div>
+            ) : transfersError ? (
+              <p className="text-[12px] text-error">{transfersError}</p>
+            ) : transfersList.length === 0 ? (
+              <p className="text-[12px] text-slate py-4 text-center">Nothing in transit right now.</p>
+            ) : (
+              <div className="flex flex-col divide-y divide-[#f3f2ec] max-h-[420px] overflow-y-auto">
+                {transfersList.map(t => {
+                  const remaining = t.quantity - t.receivedQuantity;
+                  return (
+                    <div key={t._id} className="py-3 flex flex-col gap-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[12.5px] font-semibold text-charcoal truncate">{t.productName}</p>
+                          <p className="text-[11px] text-slate">
+                            SKU: {t.sku} · {t.fromLocationName} → {t.toLocationName}
+                          </p>
+                          <p className="text-[11px] text-slate">
+                            {t.receivedQuantity} / {t.quantity} received · {remaining} remaining
+                          </p>
+                        </div>
+                        <Badge color={TRANSFER_STATUS_META[t.status].color}>{TRANSFER_STATUS_META[t.status].label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={remaining}
+                          placeholder={String(remaining)}
+                          value={receiveQtyById[t._id] ?? ''}
+                          onChange={e => setReceiveQtyById(prev => ({ ...prev, [t._id]: e.target.value }))}
+                          className="w-24 border border-bone rounded-[7px] px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                        />
+                        <Button variant="secondary" onClick={() => handleReceiveTransfer(t)} loading={receivingId === t._id}>Receive</Button>
+                        {t.status === 'in_transit' && (
+                          <button
+                            onClick={() => handleCancelTransfer(t)}
+                            disabled={receivingId === t._id}
+                            className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer ml-auto disabled:opacity-50"
+                          >
+                            Cancel transfer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {transferActionError && <p className="text-[12px] text-error">{transferActionError}</p>}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Reorder point / cost price modal ────────────────────────────── */}
+      {settingsTarget && (
+        <Modal title="Reorder point & cost" onClose={() => setSettingsTarget(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setSettingsTarget(null)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveSettings} loading={savingSettings}>Save</Button>
+          </>
+        }>
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-[13px] font-semibold text-charcoal">{settingsTarget.productName}</p>
+              <p className="text-[12px] text-slate">SKU: {settingsTarget.sku}</p>
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-graphite mb-1 block">Reorder point</label>
+              <input
+                type="number" min={0} value={reorderPointInput}
+                onChange={e => setReorderPointInput(e.target.value)}
+                placeholder={`Store default (${store?.lowStockThreshold ?? 10})`}
+                className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+              />
+              <p className="text-[11px] text-slate mt-1">Leave blank to use the store's default low-stock threshold.</p>
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-graphite mb-1 block">Cost price {currencySymbol(store?.baseCurrency)}</label>
+              <input
+                type="number" min={0} step="0.01" value={costPriceInput}
+                onChange={e => setCostPriceInput(e.target.value)}
+                placeholder="Not set"
+                className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+              />
+              <p className="text-[11px] text-slate mt-1">Used for inventory valuation — auto-updates when you receive a Purchase Order.</p>
+            </div>
+            {settingsError && <p className="text-[12px] text-error">{settingsError}</p>}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── CSV import result ────────────────────────────────────────────── */}
+      {csvImportResult && (
+        <Modal title="Stock CSV Import" onClose={() => setCsvImportResult(null)} footer={
+          <Button variant="ghost" onClick={() => setCsvImportResult(null)}>Close</Button>
+        }>
+          <div className="flex flex-col gap-3">
+            <p className="text-[13px] text-charcoal">
+              <span className="font-semibold">{csvImportResult.updatedCount}</span> of {csvImportResult.totalRows} SKU{csvImportResult.totalRows !== 1 ? 's' : ''} reconciled successfully.
+            </p>
+            {csvImportResult.failed.length > 0 && (
+              <div className="flex flex-col divide-y divide-[#f3f2ec] max-h-[260px] overflow-y-auto border border-bone rounded-lg">
+                {csvImportResult.failed.map((f, i) => (
+                  <div key={i} className="px-3 py-2 text-[11.5px]">
+                    <span className="font-semibold text-charcoal">Row {f.row} ({f.sku})</span>
+                    <span className="text-error"> — {f.error}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Modal>
       )}
@@ -800,8 +1189,10 @@ export function StoreInventory() {
                 {allLocations.filter(l => l.status === 'active').map(loc => (
                   <div key={loc._id} className="py-2.5 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[13px] font-medium text-charcoal">
-                        {loc.name}{loc.isDefault ? <span className="text-[10.5px] text-slate ml-1.5">(default)</span> : null}
+                      <p className="text-[13px] font-medium text-charcoal flex items-center gap-1.5">
+                        {loc.name}
+                        <Badge color={loc.type === 'warehouse' ? 'blue' : 'green'}>{loc.type === 'warehouse' ? 'Warehouse' : 'Store'}</Badge>
+                        {loc.isDefault ? <span className="text-[10.5px] text-slate">(default)</span> : null}
                       </p>
                       {loc.city && <p className="text-[11px] text-slate">{loc.city}</p>}
                     </div>
@@ -834,6 +1225,20 @@ export function StoreInventory() {
                 placeholder="City (optional)"
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
               />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setNewLocationType('store')}
+                  className={`flex-1 rounded-[8px] py-2 text-[12.5px] font-medium cursor-pointer border transition-colors ${newLocationType === 'store' ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange' : 'bg-white border-bone text-slate hover:bg-cream'}`}
+                >
+                  Store (retail/POS)
+                </button>
+                <button
+                  onClick={() => setNewLocationType('warehouse')}
+                  className={`flex-1 rounded-[8px] py-2 text-[12.5px] font-medium cursor-pointer border transition-colors ${newLocationType === 'warehouse' ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange' : 'bg-white border-bone text-slate hover:bg-cream'}`}
+                >
+                  Warehouse (fulfillment)
+                </button>
+              </div>
               <Button variant="secondary" onClick={handleAddLocation} loading={addingLocation}>Add Location</Button>
               {locationsError && <p className="text-[12px] text-error">{locationsError}</p>}
             </div>

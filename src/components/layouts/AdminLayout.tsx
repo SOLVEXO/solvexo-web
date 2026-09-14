@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Layers, Search, Sparkles, LogOut, Landmark, Percent, Coins, Activity,
-  TrendingUp, ChevronRight, Truck, Palette, Smartphone,
+  TrendingUp, ChevronRight, Palette, Smartphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -39,7 +39,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'manual-payments', Icon: Landmark,      label: 'Manual Payments', path: '/admin/manual-payments' },
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
-  { id: 'shipping-zones', Icon: Truck,          label: 'Shipping Zones',  path: '/admin/shipping-zones' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
   { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
@@ -110,7 +109,7 @@ interface AdminModule {
 // only the admin-facing management PAGE was removed.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'shipping-zones', 'store-app-requests'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'] },
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
