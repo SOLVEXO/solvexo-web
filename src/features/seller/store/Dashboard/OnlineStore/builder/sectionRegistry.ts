@@ -202,9 +202,9 @@ export const SECTION_META_BY_TYPE: Record<SectionType, SectionMeta> = Object.fro
 // exception (recursive nested-link-list editors, kept hand-written; see
 // `BlockFields.tsx`'s own comment). This is also where the migration closed
 // real, previously-disclosed gaps against the backend validator
-// (`section-settings.validator.ts`): `heading.level`, `hero_slide.mobileImageUrl`,
-// `testimonial.avatarUrl`, and `list.style` were all accepted by the server
-// but had no editor field at all before this.
+// (`section-settings.validator.ts`): `heading.level`, `testimonial.avatarUrl`,
+// and `list.style` were all accepted by the server but had no editor field
+// at all before this.
 //
 // Deliberately NOT carried forward from the old hand-written `BlockFields.tsx`:
 // `feature_item`, `menu_item`, `team_member`, `stat_item`, `gallery_image` —
@@ -226,7 +226,6 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   hero_slide: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
-    { key: 'mobileImageUrl', kind: 'image', label: 'Mobile image (optional)', hint: 'Shown below 768px instead of the image above — leave blank to reuse it.' },
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'subheading', kind: 'text', label: 'Subheading' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },

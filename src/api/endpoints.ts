@@ -10,13 +10,21 @@ export const ENDPOINTS = {
     CHANGE_PASSWORD: '/api/users/change-password',
     DELETE_ACCOUNT:  '/api/users/profile',
 
-    // Admin — merged buyer/seller directory
+    // Admin — sellers directory (+ per-store customers, see below)
     ADMIN: {
       STATS:     '/api/admin/users/stats',
       LIST:      '/api/admin/users',
       GET_BY_ID: (role: string, id: string) => `/api/admin/users/${role}/${id}`,
       SUSPEND:   (role: string, id: string) => `/api/admin/users/${role}/${id}/suspend`,
       UNSUSPEND: (role: string, id: string) => `/api/admin/users/${role}/${id}/unsuspend`,
+      // Per-store — a store's own customers (buyers), and single-store
+      // suspend independent of the seller account. See AdminUsersService's
+      // class doc comment for why buyers live here, not on the top-level list.
+      STORE_CUSTOMERS:  (storeId: string) => `/api/admin/users/stores/${storeId}/customers`,
+      BLOCK_CUSTOMER:   (storeId: string, buyerId: string) => `/api/admin/users/stores/${storeId}/customers/${buyerId}/block`,
+      UNBLOCK_CUSTOMER: (storeId: string, buyerId: string) => `/api/admin/users/stores/${storeId}/customers/${buyerId}/unblock`,
+      SUSPEND_STORE:    (storeId: string) => `/api/admin/users/stores/${storeId}/suspend`,
+      UNSUSPEND_STORE:  (storeId: string) => `/api/admin/users/stores/${storeId}/unsuspend`,
     },
   },
 
@@ -666,6 +674,21 @@ export const ENDPOINTS = {
     RECEIVE_TRANSFER: (storeId: string, transferId: string) => `/api/inventory/${storeId}/transfer/${transferId}/receive`,
     CANCEL_TRANSFER: (storeId: string, transferId: string) => `/api/inventory/${storeId}/transfer/${transferId}/cancel`,
     TRANSFERS: (storeId: string) => `/api/inventory/${storeId}/transfers`,
+    LIST_APPROVALS: (storeId: string) => `/api/inventory/${storeId}/approvals`,
+    APPROVE_REQUEST: (storeId: string, approvalId: string) => `/api/inventory/${storeId}/approvals/${approvalId}/approve`,
+    REJECT_REQUEST: (storeId: string, approvalId: string) => `/api/inventory/${storeId}/approvals/${approvalId}/reject`,
+    LIST_BINS: (storeId: string, locationId: string) => `/api/inventory/${storeId}/locations/${locationId}/bins`,
+    CREATE_BIN: (storeId: string, locationId: string) => `/api/inventory/${storeId}/locations/${locationId}/bins`,
+    DELETE_BIN: (storeId: string, binId: string) => `/api/inventory/${storeId}/bins/${binId}`,
+  },
+
+  STAFF: {
+    LOGIN: (storeId: string) => `/api/staff/${storeId}/login`,
+    PERMISSIONS: () => `/api/staff/permissions`,
+    CREATE: (storeId: string) => `/api/staff/${storeId}`,
+    LIST: (storeId: string) => `/api/staff/${storeId}`,
+    UPDATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}`,
+    DEACTIVATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}/deactivate`,
   },
 
   STOCK_COUNTS: {

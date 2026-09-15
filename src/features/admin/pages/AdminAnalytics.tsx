@@ -32,7 +32,9 @@ async function searchStoresByName(query: string): Promise<EntityOption[]> {
 }
 
 async function searchSellersByName(query: string): Promise<EntityOption[]> {
-  const res = await apiListAdminUsers({ role: 'seller', search: query, limit: 8 });
+  // apiListAdminUsers is sellers-only now (see AdminUsersService's doc
+  // comment) — no `role` filter needed/accepted any more.
+  const res = await apiListAdminUsers({ search: query, limit: 8 });
   return res.data.items.map(u => ({ id: u.id, label: u.name, sub: u.email }));
 }
 

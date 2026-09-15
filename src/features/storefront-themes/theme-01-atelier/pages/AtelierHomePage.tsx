@@ -46,9 +46,9 @@ function resolveBannerLink(banner: StoreBanner): { to?: string; href?: string } 
 
 /** One real seller-uploaded promo/hero/season/collection banner (Marketing →
  *  Store Banners) — the banner IS the image (no separate heading/subheading
- *  field on the model), with an optional CTA button overlaid centrally.
- *  `mobileImageUrl` swaps in below the seller's own upload-time breakpoint
- *  via `<picture>`, matching how the banner form documents that field. */
+ *  field on the model), with an optional CTA button overlaid centrally. One
+ *  image, `object-cover`-cropped at every breakpoint — no separate mobile
+ *  crop upload. */
 function BannerSlide({ banner }: { banner: StoreBanner }) {
   const [errored, setErrored] = useState(false);
   const link = resolveBannerLink(banner);
@@ -75,22 +75,17 @@ function BannerSlide({ banner }: { banner: StoreBanner }) {
           style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
         />
       ) : !errored && (
-        <picture>
-          {banner.mobileImageUrl && (
-            <source media="(max-width: 640px)" srcSet={cloudinarySrcSet(banner.mobileImageUrl, [480, 640, 960])} />
-          )}
-          <img
-            src={cloudinaryUrl(banner.imageUrl, 1600)}
-            srcSet={cloudinarySrcSet(banner.imageUrl, [768, 1200, 1600, 2560])}
-            sizes="100vw"
-            alt={banner.ctaLabel ?? ''}
-            onError={() => setErrored(true)}
-            className="w-full h-full object-cover"
-            style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
-            loading="eager"
-            fetchPriority="high"
-          />
-        </picture>
+        <img
+          src={cloudinaryUrl(banner.imageUrl, 1600)}
+          srcSet={cloudinarySrcSet(banner.imageUrl, [768, 1200, 1600, 2560])}
+          sizes="100vw"
+          alt={banner.ctaLabel ?? ''}
+          onError={() => setErrored(true)}
+          className="w-full h-full object-cover"
+          style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
+          loading="eager"
+          fetchPriority="high"
+        />
       )}
       {banner.ctaLabel && (link.to || link.href) && (
         <div className="absolute inset-0 flex items-center justify-center">

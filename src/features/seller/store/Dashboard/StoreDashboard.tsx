@@ -8,12 +8,13 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
-import { AreaChart, DonutChart, BarChart } from '@/components/comman/charts';
-import { MetricCard, SkeletonBox, Button, CoverImage } from '@/components/comman/ui';
+import { AreaChart, DonutChart } from '@/components/comman/charts';
+import { MetricCard, SkeletonBox, Button, FilterDropdown } from '@/components/comman/ui';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday,
   type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData,
 } from '@/api/services/analytics/analytics';
+import type { AnalyticsRangePreset } from '@/components/comman/analytics/analyticsFilters';
 import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from '@/api/services/product';
 import { apiGetSellerReturns } from '@/api/services/orders';
 import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
@@ -40,7 +41,6 @@ interface StoreMetrics {
   highRiskOrderCount: number;
   awaitingCaptureCount: number;
   inventoryBreakdown: { inStock: number; lowStock: number; outOfStock: number };
-  weeklyRevenue: RevenuePoint[];
   entitlements: EntitlementsSummary | null;
 }
 
@@ -68,17 +68,12 @@ function useStoreDashboardMetrics(storeId: string) {
       apiGetOpenDisputeCount(storeId),
       apiGetHighRiskOrderCount(storeId),
       apiGetAwaitingCaptureCount(storeId),
-      // Real day-granularity trend (the existing revenueSeries fetch above is
-      // month-granularity, for the 6-month line chart) — powers the new
-      // "Last 7 days" bar chart, same endpoint/hook already used, just
-      // different range/granularity params.
-      apiSellerAnalyticsRevenueOverTime({ storeId, range: '7d', granularity: 'day' }),
       // Real plan-usage progress bars — same entitlements data Billing
       // Center already shows, surfaced here too so "what's my overall
       // status" doesn't require leaving the dashboard.
       apiGetStoreEntitlements(storeId).catch(() => null),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, weeklyRes, entitlementsRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
@@ -96,7 +91,6 @@ function useStoreDashboardMetrics(storeId: string) {
             lowStock: inventoryRes.data.stats.lowStock,
             outOfStock: inventoryRes.data.stats.outOfStock,
           },
-          weeklyRevenue: weeklyRes.data.series,
           entitlements: (entitlementsRes as any)?.data ?? null,
         });
       })
@@ -120,50 +114,39 @@ const typeStyles: Record<string, { bg: string; color: string }> = {
   brand:   { bg: '#F5F0FF', color: '#7C3AED' },
 };
 
-// ── Store hero — logo, live/status badge, plan, quick actions, all real data
-// already resolved by `useStoreWorkspace()` — replaces the plain page title. ──
-function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['store'] }) {
+// ── Store header bar — logo, live/status badge, plan, quick actions, all real
+// data already resolved by `useStoreWorkspace()` — replaces the plain page
+// title. Deliberately a plain bordered white bar (matches every other card on
+// this page), not a cover-photo hero — a store's cover image belongs on its
+// public storefront identity banner, not repurposed as dashboard chrome. ──
+function StoreHeaderBar({ store }: { store: ReturnType<typeof useStoreWorkspace>['store'] }) {
   const navigate = useNavigate();
   const isLive = store?.status === 'active';
 
   return (
-    <CoverImage
-      src={store?.coverImage}
-      loading="eager"
-      overlay
-      overlayClassName="bg-gradient-to-br from-carbon/92 via-[#241f1b]/88 to-brand-deep-orange/75"
-      fallbackClassName="bg-gradient-to-br from-carbon via-[#241f1b] to-brand-deep-orange"
-      className="dash-section-enter rounded-2xl"
-    >
-      <div className="px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.06]"
-        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
-      />
-      <div className="pointer-events-none absolute -top-16 -right-10 size-56 rounded-full bg-brand-orange/25 blur-3xl" />
-
-      <div className="relative flex items-center gap-4 flex-1 min-w-0">
-        <div className="size-14 rounded-2xl bg-white/10 ring-2 ring-white/15 flex items-center justify-center shrink-0 overflow-hidden">
+    <div className="dash-section-enter bg-white border border-bone rounded-2xl px-5 py-4 sm:px-6 sm:py-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+      <div className="flex items-center gap-3.5 flex-1 min-w-0">
+        <div className="size-11 rounded-xl bg-brand-pale-orange border border-[#eae8de] flex items-center justify-center shrink-0 overflow-hidden">
           {store?.logo
             ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
-            : <Globe size={24} className="text-white/80" />}
+            : <Globe size={20} className="text-brand-orange" />}
         </div>
         <div className="min-w-0">
-          <p className="text-[20px] sm:text-[22px] font-bold text-white leading-tight truncate">
+          <p className="text-[18px] sm:text-[20px] font-bold text-charcoal leading-tight truncate">
             {store?.name ?? '—'}
           </p>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className={`inline-flex items-center gap-[6px] rounded-full px-[10px] py-[4px] text-[12px] font-medium ${isLive ? 'bg-success/20 text-[#8fe3ac]' : 'bg-white/10 text-white/80'}`}>
-              <span className={`size-[6px] rounded-full ${isLive ? 'bg-[#8fe3ac] pos-live-pulse' : 'bg-white/50'}`} />
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <span className={`inline-flex items-center gap-[5px] rounded-full px-[9px] py-[3px] text-[11px] font-semibold ${isLive ? 'bg-success-bg text-success' : 'bg-cream text-slate'}`}>
+              <span className={`size-[5px] rounded-full ${isLive ? 'bg-success pos-live-pulse' : 'bg-slate/60'}`} />
               {isLive ? 'Live' : (store?.status ?? '—')}
             </span>
             {store?.plan && (
-              <span className="inline-flex items-center rounded-full bg-white/10 px-[10px] py-[4px] text-[12px] font-medium text-white/85 capitalize">
+              <span className="inline-flex items-center rounded-full bg-cream px-[9px] py-[3px] text-[11px] font-semibold text-graphite capitalize">
                 {store.plan} plan
               </span>
             )}
             {store?.slug && (
-              <span className="hidden sm:inline-flex items-center rounded-full bg-white/10 px-[10px] py-[4px] text-[12px] font-medium text-white/60">
+              <span className="inline-flex items-center rounded-full bg-cream px-[9px] py-[3px] text-[11px] font-medium text-slate">
                 /{store.slug}
               </span>
             )}
@@ -171,10 +154,9 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
         </div>
       </div>
 
-      <div className="relative flex items-center gap-2 flex-wrap shrink-0">
+      <div className="flex items-center gap-2 flex-wrap shrink-0">
         <Button
           variant="outline" size="sm"
-          className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20"
           onClick={() => navigate(`/store/${store?._id ?? ''}/settings`)}
         >
           Settings
@@ -184,15 +166,14 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
             href={getStorefrontUrl(store.slug)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-[6px] px-[14px] py-[9px] rounded-lg bg-white text-brand-deep-orange text-[13px] font-bold no-underline transition-transform duration-150 hover:scale-[1.03]"
+            className="inline-flex items-center gap-[6px] px-[14px] py-[9px] rounded-lg bg-brand-orange text-white text-[13px] font-bold no-underline transition-colors duration-150 hover:bg-brand-deep-orange"
           >
             <ExternalLink size={14} />
             View Live Store
           </a>
         )}
       </div>
-      </div>
-    </CoverImage>
+    </div>
   );
 }
 
@@ -536,12 +517,18 @@ function renderMetricCard(
   id: string, metrics: StoreMetrics | null, currency: string | null | undefined,
   totalCustomers: number, revenueSparkline: number[],
 ) {
+  const revenueChangePct = metrics?.overview.totalRevenueChangePercent ?? null;
+  const aovChangePct = metrics?.overview.avgOrderValueChangePercent ?? null;
+  const ordersChange = metrics?.overview.totalOrdersChange;
+
   switch (id) {
     case 'revenue_30d':
       return (
         <MetricCard key={id}
           label="Revenue (30 days)" value={formatMoneyCompact(metrics?.overview.totalRevenue ?? 0, currency)}
-          sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} icon={<TrendingUp size={16} />} color="#D97757"
+          trend={revenueChangePct !== null ? `${Math.abs(revenueChangePct).toFixed(0)}% vs prev.` : undefined}
+          trendUp={revenueChangePct !== null ? revenueChangePct >= 0 : undefined}
+          sub={metrics?.overview.totalRevenue ? undefined : 'No sales yet'} icon={<TrendingUp size={16} />} color="#D97757"
           sparkline={revenueSparkline}
         />
       );
@@ -549,6 +536,8 @@ function renderMetricCard(
       return (
         <MetricCard key={id}
           label="Orders (30 days)" value={formatNumber(metrics?.overview.totalOrders ?? 0)}
+          trend={ordersChange !== undefined ? `${ordersChange >= 0 ? '+' : ''}${ordersChange} vs prev.` : undefined}
+          trendUp={ordersChange !== undefined ? ordersChange >= 0 : undefined}
           sub={metrics?.overview.totalOrders ? `${formatNumber(metrics.overview.cancelledOrders)} cancelled` : 'No orders yet'} icon={<Package size={16} />} color="#8B5CF6"
         />
       );
@@ -573,6 +562,8 @@ function renderMetricCard(
       return (
         <MetricCard key={id}
           label="Avg. Order Value (30 days)" value={formatMoneyCompact(metrics?.overview.avgOrderValue ?? 0, currency)}
+          trend={aovChangePct !== null ? `${Math.abs(aovChangePct).toFixed(0)}% vs prev.` : undefined}
+          trendUp={aovChangePct !== null ? aovChangePct >= 0 : undefined}
           sub="Per order" icon={<TrendingUp size={16} />} color="#F59E0B"
         />
       );
@@ -803,7 +794,7 @@ function DashSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-[2fr_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         <div className="bg-white rounded-2xl border border-bone p-5 h-[320px]">
           <SkeletonBox width={144} height={14} rounded="4px" className="mb-2" />
           <SkeletonBox width={96} height={10} rounded="4px" className="mb-5" />
@@ -827,18 +818,53 @@ function DashSkeleton() {
   );
 }
 
+// ── Revenue Overview range filter — one chart, switchable range, instead of
+// a fixed 6-month area chart sitting next to an always-7-day bar chart that
+// showed the same underlying metric twice at two different, unrelated
+// windows. ────────────────────────────────────────────────────────────────
+const REVENUE_RANGE_OPTIONS: { value: AnalyticsRangePreset; label: string }[] = [
+  { value: '7d',  label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+  { value: '90d', label: 'Last 90 days' },
+  { value: '6m',  label: 'Last 6 months' },
+  { value: '12m', label: 'Last 12 months' },
+];
+const REVENUE_RANGE_GRANULARITY: Record<AnalyticsRangePreset, 'day' | 'month'> = {
+  '7d': 'day', '30d': 'day', '90d': 'day', '6m': 'month', '12m': 'month', custom: 'day',
+};
+
+function useRevenueOverview(storeId: string, range: AnalyticsRangePreset) {
+  const [series, setSeries] = useState<RevenuePoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    setLoading(true);
+    apiSellerAnalyticsRevenueOverTime({ storeId, range, granularity: REVENUE_RANGE_GRANULARITY[range] })
+      .then(res => { if (!cancelled) setSeries(res.data.series); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [storeId, range]);
+
+  return { series, loading };
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreDashboard() {
   const { store, storeId, loading, refetch: refetchStore } = useStoreWorkspace();
   const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
   const testimonialPrompt = useTestimonialPrompt();
   const [showCustomize, setShowCustomize] = useState(false);
+  const [revenueRange, setRevenueRange] = useState<AnalyticsRangePreset>('30d');
+  const { series: revenueOverviewSeries, loading: revenueOverviewLoading } = useRevenueOverview(storeId, revenueRange);
   const activeMetricIds = (store?.dashboardMetrics && store.dashboardMetrics.length > 0)
     ? store.dashboardMetrics
     : DEFAULT_DASHBOARD_METRICS;
 
-  const chartData = (metrics?.revenueSeries ?? []).map(p => ({
-    month: formatBucketLabel(p.date, 'month'),
+  const revenueGranularity = REVENUE_RANGE_GRANULARITY[revenueRange];
+  const chartData = revenueOverviewSeries.map(p => ({
+    label: formatBucketLabel(p.date, revenueGranularity),
     revenue: p.grossRevenue,
   }));
   const revenueSparkline = (metrics?.revenueSeries ?? []).map(p => p.grossRevenue);
@@ -862,7 +888,7 @@ export default function StoreDashboard() {
              other page's header), directly above the store hero card. */}
           <TrialBillingPill />
 
-          <StoreHero store={store} />
+          <StoreHeaderBar store={store} />
 
           {/* Persistent Setup Guide — replaces the old mandatory onboarding
              Payment/Review steps (see OnboardingPage.tsx). Auto-hides itself
@@ -910,38 +936,39 @@ export default function StoreDashboard() {
             {activeMetricIds.map(id => renderMetricCard(id, metrics, store?.baseCurrency, totalCustomers, revenueSparkline))}
           </div>
 
-          {/* Revenue Chart + Store Info */}
+          {/* Revenue Chart + Store Info — one filterable Revenue Overview
+             chart (range picker top-right) replaces the old fixed 6-month
+             area chart + always-7-day bar chart pair, which showed the same
+             metric twice at two unrelated, non-adjustable windows. */}
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
             <AreaChart
               data={chartData}
               dataKey="revenue"
-              xKey="month"
+              xKey="label"
               title="Revenue Overview"
-              subtitle="Monthly revenue trend — last 6 months"
+              subtitle={revenueOverviewLoading ? 'Loading…' : REVENUE_RANGE_OPTIONS.find(o => o.value === revenueRange)?.label}
+              action={
+                <FilterDropdown
+                  options={REVENUE_RANGE_OPTIONS}
+                  value={revenueRange}
+                  onChange={v => setRevenueRange(v as AnalyticsRangePreset)}
+                />
+              }
               height={300}
+              loading={revenueOverviewLoading}
               valuePrefix={currencySymbol(store?.baseCurrency)}
               yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
             />
             <StoreInfoCard />
           </div>
 
-          {/* Store Health — a real, varied mix of chart types (donut, bar,
-             progress bars) alongside the line/area chart above, all from
-             data already being fetched for this page (inventory breakdown
-             and the 30-day customer split were already loaded; only the
-             7-day trend and plan entitlements are new fetches) — mirrors how
-             a real platform dashboard (Shopify/Stripe) never relies on a
-             single chart type to show "what's going on right now." */}
+          {/* Store Health — a real, varied mix of chart types (donut,
+             progress bars) alongside the area chart above, all from data
+             already being fetched for this page — mirrors how a real
+             platform dashboard (Shopify/Stripe) never relies on a single
+             chart type to show "what's going on right now." */}
           {metrics && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <BarChart
-                data={metrics.weeklyRevenue.map(p => ({ day: formatBucketLabel(p.date, 'day'), revenue: p.grossRevenue }))}
-                dataKey="revenue" xKey="day"
-                title="Last 7 Days" subtitle="Daily revenue"
-                height={180}
-                valuePrefix={currencySymbol(store?.baseCurrency)}
-                color="#D97757"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <DonutChart
                 title="Inventory Health" subtitle="Across your catalog"
                 size={150}

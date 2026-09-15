@@ -17,6 +17,7 @@ import {
   MetricCard,
   Modal,
   Button,
+  Toggle,
 } from '@/components/comman/ui';
 import {
   apiGetLowStockSummary,
@@ -47,6 +48,7 @@ import {
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
 import { apiStartStockCount } from '@/api/services/stockCounts';
+import { apiListBins, apiCreateBin, apiDeleteBin, type Bin } from '@/api/services/staff';
 
 const STATUS_META: Record<StockLine['status'], { label: string; color: 'green' | 'orange' | 'red' | 'blue' }> = {
   in_stock:     { label: 'In Stock',     color: 'green'  },
@@ -81,7 +83,16 @@ const TRANSFER_STATUS_META: Record<StockTransfer['status'], { label: string; col
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export function StoreInventory() {
+/** `embedded`: when rendered as the "Stock" tab of `InventoryHub.tsx` (the
+ *  Analytics/SEO-Center-style tabbed consolidation page), the hub already
+ *  renders one shared `StorePageHeader` + `TabBar` above every tab — this
+ *  component then skips its OWN `StorePageHeader` (avoiding a duplicate
+ *  page-header) and renders its action buttons as a plain inline bar
+ *  instead, directly above the stats cards. Every action/modal/table is
+ *  otherwise byte-identical either way. Defaults to `false` so the legacy
+ *  standalone `/inventory` route (still reachable — see router's
+ *  "disconnect, don't delete" convention) renders exactly as it always did. */
+export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate    = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
@@ -467,6 +478,57 @@ export function StoreInventory() {
     }
   };
 
+  // ── Bins (bin/shelf-level granularity within one location) — expanded
+  // inline under that location's row in the same Manage Locations modal
+  // rather than a separate modal-within-modal.
+  const [binsOpenFor, setBinsOpenFor] = useState<string | null>(null);
+  const [binsByLocation, setBinsByLocation] = useState<Record<string, Bin[]>>({});
+  const [binsLoading, setBinsLoading] = useState(false);
+  const [newBinCode, setNewBinCode] = useState('');
+  const [addingBin, setAddingBin] = useState(false);
+  const [binsError, setBinsError] = useState('');
+
+  const toggleBins = (locationId: string) => {
+    if (binsOpenFor === locationId) { setBinsOpenFor(null); return; }
+    setBinsOpenFor(locationId);
+    setBinsError('');
+    setNewBinCode('');
+    if (!binsByLocation[locationId]) {
+      setBinsLoading(true);
+      apiListBins(storeId, locationId)
+        .then(res => setBinsByLocation(prev => ({ ...prev, [locationId]: res.data })))
+        .catch((err: unknown) => setBinsError(err instanceof Error ? err.message : 'Failed to load bins.'))
+        .finally(() => setBinsLoading(false));
+    }
+  };
+
+  const handleAddBin = async (locationId: string) => {
+    if (!newBinCode.trim()) { setBinsError('A bin code is required'); return; }
+    setAddingBin(true);
+    setBinsError('');
+    try {
+      await apiCreateBin(storeId, locationId, { code: newBinCode.trim() });
+      setNewBinCode('');
+      const res = await apiListBins(storeId, locationId);
+      setBinsByLocation(prev => ({ ...prev, [locationId]: res.data }));
+    } catch (err: unknown) {
+      setBinsError(err instanceof Error ? err.message : 'Failed to add bin.');
+    } finally {
+      setAddingBin(false);
+    }
+  };
+
+  const handleDeleteBin = async (locationId: string, binId: string) => {
+    setBinsError('');
+    try {
+      await apiDeleteBin(storeId, binId);
+      const res = await apiListBins(storeId, locationId);
+      setBinsByLocation(prev => ({ ...prev, [locationId]: res.data }));
+    } catch (err: unknown) {
+      setBinsError(err instanceof Error ? err.message : 'Failed to delete bin.');
+    }
+  };
+
   // ── Real per-SKU stock history — Shopify's "Inventory History" equivalent,
   // never existed before this pass.
   const [historyTarget, setHistoryTarget] = useState<StockLine | null>(null);
@@ -492,6 +554,9 @@ export function StoreInventory() {
   const [settingsTarget, setSettingsTarget] = useState<StockLine | null>(null);
   const [reorderPointInput, setReorderPointInput] = useState('');
   const [costPriceInput, setCostPriceInput] = useState('');
+  const [allowBackorderInput, setAllowBackorderInput] = useState(false);
+  const [trackLotsInput, setTrackLotsInput] = useState(false);
+  const [trackSerialsInput, setTrackSerialsInput] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState('');
 
@@ -499,6 +564,9 @@ export function StoreInventory() {
     setSettingsTarget(line);
     setReorderPointInput(line.reorderPoint != null ? String(line.reorderPoint) : '');
     setCostPriceInput(line.costPrice != null ? String(line.costPrice) : '');
+    setAllowBackorderInput(!!line.allowBackorder);
+    setTrackLotsInput(!!line.trackLots);
+    setTrackSerialsInput(!!line.trackSerials);
     setSettingsError('');
   };
 
@@ -507,7 +575,11 @@ export function StoreInventory() {
     setSavingSettings(true);
     setSettingsError('');
     try {
-      const payload: { reorderPoint?: number; costPrice?: number } = {};
+      const payload: { reorderPoint?: number; costPrice?: number; allowBackorder?: boolean; trackLots?: boolean; trackSerials?: boolean } = {
+        allowBackorder: allowBackorderInput,
+        trackLots: trackLotsInput,
+        trackSerials: trackSerialsInput,
+      };
       if (reorderPointInput.trim() !== '') payload.reorderPoint = Math.max(0, Number(reorderPointInput));
       if (costPriceInput.trim() !== '') payload.costPrice = Math.max(0, Number(costPriceInput));
       await apiUpdateVariant(settingsTarget.productId, settingsTarget.variantId, payload);
@@ -616,70 +688,78 @@ export function StoreInventory() {
     },
   ];
 
+  const actionsBar = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <button
+        title="Manage Locations"
+        onClick={openLocationsModal}
+        className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+      >
+        <MapPin size={14} />
+        <span className="hidden sm:inline">Locations{activeLocations.length > 0 ? ` (${activeLocations.length})` : ''}</span>
+      </button>
+      {!embedded && (
+        <button
+          title="Inventory Reports"
+          onClick={() => navigate(`/store/${storeId}/inventory/reports`)}
+          className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+        >
+          <TrendingUp size={14} className="sm:hidden" />
+          <span className="hidden sm:inline">Reports</span>
+        </button>
+      )}
+      {hasMultipleLocations && (
+        <button
+          title="In-transit transfers"
+          onClick={openTransfersModal}
+          className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+        >
+          <Truck size={14} />
+          <span className="hidden sm:inline">Transfers</span>
+        </button>
+      )}
+      <button
+        title="Start a stock count"
+        onClick={handleStartStockCount}
+        disabled={startingCount}
+        className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
+      >
+        <ClipboardCheck size={14} className="sm:hidden" />
+        <span className="hidden sm:inline">{startingCount ? 'Starting…' : 'Start Stock Count'}</span>
+      </button>
+      <button
+        title="Export"
+        onClick={handleExportCsv}
+        disabled={exporting}
+        className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
+      >
+        <Download size={14} className="sm:hidden" />
+        <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
+      </button>
+      <input ref={csvInputRef} type="file" accept=".csv" onChange={handleImportCsvFile} className="hidden" />
+      <button
+        title="Import a stock-reconciliation CSV (SKU, Quantity)"
+        onClick={() => csvInputRef.current?.click()}
+        disabled={importingCsv}
+        className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
+      >
+        <Download size={14} className="sm:hidden rotate-180" />
+        <span className="hidden sm:inline">{importingCsv ? 'Importing…' : 'Import CSV'}</span>
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <StorePageHeader
-        title="Inventory"
-        subtitle={loading ? 'Loading…' : `${total} SKU${total !== 1 ? 's' : ''}`}
-        actions={
-          <div className="flex items-center gap-2">
-            <button
-              title="Manage Locations"
-              onClick={openLocationsModal}
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-            >
-              <MapPin size={14} />
-              <span className="hidden sm:inline">Locations{activeLocations.length > 0 ? ` (${activeLocations.length})` : ''}</span>
-            </button>
-            <button
-              title="Inventory Reports"
-              onClick={() => navigate(`/store/${storeId}/inventory/reports`)}
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-            >
-              <TrendingUp size={14} className="sm:hidden" />
-              <span className="hidden sm:inline">Reports</span>
-            </button>
-            {hasMultipleLocations && (
-              <button
-                title="In-transit transfers"
-                onClick={openTransfersModal}
-                className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-              >
-                <Truck size={14} />
-                <span className="hidden sm:inline">Transfers</span>
-              </button>
-            )}
-            <button
-              title="Start a stock count"
-              onClick={handleStartStockCount}
-              disabled={startingCount}
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
-            >
-              <ClipboardCheck size={14} className="sm:hidden" />
-              <span className="hidden sm:inline">{startingCount ? 'Starting…' : 'Start Stock Count'}</span>
-            </button>
-            <button
-              title="Export"
-              onClick={handleExportCsv}
-              disabled={exporting}
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
-            >
-              <Download size={14} className="sm:hidden" />
-              <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
-            </button>
-            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleImportCsvFile} className="hidden" />
-            <button
-              title="Import a stock-reconciliation CSV (SKU, Quantity)"
-              onClick={() => csvInputRef.current?.click()}
-              disabled={importingCsv}
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
-            >
-              <Download size={14} className="sm:hidden rotate-180" />
-              <span className="hidden sm:inline">{importingCsv ? 'Importing…' : 'Import CSV'}</span>
-            </button>
-          </div>
-        }
-      />
+      {embedded ? (
+        <div className="px-4 lg:px-7 pt-4">{actionsBar}</div>
+      ) : (
+        <StorePageHeader
+          title="Inventory"
+          subtitle={loading ? 'Loading…' : `${total} SKU${total !== 1 ? 's' : ''}`}
+          actions={actionsBar}
+        />
+      )}
 
       <div className="px-4 lg:px-7 py-5 flex flex-col gap-5">
 
@@ -1141,6 +1221,27 @@ export function StoreInventory() {
               />
               <p className="text-[11px] text-slate mt-1">Used for inventory valuation — auto-updates when you receive a Purchase Order.</p>
             </div>
+            <div className="flex items-center justify-between gap-3 pt-1 border-t border-bone">
+              <div>
+                <p className="text-[13px] font-medium text-charcoal">Continue selling when out of stock</p>
+                <p className="text-[11px] text-slate">Checkout never blocks on this SKU — an oversold order is flagged "backordered".</p>
+              </div>
+              <Toggle checked={allowBackorderInput} onChange={setAllowBackorderInput} ariaLabel="Continue selling when out of stock" />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[13px] font-medium text-charcoal">Track batch/lot numbers</p>
+                <p className="text-[11px] text-slate">Real FIFO cost + expiry per receipt, instead of one blended average cost.</p>
+              </div>
+              <Toggle checked={trackLotsInput} onChange={setTrackLotsInput} ariaLabel="Track batch/lot numbers" />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[13px] font-medium text-charcoal">Track serial numbers</p>
+                <p className="text-[11px] text-slate">One real serial per unit received — for high-value/electronics SKUs.</p>
+              </div>
+              <Toggle checked={trackSerialsInput} onChange={setTrackSerialsInput} ariaLabel="Track serial numbers" />
+            </div>
             {settingsError && <p className="text-[12px] text-error">{settingsError}</p>}
           </div>
         </Modal>
@@ -1187,22 +1288,61 @@ export function StoreInventory() {
             ) : (
               <div className="flex flex-col divide-y divide-[#f3f2ec]">
                 {allLocations.filter(l => l.status === 'active').map(loc => (
-                  <div key={loc._id} className="py-2.5 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[13px] font-medium text-charcoal flex items-center gap-1.5">
-                        {loc.name}
-                        <Badge color={loc.type === 'warehouse' ? 'blue' : 'green'}>{loc.type === 'warehouse' ? 'Warehouse' : 'Store'}</Badge>
-                        {loc.isDefault ? <span className="text-[10.5px] text-slate">(default)</span> : null}
-                      </p>
-                      {loc.city && <p className="text-[11px] text-slate">{loc.city}</p>}
+                  <div key={loc._id} className="py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[13px] font-medium text-charcoal flex items-center gap-1.5">
+                          {loc.name}
+                          <Badge color={loc.type === 'warehouse' ? 'blue' : 'green'}>{loc.type === 'warehouse' ? 'Warehouse' : 'Store'}</Badge>
+                          {loc.isDefault ? <span className="text-[10.5px] text-slate">(default)</span> : null}
+                        </p>
+                        {loc.city && <p className="text-[11px] text-slate">{loc.city}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleBins(loc._id)}
+                          className="text-[11px] font-medium text-brand-deep-orange bg-transparent border-none cursor-pointer hover:underline"
+                        >
+                          {binsOpenFor === loc._id ? 'Hide bins' : 'Bins'}{binsByLocation[loc._id]?.length ? ` (${binsByLocation[loc._id].length})` : ''}
+                        </button>
+                        <button
+                          onClick={() => handleArchiveLocation(loc._id)}
+                          title="Archive location"
+                          className="flex items-center justify-center w-[26px] h-[26px] text-error border border-bone rounded-[6px] cursor-pointer transition-colors duration-150 hover:bg-error-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleArchiveLocation(loc._id)}
-                      title="Archive location"
-                      className="flex items-center justify-center w-[26px] h-[26px] text-error border border-bone rounded-[6px] cursor-pointer transition-colors duration-150 hover:bg-error-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {binsOpenFor === loc._id && (
+                      <div className="mt-2 ml-2 pl-3 border-l-2 border-bone flex flex-col gap-2">
+                        {binsLoading && !binsByLocation[loc._id] ? (
+                          <SkeletonBox height={28} rounded="6px" />
+                        ) : (
+                          <>
+                            {(binsByLocation[loc._id] ?? []).map(bin => (
+                              <div key={bin._id} className="flex items-center justify-between gap-2">
+                                <span className="text-[12px] text-charcoal">{bin.code}{bin.zone || bin.aisle || bin.shelf ? ` — ${[bin.zone, bin.aisle, bin.shelf].filter(Boolean).join(' / ')}` : ''}</span>
+                                <button onClick={() => handleDeleteBin(loc._id, bin._id)} className="text-error bg-transparent border-none cursor-pointer" title="Delete bin">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            ))}
+                            {(binsByLocation[loc._id] ?? []).length === 0 && <p className="text-[11px] text-slate">No bins yet at this location.</p>}
+                            <div className="flex gap-1.5">
+                              <input
+                                value={newBinCode}
+                                onChange={e => setNewBinCode(e.target.value)}
+                                placeholder="Bin code (e.g. A3-B2)"
+                                className="flex-1 border border-bone rounded-[6px] px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                              />
+                              <Button size="xs" variant="secondary" onClick={() => handleAddBin(loc._id)} loading={addingBin}>Add</Button>
+                            </div>
+                            {binsError && <p className="text-[11px] text-error">{binsError}</p>}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {allLocations.filter(l => l.status === 'active').length === 0 && (

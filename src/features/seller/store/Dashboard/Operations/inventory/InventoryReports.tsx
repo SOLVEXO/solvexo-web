@@ -10,7 +10,7 @@ import { apiGetInventoryValuation, type InventoryValuationData } from '@/api/ser
 // or the Inventory page's own "Reorder point & cost" action) — a SKU that's
 // never had a real cost recorded is honestly excluded from the value total,
 // never assumed to be worth 0.
-export default function InventoryReports() {
+export default function InventoryReports({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId, store } = useStoreWorkspace();
   const [data, setData] = useState<InventoryValuationData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,8 +22,8 @@ export default function InventoryReports() {
 
   return (
     <>
-      <StorePageHeader title="Inventory Reports" subtitle="Stock value, dead stock, and top movers." />
-      <div className="px-4 lg:px-7 pt-5 pb-10 flex flex-col gap-5">
+      {!embedded && <StorePageHeader title="Inventory Reports" subtitle="Stock value, dead stock, and top movers." />}
+      <div className={embedded ? 'px-4 lg:px-7 pt-4 pb-10 flex flex-col gap-5' : 'px-4 lg:px-7 pt-5 pb-10 flex flex-col gap-5'}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <MetricCard
             label="Inventory Value" icon={<DollarSign size={16} />} loading={loading}

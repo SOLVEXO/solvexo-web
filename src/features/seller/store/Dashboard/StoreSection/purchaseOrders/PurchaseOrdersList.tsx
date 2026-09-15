@@ -22,7 +22,7 @@ const STATUS_TABS: (PurchaseOrderStatus | '')[] = ['', 'draft', 'ordered', 'part
 // inventory that never existed before (Inventory itself only ever covered
 // stock already on hand). Mirrors DraftOrdersList/DraftOrderForm's
 // list+detail split, the closest existing analog in this codebase.
-export default function PurchaseOrdersList() {
+export default function PurchaseOrdersList({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId, store } = useStoreWorkspace();
   const navigate = useNavigate();
   const [items, setItems] = useState<PurchaseOrder[]>([]);
@@ -45,20 +45,22 @@ export default function PurchaseOrdersList() {
 
   const openCount = (counts.ordered ?? 0) + (counts.partially_received ?? 0);
 
+  const actionsBar = (
+    <div className="flex gap-2">
+      {!embedded && <Button variant="outline" size="sm" onClick={() => navigate(`/store/${storeId}/reorder-suggestions`)}>Reorder Suggestions</Button>}
+      <Button icon={<Plus size={13} />} size="sm" onClick={() => navigate(`/store/${storeId}/purchase-orders/new`)}>New Purchase Order</Button>
+    </div>
+  );
+
   return (
     <>
-      <StorePageHeader
-        title="Purchase Orders"
-        subtitle="Order and receive stock from your suppliers."
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate(`/store/${storeId}/reorder-suggestions`)}>Reorder Suggestions</Button>
-            <Button icon={<Plus size={13} />} size="sm" onClick={() => navigate(`/store/${storeId}/purchase-orders/new`)}>New Purchase Order</Button>
-          </div>
-        }
-      />
+      {embedded ? (
+        <div className="px-4 lg:px-7 pt-4 flex justify-end">{actionsBar}</div>
+      ) : (
+        <StorePageHeader title="Purchase Orders" subtitle="Order and receive stock from your suppliers." actions={actionsBar} />
+      )}
 
-      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-4">
+      <div className={embedded ? 'px-4 lg:px-7 pt-3 pb-8 flex flex-col gap-4' : 'px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-4'}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <MetricCard label="Draft" value={counts.draft ?? 0} />
           <MetricCard label="Awaiting Receipt" value={openCount} />

@@ -10,7 +10,7 @@ import { apiGetReorderSuggestions, type ReorderSuggestionGroup } from '@/api/ser
 // supplier it was last received from, so a seller generates ONE purchase
 // order per supplier covering everything that's low, instead of hunting
 // through the Inventory list SKU by SKU (the real Shopify/Zoho pattern).
-export default function ReorderSuggestions() {
+export default function ReorderSuggestions({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const navigate = useNavigate();
   const [groups, setGroups] = useState<ReorderSuggestionGroup[]>([]);
@@ -38,8 +38,8 @@ export default function ReorderSuggestions() {
 
   return (
     <>
-      <StorePageHeader title="Reorder Suggestions" subtitle="Every SKU running low, grouped by supplier." />
-      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-4">
+      {!embedded && <StorePageHeader title="Reorder Suggestions" subtitle="Every SKU running low, grouped by supplier." />}
+      <div className={embedded ? 'px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-4' : 'px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-4'}>
         {loading ? (
           <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={100} rounded="10px" />)}</div>
         ) : groups.length === 0 ? (

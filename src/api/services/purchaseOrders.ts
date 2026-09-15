@@ -140,6 +140,16 @@ export interface ReceivePurchaseOrderLine {
   itemId: string;
   quantityReceived: number;
   quantityDamaged?: number;
+  /** Only meaningful when the line's variant has `trackLots: true` — see
+   *  StockLot schema. Harmless to send for a non-lot-tracked variant, the
+   *  backend simply ignores it there. */
+  lotNumber?: string;
+  expiryDate?: string;
+  /** Only meaningful when the line's variant has `trackSerials: true` —
+   *  must have exactly `quantityReceived + quantityDamaged` entries or the
+   *  backend rejects that one line (reported back as a discrepancy, not a
+   *  hard error — every other line in the same receipt still applies). */
+  serialNumbers?: string[];
 }
 
 export interface ReceivePurchaseOrderResult {

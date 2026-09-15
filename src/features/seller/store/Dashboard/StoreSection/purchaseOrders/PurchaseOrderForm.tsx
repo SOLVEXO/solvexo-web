@@ -400,9 +400,10 @@ function ReceiveShipmentModal({ storeId, po, onClose, onReceived }: {
 }) {
   const toast = useToast();
   const pending = po.items.filter(i => (i.quantityReceived + i.quantityDamaged) < i.quantityOrdered);
-  const [lines, setLines] = useState<Record<string, { receiving: string; damaged: string }>>(
-    Object.fromEntries(pending.map(i => [i._id, { receiving: String(i.quantityOrdered - i.quantityReceived - i.quantityDamaged), damaged: '0' }])),
+  const [lines, setLines] = useState<Record<string, { receiving: string; damaged: string; lotNumber: string; expiryDate: string; serials: string }>>(
+    Object.fromEntries(pending.map(i => [i._id, { receiving: String(i.quantityOrdered - i.quantityReceived - i.quantityDamaged), damaged: '0', lotNumber: '', expiryDate: '', serials: '' }])),
   );
+  const [lotDetailsOpenFor, setLotDetailsOpenFor] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   // Generated once when this modal mounts (not per submit) — a retry of
   // the same submission (network hiccup, an impatient double-click before
@@ -412,7 +413,14 @@ function ReceiveShipmentModal({ storeId, po, onClose, onReceived }: {
 
   const handleSubmit = async () => {
     const items = Object.entries(lines)
-      .map(([itemId, v]) => ({ itemId, quantityReceived: parseInt(v.receiving, 10) || 0, quantityDamaged: parseInt(v.damaged, 10) || 0 }))
+      .map(([itemId, v]) => ({
+        itemId,
+        quantityReceived: parseInt(v.receiving, 10) || 0,
+        quantityDamaged: parseInt(v.damaged, 10) || 0,
+        lotNumber: v.lotNumber.trim() || undefined,
+        expiryDate: v.expiryDate || undefined,
+        serialNumbers: v.serials.trim() ? v.serials.split(/[\n,]/).map(s => s.trim()).filter(Boolean) : undefined,
+      }))
       .filter(l => l.quantityReceived > 0 || l.quantityDamaged > 0);
     if (items.length === 0) { toast.error('Enter a quantity for at least one item.'); return; }
     setSubmitting(true);
@@ -444,24 +452,58 @@ function ReceiveShipmentModal({ storeId, po, onClose, onReceived }: {
         ) : (
           pending.map(item => {
             const remaining = item.quantityOrdered - item.quantityReceived - item.quantityDamaged;
+            const detailsOpen = lotDetailsOpenFor.has(item._id);
             return (
-              <div key={item._id} className="flex items-center gap-3 p-2.5 rounded-lg border border-bone">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.name}</p>
-                  <p className="text-[10.5px] text-slate">{remaining} remaining of {item.quantityOrdered}</p>
+              <div key={item._id} className="flex flex-col gap-2 p-2.5 rounded-lg border border-bone">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.name}</p>
+                    <p className="text-[10.5px] text-slate">{remaining} remaining of {item.quantityOrdered}</p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate block">Receiving</label>
+                    <input type="number" min={0} className="w-16 px-2 py-1.5 text-[12px] border border-bone rounded-md text-center"
+                      value={lines[item._id]?.receiving ?? '0'}
+                      onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], receiving: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate block">Damaged</label>
+                    <input type="number" min={0} className="w-16 px-2 py-1.5 text-[12px] border border-bone rounded-md text-center"
+                      value={lines[item._id]?.damaged ?? '0'}
+                      onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], damaged: e.target.value } }))} />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-slate block">Receiving</label>
-                  <input type="number" min={0} className="w-16 px-2 py-1.5 text-[12px] border border-bone rounded-md text-center"
-                    value={lines[item._id]?.receiving ?? '0'}
-                    onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], receiving: e.target.value } }))} />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate block">Damaged</label>
-                  <input type="number" min={0} className="w-16 px-2 py-1.5 text-[12px] border border-bone rounded-md text-center"
-                    value={lines[item._id]?.damaged ?? '0'}
-                    onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], damaged: e.target.value } }))} />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setLotDetailsOpenFor(prev => {
+                    const next = new Set(prev);
+                    if (next.has(item._id)) next.delete(item._id); else next.add(item._id);
+                    return next;
+                  })}
+                  className="self-start text-[10.5px] text-brand-deep-orange bg-transparent border-none cursor-pointer hover:underline"
+                >
+                  {detailsOpen ? 'Hide' : '+ Add'} lot / serial details
+                </button>
+                {detailsOpen && (
+                  <div className="flex flex-col gap-1.5 pl-1 border-l-2 border-bone ml-1">
+                    <p className="text-[10px] text-slate pl-2">Only applies if this SKU has batch/lot or serial tracking turned on (Inventory → Stock → Reorder point & cost).</p>
+                    <div className="flex gap-2 pl-2">
+                      <input placeholder="Lot number (optional)" className="flex-1 px-2 py-1.5 text-[11.5px] border border-bone rounded-md"
+                        value={lines[item._id]?.lotNumber ?? ''}
+                        onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], lotNumber: e.target.value } }))} />
+                      <input type="date" className="px-2 py-1.5 text-[11.5px] border border-bone rounded-md"
+                        value={lines[item._id]?.expiryDate ?? ''}
+                        onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], expiryDate: e.target.value } }))} />
+                    </div>
+                    <textarea
+                      placeholder="Serial numbers — one per line or comma-separated (required only if this SKU tracks serials)"
+                      rows={2}
+                      className="mx-2 px-2 py-1.5 text-[11.5px] border border-bone rounded-md resize-none"
+                      value={lines[item._id]?.serials ?? ''}
+                      onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], serials: e.target.value } }))}
+                    />
+                  </div>
+                )}
               </div>
             );
           })

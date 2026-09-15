@@ -88,6 +88,9 @@ export interface VariantInput {
   isDefault?:     boolean;
   reorderPoint?:  number;
   costPrice?:     number;
+  allowBackorder?: boolean;
+  trackLots?:     boolean;
+  trackSerials?:  boolean;
 }
 
 export interface StoreProduct {
@@ -478,6 +481,9 @@ export interface StockLine {
   status:         'in_stock' | 'low_stock' | 'out_of_stock' | 'unlimited';
   reorderPoint:   number | null;
   costPrice:      number | null;
+  allowBackorder: boolean;
+  trackLots:      boolean;
+  trackSerials:   boolean;
 }
 
 export type StockLineStatusFilter = 'in_stock' | 'low_stock' | 'out_of_stock' | 'unlimited';

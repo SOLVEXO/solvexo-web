@@ -18,8 +18,6 @@ export interface StoreBanner {
   type:            StoreBannerType;
   imageUrl:        string;
   publicId:        string;
-  mobileImageUrl:  string | null;
-  mobilePublicId:  string;
   videoUrl:        string | null;
   ctaLabel:        string | null;
   linkType:        StoreBannerLinkType;
@@ -63,10 +61,9 @@ export function apiGetStoreBanners(storeId: string) {
   return client.get<never, { success: boolean; data: StoreBanner[] }>(ENDPOINTS.STORE_BANNER.LIST(storeId));
 }
 
-export function apiCreateStoreBanner(storeId: string, fields: CreateStoreBannerFields, file: File, mobileFile?: File) {
+export function apiCreateStoreBanner(storeId: string, fields: CreateStoreBannerFields, file: File) {
   const fd = new FormData();
   fd.append('file', file);
-  if (mobileFile) fd.append('mobileFile', mobileFile);
   Object.entries(fields).forEach(([key, value]) => {
     if (value !== undefined) fd.append(key, String(value));
   });

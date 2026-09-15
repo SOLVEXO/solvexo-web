@@ -3,7 +3,7 @@ import { clsx } from 'clsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiTrackPromotionImpression, apiTrackPromotionClick } from '@/api/services/promotions';
 import { setPromotionAttribution } from '@/utils/promotionAttribution';
-import { cloudinaryUrl, cloudinarySrcSet, cloudinaryDensitySrcSet } from '@/utils/cloudinaryImage';
+import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 
 /** Minimal shape this carousel needs — both the platform `Banner` (Marketplace/
  *  Education Marketplace hero) and a store's own `StoreBanner` (storefront hero)
@@ -13,13 +13,7 @@ export interface BannerCarouselItem {
   order: number;
   imageUrl: string;
   linkUrl?: string | null;
-  /** Store-banner-only: a seller-provided dedicated mobile crop. Swapped in
-   *  below 768px via `<picture>` art-direction instead of just serving a
-   *  smaller version of the desktop crop. */
-  mobileImageUrl?: string | null;
 }
-
-const MOBILE_BREAKPOINT = '(max-width: 767px)';
 
 interface BannerCarouselProps {
   banners: BannerCarouselItem[];
@@ -105,26 +99,21 @@ export function BannerCarousel({ banners, entityType, fit = 'cover' }: BannerCar
       {sorted.map((banner, i) => {
         const isActive = i === index;
         const img = (
-          <picture>
-            {banner.mobileImageUrl && (
-              <source media={MOBILE_BREAKPOINT} srcSet={cloudinaryDensitySrcSet(banner.mobileImageUrl, 480)} />
+          <img
+            src={cloudinaryUrl(banner.imageUrl, 1920)}
+            srcSet={cloudinarySrcSet(banner.imageUrl)}
+            sizes="100vw"
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchPriority={i === 0 ? 'high' : undefined}
+            decoding="async"
+            alt=""
+            onLoad={() => setLoadedIds((prev) => (prev.has(banner._id) ? prev : new Set(prev).add(banner._id)))}
+            className={clsx(
+              'absolute inset-0 w-full h-full',
+              fit === 'contain' ? 'object-contain bg-cream' : 'object-cover',
+              fit === 'cover' && isActive && !prefersReducedMotion && 'hero-kenburns',
             )}
-            <img
-              src={cloudinaryUrl(banner.imageUrl, 1920)}
-              srcSet={cloudinarySrcSet(banner.imageUrl)}
-              sizes="100vw"
-              loading={i === 0 ? 'eager' : 'lazy'}
-              fetchPriority={i === 0 ? 'high' : undefined}
-              decoding="async"
-              alt=""
-              onLoad={() => setLoadedIds((prev) => (prev.has(banner._id) ? prev : new Set(prev).add(banner._id)))}
-              className={clsx(
-                'absolute inset-0 w-full h-full',
-                fit === 'contain' ? 'object-contain bg-cream' : 'object-cover',
-                fit === 'cover' && isActive && !prefersReducedMotion && 'hero-kenburns',
-              )}
-            />
-          </picture>
+          />
         );
 
         // Shortest signed distance from the active slide, wrapping around the

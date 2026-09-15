@@ -43,7 +43,6 @@ const VIDEO_ACCEPT = 'video/mp4,video/webm';
 function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState(emptyBannerForm);
   const [file, setFile] = useState<File | null>(null);
-  const [mobileFile, setMobileFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const isVideo = form.type === 'video';
@@ -67,7 +66,7 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
         linkTarget: form.linkTarget || undefined,
         startAt: form.startAt ? new Date(form.startAt).toISOString() : undefined,
         endAt: form.endAt ? new Date(form.endAt).toISOString() : undefined,
-      }, file, mobileFile ?? undefined);
+      }, file);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create store banner.');
@@ -97,21 +96,14 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-charcoal mb-1.5">{isVideo ? 'Desktop Video' : 'Desktop Image'}</label>
-          <FileDropSelect value={file} onChange={setFile} accept={isVideo ? VIDEO_ACCEPT : IMAGE_ACCEPT} label={isVideo ? 'Click to upload banner video' : 'Click to upload desktop banner'} />
+          <label className="block text-[12px] font-medium text-charcoal mb-1.5">{isVideo ? 'Video' : 'Image'}</label>
+          <FileDropSelect value={file} onChange={setFile} accept={isVideo ? VIDEO_ACCEPT : IMAGE_ACCEPT} label={isVideo ? 'Click to upload banner video' : 'Click to upload banner image'} />
           <p className="mt-1.5 text-[11px] text-slate/70">
             {isVideo
               ? 'MP4 or WebM, up to 50MB. A poster frame is generated for you automatically.'
-              : 'Recommended: 2560×720px (minimum 1280px wide) — renders full-width on desktop, so anything narrower will look blurry.'}
+              : 'Recommended: 2560×720px (minimum 1280px wide) — this renders full-width on every screen size, so anything narrower will look blurry.'}
           </p>
         </div>
-        {!isVideo && (
-          <div>
-            <label className="block text-[12px] font-medium text-charcoal mb-1.5">Mobile Image (optional)</label>
-            <FileDropSelect value={mobileFile} onChange={setMobileFile} label="Click to upload mobile banner" />
-            <p className="mt-1.5 text-[11px] text-slate/70">Recommended: 1440×600px (minimum 640px wide).</p>
-          </div>
-        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-[12px] font-medium text-charcoal mb-1.5">Link Type</label>

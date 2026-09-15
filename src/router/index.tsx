@@ -108,7 +108,7 @@ const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analy
 const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO').then(m => ({ default: m.StoreSEO })));
 const StoreFinance = lazy(() => import('@/features/seller/store/Dashboard/Operations/finance/Finance').then(m => ({ default: m.StoreFinance })));
 const StoreReviews = lazy(() => import('@/features/seller/store/Dashboard/Operations/reviews/reviews').then(m => ({ default: m.StoreReviews })));
-const StoreInventory = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/Inventory').then(m => ({ default: m.StoreInventory })));
+const InventoryHub = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryHub').then(m => ({ default: m.InventoryHub })));
 const StockCountSession = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/StockCountSession'));
 const InventoryReports = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryReports'));
 const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
@@ -364,7 +364,7 @@ const mainRouter = createBrowserRouter([
           { path: 'ai/studio',                        element: <StoreAIStudio /> },
           { path: 'reviews',                          element: <StoreReviews /> },
           { path: 'finance',                          element: <StoreFinance /> },
-          { path: 'inventory',                        element: <StoreInventory /> },
+          { path: 'inventory',                        element: <InventoryHub /> },
           { path: 'inventory/count/:countId',          element: <StockCountSession /> },
           { path: 'inventory/reports',                 element: <InventoryReports /> },
           { path: 'marketing',                        element: <StoreMarketing /> },

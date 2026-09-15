@@ -84,7 +84,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     items: [
       { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products'        },
       { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory'       },
-      { id: 'purchase-orders', Icon: Truck,         label: 'Purchase Orders', path: 'purchase-orders' },
       { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories'      },
       { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections'     },
     ],
