@@ -114,69 +114,6 @@ const typeStyles: Record<string, { bg: string; color: string }> = {
   brand:   { bg: '#F5F0FF', color: '#7C3AED' },
 };
 
-// ── Store header bar — logo, live/status badge, plan, quick actions, all real
-// data already resolved by `useStoreWorkspace()` — replaces the plain page
-// title. Deliberately a plain bordered white bar (matches every other card on
-// this page), not a cover-photo hero — a store's cover image belongs on its
-// public storefront identity banner, not repurposed as dashboard chrome. ──
-function StoreHeaderBar({ store }: { store: ReturnType<typeof useStoreWorkspace>['store'] }) {
-  const navigate = useNavigate();
-  const isLive = store?.status === 'active';
-
-  return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl px-5 py-4 sm:px-6 sm:py-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-      <div className="flex items-center gap-3.5 flex-1 min-w-0">
-        <div className="size-11 rounded-xl bg-brand-pale-orange border border-[#eae8de] flex items-center justify-center shrink-0 overflow-hidden">
-          {store?.logo
-            ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
-            : <Globe size={20} className="text-brand-orange" />}
-        </div>
-        <div className="min-w-0">
-          <p className="text-[18px] sm:text-[20px] font-bold text-charcoal leading-tight truncate">
-            {store?.name ?? '—'}
-          </p>
-          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-            <span className={`inline-flex items-center gap-[5px] rounded-full px-[9px] py-[3px] text-[11px] font-semibold ${isLive ? 'bg-success-bg text-success' : 'bg-cream text-slate'}`}>
-              <span className={`size-[5px] rounded-full ${isLive ? 'bg-success pos-live-pulse' : 'bg-slate/60'}`} />
-              {isLive ? 'Live' : (store?.status ?? '—')}
-            </span>
-            {store?.plan && (
-              <span className="inline-flex items-center rounded-full bg-cream px-[9px] py-[3px] text-[11px] font-semibold text-graphite capitalize">
-                {store.plan} plan
-              </span>
-            )}
-            {store?.slug && (
-              <span className="inline-flex items-center rounded-full bg-cream px-[9px] py-[3px] text-[11px] font-medium text-slate">
-                /{store.slug}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 flex-wrap shrink-0">
-        <Button
-          variant="outline" size="sm"
-          onClick={() => navigate(`/store/${store?._id ?? ''}/settings`)}
-        >
-          Settings
-        </Button>
-        {store?.slug && (
-          <a
-            href={getStorefrontUrl(store.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-[6px] px-[14px] py-[9px] rounded-lg bg-brand-orange text-white text-[13px] font-bold no-underline transition-colors duration-150 hover:bg-brand-deep-orange"
-          >
-            <ExternalLink size={14} />
-            View Live Store
-          </a>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Store Info Card ───────────────────────────────────────────────────────────
 function StoreInfoCard() {
   const navigate = useNavigate();
@@ -783,7 +720,6 @@ function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; cur
 function DashSkeleton() {
   return (
     <div className="px-7 py-6 flex flex-col gap-5">
-      <SkeletonBox height={112} width="100%" rounded="16px" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1,2,3,4].map(i => (
           <div key={i} className="bg-white rounded-2xl border border-bone p-5">
@@ -885,17 +821,8 @@ export default function StoreDashboard() {
         <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
 
           {/* Shopify-style trial pill — Dashboard-only (not shown on any
-             other page's header), directly above the store hero card. */}
+             other page's header). */}
           <TrialBillingPill />
-
-          <StoreHeaderBar store={store} />
-
-          {/* Persistent Setup Guide — replaces the old mandatory onboarding
-             Payment/Review steps (see OnboardingPage.tsx). Auto-hides itself
-             once every task is genuinely done; `totalProducts` is passed in
-             from the metrics this page already fetches, so it doesn't
-             trigger a second inventory request just to check completion. */}
-          {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />}
 
           {metricsError && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">
@@ -906,23 +833,9 @@ export default function StoreDashboard() {
             </div>
           )}
 
-          {metrics?.today && <TodaySnapshot today={metrics.today} currency={store?.baseCurrency} />}
-
-          {metrics && (
-            <NeedsAttentionCard
-              storeId={storeId}
-              lowStockCount={metrics.lowStockCount}
-              pendingOrdersCount={metrics.pendingOrdersCount}
-              openReturnsCount={metrics.openReturnsCount}
-              openDisputeCount={metrics.openDisputeCount}
-              highRiskOrderCount={metrics.highRiskOrderCount}
-              awaitingCaptureCount={metrics.awaitingCaptureCount}
-            />
-          )}
-
-          {metrics?.overview && <InsightsStrip overview={metrics.overview} />}
-
-          {/* Metric Cards — customizable, see MetricsCustomizeModal above */}
+          {/* Metric Cards — customizable, see MetricsCustomizeModal above.
+             Moved to the very top of the page — the numbers a seller opens
+             the dashboard to check, before anything else. */}
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">Metrics</p>
             <button
@@ -935,6 +848,40 @@ export default function StoreDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {activeMetricIds.map(id => renderMetricCard(id, metrics, store?.baseCurrency, totalCustomers, revenueSparkline))}
           </div>
+
+          {/* Today + Needs Attention, side by side — both are "what's
+             happening right now" glance cards, so they share one row instead
+             of stacking full-width one under the other. */}
+          {metrics && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TodaySnapshot today={metrics.today} currency={store?.baseCurrency} />
+              <NeedsAttentionCard
+                storeId={storeId}
+                lowStockCount={metrics.lowStockCount}
+                pendingOrdersCount={metrics.pendingOrdersCount}
+                openReturnsCount={metrics.openReturnsCount}
+                openDisputeCount={metrics.openDisputeCount}
+                highRiskOrderCount={metrics.highRiskOrderCount}
+                awaitingCaptureCount={metrics.awaitingCaptureCount}
+              />
+            </div>
+          )}
+
+          {metrics?.overview && <InsightsStrip overview={metrics.overview} />}
+
+          {/* Setup Guide + Quick Actions, side by side. Quick Actions stays
+             desktop-only within its own column — on mobile, StoreNavMenu (and
+             the bottom-nav's Menu sheet, reachable from any page) already
+             cover every one of these destinations, so it collapses away
+             rather than leaving an empty second column. */}
+          {metrics && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />
+              <div className="hidden lg:block">
+                <QuickActionsRow storeId={storeId} />
+              </div>
+            </div>
+          )}
 
           {/* Revenue Chart + Store Info — one filterable Revenue Overview
              chart (range picker top-right) replaces the old fixed 6-month
@@ -972,6 +919,7 @@ export default function StoreDashboard() {
               <DonutChart
                 title="Inventory Health" subtitle="Across your catalog"
                 size={150}
+                emptyLabel="No products in stock yet"
                 // No centerLabel — that total would just repeat the "Active
                 // Products" metric card's own number; this chart's only job
                 // is the in/low/out-of-stock proportion, not the total itself.
@@ -984,6 +932,7 @@ export default function StoreDashboard() {
               <DonutChart
                 title="Customers" subtitle="Last 30 days"
                 size={150}
+                emptyLabel="No customers yet this period"
                 // No centerLabel — that total would just repeat the
                 // "Customers (30 days)" metric card's own number; this
                 // chart's only job is the new-vs-returning proportion.
@@ -995,13 +944,6 @@ export default function StoreDashboard() {
               <PlanUsageCard entitlements={metrics.entitlements} storeId={storeId} />
             </div>
           )}
-
-          {/* Quick Actions — desktop only; on mobile StoreNavMenu above (and
-             the bottom-nav's Menu sheet, reachable from any page) already
-             cover every one of these destinations (and more). */}
-          <div className="hidden lg:block">
-            <QuickActionsRow storeId={storeId} />
-          </div>
 
         </div>
       )}

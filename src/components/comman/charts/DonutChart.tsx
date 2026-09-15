@@ -34,6 +34,11 @@ export interface DonutChartProps {
   innerRadius?: number;
   showLegend?: boolean;
   centerLabel?: string;
+  /** Shown next to a muted placeholder ring when every segment is 0 (e.g. a
+   *  brand-new store with no data yet) — distinct from the "no data at all"
+   *  case below. A ring with an invisible 0-angle slice and a legend full of
+   *  "0%" rows reads as broken, not as "nothing here yet". */
+  emptyLabel?: string;
 }
 
 export function DonutChart({
@@ -44,6 +49,7 @@ export function DonutChart({
   innerRadius,
   showLegend = true,
   centerLabel,
+  emptyLabel = 'No data yet',
 }: DonutChartProps) {
   const total    = data.reduce((s, d) => s + d.value, 0);
   const ir       = innerRadius ?? Math.round(size * 0.33);
@@ -64,6 +70,9 @@ export function DonutChart({
     );
   }
 
+  const isEmpty = total === 0;
+  const ringData = isEmpty ? [{ label: '', value: 1 }] : segments;
+
   return (
     <div
       className="bg-white border border-bone rounded-[10px] px-5 py-5 transition-colors duration-200 hover:border-slate/30"
@@ -83,31 +92,33 @@ export function DonutChart({
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={segments}
+                data={ringData}
                 dataKey="value"
                 nameKey="label"
                 cx="50%"
                 cy="50%"
                 innerRadius={ir}
                 outerRadius={or}
-                paddingAngle={2}
+                paddingAngle={isEmpty ? 0 : 2}
                 startAngle={90}
                 endAngle={-270}
                 strokeWidth={0}
               >
-                {segments.map((seg, i) => (
-                  <Cell key={i} fill={seg.color} />
-                ))}
+                {isEmpty
+                  ? <Cell fill="#F0EEE6" />
+                  : segments.map((seg, i) => <Cell key={i} fill={seg.color} />)}
               </Pie>
-              <Tooltip
-                content={<ChartTooltip total={total} />}
-                wrapperStyle={{ fontFamily: CHART_FONT }}
-              />
+              {!isEmpty && (
+                <Tooltip
+                  content={<ChartTooltip total={total} />}
+                  wrapperStyle={{ fontFamily: CHART_FONT }}
+                />
+              )}
             </PieChart>
           </ResponsiveContainer>
 
           {/* Center label */}
-          {centerLabel && (
+          {centerLabel && !isEmpty && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <p className="text-[11px] text-slate">{centerLabel}</p>
               <p className="text-[18px] font-bold text-charcoal leading-[1.2]">{total.toLocaleString()}</p>
@@ -115,20 +126,25 @@ export function DonutChart({
           )}
         </div>
 
-        {/* Legend */}
+        {/* Legend — or, when every segment is 0, one plain message instead of
+           a stack of confusing "0%" rows. */}
         {showLegend && (
-          <div className="flex flex-col gap-[10px] min-w-0">
-            {segments.map(seg => {
-              const pct = total > 0 ? ((seg.value / total) * 100).toFixed(1) : '0';
-              return (
-                <div key={seg.label} className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: seg.color }} />
-                  <span className="text-[12px] text-graphite flex-1 truncate">{seg.label}</span>
-                  <span className="text-[12px] font-semibold text-charcoal ml-2">{pct}%</span>
-                </div>
-              );
-            })}
-          </div>
+          isEmpty ? (
+            <p className="text-[12.5px] text-slate flex-1 min-w-0">{emptyLabel}</p>
+          ) : (
+            <div className="flex flex-col gap-[10px] min-w-0">
+              {segments.map(seg => {
+                const pct = ((seg.value / total) * 100).toFixed(1);
+                return (
+                  <div key={seg.label} className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: seg.color }} />
+                    <span className="text-[12px] text-graphite flex-1 truncate">{seg.label}</span>
+                    <span className="text-[12px] font-semibold text-charcoal ml-2">{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
     </div>
