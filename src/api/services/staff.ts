@@ -31,6 +31,11 @@ export const STAFF_PERMISSIONS = [
   'settings.shipping.manage', 'settings.locations.manage',
   'settings.domains.manage', 'settings.pixels.manage', 'settings.payments.manage',
   'finance.payouts.view', 'finance.payments.manage', 'finance.tax_documents.manage',
+  'messaging.view', 'messaging.manage',
+  'loyalty.view', 'loyalty.manage', 'loyalty.points.award',
+  'subscriptions.view', 'subscriptions.manage', 'subscriptions.subscribers.manage',
+  'seo.view', 'seo.manage',
+  'aistudio.view', 'aistudio.use',
   'staff.manage',
 ] as const;
 export type StaffPermission = (typeof STAFF_PERMISSIONS)[number];
@@ -90,6 +95,18 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'finance.payouts.view': 'View payouts & transactions',
   'finance.payments.manage': 'Manage Stripe payout account',
   'finance.tax_documents.manage': 'Generate tax reports',
+  'messaging.view': 'View customer messages',
+  'messaging.manage': 'Reply to & manage customer messages',
+  'loyalty.view': 'View loyalty program & members',
+  'loyalty.manage': 'Manage loyalty program & rewards',
+  'loyalty.points.award': 'Manually award loyalty points',
+  'subscriptions.view': 'View subscription plans & subscribers',
+  'subscriptions.manage': 'Manage subscription plans',
+  'subscriptions.subscribers.manage': 'Manage subscribers (pause/cancel/refund)',
+  'seo.view': 'View SEO data & audits',
+  'seo.manage': 'Manage SEO settings',
+  'aistudio.view': 'View AI Studio credit usage & history',
+  'aistudio.use': 'Use AI Studio generation tools',
   'staff.manage': 'Manage staff & roles',
 };
 

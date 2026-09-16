@@ -93,6 +93,7 @@ const StoreEditProduct = lazy(() => import('@/features/seller/store/Dashboard/St
 const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
 const StoreCustomerList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
 const StoreSettings = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
+const StoreStaff = lazy(() => import('@/features/seller/store/Dashboard/Manage/Staff'));
 const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
 const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
@@ -333,6 +334,7 @@ const mainRouter = createBrowserRouter([
           { path: 'customer/list',                    element: <StoreCustomerList /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
           { path: 'settings',                         element: <StoreSettings /> },
+          { path: 'staff',                            element: <StoreStaff /> },
           { path: 'account',                          element: <SellerSettings variant="store" /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },

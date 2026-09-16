@@ -141,12 +141,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // path to the list that create/edit actually happens from.
       { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
       { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: 'customers.view' },
-      // No staff-permission gate exists on `messaging.controller.ts` yet
-      // (untouched this pass — still `@Roles('user','seller')` only), so
-      // this is deliberately hidden from every staff nav (undefined
-      // `requiredPermission`) rather than linking to a route that would
-      // 403 on click.
-      { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages'       },
+      { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
     ],
   },
   {
@@ -175,13 +170,10 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // OR'd with `giftcards.manage` (issue/adjust balance) — a staff
       // member granted only that, not general view, still needs a nav path.
       { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards',    requiredPermission: ['giftcards.view', 'giftcards.manage'] },
-      // Loyalty/Subscriptions/SEO/AI Studio controllers weren't touched by
-      // this pass's staff-permission rollout — hidden from staff nav for
-      // the same reason as Messages above.
-      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
-      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
-      { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo'           },
-      { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio'     },
+      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'] },
+      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['subscriptions.view', 'subscriptions.manage', 'subscriptions.subscribers.manage'] },
+      { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
+      { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],
   },
   {
@@ -235,6 +227,11 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // page — OR'd so a staff member granted any one of them has a nav
       // path in, not just a backend route with nothing linking to it.
       { id: 'settings',      Icon: Settings,    label: 'Settings',     path: 'settings',     requiredPermission: ['settings.domains.manage', 'settings.general.manage', 'settings.taxes.manage'] },
+      // Real, store-wide Staff/Roles management — previously buried as a
+      // tab inside the Inventory Hub, moved here since it governs access
+      // across nearly every section of the store, not just Inventory (a
+      // real architectural mismatch, fixed rather than left as-is).
+      { id: 'staff',         Icon: Users,       label: 'Staff',        path: 'staff',        requiredPermission: 'staff.manage' },
     ],
   },
 ];

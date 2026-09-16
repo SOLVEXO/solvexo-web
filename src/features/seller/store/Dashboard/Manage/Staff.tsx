@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Check, X, ShieldCheck, KeyRound, Trash2 } from 'lucide-react';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import {
@@ -14,15 +14,19 @@ import {
 const EMPTY_STAFF_FORM = { name: '', email: '', password: '', role: 'staff' as 'staff' | 'manager', roleId: '' };
 const EMPTY_ROLE_FORM = { name: '', description: '', permissions: [] as StaffPermission[] };
 
-/** "Staff" tab of the Inventory hub — real, store-wide Staff RBAC
- *  management: Shopify-parity Roles (a named, reusable permission bundle —
- *  see the `Role` schema) assigned to staff, plus the approvals queue for
- *  large/damage stock adjustments. This is the SELLER-side management
- *  surface (reachable from the seller's own existing dashboard session) —
- *  a staff member's own login is at `/staff-login/:storeId` (see
- *  `StaffLoginPage.tsx`), a separate, real login distinct from the
- *  seller's own. */
-export default function StaffTab() {
+/** Real, store-wide Staff RBAC management — Shopify-parity Roles (a named,
+ *  reusable permission bundle — see the `Role` schema) assigned to staff,
+ *  plus the approvals queue for large/damage stock adjustments. Its own
+ *  top-level page (`/store/:storeId/staff`, Settings nav group) — moved out
+ *  of the Inventory Hub, which is where it originally landed (a real
+ *  architectural mismatch: Staff permissions now gate nearly every store
+ *  section — Orders/Products/Finance/Settings/etc, not just Inventory — so
+ *  burying management for them inside one module's tab bar was misleading).
+ *  This is the SELLER-side management surface (reachable from the seller's
+ *  own existing dashboard session) — a staff member's own login is at
+ *  `/staff-login/:storeId` (see `StaffLoginPage.tsx`), a separate, real
+ *  login distinct from the seller's own. */
+export default function StaffPage() {
   const { storeId } = useStoreWorkspace();
   const [subTab, setSubTab] = useState<'staff' | 'roles'>('staff');
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -52,45 +56,49 @@ export default function StaffTab() {
   };
 
   return (
-    <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-6">
-      {/* ── Pending approvals ────────────────────────────────────────── */}
-      {approvals.length > 0 && (
-        <div className="bg-white rounded-xl border border-brand-orange/30 overflow-hidden">
-          <div className="px-4 py-3 border-b border-bone bg-brand-pale-orange flex items-center gap-2">
-            <ShieldCheck size={15} className="text-brand-deep-orange" />
-            <p className="text-[13px] font-bold text-charcoal">Pending Approvals ({approvals.length})</p>
-          </div>
-          <div className="divide-y divide-bone">
-            {approvals.map(a => (
-              <div key={a._id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-[12.5px] font-semibold text-charcoal truncate">{a.summary}</p>
-                  <p className="text-[11px] text-slate">Requested by {a.requestedByName ?? 'a staff member'} · {new Date(a.createdAt).toLocaleString()}</p>
+    <>
+      <StorePageHeader title="Staff" subtitle="Give staff their own scoped login and control what they can access across the whole store." />
+
+      <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-6">
+        {/* ── Pending approvals ────────────────────────────────────────── */}
+        {approvals.length > 0 && (
+          <div className="bg-white rounded-xl border border-brand-orange/30 overflow-hidden">
+            <div className="px-4 py-3 border-b border-bone bg-brand-pale-orange flex items-center gap-2">
+              <ShieldCheck size={15} className="text-brand-deep-orange" />
+              <p className="text-[13px] font-bold text-charcoal">Pending Approvals ({approvals.length})</p>
+            </div>
+            <div className="divide-y divide-bone">
+              {approvals.map(a => (
+                <div key={a._id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-semibold text-charcoal truncate">{a.summary}</p>
+                    <p className="text-[11px] text-slate">Requested by {a.requestedByName ?? 'a staff member'} · {new Date(a.createdAt).toLocaleString()}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="xs" variant="outline" icon={<X size={12} />} onClick={() => handleReject(a._id)} loading={approvalBusy === a._id}>Reject</Button>
+                    <Button size="xs" variant="primary" icon={<Check size={12} />} onClick={() => handleApprove(a._id)} loading={approvalBusy === a._id}>Approve</Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button size="xs" variant="outline" icon={<X size={12} />} onClick={() => handleReject(a._id)} loading={approvalBusy === a._id}>Reject</Button>
-                  <Button size="xs" variant="primary" icon={<Check size={12} />} onClick={() => handleApprove(a._id)} loading={approvalBusy === a._id}>Approve</Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* ── Staff / Roles sub-tabs ───────────────────────────────────── */}
+        <div className="flex gap-1">
+          {(['staff', 'roles'] as const).map(t => (
+            <button key={t} type="button" onClick={() => setSubTab(t)}
+              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-semibold border cursor-pointer ${subTab === t ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
+              {t === 'staff' ? 'Staff Members' : 'Roles'}
+            </button>
+          ))}
         </div>
-      )}
 
-      {/* ── Staff / Roles sub-tabs ───────────────────────────────────── */}
-      <div className="flex gap-1">
-        {(['staff', 'roles'] as const).map(t => (
-          <button key={t} type="button" onClick={() => setSubTab(t)}
-            className={`px-3 py-1.5 rounded-lg text-[12.5px] font-semibold border cursor-pointer ${subTab === t ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
-            {t === 'staff' ? 'Staff Members' : 'Roles'}
-          </button>
-        ))}
+        {subTab === 'staff'
+          ? <StaffList storeId={storeId} staff={staff} roles={roles} loading={loading} roleName={roleName} onChanged={load} />
+          : <RolesList storeId={storeId} roles={roles} loading={loading} onChanged={load} />}
       </div>
-
-      {subTab === 'staff'
-        ? <StaffList storeId={storeId} staff={staff} roles={roles} loading={loading} roleName={roleName} onChanged={load} />
-        : <RolesList storeId={storeId} roles={roles} loading={loading} onChanged={load} />}
-    </div>
+    </>
   );
 }
 
