@@ -10,8 +10,10 @@ import { currencySymbol } from '@/utils/currency';
 import { apiListVariants, apiGetStoreInventory, type ProductVariant } from '@/api/services/product';
 import {
   apiSearchDraftOrderCustomers, apiCreateDraftOrder, apiGetDraftOrder, apiUpdateDraftOrder,
-  apiCancelDraftOrder, apiCompleteDraftOrder,
+  apiCancelDraftOrder, apiCompleteDraftOrder, apiMarkDraftOrderPaid,
+  apiDuplicateDraftOrder, apiDeleteDraftOrderPermanently, apiSendDraftOrderInvoice,
   type DraftOrder, type DraftOrderItem, type DraftOrderCustomer,
+  type DraftOrderPaymentTerms,
 } from '@/api/services/draftOrders';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white';
@@ -117,6 +119,20 @@ export default function DraftOrderForm() {
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(false);
+  const [needsShipping, setNeedsShipping] = useState(false);
+  const [shipRecipientName, setShipRecipientName] = useState('');
+  const [shipAddressLine1, setShipAddressLine1] = useState('');
+  const [shipAddressLine2, setShipAddressLine2] = useState('');
+  const [shipCity, setShipCity] = useState('');
+  const [shipState, setShipState] = useState('');
+  const [shipZip, setShipZip] = useState('');
+  const [shipPhone, setShipPhone] = useState('');
+  const [paymentTerms, setPaymentTerms] = useState<DraftOrderPaymentTerms | ''>('');
+  const [duplicating, setDuplicating] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
   const currency = draft?.currency ?? store?.baseCurrency ?? 'USD';
   const symbol = currencySymbol(currency);
   const isEditable = isNew || draft?.status === 'open';
@@ -138,6 +154,15 @@ export default function DraftOrderForm() {
       setShippingAmount(d.shippingAmount);
       setTaxAmount(d.taxAmount);
       setNotes(d.notes);
+      setNeedsShipping(!!d.shippingAddress);
+      setShipRecipientName(d.shippingAddress?.recipientName ?? '');
+      setShipAddressLine1(d.shippingAddress?.addressLine1 ?? '');
+      setShipAddressLine2(d.shippingAddress?.addressLine2 ?? '');
+      setShipCity(d.shippingAddress?.city ?? '');
+      setShipState(d.shippingAddress?.state ?? '');
+      setShipZip(d.shippingAddress?.zipCode ?? '');
+      setShipPhone(d.shippingAddress?.phoneNumber ?? '');
+      setPaymentTerms(d.paymentTerms ?? '');
     }).finally(() => setLoading(false));
   }, [storeId, draftId, isNew]);
 
@@ -181,6 +206,10 @@ export default function DraftOrderForm() {
     shippingAmount,
     taxAmount,
     notes,
+    shippingAddress: needsShipping && shipRecipientName.trim() && shipAddressLine1.trim() && shipCity.trim() && shipPhone.trim()
+      ? { recipientName: shipRecipientName.trim(), addressLine1: shipAddressLine1.trim(), addressLine2: shipAddressLine2.trim() || undefined, city: shipCity.trim(), state: shipState.trim() || undefined, zipCode: shipZip.trim() || undefined, phoneNumber: shipPhone.trim() }
+      : undefined,
+    paymentTerms: paymentTerms || undefined,
   });
 
   const handleSave = async () => {
@@ -212,6 +241,61 @@ export default function DraftOrderForm() {
     loadDraft();
   };
 
+  const handleDuplicate = async () => {
+    if (!draftId) return;
+    setDuplicating(true);
+    try {
+      const res = await apiDuplicateDraftOrder(storeId, draftId);
+      toast.success('Draft order duplicated.');
+      navigate(`/store/${storeId}/draft-orders/${res.data._id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to duplicate draft order.');
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!draftId) return;
+    setDeleting(true);
+    try {
+      await apiDeleteDraftOrderPermanently(storeId, draftId);
+      toast.success('Draft order deleted.');
+      navigate(`/store/${storeId}/draft-orders`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete draft order.');
+      setDeleting(false);
+    }
+  };
+
+  const handleSendInvoice = async () => {
+    if (!draftId) return;
+    setSendingInvoice(true);
+    try {
+      await apiSendDraftOrderInvoice(storeId, draftId);
+      toast.success(`Invoice sent to ${customerEmail}.`);
+      loadDraft();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send invoice.');
+    } finally {
+      setSendingInvoice(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!draftId) return;
+    setMarkingPaid(true);
+    try {
+      await apiMarkDraftOrderPaid(storeId, draftId);
+      toast.success('Draft order marked as paid.');
+      loadDraft();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to mark draft order as paid.');
+    } finally {
+      setMarkingPaid(false);
+    }
+  };
+
   const handleComplete = async () => {
     if (!draftId) return;
     setCompleting(true);
@@ -233,13 +317,27 @@ export default function DraftOrderForm() {
     <>
       <StorePageHeader
         title={isNew ? 'New Draft Order' : `Draft Order${draft?.orderNumber ? ` · ${draft.orderNumber}` : ''}`}
-        subtitle={!isNew && draft ? `Status: ${draft.status}` : 'Build a manually-priced order for a phone, in-person, or wholesale sale.'}
+        subtitle={!isNew && draft ? `Status: ${draft.status}${draft.status === 'open' ? ` · ${draft.isPaid ? 'Paid' : 'Unpaid'}` : ''}` : 'Build a manually-priced order for a phone, in-person, or wholesale sale.'}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
+            {!isNew && (
+              <Button variant="outline" size="sm" loading={duplicating} onClick={handleDuplicate}>Duplicate</Button>
+            )}
+            {!isNew && draft?.status !== 'completed' && (
+              <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(true)} className="!text-error !border-error/30 hover:!bg-error-bg">Delete</Button>
+            )}
+            {!isNew && draft?.status === 'open' && customerId && customerEmail && (
+              <Button variant="outline" size="sm" loading={sendingInvoice} onClick={handleSendInvoice}>
+                {draft.invoiceSentAt ? 'Resend Invoice' : 'Send Invoice'}
+              </Button>
+            )}
             {!isNew && draft?.status === 'open' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingCancel(true)}>Cancel Draft</Button>
             )}
             {isEditable && <Button size="sm" loading={saving} onClick={handleSave}>{isNew ? 'Create' : 'Save'}</Button>}
+            {!isNew && draft?.status === 'open' && !draft.isPaid && (
+              <Button size="sm" variant="outline" loading={markingPaid} onClick={handleMarkPaid}>Mark as Paid</Button>
+            )}
             {!isNew && draft?.status === 'open' && (
               <Button size="sm" variant="primary" icon={<CheckCircle2 size={13} />} onClick={() => setConfirmingComplete(true)}>Complete Order</Button>
             )}
@@ -299,6 +397,41 @@ export default function DraftOrderForm() {
           </div>
 
           <div className="bg-white rounded-xl border border-bone p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[13px] font-bold text-charcoal">Shipping Address</p>
+              <label className="flex items-center gap-1.5 text-[11.5px] text-slate cursor-pointer">
+                <input type="checkbox" checked={needsShipping} onChange={e => setNeedsShipping(e.target.checked)} disabled={!isEditable} />
+                This order ships
+              </label>
+            </div>
+            {needsShipping && (
+              <div className="flex flex-col gap-2">
+                <input className={inp} placeholder="Recipient name" value={shipRecipientName} onChange={e => setShipRecipientName(e.target.value)} disabled={!isEditable} />
+                <input className={inp} placeholder="Address line 1" value={shipAddressLine1} onChange={e => setShipAddressLine1(e.target.value)} disabled={!isEditable} />
+                <input className={inp} placeholder="Address line 2 (optional)" value={shipAddressLine2} onChange={e => setShipAddressLine2(e.target.value)} disabled={!isEditable} />
+                <div className="grid grid-cols-3 gap-2">
+                  <input className={inp} placeholder="City" value={shipCity} onChange={e => setShipCity(e.target.value)} disabled={!isEditable} />
+                  <input className={inp} placeholder="State" value={shipState} onChange={e => setShipState(e.target.value)} disabled={!isEditable} />
+                  <input className={inp} placeholder="ZIP" value={shipZip} onChange={e => setShipZip(e.target.value)} disabled={!isEditable} />
+                </div>
+                <input className={inp} placeholder="Phone number" value={shipPhone} onChange={e => setShipPhone(e.target.value)} disabled={!isEditable} />
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl border border-bone p-4">
+            <p className="text-[13px] font-bold text-charcoal mb-3">Payment Terms</p>
+            <select className={inp} value={paymentTerms} onChange={e => setPaymentTerms(e.target.value as DraftOrderPaymentTerms | '')} disabled={!isEditable}>
+              <option value="">No payment terms</option>
+              <option value="due_on_receipt">Due on receipt</option>
+              <option value="net_15">Net 15</option>
+              <option value="net_30">Net 30</option>
+              <option value="net_60">Net 60</option>
+            </select>
+            {draft?.dueDate && paymentTerms && <p className="text-[11.5px] text-slate mt-2">Due {new Date(draft.dueDate).toLocaleDateString()}</p>}
+          </div>
+
+          <div className="bg-white rounded-xl border border-bone p-4">
             <p className="text-[13px] font-bold text-charcoal mb-3">Notes</p>
             <textarea className={`${inp} resize-y min-h-[70px]`} placeholder="Internal note (not shown to the customer)" value={notes} onChange={e => setNotes(e.target.value)} disabled={!isEditable} />
           </div>
@@ -344,10 +477,20 @@ export default function DraftOrderForm() {
       {confirmingCancel && (
         <ConfirmDialog title="Cancel this draft order?" message="This cannot be undone." confirmLabel="Cancel Draft" onConfirm={handleCancel} onCancel={() => setConfirmingCancel(false)} />
       )}
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete this draft order?"
+          message="This permanently removes it from your draft orders. This cannot be undone."
+          confirmLabel="Delete"
+          loading={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
       {confirmingComplete && (
         <ConfirmDialog
           title="Complete this order?"
-          message={`This will create a real order for ${symbol}${total.toFixed(2)} and reduce stock for each item. This cannot be undone.`}
+          message={`This will create a real order for ${symbol}${total.toFixed(2)} and reduce stock for each item. This cannot be undone.${draft && !draft.isPaid ? ' This draft has not been marked as paid — the order will be created with payment pending, not paid.' : ''}`}
           confirmLabel="Complete Order"
           loading={completing}
           onConfirm={handleComplete}

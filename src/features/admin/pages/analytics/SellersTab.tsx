@@ -6,11 +6,26 @@ import {
   useAdminAnalyticsSellerPerformance,
   useAdminAnalyticsSellerRegistrationTrends,
 } from '@/hooks/admin/useAdminAnalytics';
-import type { BaseAnalyticsParams, SellerPerformanceRow, TopSellerRow } from '@/api/services/analytics/adminAnalytics';
+import type { BaseAnalyticsParams, SellerPerformanceRow, SellerSalesStatus, TopSellerRow } from '@/api/services/analytics/adminAnalytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency, formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { Store } from 'lucide-react';
+
+// Phase 3 — deterministic, date-derived status. Never an arbitrary label:
+// see deriveSellerSalesStatus on the backend for the exact rule.
+const SALES_STATUS_STYLE: Record<SellerSalesStatus, string> = {
+  new: 'bg-blue-50 text-blue-700',
+  active: 'bg-green-50 text-green-700',
+  at_risk: 'bg-amber-50 text-amber-700',
+  dormant: 'bg-slate/10 text-slate',
+};
+const SALES_STATUS_LABEL: Record<SellerSalesStatus, string> = {
+  new: 'New',
+  active: 'Active',
+  at_risk: 'At Risk',
+  dormant: 'Dormant',
+};
 
 const RANK_OPTIONS = [
   { value: 'desc', label: 'Top performers' },
@@ -39,6 +54,13 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
 
   const performanceColumns: TableColumn<SellerPerformanceRow>[] = [
     { key: 'name', header: 'Seller', render: r => <div><p className="font-medium">{r.name}</p><p className="text-[11px] text-slate">{r.email}</p></div> },
+    {
+      key: 'salesStatus', header: 'Status', render: r => (
+        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${SALES_STATUS_STYLE[r.salesStatus]}`}>
+          {SALES_STATUS_LABEL[r.salesStatus]}
+        </span>
+      ),
+    },
     { key: 'storeCount', header: 'Stores', align: 'right', render: r => `${r.activeStoreCount}/${r.storeCount} active` },
     { key: 'orderCount', header: 'Orders', align: 'right' },
     { key: 'unitsSold', header: 'Units', align: 'right' },
@@ -115,6 +137,9 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
               label: 'sellers',
             }}
           />
+        )}
+        {performance.data?.note && (
+          <p className="text-[11px] text-slate px-5 pb-4">{performance.data.note}</p>
         )}
       </div>
     </div>

@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, DollarSign, Package, Users, Globe2 } from 'lucide-react';
 import { TabBar, type Tab } from '@/components/comman/ui';
 import { AnalyticsFilterBar } from '@/components/comman/analytics/AnalyticsFilterBar';
+import { SavedReportsPanel } from './SavedReportsPanel';
 import { useSellerAnalyticsExport } from '@/hooks/seller/useSellerAnalytics';
-import type { SellerExportSection } from '@/api/services/analytics/analytics';
+import type { SellerExportSection, SellerExportParams } from '@/api/services/analytics/analytics';
 import type { SupportedCurrency } from '@/api/services/store';
 import {
   CSV_SECTION_OPTIONS,
@@ -74,6 +75,24 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
         onCsvSectionChange={setCsvSection}
         showExport={!!storeId}
       />
+
+      {storeId && (
+        <SavedReportsPanel
+          storeId={storeId}
+          currentParams={{ ...params, format: 'csv', section: csvSection as SellerExportSection }}
+          onRun={(config: SellerExportParams) => {
+            setFilters(f => ({
+              ...f,
+              range: (config.range as typeof f.range) ?? f.range,
+              from: config.from ?? f.from,
+              to: config.to ?? f.to,
+              compareToPreviousPeriod: config.compareToPreviousPeriod ?? f.compareToPreviousPeriod,
+            }));
+            if (config.section) setCsvSection(config.section);
+            exportReport(config);
+          }}
+        />
+      )}
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 

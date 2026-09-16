@@ -8,7 +8,15 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { CurrencyPreferenceProvider } from '@/contexts/CurrencyPreferenceContext';
 import { AuthGateProvider } from '@/contexts/AuthGateContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { captureSellerAcquisitionAttribution } from '@/utils/sellerAcquisitionAttribution';
 import './index.css';
+
+// Phase 9 — Merchant Acquisition Tracking. Must run here, once, on the
+// very first page load of a fresh visit (before the router mounts) so a
+// visitor arriving straight from an ad/campaign link with ?utm_* params —
+// on ANY page, not only /register — has that touch captured immediately.
+// Read back later, at seller-registration submit time, by RegisterPage.tsx.
+captureSellerAcquisitionAttribution();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

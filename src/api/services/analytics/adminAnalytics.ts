@@ -97,6 +97,19 @@ export interface AdminOverviewData {
   totalRefunds: number;
   refundRatePercent: number;
   cancelledOrders: number;
+  // Phase 1 — Solvexo's OWN recurring revenue from sellers paying for their
+  // platform plan (reused from the existing PlatformPlansService — a
+  // distinct stream from `subscriptionRevenue` above, which is buyer-VIP
+  // revenue). Platform-wide only — absent (not zero) whenever a
+  // storeId/sellerId drill-down is active, since a seller's platform plan
+  // isn't a per-store figure.
+  sellerPlatformMRR?: number;
+  sellerPlatformARR?: number;
+  activePlatformSubscribers?: number;
+  sellerChurnRatePercent?: number;
+  // Phase 2 — present only when non-zero; see AdminRevenueBreakdownData's
+  // same field for what this discloses.
+  nonUsdCommissionByCurrency?: NonUsdCommissionRow[];
   note: string;
   previousPeriod?: AdminOverviewPreviousPeriod;
 }
@@ -116,6 +129,8 @@ export interface AdminRevenueBreakdownPreviousPeriod {
   totalMarketplaceRevenue: number;
 }
 
+export interface NonUsdCommissionRow { currency: string; commission: number; processingFees: number }
+
 export interface AdminRevenueBreakdownData {
   period: AnalyticsPeriod;
   oneTimeOrderRevenue: number;
@@ -124,6 +139,10 @@ export interface AdminRevenueBreakdownData {
   paymentProcessingFees: number;
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;
+  // Phase 2 — present only when non-zero. A seller settled in a currency
+  // other than USD has their commission/fees disclosed here rather than
+  // blended into the USD figures above or silently dropped.
+  nonUsdCommissionByCurrency?: NonUsdCommissionRow[];
   note: string;
   previousPeriod?: AdminRevenueBreakdownPreviousPeriod;
 }
@@ -139,6 +158,10 @@ export interface TopSellerRow {
   revenue: number;
 }
 
+// Phase 3 — deterministic, date-derived seller sales status. Computed from
+// real Seller.createdAt + all-time last-order-date only; never arbitrary.
+export type SellerSalesStatus = 'new' | 'active' | 'at_risk' | 'dormant';
+
 export interface SellerPerformanceRow {
   sellerId: string;
   name: string;
@@ -149,11 +172,13 @@ export interface SellerPerformanceRow {
   refundRatePercent: number;
   storeCount: number;
   activeStoreCount: number;
+  salesStatus: SellerSalesStatus;
 }
 
 export interface AdminSellerPerformanceData {
   pagination: Pagination;
   sellers: SellerPerformanceRow[];
+  note?: string;
 }
 
 export interface SellerRegistrationPoint { date: string; newSellers: number; cumulativeSellers: number }
@@ -180,7 +205,19 @@ export interface AdminCustomerAnalyticsData {
 
 // ── E. Product analytics ────────────────────────────────────────────────────────
 
-export interface TopProductRow { productId: string; name: string; orderCount: number; unitsSold: number; revenue: number }
+// Phase 6 — real product-view/conversion figures from the Phase 5 tracking
+// foundation. `viewToPurchaseConversionPercent` is `null` (never 0) when
+// `views` is 0 — there is no tracked-view data to divide by, most often
+// because the product's traffic predates the view-tracking launch date.
+export interface TopProductRow {
+  productId: string;
+  name: string;
+  orderCount: number;
+  unitsSold: number;
+  revenue: number;
+  views: number;
+  viewToPurchaseConversionPercent: number | null;
+}
 export interface TopCategoryRow { categoryId: string; name: string; orderCount: number; unitsSold: number; revenue: number }
 
 export interface ProductPerformanceRow {
@@ -191,11 +228,14 @@ export interface ProductPerformanceRow {
   refundRatePercent: number;
   currentStock: number;
   isLowPerformer: boolean;
+  views: number;
+  viewToPurchaseConversionPercent: number | null;
 }
 
 export interface AdminProductPerformanceData {
   pagination: Pagination;
   products: ProductPerformanceRow[];
+  note?: string;
 }
 
 export interface InventoryOutOfStockRow { productId: string; name: string; unitsSoldLast30Days: number }
@@ -232,10 +272,46 @@ export interface AdminOrderStatusBreakdownData {
   refundRatePercent: number;
 }
 
+// Phase 7 — real Mongo-side (skip/limit) pagination, unlike the Sellers/
+// Products tabs' in-memory-then-.slice() pagination: order volume can be far
+// larger, so this must page inside the database query itself.
+export interface OrdersListParams extends BaseAnalyticsParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+}
+
+export interface OrderListRow {
+  orderId: string;
+  createdAt: string;
+  buyerName: string;
+  buyerEmail: string;
+  sellerId: string;
+  sellerName: string;
+  storeId: string;
+  storeName: string;
+  status: string;
+  itemCount: number;
+  // null (never 0) means this order predates USD-rate capture — see `unconvertible`.
+  grossAmountUSD: number | null;
+  refundedAmountUSD: number | null;
+  unconvertible: boolean;
+}
+
+export interface AdminOrdersListData {
+  pagination: Pagination;
+  orders: OrderListRow[];
+  note?: string;
+}
+
 // ── G. Payment analytics ────────────────────────────────────────────────────────
 
 export interface PaymentMethodRow { paymentType: string; label: string; orderCount: number; revenue: number }
-export interface PaymentStatusSummary { count: number; amount: number }
+// Phase 8 — `amount` is now USD-normalized from each transaction's own
+// fxSnapshots (previously a disclosed raw cross-currency sum); a
+// transaction predating fxSnapshots capture is counted in
+// `unconvertibleCount` and excluded from `amount`, never guessed at.
+export interface PaymentStatusSummary { count: number; amount: number; unconvertibleCount: number }
 
 export interface AdminPaymentBreakdownData {
   methodBreakdown: PaymentMethodRow[];
@@ -258,6 +334,79 @@ export interface AdminPlatformMetricsData {
     signupToOrderConversionPercent: number;
     note: string;
   };
+}
+
+// Phase 9 — Merchant Acquisition Tracking. Real UTM/referrer capture at
+// seller signup (see Seller.acquisitionSource on the backend) — a
+// completely separate signal from buyer-side Order.attributionSource.
+export interface SellerAcquisitionRow {
+  source: string;
+  medium: string | null;
+  campaign: string | null;
+  sellerCount: number;
+}
+
+export interface AdminSellerAcquisitionData {
+  totalSellers: number;
+  attributedCount: number;
+  breakdown: SellerAcquisitionRow[];
+  note: string;
+}
+
+// Phase 10 — Platform Health. Real, live infrastructure signals only
+// (dependency status, webhook-processing failure rate, queue backlog) —
+// never a fabricated uptime/latency/error-rate number. See
+// PlatformHealthService's own header comment (backend) for why.
+export interface DependencyStatus {
+  mongodb: 'up' | 'down';
+  redis: 'up' | 'down';
+  checkedAt: string;
+}
+
+export interface WebhookStatusCount { status: string; count: number }
+
+export interface WebhookReliability {
+  totalEvents: number;
+  failedEvents: number;
+  failureRatePercent: number;
+  byStatus: WebhookStatusCount[];
+  note: string;
+}
+
+export interface QueueBacklogRow {
+  name: string;
+  waiting: number | null;
+  active: number | null;
+  completed: number | null;
+  failed: number | null;
+  delayed: number | null;
+  unavailable?: boolean;
+}
+
+export interface AdminPlatformHealthData {
+  dependencyStatus: DependencyStatus;
+  webhookReliability: WebhookReliability;
+  queueBacklog: QueueBacklogRow[];
+  note: string;
+}
+
+// Phase 11 — Alerts & Insights. Deterministic threshold rules only — see
+// PlatformAlertsService's own header comment (backend). Never an AI-
+// generated insight or a learned/tuned anomaly score.
+export type AlertSeverity = 'critical' | 'warning' | 'info';
+
+export interface PlatformAlert {
+  id: string;
+  severity: AlertSeverity;
+  category: string;
+  message: string;
+  metricValue: number | string;
+  threshold: string;
+}
+
+export interface AdminPlatformAlertsData {
+  alerts: PlatformAlert[];
+  note: string;
 }
 
 // ── Query-string helper (mirrors the convention in services/subscriptions.ts) ──
@@ -335,6 +484,10 @@ export function apiAdminAnalyticsOrderStatusBreakdown(params: BaseAnalyticsParam
   return client.get<never, ApiResponse<AdminOrderStatusBreakdownData>>(`${ENDPOINTS.ANALYTICS.ADMIN.ORDERS_STATUS_BREAKDOWN}${qs(params)}`);
 }
 
+export function apiAdminAnalyticsOrdersList(params: OrdersListParams = {}) {
+  return client.get<never, ApiResponse<AdminOrdersListData>>(`${ENDPOINTS.ANALYTICS.ADMIN.ORDERS_LIST}${qs(params)}`);
+}
+
 // ── G. Payment analytics ────────────────────────────────────────────────────────
 
 export function apiAdminAnalyticsPaymentBreakdown(params: BaseAnalyticsParams = {}) {
@@ -345,6 +498,18 @@ export function apiAdminAnalyticsPaymentBreakdown(params: BaseAnalyticsParams = 
 
 export function apiAdminAnalyticsPlatformMetrics(params: BaseAnalyticsParams = {}) {
   return client.get<never, ApiResponse<AdminPlatformMetricsData>>(`${ENDPOINTS.ANALYTICS.ADMIN.PLATFORM_METRICS}${qs(params)}`);
+}
+
+export function apiAdminAnalyticsSellerAcquisition(params: BaseAnalyticsParams = {}) {
+  return client.get<never, ApiResponse<AdminSellerAcquisitionData>>(`${ENDPOINTS.ANALYTICS.ADMIN.SELLER_ACQUISITION}${qs(params)}`);
+}
+
+export function apiAdminAnalyticsPlatformHealth(params: BaseAnalyticsParams = {}) {
+  return client.get<never, ApiResponse<AdminPlatformHealthData>>(`${ENDPOINTS.ANALYTICS.ADMIN.PLATFORM_HEALTH}${qs(params)}`);
+}
+
+export function apiAdminAnalyticsPlatformAlerts(params: BaseAnalyticsParams = {}) {
+  return client.get<never, ApiResponse<AdminPlatformAlertsData>>(`${ENDPOINTS.ANALYTICS.ADMIN.PLATFORM_ALERTS}${qs(params)}`);
 }
 
 // ── I. Export ────────────────────────────────────────────────────────────────────

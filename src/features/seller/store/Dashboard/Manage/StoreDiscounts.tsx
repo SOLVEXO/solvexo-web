@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, ArrowRight } from 'lucide-react';
+import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, ArrowRight, Download } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
-  apiGetDiscounts, apiCreateDiscount, apiUpdateDiscount, apiDeleteDiscount,
+  apiGetDiscounts, apiCreateDiscount, apiUpdateDiscount, apiDeleteDiscount, apiExportDiscountsCsv,
   type AutomaticDiscount, type DiscountType, type DiscountTarget, type CreateDiscountPayload,
 } from '@/api/services/discounts';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
@@ -368,6 +368,24 @@ export default function StoreDiscounts() {
     }
   };
 
+  const [exporting, setExporting] = useState(false);
+  const handleExportCsv = () => {
+    setExporting(true);
+    apiExportDiscountsCsv(storeId)
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `discounts-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => {})
+      .finally(() => setExporting(false));
+  };
+
   const handleDelete = async () => {
     if (!confirmDelete) return;
     setDeleting(true);
@@ -436,9 +454,14 @@ export default function StoreDiscounts() {
         title="Discounts"
         subtitle="Automatic, no-code discounts — applied instantly, no code for buyers to enter"
         actions={(
-          <Button variant="primary" icon={<Plus size={14} />} onClick={() => { setEditing(null); setModalOpen(true); }}>
-            Create discount
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" icon={<Download size={14} />} loading={exporting} onClick={handleExportCsv}>
+              Export
+            </Button>
+            <Button variant="primary" icon={<Plus size={14} />} onClick={() => { setEditing(null); setModalOpen(true); }}>
+              Create discount
+            </Button>
+          </div>
         )}
       />
 

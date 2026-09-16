@@ -109,6 +109,39 @@ export function apiGetOpenDisputeCount(storeId: string) {
   return client.get<never, { success: boolean; data: { count: number } }>(ENDPOINTS.PAYMENT.OPEN_DISPUTE_COUNT(storeId));
 }
 
+export interface DisputeRow {
+  disputeId: string;
+  status: string;
+  reason: string | null;
+  amount: number;
+  currency: string;
+  storeIds: string[];
+  evidenceDueBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  orderIds: string[];
+  stripePaymentIntentId: string | null;
+}
+
+/** GET /api/payment/disputes/:storeId — the full disputes list/detail view
+ *  (real Stripe data, not just the count) — see PaymentService.listDisputes. */
+export function apiListDisputes(storeId: string, status?: string) {
+  return client.get<never, { success: boolean; data: DisputeRow[] }>(ENDPOINTS.PAYMENT.DISPUTES_LIST(storeId, status));
+}
+
+export interface SubmitDisputeEvidencePayload {
+  productDescription?: string;
+  customerCommunication?: string;
+  shippingDocumentation?: string;
+  uncategorizedText?: string;
+}
+
+/** POST /api/payment/disputes/:storeId/:disputeId/evidence — files real
+ *  evidence with Stripe (`submit:true`), not a local-only acknowledgement. */
+export function apiSubmitDisputeEvidence(storeId: string, disputeId: string, payload: SubmitDisputeEvidencePayload) {
+  return client.post<never, { success: boolean; message: string }>(ENDPOINTS.PAYMENT.DISPUTE_SUBMIT_EVIDENCE(storeId, disputeId), payload);
+}
+
 /** GET /api/payment/risk-orders/:storeId/open-count — mirrors Shopify Home's
  *  "Review high-risk orders" order task, backed by Stripe Radar's own real
  *  fraud-risk assessment (PaymentTransaction.riskLevel), not an invented score. */

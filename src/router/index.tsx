@@ -34,6 +34,8 @@ const OnboardingEntry = lazy(() => import('@/features/auth/pages/onboard/Onboard
 
 // Remaining auth pages
 const AdminLoginPage     = lazy(() => import('@/features/auth/pages/admin/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
+const StaffLoginPage     = lazy(() => import('@/features/auth/pages/StaffLoginPage').then(m => ({ default: m.StaffLoginPage })));
+const PayInvoicePage     = lazy(() => import('@/features/buyer/pages/PayInvoicePage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const VerifyOTPPage      = lazy(() => import('@/features/auth/pages/VerifyOTPPage').then(m => ({ default: m.VerifyOTPPage })));
 const NewPasswordPage    = lazy(() => import('@/features/auth/pages/NewPasswordPage').then(m => ({ default: m.NewPasswordPage })));
@@ -103,6 +105,7 @@ const PurchaseOrdersList = lazy(() => import('@/features/seller/store/Dashboard/
 const PurchaseOrderForm = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/purchaseOrders/PurchaseOrderForm'));
 const ReorderSuggestions = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/purchaseOrders/ReorderSuggestions'));
 const StoreReturnList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList').then(m => ({ default: m.StoreReturnList })));
+const DisputesList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DisputesList'));
 const StoreAnalytics = lazy(() => import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics').then(m => ({ default: m.StoreAnalytics })));
 const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio').then(m => ({ default: m.StoreAIStudio })));
 const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO').then(m => ({ default: m.StoreSEO })));
@@ -283,9 +286,13 @@ const mainRouter = createBrowserRouter([
       // ── Maintenance mode (backend 503 redirects here — see client.ts) ──
       { path: '/maintenance',     element: <MaintenancePage /> },
 
+      // ── Draft Orders "Pay Invoice" — public, token-secured, no auth ────
+      { path: '/pay-invoice/:token', element: <PayInvoicePage /> },
+
       // ── Auth ──────────────────────────────────────────────────────────
       { path: '/login',           element: <LoginPage /> },
       { path: '/admin/login',     element: <AdminLoginPage /> },
+      { path: '/staff-login/:storeId', element: <StaffLoginPage /> },
       { path: '/register',        element: <RegisterPage /> },
       // Alias — visitors/marketing links typing/using the equally-common
       // "/signup" spelling used to silently fall through to the catch-all
@@ -360,6 +367,7 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/announcement-bar',     element: <StoreAnnouncementBar /> },
           { path: 'online-store/featured',             element: <StoreFeaturedCollections /> },
           { path: 'returns',                          element: <StoreReturnList /> },
+          { path: 'disputes',                         element: <DisputesList /> },
           { path: 'seo',                              element: <StoreSEO /> },
           { path: 'ai/studio',                        element: <StoreAIStudio /> },
           { path: 'reviews',                          element: <StoreReviews /> },

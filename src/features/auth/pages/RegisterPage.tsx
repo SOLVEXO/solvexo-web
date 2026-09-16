@@ -14,6 +14,7 @@ import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
 import { TokenStorage, getRoleRedirect, RememberedAccount, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
+import { getSellerAcquisitionFields } from '@/utils/sellerAcquisitionAttribution';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -95,13 +96,20 @@ export function RegisterPage() {
     { name: '', email: '', password: '', phone: '', address: '', role },
     {
       onSubmit: async (data: RegisterFormData) => {
+        const isSellerSignup = data.role === 'seller';
         await register.execute({
           name:     data.name,
           email:    data.email,
           password: data.password,
           phone:    data.phone,
           address:  data.address,
-          role:     (data.role === 'seller' ? 'seller' : 'user'),
+          role:     (isSellerSignup ? 'seller' : 'user'),
+          // Phase 9 — only meaningful for a seller signup (buyer accounts
+          // have no acquisitionSource field on their schema at all). Reads
+          // back whatever UTM/referrer snapshot main.tsx captured on this
+          // visitor's first page load; {} when nothing was ever captured
+          // (organic/direct), which the backend correctly stores as null.
+          ...(isSellerSignup ? getSellerAcquisitionFields() : {}),
         });
       },
     },

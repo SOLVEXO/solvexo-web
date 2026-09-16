@@ -13,8 +13,12 @@ import {
   apiAdminAnalyticsInventoryInsights,
   apiAdminAnalyticsOrdersOverTime,
   apiAdminAnalyticsOrderStatusBreakdown,
+  apiAdminAnalyticsOrdersList,
   apiAdminAnalyticsPaymentBreakdown,
   apiAdminAnalyticsPlatformMetrics,
+  apiAdminAnalyticsSellerAcquisition,
+  apiAdminAnalyticsPlatformHealth,
+  apiAdminAnalyticsPlatformAlerts,
   apiAdminAnalyticsExport,
   type BaseAnalyticsParams,
   type TopSellersParams,
@@ -22,6 +26,7 @@ import {
   type TopProductsParams,
   type TopCategoriesParams,
   type ProductPerformanceParams,
+  type OrdersListParams,
   type ExportParams,
 } from '@/api/services/analytics/adminAnalytics';
 import { useAnalyticsQuery as useAdminAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
@@ -90,6 +95,10 @@ export function useAdminAnalyticsOrderStatusBreakdown(params: BaseAnalyticsParam
   return useAdminAnalyticsQuery(apiAdminAnalyticsOrderStatusBreakdown, params);
 }
 
+export function useAdminAnalyticsOrdersList(params: OrdersListParams) {
+  return useAdminAnalyticsQuery(apiAdminAnalyticsOrdersList, params);
+}
+
 // ── G. Payment analytics ────────────────────────────────────────────────────────
 
 export function useAdminAnalyticsPaymentBreakdown(params: BaseAnalyticsParams) {
@@ -100,6 +109,21 @@ export function useAdminAnalyticsPaymentBreakdown(params: BaseAnalyticsParams) {
 
 export function useAdminAnalyticsPlatformMetrics(params: BaseAnalyticsParams) {
   return useAdminAnalyticsQuery(apiAdminAnalyticsPlatformMetrics, params);
+}
+
+// Phase 9 — Merchant Acquisition Tracking.
+export function useAdminAnalyticsSellerAcquisition(params: BaseAnalyticsParams) {
+  return useAdminAnalyticsQuery(apiAdminAnalyticsSellerAcquisition, params);
+}
+
+// Phase 10 — Platform Health (real, live infrastructure data only).
+export function useAdminAnalyticsPlatformHealth(params: BaseAnalyticsParams) {
+  return useAdminAnalyticsQuery(apiAdminAnalyticsPlatformHealth, params);
+}
+
+// Phase 11 — Alerts & Insights (deterministic threshold rules only).
+export function useAdminAnalyticsPlatformAlerts(params: BaseAnalyticsParams) {
+  return useAdminAnalyticsQuery(apiAdminAnalyticsPlatformAlerts, params);
 }
 
 // ── I. Export ────────────────────────────────────────────────────────────────────

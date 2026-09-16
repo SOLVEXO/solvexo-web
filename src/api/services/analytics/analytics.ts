@@ -276,3 +276,26 @@ export async function apiSellerAnalyticsExport(params: SellerExportParams) {
   a.click();
   URL.revokeObjectURL(objUrl);
 }
+
+// ── Saved Reports (real "Reports" permission — a named, re-runnable filter
+// configuration, not a separate report-execution engine) ────────────────────
+
+export interface SavedReport {
+  _id: string;
+  storeId: string;
+  name: string;
+  config: SellerExportParams;
+  createdAt: string;
+}
+
+export function apiListSavedReports(storeId: string) {
+  return client.get<never, ApiResponse<SavedReport[]>>(`${ENDPOINTS.ANALYTICS.SELLER.SAVED_REPORTS}${qs({ storeId })}`);
+}
+
+export function apiCreateSavedReport(storeId: string, name: string, config: SellerExportParams) {
+  return client.post<never, ApiResponse<SavedReport>>(`${ENDPOINTS.ANALYTICS.SELLER.SAVED_REPORTS}${qs({ storeId })}`, { name, config });
+}
+
+export function apiDeleteSavedReport(storeId: string, reportId: string) {
+  return client.delete<never, ApiResponse<null>>(`${ENDPOINTS.ANALYTICS.SELLER.DELETE_SAVED_REPORT(reportId)}${qs({ storeId })}`);
+}

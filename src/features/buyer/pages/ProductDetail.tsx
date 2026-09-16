@@ -6,6 +6,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
+import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { apiGetAllProducts, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
@@ -405,6 +406,11 @@ export function ProductDetail() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?._id]);
+
+  // Phase 5 — real server-side view tracking (distinct from the client-only
+  // "Recently Viewed" snapshot above): feeds Product.viewCount and the
+  // admin Products-tab view/conversion metrics being built on top of it.
+  useRecordProductView(product?._id);
 
   useEffect(() => {
     if (!storeId) return;

@@ -202,6 +202,66 @@ export function apiCancelOrder(orderId: string, payload: CancelOrderPayload) {
   return client.post<never, CancelOrderResponse>(ENDPOINTS.ORDERS.CANCEL(orderId), payload);
 }
 
+/** POST /api/orders/seller-cancel/:storeId/:orderId — seller cancels their own
+ *  sellerOrder's items (or all of them if `itemIds` omitted). Real Stripe
+ *  refund + finance ledger debit + stock restore, same as the buyer path
+ *  (see OrdersService.executeCancellation). Requires the `orders.cancel`
+ *  staff permission. */
+export function apiCancelOrderAsSeller(storeId: string, orderId: string, payload: CancelOrderPayload) {
+  return client.post<never, CancelOrderResponse>(ENDPOINTS.ORDERS.SELLER_CANCEL(storeId, orderId), payload);
+}
+
+export interface RefundOrderPayload { amount: number; reason?: string }
+interface RefundOrderResponse {
+  success: boolean;
+  message: string;
+  data: { orderId: string; amount: number; stripeRefundId: string | null };
+}
+
+/** POST /api/orders/seller-refund/:storeId/:orderId — standalone "Refund $X",
+ *  independent of Cancel/Return — no item/fulfillment status changes. */
+export function apiRefundOrderAsSeller(storeId: string, orderId: string, payload: RefundOrderPayload) {
+  return client.post<never, RefundOrderResponse>(ENDPOINTS.ORDERS.SELLER_REFUND(storeId, orderId), payload);
+}
+
+export interface RecordOrderPaymentPayload {
+  amount: number;
+  method: 'cash' | 'bank_transfer' | 'other';
+  reference?: string;
+  note?: string;
+}
+interface RecordOrderPaymentResponse {
+  success: boolean;
+  message: string;
+  data: { orderId: string; amount: number; totalRecorded: number; remaining: number; fullyPaid: boolean };
+}
+
+/** POST /api/orders/record-payment/:storeId/:orderId — real "Record
+ *  payments": amount/method/reference/note, supports partial/installment
+ *  entries, auto-completes the order once fully covered. */
+export function apiRecordOrderPayment(storeId: string, orderId: string, payload: RecordOrderPaymentPayload) {
+  return client.post<never, RecordOrderPaymentResponse>(ENDPOINTS.ORDERS.RECORD_PAYMENT(storeId, orderId), payload);
+}
+
+export interface OrderPaymentRecordRow {
+  _id: string;
+  orderId: string;
+  storeId: string;
+  amount: number;
+  currency: string;
+  method: 'cash' | 'bank_transfer' | 'other';
+  reference: string | null;
+  note: string;
+  recordedBy: string;
+  recordedByRole: 'seller' | 'staff' | 'admin';
+  createdAt: string;
+}
+
+/** GET /api/orders/payment-records/:storeId/:orderId — the real payment ledger. */
+export function apiListOrderPayments(storeId: string, orderId: string) {
+  return client.get<never, { success: boolean; data: OrderPaymentRecordRow[] }>(ENDPOINTS.ORDERS.PAYMENT_RECORDS(storeId, orderId));
+}
+
 /** POST /api/orders/return-request/:orderId — buyer requests a return on delivered items */
 export function apiRequestReturn(orderId: string, payload: ReturnRequestPayload) {
   return client.post<never, ReturnRequestResponse>(ENDPOINTS.ORDERS.RETURN_REQUEST(orderId), payload);

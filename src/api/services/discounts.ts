@@ -65,3 +65,9 @@ export function apiUpdateDiscount(storeId: string, discountId: string, payload: 
 export function apiDeleteDiscount(storeId: string, discountId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.DISCOUNTS.DELETE(storeId, discountId));
 }
+
+/** GET /api/discounts/:storeId/export — real CSV export, the Tier-2 audit's
+ *  disclosed gap (CRUD already real, no export route existed at all). */
+export function apiExportDiscountsCsv(storeId: string) {
+  return client.get<never, Blob>(ENDPOINTS.DISCOUNTS.EXPORT(storeId), { responseType: 'blob' });
+}

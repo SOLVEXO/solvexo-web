@@ -43,7 +43,24 @@ export function useStoreWorkspace(): StoreWorkspaceValue {
 }
 
 // ── Sidebar Nav ───────────────────────────────────────────────────────────────
-export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
+// `requiredPermission` — only meaningful for a `role:'staff'` session (see
+// StoreSidebar's filter below); a seller always sees every item regardless.
+// Undefined means "this destination has no staff permission gate on the
+// backend yet" — staff never sees it in the nav, matching real backend
+// access (showing it would just lead to a 403 on every click). A handful
+// of items reuse a NEIGHBORING permission where Solvexo has no dedicated
+// backend gate of its own (Categories/Collections → `products.view`,
+// Reviews → `customers.view`) — a disclosed, deliberate simplification,
+// not a precision claim; see the staff-permissions project plan.
+// `requiredPermission` can be a single permission or an array — an array
+// means OR semantics (granted if the staff session has ANY one of them),
+// matching `PermissionsGuard`'s own multi-arg `@RequirePermission(...)` OR
+// behavior. Needed whenever a single page's content is actually gated by
+// more than one distinct backend permission (e.g. Settings hosts
+// `settings.general.manage`/`settings.taxes.manage`/`settings.domains.manage`
+// content on one page) — a single string here would otherwise hide the
+// whole page from a staff member granted only one of those.
+export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string; requiredPermission?: string | string[] }
 
 // ── Sidebar structure ──────────────────────────────────────────────────────
 // Restructured to match Shopify's admin nav: a short, always-visible flat
@@ -66,26 +83,34 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
   {
     group: 'Overview',
     items: [
-      { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
-      { id: 'analytics', Icon: BarChart2,       label: 'Analytics', path: 'analytics' },
+      { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard', requiredPermission: 'home.view' },
+      { id: 'analytics', Icon: BarChart2,       label: 'Analytics', path: 'analytics', requiredPermission: 'analytics.view' },
     ],
   },
   {
     group: 'Sales',
     items: [
-      { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
-      { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders' },
-      { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
-      { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
+      { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
+      { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: 'draft_orders.view' },
+      { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns', requiredPermission: 'orders.return' },
+      { id: 'disputes', Icon: AlertTriangle, label: 'Disputes', path: 'disputes', requiredPermission: 'orders.disputes_manage' },
+      { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping', requiredPermission: 'settings.shipping.manage' },
     ],
   },
   {
     group: 'Catalog',
     items: [
-      { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products'        },
-      { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory'       },
-      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories'      },
-      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections'     },
+      { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products',        requiredPermission: 'products.view' },
+      // Inventory Hub is one page with 6 tabs (Stock/Purchase Orders/Reorder/
+      // Stock Counts/Reports/Staff) gated by several distinct permissions
+      // beyond the base `inventory.view` — OR'd so a staff member scoped to
+      // just one sub-capability (e.g. `purchase_orders.manage` for a
+      // procurement-only role, or `settings.locations.manage` for the
+      // "Manage Locations" modal this same page hosts) still has a nav path
+      // in, not just backend routes with no way to reach them.
+      { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory',       requiredPermission: ['inventory.view', 'inventory.adjust', 'inventory.receive', 'inventory.transfer', 'inventory.count', 'inventory.approve', 'purchase_orders.manage', 'settings.locations.manage'] },
+      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories',      requiredPermission: 'products.view' },
+      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections',     requiredPermission: 'products.view' },
     ],
   },
   {
@@ -93,26 +118,34 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     collapsible: true,
     groupIcon: Store,
     items: [
-      { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes'    },
-      { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages'     },
-      { id: 'online-store-menus',     Icon: ListTree,   label: 'Menus',     path: 'online-store/menus'     },
-      { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog'      },
-      { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files'                  },
+      { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes',    requiredPermission: 'onlinestore.themes.manage' },
+      { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages',     requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-menus',     Icon: ListTree,   label: 'Menus',     path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
+      { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog',      requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
       // Moved out of Marketing.tsx — these three are store-content/design
       // features (no promotion/targeting/scheduling logic tying them to
       // Marketing), matching where Shopify itself puts banners/announcement
       // content: under the storefront's own customization area, not
       // Marketing. Same APIs/data as before, just relocated.
-      { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners'      },
-      { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar' },
-      { id: 'online-store-featured',     Icon: Pin,               label: 'Featured & Collections', path: 'online-store/featured' },
+      { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners',      requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar', requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-featured',     Icon: Pin,               label: 'Featured & Collections', path: 'online-store/featured', requiredPermission: 'onlinestore.content.manage' },
     ],
   },
   {
     group: 'Customers',
     items: [
-      { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list' },
-      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews'        },
+      // OR'd with `customers.edit` — a staff member granted create/edit but
+      // not general view (e.g. a data-entry-only role) still needs a nav
+      // path to the list that create/edit actually happens from.
+      { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
+      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: 'customers.view' },
+      // No staff-permission gate exists on `messaging.controller.ts` yet
+      // (untouched this pass — still `@Roles('user','seller')` only), so
+      // this is deliberately hidden from every staff nav (undefined
+      // `requiredPermission`) rather than linking to a route that would
+      // 403 on click.
       { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages'       },
     ],
   },
@@ -123,8 +156,11 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     // "Growth Tools" group below.
     group: 'Marketing',
     items: [
-      { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing'     },
-      { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts'     },
+      // Tracking Pixels lives as a tab inside Marketing but is gated on its
+      // own distinct `settings.pixels.manage` permission (tracking-pixels
+      // .controller.ts) — OR'd in so that permission alone still reaches it.
+      { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing',     requiredPermission: ['marketing.manage', 'settings.pixels.manage'] },
+      { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts',     requiredPermission: 'discounts.manage' },
     ],
   },
   {
@@ -136,7 +172,12 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     collapsible: true,
     groupIcon: TrendingUp,
     items: [
-      { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards'    },
+      // OR'd with `giftcards.manage` (issue/adjust balance) — a staff
+      // member granted only that, not general view, still needs a nav path.
+      { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards',    requiredPermission: ['giftcards.view', 'giftcards.manage'] },
+      // Loyalty/Subscriptions/SEO/AI Studio controllers weren't touched by
+      // this pass's staff-permission rollout — hidden from staff nav for
+      // the same reason as Messages above.
       { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
       { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo'           },
@@ -146,7 +187,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
   {
     group: 'Finance',
     items: [
-      { id: 'finance',      Icon: Wallet,     label: 'Finance',  path: 'finance'      },
+      { id: 'finance',      Icon: Wallet,     label: 'Finance',  path: 'finance',      requiredPermission: 'finance.payouts.view' },
       // Renamed from "Plan & Billing" — that name read as the same thing as
       // Marketing's "Subscriptions" item above, but they're unrelated: this
       // is the SELLER's own Solvexo plan/invoices (`StorePlanBilling.tsx`),
@@ -156,7 +197,11 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // unrelated feature sets into one confusing screen) but renamed so the
       // two no longer sound like the same page. Route path (`plan-billing`)
       // is unchanged — only the label a seller sees changed.
-      { id: 'plan-billing', Icon: CreditCard, label: 'Billing',  path: 'plan-billing' },
+      // The 3 read-only billing routes (getStorePlan/getEntitlements/
+      // listInvoices) are gated on `settings.billing.view` alone on the
+      // backend, separate from the mutating routes' `settings.billing
+      // .manage` — OR'd here too so a view-only staff member has a nav path.
+      { id: 'plan-billing', Icon: CreditCard, label: 'Billing',  path: 'plan-billing', requiredPermission: ['settings.billing.manage', 'settings.billing.view'] },
     ],
   },
   {
@@ -165,20 +210,55 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     // group from Catalog, matching where Shopify itself puts them.
     group: 'Settings',
     items: [
-      { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations'  },
+      // OR'd across the two permissions this one page's content is actually
+      // gated by: `settings.payments.manage` (checkout payment providers,
+      // SellerIntegrationsController) and `finance.payments.manage` (the
+      // Stripe Connect card's own Connect/Sync actions, StripeConnect
+      // Controller) — a staff member with either one has a real reason to
+      // land here, even though fully managing Stripe specifically still
+      // needs both (see StripeConnectController's doc comment).
+      { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations', requiredPermission: ['settings.payments.manage', 'finance.payments.manage'] },
       // Own store's branded app request + Solvexo POS access — two
       // independent mobile-app products, both applied for from one page
-      // (see MobileApp.tsx's own doc comment for the distinction).
+      // (see MobileApp.tsx's own doc comment for the distinction). Not
+      // staff-gated this pass — hidden from staff nav.
       { id: 'mobile-app',    Icon: Smartphone,  label: 'Mobile App',   path: 'mobile-app'    },
-      { id: 'metafields',    Icon: SlidersHorizontal, label: 'Custom Fields', path: 'metafields' },
-      { id: 'metaobjects',   Icon: Boxes,         label: 'Content Types', path: 'metaobjects' },
+      { id: 'metafields',    Icon: SlidersHorizontal, label: 'Custom Fields', path: 'metafields', requiredPermission: 'content.metaobjects.manage' },
+      { id: 'metaobjects',   Icon: Boxes,         label: 'Content Types', path: 'metaobjects', requiredPermission: 'content.metaobjects.manage' },
       // 'verification' and 'account' were removed from here — see the doc
       // comment above `StoreVerificationBanner`'s old call site (deleted
       // below) and `StorePageHeader`'s new account button for why.
-      { id: 'settings',      Icon: Settings,    label: 'Settings',     path: 'settings'      },
+      // StoreSettings.tsx hosts general fields (name/description/tagline/
+      // etc. — `settings.general.manage`), the tax-rate field (`settings
+      // .taxes.manage`, same endpoint as general — see store.controller.ts),
+      // and custom-domain management (`settings.domains.manage`) all on one
+      // page — OR'd so a staff member granted any one of them has a nav
+      // path in, not just a backend route with nothing linking to it.
+      { id: 'settings',      Icon: Settings,    label: 'Settings',     path: 'settings',     requiredPermission: ['settings.domains.manage', 'settings.general.manage', 'settings.taxes.manage'] },
     ],
   },
 ];
+
+// Real permission-aware nav filtering for a `role:'staff'` session — a
+// seller (or admin) always gets the raw, unfiltered `NAV` unchanged. Every
+// consumer of `NAV` (StoreSidebar, StoreNavMenu, command palette, mobile
+// bottom nav) should call this instead of reading `NAV` directly, so the
+// filter logic exists in exactly one place. This is a UX convenience, not
+// the security boundary — every underlying route is independently 403'd
+// server-side by `PermissionsGuard` regardless of what the nav shows.
+export function visibleNavForUser(user: { role?: AppRole; permissions?: string[] } | null): typeof NAV {
+  if (!user || user.role !== 'staff') return NAV;
+  const granted = new Set(user.permissions ?? []);
+  const hasAccess = (item: NavItem) => {
+    if (!item.requiredPermission) return false;
+    return Array.isArray(item.requiredPermission)
+      ? item.requiredPermission.some(p => granted.has(p))
+      : granted.has(item.requiredPermission);
+  };
+  return NAV
+    .map(section => ({ ...section, items: section.items.filter(hasAccess) }))
+    .filter(section => section.items.length > 0);
+}
 
 // Groups a seller has never touched the toggle for start closed — everything
 // else (including every non-collapsible group, which ignores this entirely)
@@ -214,9 +294,10 @@ export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeI
   const navigate = useNavigate();
   const hiddenGroups = new Set(['Overview', ...excludeGroups]);
   const hiddenItems = new Set(excludeItemIds);
+  const nav = visibleNavForUser(TokenStorage.getUser());
   return (
     <div className="flex flex-col gap-4">
-      {NAV.filter(section => !hiddenGroups.has(section.group))
+      {nav.filter(section => !hiddenGroups.has(section.group))
         .map(section => ({ ...section, items: section.items.filter(item => !hiddenItems.has(item.id)) }))
         .filter(section => section.items.length > 0)
         .map(section => (
@@ -318,7 +399,7 @@ function buildPaletteItems(
   storeId: string,
 ): CommandPaletteItem[] {
   const result: CommandPaletteItem[] = [];
-  NAV.forEach(section => {
+  visibleNavForUser(TokenStorage.getUser()).forEach(section => {
     section.items.forEach(item => {
       result.push({
         id:       item.id,
@@ -356,6 +437,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // see `DEFAULT_COLLAPSED_GROUPS`. Lazy-init reads localStorage once; every
   // toggle re-persists so the seller's open/closed choice survives a reload.
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(loadCollapsedGroups);
+  const nav = visibleNavForUser(TokenStorage.getUser());
   const toggleGroup = (group: string) => {
     setCollapsedGroups(prev => {
       const next = new Set(prev);
@@ -417,6 +499,16 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
     : null;
   const isTrialing = platformSub?.status === 'trialing' && trialTimeLeft !== null;
   const isTrialEndedSidebar = platformSub?.status === 'trial_ended';
+  // `trialEndsAt` is preserved (not nulled) once a trial genuinely ends —
+  // see `expireTrials()`'s own comment on the backend — specifically so this
+  // can show the real trial length + end date instead of a bare "Trial
+  // Ended" label with no context.
+  const trialEndedSummary = isTrialEndedSidebar && platformSub?.startedAt && platformSub?.trialEndsAt
+    ? {
+        days: Math.round((new Date(platformSub.trialEndsAt).getTime() - new Date(platformSub.startedAt).getTime()) / 86400000),
+        endedOn: new Date(platformSub.trialEndsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      }
+    : null;
   // Real elapsed-vs-total from the subscription's own `startedAt`/`trialEndsAt`
   // — trial has no plan attached (see PlatformTrialSettings), so this can no
   // longer derive from a plan's `trialDays` the way it used to.
@@ -501,7 +593,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
 
         {/* Nav */}
         <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
-          {NAV.map((section, sectionIdx) => {
+          {nav.map((section, sectionIdx) => {
             // A collapsed group whose own page is currently open still shows
             // its items — collapse state is a tidiness preference, never a
             // way to lose track of where you are. Only applies at full
@@ -647,6 +739,11 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                   <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
                     Trial Ended
                   </span>
+                  {trialEndedSummary && (
+                    <p className="text-white/75 text-[9.5px] mt-[7px] leading-[1.4]">
+                      Your {trialEndedSummary.days}-day trial ended on {trialEndedSummary.endedOn}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => navigate(`/store/${storeId}/plan-billing`)}
@@ -1102,16 +1199,30 @@ function GatedOutlet() {
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
   const { pathname: currentPath } = useLocation();
+  const { storeId: routeStoreId } = useParams<{ storeId: string }>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);
 
-  const user = TokenStorage.getUser<{ role?: AppRole }>();
-  if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
+  // A 'staff' session is a real, separate identity (see StaffMember/
+  // PermissionsGuard on the backend) — allowed into this same dashboard
+  // shell, but ONLY for the one store its login is scoped to (`storeId` on
+  // the stored user, set at staff login — see StaffLoginPage). This is a
+  // UX convenience mirroring the backend's own real enforcement
+  // (`PermissionsGuard` already 403s a mismatched store server-side no
+  // matter what this check does) — never the actual security boundary.
+  const user = TokenStorage.getUser<{ role?: AppRole; storeId?: string }>();
+  const isSeller = user?.role === 'seller';
+  const isScopedStaff = user?.role === 'staff' && user.storeId === routeStoreId;
+  if (!TokenStorage.isLoggedIn() || !(isSeller || isScopedStaff)) {
     // Same `?redirect=` convention as SellerLayout's guard — a buyer/
     // logged-out visitor hitting a store-workspace URL directly (e.g. the
     // verification page) lands back on it after logging in, instead of a
-    // bare /login that drops where they were headed.
-    return <Navigate to={`/login?redirect=${encodeURIComponent(currentPath)}`} replace />;
+    // bare /login that drops where they were headed. A staff session whose
+    // `storeId` doesn't match this URL also lands here (wrong store), not
+    // silently — since staff-login is per-store, no generic redirect can
+    // guess the right login URL, so this falls back to the seller login.
+    const loginPath = user?.role === 'staff' ? `/staff-login/${user.storeId}` : '/login';
+    return <Navigate to={`${loginPath}?redirect=${encodeURIComponent(currentPath)}`} replace />;
   }
 
   return (

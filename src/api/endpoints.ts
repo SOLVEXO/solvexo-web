@@ -207,6 +207,7 @@ export const ENDPOINTS = {
     // Customers (staff-facing — only people who ordered from this store)
     CUSTOMERS: {
       LIST:          (storeId: string) => `/api/store/${storeId}/customers`,
+      CREATE:        (storeId: string) => `/api/store/${storeId}/customers`,
       EXPORT:        (storeId: string) => `/api/store/${storeId}/customers/export`,
       BULK_TAG:      (storeId: string) => `/api/store/${storeId}/customers/bulk-tag`,
       BULK_ARCHIVE:  (storeId: string) => `/api/store/${storeId}/customers/bulk-archive`,
@@ -483,6 +484,7 @@ export const ENDPOINTS = {
     ISSUE:           (storeId: string) => `/api/gift-cards/${storeId}/issue`,
     LIST:            (storeId: string) => `/api/gift-cards/${storeId}`,
     DISABLE:         (storeId: string, giftCardId: string) => `/api/gift-cards/${storeId}/${giftCardId}/disable`,
+    ADJUST:          (storeId: string, giftCardId: string) => `/api/gift-cards/${storeId}/${giftCardId}/adjust`,
     PUBLIC_SETTINGS: (storeId: string) => `/api/gift-cards/${storeId}/public-settings`,
     PURCHASE_INTENT: (storeId: string) => `/api/gift-cards/${storeId}/purchase-intent`,
   },
@@ -528,6 +530,7 @@ export const ENDPOINTS = {
     LIST:   (storeId: string) => `/api/discounts/${storeId}`,
     UPDATE: (storeId: string, discountId: string) => `/api/discounts/${storeId}/${discountId}`,
     DELETE: (storeId: string, discountId: string) => `/api/discounts/${storeId}/${discountId}`,
+    EXPORT: (storeId: string) => `/api/discounts/${storeId}/export`,
   },
 
   // ── STRIPE CONNECT (seller's own payment gateway) ────────────────────────
@@ -592,6 +595,11 @@ export const ENDPOINTS = {
     STORES:   '/api/search/stores',
     PRODUCTS: '/api/search/products',
     RECENT:   '/api/search/recent',
+  },
+
+  // ── PRODUCT VIEWS (Phase 5 tracking foundation) ─────────────────────────────
+  PRODUCT_VIEWS: {
+    RECORD: '/api/product-views',
   },
 
   // ── CART ──────────────────────────────────────────────────────────────────
@@ -671,6 +679,7 @@ export const ENDPOINTS = {
     LOCATIONS: (storeId: string) => `/api/inventory/${storeId}/locations`,
     VARIANT_LOCATIONS: (storeId: string, variantId: string) => `/api/inventory/${storeId}/variant/${variantId}/locations`,
     SHIP_TRANSFER: (storeId: string, variantId: string) => `/api/inventory/${storeId}/variant/${variantId}/transfer/ship`,
+    UPDATE_TRANSFER_SHIPPING: (storeId: string, transferId: string) => `/api/inventory/${storeId}/transfer/${transferId}/shipping`,
     RECEIVE_TRANSFER: (storeId: string, transferId: string) => `/api/inventory/${storeId}/transfer/${transferId}/receive`,
     CANCEL_TRANSFER: (storeId: string, transferId: string) => `/api/inventory/${storeId}/transfer/${transferId}/cancel`,
     TRANSFERS: (storeId: string) => `/api/inventory/${storeId}/transfers`,
@@ -689,6 +698,10 @@ export const ENDPOINTS = {
     LIST: (storeId: string) => `/api/staff/${storeId}`,
     UPDATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}`,
     DEACTIVATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}/deactivate`,
+    LIST_ROLES: (storeId: string) => `/api/staff/${storeId}/roles`,
+    CREATE_ROLE: (storeId: string) => `/api/staff/${storeId}/roles`,
+    UPDATE_ROLE: (storeId: string, roleId: string) => `/api/staff/${storeId}/roles/${roleId}`,
+    DELETE_ROLE: (storeId: string, roleId: string) => `/api/staff/${storeId}/roles/${roleId}`,
   },
 
   STOCK_COUNTS: {
@@ -733,7 +746,14 @@ export const ENDPOINTS = {
     SEARCH_CUSTOMERS: (storeId: string, q: string) => `/api/draft-orders/${storeId}/customers/search?q=${encodeURIComponent(q)}`,
     LIST_CREATE: (storeId: string) => `/api/draft-orders/${storeId}`,
     DETAIL: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}`,
+    MARK_PAID: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}/mark-paid`,
     COMPLETE: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}/complete`,
+    DUPLICATE: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}/duplicate`,
+    DELETE_PERMANENT: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}/permanent`,
+    SEND_INVOICE: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}/send-invoice`,
+
+    PUBLIC_INVOICE: (token: string) => `/api/public/draft-orders/invoice/${token}`,
+    PUBLIC_INVOICE_PAYMENT_INTENT: (token: string) => `/api/public/draft-orders/invoice/${token}/create-payment-intent`,
   },
 
   PAYMENT: {
@@ -741,6 +761,8 @@ export const ENDPOINTS = {
     INITIATE_PAYMENT: '/api/payment/initiate-payment',
     STATUS:           '/api/payment/status',
     OPEN_DISPUTE_COUNT: (storeId: string) => `/api/payment/disputes/${storeId}/open-count`,
+    DISPUTES_LIST: (storeId: string, status?: string) => `/api/payment/disputes/${storeId}${status ? `?status=${status}` : ''}`,
+    DISPUTE_SUBMIT_EVIDENCE: (storeId: string, disputeId: string) => `/api/payment/disputes/${storeId}/${disputeId}/evidence`,
     HIGH_RISK_ORDER_COUNT: (storeId: string) => `/api/payment/risk-orders/${storeId}/open-count`,
     CAPTURE_ORDER: (orderId: string) => `/api/payment/orders/${orderId}/capture`,
     AWAITING_CAPTURE_COUNT: (storeId: string) => `/api/payment/orders/${storeId}/awaiting-capture-count`,
@@ -751,6 +773,10 @@ export const ENDPOINTS = {
     UPDATE_STATUS: '/api/orders/update-status',
     PURCHASE_SHIPPING_LABEL: '/api/orders/purchase-shipping-label',
     DOWNLOAD_URL:  '/api/orders/download-url',
+    SELLER_CANCEL:   (storeId: string, orderId: string) => `/api/orders/seller-cancel/${storeId}/${orderId}`,
+    SELLER_REFUND:   (storeId: string, orderId: string) => `/api/orders/seller-refund/${storeId}/${orderId}`,
+    RECORD_PAYMENT:  (storeId: string, orderId: string) => `/api/orders/record-payment/${storeId}/${orderId}`,
+    PAYMENT_RECORDS: (storeId: string, orderId: string) => `/api/orders/payment-records/${storeId}/${orderId}`,
 
     MY_ORDERS:       '/api/orders/my-orders',
     GET_BY_ID:       (orderId: string) => `/api/orders/${orderId}`,
@@ -1010,6 +1036,8 @@ export const ENDPOINTS = {
       PAYMENT_METHODS:      '/api/seller/analytics/payment-methods',
       REVENUE_BREAKDOWN:    '/api/seller/analytics/revenue-breakdown',
       EXPORT:               '/api/seller/analytics/export',
+      SAVED_REPORTS:        '/api/seller/analytics/saved-reports',
+      DELETE_SAVED_REPORT:  (reportId: string) => `/api/seller/analytics/saved-reports/${reportId}`,
     },
     ADMIN: {
       OVERVIEW:                    '/api/admin/analytics/overview',
@@ -1025,8 +1053,12 @@ export const ENDPOINTS = {
       INVENTORY_INSIGHTS:          '/api/admin/analytics/inventory-insights',
       ORDERS_OVER_TIME:            '/api/admin/analytics/orders-over-time',
       ORDERS_STATUS_BREAKDOWN:     '/api/admin/analytics/orders/status-breakdown',
+      ORDERS_LIST:                 '/api/admin/analytics/orders/list',
       PAYMENTS_BREAKDOWN:          '/api/admin/analytics/payments/breakdown',
       PLATFORM_METRICS:            '/api/admin/analytics/platform-metrics',
+      SELLER_ACQUISITION:          '/api/admin/analytics/platform/seller-acquisition',
+      PLATFORM_HEALTH:             '/api/admin/analytics/platform/health',
+      PLATFORM_ALERTS:             '/api/admin/analytics/platform/alerts',
       EXPORT:                      '/api/admin/analytics/export',
     },
   },
@@ -1049,6 +1081,7 @@ export const ENDPOINTS = {
       PAYOUT_SCHEDULE:       (storeId: string) => `/api/finance/${storeId}/payout-schedule`,
       GENERATE_TAX_REPORT:   (storeId: string) => `/api/finance/${storeId}/tax-reports/generate`,
       TAX_REPORTS:           (storeId: string) => `/api/finance/${storeId}/tax-reports`,
+      TAX_REPORT_PDF:        (storeId: string, reportId: string) => `/api/finance/${storeId}/tax-reports/${reportId}/pdf`,
     },
     ADMIN: {
       OVERVIEW:              '/api/admin/finance/overview',

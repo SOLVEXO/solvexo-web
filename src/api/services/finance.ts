@@ -261,3 +261,17 @@ export function apiGetTaxReports(storeId: string) {
 export function apiGenerateTaxReport(storeId: string, year: number, period: 'q1' | 'q2' | 'q3' | 'q4' | 'annual', currency?: string) {
   return client.post<never, TaxReport>(`${ENDPOINTS.FINANCE.SELLER.GENERATE_TAX_REPORT(storeId)}${qs({ year, period, currency })}`);
 }
+
+/** Real, downloadable tax document — streamed on-demand (see
+ *  FinanceService.buildTaxReportPdf's doc comment for why `TaxReport.pdfUrl`
+ *  itself is never populated), same blob-download pattern
+ *  `apiSellerAnalyticsExport` already uses for its PDF export. */
+export async function apiDownloadTaxReportPdf(storeId: string, reportId: string) {
+  const blob = await client.get<never, Blob>(ENDPOINTS.FINANCE.SELLER.TAX_REPORT_PDF(storeId, reportId), { responseType: 'blob' } as never);
+  const objUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objUrl;
+  a.download = 'tax-report.pdf';
+  a.click();
+  URL.revokeObjectURL(objUrl);
+}

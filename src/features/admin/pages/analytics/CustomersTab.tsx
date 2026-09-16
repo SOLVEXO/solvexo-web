@@ -113,6 +113,10 @@ export function CustomersTab({ params }: { params: BaseAnalyticsParams }) {
           />
         </div>
       </div>
+
+      {d?.note && (
+        <p className="text-[11px] text-slate bg-cream border border-bone rounded-lg px-3 py-2">{d.note}</p>
+      )}
     </div>
   );
 }

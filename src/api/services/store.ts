@@ -502,7 +502,7 @@ export function apiGetPlatformStats() {
 
 // ── Customers (staff-facing) ──────────────────────────────────────────────────
 
-export type StoreCustomerSegment = 'new' | 'returning' | 'vip' | 'at_risk';
+export type StoreCustomerSegment = 'new' | 'returning' | 'vip' | 'at_risk' | 'no_orders';
 
 export type StoreCustomerView = 'active' | 'archived' | 'all';
 export type StoreCustomerSortBy = 'name' | 'totalSpent' | 'orderCount' | 'lastOrderAt' | 'createdAt';
@@ -595,6 +595,15 @@ export function apiExportStoreCustomers(storeId: string, params: GetStoreCustome
   return client.get<never, Blob>(
     `${ENDPOINTS.STORE.CUSTOMERS.EXPORT(storeId)}?${customerQueryString(params)}`,
     { responseType: 'blob' },
+  );
+}
+
+/** POST /api/store/:storeId/customers — real "Create customer profile"
+ *  (previously edit-only, no seller-initiated create). Finds an existing
+ *  account by email first rather than always creating a new one. */
+export function apiCreateStoreCustomer(storeId: string, payload: { name: string; email: string; phone?: string }) {
+  return client.post<never, ApiResponse<{ _id: string; name: string; email: string; phone: string | null; createdAt: string }>>(
+    ENDPOINTS.STORE.CUSTOMERS.CREATE(storeId), payload,
   );
 }
 

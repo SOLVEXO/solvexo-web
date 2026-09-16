@@ -84,7 +84,10 @@ export const TokenStorage = {
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLE-BASED REDIRECT
 // ─────────────────────────────────────────────────────────────────────────────
-export type AppRole = 'user' | 'seller' | 'admin';
+// 'staff' is a real, store-scoped identity (see StaffMember/PermissionsGuard
+// on the backend) — a separate login from the seller's own, always pinned
+// to exactly one store, gated on that store's assigned permissions.
+export type AppRole = 'user' | 'seller' | 'admin' | 'staff';
 
 export function getRoleRedirect(role: AppRole): string {
   switch (role) {
@@ -221,6 +224,14 @@ export interface RegisterPayload {
   /** Set only when registering through a specific store's own storefront —
    *  see User.storeId. Omitted = the legacy apex-wide buyer account. */
   storeId?: string;
+  // Phase 9 — Merchant Acquisition Tracking. Only meaningful for a seller
+  // signup — see getSellerAcquisitionFields() (sellerAcquisitionAttribution.ts),
+  // read back from the UTM/referrer snapshot captured at app load and sent
+  // here so the backend can persist it once on the new Seller document.
+  acquisitionSource?: string;
+  acquisitionMedium?: string;
+  acquisitionCampaign?: string;
+  acquisitionLandingPage?: string;
 }
 interface RegisterData { userId: string; otp?: string }
 

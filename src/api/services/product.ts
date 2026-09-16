@@ -627,6 +627,9 @@ export interface StockTransfer {
   note: string | null;
   transferredByName: string | null;
   receivedByName: string | null;
+  carrier: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
   createdAt: string;
 }
 
@@ -634,11 +637,20 @@ export interface StockTransfer {
  *  branch-to-branch stock move, a genuine 2-step lifecycle (ship now,
  *  receive later at the destination once it actually arrives) — Shopify's
  *  own "Transfer" equivalent, not an instant teleport. */
-export function apiShipTransfer(storeId: string, variantId: string, fromLocationId: string, toLocationId: string, quantity: number, note?: string) {
+export function apiShipTransfer(
+  storeId: string, variantId: string, fromLocationId: string, toLocationId: string, quantity: number, note?: string,
+  shipping?: { carrier?: string; trackingNumber?: string; trackingUrl?: string },
+) {
   return client.post<never, ApiResponse<StockTransfer>>(
     ENDPOINTS.INVENTORY.SHIP_TRANSFER(storeId, variantId),
-    { fromLocationId, toLocationId, quantity, note },
+    { fromLocationId, toLocationId, quantity, note, ...shipping },
   );
+}
+
+/** PATCH /api/inventory/:storeId/transfer/:transferId/shipping — add/edit
+ *  carrier/tracking on an already-shipped, still-in-transit transfer. */
+export function apiUpdateTransferShipping(storeId: string, transferId: string, shipping: { carrier?: string; trackingNumber?: string; trackingUrl?: string }) {
+  return client.patch<never, ApiResponse<StockTransfer>>(ENDPOINTS.INVENTORY.UPDATE_TRANSFER_SHIPPING(storeId, transferId), shipping);
 }
 
 /** POST /api/inventory/:storeId/transfer/:transferId/receive — settle some

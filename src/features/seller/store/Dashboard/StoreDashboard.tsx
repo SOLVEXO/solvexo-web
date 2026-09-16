@@ -4,7 +4,7 @@ import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
   CheckCircle, Clock, Globe, Copy, ExternalLink,
   ArrowRight, Settings, Sparkles, BarChart2,
-  ClipboardList, Megaphone, AlertTriangle,
+  ClipboardList, Megaphone, AlertTriangle, Lightbulb,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
@@ -306,7 +306,7 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
     // real Stripe dispute-status tracking (PaymentService.getOpenDisputeCount),
     // shown only while genuinely awaiting the seller's response (not merely
     // "under review", where there's nothing left to do).
-    { label: 'Order(s) with an open payment dispute', count: openDisputeCount, path: 'orders', Icon: AlertTriangle, color: '#DC2626' },
+    { label: 'Order(s) with an open payment dispute', count: openDisputeCount, path: 'disputes', Icon: AlertTriangle, color: '#DC2626' },
     { label: 'Product(s) low on stock', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B' },
     { label: 'Return request(s) awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444' },
   ].filter(i => i.count > 0);
@@ -423,19 +423,28 @@ function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
 
   return (
     <div className="dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden">
-      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec]">
-        <p className="text-sm font-bold text-charcoal">Insights</p>
-        <p className="text-[11px] text-slate mt-[2px]">A few things worth noticing about the last 30 days</p>
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg bg-brand-pale-orange text-brand-orange flex items-center justify-center shrink-0">
+          <Lightbulb size={14} />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-charcoal">Insights</p>
+          <p className="text-[11px] text-slate mt-[1px]">A few things worth noticing about the last 30 days</p>
+        </div>
       </div>
       <div className="flex flex-col divide-y divide-[#f3f2ec]">
         {insights.map((insight, i) => {
           const { bg, color, Icon } = toneStyle[insight.tone];
           return (
-            <div key={i} className="flex items-center gap-3 px-5 py-3">
+            <div
+              key={i}
+              className="flex items-center gap-3 px-5 py-3 border-l-[3px] transition-colors duration-150 hover:bg-[#fafaf6]"
+              style={{ borderLeftColor: color }}
+            >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg, color }}>
                 <Icon size={14} />
               </div>
-              <span className="text-[13px] text-charcoal">{insight.text}</span>
+              <span className="text-[13px] text-charcoal leading-[1.4]">{insight.text}</span>
             </div>
           );
         })}
@@ -454,9 +463,16 @@ function renderMetricCard(
   id: string, metrics: StoreMetrics | null, currency: string | null | undefined,
   totalCustomers: number, revenueSparkline: number[],
 ) {
-  const revenueChangePct = metrics?.overview.totalRevenueChangePercent ?? null;
-  const aovChangePct = metrics?.overview.avgOrderValueChangePercent ?? null;
-  const ordersChange = metrics?.overview.totalOrdersChange;
+  // A 0-vs-0 comparison (nothing happened this period, nothing happened last
+  // period either) isn't a real trend — showing "↑0%"/"↑+0 vs prev." on a
+  // brand-new store with zero activity reads as if something happened when
+  // nothing did, so the trend badge only renders once there's genuine
+  // activity to compare against.
+  const hasRevenue = (metrics?.overview.totalRevenue ?? 0) > 0;
+  const hasOrders  = (metrics?.overview.totalOrders ?? 0) > 0;
+  const revenueChangePct = hasRevenue ? (metrics?.overview.totalRevenueChangePercent ?? null) : null;
+  const aovChangePct = hasOrders ? (metrics?.overview.avgOrderValueChangePercent ?? null) : null;
+  const ordersChange = hasOrders ? metrics?.overview.totalOrdersChange : undefined;
 
   switch (id) {
     case 'revenue_30d':
@@ -680,38 +696,45 @@ function PlanUsageCard({ entitlements, storeId }: { entitlements: EntitlementsSu
   );
 }
 
-// ── Today Snapshot ────────────────────────────────────────────────────────────
+// ── Today Snapshot — 3 real stat tiles (Revenue/Orders/AOV), not an inline
+// text strip, so it reads as a proper "today at a glance" panel instead of
+// a thin caption row. ─────────────────────────────────────────────────────
 function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; currency?: string | null }) {
   const up = today.revenueChangePercent >= 0;
   const TrendIcon = up ? TrendingUp : TrendingDown;
+  // Same fix as the Metrics cards above — Rs0 today vs Rs0 yesterday isn't a
+  // real +/-0% trend, so the badge only shows once there's actual revenue.
+  const hasTodayRevenue = today.revenue > 0;
 
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
-      <p className="text-[13px] font-bold text-charcoal shrink-0 flex items-center gap-[6px]">
-        <span className="size-[6px] rounded-full bg-success pos-live-pulse" />
-        Today
-      </p>
-
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-slate">Revenue</span>
-        <span className="text-[14px] font-bold text-carbon">{formatMoneyCompact(today.revenue, currency)}</span>
-        <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-[6px] py-[1px] rounded-full ${up ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
-          <TrendIcon size={11} />
-          {Math.abs(today.revenueChangePercent).toFixed(0)}%
-        </span>
+    <div className="dash-section-enter bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden">
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center justify-between gap-3">
+        <p className="text-sm font-bold text-charcoal flex items-center gap-[6px]">
+          <span className="size-[6px] rounded-full bg-success pos-live-pulse" />
+          Today
+        </p>
+        <span className="text-[11px] text-slate">vs. this time yesterday</span>
       </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-slate">Orders</span>
-        <span className="text-[14px] font-bold text-carbon">{formatNumber(today.ordersCount)}</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#f3f2ec]">
+        <div className="px-5 py-4 flex flex-col gap-1.5">
+          <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Revenue</span>
+          <span className="text-[22px] font-bold text-carbon tabular-nums leading-none">{formatMoneyCompact(today.revenue, currency)}</span>
+          {hasTodayRevenue && (
+            <span className={`inline-flex items-center gap-0.5 self-start text-[11px] font-semibold px-[6px] py-[1px] rounded-full ${up ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
+              <TrendIcon size={11} />
+              {Math.abs(today.revenueChangePercent).toFixed(0)}%
+            </span>
+          )}
+        </div>
+        <div className="px-5 py-4 flex flex-col gap-1.5">
+          <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Orders</span>
+          <span className="text-[22px] font-bold text-carbon tabular-nums leading-none">{formatNumber(today.ordersCount)}</span>
+        </div>
+        <div className="px-5 py-4 flex flex-col gap-1.5">
+          <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Avg. Order Value</span>
+          <span className="text-[22px] font-bold text-carbon tabular-nums leading-none">{formatMoneyCompact(today.avgOrderValue, currency)}</span>
+        </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-slate">Avg. Order Value</span>
-        <span className="text-[14px] font-bold text-carbon">{formatMoneyCompact(today.avgOrderValue, currency)}</span>
-      </div>
-
-      <span className="text-[10px] text-slate/70 ml-auto shrink-0">vs. this time yesterday</span>
     </div>
   );
 }
@@ -769,21 +792,31 @@ const REVENUE_RANGE_GRANULARITY: Record<AnalyticsRangePreset, 'day' | 'month'> =
   '7d': 'day', '30d': 'day', '90d': 'day', '6m': 'month', '12m': 'month', custom: 'day',
 };
 
-function useRevenueOverview(storeId: string, range: AnalyticsRangePreset) {
-  const [series, setSeries] = useState<RevenuePoint[]>([]);
+// Every range option is fetched once, in parallel, up front — switching the
+// filter afterward is a plain in-memory lookup, not a new request, so the
+// dropdown never shows a loading state after the initial page load (the one
+// exception: it briefly refetches everything after Metrics's own refetch,
+// e.g. after "Try again").
+function useRevenueOverviewAll(storeId: string) {
+  const [seriesByRange, setSeriesByRange] = useState<Partial<Record<AnalyticsRangePreset, RevenuePoint[]>>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
     setLoading(true);
-    apiSellerAnalyticsRevenueOverTime({ storeId, range, granularity: REVENUE_RANGE_GRANULARITY[range] })
-      .then(res => { if (!cancelled) setSeries(res.data.series); })
+    Promise.all(
+      REVENUE_RANGE_OPTIONS.map(({ value }) =>
+        apiSellerAnalyticsRevenueOverTime({ storeId, range: value, granularity: REVENUE_RANGE_GRANULARITY[value] })
+          .then(res => [value, res.data.series] as const),
+      ),
+    )
+      .then(entries => { if (!cancelled) setSeriesByRange(Object.fromEntries(entries)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, range]);
+  }, [storeId]);
 
-  return { series, loading };
+  return { seriesByRange, loading };
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -793,7 +826,8 @@ export default function StoreDashboard() {
   const testimonialPrompt = useTestimonialPrompt();
   const [showCustomize, setShowCustomize] = useState(false);
   const [revenueRange, setRevenueRange] = useState<AnalyticsRangePreset>('30d');
-  const { series: revenueOverviewSeries, loading: revenueOverviewLoading } = useRevenueOverview(storeId, revenueRange);
+  const { seriesByRange, loading: revenueOverviewLoading } = useRevenueOverviewAll(storeId);
+  const revenueOverviewSeries = seriesByRange[revenueRange] ?? [];
   const activeMetricIds = (store?.dashboardMetrics && store.dashboardMetrics.length > 0)
     ? store.dashboardMetrics
     : DEFAULT_DASHBOARD_METRICS;
@@ -845,7 +879,12 @@ export default function StoreDashboard() {
               <Sliders size={12} /> Customize
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* auto-fit, not a fixed 4-column grid — the card count here is
+             seller-customizable (see MetricsCustomizeModal), and a fixed
+             column count leaves a leftover row's 1-2 cards small and
+             left-aligned, looking abandoned. auto-fit instead stretches
+             whatever's left in the last row to fill it. */}
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
             {activeMetricIds.map(id => renderMetricCard(id, metrics, store?.baseCurrency, totalCustomers, revenueSparkline))}
           </div>
 
@@ -868,20 +907,6 @@ export default function StoreDashboard() {
           )}
 
           {metrics?.overview && <InsightsStrip overview={metrics.overview} />}
-
-          {/* Setup Guide + Quick Actions, side by side. Quick Actions stays
-             desktop-only within its own column — on mobile, StoreNavMenu (and
-             the bottom-nav's Menu sheet, reachable from any page) already
-             cover every one of these destinations, so it collapses away
-             rather than leaving an empty second column. */}
-          {metrics && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />
-              <div className="hidden lg:block">
-                <QuickActionsRow storeId={storeId} />
-              </div>
-            </div>
-          )}
 
           {/* Revenue Chart + Store Info — one filterable Revenue Overview
              chart (range picker top-right) replaces the old fixed 6-month
@@ -908,6 +933,26 @@ export default function StoreDashboard() {
             />
             <StoreInfoCard />
           </div>
+
+          {/* Setup Guide + Quick Actions, side by side. Quick Actions stays
+             desktop-only within its own column — on mobile, StoreNavMenu (and
+             the bottom-nav's Menu sheet, reachable from any page) already
+             cover every one of these destinations, so it collapses away
+             rather than leaving an empty second column. */}
+          {metrics && (
+            // items-start — without it, a grid row stretches both columns to
+            // match the taller one; Setup Guide (multiple task rows) is
+            // usually much taller than Quick Actions (one icon row), which
+            // left Quick Actions' card stretched with a lot of dead empty
+            // space below its icons. Each column now only takes its own
+            // natural height.
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />
+              <div className="hidden lg:block">
+                <QuickActionsRow storeId={storeId} />
+              </div>
+            </div>
+          )}
 
           {/* Store Health — a real, varied mix of chart types (donut,
              progress bars) alongside the area chart above, all from data

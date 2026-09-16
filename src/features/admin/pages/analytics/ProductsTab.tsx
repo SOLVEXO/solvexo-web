@@ -43,10 +43,15 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
   const performance = useAdminAnalyticsProductPerformance({ ...params, page, limit: 10, categoryId: categoryId || undefined });
   const inventory = useAdminAnalyticsInventoryInsights(params);
 
+  // Phase 6 — views/conversion come from Phase 5's real tracking; a `null`
+  // conversion rate means no tracked views exist for that product in this
+  // window (most often pre-launch traffic), never a fabricated 0%.
   const productColumns: TableColumn<TopProductRow>[] = [
     { key: 'name', header: 'Product' },
     { key: 'orderCount', header: 'Orders', align: 'right' },
     { key: 'unitsSold', header: 'Units Sold', align: 'right' },
+    { key: 'views', header: 'Views', align: 'right' },
+    { key: 'viewToPurchaseConversionPercent', header: 'View → Purchase', align: 'right', render: r => r.viewToPurchaseConversionPercent == null ? '—' : `${r.viewToPurchaseConversionPercent}%` },
     { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
   ];
 
@@ -58,6 +63,8 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
       </div>
     ) },
     { key: 'unitsSold', header: 'Units Sold', align: 'right' },
+    { key: 'views', header: 'Views', align: 'right' },
+    { key: 'viewToPurchaseConversionPercent', header: 'View → Purchase', align: 'right', render: r => r.viewToPurchaseConversionPercent == null ? '—' : `${r.viewToPurchaseConversionPercent}%` },
     { key: 'currentStock', header: 'Stock', align: 'right' },
     { key: 'refundRatePercent', header: 'Refund Rate', align: 'right', render: r => `${r.refundRatePercent}%` },
     { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
@@ -126,6 +133,9 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
               label: 'products',
             }}
           />
+        )}
+        {performance.data?.note && (
+          <p className="text-[11px] text-slate px-5 pb-4">{performance.data.note}</p>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { Bell, Package, MessageSquare, Star, Sparkles, AlertTriangle } from 'lucide-react';
+import { Bell, Package, MessageSquare, Star, Sparkles, AlertTriangle, Undo2, ShieldAlert } from 'lucide-react';
 
 /** Shared by NotificationBell (dropdown) and NotificationsPanel (full page) —
  *  previously each hand-rolled an identical copy of this type→icon/color
@@ -6,6 +6,8 @@ import { Bell, Package, MessageSquare, Star, Sparkles, AlertTriangle } from 'luc
 export function getNotificationIcon(type: string, size: number = 14) {
   const t = type.toLowerCase();
   if (t.includes('stock')) return <AlertTriangle size={size} className="text-warning" />;
+  if (t.includes('dispute')) return <ShieldAlert size={size} className="text-error" />;
+  if (t.includes('refund')) return <Undo2 size={size} className="text-error" />;
   if (t.includes('order')) return <Package size={size} className="text-brand-orange" />;
   if (t.includes('message') || t.includes('chat')) return <MessageSquare size={size} className="text-[#1a65a8]" />;
   if (t.includes('loyalty') || t.includes('points') || t.includes('tier')) return <Star size={size} className="text-[#d4af37]" />;

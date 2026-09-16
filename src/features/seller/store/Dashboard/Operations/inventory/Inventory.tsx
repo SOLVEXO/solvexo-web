@@ -31,6 +31,7 @@ import {
   apiArchiveLocation,
   apiGetVariantLocations,
   apiShipTransfer,
+  apiUpdateTransferShipping,
   apiReceiveTransfer,
   apiCancelTransfer,
   apiListTransfers,
@@ -299,6 +300,9 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
   const [transferTo, setTransferTo] = useState('');
   const [transferQty, setTransferQty] = useState('');
   const [transferNote, setTransferNote] = useState('');
+  const [transferCarrier, setTransferCarrier] = useState('');
+  const [transferTrackingNumber, setTransferTrackingNumber] = useState('');
+  const [transferTrackingUrl, setTransferTrackingUrl] = useState('');
   const [transferring, setTransferring] = useState(false);
   const [transferError, setTransferError] = useState('');
 
@@ -339,8 +343,13 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
     setTransferring(true);
     setTransferError('');
     try {
-      await apiShipTransfer(storeId, transferTarget.variantId, transferFrom, transferTo, qty, transferNote);
+      await apiShipTransfer(storeId, transferTarget.variantId, transferFrom, transferTo, qty, transferNote, {
+        carrier: transferCarrier.trim() || undefined,
+        trackingNumber: transferTrackingNumber.trim() || undefined,
+        trackingUrl: transferTrackingUrl.trim() || undefined,
+      });
       setTransferTarget(null);
+      setTransferCarrier(''); setTransferTrackingNumber(''); setTransferTrackingUrl('');
       setRefreshKey(k => k + 1);
     } catch (err: unknown) {
       setTransferError(err instanceof Error ? err.message : 'Failed to ship transfer.');
@@ -359,6 +368,10 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
   const [transfersError, setTransfersError] = useState('');
   const [receivingId, setReceivingId] = useState<string | null>(null);
   const [receiveQtyById, setReceiveQtyById] = useState<Record<string, string>>({});
+  const [editingShippingId, setEditingShippingId] = useState<string | null>(null);
+  const [shippingCarrierEdit, setShippingCarrierEdit] = useState('');
+  const [shippingTrackingEdit, setShippingTrackingEdit] = useState('');
+  const [savingShipping, setSavingShipping] = useState(false);
   const [transferActionError, setTransferActionError] = useState('');
   // One idempotency key per transfer, generated lazily and reused across a
   // retry of the SAME receive attempt — cleared on success so a genuinely
@@ -419,6 +432,29 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
       setTransferActionError(err instanceof Error ? err.message : 'Failed to cancel transfer.');
     } finally {
       setReceivingId(null);
+    }
+  };
+
+  const openShippingEdit = (t: StockTransfer) => {
+    setEditingShippingId(t._id);
+    setShippingCarrierEdit(t.carrier ?? '');
+    setShippingTrackingEdit(t.trackingNumber ?? '');
+  };
+
+  const handleSaveShipping = async (transferId: string) => {
+    setSavingShipping(true);
+    setTransferActionError('');
+    try {
+      await apiUpdateTransferShipping(storeId, transferId, {
+        carrier: shippingCarrierEdit.trim() || undefined,
+        trackingNumber: shippingTrackingEdit.trim() || undefined,
+      });
+      setEditingShippingId(null);
+      loadTransfers();
+    } catch (err: unknown) {
+      setTransferActionError(err instanceof Error ? err.message : 'Failed to update shipment details.');
+    } finally {
+      setSavingShipping(false);
     }
   };
 
@@ -1111,6 +1147,26 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
                     className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] resize-none focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[12px] font-medium text-graphite mb-1 block">Carrier (optional)</label>
+                    <input
+                      value={transferCarrier}
+                      onChange={e => setTransferCarrier(e.target.value)}
+                      placeholder="e.g. DHL, Local Courier"
+                      className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[12px] font-medium text-graphite mb-1 block">Tracking # (optional)</label>
+                    <input
+                      value={transferTrackingNumber}
+                      onChange={e => setTransferTrackingNumber(e.target.value)}
+                      className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                    />
+                  </div>
+                </div>
               </>
             )}
 
@@ -1157,6 +1213,41 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
                         </div>
                         <Badge color={TRANSFER_STATUS_META[t.status].color}>{TRANSFER_STATUS_META[t.status].label}</Badge>
                       </div>
+
+                      {editingShippingId === t._id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={shippingCarrierEdit}
+                            onChange={e => setShippingCarrierEdit(e.target.value)}
+                            placeholder="Carrier"
+                            className="w-28 border border-bone rounded-[7px] px-2 py-1 text-[11.5px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                          />
+                          <input
+                            value={shippingTrackingEdit}
+                            onChange={e => setShippingTrackingEdit(e.target.value)}
+                            placeholder="Tracking #"
+                            className="w-32 border border-bone rounded-[7px] px-2 py-1 text-[11.5px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                          />
+                          <Button variant="secondary" onClick={() => handleSaveShipping(t._id)} loading={savingShipping}>Save</Button>
+                          <button onClick={() => setEditingShippingId(null)} className="text-[11px] text-slate bg-transparent border-none cursor-pointer">Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          {(t.carrier || t.trackingNumber) ? (
+                            <p className="text-[11px] text-slate">
+                              {t.carrier ?? 'Carrier —'}{t.trackingNumber ? ` · Tracking: ${t.trackingNumber}` : ''}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-slate/60">No shipment details</p>
+                          )}
+                          {(t.status === 'in_transit' || t.status === 'partially_received') && (
+                            <button onClick={() => openShippingEdit(t)} className="text-[11px] font-medium text-brand-orange bg-transparent border-none cursor-pointer">
+                              {t.carrier || t.trackingNumber ? 'Edit' : 'Add tracking'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <input
                           type="number"

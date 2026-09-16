@@ -71,6 +71,12 @@ export function apiDisableGiftCard(storeId: string, giftCardId: string) {
   return client.patch<never, ApiResponse<GiftCard>>(ENDPOINTS.GIFT_CARDS.DISABLE(storeId, giftCardId), {});
 }
 
+/** PATCH /api/gift-cards/:storeId/:giftCardId/adjust — real "Edit existing
+ *  card value": `delta` can be positive (top-up) or negative (deduction). */
+export function apiAdjustGiftCardBalance(storeId: string, giftCardId: string, delta: number, reason?: string) {
+  return client.patch<never, ApiResponse<GiftCard>>(ENDPOINTS.GIFT_CARDS.ADJUST(storeId, giftCardId), { delta, reason });
+}
+
 // ── Buyer-facing ───────────────────────────────────────────────────────────
 
 export interface GiftCardPublicSettings {

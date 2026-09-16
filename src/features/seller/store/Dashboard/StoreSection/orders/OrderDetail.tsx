@@ -2,22 +2,25 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Package, MapPin, User, CreditCard, Truck, AlertCircle,
-  CheckCheck, RefreshCw,
+  CheckCheck, RefreshCw, XCircle, Undo2,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetSellerOrderDetail,
   type SellerOrderDetail,
 } from '@/api/services/product';
-import { apiMarkOrderPaid, apiUpdateOrderStatus, apiPurchaseShippingLabel } from '@/api/services/orders';
+import {
+  apiMarkOrderPaid, apiUpdateOrderStatus, apiPurchaseShippingLabel, apiCancelOrderAsSeller, apiRefundOrderAsSeller,
+  apiRecordOrderPayment, apiListOrderPayments, type OrderPaymentRecordRow,
+} from '@/api/services/orders';
 import { apiCaptureOrderPayment } from '@/api/services/payment';
 import {
-  SkeletonBox, StatusBadge, Button, Modal, Field, Input,
+  SkeletonBox, StatusBadge, Button, Modal, Field, Input, Select,
 } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 
-type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | 'capture' | null;
+type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | 'capture' | 'cancel' | 'refund' | 'record-payment' | null;
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -61,6 +64,20 @@ export function StoreOrderDetail() {
   const [trackingForm, setTrackingForm] = useState({ carrier: '', trackingNumber: '', trackingUrl: '' });
   const [trackingErrors, setTrackingErrors] = useState<{ carrier?: string; trackingNumber?: string }>({});
   const [confirmComplete, setConfirmComplete] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundError, setRefundError] = useState('');
+  const [paymentRecords, setPaymentRecords] = useState<OrderPaymentRecordRow[]>([]);
+  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'other'>('cash');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
+  const [paymentError, setPaymentError] = useState('');
   // Real one-click "buy a live carrier label" (Shippo) — a separate error
   // slot from the manual form below it, since failing here (store hasn't
   // connected Shippo, no live rate for this address, etc.) is expected to
@@ -75,6 +92,9 @@ export function StoreOrderDetail() {
       .then(res => setDetail(res.data))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load order.'))
       .finally(() => setLoading(false));
+    apiListOrderPayments(storeId, orderId)
+      .then(res => setPaymentRecords(res.data))
+      .catch(() => setPaymentRecords([]));
   };
 
   useEffect(() => { if (storeId && orderId) load(); }, [storeId, orderId]);
@@ -156,6 +176,43 @@ export function StoreOrderDetail() {
       .finally(() => setBusyAction(null));
   };
 
+  const handleCancelOrder = () => {
+    const reason = cancelReason.trim();
+    if (!reason) { setCancelError('A cancellation reason is required.'); return; }
+    setBusyAction('cancel');
+    setCancelError('');
+    apiCancelOrderAsSeller(storeId, orderId, { reason })
+      .then(() => { setShowCancelModal(false); setCancelReason(''); load(); })
+      .catch((err: unknown) => setCancelError(err instanceof Error ? err.message : 'Failed to cancel order.'))
+      .finally(() => setBusyAction(null));
+  };
+
+  const handleRecordPayment = () => {
+    const amount = parseFloat(paymentAmount);
+    if (!amount || amount <= 0) { setPaymentError('Enter a valid amount.'); return; }
+    setBusyAction('record-payment');
+    setPaymentError('');
+    apiRecordOrderPayment(storeId, orderId, {
+      amount, method: paymentMethod,
+      reference: paymentReference.trim() || undefined,
+      note: paymentNote.trim() || undefined,
+    })
+      .then(() => { setShowRecordPaymentModal(false); setPaymentAmount(''); setPaymentReference(''); setPaymentNote(''); load(); })
+      .catch((err: unknown) => setPaymentError(err instanceof Error ? err.message : 'Failed to record payment.'))
+      .finally(() => setBusyAction(null));
+  };
+
+  const handleRefund = () => {
+    const amount = parseFloat(refundAmount);
+    if (!amount || amount <= 0) { setRefundError('Enter a valid refund amount.'); return; }
+    setBusyAction('refund');
+    setRefundError('');
+    apiRefundOrderAsSeller(storeId, orderId, { amount, reason: refundReason.trim() || undefined })
+      .then(() => { setShowRefundModal(false); setRefundAmount(''); setRefundReason(''); load(); })
+      .catch((err: unknown) => setRefundError(err instanceof Error ? err.message : 'Failed to issue refund.'))
+      .finally(() => setBusyAction(null));
+  };
+
   const handlePurchaseLiveLabel = () => {
     setLiveLabelBusy(true);
     setLiveLabelError('');
@@ -196,6 +253,8 @@ export function StoreOrderDetail() {
   const canProcess  = so.status === 'pending';
   const canShip     = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded' && !so.status.startsWith('partially_') && so.fulfillmentType !== 'digital';
   const canComplete = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
+  const canCancel   = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
+  const canRefund   = detail.isPaid;
 
   return (
     <>
@@ -298,6 +357,25 @@ export function StoreOrderDetail() {
                   Card authorized, not yet charged — capture it below, or it auto-captures the moment you mark this order shipped/completed.
                 </p>
               )}
+              {paymentRecords.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-bone">
+                  <p className="text-[11px] font-bold text-charcoal uppercase tracking-[0.05em] mb-2">Payment History</p>
+                  <div className="flex flex-col gap-2">
+                    {paymentRecords.map(p => (
+                      <div key={p._id} className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-semibold text-charcoal capitalize">{p.method.replace(/_/g, ' ')}</p>
+                          <p className="text-[11px] text-slate">
+                            {formatDate(p.createdAt)}{p.reference ? ` · Ref: ${p.reference}` : ''}
+                          </p>
+                          {p.note && <p className="text-[11px] text-slate mt-0.5">{p.note}</p>}
+                        </div>
+                        <p className="text-[12.5px] font-bold text-charcoal shrink-0">{symbol}{p.amount.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
 
             <Card title="Actions">
@@ -309,7 +387,16 @@ export function StoreOrderDetail() {
                 )}
                 {!detail.isPaid && detail.paymentStatus !== 'authorized' && (
                   <Button size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
-                    <CheckCheck size={13} /> Mark as Paid
+                    <CheckCheck size={13} /> Mark as Paid (full amount)
+                  </Button>
+                )}
+                {!detail.isPaid && detail.paymentStatus !== 'authorized' && (
+                  <Button
+                    size="sm" variant="outline"
+                    onClick={() => { setPaymentAmount(''); setPaymentMethod('cash'); setPaymentReference(''); setPaymentNote(''); setPaymentError(''); setShowRecordPaymentModal(true); }}
+                    disabled={busy}
+                  >
+                    <CreditCard size={13} /> Record a Payment
                   </Button>
                 )}
                 {canProcess && (
@@ -327,7 +414,26 @@ export function StoreOrderDetail() {
                     <CheckCheck size={13} /> Mark Completed
                   </Button>
                 )}
-                {!canProcess && !canShip && !canComplete && detail.isPaid && (
+                {canRefund && (
+                  <Button
+                    size="sm" variant="outline"
+                    onClick={() => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setShowRefundModal(true); }}
+                    disabled={busy}
+                  >
+                    <Undo2 size={13} /> Issue Refund
+                  </Button>
+                )}
+                {canCancel && (
+                  <Button
+                    size="sm" variant="outline"
+                    onClick={() => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }}
+                    disabled={busy}
+                    className="!text-error !border-error/30 hover:!bg-error-bg"
+                  >
+                    <XCircle size={13} /> Cancel Order
+                  </Button>
+                )}
+                {!canProcess && !canShip && !canComplete && !canCancel && !canRefund && detail.isPaid && (
                   <p className="text-[12px] text-slate">No further actions available for this order.</p>
                 )}
               </div>
@@ -397,6 +503,91 @@ export function StoreOrderDetail() {
           >
             Capture full authorized amount instead
           </button>
+        </Modal>
+      )}
+
+      {showCancelModal && (
+        <Modal
+          title={`Cancel ${detail.orderNumber}`}
+          onClose={() => { if (!busy) setShowCancelModal(false); }}
+          footer={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowCancelModal(false)} disabled={busy}>Keep Order</Button>
+              <Button size="sm" onClick={handleCancelOrder} loading={busyAction === 'cancel'} disabled={busy}>
+                Confirm Cancellation
+              </Button>
+            </>
+          }
+        >
+          {cancelError && <p className="text-[12px] text-error mb-3">{cancelError}</p>}
+          <p className="text-[12.5px] text-slate mb-4">
+            This cancels every item on your store's part of this order, restores stock, and issues a real refund to the customer's original payment method. This cannot be undone.
+          </p>
+          <Field label="Cancellation reason" required error={cancelError && !cancelReason.trim() ? cancelError : undefined}>
+            <Input placeholder="e.g. Out of stock, customer request" value={cancelReason} onChange={e => setCancelReason(e.target.value)} disabled={busy} />
+          </Field>
+        </Modal>
+      )}
+
+      {showRecordPaymentModal && (
+        <Modal
+          title={`Record a Payment — ${detail.orderNumber}`}
+          onClose={() => { if (!busy) setShowRecordPaymentModal(false); }}
+          footer={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowRecordPaymentModal(false)} disabled={busy}>Cancel</Button>
+              <Button size="sm" onClick={handleRecordPayment} loading={busyAction === 'record-payment'} disabled={busy}>
+                Record Payment
+              </Button>
+            </>
+          }
+        >
+          {paymentError && <p className="text-[12px] text-error mb-3">{paymentError}</p>}
+          <p className="text-[12.5px] text-slate mb-4">
+            Records a manually-collected payment (cash, bank transfer, etc.) against this order. Partial amounts are supported — the order is automatically marked fully paid once the total recorded reaches {symbol}{detail.sellerOrder.subtotal.toFixed(2)}.
+          </p>
+          <Field label="Amount" required>
+            <Input type="number" placeholder="0.00" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} disabled={busy} />
+          </Field>
+          <Field label="Payment method" required>
+            <Select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as 'cash' | 'bank_transfer' | 'other')} disabled={busy}>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="other">Other</option>
+            </Select>
+          </Field>
+          <Field label="Reference" hint="Optional — transaction/receipt number.">
+            <Input value={paymentReference} onChange={e => setPaymentReference(e.target.value)} disabled={busy} />
+          </Field>
+          <Field label="Note" hint="Optional.">
+            <Input value={paymentNote} onChange={e => setPaymentNote(e.target.value)} disabled={busy} />
+          </Field>
+        </Modal>
+      )}
+
+      {showRefundModal && (
+        <Modal
+          title={`Issue Refund — ${detail.orderNumber}`}
+          onClose={() => { if (!busy) setShowRefundModal(false); }}
+          footer={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowRefundModal(false)} disabled={busy}>Cancel</Button>
+              <Button size="sm" onClick={handleRefund} loading={busyAction === 'refund'} disabled={busy}>
+                Issue Refund
+              </Button>
+            </>
+          }
+        >
+          {refundError && <p className="text-[12px] text-error mb-3">{refundError}</p>}
+          <p className="text-[12.5px] text-slate mb-4">
+            Refunds this amount to the customer's original payment method and debits your store balance. This doesn't cancel or change any items on the order.
+          </p>
+          <Field label="Refund amount" required>
+            <Input type="number" placeholder="0.00" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} disabled={busy} />
+          </Field>
+          <Field label="Reason" hint="Optional — shown in your activity log.">
+            <Input placeholder="e.g. Goodwill credit, price adjustment" value={refundReason} onChange={e => setRefundReason(e.target.value)} disabled={busy} />
+          </Field>
         </Modal>
       )}
 

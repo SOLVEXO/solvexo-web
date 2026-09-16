@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore } from 'lucide-react';
+import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta,
-  apiExportStoreCustomers, apiBulkTagCustomers, apiBulkArchiveCustomers,
+  apiExportStoreCustomers, apiBulkTagCustomers, apiBulkArchiveCustomers, apiCreateStoreCustomer,
   type StoreCustomer, type StoreCustomerSegment, type StoreCustomerView, type GetStoreCustomersParams,
 } from '@/api/services/store';
 import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
@@ -28,11 +28,14 @@ function fmtDate(d: string | null) {
   return d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 }
 
-const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green' | 'blue' | 'orange' | 'red' }> = {
+const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green' | 'blue' | 'orange' | 'red' | 'gray' }> = {
   new:       { label: 'New',       color: 'blue' },
   returning: { label: 'Returning', color: 'green' },
   vip:       { label: 'VIP',       color: 'orange' },
   at_risk:   { label: 'At Risk',   color: 'red' },
+  // A customer the seller created/tagged directly but who hasn't ordered
+  // yet — real, not a placeholder (see StoreService's $unionWith fix).
+  no_orders: { label: 'No Orders', color: 'gray' },
 };
 
 const SEGMENT_OPTIONS = Object.entries(SEGMENT_META).map(([value, m]) => ({ value, label: m.label }));
@@ -67,6 +70,11 @@ export default function StoreCustomerList() {
   const [sel, setSel] = useState<StoreCustomer | null>(null);
   const [form, setForm] = useState({ name: '', phone: '', email: '' });
   const [saving, setSaving] = useState(false);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', email: '', phone: '' });
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -216,6 +224,27 @@ export default function StoreCustomerList() {
     }
   }
 
+  async function handleCreateCustomer() {
+    if (!createForm.name.trim()) { setCreateError('Enter a name.'); return; }
+    if (!createForm.email.trim()) { setCreateError('Enter an email.'); return; }
+    setCreating(true);
+    setCreateError('');
+    try {
+      await apiCreateStoreCustomer(storeId, {
+        name: createForm.name.trim(),
+        email: createForm.email.trim(),
+        phone: createForm.phone.trim() || undefined,
+      });
+      setCreateOpen(false);
+      setCreateForm({ name: '', email: '', phone: '' });
+      refetch();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create customer.');
+    } finally {
+      setCreating(false);
+    }
+  }
+
   async function handleBulkArchive(ids: string[], archived: boolean) {
     setBulkSaving(true);
     try {
@@ -283,6 +312,11 @@ export default function StoreCustomerList() {
       <StorePageHeader
         title="Customers"
         subtitle="Manage buyer relationships and followers for this store."
+        actions={
+          <Button size="sm" icon={<Plus size={14} />} onClick={() => { setCreateForm({ name: '', email: '', phone: '' }); setCreateError(''); setCreateOpen(true); }}>
+            Create Customer
+          </Button>
+        }
       />
 
       <div className="px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5">
@@ -493,6 +527,39 @@ export default function StoreCustomerList() {
           )}
         </div>
       </div>
+
+      {createOpen && (
+        <Modal
+          title="Create Customer"
+          onClose={() => { if (!creating) setCreateOpen(false); }}
+          footer={<>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>Cancel</Button>
+            <Button variant="primary" onClick={handleCreateCustomer} loading={creating}>Create</Button>
+          </>}
+        >
+          {createError && <p className="text-[12px] text-error mb-3">{createError}</p>}
+          <p className="text-[12px] text-slate mb-3">
+            Adds a customer contact even if they haven't ordered yet — useful for wholesale relationships or importing a known customer. If an account with this email already exists, it's linked instead of creating a duplicate.
+          </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Name</label>
+              <input autoFocus value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Email</label>
+              <input type="email" value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Phone <span className="text-slate font-normal">(optional)</span></label>
+              <input value={createForm.phone} onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {bulkTagOpen && (
         <Modal

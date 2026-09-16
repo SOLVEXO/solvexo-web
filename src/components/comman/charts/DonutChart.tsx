@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { Inbox } from 'lucide-react';
 import { CHART_FONT, CHART_COLORS } from './chartTheme';
 
 export interface DonutSegment {
@@ -122,6 +123,14 @@ export function DonutChart({
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <p className="text-[11px] text-slate">{centerLabel}</p>
               <p className="text-[18px] font-bold text-charcoal leading-[1.2]">{total.toLocaleString()}</p>
+            </div>
+          )}
+
+          {/* A muted icon anchors the empty ring — a flat grey circle with
+             nothing in it reads as broken/loading-forever, not "no data". */}
+          {isEmpty && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <Inbox size={Math.round(size * 0.16)} className="text-slate/35" strokeWidth={1.5} />
             </div>
           )}
         </div>

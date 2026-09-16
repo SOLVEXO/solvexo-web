@@ -176,7 +176,12 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       </button>
 
       {!collapsed && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+        // Capped at 2 columns, not 3 — this card now always sits in a
+        // half-width column next to Quick Actions (see StoreDashboard.tsx),
+        // and `lg:` is a viewport-width breakpoint, not a container-width
+        // one, so a 3rd column would keep trying to squeeze into half the
+        // page width and crowd every task's text/button.
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
           {tasks.map(task => (
             <div
               key={task.id}

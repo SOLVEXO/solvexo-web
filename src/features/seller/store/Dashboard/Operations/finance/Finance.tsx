@@ -14,7 +14,7 @@ import {
   apiRequestPayout, apiGetPayouts, apiGetPayoutById,
   apiGetPayoutMethods, apiAddPayoutMethod, apiUpdatePayoutMethod, apiSetDefaultPayoutMethod,
   apiDeletePayoutMethod, apiGetPayoutSchedule, apiUpdatePayoutSchedule,
-  apiGetTaxReports, apiGenerateTaxReport,
+  apiGetTaxReports, apiGenerateTaxReport, apiDownloadTaxReportPdf,
   type FinanceDashboard, type Transaction, type TransactionType, type PayoutMethod,
   type PayoutMethodType, type PayoutSchedule, type TaxReport, type Payout, type PayoutStatus,
 } from '@/api/services/finance';
@@ -773,12 +773,13 @@ export function StoreFinance() {
                         <p className="text-[13px] font-medium text-graphite leading-[1.3] capitalize">{r.period} {r.year}</p>
                         <p className="text-[11px] text-slate mt-0.5">Net {fmt(r.netRevenue, r.currency)} · Est. tax {fmt(r.estimatedTax, r.currency)}</p>
                       </div>
-                      {r.pdfUrl && (
-                        <a href={r.pdfUrl} target="_blank" rel="noreferrer"
-                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate hover:border-brand-orange/40">
-                          PDF
-                        </a>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => apiDownloadTaxReportPdf(storeId, r._id).catch(() => {})}
+                        className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate hover:border-brand-orange/40 cursor-pointer"
+                      >
+                        <Download className="w-3 h-3" /> PDF
+                      </button>
                     </div>
                   ))}
                 </div>

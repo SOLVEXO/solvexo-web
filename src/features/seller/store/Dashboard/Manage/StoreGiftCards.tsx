@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Plus, Gift, Ban } from 'lucide-react';
+import { Plus, Gift, Ban, SlidersHorizontal } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetGiftCardSettings, apiUpdateGiftCardSettings, apiIssueGiftCard, apiListGiftCards, apiDisableGiftCard,
+  apiAdjustGiftCardBalance,
   type GiftCardSettings, type GiftCard, type IssueManualGiftCardPayload,
 } from '@/api/services/giftCards';
 import { currencySymbol, fmt2 } from '@/utils/currency';
@@ -178,6 +179,57 @@ function IssueGiftCardModal({
   );
 }
 
+// ── Adjust balance (real "Edit existing card value") ────────────────────────
+function AdjustBalanceModal({
+  storeId, giftCard, onClose, onAdjusted,
+}: { storeId: string; giftCard: GiftCard; onClose: () => void; onAdjusted: () => void }) {
+  const [delta, setDelta] = useState('');
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAdjust = async () => {
+    const amt = Number(delta);
+    if (!amt) { setError('Enter a non-zero amount (positive to add, negative to deduct).'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await apiAdjustGiftCardBalance(storeId, giftCard._id, amt, reason.trim() || undefined);
+      onAdjusted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to adjust balance.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      title={`Adjust balance — ${giftCard.code}`}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="primary" onClick={handleAdjust} loading={saving}>Save adjustment</Button>
+        </>
+      )}
+    >
+      {error && (
+        <p className="mb-3 text-[12.5px] text-error bg-error-bg border border-error-border rounded-md px-3 py-2">{error}</p>
+      )}
+      <p className="text-[12px] text-slate mb-3">
+        Current balance: {currencySymbol(giftCard.currency)}{fmt2(giftCard.balance)}. Enter a positive amount to add credit, or a negative amount to deduct.
+      </p>
+      <Field label="Adjustment amount" required hint="e.g. 10 to add, -10 to deduct">
+        <Input type="number" value={delta} onChange={e => setDelta(e.target.value)} leftAddon={currencySymbol(giftCard.currency)} />
+      </Field>
+      <Field label="Reason" hint="Optional — shown in the card's activity log.">
+        <Input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Correction, goodwill credit" />
+      </Field>
+    </Modal>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function StoreGiftCards() {
   const { storeId, store } = useStoreWorkspace();
@@ -191,6 +243,7 @@ export default function StoreGiftCards() {
   const [debouncedCode, setDebouncedCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [issueOpen, setIssueOpen] = useState(false);
+  const [adjustingCard, setAdjustingCard] = useState<GiftCard | null>(null);
 
   // Debounce the free-text code search before it drives a fetch.
   useEffect(() => {
@@ -245,7 +298,12 @@ export default function StoreGiftCards() {
     {
       key: 'actions', header: '', align: 'right', render: gc => (
         gc.status === 'active'
-          ? <Button variant="outline" size="xs" icon={<Ban size={12} />} onClick={() => handleDisable(gc)}>Disable</Button>
+          ? (
+            <div className="flex items-center gap-1.5 justify-end">
+              <Button variant="outline" size="xs" icon={<SlidersHorizontal size={12} />} onClick={() => setAdjustingCard(gc)}>Adjust</Button>
+              <Button variant="outline" size="xs" icon={<Ban size={12} />} onClick={() => handleDisable(gc)}>Disable</Button>
+            </div>
+          )
           : null
       ),
     },
@@ -299,6 +357,15 @@ export default function StoreGiftCards() {
           storeCurrency={storeCurrency}
           onClose={() => setIssueOpen(false)}
           onIssued={() => { setIssueOpen(false); load(); }}
+        />
+      )}
+
+      {adjustingCard && (
+        <AdjustBalanceModal
+          storeId={storeId}
+          giftCard={adjustingCard}
+          onClose={() => setAdjustingCard(null)}
+          onAdjusted={() => { setAdjustingCard(null); load(); }}
         />
       )}
     </div>
