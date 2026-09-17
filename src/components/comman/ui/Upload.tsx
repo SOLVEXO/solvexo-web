@@ -1,9 +1,9 @@
-import { type ChangeEvent, useState, lazy, Suspense } from 'react';
-import { Camera, Plus, Upload, Loader2, X, File as FileIcon, FolderOpen } from 'lucide-react';
+import { type ChangeEvent, type KeyboardEvent, useState, lazy, Suspense } from 'react';
+import { Camera, Plus, Upload, Loader2, X, File as FileIcon, FolderOpen, Link2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { PrivateUploadData } from '@/api/upload';
-import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
+import { apiUploadMediaAsset, apiUploadMediaAssetFromUrl } from '@/api/services/mediaLibrary';
 
 export type { PrivateUploadData };
 
@@ -33,10 +33,16 @@ interface ImageUploadProps {
 export function ImageUpload({
   value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className, storeId,
 }: ImageUploadProps) {
-  const { upload, uploading: plainUploading, error } = useUpload('public');
+  const { upload, uploadUrl, uploading: plainUploading, error: plainError } = useUpload('public');
   const [libraryUploading, setLibraryUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // "Paste a URL" is the alternative to the default file picker below — off
+  // by default, every call site still opens straight to a file dialog.
+  const [urlMode, setUrlMode] = useState(false);
+  const [urlValue, setUrlValue] = useState('');
+  const [urlError, setUrlError] = useState('');
   const uploading = plainUploading || libraryUploading;
+  const error = plainError || urlError;
 
   const addUrl = (url: string) => {
     if (maxFiles === 1) onChange([url]);
@@ -57,6 +63,63 @@ export function ImageUpload({
       upload(file).then(data => addUrl(data.url)).catch(() => {});
     }
   };
+
+  const submitUrl = () => {
+    const trimmed = urlValue.trim();
+    if (!trimmed) return;
+    setUrlError('');
+    const promise = storeId
+      ? (() => { setLibraryUploading(true); return apiUploadMediaAssetFromUrl(storeId, trimmed).then(res => res.data).finally(() => setLibraryUploading(false)); })()
+      : uploadUrl(trimmed);
+    promise
+      .then(data => { addUrl(data.url); setUrlValue(''); setUrlMode(false); })
+      .catch((err: unknown) => setUrlError(err instanceof Error ? err.message : 'Could not load that image URL'));
+  };
+
+  const handleUrlKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') { e.preventDefault(); submitUrl(); }
+    if (e.key === 'Escape') { setUrlMode(false); setUrlValue(''); setUrlError(''); }
+  };
+
+  const urlToggle = !urlMode && (
+    <button
+      type="button"
+      onClick={() => setUrlMode(true)}
+      className="text-[11px] font-semibold text-slate bg-transparent border-none cursor-pointer flex items-center gap-1 hover:text-brand-orange transition-colors"
+    >
+      <Link2 size={11} /> Add via URL
+    </button>
+  );
+
+  const urlField = urlMode && (
+    <div className="flex items-center gap-1.5 w-full max-w-[320px]">
+      <input
+        type="url"
+        autoFocus
+        value={urlValue}
+        onChange={e => setUrlValue(e.target.value)}
+        onKeyDown={handleUrlKeyDown}
+        placeholder="Paste image URL"
+        disabled={uploading}
+        className="flex-1 min-w-0 px-2.5 py-[7px] text-[12px] border border-bone rounded-md outline-none text-charcoal bg-white box-border focus:border-brand-orange"
+      />
+      <button
+        type="button"
+        onClick={submitUrl}
+        disabled={uploading || !urlValue.trim()}
+        className="px-2.5 py-[7px] rounded-md bg-brand-orange text-white text-[11px] font-semibold border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+      >
+        {uploading ? <Loader2 size={12} className="animate-spin" /> : 'Add'}
+      </button>
+      <button
+        type="button"
+        onClick={() => { setUrlMode(false); setUrlValue(''); setUrlError(''); }}
+        className="size-[26px] rounded-md flex items-center justify-center text-slate hover:text-charcoal bg-transparent border-none cursor-pointer shrink-0"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
 
   const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
   const canAdd = value.length < maxFiles;
@@ -91,11 +154,15 @@ export function ImageUpload({
             <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
           </label>
         </div>
-        {storeId && (
-          <button type="button" onClick={() => setPickerOpen(true)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer flex items-center gap-1">
-            <FolderOpen size={11} /> Browse Library
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {storeId && (
+            <button type="button" onClick={() => setPickerOpen(true)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer flex items-center gap-1">
+              <FolderOpen size={11} /> Browse Library
+            </button>
+          )}
+          {urlToggle}
+        </div>
+        {urlField}
         {error && <p className="text-[11px] text-error mt-1">{error}</p>}
         {libraryPicker}
       </div>
@@ -131,13 +198,91 @@ export function ImageUpload({
           </label>
         )}
       </div>
-      {storeId && canAdd && (
-        <button type="button" onClick={() => setPickerOpen(true)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer flex items-center gap-1 self-start">
-          <FolderOpen size={11} /> Browse Library
-        </button>
+      {canAdd && (
+        <div className="flex items-center gap-3">
+          {storeId && (
+            <button type="button" onClick={() => setPickerOpen(true)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer flex items-center gap-1 self-start">
+              <FolderOpen size={11} /> Browse Library
+            </button>
+          )}
+          {urlToggle}
+        </div>
       )}
+      {canAdd && urlField}
       {error && <p className="text-[11px] text-error w-full">{error}</p>}
       {libraryPicker}
+    </div>
+  );
+}
+
+// ── PasteImageUrl ─────────────────────────────────────────────────────────────
+// A small, self-contained "Add via URL" toggle + inline input — the same
+// pattern `ImageUpload` builds inline above, extracted for the handful of
+// hand-rolled single-avatar uploaders in the app (Admin/Seller profile photo,
+// Onboarding's store logo) that render their own custom avatar circle instead
+// of using `ImageUpload` directly. Owns its own toggle/loading/error state —
+// the caller only supplies the actual upload call and what to do with the
+// resulting URL.
+interface PasteImageUrlProps {
+  upload: (url: string) => Promise<{ url: string }>;
+  onUploaded: (url: string) => void;
+  className?: string;
+}
+
+export function PasteImageUrl({ upload, onUploaded, className }: PasteImageUrlProps) {
+  const [mode, setMode] = useState(false);
+  const [value, setValue] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const reset = () => { setMode(false); setValue(''); setError(''); };
+
+  const submit = () => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setError('');
+    setSubmitting(true);
+    upload(trimmed)
+      .then(data => { onUploaded(data.url); reset(); })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Could not load that image URL'))
+      .finally(() => setSubmitting(false));
+  };
+
+  if (!mode) {
+    return (
+      <button
+        type="button"
+        onClick={() => setMode(true)}
+        className={clsx('text-[11px] font-semibold text-slate bg-transparent border-none cursor-pointer flex items-center gap-1 hover:text-brand-orange transition-colors', className)}
+      >
+        <Link2 size={11} /> Add via URL
+      </button>
+    );
+  }
+
+  return (
+    <div className={clsx('flex flex-col gap-1', className)}>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="url"
+          autoFocus
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') reset(); }}
+          placeholder="Paste image URL"
+          disabled={submitting}
+          className="flex-1 min-w-0 px-2.5 py-[6px] text-[12px] border border-bone rounded-md outline-none text-charcoal bg-white box-border focus:border-brand-orange"
+        />
+        <button type="button" onClick={submit} disabled={submitting || !value.trim()}
+          className="px-2.5 py-[6px] rounded-md bg-brand-orange text-white text-[11px] font-semibold border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+          {submitting ? <Loader2 size={12} className="animate-spin" /> : 'Add'}
+        </button>
+        <button type="button" onClick={reset}
+          className="size-[26px] rounded-md flex items-center justify-center text-slate hover:text-charcoal bg-transparent border-none cursor-pointer shrink-0">
+          <X size={12} />
+        </button>
+      </div>
+      {error && <p className="text-[11px] text-error">{error}</p>}
     </div>
   );
 }

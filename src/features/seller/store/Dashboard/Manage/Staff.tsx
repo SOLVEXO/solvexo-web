@@ -26,7 +26,7 @@ const EMPTY_ROLE_FORM = { name: '', description: '', permissions: [] as StaffPer
  *  own existing dashboard session) — a staff member's own login is at
  *  `/staff-login/:storeId` (see `StaffLoginPage.tsx`), a separate, real
  *  login distinct from the seller's own. */
-export default function StaffPage() {
+export default function StaffPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const [subTab, setSubTab] = useState<'staff' | 'roles'>('staff');
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -57,7 +57,9 @@ export default function StaffPage() {
 
   return (
     <>
-      <StorePageHeader title="Staff" subtitle="Give staff their own scoped login and control what they can access across the whole store." />
+      {!embedded && (
+        <StorePageHeader title="Staff" subtitle="Give staff their own scoped login and control what they can access across the whole store." />
+      )}
 
       <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-6">
         {/* ── Pending approvals ────────────────────────────────────────── */}

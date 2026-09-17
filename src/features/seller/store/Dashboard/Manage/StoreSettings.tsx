@@ -1,139 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check, Clock, EyeOff } from 'lucide-react';
-import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
+import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, Copy, Check, Clock, EyeOff } from 'lucide-react';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, apiUpdateStorePrivacy, apiGetEnabledCurrencies, type ProductType, type CustomDomainStatus, type SupportedCurrency, type StorePrivacyMode } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
-import { useMyStores } from '@/hooks/store/useMyStores';
-import { currencySymbol } from '@/utils/currency';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
-import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
-import { ActivityLogTab } from './tabs/ActivityLogTab';
-
-const TABS: Tab[] = [
-  { id: 'general',  label: 'General' },
-  { id: 'activity', label: 'Activity Log' },
-];
-
-const STORE_SETTINGS_NAV: { id: string; label: string; Icon: typeof Store }[] = [
-  { id: 'general',  label: 'General',      Icon: Store   },
-  { id: 'activity', label: 'Activity Log', Icon: History },
-];
-
-// ── Mobile-only store hero — same native-app account-hub pattern already
-// built for the top-level Seller Settings page (avatar/name/identity + a
-// real stats strip), just re-keyed to a STORE's identity (logo, slug,
-// marketplace status) instead of a person's. Products/Revenue come from the
-// same useMyStores() list the "My Stores" page already uses — never
-// fabricated numbers.
-function MobileStoreHero({
-  name, slug, logo, status, productCount, totalSales, currency, aiCredits, loading,
-}: {
-  name?: string; slug?: string; logo?: string | null; status?: string;
-  productCount: number | null; totalSales: number | null; currency?: string; aiCredits: number; loading: boolean;
-}) {
-  // While the real store identity hasn't loaded yet, don't render a fallback
-  // name/status ("Your Store" / "Pending") that reads as real data — a
-  // brand-agnostic skeleton avoids momentarily telling the merchant their
-  // store is "Pending" when it may not be.
-  if (loading) {
-    return (
-      <div className="lg:hidden -mx-4 -mt-3">
-        <div className="relative overflow-hidden bg-gradient-to-br from-brand-orange via-[#d98a6f] to-[#f0b8a0] px-6 pt-8 pb-12 flex flex-col items-center text-center">
-          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 animate-pulse" />
-          <div className="relative w-32 h-4 rounded bg-white/25 animate-pulse mt-4" />
-          <div className="relative w-20 h-5 rounded-full bg-white/20 animate-pulse mt-3" />
-        </div>
-        <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
-          {[0, 1, 2].map(i => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-[2px]">
-              <div className="w-10 h-5 rounded bg-bone animate-pulse" />
-              <div className="w-14 h-3 rounded bg-bone animate-pulse mt-1" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="lg:hidden -mx-4 -mt-3">
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-orange via-[#d98a6f] to-[#f0b8a0] px-6 pt-8 pb-12 flex flex-col items-center text-center">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
-          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
-        />
-        {logo ? (
-          <img
-            loading="lazy" decoding="async"
-            src={logo} alt={name ?? 'Store'}
-            className="relative size-24 rounded-full object-cover ring-4 ring-white/40 bg-white"
-          />
-        ) : (
-          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center text-white text-[26px] font-bold">
-            {name ? name.slice(0, 2).toUpperCase() : 'ST'}
-          </div>
-        )}
-        <p className="relative text-[19px] font-bold text-white mt-3 leading-tight">{name ?? 'Your Store'}</p>
-        {slug && <p className="relative text-[13px] text-white/75 mt-[2px]">/{slug}</p>}
-        <span className="relative inline-flex mt-3 px-4 py-[6px] rounded-full bg-white/20 text-[11px] font-semibold text-white capitalize">
-          {(status ?? 'pending').replace(/_/g, ' ')}
-        </span>
-      </div>
-
-      <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
-        <div className="flex-1 flex flex-col items-center gap-[2px]">
-          <span className="text-[19px] font-bold text-brand-orange leading-none">{productCount == null ? '—' : productCount}</span>
-          <span className="text-[11px] text-slate">Products</span>
-        </div>
-        <div className="w-px h-9 bg-bone" />
-        <div className="flex-1 flex flex-col items-center gap-[2px]">
-          <span className="text-[19px] font-bold text-brand-orange leading-none">
-            {totalSales == null ? '—' : `${currencySymbol(currency)}${totalSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-          </span>
-          <span className="text-[11px] text-slate">Revenue</span>
-        </div>
-        <div className="w-px h-9 bg-bone" />
-        <div className="flex-1 flex flex-col items-center gap-[2px]">
-          <span className="text-[19px] font-bold text-brand-orange leading-none">{aiCredits.toLocaleString()}</span>
-          <span className="text-[11px] text-slate">AI Credits</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Mobile-only navigation menu — same grouped card-list pattern as Seller
-// Settings; only 2 real destinations exist on this page (General, Activity
-// Log), so it's one group rather than several — no filler items added just
-// to look fuller.
-function MobileStoreMenu({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
-  return (
-    <div className="lg:hidden bg-white border border-bone rounded-2xl overflow-hidden">
-      <div className="px-5 pt-4 pb-2">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate">Store</p>
-      </div>
-      <div className="divide-y divide-[#f5f4ef]">
-        {STORE_SETTINGS_NAV.map(item => {
-          const isActive = active === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              className={`w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left transition-colors ${isActive ? 'bg-cream' : 'hover:bg-cream'}`}
-            >
-              <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
-                <item.Icon size={15} className="text-brand-orange" />
-              </div>
-              <span className="flex-1 text-[13px] font-medium text-charcoal">{item.label}</span>
-              <ChevronRight size={15} className="text-slate shrink-0" />
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products:    'Physical Products',
@@ -437,17 +308,13 @@ function StorePrivacyCard({ storeId, store, refetch }: {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
+// `embedded` was dropped from this signature — unlike its 5 sibling tab
+// components, this one no longer has a real standalone (non-embedded) mode
+// at all (see the doc comment on the return statement below), so keeping an
+// always-true prop around just to match their shape would be dead weight,
+// not real API consistency.
 export default function StoreSettings() {
   const { store, storeId, loading, refetch } = useStoreWorkspace();
-  const { stores: myStores } = useMyStores();
-  const thisStoreListItem = myStores.find(s => s._id === storeId);
-
-  const [activeTab, setActiveTab] = useState('general');
-  // Mobile-only: whether we've drilled into a tab from the store account-hub
-  // menu below — mirrors the same drill-in pattern just built for the
-  // top-level Seller Settings page. Desktop ignores this; it always shows
-  // the TabBar + content.
-  const [mobileDrilledIn, setMobileDrilledIn] = useState(false);
   const [name,         setName]         = useState('');
   const [description,  setDescription]  = useState('');
   const [tagline,      setTagline]      = useState('');
@@ -541,83 +408,32 @@ export default function StoreSettings() {
       JSON.stringify(enabledCurrencies ? enabledCurrencies.slice().sort() : null) !==
         JSON.stringify(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies.slice().sort() : null));
 
+  // This component only ever renders embedded now — it's the Settings Hub's
+  // "General" tab (`SettingsHub.tsx`), which owns the header, tab
+  // navigation, and mobile account-hub menu that used to live here. Kept as
+  // its own component (not inlined into the hub) since it's still a
+  // sizeable, independent form with its own state/save logic.
   return (
     <div>
-      <StorePageHeader
-        title="Store Settings"
-        subtitle={store?.name ?? ''}
-        actions={
-          activeTab === 'general' ? (
-            <button
-              onClick={handleSave}
-              disabled={!isDirty || saving}
-              className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold transition-all duration-150"
-              style={{
-                background: isDirty && !saving ? '#D97757' : '#E8E6DC',
-                color: isDirty && !saving ? '#fff' : '#8C8A82',
-                cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
-              }}
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Save Changes
-            </button>
-          ) : undefined
-        }
-      />
+      <div className="px-4 lg:px-7 py-6">
+        {loading ? <SettingsSkeleton /> : (
+          <div>
 
-      {/* Mobile-only account hub — hero (logo/name/status + real Products/
-         Revenue/AI Credits stats) + a grouped menu, replacing the TabBar
-         below on small screens. Hidden once a tab has been opened. */}
-      {!mobileDrilledIn && (
-        <div className="lg:hidden flex flex-col gap-4 px-4 mb-5">
-          <MobileStoreHero
-            name={store?.name}
-            slug={store?.slug}
-            logo={store?.logo}
-            status={store?.status}
-            productCount={thisStoreListItem?.productCount ?? null}
-            totalSales={thisStoreListItem?.totalSalesUSD ?? null}
-            currency={store?.baseCurrency}
-            aiCredits={store?.aiCredits ?? 0}
-            loading={loading}
-          />
-          <MobileStoreMenu active={activeTab} onSelect={id => { setActiveTab(id); setMobileDrilledIn(true); }} />
-
-          {/* Every other store section — Sales/Catalog/Customers/Growth/
-             Finance, plus Integrations/Business Verification from the
-             Settings group ('settings' itself is excluded since the local
-             General tab above already covers it). This is the one place
-             the full store workspace list lives on mobile — not the
-             Dashboard, which stays a pure metrics page. */}
-          <StoreNavMenu storeId={storeId} excludeItemIds={['settings']} />
-        </div>
-      )}
-
-      {/* Mobile-only back bar — shown only once a tab is open. */}
-      {mobileDrilledIn && (
-        <div className="lg:hidden flex items-center gap-2 px-4 mb-1">
-          <button
-            onClick={() => setMobileDrilledIn(false)}
-            aria-label="Back to store menu"
-            className="size-8 -ml-1 flex items-center justify-center rounded-full bg-transparent border-none cursor-pointer text-charcoal hover:bg-cream transition-colors"
-          >
-            <ChevronLeft size={19} />
-          </button>
-          <p className="text-[15px] font-bold text-carbon">{TABS.find(t => t.id === activeTab)?.label ?? 'Settings'}</p>
-        </div>
-      )}
-
-      <div className="hidden lg:block px-4 md:px-7 pt-3">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
-      </div>
-
-      <div className={mobileDrilledIn ? 'block' : 'hidden lg:block'}>
-      {activeTab === 'activity' ? (
-        <div className="px-4 lg:px-7 py-6">
-          <ActivityLogTab />
-        </div>
-      ) : loading ? <SettingsSkeleton /> : (
-        <div className="px-4 lg:px-7 py-6">
+          <div className="flex justify-end mb-4">
+              <button
+                onClick={handleSave}
+                disabled={!isDirty || saving}
+                className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold transition-all duration-150"
+                style={{
+                  background: isDirty && !saving ? '#D97757' : '#E8E6DC',
+                  color: isDirty && !saving ? '#fff' : '#8C8A82',
+                  cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                Save Changes
+              </button>
+            </div>
 
           {/* Status message */}
           {saveMsg && (

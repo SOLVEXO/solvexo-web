@@ -8,7 +8,7 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
-import { Modal, Button, NotificationsPanel } from '@/components/comman/ui';
+import { Modal, Button, NotificationsPanel, PasteImageUrl } from '@/components/comman/ui';
 import {
   User, KeyRound,
   Trash2, Camera, Settings, Check, Loader2, Eye, EyeOff, ChevronLeft, ChevronRight, Quote, type LucideIcon,
@@ -208,7 +208,7 @@ export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 's
 
   const { profile, loading: profileLoading } = useGetProfile();
   const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
-  const { upload: uploadPhoto, uploading: photoUploading } = useUpload('public');
+  const { upload: uploadPhoto, uploadUrl: uploadPhotoUrl, uploading: photoUploading } = useUpload('public');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword,     setNewPassword]     = useState('');
@@ -345,19 +345,22 @@ export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 's
                        separate row below) + name + email + role/verified
                        badges, all in one warm-tinted band. */}
                     <div className="px-4 sm:px-[26px] py-6 bg-gradient-to-br from-brand-pale-orange/60 to-cream flex items-center gap-4 sm:gap-5 border-b border-bone">
-                      <label className={`relative shrink-0 ${photoUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
-                        <div className="w-[72px] h-[72px] rounded-full bg-white text-brand-deep-orange text-[24px] font-bold flex items-center justify-center overflow-hidden border-[3px] border-white outline outline-1 outline-bone">
-                          {photoUploading
-                            ? <Loader2 size={22} className="animate-spin" />
-                            : profileImage
-                              ? <img loading="lazy" decoding="async" src={profileImage} alt={profile?.name} className="w-full h-full object-cover" />
-                              : (profile?.name?.slice(0, 2).toUpperCase() ?? 'ME')}
-                        </div>
-                        <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange border-2 border-white flex items-center justify-center">
-                          <Camera size={11} className="text-white" />
-                        </span>
-                        <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
-                      </label>
+                      <div className="flex flex-col items-center gap-1.5 shrink-0">
+                        <label className={`relative shrink-0 ${photoUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
+                          <div className="w-[72px] h-[72px] rounded-full bg-white text-brand-deep-orange text-[24px] font-bold flex items-center justify-center overflow-hidden border-[3px] border-white outline outline-1 outline-bone">
+                            {photoUploading
+                              ? <Loader2 size={22} className="animate-spin" />
+                              : profileImage
+                                ? <img loading="lazy" decoding="async" src={profileImage} alt={profile?.name} className="w-full h-full object-cover" />
+                                : (profile?.name?.slice(0, 2).toUpperCase() ?? 'ME')}
+                          </div>
+                          <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange border-2 border-white flex items-center justify-center">
+                            <Camera size={11} className="text-white" />
+                          </span>
+                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
+                        </label>
+                        <PasteImageUrl upload={uploadPhotoUrl} onUploaded={setProfileImage} />
+                      </div>
                       <div className="min-w-0">
                         <p className="text-[17px] font-bold text-charcoal truncate">{profile?.name || 'Seller'}</p>
                         <p className="text-[12.5px] text-slate truncate mt-[3px]">{profile?.email ?? ''}</p>

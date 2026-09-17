@@ -389,6 +389,10 @@ export interface ReorderSuggestionItem {
   available: number;
   reorderPoint: number;
   daysOfStockLeft: number | null;
+  /** 'trend_seasonal' = a real trend+day-of-week forecast (enough sales
+   *  history existed); 'simple_average' = the plain last-30-days average
+   *  fallback (not enough history yet to forecast responsibly). */
+  forecastMethod: 'trend_seasonal' | 'simple_average';
 }
 
 export interface ReorderSuggestionGroup {

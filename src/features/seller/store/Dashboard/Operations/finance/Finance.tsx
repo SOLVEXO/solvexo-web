@@ -10,12 +10,12 @@ import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import {
-  apiGetFinanceDashboard, apiGetFinanceTransactions, apiExportFinanceTransactions,
+  apiGetFinanceDashboard, apiGetFinancePayoutForecast, apiGetFinanceTransactions, apiExportFinanceTransactions,
   apiRequestPayout, apiGetPayouts, apiGetPayoutById,
   apiGetPayoutMethods, apiAddPayoutMethod, apiUpdatePayoutMethod, apiSetDefaultPayoutMethod,
   apiDeletePayoutMethod, apiGetPayoutSchedule, apiUpdatePayoutSchedule,
   apiGetTaxReports, apiGenerateTaxReport, apiDownloadTaxReportPdf,
-  type FinanceDashboard, type Transaction, type TransactionType, type PayoutMethod,
+  type FinanceDashboard, type PayoutForecastRow, type Transaction, type TransactionType, type PayoutMethod,
   type PayoutMethodType, type PayoutSchedule, type TaxReport, type Payout, type PayoutStatus,
 } from '@/api/services/finance';
 import {
@@ -304,6 +304,7 @@ export function StoreFinance() {
   const { storeId } = useStoreWorkspace();
 
   const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
+  const [payoutForecast, setPayoutForecast] = useState<PayoutForecastRow[]>([]);
   // Which wallet/currency is currently shown — a seller can hold more than
   // one (see FinanceDashboard.wallets); never summed into a single number.
   const [activeCurrency, setActiveCurrency] = useState<string | null>(null);
@@ -369,11 +370,12 @@ export function StoreFinance() {
       apiGetFinanceDashboard(storeId),
       apiGetPayoutMethods(storeId),
       apiGetTaxReports(storeId),
+      apiGetFinancePayoutForecast(storeId),
     ])
-      .then(([d, m, t]) => {
+      .then(([d, m, t, pf]) => {
         setDashboard(d);
         setActiveCurrency(prev => prev && d.wallets.some(w => w.currency === prev) ? prev : (d.wallets[0]?.currency ?? null));
-        setMethods(m ?? []); setTaxReports(t ?? []);
+        setMethods(m ?? []); setTaxReports(t ?? []); setPayoutForecast(pf ?? []);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load finance data.'))
       .finally(() => setLoading(false));
@@ -613,6 +615,35 @@ export function StoreFinance() {
             Request Payout
           </Button>
         </div>
+
+        {/* Upcoming Payout Availability — real, deterministic (each pending
+            sale's own known clearing date), not a statistical guess. */}
+        {(() => {
+          const pf = payoutForecast.find(f => f.currency === activeWallet.currency);
+          if (!pf || pf.next30Days <= 0) return null;
+          return (
+            <div className="bg-white border border-bone rounded-xl px-5 py-4">
+              <p className="text-[13px] font-bold text-charcoal mb-1">Upcoming Payout Availability</p>
+              <p className="text-[11px] text-slate mb-3">
+                How much of your current pending balance will clear (become withdrawable) over time — based on each sale's own real clearing schedule, not an estimate.
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[10px] text-slate uppercase tracking-[0.08em]">Within 7 days</p>
+                  <p className="text-[16px] font-bold text-charcoal">{fmt(pf.next7Days, activeWallet.currency)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate uppercase tracking-[0.08em]">Within 14 days</p>
+                  <p className="text-[16px] font-bold text-charcoal">{fmt(pf.next14Days, activeWallet.currency)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate uppercase tracking-[0.08em]">Within 30 days</p>
+                  <p className="text-[16px] font-bold text-charcoal">{fmt(pf.next30Days, activeWallet.currency)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Metrics */}
         <div className="flex flex-col sm:flex-row gap-3">

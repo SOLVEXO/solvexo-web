@@ -67,7 +67,7 @@ export type { ActionMenuItem }               from './ActionMenu';
 export type { TablePagination }              from './Table';
 export type { TableSort }                    from './Table';
 
-export { ImageUpload, FileUpload, FileDropSelect } from './Upload';
+export { ImageUpload, FileUpload, FileDropSelect, PasteImageUrl } from './Upload';
 export type { PrivateUploadData }            from './Upload';
 
 export { DateTimePickerModal }               from './DateTimePickerModal';

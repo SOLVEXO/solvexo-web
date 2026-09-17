@@ -55,7 +55,7 @@ function UsageBar({ label, used, max, Icon }: { label: string; used: number; max
   );
 }
 
-export default function StorePlanBilling() {
+export default function StorePlanBilling({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [current, setCurrent] = useState<StorePlatformSubscription | null>(null);
@@ -268,7 +268,9 @@ export default function StorePlanBilling() {
 
   return (
     <>
-      <StorePageHeader title="Billing Center" subtitle="Your store's Solvexo subscription, usage limits, payment method, and billing history." />
+      {!embedded && (
+        <StorePageHeader title="Billing Center" subtitle="Your store's Solvexo subscription, usage limits, payment method, and billing history." />
+      )}
 
       <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}

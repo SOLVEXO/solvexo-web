@@ -825,7 +825,7 @@ function ShippingIntegrationCard({ integration, storeId, onChanged }: { integrat
   );
 }
 
-export function StoreIntegrations() {
+export function StoreIntegrations({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const [data, setData] = useState<StoreIntegrationsList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -852,10 +852,12 @@ export function StoreIntegrations() {
 
   return (
     <>
-      <StorePageHeader
-        title="Integrations"
-        subtitle="Connect a payment gateway and WhatsApp Business to your own storefront checkout and order updates."
-      />
+      {!embedded && (
+        <StorePageHeader
+          title="Integrations"
+          subtitle="Connect a payment gateway and WhatsApp Business to your own storefront checkout and order updates."
+        />
+      )}
 
       <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-6">
         {loading ? (

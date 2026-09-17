@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  apiUploadPublicFile, apiUploadPrivateFile,
+  apiUploadPublicFile, apiUploadPrivateFile, apiUploadFromUrl,
   type PublicUploadData, type PrivateUploadData,
 } from '@/api/upload';
 
@@ -24,7 +24,20 @@ export function useUpload<T extends UploadType>(type: T) {
       .finally(() => setUploading(false));
   }, [type]);
 
+  /** "Paste an image URL" alternative to `upload()` — public images only. */
+  const uploadUrl = useCallback((url: string): Promise<PublicUploadData> => {
+    setUploading(true);
+    setError('');
+    return apiUploadFromUrl(url)
+      .then(res => res.data)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Could not load that image URL');
+        throw err;
+      })
+      .finally(() => setUploading(false));
+  }, []);
+
   const clearError = useCallback(() => setError(''), []);
 
-  return { upload, uploading, error, clearError };
+  return { upload, uploadUrl, uploading, error, clearError };
 }

@@ -212,6 +212,33 @@ export function apiSellerAnalyticsRevenueOverTime(params: SellerAnalyticsParams)
   return client.get<never, ApiResponse<SellerRevenueOverTimeData>>(`${ENDPOINTS.ANALYTICS.SELLER.REVENUE_OVER_TIME}${qs(params)}`);
 }
 
+// ── B2. Sales forecast (real trend+seasonality projection, or an honest
+// simple-average fallback when there isn't enough order history yet) ──────
+
+export interface SellerSalesForecastData {
+  currency: string;
+  method: 'trend_seasonal' | 'simple_average';
+  forecastedDailyRevenue: number;
+  projectedNext7Days: number;
+  projectedNext30Days: number;
+}
+
+export function apiSellerAnalyticsSalesForecast(params: { storeId?: string | null }) {
+  return client.get<never, ApiResponse<SellerSalesForecastData>>(`${ENDPOINTS.ANALYTICS.SELLER.SALES_FORECAST}${qs(params)}`);
+}
+
+// ── B3. Weekday performance (slow/busy day detection, for Marketing/Discounts) ─────
+
+export interface SellerWeekdayPerformanceData {
+  slowestDay: string;
+  slowestDayBelowAveragePercent: number;
+  busiestDay: string;
+}
+
+export function apiSellerAnalyticsWeekdayPerformance(params: { storeId?: string | null }) {
+  return client.get<never, ApiResponse<SellerWeekdayPerformanceData | null>>(`${ENDPOINTS.ANALYTICS.SELLER.WEEKDAY_PERFORMANCE}${qs(params)}`);
+}
+
 // ── C. Orders over time ──────────────────────────────────────────────────────────
 
 export function apiSellerAnalyticsOrdersOverTime(params: SellerAnalyticsParams) {
@@ -228,6 +255,22 @@ export function apiSellerAnalyticsTrafficSources(params: SellerAnalyticsParams) 
 
 export function apiSellerAnalyticsTopProducts(params: SellerTopProductsParams) {
   return client.get<never, ApiResponse<TopProductRow[]>>(`${ENDPOINTS.ANALYTICS.SELLER.TOP_PRODUCTS}${qs(params)}`);
+}
+
+// ── E2. Trending products (real week-over-week growth, independent of the
+// filter bar's date range) ──────────────────────────────────────────────────
+
+export interface TrendingProductRow {
+  productId: string;
+  name: string;
+  unitsSoldLast7Days: number;
+  unitsSoldPrior7Days: number;
+  /** null = no prior-week sales to compare against (a new/rarely-sold product suddenly moving). */
+  growthPercent: number | null;
+}
+
+export function apiSellerAnalyticsTrendingProducts(params: { storeId?: string | null }) {
+  return client.get<never, ApiResponse<TrendingProductRow[]>>(`${ENDPOINTS.ANALYTICS.SELLER.TRENDING_PRODUCTS}${qs(params)}`);
 }
 
 // ── F. Customer analytics ────────────────────────────────────────────────────────

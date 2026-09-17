@@ -295,7 +295,7 @@ function ConfigSkeleton() {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function AdminConfig() {
+export function AdminConfig({ embedded = false }: { embedded?: boolean } = {}) {
   usePageTitle('Config');
   const { data, loading, error, refetch } = useAdminConfig();
   const [config, setConfig] = useState<PlatformConfig | null>(null);
@@ -310,7 +310,9 @@ export function AdminConfig() {
 
   return (
     <>
-      <AdminPageHeader title="Platform Config" subtitle="AI settings, email config and system controls." />
+      {!embedded && (
+        <AdminPageHeader title="Platform Config" subtitle="AI settings, email config and system controls." />
+      )}
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {loading && !config ? (
         <ConfigSkeleton />

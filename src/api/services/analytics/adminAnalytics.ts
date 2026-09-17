@@ -432,6 +432,22 @@ export function apiAdminAnalyticsRevenueOverTime(params: BaseAnalyticsParams = {
   return client.get<never, ApiResponse<AdminRevenueOverTimeData>>(`${ENDPOINTS.ANALYTICS.ADMIN.REVENUE_OVER_TIME}${qs(params)}`);
 }
 
+// ── Platform growth forecast (real trend+seasonality projection, or an
+// honest simple-average fallback) — same technique as the seller-facing
+// Sales Forecast, applied platform-wide (or scoped via storeId/sellerId). ──
+
+export interface AdminGrowthForecastData {
+  currency: string;
+  method: 'trend_seasonal' | 'simple_average';
+  forecastedDailyRevenue: number;
+  projectedNext7Days: number;
+  projectedNext30Days: number;
+}
+
+export function apiAdminAnalyticsGrowthForecast(params: Pick<BaseAnalyticsParams, 'storeId' | 'sellerId'> = {}) {
+  return client.get<never, ApiResponse<AdminGrowthForecastData>>(`${ENDPOINTS.ANALYTICS.ADMIN.GROWTH_FORECAST}${qs(params)}`);
+}
+
 export function apiAdminAnalyticsRevenueBreakdown(params: BaseAnalyticsParams = {}) {
   return client.get<never, ApiResponse<AdminRevenueBreakdownData>>(`${ENDPOINTS.ANALYTICS.ADMIN.REVENUE_BREAKDOWN}${qs(params)}`);
 }

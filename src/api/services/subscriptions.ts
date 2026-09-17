@@ -113,6 +113,11 @@ export interface Subscription {
   creditBalanceUSD:       number;
   planHistory:            PlanHistoryEntry[];
   pendingCancellation:    boolean;
+  /** Real, rule-based classification off the subscription's own known state
+   *  (`'past_due'`/`'paused'`/a recovered-but-previously-failed payment) —
+   *  not a statistical/trend model. See SubscriptionsService.churnRisk's
+   *  own doc comment. */
+  churnRisk:              'high' | 'medium' | 'none';
 }
 
 export interface SubscriptionInvoice {

@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Check, ImageIcon, Loader2, Upload } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox } from '@/components/comman/ui';
-import { apiBrowseMediaLibrary, apiUploadMediaAsset, type MediaAsset } from '@/api/services/mediaLibrary';
+import { SkeletonBox, PasteImageUrl } from '@/components/comman/ui';
+import { apiBrowseMediaLibrary, apiUploadMediaAsset, apiUploadMediaAssetFromUrl, type MediaAsset } from '@/api/services/mediaLibrary';
 
 /** The Files Library's "choose existing" picker — opened from `ImageUpload`
  *  wherever a `storeId` is in scope. Reuses the same upload endpoint the
@@ -74,6 +74,7 @@ export function MediaLibraryPickerModal({
           </Button>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => { handleUpload(e.target.files?.[0]); e.target.value = ''; }} />
         </div>
+        <PasteImageUrl upload={url => apiUploadMediaAssetFromUrl(storeId, url).then(res => res.data)} onUploaded={onSelect} />
 
         {error && <p className="text-[12px] text-error">{error}</p>}
 

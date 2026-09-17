@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { FilterDropdown, Table, Badge, type TableColumn } from '@/components/comman/ui';
-import { Package } from 'lucide-react';
+import { Package, TrendingUp } from 'lucide-react';
 import {
   useSellerAnalyticsTopProducts,
+  useSellerAnalyticsTrendingProducts,
   useSellerAnalyticsProductPerformance,
   useSellerAnalyticsInventoryInsights,
 } from '@/hooks/seller/useSellerAnalytics';
@@ -21,6 +22,7 @@ export function SellerProductsTab({ params, currency }: { params: SellerAnalytic
   const [page, setPage] = useState(1);
 
   const topProducts = useSellerAnalyticsTopProducts({ ...params, limit: 10, sort });
+  const trending = useSellerAnalyticsTrendingProducts({ storeId: params.storeId });
   const performance = useSellerAnalyticsProductPerformance({ ...params, page, limit: 10 });
   const inventory = useSellerAnalyticsInventoryInsights(params);
 
@@ -46,6 +48,27 @@ export function SellerProductsTab({ params, currency }: { params: SellerAnalytic
 
   return (
     <div className="flex flex-col gap-4">
+      {!trending.loading && (trending.data?.length ?? 0) > 0 && (
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp size={15} className="text-brand-orange" />
+            <p className="text-[14px] font-bold text-charcoal">Trending Products</p>
+            <p className="text-[11px] text-slate">Last 7 days vs. the 7 before</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {trending.data!.map(p => (
+              <div key={p.productId} className="border border-bone rounded-lg px-3 py-2.5">
+                <p className="text-[12px] font-semibold text-charcoal truncate">{p.name}</p>
+                <p className="text-[11px] text-slate">{p.unitsSoldLast7Days} sold this week</p>
+                <Badge color="green" size="sm">
+                  {p.growthPercent != null ? `+${p.growthPercent}%` : 'New momentum'}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-[14px] font-bold text-charcoal">Top Products</p>

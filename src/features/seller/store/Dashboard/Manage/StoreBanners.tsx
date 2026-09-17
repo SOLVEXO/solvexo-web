@@ -3,7 +3,7 @@ import { Image as ImageIcon, Pause, Play, Plus, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, FileDropSelect } from '@/components/comman/ui';
 import {
-  apiGetStoreBanners, apiCreateStoreBanner, apiPauseStoreBanner, apiResumeStoreBanner, apiDeleteStoreBanner,
+  apiGetStoreBanners, apiCreateStoreBanner, apiCreateStoreBannerFromUrl, apiPauseStoreBanner, apiResumeStoreBanner, apiDeleteStoreBanner,
   STORE_BANNER_TYPES, STORE_BANNER_LINK_TYPES,
   type StoreBanner, type StoreBannerType, type StoreBannerLinkType,
 } from '@/api/services/storeBanner';
@@ -43,30 +43,48 @@ const VIDEO_ACCEPT = 'video/mp4,video/webm';
 function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState(emptyBannerForm);
   const [file, setFile] = useState<File | null>(null);
+  // "Paste a URL" alternative to the file picker below — image types only
+  // (a Video banner still needs a real uploaded file, see the type-switch
+  // guard below). Default stays the file picker for every banner type.
+  const [source, setSource] = useState<'file' | 'url'>('file');
+  const [imageUrl, setImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const isVideo = form.type === 'video';
 
   // Switching type away from "Video" would otherwise leave a picked video
   // file sitting in state with no matching UI hint that it needs replacing.
+  // Switching TO "Video" forces the source back to file — a video banner
+  // can't be created via the URL path (see backend `createFromUrl`).
   function handleTypeChange(type: StoreBannerType) {
     setForm(f => ({ ...f, type }));
     setFile(null);
+    if (type === 'video') { setSource('file'); setImageUrl(''); }
   }
 
   async function submit() {
-    if (!file) { setError(isVideo ? 'Please choose a banner video.' : 'Please choose a banner image.'); return; }
+    if (source === 'url') {
+      if (!imageUrl.trim()) { setError('Please paste an image URL.'); return; }
+    } else if (!file) {
+      setError(isVideo ? 'Please choose a banner video.' : 'Please choose a banner image.');
+      return;
+    }
     setError('');
     setSaving(true);
+    const fields = {
+      type: form.type,
+      ctaLabel: form.ctaLabel || undefined,
+      linkType: form.linkType,
+      linkTarget: form.linkTarget || undefined,
+      startAt: form.startAt ? new Date(form.startAt).toISOString() : undefined,
+      endAt: form.endAt ? new Date(form.endAt).toISOString() : undefined,
+    };
     try {
-      await apiCreateStoreBanner(storeId, {
-        type: form.type,
-        ctaLabel: form.ctaLabel || undefined,
-        linkType: form.linkType,
-        linkTarget: form.linkTarget || undefined,
-        startAt: form.startAt ? new Date(form.startAt).toISOString() : undefined,
-        endAt: form.endAt ? new Date(form.endAt).toISOString() : undefined,
-      }, file);
+      if (source === 'url') {
+        await apiCreateStoreBannerFromUrl(storeId, fields, imageUrl.trim());
+      } else {
+        await apiCreateStoreBanner(storeId, fields, file as File);
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create store banner.');
@@ -96,8 +114,32 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-charcoal mb-1.5">{isVideo ? 'Video' : 'Image'}</label>
-          <FileDropSelect value={file} onChange={setFile} accept={isVideo ? VIDEO_ACCEPT : IMAGE_ACCEPT} label={isVideo ? 'Click to upload banner video' : 'Click to upload banner image'} />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-[12px] font-medium text-charcoal">{isVideo ? 'Video' : 'Image'}</label>
+            {!isVideo && (
+              <div className="flex items-center gap-1 bg-cream rounded-md p-0.5">
+                <button type="button" onClick={() => setSource('file')}
+                  className={`px-2 py-[3px] rounded text-[11px] font-semibold border-none cursor-pointer ${source === 'file' ? 'bg-white text-charcoal shadow-sm' : 'bg-transparent text-slate'}`}>
+                  Upload file
+                </button>
+                <button type="button" onClick={() => setSource('url')}
+                  className={`px-2 py-[3px] rounded text-[11px] font-semibold border-none cursor-pointer ${source === 'url' ? 'bg-white text-charcoal shadow-sm' : 'bg-transparent text-slate'}`}>
+                  Paste URL
+                </button>
+              </div>
+            )}
+          </div>
+          {source === 'file' ? (
+            <FileDropSelect value={file} onChange={setFile} accept={isVideo ? VIDEO_ACCEPT : IMAGE_ACCEPT} label={isVideo ? 'Click to upload banner video' : 'Click to upload banner image'} />
+          ) : (
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={e => setImageUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+            />
+          )}
           <p className="mt-1.5 text-[11px] text-slate/70">
             {isVideo
               ? 'MP4 or WebM, up to 50MB. A poster frame is generated for you automatically.'

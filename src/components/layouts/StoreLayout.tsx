@@ -7,10 +7,10 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown,
-  ClipboardList, Megaphone, Star, Plug, Search, Wallet,
-  Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
+  ClipboardList, Megaphone, Star, Search, Wallet,
+  Truck, MessageSquare, FolderTree, RefreshCw, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, SlidersHorizontal, ListTree, Boxes, MoreHorizontal,
+  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
   Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -88,7 +88,13 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
-    group: 'Sales',
+    // Renamed from "Sales" and made collapsible — every order-related page
+    // (Orders itself included, not split out) lives together in one dropdown,
+    // closed by default like every other group except Overview, instead of
+    // sitting flat and always taking up 5 rows of space.
+    group: 'Orders',
+    collapsible: true,
+    groupIcon: Package,
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: 'draft_orders.view' },
@@ -98,7 +104,11 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
+    // Made collapsible, same reasoning as Orders above — Products included
+    // inside, not split out as a bare item.
     group: 'Catalog',
+    collapsible: true,
+    groupIcon: ShoppingBag,
     items: [
       { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products',        requiredPermission: 'products.view' },
       // Inventory Hub is one page with 6 tabs (Stock/Purchase Orders/Reorder/
@@ -134,7 +144,19 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
+    // Own store's branded app request + Solvexo POS access — a real sales
+    // channel (how buyers reach this store), not store configuration, so it
+    // deliberately does NOT live inside Settings — matches Shopify's own
+    // treatment of Point of Sale as its own channel, never a Settings item.
+    group: 'Sales Channels',
+    items: [
+      { id: 'mobile-app', Icon: Smartphone, label: 'Mobile App', path: 'mobile-app' },
+    ],
+  },
+  {
     group: 'Customers',
+    collapsible: true,
+    groupIcon: Users,
     items: [
       // OR'd with `customers.edit` — a staff member granted create/edit but
       // not general view (e.g. a data-entry-only role) still needs a nav
@@ -145,11 +167,12 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
-    // Only the two items a seller touches often stay flat here, matching
-    // Shopify's own flat "Marketing"/"Discounts" top-level items — the rest
-    // of the old 7-item "Growth" group moved to the new collapsible
-    // "Growth Tools" group below.
+    // Made collapsible for consistency with every other multi-item group —
+    // the rest of the old 7-item "Growth" group already moved to the
+    // separate collapsible "Growth Tools" group below.
     group: 'Marketing',
+    collapsible: true,
+    groupIcon: Megaphone,
     items: [
       // Tracking Pixels lives as a tab inside Marketing but is gated on its
       // own distinct `settings.pixels.manage` permission (tracking-pixels
@@ -177,61 +200,40 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
+    // Billing (`plan-billing`) moved into the Settings hub as a tab —
+    // matches Shopify's own real distinction: Finance is the store's own
+    // money in/out (payouts), Settings→Billing is what Solvexo charges the
+    // seller for running the store. The two were never the same concept;
+    // now they're not even adjacent in the sidebar either.
     group: 'Finance',
     items: [
-      { id: 'finance',      Icon: Wallet,     label: 'Finance',  path: 'finance',      requiredPermission: 'finance.payouts.view' },
-      // Renamed from "Plan & Billing" — that name read as the same thing as
-      // Marketing's "Subscriptions" item above, but they're unrelated: this
-      // is the SELLER's own Solvexo plan/invoices (`StorePlanBilling.tsx`),
-      // "Subscriptions" is a customer-facing recurring-order feature for
-      // THIS store's shoppers (`Operations/subscriptions/Subscriptions.tsx`).
-      // Kept as two separate pages (merging them would combine two
-      // unrelated feature sets into one confusing screen) but renamed so the
-      // two no longer sound like the same page. Route path (`plan-billing`)
-      // is unchanged — only the label a seller sees changed.
-      // The 3 read-only billing routes (getStorePlan/getEntitlements/
-      // listInvoices) are gated on `settings.billing.view` alone on the
-      // backend, separate from the mutating routes' `settings.billing
-      // .manage` — OR'd here too so a view-only staff member has a nav path.
-      { id: 'plan-billing', Icon: CreditCard, label: 'Billing',  path: 'plan-billing', requiredPermission: ['settings.billing.manage', 'settings.billing.view'] },
+      { id: 'finance', Icon: Wallet, label: 'Finance', path: 'finance', requiredPermission: 'finance.payouts.view' },
     ],
   },
   {
-    // Catch-all for one-time setup / configuration, not day-to-day work —
-    // Custom Fields and Content Types (metafields/metaobjects) joined this
-    // group from Catalog, matching where Shopify itself puts them.
+    // Real, single tabbed Settings hub (`SettingsHub.tsx`) — General/Billing/
+    // Integrations/Staff/Custom Fields/Content Types/Activity Log all live
+    // as tabs on ONE page now, matching Shopify's own single Settings
+    // destination instead of 6 separate sidebar entries each pointing at
+    // its own full page. The old routes (`/staff`, `/integrations`,
+    // `/plan-billing`, `/metafields`, `/metaobjects`) still exist and are
+    // still reachable by direct URL (this project's "disconnect, don't
+    // delete" convention) — only the NAV was consolidated down to this one
+    // "Settings" entry, same as InventoryHub already did for Inventory/
+    // Purchase Orders/Reorder/Reports. `requiredPermission` is OR'd across
+    // every permission any of the hub's tabs actually need, so a staff
+    // member granted any one of them still has a nav path in.
     group: 'Settings',
     items: [
-      // OR'd across the two permissions this one page's content is actually
-      // gated by: `settings.payments.manage` (checkout payment providers,
-      // SellerIntegrationsController) and `finance.payments.manage` (the
-      // Stripe Connect card's own Connect/Sync actions, StripeConnect
-      // Controller) — a staff member with either one has a real reason to
-      // land here, even though fully managing Stripe specifically still
-      // needs both (see StripeConnectController's doc comment).
-      { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations', requiredPermission: ['settings.payments.manage', 'finance.payments.manage'] },
-      // Own store's branded app request + Solvexo POS access — two
-      // independent mobile-app products, both applied for from one page
-      // (see MobileApp.tsx's own doc comment for the distinction). Not
-      // staff-gated this pass — hidden from staff nav.
-      { id: 'mobile-app',    Icon: Smartphone,  label: 'Mobile App',   path: 'mobile-app'    },
-      { id: 'metafields',    Icon: SlidersHorizontal, label: 'Custom Fields', path: 'metafields', requiredPermission: 'content.metaobjects.manage' },
-      { id: 'metaobjects',   Icon: Boxes,         label: 'Content Types', path: 'metaobjects', requiredPermission: 'content.metaobjects.manage' },
-      // 'verification' and 'account' were removed from here — see the doc
-      // comment above `StoreVerificationBanner`'s old call site (deleted
-      // below) and `StorePageHeader`'s new account button for why.
-      // StoreSettings.tsx hosts general fields (name/description/tagline/
-      // etc. — `settings.general.manage`), the tax-rate field (`settings
-      // .taxes.manage`, same endpoint as general — see store.controller.ts),
-      // and custom-domain management (`settings.domains.manage`) all on one
-      // page — OR'd so a staff member granted any one of them has a nav
-      // path in, not just a backend route with nothing linking to it.
-      { id: 'settings',      Icon: Settings,    label: 'Settings',     path: 'settings',     requiredPermission: ['settings.domains.manage', 'settings.general.manage', 'settings.taxes.manage'] },
-      // Real, store-wide Staff/Roles management — previously buried as a
-      // tab inside the Inventory Hub, moved here since it governs access
-      // across nearly every section of the store, not just Inventory (a
-      // real architectural mismatch, fixed rather than left as-is).
-      { id: 'staff',         Icon: Users,       label: 'Staff',        path: 'staff',        requiredPermission: 'staff.manage' },
+      {
+        id: 'settings', Icon: Settings, label: 'Settings', path: 'settings',
+        requiredPermission: [
+          'settings.domains.manage', 'settings.general.manage', 'settings.taxes.manage',
+          'settings.billing.manage', 'settings.billing.view',
+          'settings.payments.manage', 'finance.payments.manage',
+          'staff.manage', 'content.metaobjects.manage',
+        ],
+      },
     ],
   },
 ];
@@ -243,24 +245,37 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
 // filter logic exists in exactly one place. This is a UX convenience, not
 // the security boundary — every underlying route is independently 403'd
 // server-side by `PermissionsGuard` regardless of what the nav shows.
+// Shared by `visibleNavForUser` below and `StoreBottomNav`'s mobile tab
+// filter — one place for "does this staff session have any of the listed
+// permissions." A seller/admin (or no user) always passes; a staff user
+// with no `requiredPermission` at all on the item fails closed (hidden) by
+// default, matching the desktop sidebar's existing convention that an
+// ungated destination shouldn't be surfaced to a staff session.
+export function hasNavPermission(user: { role?: AppRole; permissions?: string[] } | null, requiredPermission?: string | string[]): boolean {
+  if (!user || user.role !== 'staff') return true;
+  if (!requiredPermission) return false;
+  const granted = new Set(user.permissions ?? []);
+  return Array.isArray(requiredPermission)
+    ? requiredPermission.some(p => granted.has(p))
+    : granted.has(requiredPermission);
+}
+
 export function visibleNavForUser(user: { role?: AppRole; permissions?: string[] } | null): typeof NAV {
   if (!user || user.role !== 'staff') return NAV;
-  const granted = new Set(user.permissions ?? []);
-  const hasAccess = (item: NavItem) => {
-    if (!item.requiredPermission) return false;
-    return Array.isArray(item.requiredPermission)
-      ? item.requiredPermission.some(p => granted.has(p))
-      : granted.has(item.requiredPermission);
-  };
   return NAV
-    .map(section => ({ ...section, items: section.items.filter(hasAccess) }))
+    .map(section => ({ ...section, items: section.items.filter(item => hasNavPermission(user, item.requiredPermission)) }))
     .filter(section => section.items.length > 0);
 }
 
 // Groups a seller has never touched the toggle for start closed — everything
 // else (including every non-collapsible group, which ignores this entirely)
 // starts open, so this restructure changes *layout*, not what's reachable.
-const DEFAULT_COLLAPSED_GROUPS = ['Online Store', 'Growth Tools'];
+// Every collapsible group starts closed except Overview (Overview is
+// deliberately NOT collapsible at all — Dashboard is the landing page, it
+// should never require a click to reveal). A group the seller is currently
+// standing inside still shows its items regardless (see `groupHasActiveItem`
+// below) — closed-by-default only affects a group with nothing active in it.
+const DEFAULT_COLLAPSED_GROUPS = ['Orders', 'Catalog', 'Online Store', 'Customers', 'Marketing', 'Growth Tools'];
 const SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:sidebar:collapsed-groups';
 
 function loadCollapsedGroups(): Set<string> {
@@ -347,18 +362,26 @@ export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeI
 // `!mobileDrilledIn` view) — this only renames+re-icons the tab so a mobile
 // admin has an honest, Shopify-style "More" entry point into it, rather than
 // building a second/duplicate menu.
-const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
-  { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
-  { id: 'orders',    Icon: Package,         label: 'Orders',    path: 'orders'    },
-  { id: 'products',  Icon: ShoppingBag,     label: 'Products',  path: 'products'  },
-  { id: 'messages',  Icon: MessageSquare,   label: 'Messages',  path: 'messages'  },
-  { id: 'settings',  Icon: MoreHorizontal,  label: 'More',      path: 'settings'  },
+// `requiredPermission` mirrors `NavItem`'s own shape — filtered for a
+// staff session the same way the desktop sidebar's NAV already is (see
+// `hasNavPermission`). "More" is deliberately left with none but marked
+// `alwaysVisible` — it's a drill-down gateway into `StoreNavMenu`'s own
+// already-permission-filtered list, not a destination with its own single
+// permission to gate on, so it should never be hidden outright.
+const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string; requiredPermission?: string | string[]; alwaysVisible?: boolean }[] = [
+  { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard', requiredPermission: 'home.view' },
+  { id: 'orders',    Icon: Package,         label: 'Orders',    path: 'orders',    requiredPermission: 'orders.view' },
+  { id: 'products',  Icon: ShoppingBag,     label: 'Products',  path: 'products',  requiredPermission: 'products.view' },
+  { id: 'messages',  Icon: MessageSquare,   label: 'Messages',  path: 'messages',  requiredPermission: ['messaging.view', 'messaging.manage'] },
+  { id: 'settings',  Icon: MoreHorizontal,  label: 'More',      path: 'settings',  alwaysVisible: true },
 ];
 
 function StoreBottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { storeId } = useStoreWorkspace();
+  const user = TokenStorage.getUser();
+  const tabs = STORE_TABS.filter(tab => tab.alwaysVisible || hasNavPermission(user, tab.requiredPermission));
 
   const isActive = (path: string) => pathname === `/store/${storeId}/${path}`;
 
@@ -367,7 +390,7 @@ function StoreBottomNav() {
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
       <div className="flex items-stretch">
-        {STORE_TABS.map(tab => {
+        {tabs.map(tab => {
           const active = isActive(tab.path);
           return (
             <button
@@ -601,7 +624,19 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
             const isCollapsed = !!section.collapsible && open && collapsedGroups.has(section.group) && !groupHasActiveItem;
             const GroupIcon = section.groupIcon;
             return (
-            <div key={section.group} className={clsx('mb-1', section.collapsible && sectionIdx > 0 && 'mt-1.5')}>
+            <div
+              key={section.group}
+              className={clsx(
+                'mb-1',
+                section.collapsible && sectionIdx > 0 && 'mt-1.5',
+                // Settings sits last and is pure configuration, not daily
+                // work — a thin divider + extra top space pins it apart from
+                // everything above, matching Shopify's own bottom-anchored
+                // Settings placement instead of it just blending into the
+                // list as one more item.
+                section.group === 'Settings' && open && 'mt-2 pt-2 border-t border-dark-active',
+              )}
+            >
               {open
                 ? (section.collapsible && GroupIcon ? (
                     // Collapsible groups render as a full nav-item-styled ROW
@@ -627,7 +662,16 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                       />
                     </button>
                   ) : (
-                    <p className="text-[10px] font-semibold text-dark-label px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{section.group}</p>
+                    // A section with only one item (Finance/Mobile App/
+                    // Settings today) skips its own uppercase group label —
+                    // a whole header row for one link is wasted space and
+                    // reads as heavier than it is. It just renders as a
+                    // bare top-level link instead, matching how Shopify's
+                    // own single-destination items (Home/Orders/Products)
+                    // have no group heading above them either.
+                    section.items.length > 1 && (
+                      <p className="text-[10px] font-semibold text-dark-label px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{section.group}</p>
+                    )
                   ))
                 : <div className="h-px bg-dark-active mx-1 mb-2" />
               }

@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Image as ImageIcon, Upload, Search, Trash2, Loader2, AlertTriangle, Video, FileText as FileIcon, Copy, Check } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, EmptyState, Modal } from '@/components/comman/ui';
+import { SkeletonBox, EmptyState, Modal, PasteImageUrl } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  apiBrowseMediaLibrary, apiUploadMediaAsset, apiUpdateMediaAsset, apiDeleteMediaAsset, apiGetMediaAssetUsage,
+  apiBrowseMediaLibrary, apiUploadMediaAsset, apiUploadMediaAssetFromUrl, apiUpdateMediaAsset, apiDeleteMediaAsset, apiGetMediaAssetUsage,
   type MediaAsset, type MediaAssetUsage,
 } from '@/api/services/mediaLibrary';
 
@@ -198,9 +198,12 @@ export default function FilesLibrary() {
         title="Files"
         subtitle={`${total} file${total !== 1 ? 's' : ''} — reusable across your Theme, products, pages, and banners.`}
         actions={
-          <Button icon={uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-            {uploading ? 'Uploading…' : 'Upload files'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button icon={uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              {uploading ? 'Uploading…' : 'Upload files'}
+            </Button>
+            <PasteImageUrl upload={url => apiUploadMediaAssetFromUrl(storeId, url).then(res => res.data)} onUploaded={load} />
+          </div>
         }
       />
       <input ref={fileRef} type="file" multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" onChange={e => { handleUpload(e.target.files); e.target.value = ''; }} />

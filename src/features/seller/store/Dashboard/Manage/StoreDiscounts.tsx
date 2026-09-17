@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, ArrowRight, Download } from 'lucide-react';
+import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, ArrowRight, Download, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetDiscounts, apiCreateDiscount, apiUpdateDiscount, apiDeleteDiscount, apiExportDiscountsCsv,
   type AutomaticDiscount, type DiscountType, type DiscountTarget, type CreateDiscountPayload,
 } from '@/api/services/discounts';
+import { useSellerAnalyticsWeekdayPerformance } from '@/hooks/seller/useSellerAnalytics';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { currencySymbol } from '@/utils/currency';
@@ -337,6 +338,7 @@ export default function StoreDiscounts() {
   const [editing, setEditing] = useState<AutomaticDiscount | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AutomaticDiscount | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const weekday = useSellerAnalyticsWeekdayPerformance({ storeId });
 
   const flatCategories = useMemo(() => flattenCategories(categoryTree), [categoryTree]);
   const categoryNames = useMemo(
@@ -466,6 +468,23 @@ export default function StoreDiscounts() {
       />
 
       <div className="p-4 md:p-7">
+        {weekday.data && (
+          <div className="flex items-start gap-3 mb-5 bg-brand-pale-orange/60 border border-brand-orange/20 rounded-xl px-4 py-3">
+            <div className="w-8 h-8 rounded-[8px] bg-white flex items-center justify-center shrink-0">
+              <CalendarClock size={14} className="text-brand-orange" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-carbon">
+                {weekday.data.slowestDay}s are your slowest day
+              </p>
+              <p className="text-[12px] text-slate">
+                Sales run ~{weekday.data.slowestDayBelowAveragePercent}% below your weekly average on {weekday.data.slowestDay}s —
+                a discount timed for that day could help even out the week. ({weekday.data.busiestDay}s are your busiest.)
+              </p>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={() => navigate(`/store/${storeId}/marketing`)}
           className="w-full flex items-center gap-3 mb-5 bg-white border border-bone rounded-xl px-4 py-3 text-left cursor-pointer hover:bg-cream transition-colors"

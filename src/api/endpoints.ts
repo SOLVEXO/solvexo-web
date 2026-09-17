@@ -664,6 +664,7 @@ export const ENDPOINTS = {
   UPLOAD: {
     PUBLIC_FILE: '/api/upload/file',
     PRIVATE_FILE: '/api/upload/private-file',
+    FROM_URL: '/api/upload/from-url',
   },
 
   INVENTORY: {
@@ -930,6 +931,7 @@ export const ENDPOINTS = {
     PUBLIC:   (storeId: string) => `/api/public/store-banners/${storeId}`,
     LIST:     (storeId: string) => `/api/store-banner/${storeId}`,
     CREATE:   (storeId: string) => `/api/store-banner/${storeId}`,
+    CREATE_FROM_URL: (storeId: string) => `/api/store-banner/${storeId}/from-url`,
     UPDATE:   (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}`,
     PAUSE:    (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}/pause`,
     RESUME:   (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}/resume`,
@@ -942,6 +944,7 @@ export const ENDPOINTS = {
     LIST: '/api/media-library',
     BROWSE: (storeId: string) => `/api/media-library/${storeId}`,
     UPLOAD: (storeId: string) => `/api/media-library/${storeId}/upload`,
+    UPLOAD_FROM_URL: (storeId: string) => `/api/media-library/${storeId}/upload-from-url`,
     UPDATE: (storeId: string, assetId: string) => `/api/media-library/${storeId}/${assetId}`,
     USAGE: (storeId: string, assetId: string) => `/api/media-library/${storeId}/${assetId}/usage`,
     DELETE: (storeId: string, assetId: string, force?: boolean) => `/api/media-library/${storeId}/${assetId}${force ? '?force=true' : ''}`,
@@ -1027,9 +1030,12 @@ export const ENDPOINTS = {
       TODAY:                '/api/seller/analytics/today',
       OVERVIEW:             '/api/seller/analytics/overview',
       REVENUE_OVER_TIME:    '/api/seller/analytics/revenue-over-time',
+      SALES_FORECAST:       '/api/seller/analytics/sales-forecast',
+      WEEKDAY_PERFORMANCE:  '/api/seller/analytics/weekday-performance',
       ORDERS_OVER_TIME:     '/api/seller/analytics/orders-over-time',
       TRAFFIC_SOURCES:      '/api/seller/analytics/traffic-sources',
       TOP_PRODUCTS:         '/api/seller/analytics/top-products',
+      TRENDING_PRODUCTS:    '/api/seller/analytics/trending-products',
       CUSTOMERS:            '/api/seller/analytics/customers',
       PRODUCTS_PERFORMANCE: '/api/seller/analytics/products/performance',
       INVENTORY_INSIGHTS:   '/api/seller/analytics/inventory-insights',
@@ -1042,6 +1048,7 @@ export const ENDPOINTS = {
     ADMIN: {
       OVERVIEW:                    '/api/admin/analytics/overview',
       REVENUE_OVER_TIME:           '/api/admin/analytics/revenue-over-time',
+      GROWTH_FORECAST:             '/api/admin/analytics/growth-forecast',
       REVENUE_BREAKDOWN:           '/api/admin/analytics/revenue-breakdown',
       SELLERS_TOP:                 '/api/admin/analytics/sellers/top',
       SELLERS_PERFORMANCE:         '/api/admin/analytics/sellers/performance',
@@ -1067,6 +1074,7 @@ export const ENDPOINTS = {
   FINANCE: {
     SELLER: {
       DASHBOARD:             (storeId: string) => `/api/finance/${storeId}/dashboard`,
+      PAYOUT_FORECAST:       (storeId: string) => `/api/finance/${storeId}/payout-forecast`,
       TRANSACTIONS:          (storeId: string) => `/api/finance/${storeId}/transactions`,
       TRANSACTIONS_EXPORT:   (storeId: string) => `/api/finance/${storeId}/transactions/export`,
       ANALYTICS:             (storeId: string) => `/api/finance/${storeId}/analytics`,

@@ -42,6 +42,7 @@ export function ImageEnhancerTool({ storeId, onCreditsChanged }: ImageEnhancerTo
             <ImageUpload
               value={imageUrl ? [imageUrl] : []}
               onChange={urls => setImageUrl(urls[0] ?? '')}
+              storeId={storeId}
             />
           </Field>
           <Field label="Enhancement Type">

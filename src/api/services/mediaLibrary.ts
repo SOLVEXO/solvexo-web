@@ -63,6 +63,13 @@ export function apiUploadMediaAsset(storeId: string, file: File, meta?: { altTex
   );
 }
 
+/** Same as `apiUploadMediaAsset`, sourced from a pasted URL instead of a file. */
+export function apiUploadMediaAssetFromUrl(storeId: string, url: string, meta?: { altText?: string; tags?: string[] }) {
+  return client.post<never, { success: boolean; data: { url: string; publicId: string; resourceType: string; mediaAssetId: string } }>(
+    ENDPOINTS.MEDIA_LIBRARY.UPLOAD_FROM_URL(storeId), { url, altText: meta?.altText, tags: meta?.tags?.join(',') },
+  );
+}
+
 export function apiUpdateMediaAsset(storeId: string, assetId: string, patch: { altText?: string; tags?: string[] }) {
   return client.patch<never, { success: boolean; data: MediaAsset }>(ENDPOINTS.MEDIA_LIBRARY.UPDATE(storeId, assetId), patch);
 }

@@ -199,7 +199,7 @@ function SellerOverrideModal({ onClose, onSaved }: { onClose: () => void; onSave
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export function AdminCommissionRules() {
+export function AdminCommissionRules({ embedded = false }: { embedded?: boolean } = {}) {
   usePageTitle('Commission Rules');
   const [page, setPage] = useState(1);
   const { data, loading, error, refetch } = useSellerCommissionOverrides(page);
@@ -233,10 +233,12 @@ export function AdminCommissionRules() {
 
   return (
     <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Commission Rules</h1>
-        <p className="text-[12px] text-slate">Global default rate and per-seller commission overrides — layered above each store's platform-plan tier rate.</p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Commission Rules</h1>
+          <p className="text-[12px] text-slate">Global default rate and per-seller commission overrides — layered above each store's platform-plan tier rate.</p>
+        </div>
+      )}
 
       <GlobalDefaultCard />
 

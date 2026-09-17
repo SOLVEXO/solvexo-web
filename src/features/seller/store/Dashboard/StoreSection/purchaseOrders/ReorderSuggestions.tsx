@@ -68,10 +68,22 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
                     <div className="text-right shrink-0">
                       <p className="text-[12px] font-semibold text-charcoal">{item.available} left</p>
                       {item.daysOfStockLeft != null && (
-                        <Badge color={item.daysOfStockLeft <= 7 ? 'red' : 'orange'} size="sm">
-                          <AlertTriangle size={9} className="inline mr-1" />
-                          ~{item.daysOfStockLeft}d left
-                        </Badge>
+                        <>
+                          <Badge color={item.daysOfStockLeft <= 7 ? 'red' : 'orange'} size="sm">
+                            <AlertTriangle size={9} className="inline mr-1" />
+                            ~{item.daysOfStockLeft}d left
+                          </Badge>
+                          <p
+                            className="text-[9px] text-slate mt-0.5"
+                            title={
+                              item.forecastMethod === 'trend_seasonal'
+                                ? 'Based on this SKU\'s sales trend and weekly pattern'
+                                : 'Based on a simple recent-sales average — not enough history yet for a trend forecast'
+                            }
+                          >
+                            {item.forecastMethod === 'trend_seasonal' ? 'Trend forecast' : 'Simple average'}
+                          </p>
+                        </>
                       )}
                     </div>
                   </div>

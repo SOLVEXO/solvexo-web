@@ -2,9 +2,12 @@ import { useCallback, useState } from 'react';
 import {
   apiSellerAnalyticsOverview,
   apiSellerAnalyticsRevenueOverTime,
+  apiSellerAnalyticsSalesForecast,
+  apiSellerAnalyticsWeekdayPerformance,
   apiSellerAnalyticsOrdersOverTime,
   apiSellerAnalyticsTrafficSources,
   apiSellerAnalyticsTopProducts,
+  apiSellerAnalyticsTrendingProducts,
   apiSellerAnalyticsCustomers,
   apiSellerAnalyticsProductPerformance,
   apiSellerAnalyticsInventoryInsights,
@@ -30,6 +33,18 @@ export function useSellerAnalyticsRevenueOverTime(params: SellerAnalyticsParams)
   return useAnalyticsQuery(apiSellerAnalyticsRevenueOverTime, params);
 }
 
+// ── B2. Sales forecast (real trend+seasonality projection) ─────────────────────────
+
+export function useSellerAnalyticsSalesForecast(params: { storeId?: string | null }) {
+  return useAnalyticsQuery(apiSellerAnalyticsSalesForecast, params);
+}
+
+// ── B3. Weekday performance ──────────────────────────────────────────────────────
+
+export function useSellerAnalyticsWeekdayPerformance(params: { storeId?: string | null }) {
+  return useAnalyticsQuery(apiSellerAnalyticsWeekdayPerformance, params);
+}
+
 // ── C. Orders over time ──────────────────────────────────────────────────────────
 
 export function useSellerAnalyticsOrdersOverTime(params: SellerAnalyticsParams) {
@@ -46,6 +61,12 @@ export function useSellerAnalyticsTrafficSources(params: SellerAnalyticsParams) 
 
 export function useSellerAnalyticsTopProducts(params: SellerTopProductsParams) {
   return useAnalyticsQuery(apiSellerAnalyticsTopProducts, params);
+}
+
+// ── E2. Trending products ────────────────────────────────────────────────────────
+
+export function useSellerAnalyticsTrendingProducts(params: { storeId?: string | null }) {
+  return useAnalyticsQuery(apiSellerAnalyticsTrendingProducts, params);
 }
 
 // ── F. Customer analytics ────────────────────────────────────────────────────────

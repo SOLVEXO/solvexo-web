@@ -83,7 +83,7 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
  *  Metafields system — the other half (`MetafieldsEditor`) is where a
  *  seller actually fills in a value on one product/category/etc. Reachable
  *  from Settings (see `StoreLayout.tsx`'s NAV). */
-export function MetafieldDefinitionsPage() {
+export function MetafieldDefinitionsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const [definitions, setDefinitions] = useState<MetafieldDefinition[] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -142,15 +142,25 @@ export function MetafieldDefinitionsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <StorePageHeader
-        title="Custom Fields"
-        subtitle="Add your own fields to products, categories, collections, or pages — no developer needed."
-        actions={(
+      {!embedded && (
+        <StorePageHeader
+          title="Custom Fields"
+          subtitle="Add your own fields to products, categories, collections, or pages — no developer needed."
+          actions={(
+            <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
+              New Field
+            </Button>
+          )}
+        />
+      )}
+
+      {embedded && definitions !== null && definitions.length > 0 && (
+        <div className="flex justify-end">
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
             New Field
           </Button>
-        )}
-      />
+        </div>
+      )}
 
       {definitions === null ? null : definitions.length === 0 ? (
         <EmptyState

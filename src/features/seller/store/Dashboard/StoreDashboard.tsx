@@ -11,8 +11,8 @@ import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/componen
 import { AreaChart, DonutChart } from '@/components/comman/charts';
 import { MetricCard, SkeletonBox, Button, FilterDropdown } from '@/components/comman/ui';
 import {
-  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday,
-  type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData,
+  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday, apiSellerAnalyticsSalesForecast,
+  type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData, type SellerSalesForecastData,
 } from '@/api/services/analytics/analytics';
 import type { AnalyticsRangePreset } from '@/components/comman/analytics/analyticsFilters';
 import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from '@/api/services/product';
@@ -20,6 +20,8 @@ import { apiGetSellerReturns } from '@/api/services/orders';
 import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
 import { apiUpdateStore } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
+import { apiGetFinanceDashboard, type FinanceWallet } from '@/api/services/finance';
+import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { DASHBOARD_METRIC_CATALOG, DEFAULT_DASHBOARD_METRICS } from './dashboardMetrics.const';
 import { Sliders, Check as CheckIcon, ChevronUp, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
@@ -42,6 +44,8 @@ interface StoreMetrics {
   awaitingCaptureCount: number;
   inventoryBreakdown: { inStock: number; lowStock: number; outOfStock: number };
   entitlements: EntitlementsSummary | null;
+  salesForecast: SellerSalesForecastData | null;
+  primaryWallet: FinanceWallet | null;
 }
 
 function useStoreDashboardMetrics(storeId: string) {
@@ -72,8 +76,13 @@ function useStoreDashboardMetrics(storeId: string) {
       // Center already shows, surfaced here too so "what's my overall
       // status" doesn't require leaving the dashboard.
       apiGetStoreEntitlements(storeId).catch(() => null),
+      // Both best-effort — a fresh store with no sales history yet, or a
+      // seller who hasn't touched Finance, should never block the rest of
+      // the dashboard from loading over these two.
+      apiSellerAnalyticsSalesForecast({ storeId }).catch(() => null),
+      apiGetFinanceDashboard(storeId).catch(() => null),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes, forecastRes, financeRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
@@ -92,6 +101,8 @@ function useStoreDashboardMetrics(storeId: string) {
             outOfStock: inventoryRes.data.stats.outOfStock,
           },
           entitlements: (entitlementsRes as any)?.data ?? null,
+          salesForecast: (forecastRes as any)?.data ?? null,
+          primaryWallet: (financeRes as any)?.wallets?.[0] ?? null,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -134,7 +145,10 @@ function StoreInfoCard() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-bone hover:border-slate/30 transition-colors duration-200 flex flex-col h-full">
+    <div className="relative surface-panel surface-panel-interactive rounded-2xl flex flex-col h-full overflow-hidden">
+      {/* Slim brand-colored top edge — a small, consistent "this is your
+         store's own card" marker without a heavy banner. */}
+      <div className="h-[3px] bg-gradient-to-r from-brand-orange via-brand-orange to-brand-pale-orange shrink-0" />
 
       {/* Logo + name + badges */}
       <div className="px-5 pt-5 pb-4 border-b border-[#f3f2ec]">
@@ -255,7 +269,7 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
   ];
 
   return (
-    <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200">
+    <div className="surface-panel surface-panel-interactive rounded-2xl">
       <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
@@ -264,13 +278,13 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
           <button
             key={label}
             onClick={() => navigate(`/store/${storeId}/${path}`)}
-            className={`group flex flex-col items-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 w-full`}
+            className={`group flex flex-col items-center gap-2.5 py-5 px-2 rounded-[16px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-[0_8px_20px_rgba(20,20,19,0.06)] w-full`}
           >
             <div
-              className="w-9 h-9 rounded-[10px] bg-white/70 border border-white/60 flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+              className="w-10 h-10 rounded-[12px] bg-white/80 border border-white/60 flex items-center justify-center transition-transform duration-normal ease-spring group-hover:scale-110 group-hover:-rotate-3"
               style={{ color: iconColor }}
             >
-              <Icon size={16} />
+              <Icon size={17} />
             </div>
             <span className="text-[11px] font-semibold text-charcoal text-center leading-[1.3]">{label}</span>
           </button>
@@ -313,17 +327,21 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
 
   if (items.length === 0) {
     return (
-      <div className="dash-section-enter bg-white border border-bone rounded-2xl px-5 py-4 flex items-center gap-2.5">
-        <CheckCircle size={16} className="text-success shrink-0" />
+      <div className="dash-section-enter surface-panel rounded-2xl px-5 py-4 flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg bg-success-bg text-success flex items-center justify-center shrink-0">
+          <CheckCircle size={14} />
+        </div>
         <p className="text-[13px] font-medium text-charcoal">All caught up — nothing needs your attention right now.</p>
       </div>
     );
   }
 
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden">
-      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center gap-2">
-        <AlertTriangle size={14} className="text-brand-orange" />
+    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl overflow-hidden">
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg bg-error-bg text-error flex items-center justify-center shrink-0">
+          <AlertTriangle size={14} />
+        </div>
         <p className="text-sm font-bold text-charcoal">Needs Attention</p>
       </div>
       <div className="flex flex-col divide-y divide-[#f3f2ec]">
@@ -422,7 +440,7 @@ function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
   };
 
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden">
+    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl overflow-hidden">
       <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg bg-brand-pale-orange text-brand-orange flex items-center justify-center shrink-0">
           <Lightbulb size={14} />
@@ -448,6 +466,40 @@ function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ── Available Balance — real Finance ledger data (`FinanceService.getDashboard`,
+// same numbers Finance's own Balance Card shows), surfaced here so a seller
+// doesn't have to leave the dashboard just to see what's available to
+// withdraw. Shows the store's primary-currency wallet only (a full per-
+// currency breakdown stays Finance's own job) — hidden entirely for a store
+// with no wallet yet (nothing sold), same "don't show an empty placeholder"
+// convention as the rest of this page. ──────────────────────────────────────
+function AvailableBalanceCard({ wallet, storeId }: { wallet: FinanceWallet; storeId: string }) {
+  const navigate = useNavigate();
+  return (
+    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl px-5 py-5 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-bold text-charcoal">Available Balance</p>
+        <button
+          onClick={() => navigate(`/store/${storeId}/finance`)}
+          className="text-[11px] font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer"
+        >
+          View Finance
+        </button>
+      </div>
+      <div className="flex-1 flex flex-col justify-center gap-3">
+        <div>
+          <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em] mb-1">{wallet.currency} Available</p>
+          <p className="text-[24px] font-bold text-charcoal tabular-nums">{formatMoneyCompact(wallet.availableBalance, wallet.currency)}</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-[11.5px] text-slate">
+          <Clock size={12} />
+          Pending: <span className="font-semibold text-graphite">{formatMoneyCompact(wallet.pendingBalance, wallet.currency)}</span>
+        </div>
       </div>
     </div>
   );
@@ -659,10 +711,10 @@ function UsageProgressBar({ label, used, max }: { label: string; used: number; m
         <span className="text-[11.5px] text-graphite">{label}</span>
         <span className="text-[11.5px] font-semibold text-carbon">{formatNumber(used)}{unlimited ? '' : ` / ${formatNumber(max)}`}</span>
       </div>
-      <div className="h-[6px] bg-cream rounded-full overflow-hidden">
+      <div className="h-[7px] bg-cream rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all"
-          style={{ width: unlimited ? '100%' : `${pct}%`, background: unlimited ? '#22C55E' : (near ? '#C0392B' : '#D97757') }}
+          className="h-full rounded-full transition-all duration-slow ease-out"
+          style={{ width: unlimited ? '100%' : `${pct}%`, background: unlimited ? 'var(--color-success)' : (near ? 'var(--color-error)' : 'var(--color-brand-orange)') }}
         />
       </div>
     </div>
@@ -672,7 +724,7 @@ function UsageProgressBar({ label, used, max }: { label: string; used: number; m
 function PlanUsageCard({ entitlements, storeId }: { entitlements: EntitlementsSummary | null; storeId: string }) {
   const navigate = useNavigate();
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-[10px] px-5 py-5 flex flex-col h-full">
+    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl px-5 py-5 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-bold text-charcoal">Plan Usage</p>
         <button
@@ -707,7 +759,7 @@ function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; cur
   const hasTodayRevenue = today.revenue > 0;
 
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden">
+    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl overflow-hidden">
       <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-charcoal flex items-center gap-[6px]">
           <span className="size-[6px] rounded-full bg-success pos-live-pulse" />
@@ -742,7 +794,8 @@ function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; cur
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DashSkeleton() {
   return (
-    <div className="px-7 py-6 flex flex-col gap-5">
+    <div className="px-4 lg:px-7 py-6 flex flex-col gap-5 max-w-[1440px] mx-auto">
+      <DashboardHeroSkeleton />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1,2,3,4].map(i => (
           <div key={i} className="bg-white rounded-2xl border border-bone p-5">
@@ -800,11 +853,15 @@ const REVENUE_RANGE_GRANULARITY: Record<AnalyticsRangePreset, 'day' | 'month'> =
 function useRevenueOverviewAll(storeId: string) {
   const [seriesByRange, setSeriesByRange] = useState<Partial<Record<AnalyticsRangePreset, RevenuePoint[]>>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const refetch = useCallback(() => setReloadKey(k => k + 1), []);
 
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
     setLoading(true);
+    setError('');
     Promise.all(
       REVENUE_RANGE_OPTIONS.map(({ value }) =>
         apiSellerAnalyticsRevenueOverTime({ storeId, range: value, granularity: REVENUE_RANGE_GRANULARITY[value] })
@@ -812,11 +869,149 @@ function useRevenueOverviewAll(storeId: string) {
       ),
     )
       .then(entries => { if (!cancelled) setSeriesByRange(Object.fromEntries(entries)); })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load revenue data.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, reloadKey]);
 
-  return { seriesByRange, loading };
+  return { seriesByRange, loading, error, refetch };
+}
+
+// ── Dashboard Hero ────────────────────────────────────────────────────────────
+// A single, premium "welcome" moment at the top of the page — the one thing a
+// generic stacked-cards dashboard is missing. Everything shown here is a
+// number the page already fetches (30-day revenue + its real period-over-
+// period change, from the same `SellerOverviewData` the Metrics row reads) —
+// this component computes nothing new, it just gives the store's own real
+// headline number a proper, spacious presentation instead of burying it in a
+// same-size grid tile.
+function getTimeGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 5) return 'Working late';
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+interface HeroStat { label: string; value: string; changeLabel?: string; up?: boolean; sub?: string }
+
+function DashboardHero({ store, metrics, currency }: {
+  store: ReturnType<typeof useStoreWorkspace>['store']; metrics: StoreMetrics | null; currency?: string | null;
+}) {
+  const overview = metrics?.overview;
+  const isLive = store?.status === 'active';
+
+  const revenue = overview?.totalRevenue ?? 0;
+  const hasRevenue = revenue > 0;
+  const revenueChangePct = hasRevenue ? overview?.totalRevenueChangePercent ?? null : null;
+
+  const orders = overview?.totalOrders ?? 0;
+  const hasOrders = orders > 0;
+  const ordersChange = hasOrders ? overview?.totalOrdersChange : undefined;
+
+  const totalCustomers = overview ? overview.newCustomersCount + overview.returningCustomersCount : 0;
+
+  // Three real numbers, same source as the Metrics grid below — this is a
+  // condensed "at a glance" row (Stripe/Shopify Home both open on one), not
+  // a duplicate: it fills the banner's width instead of one lonely number
+  // floating with a wall of empty space next to it.
+  const stats: HeroStat[] = [
+    {
+      label: 'Revenue (30d)', value: formatMoneyCompact(revenue, currency),
+      changeLabel: revenueChangePct !== null ? `${Math.abs(revenueChangePct).toFixed(0)}%` : undefined,
+      up: revenueChangePct !== null ? revenueChangePct >= 0 : undefined,
+    },
+    {
+      label: 'Orders (30d)', value: formatNumber(orders),
+      changeLabel: ordersChange !== undefined ? `${Math.abs(ordersChange)}` : undefined,
+      up: ordersChange !== undefined ? ordersChange >= 0 : undefined,
+    },
+    { label: 'Customers (30d)', value: formatNumber(totalCustomers) },
+    // 4th stat, only once real forecast data has loaded — folded into the
+    // Hero's existing stat row instead of its own separate full-width card
+    // (which sandwiched the page between two already-dense sections and
+    // read as clutter). Same real number `SalesForecastBanner` used to show,
+    // same honest method disclosure via `sub` instead of a whole second
+    // header block.
+    ...(metrics?.salesForecast ? [{
+      label: 'Forecast (7d)', value: formatMoneyCompact(metrics.salesForecast.projectedNext7Days, currency),
+      sub: metrics.salesForecast.method === 'trend_seasonal' ? 'Trend-based' : 'Simple average',
+    }] : []),
+  ];
+
+  return (
+    <div className="dash-section-enter surface-panel rounded-2xl relative overflow-hidden">
+      {/* One deliberate ambient glow, brand-colored — the "surprise" moment
+         for the whole page, not repeated on every card below it. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(130% 100% at 100% 0%, rgba(217,119,87,0.09), transparent 55%)' }}
+      />
+      <div className="relative px-6 sm:px-8 py-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="flex items-center gap-4 min-w-0 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-brand-pale-orange border border-[#eee0d5] flex items-center justify-center overflow-hidden shrink-0">
+            {store?.logo
+              ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
+              : <Globe size={22} className="text-brand-orange" />}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-brand-orange uppercase tracking-[0.08em] mb-1 flex items-center gap-1.5">
+              <span className={`size-[6px] rounded-full ${isLive ? 'bg-success pos-live-pulse' : 'bg-slate'}`} />
+              {getTimeGreeting()}
+            </p>
+            <h1 className="text-[24px] sm:text-[27px] font-bold text-carbon tracking-tight leading-tight overflow-hidden text-ellipsis whitespace-nowrap max-w-[280px] sm:max-w-none">
+              {store?.name ?? 'Your Store'}
+            </h1>
+            <p className="text-[13px] text-slate mt-0.5">Here's how things are looking right now.</p>
+          </div>
+        </div>
+
+        <div className="h-px w-full bg-bone lg:hidden" />
+
+        <div className="flex items-stretch divide-x divide-bone -mx-1 overflow-x-auto">
+          {stats.map(s => (
+            <div key={s.label} className="px-5 sm:px-6 first:pl-1 last:pr-1 flex flex-col gap-1.5 shrink-0">
+              <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em] whitespace-nowrap">{s.label}</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[24px] sm:text-[26px] font-bold text-carbon tabular-nums tracking-tight leading-none">{s.value}</span>
+                {s.changeLabel && (
+                  <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-[6px] py-[2px] rounded-full tabular-nums ${s.up ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
+                    {s.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                    {s.changeLabel}
+                  </span>
+                )}
+              </div>
+              {s.sub && <span className="text-[10px] text-slate whitespace-nowrap">{s.sub}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardHeroSkeleton() {
+  return (
+    <div className="surface-panel rounded-2xl px-6 sm:px-8 py-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="flex items-center gap-4">
+        <SkeletonBox width={56} height={56} rounded="16px" />
+        <div>
+          <SkeletonBox width={110} height={11} rounded="4px" className="mb-2" />
+          <SkeletonBox width={160} height={22} rounded="6px" className="mb-2" />
+          <SkeletonBox width={200} height={11} rounded="4px" />
+        </div>
+      </div>
+      <div className="flex items-stretch divide-x divide-bone">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="px-5 sm:px-6 flex flex-col gap-1.5">
+            <SkeletonBox width={80} height={10} rounded="4px" />
+            <SkeletonBox width={70} height={22} rounded="6px" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -826,7 +1021,7 @@ export default function StoreDashboard() {
   const testimonialPrompt = useTestimonialPrompt();
   const [showCustomize, setShowCustomize] = useState(false);
   const [revenueRange, setRevenueRange] = useState<AnalyticsRangePreset>('30d');
-  const { seriesByRange, loading: revenueOverviewLoading } = useRevenueOverviewAll(storeId);
+  const { seriesByRange, loading: revenueOverviewLoading, error: revenueOverviewError, refetch: refetchRevenueOverview } = useRevenueOverviewAll(storeId);
   const revenueOverviewSeries = seriesByRange[revenueRange] ?? [];
   const activeMetricIds = (store?.dashboardMetrics && store.dashboardMetrics.length > 0)
     ? store.dashboardMetrics
@@ -852,11 +1047,13 @@ export default function StoreDashboard() {
       )}
 
       {loading || metricsLoading ? <DashSkeleton /> : (
-        <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
+        <div className="px-4 lg:px-7 py-6 flex flex-col gap-6 max-w-[1440px] mx-auto">
 
           {/* Shopify-style trial pill — Dashboard-only (not shown on any
              other page's header). */}
           <TrialBillingPill />
+
+          <DashboardHero store={store} metrics={metrics} currency={store?.baseCurrency} />
 
           {metricsError && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">
@@ -913,24 +1110,30 @@ export default function StoreDashboard() {
              area chart + always-7-day bar chart pair, which showed the same
              metric twice at two unrelated, non-adjustable windows. */}
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-            <AreaChart
-              data={chartData}
-              dataKey="revenue"
-              xKey="label"
-              title="Revenue Overview"
-              subtitle={revenueOverviewLoading ? 'Loading…' : REVENUE_RANGE_OPTIONS.find(o => o.value === revenueRange)?.label}
-              action={
-                <FilterDropdown
-                  options={REVENUE_RANGE_OPTIONS}
-                  value={revenueRange}
-                  onChange={v => setRevenueRange(v as AnalyticsRangePreset)}
-                />
-              }
-              height={300}
-              loading={revenueOverviewLoading}
-              valuePrefix={currencySymbol(store?.baseCurrency)}
-              yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
-            />
+            {revenueOverviewError ? (
+              <div className="surface-panel rounded-2xl px-5 py-5 flex items-center justify-center min-h-[300px]">
+                <AnalyticsErrorState message={revenueOverviewError} onRetry={refetchRevenueOverview} />
+              </div>
+            ) : (
+              <AreaChart
+                data={chartData}
+                dataKey="revenue"
+                xKey="label"
+                title="Revenue Overview"
+                subtitle={revenueOverviewLoading ? 'Loading…' : REVENUE_RANGE_OPTIONS.find(o => o.value === revenueRange)?.label}
+                action={
+                  <FilterDropdown
+                    options={REVENUE_RANGE_OPTIONS}
+                    value={revenueRange}
+                    onChange={v => setRevenueRange(v as AnalyticsRangePreset)}
+                  />
+                }
+                height={300}
+                loading={revenueOverviewLoading}
+                valuePrefix={currencySymbol(store?.baseCurrency)}
+                yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
+              />
+            )}
             <StoreInfoCard />
           </div>
 
@@ -960,7 +1163,7 @@ export default function StoreDashboard() {
              platform dashboard (Shopify/Stripe) never relies on a single
              chart type to show "what's going on right now." */}
           {metrics && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
               <DonutChart
                 title="Inventory Health" subtitle="Across your catalog"
                 size={150}
@@ -987,6 +1190,7 @@ export default function StoreDashboard() {
                 ]}
               />
               <PlanUsageCard entitlements={metrics.entitlements} storeId={storeId} />
+              {metrics.primaryWallet && <AvailableBalanceCard wallet={metrics.primaryWallet} storeId={storeId} />}
             </div>
           )}
 

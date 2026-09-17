@@ -92,7 +92,7 @@ const StoreAddProduct = lazy(() => import('@/features/seller/store/Dashboard/Sto
 const StoreEditProduct = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
 const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
 const StoreCustomerList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
-const StoreSettings = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
+const SettingsHub = lazy(() => import('@/features/seller/store/Dashboard/Manage/SettingsHub'));
 const StoreStaff = lazy(() => import('@/features/seller/store/Dashboard/Manage/Staff'));
 const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
 const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
@@ -155,7 +155,7 @@ const AdminManualPayments = lazy(() => import('@/features/admin/pages/AdminManua
 const AdminCommissionRules = lazy(() => import('@/features/admin/pages/AdminCommissionRules').then(m => ({ default: m.AdminCommissionRules })));
 const AdminConfig = lazy(() => import('@/features/admin/pages/AdminConfig').then(m => ({ default: m.AdminConfig })));
 const AdminFxSettings = lazy(() => import('@/features/admin/pages/AdminFxSettings').then(m => ({ default: m.AdminFxSettings })));
-const AdminSettings = lazy(() => import('@/features/admin/pages/settings/AdminSettings').then(m => ({ default: m.AdminSettings })));
+const AdminSettingsHub = lazy(() => import('@/features/admin/pages/settings/AdminSettingsHub'));
 const AdminSEO = lazy(() => import('@/features/admin/pages/AdminSEO').then(m => ({ default: m.AdminSEO })));
 const AdminAiStudio = lazy(() => import('@/features/admin/pages/AdminAiStudio').then(m => ({ default: m.AdminAiStudio })));
 const AdminStoreAppRequests = lazy(() => import('@/features/admin/pages/AdminStoreAppRequests').then(m => ({ default: m.AdminStoreAppRequests })));
@@ -333,7 +333,13 @@ const mainRouter = createBrowserRouter([
           { path: 'products/detail/:productId',       element: <StoreProductDetail /> },
           { path: 'customer/list',                    element: <StoreCustomerList /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
-          { path: 'settings',                         element: <StoreSettings /> },
+          // Settings hub — one tabbed page (General/Billing/Integrations/Staff/
+          // Custom Fields/Content Types/Activity Log) replacing 6 separate
+          // top-level pages, same "disconnect, don't delete" consolidation
+          // InventoryHub already did for Inventory/Purchase Orders/Reorder/
+          // Reports below. The raw `StoreSettings` component itself is now
+          // only ever rendered embedded, as this hub's "General" tab.
+          { path: 'settings',                         element: <SettingsHub /> },
           { path: 'staff',                            element: <StoreStaff /> },
           { path: 'account',                          element: <SellerSettings variant="store" /> },
           { path: 'categories',                       element: <StoreCategories /> },
@@ -449,7 +455,7 @@ const mainRouter = createBrowserRouter([
           { path: 'contact',      element: <Navigate to="../content" replace /> },
           { path: 'testimonials', element: <Navigate to="../content" replace /> },
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },
-          { path: 'settings',     element: <AdminSettings /> },
+          { path: 'settings',     element: <RequireRole role="admin"><AdminSettingsHub /></RequireRole> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
           { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },

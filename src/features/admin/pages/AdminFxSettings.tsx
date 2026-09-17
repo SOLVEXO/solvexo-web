@@ -178,7 +178,7 @@ function AddCurrencyForm({ existing, onDone }: { existing: string[]; onDone: () 
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export function AdminFxSettings() {
+export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {}) {
   usePageTitle('FX Settings');
   const [rates, setRates] = useState<CurrentRatesMap>({});
   const [staleness, setStaleness] = useState<Record<string, { hoursOld: number; isStale: boolean } | null>>({});
@@ -282,13 +282,20 @@ export function AdminFxSettings() {
 
   return (
     <div>
-      <AdminPageHeader
-        title="FX Settings"
-        subtitle="The single authoritative PKR/USD exchange rate used across checkout, settlement, and refunds."
-        actions={<Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>}
-      />
+      {!embedded && (
+        <AdminPageHeader
+          title="FX Settings"
+          subtitle="The single authoritative PKR/USD exchange rate used across checkout, settlement, and refunds."
+          actions={<Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>}
+        />
+      )}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
+        {embedded && (
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>
+          </div>
+        )}
         <div className="flex gap-4 flex-wrap">
           {loading ? (
             <SkeletonBox className="h-24 w-full" />

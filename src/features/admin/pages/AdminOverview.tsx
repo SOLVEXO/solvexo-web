@@ -2,17 +2,19 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle, Users, UserCheck, DollarSign, UserPlus,
-  Shield, Store, Bell, Tag, ArrowRight, LayoutGrid,
+  Shield, Store, Bell, Tag, ArrowRight, LayoutGrid, TrendingUp,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   apiAdminAnalyticsOverview, apiAdminAnalyticsTopCategories,
   type AdminOverviewData, type TopCategoryRow,
 } from '@/api/services/analytics/adminAnalytics';
+import { useAdminAnalyticsGrowthForecast } from '@/hooks/admin/useAdminAnalytics';
 import { formatCurrency, formatNumber, formatPercent } from '@/components/comman/analytics/format';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
+import { Badge } from '@/components/comman/ui/Badge';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 
 // Pure navigation shortcuts to the real queue/alert/moderation pages — no new
@@ -33,6 +35,7 @@ export function AdminOverview() {
   const [categories, setCategories] = useState<TopCategoryRow[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
+  const forecast = useAdminAnalyticsGrowthForecast();
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +90,33 @@ export function AdminOverview() {
           <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend} trendUp={m.trendUp} sub={m.sub} icon={m.icon} color={m.color} />
         ))}
       </div>
+
+      {forecast.data && (
+        <div className="bg-white border border-bone rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="size-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center">
+              <TrendingUp size={16} className="text-brand-orange" />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-charcoal">Platform Growth Forecast</p>
+              <p className="text-[10.5px] text-slate">
+                {forecast.data.method === 'trend_seasonal' ? 'Trend-based (across all stores)' : 'Simple average — building up platform history'}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
+            <div>
+              <p className="text-[11px] text-slate">Next 7 days (GMV)</p>
+              <p className="text-[15px] font-bold text-charcoal">{formatCurrency(forecast.data.projectedNext7Days)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-slate">Next 30 days (GMV)</p>
+              <p className="text-[15px] font-bold text-charcoal">{formatCurrency(forecast.data.projectedNext30Days)}</p>
+            </div>
+          </div>
+          {forecast.data.method === 'simple_average' && <Badge color="orange" size="sm">Building up history</Badge>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
 

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Layers, Search, Sparkles, LogOut, Landmark, Percent, Coins, Activity,
-  TrendingUp, ChevronRight, Palette, Smartphone,
+  TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -57,6 +57,7 @@ interface AdminModule {
   label: string;
   Icon:  LucideIcon;
   ids:   AdminNavItem['id'][];
+  collapsible?: boolean;
 }
 
 // Sidebar presentation only — every route/page listed in ADMIN_NAV above
@@ -107,16 +108,46 @@ interface AdminModule {
 // (grandfathered legacy stores' `Store.categoryId`, the disconnected
 // Marketplace/EducationMarketplace pages, SEO/sitemap) are all untouched —
 // only the admin-facing management PAGE was removed.
+// 'commission-rules'/'fx-settings'/'config' are no longer their own module
+// entries — all 3 are now tabs inside the consolidated Settings hub
+// (AdminSettingsHub.tsx, mirrors the seller-side SettingsHub.tsx) reached via
+// the single 'settings' item below. Their ADMIN_NAV entries/routes/pages stay
+// fully intact and reachable by direct URL, same "disconnect, don't delete"
+// convention as everywhere else in this file — only removed from module
+// membership. Commerce/People/Growth/Finance are now collapsible (closed by
+// default, see DEFAULT_COLLAPSED_GROUPS below) to keep the sidebar compact,
+// matching the same accordion treatment StoreLayout's NAV already uses.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'] },
-  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation'] },
-  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'] },
-  { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'], collapsible: true },
+  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation'], collapsible: true },
+  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'], collapsible: true },
+  { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments'], collapsible: true },
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
-  { id: 'system',    label: 'System',                Icon: Settings,       ids: ['activity-log', 'config'] },
+  { id: 'activity',  label: 'Activity Log',          Icon: Activity,       ids: ['activity-log'] },
+  { id: 'settings',  label: 'Settings',              Icon: UserCog,        ids: ['settings'] },
 ];
+
+// Which collapsible modules (Commerce/People/Growth/Finance) start closed —
+// same accordion convention as StoreLayout's NAV: every collapsible group
+// starts collapsed, a group containing the current route force-expands
+// itself regardless (see `groupHasActiveItem` in AdminSidebar), and the
+// choice is remembered per-browser via localStorage.
+const DEFAULT_COLLAPSED_ADMIN_GROUPS = ['Commerce', 'Users & Communication', 'Growth', 'Finance'];
+const ADMIN_SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:admin-sidebar:collapsed-groups';
+
+function loadCollapsedAdminGroups(): Set<string> {
+  try {
+    const raw = localStorage.getItem(ADMIN_SIDEBAR_COLLAPSED_GROUPS_KEY);
+    if (raw) return new Set(JSON.parse(raw));
+  } catch { /* per-viewer convenience only — falls back to the default below */ }
+  return new Set(DEFAULT_COLLAPSED_ADMIN_GROUPS);
+}
+
+function saveCollapsedAdminGroups(groups: Set<string>) {
+  try { localStorage.setItem(ADMIN_SIDEBAR_COLLAPSED_GROUPS_KEY, JSON.stringify([...groups])); } catch { /* per-viewer convenience only */ }
+}
 
 // The subset of ADMIN_NAV actually reachable from the sidebar/mobile-menu/
 // command-palette — everything ADMIN_MODULES references. Kept as its own
@@ -235,11 +266,17 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Flat sidebar — every module's items are always visible (no expand/
-  // collapse accordion), matching StoreLayout/SellerLayout's plain grouped-
-  // list pattern. Single travelling-pill scope since there's only one list
-  // level now.
+  // Single travelling-pill scope since there's only one list level.
   const navPillId = useId();
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(loadCollapsedAdminGroups);
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      saveCollapsedAdminGroups(next);
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -314,9 +351,10 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
           </div>
         )}
 
-        {/* Nav — flat grouped list (a plain label per module, items always
-            visible), matching StoreLayout/SellerLayout's sidebar pattern —
-            no expand/collapse accordion. */}
+        {/* Nav — Overview/Content/Analytics/Activity Log/Settings render as
+            bare single-item links (no heading, matching StoreLayout's rule
+            that a 1-item group skips its own label); Commerce/People/Growth/
+            Finance are collapsible accordion groups, closed by default. */}
         <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto py-1', open ? 'px-3' : 'px-[10px] pt-1')}>
           {ADMIN_MODULES.map(module => {
             const children = module.ids
@@ -324,13 +362,42 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
               .filter((n): n is AdminNavItem => !!n);
             if (!children.length) return null;
 
+            const groupHasActiveItem = children.some(item => isActive(item.path));
+            const isCollapsed = !!module.collapsible && open && collapsedGroups.has(module.label) && !groupHasActiveItem;
+            const ModuleIcon = module.Icon;
+
             return (
-              <div key={module.id} className="mb-1">
+              <div
+                key={module.id}
+                className={clsx(
+                  'mb-1',
+                  module.label === 'Settings' && open && 'mt-2 pt-2 border-t border-dark-active',
+                )}
+              >
                 {open
-                  ? <p className="text-[10px] font-semibold text-pos-faint px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{module.label}</p>
+                  ? (module.collapsible ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(module.label)}
+                        aria-expanded={!isCollapsed}
+                        className="relative w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer border-0 bg-transparent hover:bg-dark-active transition-colors duration-fast"
+                      >
+                        <ModuleIcon size={15} className="shrink-0 text-pos-faint opacity-55" />
+                        <span className="text-[12.5px] flex-1 font-normal text-pos-faint text-left">{module.label}</span>
+                        <ChevronDown
+                          size={14}
+                          className={clsx('text-pos-faint opacity-70 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
+                        />
+                      </button>
+                    ) : (
+                      children.length > 1 && (
+                        <p className="text-[10px] font-semibold text-pos-faint px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{module.label}</p>
+                      )
+                    ))
                   : <div className="h-px bg-dark-active mx-1 mb-2" />
                 }
-                {children.map(item => {
+                <div className={clsx(open && module.collapsible && 'ml-[11px] pl-[10px] border-l border-dark-active')}>
+                  {!isCollapsed && children.map(item => {
                   const active = isActive(item.path);
                   return (
                     <button
@@ -370,7 +437,8 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
                       )}
                     </button>
                   );
-                })}
+                  })}
+                </div>
               </div>
             );
           })}

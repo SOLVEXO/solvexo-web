@@ -8,7 +8,7 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
-import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
+import { SkeletonBox, Table, Badge, type TableColumn } from '@/components/comman/ui';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import {
   apiListPlans, apiCreatePlan, apiUpdatePlan, apiArchivePlan, apiEstimatePlanHealth,
@@ -518,6 +518,19 @@ export function StoreSubscriptions() {
         return (
           <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: style.bg, color: style.color }}>
             {sub.status}{sub.pendingCancellation ? ' (ending)' : ''}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'churnRisk', header: 'Retention Risk',
+      render: sub => {
+        if (sub.churnRisk === 'none') return <span className="text-[11px] text-slate">—</span>;
+        return (
+          <span title={sub.churnRisk === 'high' ? 'Payment is currently failing' : 'Paused, or recovered from a recent failed payment'}>
+            <Badge color={sub.churnRisk === 'high' ? 'red' : 'yellow'} size="sm">
+              {sub.churnRisk === 'high' ? 'High risk' : 'At risk'}
+            </Badge>
           </span>
         );
       },

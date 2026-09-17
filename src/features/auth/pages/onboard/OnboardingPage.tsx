@@ -12,6 +12,7 @@ import {
   ShieldCheck, CreditCard,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
+import { PasteImageUrl } from '@/components/comman/ui';
 import { apiGetEnabledCurrencies, apiSuggestLocation, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import {
@@ -179,7 +180,7 @@ function Step1StoreInfo({ form, setForm, onNext }: {
 }) {
   const [preview, setPreview] = useState('');
   const canProceed = form.storeName.trim().length > 0;
-  const { upload: uploadLogo, uploading: logoUploading } = useUpload('public');
+  const { upload: uploadLogo, uploadUrl: uploadLogoUrl, uploading: logoUploading } = useUpload('public');
   const [currencyOptions, setCurrencyOptions] = useState<string[]>([]);
   // Tracks whether the seller has manually touched the currency picker —
   // the IP-detected suggestion below is only ever applied as a pre-fill, and
@@ -231,6 +232,11 @@ function Step1StoreInfo({ form, setForm, onNext }: {
       .catch(() => setPreview(''));
   };
 
+  const handleLogoUrlUploaded = (url: string) => {
+    setPreview(url);
+    setForm({ ...form, logo: url });
+  };
+
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <div className={clsx(NARROW_CONTENT, 'text-center mb-9')}>
@@ -250,11 +256,12 @@ function Step1StoreInfo({ form, setForm, onNext }: {
                 : <Camera size={28} className="text-brand-orange" />}
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} disabled={logoUploading} />
           </label>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold text-carbon mb-1">Store Logo</p>
             <p className="text-[12px] text-slate">PNG, JPG or WebP. Click to upload.</p>
             {logoUploading && <p className="text-[11px] text-brand-orange mt-1">Uploading…</p>}
             {!logoUploading && form.logo && <p className="text-[11px] text-success mt-1">✓ Logo uploaded</p>}
+            <PasteImageUrl upload={uploadLogoUrl} onUploaded={handleLogoUrlUploaded} className="mt-1.5" />
           </div>
         </div>
 

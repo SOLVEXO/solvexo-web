@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   apiAdminAnalyticsOverview,
   apiAdminAnalyticsRevenueOverTime,
+  apiAdminAnalyticsGrowthForecast,
   apiAdminAnalyticsRevenueBreakdown,
   apiAdminAnalyticsTopSellers,
   apiAdminAnalyticsSellerPerformance,
@@ -41,6 +42,12 @@ export function useAdminAnalyticsOverview(params: BaseAnalyticsParams) {
 
 export function useAdminAnalyticsRevenueOverTime(params: BaseAnalyticsParams) {
   return useAdminAnalyticsQuery(apiAdminAnalyticsRevenueOverTime, params);
+}
+
+// ── B2. Platform growth forecast ────────────────────────────────────────────────
+
+export function useAdminAnalyticsGrowthForecast(params: Pick<BaseAnalyticsParams, 'storeId' | 'sellerId'> = {}) {
+  return useAdminAnalyticsQuery(apiAdminAnalyticsGrowthForecast, params);
 }
 
 export function useAdminAnalyticsRevenueBreakdown(params: BaseAnalyticsParams) {

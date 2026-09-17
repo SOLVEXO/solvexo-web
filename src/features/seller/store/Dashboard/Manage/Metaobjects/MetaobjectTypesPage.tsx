@@ -164,7 +164,7 @@ function TypeFormModal({ storeId, editing, onClose, onSaved }: { storeId: string
  *  EXISTING resource — see `MetafieldDefinitionsPage.tsx`). The other half,
  *  each definition's real entries, is `MetaobjectEntriesPage`, reached by
  *  clicking a row here. */
-export function MetaobjectTypesPage() {
+export function MetaobjectTypesPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const navigate = useNavigate();
   const [definitions, setDefinitions] = useState<MetaobjectDefinitionSummary[] | null>(null);
@@ -224,15 +224,25 @@ export function MetaobjectTypesPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <StorePageHeader
-        title="Content Types"
-        subtitle="Define your own custom content — Team Members, Size Guides, anything with no product or category of its own."
-        actions={(
+      {!embedded && (
+        <StorePageHeader
+          title="Content Types"
+          subtitle="Define your own custom content — Team Members, Size Guides, anything with no product or category of its own."
+          actions={(
+            <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
+              New Type
+            </Button>
+          )}
+        />
+      )}
+
+      {embedded && definitions !== null && definitions.length > 0 && (
+        <div className="flex justify-end">
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
             New Type
           </Button>
-        )}
-      />
+        </div>
+      )}
 
       {definitions === null ? null : definitions.length === 0 ? (
         <EmptyState

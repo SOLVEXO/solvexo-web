@@ -1,7 +1,7 @@
-import { DollarSign, ShoppingCart, RotateCcw, Users } from 'lucide-react';
-import { MetricCard, Table, type TableColumn } from '@/components/comman/ui';
+import { DollarSign, ShoppingCart, RotateCcw, Users, TrendingUp } from 'lucide-react';
+import { MetricCard, Table, Badge, type TableColumn } from '@/components/comman/ui';
 import { LineChart, BarChart } from '@/components/comman/charts';
-import { useSellerAnalyticsOverview, useSellerAnalyticsRevenueOverTime, useSellerAnalyticsOrdersOverTime } from '@/hooks/seller/useSellerAnalytics';
+import { useSellerAnalyticsOverview, useSellerAnalyticsRevenueOverTime, useSellerAnalyticsOrdersOverTime, useSellerAnalyticsSalesForecast } from '@/hooks/seller/useSellerAnalytics';
 import type { SellerAnalyticsParams } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
@@ -14,6 +14,7 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod, currency }:
   const overview = useSellerAnalyticsOverview(params);
   const revenue = useSellerAnalyticsRevenueOverTime(params);
   const orders = useSellerAnalyticsOrdersOverTime(params);
+  const forecast = useSellerAnalyticsSalesForecast({ storeId: params.storeId });
 
   if (overview.error) {
     return <AnalyticsErrorState message={overview.error} onRetry={overview.refetch} />;
@@ -72,6 +73,42 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod, currency }:
           ? Array.from({ length: 8 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
           : metrics.map(m => <MetricCard key={m.label} {...m} />)}
       </div>
+
+      {forecast.data && (
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-brand-pale-orange flex items-center justify-center">
+              <TrendingUp size={16} className="text-brand-orange" />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-charcoal">Sales Forecast</p>
+              <p
+                className="text-[10.5px] text-slate"
+                title={
+                  forecast.data.method === 'trend_seasonal'
+                    ? "Based on this store's sales trend and weekly pattern"
+                    : 'Based on a simple recent-sales average — not enough history yet for a trend forecast'
+                }
+              >
+                {forecast.data.method === 'trend_seasonal' ? 'Trend-based' : 'Simple average'}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
+            <div>
+              <p className="text-[11px] text-slate">Next 7 days</p>
+              <p className="text-[15px] font-bold text-charcoal">{formatMoneyCompact(forecast.data.projectedNext7Days, currency)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-slate">Next 30 days</p>
+              <p className="text-[15px] font-bold text-charcoal">{formatMoneyCompact(forecast.data.projectedNext30Days, currency)}</p>
+            </div>
+          </div>
+          {forecast.data.method === 'simple_average' && (
+            <Badge color="orange" size="sm">Building up history</Badge>
+          )}
+        </div>
+      )}
 
       {compareToPreviousPeriod && d?.previousPeriod && (
         <div className="bg-white border border-bone rounded-[10px]">

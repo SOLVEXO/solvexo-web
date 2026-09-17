@@ -72,6 +72,14 @@ export function apiCreateStoreBanner(storeId: string, fields: CreateStoreBannerF
   );
 }
 
+/** The "paste a URL" alternative to `apiCreateStoreBanner` — image types only
+ *  (a Video banner still needs a real file upload). */
+export function apiCreateStoreBannerFromUrl(storeId: string, fields: CreateStoreBannerFields, imageUrl: string) {
+  return client.post<never, { success: boolean; message: string; data: StoreBanner }>(
+    ENDPOINTS.STORE_BANNER.CREATE_FROM_URL(storeId), { ...fields, imageUrl },
+  );
+}
+
 export function apiUpdateStoreBanner(storeId: string, bannerId: string, fields: UpdateStoreBannerFields) {
   return client.patch<never, { success: boolean; message: string; data: StoreBanner }>(
     ENDPOINTS.STORE_BANNER.UPDATE(storeId, bannerId), fields,

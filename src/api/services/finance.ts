@@ -188,6 +188,22 @@ export function apiGetFinanceDashboard(storeId: string) {
   return client.get<never, FinanceDashboard>(ENDPOINTS.FINANCE.SELLER.DASHBOARD(storeId));
 }
 
+// ── Payout forecast — real, deterministic (not a statistical guess): each
+// still-pending sale's own known clearing date decides which bucket it
+// falls into. See FinanceService.getPayoutForecast's own doc comment. ──────
+
+export interface PayoutForecastRow {
+  currency: string;
+  next7Days: number;
+  next14Days: number;
+  next30Days: number;
+  beyond30Days: number;
+}
+
+export function apiGetFinancePayoutForecast(storeId: string) {
+  return client.get<never, PayoutForecastRow[]>(ENDPOINTS.FINANCE.SELLER.PAYOUT_FORECAST(storeId));
+}
+
 // ── Transactions ──────────────────────────────────────────────────────────────
 export function apiGetFinanceTransactions(storeId: string, query: TransactionsQuery = {}) {
   return client.get<never, Paginated & { transactions: Transaction[] }>(
