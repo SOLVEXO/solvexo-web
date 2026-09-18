@@ -170,6 +170,8 @@ export const ENDPOINTS = {
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,
+    PRIVACY_REQUEST_SUBMIT:   (storeId: string) => `/api/store/public/${storeId}/privacy-requests`,
+    PRIVACY_REQUEST_COMPLETE: (storeId: string, requestId: string) => `/api/store/${storeId}/privacy-requests/${requestId}/complete`,
     VERIFY_PASSWORD: (storeId: string) => `/api/store/public/${storeId}/verify-password`,
     ROBOTS_TXT:    (storeId: string) => `/api/store/${storeId}/robots-txt`,
     // Solvexo's own single POS app — a single, already-published, PAID
@@ -699,6 +701,9 @@ export const ENDPOINTS = {
     LIST: (storeId: string) => `/api/staff/${storeId}`,
     UPDATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}`,
     DEACTIVATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}/deactivate`,
+    RESEND_INVITE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}/resend-invite`,
+    GET_INVITE: (token: string) => `/api/staff/invite/${token}`,
+    ACCEPT_INVITE: (token: string) => `/api/staff/invite/${token}/accept`,
     LIST_ROLES: (storeId: string) => `/api/staff/${storeId}/roles`,
     CREATE_ROLE: (storeId: string) => `/api/staff/${storeId}/roles`,
     UPDATE_ROLE: (storeId: string, roleId: string) => `/api/staff/${storeId}/roles/${roleId}`,

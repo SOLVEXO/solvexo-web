@@ -1,6 +1,5 @@
 import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
-import { ReferenceNav } from './ReferenceNav';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 import { scrollRootRef, scrollRootToTop, lenisRef } from '@/utils/scrollRoot';
 import { SmoothScroll } from '@/components/comman/motion/SmoothScroll';
@@ -62,7 +61,6 @@ export function RootLayout() {
       <AuthGateModal />
       <ToastContainer />
       <GoogleOneTapPrompt />
-      <ReferenceNav />
       {/* Eases wheel/touch input on the scroll container below instead of
          jumping the raw delta — the same Lenis smooth-scroll layer the
          reference design runs site-wide. Mounted once here so it wraps

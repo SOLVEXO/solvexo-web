@@ -149,13 +149,17 @@ export interface StaffMember {
   roleId: string | null;
   locationId: string | null;
   status: 'active' | 'inactive';
+  /** Null until this staff member accepts their invite and sets their own
+   *  password — see `apiResendStaffInvite`/the "Accept Invite" page. */
+  inviteAcceptedAt: string | null;
   createdAt: string;
 }
 
+// No `password` field — the seller never sets a staff member's password
+// (see StaffAcceptInvitePage.tsx / apiAcceptStaffInvite).
 export interface CreateStaffPayload {
   name: string;
   email: string;
-  password: string;
   role?: 'manager' | 'staff';
   roleId?: string;
   locationId?: string;
@@ -190,6 +194,27 @@ export function apiUpdateStaff(storeId: string, staffId: string, payload: Update
 
 export function apiDeactivateStaff(storeId: string, staffId: string) {
   return client.patch<never, ApiResponse<StaffMember>>(ENDPOINTS.STAFF.DEACTIVATE(storeId, staffId), {});
+}
+
+export function apiResendStaffInvite(storeId: string, staffId: string) {
+  return client.post<never, ApiResponse<null>>(ENDPOINTS.STAFF.RESEND_INVITE(storeId, staffId), {});
+}
+
+// ── Invite acceptance (public — no seller/staff session yet) ─────────────
+
+export interface StaffInviteInfo {
+  name: string;
+  email: string;
+  storeId: string;
+  storeName: string | null;
+}
+
+export function apiGetStaffInvite(token: string) {
+  return client.get<never, ApiResponse<StaffInviteInfo>>(ENDPOINTS.STAFF.GET_INVITE(token));
+}
+
+export function apiAcceptStaffInvite(token: string, password: string) {
+  return client.post<never, ApiResponse<{ storeId: string }>>(ENDPOINTS.STAFF.ACCEPT_INVITE(token), { password });
 }
 
 // ── Approvals queue ─────────────────────────────────────────────────────

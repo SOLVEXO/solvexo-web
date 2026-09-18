@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet, ShoppingBag, Palette, CreditCard, Truck, Globe2,
-  Check, ArrowRight, ChevronDown, ChevronUp,
+  Check, ArrowRight, ChevronDown, ChevronUp, ListChecks,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiGetOnboardingProgress, apiGetStorePlatformPlan } from '@/api/services/platformPlans';
@@ -163,33 +163,44 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
   if (!loaded || shippingZoneCount === null || doneCount === tasks.length) return null;
 
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden">
+    // self-start while collapsed — opts out of the parent grid's
+    // items-stretch when there's only a header to show, mirroring
+    // RecentActivityCard's own collapsed treatment, so neither card ever
+    // gets force-stretched into a tall card with an empty body.
+    <div className={`dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden flex flex-col ${collapsed ? 'self-start' : 'h-full'}`}>
+      {/* Same header shape (icon badge + title + inline subtitle + chevron,
+         one row, border only while expanded) as RecentActivityCard's own
+         header — so the two collapsed cards land on the exact same height
+         instead of one being taller because of a stacked two-line title. */}
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="w-full flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-[#f3f2ec] bg-transparent border-0 cursor-pointer text-left"
+        className={`w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-0 cursor-pointer text-left shrink-0 ${!collapsed ? 'border-b border-[#f3f2ec]' : ''}`}
       >
-        <div>
-          <p className="text-sm font-bold text-charcoal">Setup Guide</p>
-          <p className="text-[11px] text-slate mt-[2px]">{doneCount} of {tasks.length} done — finish setting up your store</p>
+        <div className="w-7 h-7 rounded-lg bg-brand-pale-orange text-brand-orange flex items-center justify-center shrink-0">
+          <ListChecks size={13} />
         </div>
-        {collapsed ? <ChevronDown size={16} className="text-slate shrink-0" /> : <ChevronUp size={16} className="text-slate shrink-0" />}
+        <div className="flex-1 min-w-0 flex items-baseline gap-2">
+          <p className="text-[13px] font-bold text-charcoal shrink-0">Setup Guide</p>
+          <span className="text-[11px] text-slate truncate">{doneCount} of {tasks.length} done</span>
+        </div>
+        {collapsed ? <ChevronDown size={15} className="text-slate shrink-0" /> : <ChevronUp size={15} className="text-slate shrink-0" />}
       </button>
 
       {!collapsed && (
         // Capped at 2 columns, not 3 — this card now always sits in a
-        // half-width column next to Quick Actions (see StoreDashboard.tsx),
+        // half-width column next to Recent Activity (see StoreDashboard.tsx),
         // and `lg:` is a viewport-width breakpoint, not a container-width
         // one, so a 3rd column would keep trying to squeeze into half the
         // page width and crowd every task's text/button.
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 content-start flex-1">
           {tasks.map(task => (
             <div
               key={task.id}
-              className={`flex flex-col gap-3 rounded-[14px] border p-4 transition-colors duration-150 ${task.done ? 'border-[#eae8de] bg-[#fafaf6]' : 'border-bone bg-white hover:border-brand-orange/30'}`}
+              className={`flex flex-col gap-2.5 rounded-xl border p-3 transition-colors duration-150 ${task.done ? 'border-[#eae8de] bg-[#fafaf6]' : 'border-bone bg-white hover:border-brand-orange/30'}`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 ${task.done ? 'bg-success-bg text-success' : 'bg-brand-pale-orange text-brand-orange'}`}>
-                  {task.done ? <Check size={16} /> : <task.Icon size={16} />}
+                <div className={`w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 ${task.done ? 'bg-success-bg text-success' : 'bg-brand-pale-orange text-brand-orange'}`}>
+                  {task.done ? <Check size={14} /> : <task.Icon size={14} />}
                 </div>
                 {task.manual && (
                   <button
@@ -202,16 +213,16 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-[13px] font-semibold leading-[1.3] ${task.done ? 'text-slate line-through' : 'text-charcoal'}`}>{task.label}</p>
-                <p className="text-[11.5px] text-slate mt-1 leading-[1.4]">{task.desc}</p>
+                <p className={`text-[12.5px] font-semibold leading-[1.3] ${task.done ? 'text-slate line-through' : 'text-charcoal'}`}>{task.label}</p>
+                <p className="text-[11px] text-slate mt-0.5 leading-[1.4]">{task.desc}</p>
               </div>
               <button
                 type="button"
                 onClick={() => navigate(`/store/${storeId}/${task.path}`)}
-                className="self-start flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[11.5px] font-semibold bg-cream border border-bone text-charcoal cursor-pointer transition-colors duration-150 hover:border-brand-orange/40 hover:bg-brand-pale-orange"
+                className="self-start flex items-center gap-1.5 px-2.5 py-[5px] rounded-lg text-[11px] font-semibold bg-cream border border-bone text-charcoal cursor-pointer transition-colors duration-150 hover:border-brand-orange/40 hover:bg-brand-pale-orange"
               >
                 {task.done ? 'View' : task.cta}
-                <ArrowRight size={11} />
+                <ArrowRight size={10} />
               </button>
             </div>
           ))}

@@ -42,6 +42,8 @@ export interface OrderStoreGroup {
   fulfillmentType: string;
   status:          string;
   subtotal:        number;
+  /** This store's own share of the order's tax — now real (was always 0). */
+  taxAmount?:      number;
   itemCount:       number;
   items:           OrderLineItem[];
   tracking?:       { carrier: string; trackingNumber: string; trackingUrl: string } | null;

@@ -35,6 +35,7 @@ const OnboardingEntry = lazy(() => import('@/features/auth/pages/onboard/Onboard
 // Remaining auth pages
 const AdminLoginPage     = lazy(() => import('@/features/auth/pages/admin/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
 const StaffLoginPage     = lazy(() => import('@/features/auth/pages/StaffLoginPage').then(m => ({ default: m.StaffLoginPage })));
+const StaffAcceptInvitePage = lazy(() => import('@/features/auth/pages/StaffAcceptInvitePage'));
 const PayInvoicePage     = lazy(() => import('@/features/buyer/pages/PayInvoicePage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const VerifyOTPPage      = lazy(() => import('@/features/auth/pages/VerifyOTPPage').then(m => ({ default: m.VerifyOTPPage })));
@@ -274,13 +275,12 @@ const mainRouter = createBrowserRouter([
           // hidden every path that led here. `getRoleRedirect`'s buyer/apex
           // fallback and `ProfileAvatar`'s buyer menu items were updated in
           // the same pass so nothing is left pointing at a deleted route —
-          // see those files' own comments. The actual page files under
-          // `features/buyer/pages/{Marketplace,CartPage,CheckoutPage,
-          // OrderSuccessPage,ProductDetail,EducationMarketplace,account/*,
-          // MyOrdersPage,MyReviewsPage,MySubscriptionsPage}` and
-          // `components/layouts/AccountLayout.tsx` are now unreferenced by
-          // any route — kept on disk only because this session couldn't
-          // delete files directly; safe to delete outright.
+          // see those files' own comments. The actual page files (Marketplace,
+          // CartPage, CheckoutPage, OrderSuccessPage, ProductDetail,
+          // EducationMarketplace, account/*, MyOrdersPage, MyReviewsPage,
+          // MySubscriptionsPage, and components/layouts/AccountLayout.tsx)
+          // have since been deleted outright — they're gone from disk, not
+          // just unlinked.
         ],
       },
 
@@ -294,6 +294,7 @@ const mainRouter = createBrowserRouter([
       { path: '/login',           element: <LoginPage /> },
       { path: '/admin/login',     element: <AdminLoginPage /> },
       { path: '/staff-login/:storeId', element: <StaffLoginPage /> },
+      { path: '/staff-invite/:token', element: <StaffAcceptInvitePage /> },
       { path: '/register',        element: <RegisterPage /> },
       // Alias — visitors/marketing links typing/using the equally-common
       // "/signup" spelling used to silently fall through to the catch-all
@@ -341,7 +342,7 @@ const mainRouter = createBrowserRouter([
           // only ever rendered embedded, as this hub's "General" tab.
           { path: 'settings',                         element: <SettingsHub /> },
           { path: 'staff',                            element: <StoreStaff /> },
-          { path: 'account',                          element: <SellerSettings variant="store" /> },
+          { path: 'account',                          element: <SellerSettings /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },
           { path: 'files',                            element: <FilesLibrary /> },

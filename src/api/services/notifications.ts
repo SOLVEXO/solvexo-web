@@ -45,6 +45,7 @@ export interface NotificationPreferenceData {
   _id:          string;
   userId:       string;
   role:         'user' | 'seller';
+  storeId:      string | null;
   prefs:        NotificationPreferenceFlags;
   pushEnabled:  boolean;
   emailEnabled: boolean;
@@ -75,12 +76,23 @@ export function apiGetUnreadCount(storeId?: string) {
   return client.get<never, ApiResponse<{ unreadCount: number }>>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT, { params });
 }
 
-export function apiGetPreferences() {
-  return client.get<never, ApiResponse<NotificationPreferenceData>>(ENDPOINTS.NOTIFICATIONS.PREFERENCES);
+/** `storeId` omitted = the account-wide preferences row (every buyer, plus
+ *  the seller's own cross-store pages); pass a real store id from inside
+ *  that store's workspace so each store keeps its own independent
+ *  preferences (see backend NotificationPreference.storeId's doc comment). */
+export function apiGetPreferences(storeId?: string | null) {
+  const params: Record<string, string> = {};
+  if (storeId) params.storeId = storeId;
+  return client.get<never, ApiResponse<NotificationPreferenceData>>(ENDPOINTS.NOTIFICATIONS.PREFERENCES, { params });
 }
 
-export function apiUpdatePreferences(dto: Partial<NotificationPreferenceFlags> & { pushEnabled?: boolean; emailEnabled?: boolean }) {
-  return client.patch<never, ApiResponse<NotificationPreferenceData>>(ENDPOINTS.NOTIFICATIONS.UPDATE_PREFERENCES, dto);
+export function apiUpdatePreferences(
+  dto: Partial<NotificationPreferenceFlags> & { pushEnabled?: boolean; emailEnabled?: boolean },
+  storeId?: string | null,
+) {
+  const params: Record<string, string> = {};
+  if (storeId) params.storeId = storeId;
+  return client.patch<never, ApiResponse<NotificationPreferenceData>>(ENDPOINTS.NOTIFICATIONS.UPDATE_PREFERENCES, dto, { params });
 }
 
 export function apiRegisterDeviceToken(fcmToken: string, platform: string) {

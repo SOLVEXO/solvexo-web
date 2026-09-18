@@ -3,6 +3,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { Link2 } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
+import { apiSubmitPrivacyRequest } from '@/api/services/store';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { novaTheme as t } from '../theme.config';
 
@@ -36,6 +37,24 @@ export function NovaFooter() {
       .then(res => setFooterPages(res.data.filter(p => p.showInFooter)))
       .catch(() => setFooterPages([]));
   }, [store.storeId]);
+  // Real Customer-Privacy "Do Not Sell" request tool — CCPA-style, opt-in via
+  // `Store.showDoNotSellLink` (Settings → Privacy). Same as AtelierFooter's
+  // own doc comment: a genuine submit action, not just a disclosure — the
+  // seller sees and resolves each request from that same settings tab.
+  const [showDoNotSell, setShowDoNotSell] = useState(false);
+  const [dnsEmail, setDnsEmail] = useState('');
+  const [dnsStatus, setDnsStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const submitDoNotSell = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!dnsEmail.trim() || dnsStatus === 'loading') return;
+    setDnsStatus('loading');
+    try {
+      await apiSubmitPrivacyRequest(store.storeId, dnsEmail.trim());
+      setDnsStatus('done');
+    } catch {
+      setDnsStatus('error');
+    }
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,8 +72,10 @@ export function NovaFooter() {
   const columnBlocks = footerBlocks.filter(b => b.type === 'footer_column');
   const socialBlocks = footerBlocks.filter(b => b.type === 'social_link');
   const copyrightBlock = footerBlocks.find(b => b.type === 'copyright_text');
+  const privacyPage = footerPages.find(p => p.policyType === 'privacy_policy');
 
   return (
+    <>
     <footer style={{ background: t.colors.ink, color: '#EDEBFF' }}>
       <div
         className="mx-auto grid gap-10"
@@ -114,6 +135,7 @@ export function NovaFooter() {
                 <Link to="/account" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>My Account</Link>
                 <Link to="/login" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>Sign In</Link>
                 {store.contactEmail && <a href={`mailto:${store.contactEmail}`} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{store.contactEmail}</a>}
+                {store.contactPhone && <a href={`tel:${store.contactPhone}`} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{store.contactPhone}</a>}
               </div>
             </div>
           </>
@@ -170,10 +192,67 @@ export function NovaFooter() {
                   {(p.policyType && POLICY_LABELS[p.policyType]) || p.title}
                 </Link>
               ))}
+              {store.showDoNotSellLink && (
+                <button
+                  type="button"
+                  onClick={() => setShowDoNotSell(true)}
+                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#ABA6C9', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                >
+                  Do Not Sell My Personal Information
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
     </footer>
+    {showDoNotSell && (
+      <div
+        role="dialog" aria-modal="true"
+        onClick={() => setShowDoNotSell(false)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+      >
+        <div onClick={e => e.stopPropagation()} style={{ background: '#fff', color: t.colors.ink, maxWidth: '420px', width: '100%', borderRadius: t.radius.md, padding: '24px' }}>
+          <p style={{ fontFamily: t.fonts.display, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>Your Privacy Choices</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#5A5852', lineHeight: 1.6, marginBottom: '16px' }}>
+            {store.name} does not sell your personal information to third parties. You can still submit a formal request below and we'll confirm it in writing.{privacyPage && (
+              <> See our <Link to={`/${privacyPage.slug}`} onClick={() => setShowDoNotSell(false)} style={{ color: t.colors.ink, textDecoration: 'underline' }}>Privacy Policy</Link> for more details.</>
+            )}
+          </p>
+          {dnsStatus === 'done' ? (
+            <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#3C7A4B', marginBottom: '16px' }}>Request submitted — thank you.</p>
+          ) : (
+            <form onSubmit={submitDoNotSell} style={{ marginBottom: '16px' }}>
+              <label htmlFor="nova-dns-email" style={{ display: 'block', fontFamily: t.fonts.body, fontSize: '11.5px', color: '#5A5852', marginBottom: '6px' }}>Your email</label>
+              <input
+                id="nova-dns-email"
+                type="email"
+                required
+                value={dnsEmail}
+                onChange={e => setDnsEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, width: '100%', boxSizing: 'border-box', border: '1.5px solid #E4E1D6', borderRadius: t.radius.sm, padding: '10px 12px', marginBottom: '8px' }}
+              />
+              <button
+                type="submit"
+                disabled={dnsStatus === 'loading'}
+                style={{ padding: '9px 16px', borderRadius: t.radius.sm, border: 'none', background: t.colors.ink, color: '#fff', fontSize: '13px', fontWeight: 600, cursor: dnsStatus === 'loading' ? 'wait' : 'pointer', opacity: dnsStatus === 'loading' ? 0.7 : 1 }}
+              >
+                {dnsStatus === 'loading' ? 'Submitting…' : 'Submit Request'}
+              </button>
+              {dnsStatus === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: '#B3261E', marginTop: '8px' }}>Something went wrong — try again.</p>}
+            </form>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowDoNotSell(false)}
+            style={{ padding: '9px 16px', borderRadius: t.radius.sm, border: `1.5px solid #E4E1D6`, background: 'transparent', color: t.colors.ink, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -42,27 +42,45 @@ declare global {
   }
 }
 
+/** Real Customer-Privacy consent categories (Shopify's own cookie-banner
+ *  "Manage Preferences" model — Necessary is always on/never asked about;
+ *  Analytics and Marketing are the two real, separately-consentable
+ *  buckets, and every pixel below is mapped to exactly one). Callers that
+ *  never enabled the cookie banner (or a store where it's disabled) pass
+ *  `{ analytics: true, marketing: true }` — the old unconditional behavior. */
+export interface CookieConsentCategories {
+  analytics: boolean;
+  marketing: boolean;
+}
+
 let loadedForSession = false;
 let activeSettings: TrackingPixelIds | null = null;
+let activeConsent: CookieConsentCategories = { analytics: true, marketing: true };
 
-/** Injects the base script for each connected platform, once per page
- *  session. Safe to call on every storefront page load — guarded so a
- *  second call (e.g. a client-side route change re-mounting the layout)
- *  never double-injects. Does not itself fire PageView; call
+/** Injects the base script for each connected platform whose CATEGORY is
+ *  consented, once per page session. Real Analytics/Marketing split, not
+ *  cosmetic: Google Analytics only loads under `consent.analytics`;
+ *  Facebook/Google Ads/TikTok (all ad-retargeting platforms) only load
+ *  under `consent.marketing`. Safe to call on every storefront page load —
+ *  guarded so a second call (e.g. a client-side route change re-mounting
+ *  the layout) never double-injects. Does not itself fire PageView; call
  *  `trackPixelEvent('PageView')` right after this returns. */
-export function loadPixelScripts(settings: TrackingPixelIds): void {
+export function loadPixelScripts(settings: TrackingPixelIds, consent: CookieConsentCategories = { analytics: true, marketing: true }): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   activeSettings = settings;
+  activeConsent = consent;
   if (loadedForSession) return;
   loadedForSession = true;
 
-  if (settings.facebookPixelId) {
+  if (consent.marketing && settings.facebookPixelId) {
     injectFacebookPixel(settings.facebookPixelId);
   }
-  if (settings.googleAnalyticsId || settings.googleAdsId) {
-    injectGoogleGtag(settings.googleAnalyticsId, settings.googleAdsId);
+  const analyticsId = consent.analytics ? settings.googleAnalyticsId : null;
+  const adsId = consent.marketing ? settings.googleAdsId : null;
+  if (analyticsId || adsId) {
+    injectGoogleGtag(analyticsId, adsId);
   }
-  if (settings.tiktokPixelId) {
+  if (consent.marketing && settings.tiktokPixelId) {
     injectTikTokPixel(settings.tiktokPixelId);
   }
 }
@@ -159,7 +177,7 @@ export function trackPixelEvent(eventName: PixelEventName, params: PixelEventPar
       currency: params.currency,
       items: params.contentIds,
     });
-    if (eventName === 'Purchase' && activeSettings?.googleAdsId && activeSettings?.googleAdsConversionLabel) {
+    if (eventName === 'Purchase' && activeConsent.marketing && activeSettings?.googleAdsId && activeSettings?.googleAdsConversionLabel) {
       window.gtag('event', 'conversion', {
         send_to: `${activeSettings.googleAdsId}/${activeSettings.googleAdsConversionLabel}`,
         value: params.value,

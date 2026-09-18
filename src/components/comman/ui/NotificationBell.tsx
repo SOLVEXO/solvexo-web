@@ -84,12 +84,12 @@ export function NotificationBell() {
 
   const handleViewAll = () => {
     setIsOpen(false);
-    // Inside a store's own dashboard, stay there — a seller's account/
-    // notification settings live at /store/:storeId/account now, never a
-    // separate cross-store "seller dashboard" page.
+    // Inside a store's own dashboard, stay there — Notifications is its own
+    // real Settings tab (SettingsHub.tsx), not buried inside the seller's
+    // personal Account/profile page.
     const storeMatch = pathname.match(/^\/store\/([^/]+)/);
     if (storeMatch) {
-      navigate(`/store/${storeMatch[1]}/account?tab=notifications`);
+      navigate(`/store/${storeMatch[1]}/settings?tab=notifications`);
       return;
     }
     const user = TokenStorage.getUser<{ role?: 'user' | 'seller' | 'admin' }>();

@@ -2,14 +2,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
-  CheckCircle, Clock, Globe, Copy, ExternalLink,
-  ArrowRight, Settings, Sparkles, BarChart2,
-  ClipboardList, Megaphone, AlertTriangle, Lightbulb,
+  CheckCircle, Clock, Globe, ExternalLink,
+  ArrowRight, Settings, AlertTriangle, Lightbulb,
+  Megaphone, ClipboardList, Plus, History, Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
-import { AreaChart, DonutChart } from '@/components/comman/charts';
-import { MetricCard, SkeletonBox, Button, FilterDropdown } from '@/components/comman/ui';
+import { AreaChart } from '@/components/comman/charts';
+import { MetricCard, SkeletonBox, Button, FilterDropdown, CopyIconButton } from '@/components/comman/ui';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday, apiSellerAnalyticsSalesForecast,
   type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData, type SellerSalesForecastData,
@@ -21,6 +21,8 @@ import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCapture
 import { apiUpdateStore } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetFinanceDashboard, type FinanceWallet } from '@/api/services/finance';
+import { apiGetActivityLog, type ActivityLogEntry, type ActivityCategory } from '@/api/services/activityLog';
+import { timeAgo } from '@/utils/timeAgo';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { DASHBOARD_METRIC_CATALOG, DEFAULT_DASHBOARD_METRICS } from './dashboardMetrics.const';
 import { Sliders, Check as CheckIcon, ChevronUp, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
@@ -42,7 +44,6 @@ interface StoreMetrics {
   openDisputeCount: number;
   highRiskOrderCount: number;
   awaitingCaptureCount: number;
-  inventoryBreakdown: { inStock: number; lowStock: number; outOfStock: number };
   entitlements: EntitlementsSummary | null;
   salesForecast: SellerSalesForecastData | null;
   primaryWallet: FinanceWallet | null;
@@ -72,9 +73,9 @@ function useStoreDashboardMetrics(storeId: string) {
       apiGetOpenDisputeCount(storeId),
       apiGetHighRiskOrderCount(storeId),
       apiGetAwaitingCaptureCount(storeId),
-      // Real plan-usage progress bars — same entitlements data Billing
-      // Center already shows, surfaced here too so "what's my overall
-      // status" doesn't require leaving the dashboard.
+      // Real plan-usage data — same entitlements Billing Center already
+      // shows. Only ever surfaced here as a contextual warning when a limit
+      // is genuinely close, never as a permanent card (see getUsageWarning).
       apiGetStoreEntitlements(storeId).catch(() => null),
       // Both best-effort — a fresh store with no sales history yet, or a
       // seller who hasn't touched Finance, should never block the rest of
@@ -95,11 +96,6 @@ function useStoreDashboardMetrics(storeId: string) {
           openDisputeCount: disputesRes.data.count,
           highRiskOrderCount: riskRes.data.count,
           awaitingCaptureCount: captureRes.data.count,
-          inventoryBreakdown: {
-            inStock: inventoryRes.data.stats.inStock,
-            lowStock: inventoryRes.data.stats.lowStock,
-            outOfStock: inventoryRes.data.stats.outOfStock,
-          },
           entitlements: (entitlementsRes as any)?.data ?? null,
           salesForecast: (forecastRes as any)?.data ?? null,
           primaryWallet: (financeRes as any)?.wallets?.[0] ?? null,
@@ -113,272 +109,99 @@ function useStoreDashboardMetrics(storeId: string) {
   return { metrics, loading, error, refetch };
 }
 
-// ── Badge style maps ───────────────────────────────────────────────────────────
-const planStyles: Record<string, { bg: string; color: string }> = {
-  starter:      { bg: '#EAF0FB', color: '#2156A8' },
-  professional: { bg: '#EAF7EF', color: '#1E7A3C' },
-  enterprise:   { bg: '#F5F0FF', color: '#7C3AED' },
-};
-const typeStyles: Record<string, { bg: string; color: string }> = {
-  creator: { bg: '#FFF4E5', color: '#B36200' },
-  seller:  { bg: '#EAF0FB', color: '#2156A8' },
-  brand:   { bg: '#F5F0FF', color: '#7C3AED' },
-};
-
-// ── Store Info Card ───────────────────────────────────────────────────────────
-function StoreInfoCard() {
-  const navigate = useNavigate();
-  const { store, storeId } = useStoreWorkspace();
-  const [copied, setCopied] = useState(false);
-
-  const statusColor = store?.status === 'active' ? '#22C55E' : '#8C8A82';
-  const StatusIcon  = store?.status === 'active' ? CheckCircle : Clock;
-  const planStyle   = planStyles[store?.plan ?? ''] ?? { bg: '#F0EEE6', color: '#5A5852' };
-  const typeStyle   = typeStyles[store?.sellerType ?? ''] ?? { bg: '#F0EEE6', color: '#5A5852' };
-
-  const handleCopy = () => {
-    if (store?.slug) {
-      navigator.clipboard.writeText(`/${store.slug}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    }
-  };
-
-  return (
-    <div className="relative surface-panel surface-panel-interactive rounded-2xl flex flex-col h-full overflow-hidden">
-      {/* Slim brand-colored top edge — a small, consistent "this is your
-         store's own card" marker without a heavy banner. */}
-      <div className="h-[3px] bg-gradient-to-r from-brand-orange via-brand-orange to-brand-pale-orange shrink-0" />
-
-      {/* Logo + name + badges */}
-      <div className="px-5 pt-5 pb-4 border-b border-[#f3f2ec]">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-[10px] bg-brand-pale-orange border border-[#eae8de] flex items-center justify-center overflow-hidden shrink-0">
-            {store?.logo
-              ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
-              : <Globe size={18} className="text-brand-orange" />}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[14px] font-bold text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
-              {store?.name ?? '—'}
-            </p>
-            <p className="text-[11px] text-slate mt-[2px]">Store Workspace</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-[6px]">
-          <span
-            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-[3px] rounded-full"
-            style={{ background: statusColor + '18', color: statusColor }}
-          >
-            <StatusIcon size={9} />
-            {store?.status ?? '—'}
-          </span>
-          <span
-            className="text-[10px] font-semibold px-2 py-[3px] rounded-full"
-            style={planStyle}
-          >
-            {store?.plan ?? '—'} plan
-          </span>
-          <span
-            className="text-[10px] font-semibold px-2 py-[3px] rounded-full capitalize"
-            style={typeStyle}
-          >
-            {store?.sellerType ?? '—'}
-          </span>
-        </div>
-      </div>
-
-      {/* URL + Product Types */}
-      <div className="px-5 py-4 border-b border-[#f3f2ec] flex flex-col gap-3">
-        <div>
-          <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em] mb-1.5">Store URL</p>
-          <div className="flex items-center gap-2 bg-[#f7f6f1] rounded-lg px-[10px] py-[8px] border border-[#edebd8]">
-            <span className="flex-1 text-[12px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
-              /{store?.slug ?? '…'}
-            </span>
-            <button
-              onClick={handleCopy}
-              className="shrink-0 border-0 bg-transparent p-0 cursor-pointer transition-transform active:scale-90"
-              title="Copy URL"
-            >
-              <Copy size={12} className={copied ? 'text-[#22c55e]' : 'text-slate'} />
-            </button>
-          </div>
-          {copied && <p className="text-[10px] text-[#22c55e] mt-1 font-medium">Copied!</p>}
-        </div>
-
-        {(store?.productTypes?.length ?? 0) > 0 && (
-          <div>
-            <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em] mb-1.5">
-              Product Types
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {store!.productTypes!.map(pt => (
-                <span
-                  key={pt}
-                  className="text-[10px] font-medium text-charcoal bg-bone border border-bone px-[8px] py-[3px] rounded-[5px] capitalize"
-                >
-                  {pt.replace(/_/g, ' ')}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Action links */}
-      <div className="px-3 py-3 mt-auto flex flex-col gap-0.5">
-        <button
-          onClick={() => navigate(`/store/${storeId}/settings`)}
-          className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal bg-transparent border-0 cursor-pointer text-left transition-colors duration-150 hover:bg-[#f7f6f1] w-full"
-        >
-          <Settings size={13} className="text-slate shrink-0" />
-          Store Settings
-          <ArrowRight size={11} className="text-dark-text ml-auto" />
-        </button>
-        {store?.slug && (
-          <a
-            href={getStorefrontUrl(store.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal no-underline transition-colors duration-150 hover:bg-[#f7f6f1]"
-          >
-            <ExternalLink size={13} className="text-slate shrink-0" />
-            View Live Store
-            <ExternalLink size={10} className="text-dark-text ml-auto" />
-          </a>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Quick Actions Row ─────────────────────────────────────────────────────────
-interface QuickAction { Icon: LucideIcon; label: string; path: string; gradient: string; iconColor: string }
-
-function QuickActionsRow({ storeId }: { storeId: string }) {
-  const navigate = useNavigate();
-
-  const actions: QuickAction[] = [
-    { Icon: ShoppingBag,   label: 'Add Product', path: 'products/add', gradient: 'from-brand-pale-orange to-brand-pale-orange', iconColor: '#D97757' },
-    { Icon: Package,       label: 'View Orders', path: 'orders',        gradient: 'from-[#f3e8ff] to-[#ede0fe]',         iconColor: '#8B5CF6' },
-    { Icon: BarChart2,     label: 'Analytics',   path: 'analytics',     gradient: 'from-info-bg to-[#dcebfa]',         iconColor: '#0EA5E9' },
-    { Icon: ClipboardList, label: 'Inventory',   path: 'inventory',     gradient: 'from-[#eaf7ef] to-[#dff3e7]',         iconColor: '#22C55E' },
-    { Icon: Megaphone,     label: 'Marketing',   path: 'marketing',     gradient: 'from-[#fff4e5] to-[#feebcf]',         iconColor: '#F59E0B' },
-    { Icon: Sparkles,      label: 'AI Studio',   path: 'ai/studio',     gradient: 'from-cream to-bone',                  iconColor: '#A855F7' },
-  ];
-
-  return (
-    <div className="surface-panel surface-panel-interactive rounded-2xl">
-      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec]">
-        <p className="text-sm font-bold text-charcoal">Quick Actions</p>
-      </div>
-      <div className="px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {actions.map(({ Icon, label, path, gradient, iconColor }) => (
-          <button
-            key={label}
-            onClick={() => navigate(`/store/${storeId}/${path}`)}
-            className={`group flex flex-col items-center gap-2.5 py-5 px-2 rounded-[16px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-[0_8px_20px_rgba(20,20,19,0.06)] w-full`}
-          >
-            <div
-              className="w-10 h-10 rounded-[12px] bg-white/80 border border-white/60 flex items-center justify-center transition-transform duration-normal ease-spring group-hover:scale-110 group-hover:-rotate-3"
-              style={{ color: iconColor }}
-            >
-              <Icon size={17} />
-            </div>
-            <span className="text-[11px] font-semibold text-charcoal text-center leading-[1.3]">{label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Needs Attention ───────────────────────────────────────────────────────────
 // Real, actionable signals already computed by existing endpoints (low-stock
-// threshold from Phase 5, order stats, return stats) — surfaced as one glance
-// list instead of a seller having to separately check Inventory/Orders/
-// Returns to notice something needs action. Renders nothing extra when
-// everything's caught up, rather than an empty placeholder card.
-interface AttentionItem { label: string; count: number; path: string; Icon: LucideIcon; color: string }
+// threshold from Phase 5, order stats, return stats). Every one of the 6
+// signals is always shown — flagged as a colored, clickable row when it
+// needs action, or as a quiet green "all fine" row when it doesn't. This
+// gives a genuine full status picture (not just problems) and fills the
+// card naturally, instead of either one lonely row floating in a mostly
+// empty box, or a single vague "all caught up" placeholder.
+interface AttentionItem { label: string; okLabel: string; count: number; path: string; Icon: LucideIcon; color: string }
 
 function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount, awaitingCaptureCount }: {
   storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number; awaitingCaptureCount: number;
 }) {
   const navigate = useNavigate();
-  const items: AttentionItem[] = [
-    // Mirrors Shopify's real manual-capture "Capture a payment" order task —
-    // only ever non-zero for a Store.paymentCaptureMethod === 'manual' store
-    // with a genuinely authorized-but-uncaptured order (PaymentService.getAwaitingCaptureCount).
-    { label: 'Order(s) awaiting payment capture', count: awaitingCaptureCount, path: 'orders', Icon: AlertTriangle, color: '#B45309' },
-    { label: 'Order(s) awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6' },
-    // Mirrors Shopify Home's "Review high-risk orders" order task — real
-    // Stripe Radar fraud-risk signal (PaymentService.getHighRiskOrderCount),
-    // not an invented score.
-    { label: 'Order(s) flagged as high-risk — review before shipping', count: highRiskOrderCount, path: 'orders', Icon: AlertTriangle, color: '#B91C1C' },
-    // Mirrors Shopify Home's "Submit evidence for chargebacks" order task —
-    // real Stripe dispute-status tracking (PaymentService.getOpenDisputeCount),
-    // shown only while genuinely awaiting the seller's response (not merely
-    // "under review", where there's nothing left to do).
-    { label: 'Order(s) with an open payment dispute', count: openDisputeCount, path: 'disputes', Icon: AlertTriangle, color: '#DC2626' },
-    { label: 'Product(s) low on stock', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B' },
-    { label: 'Return request(s) awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444' },
-  ].filter(i => i.count > 0);
-
-  if (items.length === 0) {
-    return (
-      <div className="dash-section-enter surface-panel rounded-2xl px-5 py-4 flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-success-bg text-success flex items-center justify-center shrink-0">
-          <CheckCircle size={14} />
-        </div>
-        <p className="text-[13px] font-medium text-charcoal">All caught up — nothing needs your attention right now.</p>
-      </div>
-    );
-  }
+  // Collapsible, same header pattern as SetupGuideCard/RecentActivityCard.
+  const [collapsed, setCollapsed] = useState(false);
+  // Seller-friendly phrasing — "N need X", not "Order(s) with an open Y" —
+  // same real signals, easier to scan at a glance.
+  const allItems: AttentionItem[] = [
+    { label: 'order(s) need payment capture', okLabel: 'No payments awaiting capture', count: awaitingCaptureCount, path: 'orders', Icon: AlertTriangle, color: '#B45309' },
+    { label: 'order(s) need fulfillment', okLabel: 'No orders awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6' },
+    { label: 'order(s) flagged high-risk — review before shipping', okLabel: 'No high-risk orders', count: highRiskOrderCount, path: 'orders', Icon: AlertTriangle, color: '#B91C1C' },
+    { label: 'payment dispute(s) need a response', okLabel: 'No open disputes', count: openDisputeCount, path: 'disputes', Icon: AlertTriangle, color: '#DC2626' },
+    { label: 'product(s) low on stock', okLabel: 'Stock levels look healthy', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B' },
+    { label: 'return(s) need review', okLabel: 'No returns awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444' },
+  ];
+  const flagged = allItems.filter(i => i.count > 0);
+  const clear = allItems.filter(i => i.count === 0);
+  const totalCount = flagged.reduce((s, i) => s + i.count, 0);
+  const allClear = flagged.length === 0;
 
   return (
-    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl overflow-hidden">
-      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-error-bg text-error flex items-center justify-center shrink-0">
-          <AlertTriangle size={14} />
+    // self-start while collapsed — same "opt out of items-stretch" trick as
+    // SetupGuideCard/RecentActivityCard, so a collapsed card never gets
+    // force-stretched into a tall empty box. Expanded, the full 6-row
+    // checklist naturally fills close to the Revenue chart's height.
+    // No surface-panel-interactive — the whole card isn't a single click
+    // target (only the header toggle + individual rows are), so a
+    // whole-card hover-lift read as a visual glitch rather than a hint.
+    <div className={`dash-section-enter surface-panel rounded-2xl overflow-hidden flex flex-col ${collapsed ? 'self-start' : 'h-full'}`}>
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className={`w-full flex items-center gap-2.5 px-5 py-3 bg-transparent border-0 cursor-pointer text-left shrink-0 ${!collapsed ? 'border-b border-[#f3f2ec]' : ''}`}
+      >
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${allClear ? 'bg-success-bg text-success' : 'bg-error-bg text-error'}`}>
+          {allClear ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
         </div>
         <p className="text-sm font-bold text-charcoal">Needs Attention</p>
-      </div>
-      <div className="flex flex-col divide-y divide-[#f3f2ec]">
-        {items.map(item => (
-          <button
-            key={item.label}
-            onClick={() => navigate(`/store/${storeId}/${item.path}`)}
-            className="flex items-center gap-3 px-5 py-3 bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 hover:bg-[#f7f6f1]"
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: item.color + '18', color: item.color }}>
-              <item.Icon size={14} />
+        <span className={`ml-auto text-[11px] font-semibold px-2 py-[2px] rounded-full ${allClear ? 'text-success bg-success-bg' : 'text-slate bg-cream'}`}>
+          {allClear ? 'All clear' : totalCount}
+        </span>
+        {collapsed ? <ChevronDownIcon size={15} className="text-slate shrink-0" /> : <ChevronUp size={15} className="text-slate shrink-0" />}
+      </button>
+      {!collapsed && (
+        <div className="flex flex-col divide-y divide-[#f3f2ec]">
+          {flagged.map(item => (
+            <button
+              key={item.label}
+              onClick={() => navigate(`/store/${storeId}/${item.path}`)}
+              className="flex items-center gap-3 px-5 py-3 bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 hover:bg-[#f7f6f1]"
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: item.color + '18', color: item.color }}>
+                <item.Icon size={14} />
+              </div>
+              <span className="flex-1 text-[13px] font-medium text-charcoal">{item.count} {item.label}</span>
+              <ArrowRight size={14} className="text-slate shrink-0" />
+            </button>
+          ))}
+          {clear.map(item => (
+            <div key={item.label} className="flex items-center gap-3 px-5 py-3">
+              <div className="w-8 h-8 rounded-lg bg-success-bg text-success flex items-center justify-center shrink-0">
+                <CheckCircle size={14} />
+              </div>
+              <span className="flex-1 text-[13px] text-slate">{item.okLabel}</span>
             </div>
-            <span className="flex-1 text-[13px] font-medium text-charcoal">{item.count} {item.label}</span>
-            <ArrowRight size={14} className="text-slate shrink-0" />
-          </button>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Insights ──────────────────────────────────────────────────────────────────
-// Mirrors Shopify Home's "Insights" section (their own docs describe it as
-// "data-driven observations about your store's performance", capped at a
-// handful shown at once) — deliberately NOT an AI/LLM-generated feature
-// (Solvexo has no dashboard-recommendation engine, and faking one with a
-// canned "Sidekick"-style assistant would be exactly the kind of decorative,
-// non-functional UI this project's standards explicitly reject). Every
-// insight here is a plain rule evaluated against real period-over-period
-// percentages the backend already computes for `SellerOverviewData`
-// (`totalRevenueChangePercent`, `avgOrderValueChangePercent`,
-// `refundRatePercent`, `repeatBuyerTrend`) — nothing new was fetched to
-// build this, and nothing here can ever show a number the seller couldn't
-// already find on the Analytics page themselves.
+// ── Insights ("Things worth knowing") ─────────────────────────────────────────
+// Mirrors Shopify Home's own "Insights" section (data-driven observations,
+// capped at a handful shown at once) — deliberately NOT an AI/LLM-generated
+// feature. Every insight is a plain rule evaluated against real
+// period-over-period numbers the backend already computes for
+// `SellerOverviewData` (or, for the last rule, the same trend+seasonality
+// sales forecast already fetched for this page) — nothing new is computed
+// here, and nothing shown can't already be found on the Analytics page.
 interface Insight { text: string; tone: 'positive' | 'negative' | 'neutral'; magnitude: number }
 
-function buildInsights(overview: SellerOverviewData): Insight[] {
+function buildInsights(overview: SellerOverviewData, forecast?: SellerSalesForecastData | null, currency?: string | null): Insight[] {
   const insights: Insight[] = [];
 
   if (overview.totalRevenueChangePercent !== null && Math.abs(overview.totalRevenueChangePercent) >= 5) {
@@ -424,13 +247,23 @@ function buildInsights(overview: SellerOverviewData): Insight[] {
     });
   }
 
+  // Only the real trend+seasonality forecast (never the low-data "simple
+  // average" fallback) counts as a genuine trend worth calling out here.
+  if (forecast && forecast.method === 'trend_seasonal' && forecast.projectedNext7Days > 0) {
+    insights.push({
+      tone: 'positive',
+      magnitude: 4,
+      text: `Your sales are trending toward ${formatMoneyCompact(forecast.projectedNext7Days, currency)} over the next 7 days.`,
+    });
+  }
+
   // Shopify caps this at a handful shown at once so it reads as "worth your
   // attention," not a wall of stats — same reasoning here, biggest-magnitude first.
   return insights.sort((a, b) => b.magnitude - a.magnitude).slice(0, 3);
 }
 
-function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
-  const insights = buildInsights(overview);
+function InsightsStrip({ overview, forecast, currency }: { overview: SellerOverviewData; forecast?: SellerSalesForecastData | null; currency?: string | null }) {
+  const insights = buildInsights(overview, forecast, currency);
   if (insights.length === 0) return null;
 
   const toneStyle: Record<Insight['tone'], { bg: string; color: string; Icon: LucideIcon }> = {
@@ -446,23 +279,19 @@ function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
           <Lightbulb size={14} />
         </div>
         <div>
-          <p className="text-sm font-bold text-charcoal">Insights</p>
-          <p className="text-[11px] text-slate mt-[1px]">A few things worth noticing about the last 30 days</p>
+          <p className="text-sm font-bold text-charcoal">Things worth knowing</p>
+          <p className="text-[11px] text-slate mt-[1px]">A few observations from the last 30 days</p>
         </div>
       </div>
-      <div className="flex flex-col divide-y divide-[#f3f2ec]">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4">
         {insights.map((insight, i) => {
           const { bg, color, Icon } = toneStyle[insight.tone];
           return (
-            <div
-              key={i}
-              className="flex items-center gap-3 px-5 py-3 border-l-[3px] transition-colors duration-150 hover:bg-[#fafaf6]"
-              style={{ borderLeftColor: color }}
-            >
+            <div key={i} className="flex flex-col gap-2.5 rounded-[14px] border border-[#f0eee6] bg-[#fafaf6] p-4">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg, color }}>
-                <Icon size={14} />
+                <Icon size={15} />
               </div>
-              <span className="text-[13px] text-charcoal leading-[1.4]">{insight.text}</span>
+              <p className="text-[12.5px] text-charcoal leading-[1.45]">{insight.text}</p>
             </div>
           );
         })}
@@ -471,38 +300,144 @@ function InsightsStrip({ overview }: { overview: SellerOverviewData }) {
   );
 }
 
-// ── Available Balance — real Finance ledger data (`FinanceService.getDashboard`,
-// same numbers Finance's own Balance Card shows), surfaced here so a seller
-// doesn't have to leave the dashboard just to see what's available to
-// withdraw. Shows the store's primary-currency wallet only (a full per-
-// currency breakdown stays Finance's own job) — hidden entirely for a store
-// with no wallet yet (nothing sold), same "don't show an empty placeholder"
-// convention as the rest of this page. ──────────────────────────────────────
-function AvailableBalanceCard({ wallet, storeId }: { wallet: FinanceWallet; storeId: string }) {
+// ── Recent Activity — real store activity feed (products/orders/finance/
+// marketing/customers/settings/security events already tracked by the
+// backend's ActivityLog, same data the seller's own Settings → Activity Log
+// tab shows in full). Surfaced here so opening Home also reads as "what just
+// happened in my store," not only a numbers dashboard. Best-effort/self-
+// hiding — a brand-new store with no events yet, or a failed fetch, simply
+// shows nothing rather than an empty placeholder. ──────────────────────────
+const ACTIVITY_ICON: Record<ActivityCategory, LucideIcon> = {
+  products: ShoppingBag, orders: Package, finance: Wallet, marketing: Megaphone,
+  customers: Users, settings: Settings, security: AlertTriangle,
+};
+
+function RecentActivityCard({ storeId }: { storeId: string }) {
+  const navigate = useNavigate();
+  const [entries, setEntries] = useState<ActivityLogEntry[] | null>(null);
+  // Collapsible, same show/hide pattern as SetupGuideCard's own header
+  // toggle — a seller who doesn't care about the feed can tuck it away
+  // without losing the row entirely.
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetActivityLog(storeId, { limit: 5 })
+      .then(res => { if (!cancelled) setEntries(res.data.logs); })
+      .catch(() => { if (!cancelled) setEntries([]); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  if (!entries || entries.length === 0) return null;
+
+  return (
+    // self-start while collapsed — opts this card OUT of the grid's
+    // items-stretch when there's nothing but a header to show, so it never
+    // gets force-stretched into a tall card with a big empty body. Expanded,
+    // it stretches to match Setup Guide's height, with the footer pinned to
+    // the bottom (mt-auto below) so a short activity list doesn't leave the
+    // "View activity" link stranded mid-card.
+    <div className={`dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden flex flex-col ${collapsed ? 'self-start' : 'h-full'}`}>
+      {/* Same header shape as SetupGuideCard's own header (icon badge +
+         title + inline subtitle + chevron, border only while expanded) — so
+         the two collapsed cards land on the exact same height. */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className={`w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-0 cursor-pointer text-left shrink-0 ${!collapsed ? 'border-b border-[#f3f2ec]' : ''}`}
+      >
+        <div className="w-7 h-7 rounded-lg bg-info-bg text-info flex items-center justify-center shrink-0">
+          <History size={13} />
+        </div>
+        <div className="flex-1 min-w-0 flex items-baseline gap-2">
+          <p className="text-[13px] font-bold text-charcoal shrink-0">Recent Activity</p>
+          <span className="text-[11px] text-slate truncate">Last {entries.length} event{entries.length === 1 ? '' : 's'}</span>
+        </div>
+        {collapsed ? <ChevronDownIcon size={15} className="text-slate shrink-0" /> : <ChevronUp size={15} className="text-slate shrink-0" />}
+      </button>
+
+      {!collapsed && (
+        <div className="flex-1 flex flex-col">
+          <div className="flex flex-col divide-y divide-[#f3f2ec]">
+            {entries.map(entry => {
+              const Icon = ACTIVITY_ICON[entry.category] ?? History;
+              return (
+                <div key={entry._id} className="flex items-center gap-2.5 px-4 py-2.5">
+                  <div className="w-6 h-6 rounded-md bg-cream text-slate flex items-center justify-center shrink-0">
+                    <Icon size={11.5} />
+                  </div>
+                  <span className="flex-1 text-[12px] text-charcoal leading-[1.4] overflow-hidden text-ellipsis whitespace-nowrap">
+                    {entry.description ?? entry.action}
+                  </span>
+                  <span className="text-[10.5px] text-slate shrink-0">{timeAgo(entry.createdAt)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => navigate(`/store/${storeId}/settings?tab=activity`)}
+            className="mt-auto w-full px-4 py-2.5 border-t border-[#f3f2ec] text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left"
+          >
+            View activity →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Available Balance — a slim, contextual strip (not a permanent full-size
+// card) surfaced only when there's actually something to say: a real,
+// non-zero available or pending balance from Finance's own ledger
+// (`FinanceService.getDashboard`). Hidden entirely for a store that hasn't
+// sold anything yet — full per-currency detail always stays Finance's job. ─
+function AvailableBalanceBanner({ wallet, storeId }: { wallet: FinanceWallet; storeId: string }) {
   const navigate = useNavigate();
   return (
-    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl px-5 py-5 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-bold text-charcoal">Available Balance</p>
-        <button
-          onClick={() => navigate(`/store/${storeId}/finance`)}
-          className="text-[11px] font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer"
-        >
-          View Finance
-        </button>
+    // No surface-panel-interactive — this strip isn't a single click target
+    // (only the "View Finance" button is), so a whole-strip hover-lift read
+    // as a glitch rather than a hint.
+    <div className="dash-section-enter surface-panel rounded-2xl px-5 py-4 flex items-center gap-4 flex-wrap">
+      <div className="w-9 h-9 rounded-lg bg-success-bg text-success flex items-center justify-center shrink-0">
+        <Wallet size={16} />
       </div>
-      <div className="flex-1 flex flex-col justify-center gap-3">
+      <div className="flex-1 min-w-0 flex items-center gap-6 flex-wrap">
         <div>
-          <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em] mb-1">{wallet.currency} Available</p>
-          <p className="text-[24px] font-bold text-charcoal tabular-nums">{formatMoneyCompact(wallet.availableBalance, wallet.currency)}</p>
+          <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em]">Available</p>
+          <p className="text-[17px] font-bold text-carbon tabular-nums leading-tight">{formatMoneyCompact(wallet.availableBalance, wallet.currency)}</p>
         </div>
-        <div className="flex items-center gap-1.5 text-[11.5px] text-slate">
+        <div className="flex items-center gap-1.5 text-[12px] text-slate">
           <Clock size={12} />
           Pending: <span className="font-semibold text-graphite">{formatMoneyCompact(wallet.pendingBalance, wallet.currency)}</span>
         </div>
       </div>
+      <button
+        onClick={() => navigate(`/store/${storeId}/finance`)}
+        className="text-[12px] font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer shrink-0"
+      >
+        View Finance →
+      </button>
     </div>
   );
+}
+
+// ── Plan usage warning — a contextual banner, not a permanent card. Shows at
+// most one (the closest-to-limit) usage figure, and only once it's genuinely
+// worth flagging — full usage detail always stays Billing's own job. ───────
+function getUsageWarning(entitlements: EntitlementsSummary | null): { label: string; pct: number } | null {
+  if (!entitlements) return null;
+  const candidates = [
+    { label: 'product limit', used: entitlements.maxProducts.used, max: entitlements.maxProducts.limit },
+    { label: 'AI credits', used: Math.max(0, entitlements.aiCredits.monthlyAllowance - entitlements.aiCredits.balance), max: entitlements.aiCredits.monthlyAllowance },
+    { label: 'staff account limit', used: entitlements.maxStaffAccounts.used, max: entitlements.maxStaffAccounts.limit },
+    { label: 'POS location limit', used: entitlements.maxPosLocations.used, max: entitlements.maxPosLocations.limit },
+  ];
+  let worst: { label: string; pct: number } | null = null;
+  for (const c of candidates) {
+    if (c.max === -1 || c.max <= 0) continue;
+    const pct = (c.used / c.max) * 100;
+    if (pct >= 85 && (!worst || pct > worst.pct)) worst = { label: c.label, pct };
+  }
+  return worst;
 }
 
 // ── Metric Cards — customizable, mirrors Shopify's real Home metrics
@@ -557,9 +492,6 @@ function renderMetricCard(
       return (
         <MetricCard key={id}
           label="Customers (30 days)" value={formatNumber(totalCustomers)}
-          // New-vs-returning breakdown lives in the "Customers" donut chart
-          // further down the page now — kept out of this sub-label too, so
-          // the same number isn't shown twice on one page.
           sub={totalCustomers ? 'Unique buyers' : 'No customers yet'} icon={<Users size={16} />} color="#22C55E"
         />
       );
@@ -697,100 +629,6 @@ function MetricsCustomizeModal({ storeId, current, onClose, onSaved }: {
   );
 }
 
-// ── Plan Usage — real progress bars (Shopify/Stripe-style "how much of your
-// plan have you used"), same EntitlementsSummary data Billing Center already
-// shows in full, surfaced here too so a genuine "what's my overall status"
-// glance doesn't require leaving the dashboard. ─────────────────────────────
-function UsageProgressBar({ label, used, max }: { label: string; used: number; max: number }) {
-  const unlimited = max === -1;
-  const pct = unlimited ? 0 : Math.min(100, (used / Math.max(1, max)) * 100);
-  const near = !unlimited && pct >= 85;
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[11.5px] text-graphite">{label}</span>
-        <span className="text-[11.5px] font-semibold text-carbon">{formatNumber(used)}{unlimited ? '' : ` / ${formatNumber(max)}`}</span>
-      </div>
-      <div className="h-[7px] bg-cream rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-slow ease-out"
-          style={{ width: unlimited ? '100%' : `${pct}%`, background: unlimited ? 'var(--color-success)' : (near ? 'var(--color-error)' : 'var(--color-brand-orange)') }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function PlanUsageCard({ entitlements, storeId }: { entitlements: EntitlementsSummary | null; storeId: string }) {
-  const navigate = useNavigate();
-  return (
-    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl px-5 py-5 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-bold text-charcoal">Plan Usage</p>
-        <button
-          onClick={() => navigate(`/store/${storeId}/plan-billing`)}
-          className="text-[11px] font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer"
-        >
-          {entitlements?.currentPlanName ?? 'View plan'}
-        </button>
-      </div>
-      {!entitlements ? (
-        <p className="text-[12px] text-slate">Unable to load plan usage.</p>
-      ) : (
-        <div className="flex flex-col gap-3.5 flex-1 justify-center">
-          <UsageProgressBar label="Products" used={entitlements.maxProducts.used} max={entitlements.maxProducts.limit} />
-          <UsageProgressBar label="AI Credits" used={Math.max(0, entitlements.aiCredits.monthlyAllowance - entitlements.aiCredits.balance)} max={entitlements.aiCredits.monthlyAllowance} />
-          <UsageProgressBar label="Staff Accounts" used={entitlements.maxStaffAccounts.used} max={entitlements.maxStaffAccounts.limit} />
-          <UsageProgressBar label="POS Locations" used={entitlements.maxPosLocations.used} max={entitlements.maxPosLocations.limit} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Today Snapshot — 3 real stat tiles (Revenue/Orders/AOV), not an inline
-// text strip, so it reads as a proper "today at a glance" panel instead of
-// a thin caption row. ─────────────────────────────────────────────────────
-function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; currency?: string | null }) {
-  const up = today.revenueChangePercent >= 0;
-  const TrendIcon = up ? TrendingUp : TrendingDown;
-  // Same fix as the Metrics cards above — Rs0 today vs Rs0 yesterday isn't a
-  // real +/-0% trend, so the badge only shows once there's actual revenue.
-  const hasTodayRevenue = today.revenue > 0;
-
-  return (
-    <div className="dash-section-enter surface-panel surface-panel-interactive rounded-2xl overflow-hidden">
-      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center justify-between gap-3">
-        <p className="text-sm font-bold text-charcoal flex items-center gap-[6px]">
-          <span className="size-[6px] rounded-full bg-success pos-live-pulse" />
-          Today
-        </p>
-        <span className="text-[11px] text-slate">vs. this time yesterday</span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#f3f2ec]">
-        <div className="px-5 py-4 flex flex-col gap-1.5">
-          <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Revenue</span>
-          <span className="text-[22px] font-bold text-carbon tabular-nums leading-none">{formatMoneyCompact(today.revenue, currency)}</span>
-          {hasTodayRevenue && (
-            <span className={`inline-flex items-center gap-0.5 self-start text-[11px] font-semibold px-[6px] py-[1px] rounded-full ${up ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
-              <TrendIcon size={11} />
-              {Math.abs(today.revenueChangePercent).toFixed(0)}%
-            </span>
-          )}
-        </div>
-        <div className="px-5 py-4 flex flex-col gap-1.5">
-          <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Orders</span>
-          <span className="text-[22px] font-bold text-carbon tabular-nums leading-none">{formatNumber(today.ordersCount)}</span>
-        </div>
-        <div className="px-5 py-4 flex flex-col gap-1.5">
-          <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Avg. Order Value</span>
-          <span className="text-[22px] font-bold text-carbon tabular-nums leading-none">{formatMoneyCompact(today.avgOrderValue, currency)}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DashSkeleton() {
   return (
@@ -878,13 +716,11 @@ function useRevenueOverviewAll(storeId: string) {
 }
 
 // ── Dashboard Hero ────────────────────────────────────────────────────────────
-// A single, premium "welcome" moment at the top of the page — the one thing a
-// generic stacked-cards dashboard is missing. Everything shown here is a
-// number the page already fetches (30-day revenue + its real period-over-
-// period change, from the same `SellerOverviewData` the Metrics row reads) —
-// this component computes nothing new, it just gives the store's own real
-// headline number a proper, spacious presentation instead of burying it in a
-// same-size grid tile.
+// A single, clean "welcome" moment at the top of the page — store identity,
+// live status, and the two actions a seller reaches for most (Add product /
+// View store). Deliberately carries NO metrics — those already have a
+// dedicated, customizable row right below it, and repeating them here just
+// duplicated the same numbers twice on one page.
 function getTimeGreeting(): string {
   const h = new Date().getHours();
   if (h < 5) return 'Working late';
@@ -893,51 +729,16 @@ function getTimeGreeting(): string {
   return 'Good evening';
 }
 
-interface HeroStat { label: string; value: string; changeLabel?: string; up?: boolean; sub?: string }
-
-function DashboardHero({ store, metrics, currency }: {
-  store: ReturnType<typeof useStoreWorkspace>['store']; metrics: StoreMetrics | null; currency?: string | null;
-}) {
-  const overview = metrics?.overview;
+function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWorkspace>['store']; storeId: string }) {
+  const navigate = useNavigate();
   const isLive = store?.status === 'active';
-
-  const revenue = overview?.totalRevenue ?? 0;
-  const hasRevenue = revenue > 0;
-  const revenueChangePct = hasRevenue ? overview?.totalRevenueChangePercent ?? null : null;
-
-  const orders = overview?.totalOrders ?? 0;
-  const hasOrders = orders > 0;
-  const ordersChange = hasOrders ? overview?.totalOrdersChange : undefined;
-
-  const totalCustomers = overview ? overview.newCustomersCount + overview.returningCustomersCount : 0;
-
-  // Three real numbers, same source as the Metrics grid below — this is a
-  // condensed "at a glance" row (Stripe/Shopify Home both open on one), not
-  // a duplicate: it fills the banner's width instead of one lonely number
-  // floating with a wall of empty space next to it.
-  const stats: HeroStat[] = [
-    {
-      label: 'Revenue (30d)', value: formatMoneyCompact(revenue, currency),
-      changeLabel: revenueChangePct !== null ? `${Math.abs(revenueChangePct).toFixed(0)}%` : undefined,
-      up: revenueChangePct !== null ? revenueChangePct >= 0 : undefined,
-    },
-    {
-      label: 'Orders (30d)', value: formatNumber(orders),
-      changeLabel: ordersChange !== undefined ? `${Math.abs(ordersChange)}` : undefined,
-      up: ordersChange !== undefined ? ordersChange >= 0 : undefined,
-    },
-    { label: 'Customers (30d)', value: formatNumber(totalCustomers) },
-    // 4th stat, only once real forecast data has loaded — folded into the
-    // Hero's existing stat row instead of its own separate full-width card
-    // (which sandwiched the page between two already-dense sections and
-    // read as clutter). Same real number `SalesForecastBanner` used to show,
-    // same honest method disclosure via `sub` instead of a whole second
-    // header block.
-    ...(metrics?.salesForecast ? [{
-      label: 'Forecast (7d)', value: formatMoneyCompact(metrics.salesForecast.projectedNext7Days, currency),
-      sub: metrics.salesForecast.method === 'trend_seasonal' ? 'Trend-based' : 'Simple average',
-    }] : []),
-  ];
+  const statusLabel = isLive
+    ? 'Store is live'
+    : store?.status === 'pending'
+      ? 'Store is pending review'
+      : store?.status === 'suspended'
+        ? 'Store is suspended'
+        : 'Store is not live yet';
 
   return (
     <div className="dash-section-enter surface-panel rounded-2xl relative overflow-hidden">
@@ -948,43 +749,52 @@ function DashboardHero({ store, metrics, currency }: {
         className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(130% 100% at 100% 0%, rgba(217,119,87,0.09), transparent 55%)' }}
       />
-      <div className="relative px-6 sm:px-8 py-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="flex items-center gap-4 min-w-0 shrink-0">
+      <div className="relative px-6 sm:px-8 py-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        <div className="flex items-center gap-4 min-w-0">
           <div className="w-14 h-14 rounded-2xl bg-brand-pale-orange border border-[#eee0d5] flex items-center justify-center overflow-hidden shrink-0">
             {store?.logo
               ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
               : <Globe size={22} className="text-brand-orange" />}
           </div>
           <div className="min-w-0">
-            <p className="text-[12px] font-semibold text-brand-orange uppercase tracking-[0.08em] mb-1 flex items-center gap-1.5">
-              <span className={`size-[6px] rounded-full ${isLive ? 'bg-success pos-live-pulse' : 'bg-slate'}`} />
+            <p className="text-[12px] font-semibold text-brand-orange uppercase tracking-[0.08em] mb-1">
               {getTimeGreeting()}
             </p>
             <h1 className="text-[24px] sm:text-[27px] font-bold text-carbon tracking-tight leading-tight overflow-hidden text-ellipsis whitespace-nowrap max-w-[280px] sm:max-w-none">
               {store?.name ?? 'Your Store'}
             </h1>
-            <p className="text-[13px] text-slate mt-0.5">Here's how things are looking right now.</p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className={`size-[6px] rounded-full ${isLive ? 'bg-success pos-live-pulse' : 'bg-slate'}`} />
+                <span className={`text-[12.5px] font-medium ${isLive ? 'text-success' : 'text-slate'}`}>{statusLabel}</span>
+              </span>
+              {store?.slug && (
+                <span className="flex items-center gap-1 text-[12px] text-slate">
+                  <span className="text-slate/60">·</span>
+                  /{store.slug}
+                  <CopyIconButton value={`/${store.slug}`} title="Copy store URL" size={11} />
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="h-px w-full bg-bone lg:hidden" />
 
-        <div className="flex items-stretch divide-x divide-bone -mx-1 overflow-x-auto">
-          {stats.map(s => (
-            <div key={s.label} className="px-5 sm:px-6 first:pl-1 last:pr-1 flex flex-col gap-1.5 shrink-0">
-              <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em] whitespace-nowrap">{s.label}</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[24px] sm:text-[26px] font-bold text-carbon tabular-nums tracking-tight leading-none">{s.value}</span>
-                {s.changeLabel && (
-                  <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-[6px] py-[2px] rounded-full tabular-nums ${s.up ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
-                    {s.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                    {s.changeLabel}
-                  </span>
-                )}
-              </div>
-              {s.sub && <span className="text-[10px] text-slate whitespace-nowrap">{s.sub}</span>}
-            </div>
-          ))}
+        <div className="flex items-center gap-2 shrink-0">
+          {store?.slug && (
+            <a
+              href={getStorefrontUrl(store.slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] font-medium py-[7px] px-[14px] rounded-md bg-white text-carbon border border-bone hover:bg-cream hover:border-slate/40 transition-colors duration-150 no-underline"
+            >
+              View store <ExternalLink size={12} />
+            </a>
+          )}
+          <Button size="sm" icon={<Plus size={12} />} onClick={() => navigate(`/store/${storeId}/products/add`)}>
+            Add product
+          </Button>
         </div>
       </div>
     </div>
@@ -999,16 +809,12 @@ function DashboardHeroSkeleton() {
         <div>
           <SkeletonBox width={110} height={11} rounded="4px" className="mb-2" />
           <SkeletonBox width={160} height={22} rounded="6px" className="mb-2" />
-          <SkeletonBox width={200} height={11} rounded="4px" />
+          <SkeletonBox width={140} height={11} rounded="4px" />
         </div>
       </div>
-      <div className="flex items-stretch divide-x divide-bone">
-        {[0, 1, 2].map(i => (
-          <div key={i} className="px-5 sm:px-6 flex flex-col gap-1.5">
-            <SkeletonBox width={80} height={10} rounded="4px" />
-            <SkeletonBox width={70} height={22} rounded="6px" />
-          </div>
-        ))}
+      <div className="flex items-center gap-2">
+        <SkeletonBox width={100} height={32} rounded="6px" />
+        <SkeletonBox width={110} height={32} rounded="6px" />
       </div>
     </div>
   );
@@ -1016,6 +822,7 @@ function DashboardHeroSkeleton() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreDashboard() {
+  const navigate = useNavigate();
   const { store, storeId, loading, refetch: refetchStore } = useStoreWorkspace();
   const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
   const testimonialPrompt = useTestimonialPrompt();
@@ -1034,6 +841,9 @@ export default function StoreDashboard() {
   }));
   const revenueSparkline = (metrics?.revenueSeries ?? []).map(p => p.grossRevenue);
   const totalCustomers = metrics ? metrics.overview.newCustomersCount + metrics.overview.returningCustomersCount : 0;
+  const usageWarning = getUsageWarning(metrics?.entitlements ?? null);
+  const wallet = metrics?.primaryWallet;
+  const showBalanceBanner = !!wallet && (wallet.availableBalance > 0 || wallet.pendingBalance > 0);
 
   return (
     <div>
@@ -1053,7 +863,7 @@ export default function StoreDashboard() {
              other page's header). */}
           <TrialBillingPill />
 
-          <DashboardHero store={store} metrics={metrics} currency={store?.baseCurrency} />
+          <DashboardHero store={store} storeId={storeId} />
 
           {metricsError && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">
@@ -1064,9 +874,24 @@ export default function StoreDashboard() {
             </div>
           )}
 
-          {/* Metric Cards — customizable, see MetricsCustomizeModal above.
-             Moved to the very top of the page — the numbers a seller opens
-             the dashboard to check, before anything else. */}
+          {/* Contextual plan-usage warning — only ever appears when a real
+             limit is genuinely close; otherwise this row doesn't exist. */}
+          {usageWarning && (
+            <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-brand-pale-orange text-brand-deep-orange text-[12.5px] border border-brand-orange/20">
+              <span className="flex items-center gap-2">
+                <AlertTriangle size={14} className="shrink-0" />
+                You're using {usageWarning.pct.toFixed(0)}% of your {usageWarning.label}.
+              </span>
+              <button
+                onClick={() => navigate(`/store/${storeId}/settings?tab=billing`)}
+                className="font-semibold underline bg-transparent border-none cursor-pointer shrink-0"
+              >
+                View plan →
+              </button>
+            </div>
+          )}
+
+          {/* Metric Cards — customizable, see MetricsCustomizeModal above. */}
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">Metrics</p>
             <button
@@ -1085,31 +910,12 @@ export default function StoreDashboard() {
             {activeMetricIds.map(id => renderMetricCard(id, metrics, store?.baseCurrency, totalCustomers, revenueSparkline))}
           </div>
 
-          {/* Today + Needs Attention, side by side — both are "what's
-             happening right now" glance cards, so they share one row instead
-             of stacking full-width one under the other. */}
-          {metrics && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <TodaySnapshot today={metrics.today} currency={store?.baseCurrency} />
-              <NeedsAttentionCard
-                storeId={storeId}
-                lowStockCount={metrics.lowStockCount}
-                pendingOrdersCount={metrics.pendingOrdersCount}
-                openReturnsCount={metrics.openReturnsCount}
-                openDisputeCount={metrics.openDisputeCount}
-                highRiskOrderCount={metrics.highRiskOrderCount}
-                awaitingCaptureCount={metrics.awaitingCaptureCount}
-              />
-            </div>
-          )}
-
-          {metrics?.overview && <InsightsStrip overview={metrics.overview} />}
-
-          {/* Revenue Chart + Store Info — one filterable Revenue Overview
-             chart (range picker top-right) replaces the old fixed 6-month
-             area chart + always-7-day bar chart pair, which showed the same
-             metric twice at two unrelated, non-adjustable windows. */}
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+          {/* Revenue Chart + Needs Attention — the core of the page: trend
+             on the left, urgent tasks on the right, sharing one row.
+             items-stretch — Needs Attention matches the chart's height (it
+             opts out via self-start while collapsed, so a collapsed card
+             never gets force-stretched into empty white space). */}
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-stretch">
             {revenueOverviewError ? (
               <div className="surface-panel rounded-2xl px-5 py-5 flex items-center justify-center min-h-[300px]">
                 <AnalyticsErrorState message={revenueOverviewError} onRetry={refetchRevenueOverview} />
@@ -1134,65 +940,36 @@ export default function StoreDashboard() {
                 yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
               />
             )}
-            <StoreInfoCard />
+            {metrics && (
+              <NeedsAttentionCard
+                storeId={storeId}
+                lowStockCount={metrics.lowStockCount}
+                pendingOrdersCount={metrics.pendingOrdersCount}
+                openReturnsCount={metrics.openReturnsCount}
+                openDisputeCount={metrics.openDisputeCount}
+                highRiskOrderCount={metrics.highRiskOrderCount}
+                awaitingCaptureCount={metrics.awaitingCaptureCount}
+              />
+            )}
           </div>
 
-          {/* Setup Guide + Quick Actions, side by side. Quick Actions stays
-             desktop-only within its own column — on mobile, StoreNavMenu (and
-             the bottom-nav's Menu sheet, reachable from any page) already
-             cover every one of these destinations, so it collapses away
-             rather than leaving an empty second column. */}
-          {metrics && (
-            // items-start — without it, a grid row stretches both columns to
-            // match the taller one; Setup Guide (multiple task rows) is
-            // usually much taller than Quick Actions (one icon row), which
-            // left Quick Actions' card stretched with a lot of dead empty
-            // space below its icons. Each column now only takes its own
-            // natural height.
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />
-              <div className="hidden lg:block">
-                <QuickActionsRow storeId={storeId} />
-              </div>
-            </div>
-          )}
+          {/* Payout — a slim, contextual strip, only when there's a real
+             balance to mention. */}
+          {showBalanceBanner && wallet && <AvailableBalanceBanner wallet={wallet} storeId={storeId} />}
 
-          {/* Store Health — a real, varied mix of chart types (donut,
-             progress bars) alongside the area chart above, all from data
-             already being fetched for this page — mirrors how a real
-             platform dashboard (Shopify/Stripe) never relies on a single
-             chart type to show "what's going on right now." */}
-          {metrics && (
-            <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
-              <DonutChart
-                title="Inventory Health" subtitle="Across your catalog"
-                size={150}
-                emptyLabel="No products in stock yet"
-                // No centerLabel — that total would just repeat the "Active
-                // Products" metric card's own number; this chart's only job
-                // is the in/low/out-of-stock proportion, not the total itself.
-                data={[
-                  { label: 'In Stock', value: metrics.inventoryBreakdown.inStock, color: '#22C55E' },
-                  { label: 'Low Stock', value: metrics.inventoryBreakdown.lowStock, color: '#F59E0B' },
-                  { label: 'Out of Stock', value: metrics.inventoryBreakdown.outOfStock, color: '#EF4444' },
-                ]}
-              />
-              <DonutChart
-                title="Customers" subtitle="Last 30 days"
-                size={150}
-                emptyLabel="No customers yet this period"
-                // No centerLabel — that total would just repeat the
-                // "Customers (30 days)" metric card's own number; this
-                // chart's only job is the new-vs-returning proportion.
-                data={[
-                  { label: 'New', value: metrics.overview.newCustomersCount, color: '#8B5CF6' },
-                  { label: 'Returning', value: metrics.overview.returningCustomersCount, color: '#0EA5E9' },
-                ]}
-              />
-              <PlanUsageCard entitlements={metrics.entitlements} storeId={storeId} />
-              {metrics.primaryWallet && <AvailableBalanceCard wallet={metrics.primaryWallet} storeId={storeId} />}
-            </div>
-          )}
+          {metrics?.overview && <InsightsStrip overview={metrics.overview} forecast={metrics.salesForecast} currency={store?.baseCurrency} />}
+
+          {/* Setup Guide + Recent Activity, side by side. Both are
+             self-hiding (Setup Guide once every task is done; Activity once
+             there's nothing to show), so a mature, active store naturally
+             loses this row entirely over time. items-stretch — both cards
+             match the taller one's height (each card opts out via
+             self-start while collapsed, so a collapsed card never gets
+             force-stretched into empty white space). */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />}
+            <RecentActivityCard storeId={storeId} />
+          </div>
 
         </div>
       )}

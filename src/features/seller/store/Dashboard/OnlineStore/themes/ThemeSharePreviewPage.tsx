@@ -70,6 +70,7 @@ export function ThemeSharePreviewPage() {
       contactEmail: null, contactPhone: null, categoryId: null, followersCount: 0, averageRating: 0, reviewCount: 0,
       builderConfig: null, baseCurrency: 'USD', enabledCurrencies: null, sellerType: null, badges: [], createdAt: new Date().toISOString(),
       activeCampaign: null, announcementBar: null, privacyMode: 'public', faviconUrl: null,
+      cookieBannerEnabled: false, cookieBannerMessage: null, cookieBannerPosition: 'bottom_bar', cookieBannerColorMode: 'dark', showDoNotSellLink: false,
     } as PublicStoreData,
     theme: null,
     cfg: resolveStorefrontCfg(null),

@@ -1064,12 +1064,11 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
 // `StoreVerificationBanner` (the workspace-wide "complete business
 // verification" nag) was removed along with the `verification` sidebar
 // item and route — a banner nagging the seller toward a page that no
-// longer exists in navigation is worse than no banner. The underlying
-// verification feature/data (`useStoreVerification`, `StoreVerification.tsx`,
-// the backend endpoints, the marketplace-visibility gate itself) is
-// untouched — only this page's reachability from the dashboard was cut, at
-// the seller's explicit request, pending a later decision on the feature
-// itself.
+// longer exists in navigation is worse than no banner. The frontend
+// verification page/form/hook (`StoreVerification.tsx`,
+// `VerificationFormFields.tsx`, `useStoreVerification.ts`) have since been
+// deleted outright, at the seller's explicit request — the backend
+// endpoints and the marketplace-visibility gate itself are untouched.
 
 // ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
 // surfaced workspace-wide (not just on the Billing Center page) so a seller can't

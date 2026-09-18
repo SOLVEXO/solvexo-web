@@ -4,14 +4,14 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { SkeletonBox, EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import {
-  apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff,
+  apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff, apiResendStaffInvite,
   apiListRoles, apiCreateRole, apiUpdateRole, apiDeleteRole,
   apiListApprovals, apiApproveRequest, apiRejectRequest,
   STAFF_PERMISSIONS, PERMISSION_LABELS,
   type StaffMember, type Role, type StaffPermission, type ApprovalRequestItem,
 } from '@/api/services/staff';
 
-const EMPTY_STAFF_FORM = { name: '', email: '', password: '', role: 'staff' as 'staff' | 'manager', roleId: '' };
+const EMPTY_STAFF_FORM = { name: '', email: '', role: 'staff' as 'staff' | 'manager', roleId: '' };
 const EMPTY_ROLE_FORM = { name: '', description: '', permissions: [] as StaffPermission[] };
 
 /** Real, store-wide Staff RBAC management — Shopify-parity Roles (a named,
@@ -34,11 +34,27 @@ export default function StaffPage({ embedded = false }: { embedded?: boolean } =
   const [approvals, setApprovals] = useState<ApprovalRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvalBusy, setApprovalBusy] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState('');
 
+  // `allSettled`, not `all` — these 3 calls are independent (Staff/Roles/
+  // Approvals), so one of them failing (e.g. a real backend error, or a
+  // transient network blip) must never silently blank out the other two,
+  // or hide whatever just happened in a create/edit action that calls this
+  // to refresh. Previously a single failed call here rejected the whole
+  // `Promise.all`, so e.g. a successful "Create Role" would close its modal
+  // (optimistic) but the new role would never actually show up in the list
+  // — no visible error, just "nothing happened" — exactly the reported bug.
   const load = useCallback(() => {
     setLoading(true);
-    Promise.all([apiListStaff(storeId), apiListRoles(storeId), apiListApprovals(storeId, 'pending')])
-      .then(([s, r, a]) => { setStaff(s.data); setRoles(r.data); setApprovals(a.data); })
+    setLoadError('');
+    Promise.allSettled([apiListStaff(storeId), apiListRoles(storeId), apiListApprovals(storeId, 'pending')])
+      .then(([s, r, a]) => {
+        const errors: string[] = [];
+        if (s.status === 'fulfilled') setStaff(s.value.data); else errors.push(`Staff list: ${s.reason instanceof Error ? s.reason.message : 'failed to load'}`);
+        if (r.status === 'fulfilled') setRoles(r.value.data); else errors.push(`Roles list: ${r.reason instanceof Error ? r.reason.message : 'failed to load'}`);
+        if (a.status === 'fulfilled') setApprovals(a.value.data); else errors.push(`Approvals: ${a.reason instanceof Error ? a.reason.message : 'failed to load'}`);
+        if (errors.length > 0) setLoadError(errors.join(' · '));
+      })
       .finally(() => setLoading(false));
   }, [storeId]);
 
@@ -62,6 +78,12 @@ export default function StaffPage({ embedded = false }: { embedded?: boolean } =
       )}
 
       <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-6">
+        {loadError && (
+          <div className="bg-error-bg border border-error/30 rounded-lg px-3.5 py-2.5 text-[12px] text-error">
+            Couldn't fully refresh this page — {loadError}
+          </div>
+        )}
+
         {/* ── Pending approvals ────────────────────────────────────────── */}
         {approvals.length > 0 && (
           <div className="bg-white rounded-xl border border-brand-orange/30 overflow-hidden">
@@ -125,14 +147,14 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
   const handleSave = async () => {
     if (!formOpen) return;
     setError('');
-    if (formOpen === 'new' && (!form.name.trim() || !form.email.trim() || form.password.length < 8)) {
-      setError('Name, email, and an 8+ character password are required.');
+    if (formOpen === 'new' && (!form.name.trim() || !form.email.trim())) {
+      setError('Name and email are required.');
       return;
     }
     setSaving(true);
     try {
       if (formOpen === 'new') {
-        await apiCreateStaff(storeId, { name: form.name, email: form.email, password: form.password, role: form.role, roleId: form.roleId || undefined });
+        await apiCreateStaff(storeId, { name: form.name, email: form.email, role: form.role, roleId: form.roleId || undefined });
       } else {
         await apiUpdateStaff(storeId, formOpen._id, { name: form.name, role: form.role, roleId: form.roleId || undefined });
       }
@@ -150,46 +172,60 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
     onChanged();
   };
 
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const handleResendInvite = async (member: StaffMember) => {
+    setResendingId(member._id);
+    try { await apiResendStaffInvite(storeId, member._id); } finally { setResendingId(null); }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] text-slate max-w-[520px]">
-          Give staff their own store-scoped login (at <code className="text-[11px]">/staff-login/{storeId}</code>) with only the Role's permissions. You always have full access regardless of what's set here.
+          Invite staff to their own store-scoped login (at <code className="text-[11px]">/staff-login/{storeId}</code>) with only the Role's permissions — they set their own password from the invite email. You always have full access regardless of what's set here.
         </p>
-        <Button size="sm" icon={<Plus size={13} />} onClick={openNew} disabled={roles.length === 0}>Add Staff</Button>
+        <Button size="sm" icon={<Plus size={13} />} onClick={openNew} disabled={roles.length === 0}>Invite Staff</Button>
       </div>
       {roles.length === 0 && !loading && (
-        <p className="text-[12px] text-slate bg-cream rounded-lg px-3 py-2">Create a Role first (see the Roles tab above) before adding staff.</p>
+        <p className="text-[12px] text-slate bg-cream rounded-lg px-3 py-2">Create a Role first (see the Roles tab above) before inviting staff.</p>
       )}
 
       {loading ? (
         <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={56} rounded="10px" />)}</div>
       ) : staff.length === 0 ? (
-        <EmptyState icon={<Users size={28} className="text-brand-orange opacity-55" />} title="No staff accounts yet" description="Add one to give a warehouse worker or manager their own scoped login." action={roles.length > 0 ? { label: 'Add Staff', onClick: openNew, icon: <Plus size={14} /> } : undefined} />
+        <EmptyState icon={<Users size={28} className="text-brand-orange opacity-55" />} title="No staff accounts yet" description="Invite one to give a warehouse worker or manager their own scoped login." action={roles.length > 0 ? { label: 'Invite Staff', onClick: openNew, icon: <Plus size={14} /> } : undefined} />
       ) : (
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
-          {staff.map(member => (
-            <div key={member._id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <button type="button" onClick={() => openEdit(member)} className="min-w-0 text-left bg-transparent border-none cursor-pointer flex-1">
-                <p className="text-[13px] font-semibold text-charcoal truncate">{member.name} <span className="text-slate font-normal">· {member.email}</span></p>
-                <p className="text-[11px] text-slate">{roleName(member.roleId)}</p>
-              </button>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge color={member.status === 'active' ? 'green' : 'gray'} size="sm">{member.status === 'active' ? 'Active' : 'Inactive'}</Badge>
-                {member.status === 'active' && (
-                  <Button size="xs" variant="ghost" onClick={() => handleDeactivate(member)}>Deactivate</Button>
-                )}
+          {staff.map(member => {
+            const pending = !member.inviteAcceptedAt;
+            return (
+              <div key={member._id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <button type="button" onClick={() => openEdit(member)} className="min-w-0 text-left bg-transparent border-none cursor-pointer flex-1">
+                  <p className="text-[13px] font-semibold text-charcoal truncate">{member.name} <span className="text-slate font-normal">· {member.email}</span></p>
+                  <p className="text-[11px] text-slate">{roleName(member.roleId)}</p>
+                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {pending
+                    ? <Badge color="orange" size="sm">Invite pending</Badge>
+                    : <Badge color={member.status === 'active' ? 'green' : 'gray'} size="sm">{member.status === 'active' ? 'Active' : 'Inactive'}</Badge>}
+                  {pending && member.status === 'active' && (
+                    <Button size="xs" variant="ghost" loading={resendingId === member._id} onClick={() => handleResendInvite(member)}>Resend Invite</Button>
+                  )}
+                  {!pending && member.status === 'active' && (
+                    <Button size="xs" variant="ghost" onClick={() => handleDeactivate(member)}>Deactivate</Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {formOpen && (
-        <Modal title={formOpen === 'new' ? 'Add Staff' : 'Edit Staff'} onClose={() => setFormOpen(null)} footer={
+        <Modal title={formOpen === 'new' ? 'Invite Staff' : 'Edit Staff'} onClose={() => setFormOpen(null)} footer={
           <>
             <Button variant="ghost" onClick={() => setFormOpen(null)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSave} loading={saving}>Save</Button>
+            <Button variant="primary" onClick={handleSave} loading={saving}>{formOpen === 'new' ? 'Send Invite' : 'Save'}</Button>
           </>
         }>
           <div className="flex flex-col gap-4">
@@ -202,15 +238,8 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
               <label className="text-[12px] font-medium text-graphite mb-1 block">Email</label>
               <input type="email" value={form.email} disabled={formOpen !== 'new'} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40 disabled:bg-cream disabled:text-slate" />
+              {formOpen === 'new' && <p className="text-[11px] text-slate mt-1">They'll get an email at this address to set their own password.</p>}
             </div>
-            {formOpen === 'new' && (
-              <div>
-                <label className="text-[12px] font-medium text-graphite mb-1 block">Password</label>
-                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  placeholder="At least 8 characters"
-                  className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
-              </div>
-            )}
             <div>
               <label className="text-[12px] font-medium text-graphite mb-1 block">Role</label>
               <select value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}

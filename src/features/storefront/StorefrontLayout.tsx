@@ -12,7 +12,21 @@ import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type S
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { useFavicon } from '@/hooks/useFavicon';
 import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
-import { loadPixelScripts, trackPixelEvent } from '@/utils/trackingPixels';
+import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
+import { CookieConsentBanner } from './CookieConsentBanner';
+
+function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
+
+const FULL_CONSENT: CookieConsentCategories = { analytics: true, marketing: true };
+
+function readSavedConsent(storeId: string): CookieConsentCategories | null {
+  try {
+    const raw = localStorage.getItem(cookieConsentKey(storeId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return { analytics: !!parsed.analytics, marketing: !!parsed.marketing };
+  } catch { return null; }
+}
 
 // Root layout for a store's own subdomain (`hello.solvexo.store`) OR a
 // seller-connected Custom Domain — the router mounts this tree whenever
@@ -38,6 +52,13 @@ export function StorefrontLayout() {
   // store never flashes its real content first. See `AtelierStorefrontGate`/
   // `NovaStorefrontGate`'s own doc comments for the full rationale.
   const [unlocked, setUnlocked] = useState(false);
+  // Real Customer-Privacy cookie consent — `null` means "not yet decided,
+  // show the banner"; a real object means the visitor (or a store that
+  // never enabled `cookieBannerEnabled`, resolved to full consent
+  // immediately) has decided, per-category, real Shopify "Manage
+  // Preferences" semantics — see the pixel effect below, which now waits on
+  // this instead of firing unconditionally.
+  const [cookieConsent, setCookieConsent] = useState<CookieConsentCategories | null>(null);
   const { setCurrency } = useCurrencyPreference();
 
   useEffect(() => {
@@ -50,6 +71,7 @@ export function StorefrontLayout() {
         if (cancelled) return;
         setStore(res.data);
         setUnlocked(sessionStorage.getItem(`storefront_unlock_${res.data.storeId}`) === '1');
+        setCookieConsent(!res.data.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(res.data.storeId));
         return apiGetPublicStoreTheme(res.data.storeId).then(r => { if (!cancelled) setTheme(r.data); });
       })
       .catch(() => { if (!cancelled) setError('Store not found'); })
@@ -87,18 +109,28 @@ export function StorefrontLayout() {
   // from Marketing → Tracking Pixels, fired straight from this buyer's
   // browser to each platform's own servers. Runs once per store resolution;
   // `loadPixelScripts` itself guards against double-injecting the scripts.
+  // Held off entirely until `cookieConsent` is true — a store with the
+  // cookie banner enabled must not load any tracking script before the
+  // visitor accepts (real Customer-Privacy enforcement, not cosmetic).
   useEffect(() => {
-    if (!store?.storeId) return;
+    if (!store?.storeId || !cookieConsent) return;
     let cancelled = false;
     apiGetPublicTrackingPixelSettings(store.storeId)
       .then(res => {
         if (cancelled) return;
-        loadPixelScripts(res.data);
+        loadPixelScripts(res.data, cookieConsent);
         trackPixelEvent('PageView');
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [store?.storeId]);
+  }, [store?.storeId, cookieConsent]);
+
+  const decideCookies = (consent: CookieConsentCategories) => {
+    if (store?.storeId) {
+      try { localStorage.setItem(cookieConsentKey(store.storeId), JSON.stringify(consent)); } catch { /* per-viewer convenience only */ }
+    }
+    setCookieConsent(consent);
+  };
 
   useFavicon(store?.faviconUrl, store?.logo);
 
@@ -169,6 +201,15 @@ export function StorefrontLayout() {
           <Layout>
             <Outlet />
           </Layout>
+          {store.cookieBannerEnabled && !cookieConsent && (
+            <CookieConsentBanner
+              message={store.cookieBannerMessage}
+              position={store.cookieBannerPosition}
+              colorMode={store.cookieBannerColorMode}
+              brandColor={cfg.primaryColor}
+              onDecide={decideCookies}
+            />
+          )}
         </WishlistProvider>
       </CartProvider>
     </StorefrontProvider>

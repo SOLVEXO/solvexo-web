@@ -385,25 +385,25 @@ export function ProfileAvatar() {
     window.location.reload();
   };
   // Straight to the notifications page — no nested dropdown/panel stacked
-  // underneath this one. A seller's notification settings live inside
-  // THEIR OWN store's workspace (/store/:storeId/account?tab=notifications,
-  // same as SellerSettings variant="store") — never the orphaned cross-store
-  // /seller/settings route, which nothing else in the app links to any more
-  // (see "Store switcher moved into the top navbar" in CLAUDE.md). If we're
-  // not already inside a store's own pages, resolve which store via the
-  // same resolver login/"My Store" already use.
+  // underneath this one. A seller's notifications live as their store's own
+  // real Settings tab (/store/:storeId/settings?tab=notifications,
+  // SettingsHub.tsx) — never the orphaned cross-store /seller/settings
+  // route, which nothing else in the app links to any more (see "Store
+  // switcher moved into the top navbar" in CLAUDE.md). If we're not already
+  // inside a store's own pages, resolve which store via the same resolver
+  // login/"My Store" already use.
   const handleNotificationsClick = async () => {
     setOpen(false);
     const storeMatch = pathname.match(/^\/store\/([^/]+)/);
     if (storeMatch) {
-      navigate(`/store/${storeMatch[1]}/account?tab=notifications`);
+      navigate(`/store/${storeMatch[1]}/settings?tab=notifications`);
       return;
     }
     const role = profile?.role;
     if (role === 'seller') {
       const destination = await resolveSellerDestinationRemote();
       const idMatch = destination.match(/^\/store\/([^/]+)/);
-      navigate(idMatch ? `/store/${idMatch[1]}/account?tab=notifications` : destination);
+      navigate(idMatch ? `/store/${idMatch[1]}/settings?tab=notifications` : destination);
     } else if (role === 'admin') {
       navigate('/admin/settings?tab=notifications');
     } else {
@@ -412,7 +412,7 @@ export function ProfileAvatar() {
       // whole apex-domain Account/Marketplace/Cart/Checkout flow was removed
       // outright, since a real buyer always shops a store's own themed
       // subdomain now, which has its own real notifications inside that
-      // store's `/account?tab=notifications`). Nothing meaningful to land a
+      // store's `/settings?tab=notifications`). Nothing meaningful to land a
       // bare apex-domain buyer on any more, so just go home.
       navigate('/');
     }

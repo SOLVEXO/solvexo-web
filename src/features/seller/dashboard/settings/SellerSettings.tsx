@@ -13,7 +13,6 @@ import {
   User, KeyRound,
   Trash2, Camera, Settings, Check, Loader2, Eye, EyeOff, ChevronLeft, ChevronRight, Quote, type LucideIcon,
 } from 'lucide-react';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { TestimonialShareForm } from '@/features/seller/components/TestimonialShareForm';
 
@@ -26,17 +25,15 @@ import { TestimonialShareForm } from '@/features/seller/components/TestimonialSh
 // Staff/Permissions/Tax have no backend implementation anywhere yet either
 // (no RBAC system, no tax module) — building them is a separate product decision.
 //
-// 'notifications' is deliberately kept in this union, in `validTabs` below,
-// and still fully rendered (`active === 'notifications'` → <NotificationsPanel/>)
-// even though it's no longer a browsable item in SETTINGS_NAV — both
-// NotificationBell's "View All" and the store navbar's own bell already
-// hard-navigate to this exact page's `?tab=notifications` (see
-// NotificationBell.tsx / ProfileAvatar.tsx), so deleting the tab itself
-// would silently break those two live links. Only its standalone entry in
-// the Account sidebar/mobile menu was removed, at the seller's request —
-// real notifications now live in the store dashboard's own navbar bell, so
-// browsing to a second, separate "Notifications" page from inside Account
-// was pure duplication of the same data.
+// 'notifications' is kept in this union/`validTabs` below and still renders
+// (`active === 'notifications'` → <NotificationsPanel/>) purely for direct-
+// URL backward compatibility (this project's established "disconnect,
+// don't delete" convention) — NotificationBell's "View All" and the store
+// navbar's own bell now both navigate to the real home for this content,
+// SettingsHub.tsx's own "Notifications" tab (/store/:storeId/settings?tab=notifications),
+// at the seller's explicit request (notification settings belong under
+// Settings, not buried inside the personal Account/profile page). Nothing
+// in the app links to this Account-page copy any more.
 //
 // 'two-factor' was removed outright (not just hidden) — unlike the section
 // above, nothing else in the app links to `?tab=two-factor`, and its content
@@ -172,15 +169,14 @@ function MobileSellerMenu({ active, onSelect }: { active: SettingSection; onSele
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-// `variant="store"` renders this same account-settings content inside a
-// specific store's dashboard (via StorePageHeader, with that workspace's
-// back-nav/notification bell) — used at /store/:storeId/account. There's no
-// separate cross-store "seller dashboard" page any more, so a seller's own
-// profile/security/notifications must be reachable from inside whichever
-// store they're currently working in, not just from the legacy /seller/settings
-// page (kept reachable by direct URL only, matching this project's established
-// "disconnect, don't delete" convention — nothing links to it any more).
-export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 'store' } = {}) {
+// Renders the seller's own account-settings content inside a specific
+// store's dashboard (via StorePageHeader, with that workspace's own
+// back-nav/notification bell) — the only route this is used at is
+// /store/:storeId/account. There's no separate cross-store "seller
+// dashboard" any more, so a seller's own profile/security/notifications
+// must be reachable from inside whichever store they're currently working
+// in.
+export function SellerSettings() {
   usePageTitle('Settings');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -268,9 +264,7 @@ export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 's
 
   return (
     <>
-      {variant === 'store'
-        ? <StorePageHeader title="Account" subtitle="Manage your personal profile and login details." titleContext="seller" />
-        : <SellerPageHeader title="Settings" subtitle="Manage your account preferences." />}
+      <StorePageHeader title="Account" subtitle="Manage your personal profile and login details." titleContext="seller" />
 
       <div className="px-4 lg:px-7 pt-5 pb-8">
         {/* Mobile-only account hub — hero (avatar/name/email/role + real

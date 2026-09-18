@@ -105,12 +105,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const fetchPreferences = useCallback(async () => {
     if (!TokenStorage.isLoggedIn()) return;
     try {
-      const res = await apiGetPreferences();
+      const res = await apiGetPreferences(activeStoreId);
       setPreferences(res.data);
     } catch {
       // Ignore preferences fetch errors
     }
-  }, []);
+  }, [activeStoreId]);
 
   const markAsRead = useCallback(async (id: string) => {
     try {
@@ -183,13 +183,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
 
     try {
-      const res = await apiUpdatePreferences(dto);
+      const res = await apiUpdatePreferences(dto, activeStoreId);
       setPreferences(res.data);
     } catch (err) {
       if (snapshot) setPreferences(snapshot);
       throw err;
     }
-  }, []);
+  }, [activeStoreId]);
 
   // Fetch initial stats when logged in, and again whenever the active store
   // scope changes (e.g. the seller switches stores via the dashboard's store

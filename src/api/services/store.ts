@@ -17,6 +17,13 @@ export interface EnabledCurrency {
   sanityBandMax: number | null;
 }
 
+/** One manual "Tax region" entry — see `UpdateStorePayload.taxRegions`. */
+export interface TaxRegion {
+  country: string;
+  state: string | null;
+  rate: number;
+}
+
 /** GET /api/store/public/enabled-currencies — the platform's real, dynamic
  *  Markets currency list (always includes 'USD' first). Public/no-auth —
  *  used by Onboarding's currency step, a store's "Markets" card, and the
@@ -76,6 +83,10 @@ export interface UpdateStorePayload {
   reviewModerationEnabled?: boolean;
   lowStockThreshold?: number;
   taxRate?: number;
+  /** Shopify-"Tax regions"-style manual per-destination rates — checked
+   *  before `taxRate` at checkout. `state: null` matches every state within
+   *  that country. `country` is an ISO-3166 alpha-2 code (e.g. 'US', 'PK'). */
+  taxRegions?: TaxRegion[];
   /** "Markets" — which of the platform's supported currencies buyers may
    *  check out in on this store. Must include the store's own baseCurrency.
    *  `null` explicitly means "no restriction — every platform currency is
@@ -84,6 +95,13 @@ export interface UpdateStorePayload {
    *  `[baseCurrency]`) just because "nothing is set yet" — that silently
    *  narrows a store that was previously unrestricted. */
   enabledCurrencies?: SupportedCurrency[] | null;
+  /** Customer Privacy — see `StoreData`'s identical fields for the doc comment. */
+  cookieBannerEnabled?: boolean;
+  cookieBannerMessage?: string | null;
+  cookieBannerRegionMode?: 'all' | 'eu_uk_only';
+  cookieBannerPosition?: 'bottom_bar' | 'bottom_corner';
+  cookieBannerColorMode?: 'dark' | 'light' | 'brand';
+  showDoNotSellLink?: boolean;
 }
 
 export interface StoreData {
@@ -102,8 +120,10 @@ export interface StoreData {
   contactPhone: string | null;
   /** Store-configurable "low stock" cutoff used by InventoryService's stats/alerts — was previously a fixed 10 for every store. */
   lowStockThreshold: number;
-  /** A flat percentage charged on top of the subtotal at checkout — 0 = no tax. Deliberately simple (no jurisdiction rules), see CheckoutService's comment. */
+  /** The DEFAULT flat percentage — used only when no `taxRegions` entry (or live TaxJar quote) matches the buyer's destination. 0 = no tax. */
   taxRate: number;
+  /** Manual per-country/state tax rates — see `UpdateStorePayload.taxRegions`. */
+  taxRegions: TaxRegion[];
   sellerType:   SellerType;
   productTypes: ProductType[];
   baseCurrency: SupportedCurrency;
@@ -143,6 +163,27 @@ export interface StoreData {
   /** Real storefront access gate — see `apiUpdateStorePrivacy`. Never
    *  includes the password itself (bcrypt hash, `select:false` server-side). */
   privacyMode: 'public' | 'password' | 'coming_soon';
+  /** Real Shopify-equivalent "Customer Privacy" — cookie-consent banner
+   *  (gates tracking-pixel script injection on the storefront, see
+   *  `StorefrontLayout.tsx`) + a CCPA-style disclosure link. Both default
+   *  false — a pre-existing store's storefront behaves unchanged until its
+   *  seller opts in. */
+  cookieBannerEnabled: boolean;
+  cookieBannerMessage: string | null;
+  showDoNotSellLink: boolean;
+  /** Real Shopify-equivalent "regions with consent laws" scoping for the
+   *  cookie banner — 'all' (default) shows it to every visitor; 'eu_uk_only'
+   *  shows it only to a visitor whose IP resolves to the EU/UK (resolved
+   *  server-side, see `shapePublicStoreResponse`). */
+  cookieBannerRegionMode: 'all' | 'eu_uk_only';
+  /** Purely cosmetic — where/how the banner renders, no effect on consent
+   *  logic. Both default to the original fixed look (`'bottom_bar'`/`'dark'`). */
+  cookieBannerPosition: 'bottom_bar' | 'bottom_corner';
+  cookieBannerColorMode: 'dark' | 'light' | 'brand';
+  /** Real Shopify "data sale opt-out requests" — submitted via the
+   *  storefront's "Do Not Sell My Personal Information" dialog, reviewed/
+   *  resolved here. Genuinely tiny in practice for most stores. */
+  privacyRequests: StorePrivacyRequest[];
   /** Marketplace listing lifecycle — independent of `verificationStatus`
    *  below (see store.schema.ts). Only `'active'` unlocks product creation
    *  and public storefront/marketplace visibility. */
@@ -228,11 +269,29 @@ export function apiResolveStoreByDomain(host: string) {
 
 export type StorePrivacyMode = 'public' | 'password' | 'coming_soon';
 
+export interface StorePrivacyRequest {
+  _id: string;
+  email: string;
+  status: 'pending' | 'completed';
+  createdAt: string;
+}
+
 /** PATCH /api/store/:storeId/privacy — seller-facing storefront gate control
  *  (Settings). `password` is only read when switching into 'password' mode
  *  with a NEW password typed — see the backend's own doc comment. */
 export function apiUpdateStorePrivacy(storeId: string, payload: { privacyMode: StorePrivacyMode; password?: string }) {
   return client.patch<never, ApiResponse<{ privacyMode: StorePrivacyMode }>>(ENDPOINTS.STORE.PRIVACY(storeId), payload);
+}
+
+/** POST /api/store/public/:storeId/privacy-requests — the storefront's real
+ *  "Do Not Sell My Personal Information" submit action. */
+export function apiSubmitPrivacyRequest(storeId: string, email: string) {
+  return client.post<never, ApiResponse<null>>(ENDPOINTS.STORE.PRIVACY_REQUEST_SUBMIT(storeId), { email });
+}
+
+/** PATCH /api/store/:storeId/privacy-requests/:requestId/complete — seller marks a submitted request resolved. */
+export function apiCompletePrivacyRequest(storeId: string, requestId: string) {
+  return client.patch<never, ApiResponse<StorePrivacyRequest[]>>(ENDPOINTS.STORE.PRIVACY_REQUEST_COMPLETE(storeId, requestId));
 }
 
 /** POST /api/store/public/:storeId/verify-password — the storefront gate's
@@ -361,6 +420,14 @@ export interface PublicStoreData {
    *  sees the real site, same as before this field existed. See
    *  `StorefrontLayout.tsx` for where this is enforced. */
   privacyMode: 'public' | 'password' | 'coming_soon';
+  /** Customer Privacy — see `StoreData`'s identical fields for the full doc
+   *  comment. `cookieBannerEnabled`/`showDoNotSellLink` default false. */
+  cookieBannerEnabled: boolean;
+  cookieBannerMessage: string | null;
+  /** Purely cosmetic banner appearance — see `StoreData`'s identical fields. */
+  cookieBannerPosition: 'bottom_bar' | 'bottom_corner';
+  cookieBannerColorMode: 'dark' | 'light' | 'brand';
+  showDoNotSellLink: boolean;
 }
 
 export interface PublicStoreProductsParams {
