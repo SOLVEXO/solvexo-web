@@ -46,8 +46,38 @@ export const SECTION_TYPES = [
   'craft_process',
   'tech_specs_compare',
   'soft_gallery',
+  // Core/locked sections (Phase 4) — always pre-seeded into their owning
+  // Product/Search/Cart/Blog-Index/Blog-Article template, never removable
+  // via the section editor (see `CORE_SECTION_TYPES` below and the backend's
+  // matching doc comment on `SECTION_TYPES`). The real, always-correct
+  // commerce/listing markup they represent stays exactly where it already
+  // was — each theme's own page component — these types are only ever
+  // rendered for real by the Customize editor's own live preview, as a
+  // representative placeholder.
+  'product_main',
+  'search_results',
+  'cart_items',
+  'cart_summary',
+  'blog_post_list',
+  'article_content',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
+
+/** Every core/locked section type — see the comment above. Shared by the
+ *  Customize editor (`PageSectionsEditor`/`sectionRegistry`, which hide the
+ *  Remove/Duplicate/Hide/Drag controls for these) and each theme's own
+ *  storefront pages (`AtelierProductPage` etc., which filter these OUT of
+ *  what they hand to the generic section renderer, since their own fixed
+ *  markup already renders the real thing — rendering both would duplicate
+ *  it on the live storefront). */
+export const CORE_SECTION_TYPES: readonly SectionType[] = [
+  'product_main',
+  'search_results',
+  'cart_items',
+  'cart_summary',
+  'blog_post_list',
+  'article_content',
+];
 
 export interface Section {
   _id?:      string;

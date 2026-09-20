@@ -17,5 +17,6 @@ import './TrustBadgesSection';
 import './NewsletterSection';
 import './DropCountdownSection';
 import './MetaobjectListSection';
+import './CoreSections';
 
 export { AtelierSectionRenderer, getRegisteredAtelierSectionTypes } from './atelierSectionRenderer';

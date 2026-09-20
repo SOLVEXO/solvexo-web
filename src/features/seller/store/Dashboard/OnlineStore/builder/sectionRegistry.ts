@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 
@@ -14,6 +14,8 @@ export interface SectionMeta {
   defaultBlockSettings: Record<string, any>;
   /** Excluded from `AddSectionModal`'s general picker — still has full metadata (icon/label/settings form) for when it already exists in a `Section[]` array. Used by `collection_product_grid`, which is pre-seeded once into the singleton Collection Template and never manually addable. */
   hidden?: boolean;
+  /** Core/locked section (Phase 4, see `CORE_SECTION_TYPES`) — `PageSectionsEditor` renders it without a Remove/Duplicate/Hide/Drag control, and never offers it as an addable block-donor either (implies `hidden: true`, which every entry below still sets explicitly for clarity). */
+  locked?: boolean;
   /** Drives `SchemaForm` — this section's own settings form. Replaces what used to be a hand-written `{type === '…' && …}` branch in `SectionFields.tsx`; see that file's own comment for why this exists. */
   settingsSchema: FieldSchema[];
 }
@@ -192,6 +194,51 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
     ]),
   },
+  // ── Core/locked sections (Phase 4) — always pre-seeded, never manually
+  // addable (`hidden: true`) and never removable once present (`locked: true`).
+  // See `CORE_SECTION_TYPES` in `storefrontTypes.ts` for the full story. ────
+  {
+    type: 'product_main', label: 'Main Product', description: 'The product\'s core content — media, title, price, variant picker, quantity and buy buttons. Always shown on this product\'s page; hide or reorder individual items below.',
+    Icon: ShoppingBag, color: '#D97757',
+    defaultSettings: {}, allowedBlockTypes: ['product_media', 'product_title', 'product_price', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description'], blockLabel: 'Item',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
+  {
+    type: 'search_results', label: 'Search Results', description: 'The live product grid shown for whatever a buyer searches. Always present on the Search page.',
+    Icon: Search, color: '#0EA5E9',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
+  {
+    type: 'cart_items', label: 'Cart Contents', description: 'The buyer\'s cart line items. Always present on the Cart page.',
+    Icon: ShoppingCart, color: '#059669',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
+  {
+    type: 'cart_summary', label: 'Cart Summary', description: 'Subtotal, shipping and the checkout button. Always present on the Cart page.',
+    Icon: Receipt, color: '#7C3AED',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
+  {
+    type: 'blog_post_list', label: 'Blog Posts', description: 'The list of your published blog posts. Always present on the Blog index page.',
+    Icon: Newspaper, color: '#DC2626',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
+  {
+    type: 'article_content', label: 'Article Content', description: 'The article\'s title and body. Always present on a Blog Article page.',
+    Icon: FileText, color: '#4F46E5',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
 ];
 
 export const SECTION_META_BY_TYPE: Record<SectionType, SectionMeta> = Object.fromEntries(SECTION_META.map(m => [m.type, m])) as Record<SectionType, SectionMeta>;
@@ -296,4 +343,13 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     ] },
     { key: 'text', kind: 'text', label: 'Text', half: true, required: true, maxLength: 80 },
   ],
+  // product_main's 7 fixed blocks — no settings, purely enable/disable +
+  // reorder of an already-real, already-rendered piece of the product page.
+  product_media: [],
+  product_title: [],
+  product_price: [],
+  product_variant_picker: [],
+  product_quantity: [],
+  product_buy_buttons: [],
+  product_description: [],
 };

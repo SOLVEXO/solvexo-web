@@ -12,7 +12,7 @@ import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -162,6 +162,18 @@ export function AtelierProductPage() {
   // via the store's own real "product" alternate-template document — the
   // exact same backend `collection-template` infra Product/Collection
   // Template editing already uses elsewhere in this app.
+  //
+  // Phase 4: the template now also always carries a real, LOCKED
+  // `product_main` section (seeded server-side — see
+  // `collection-template/core-sections.util.ts`) purely so the Customize
+  // editor's section list/preview shows this fixed content instead of
+  // looking blank. It is NOT re-rendered here via the generic section
+  // renderer (that would duplicate this exact markup on the real page) —
+  // instead, `isBlockOn` reads its 7 blocks' real `enabled` flags so a
+  // merchant hiding one of them (e.g. Quantity) in the editor has a real
+  // effect here, not a no-op. A store whose published template predates
+  // this (no `product_main` entry at all) resolves every block to "on",
+  // byte-identical to before this existed.
   useEffect(() => {
     if (!product) return;
     apiGetPublicCollectionTemplate(store.storeId, 'product', product.templateKey || 'default')
@@ -181,6 +193,9 @@ export function AtelierProductPage() {
       navigate(`/product/${product.slug}`, { replace: true });
     }
   }, [product, slug, navigate]);
+
+  const productMainSection = templateSections.find(s => s.type === 'product_main');
+  const isBlockOn = (blockType: string) => productMainSection ? productMainSection.blocks.find(b => b.type === blockType)?.enabled !== false : true;
 
   const variants = detail?.variants ?? [];
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
@@ -223,12 +238,14 @@ export function AtelierProductPage() {
   return (
     <main>
       <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
-        <Gallery images={allImages} name={product.name} />
+        {isBlockOn('product_media') && <Gallery images={allImages} name={product.name} />}
 
         <div className="flex flex-col">
-          <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15 }}>
-            {product.name}
-          </h1>
+          {isBlockOn('product_title') && (
+            <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15 }}>
+              {product.name}
+            </h1>
+          )}
 
           {product.averageRating > 0 && (
             <div className="flex items-center gap-1.5 mt-2">
@@ -239,25 +256,27 @@ export function AtelierProductPage() {
             </div>
           )}
 
-          <div className="flex items-baseline gap-3 mt-4 mb-6">
-            <span style={{ fontFamily: t.fonts.body, fontSize: '22px', color: t.colors.ink, fontWeight: 500 }}>
-              {symbol}{displayPrice != null ? fmt2(displayPrice) : ''}
-            </span>
-            {displayCompareAt != null && (
-              <>
-                <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
-                  {symbol}{fmt2(displayCompareAt)}
-                </span>
-                {pctOff != null && (
-                  <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 600, color: t.colors.accent }}>−{pctOff}%</span>
-                )}
-              </>
-            )}
-          </div>
+          {isBlockOn('product_price') && (
+            <div className="flex items-baseline gap-3 mt-4 mb-6">
+              <span style={{ fontFamily: t.fonts.body, fontSize: '22px', color: t.colors.ink, fontWeight: 500 }}>
+                {symbol}{displayPrice != null ? fmt2(displayPrice) : ''}
+              </span>
+              {displayCompareAt != null && (
+                <>
+                  <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
+                    {symbol}{fmt2(displayCompareAt)}
+                  </span>
+                  {pctOff != null && (
+                    <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 600, color: t.colors.accent }}>−{pctOff}%</span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
-          <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />
+          {isBlockOn('product_variant_picker') && <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />}
 
-          {!isDigital && (
+          {isBlockOn('product_quantity') && !isDigital && (
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center" style={{ border: `1px solid ${t.colors.border}` }}>
                 <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
@@ -285,16 +304,18 @@ export function AtelierProductPage() {
             </button>
           )}
 
-          <AtelierButton
-            disabled={stock <= 0}
-            loading={adding === activeVariant?._id}
-            onClick={handleAddToCart}
-            style={{ width: '100%', justifyContent: 'center' }}
-          >
-            {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-          </AtelierButton>
+          {isBlockOn('product_buy_buttons') && (
+            <AtelierButton
+              disabled={stock <= 0}
+              loading={adding === activeVariant?._id}
+              onClick={handleAddToCart}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+            </AtelierButton>
+          )}
 
-          {product.description && (
+          {isBlockOn('product_description') && product.description && (
             <div className="mt-8 pt-8" style={{ borderTop: `1px solid ${t.colors.border}` }}>
               <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '10px' }}>Description</p>
               <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{product.description}</p>
@@ -307,7 +328,15 @@ export function AtelierProductPage() {
         <ProductReviewsSection productId={product._id} />
       </div>
 
-      {templateSections.length > 0 && <AtelierSectionRenderer sections={templateSections} dynamicSourceValues={dynamicSourceValues} />}
+      {/* `product_main` (the locked core section, seeded server-side) is
+         NOT re-rendered here — it's already the real, always-rendered
+         gallery/title/price/etc. above; rendering it again via the generic
+         section renderer would duplicate that content on the page. Only
+         genuinely surrounding sections a seller added reach this call. */}
+      {(() => {
+        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <AtelierSectionRenderer sections={surrounding} dynamicSourceValues={dynamicSourceValues} />;
+      })()}
 
       {previewOpen && (
         <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>

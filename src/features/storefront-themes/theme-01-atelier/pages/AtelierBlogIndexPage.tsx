@@ -4,7 +4,7 @@ import { Newspaper, ImageOff } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { apiListPublicBlogPosts, type BlogPostSummary } from '@/api/services/storeBlog';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierSectionRenderer } from '../sections';
 import { atelierTheme as t } from '../theme.config';
@@ -53,7 +53,13 @@ export function AtelierBlogIndexPage() {
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 600, color: t.colors.ink, marginBottom: '36px' }}>{blogTitle ?? 'Journal'}</h1>
 
-      {sections.length > 0 && <div style={{ marginBottom: '40px' }}><AtelierSectionRenderer sections={sections} /></div>}
+      {/* `blog_post_list` (the locked core section, seeded server-side) is
+         NOT re-rendered here — the real post grid below already is it;
+         rendering it again would duplicate the list on the page. */}
+      {(() => {
+        const surrounding = sections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <div style={{ marginBottom: '40px' }}><AtelierSectionRenderer sections={surrounding} /></div>;
+      })()}
 
       {posts === null && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">

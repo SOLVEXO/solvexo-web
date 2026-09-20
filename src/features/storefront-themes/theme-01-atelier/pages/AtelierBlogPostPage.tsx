@@ -7,7 +7,7 @@ import {
 } from '@/api/services/storeBlog';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierContentBlocks } from '../components/AtelierContentBlocks';
 import { AtelierButton } from '../components/AtelierButton';
@@ -143,7 +143,13 @@ export function AtelierBlogPostPage() {
         <AtelierContentBlocks blocks={post.content} />
       </div>
       {post.commentsEnabled && <CommentsSection storeId={store.storeId} postId={post._id} />}
-      {templateSections.length > 0 && <div style={{ marginTop: '48px' }}><AtelierSectionRenderer sections={templateSections} /></div>}
+      {/* `article_content` (the locked core section, seeded server-side) is
+         NOT re-rendered here — the real article title/body above already
+         is it; rendering it again would duplicate that content. */}
+      {(() => {
+        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <div style={{ marginTop: '48px' }}><AtelierSectionRenderer sections={surrounding} /></div>;
+      })()}
     </article>
   );
 }

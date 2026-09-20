@@ -6,7 +6,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
@@ -232,7 +232,14 @@ export function AtelierCartPage() {
         </div>
       )}
 
-      {templateSections.length > 0 && <div style={{ marginTop: '56px' }}><AtelierSectionRenderer sections={templateSections} /></div>}
+      {/* `cart_items`/`cart_summary` (the two locked core sections, seeded
+         server-side) are NOT re-rendered here — the line items/totals/
+         checkout button above are already the real thing; rendering them
+         again would duplicate that content on the page. */}
+      {(() => {
+        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <div style={{ marginTop: '56px' }}><AtelierSectionRenderer sections={surrounding} /></div>;
+      })()}
     </main>
   );
 }

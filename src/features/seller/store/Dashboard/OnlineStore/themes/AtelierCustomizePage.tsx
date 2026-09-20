@@ -62,6 +62,20 @@ type ResourceConfig = { resourceType: ResourceTemplateType; templateKey: string;
 // was actually active on the store being edited).
 const ADMIN_ACCENT = '#D97757';
 
+// Phase 4 — explains the locked "core content" card these 5 scopes now
+// always seed (Main Product / Search Results / Cart Contents+Summary /
+// Blog Posts / Article Content), instead of leaving a merchant to wonder
+// why a section they can't delete is sitting in what used to look like an
+// empty list. `undefined` for every other scope (Home, Collection, theme) —
+// `PageSectionsEditor` simply shows no banner then, unchanged from before.
+const SCOPE_HELPER_TEXT: Record<string, string> = {
+  product: 'This product\'s page always shows its media, title, price, variant picker, quantity and buy buttons — the locked "Main Product" card below. Hide or reorder its individual items there, or add more sections to customize what surrounds it.',
+  search: 'The Search page always shows its live results grid — the locked "Search Results" card below. Add sections to customize what surrounds it.',
+  cart: 'The Cart page always shows its line items and summary/checkout button — the two locked cards below. Add sections to customize what surrounds them.',
+  blogIndex: 'The Blog index always shows your list of posts — the locked "Blog Posts" card below. Add sections to customize what surrounds it.',
+  blogArticle: 'Every article always shows its title and body — the locked "Article Content" card below. Add sections to customize what surrounds it.',
+};
+
 function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: boolean; label: string }) {
   return (
     <button
@@ -463,6 +477,7 @@ export function AtelierCustomizePage() {
               onSelectSection={setSelectedSectionId}
               supportedSectionTypes={supportedSectionTypes}
               colorSchemes={draftTheme?.theme.colorSchemes ?? []}
+              helperText={SCOPE_HELPER_TEXT[scope]}
             />
           </div>
 

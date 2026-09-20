@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye, EyeOff, Copy } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye, EyeOff, Copy, Lock, Info } from 'lucide-react';
 import { ActionMenu } from '@/components/comman/ui';
 import type { Section, Block, SectionType } from '@/api/services/storefrontTypes';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
@@ -17,7 +17,7 @@ function cloneWithoutId<T extends { _id?: string }>(item: T): T {
   return { ...rest } as T;
 }
 
-function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId }: {
+function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked }: {
   block: Block;
   sectionType: string;
   onChange: (next: Block) => void;
@@ -25,7 +25,11 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
   onDuplicate: () => void;
   pageOptions: PageOption[];
   storeId: string;
- 
+  /** Belongs to a locked/core section (`SectionMeta.locked`, see
+   *  `sectionRegistry.ts`) — it's one of a fixed, required set (e.g.
+   *  `product_main`'s 7 items), so it can be hidden/reordered but never
+   *  removed or duplicated. */
+  locked?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
@@ -45,11 +49,15 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
           className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">
           {hidden ? <EyeOff size={13} /> : <Eye size={13} />}
         </button>
-        <button type="button" onClick={onDuplicate} aria-label="Duplicate" title="Duplicate"
-          className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">
-          <Copy size={13} />
-        </button>
-        <button type="button" onClick={() => setConfirmingRemove(true)} className="text-error/70 text-[11px] font-semibold px-2 py-1 hover:bg-error-bg hover:text-error rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">Remove</button>
+        {!locked && (
+          <button type="button" onClick={onDuplicate} aria-label="Duplicate" title="Duplicate"
+            className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">
+            <Copy size={13} />
+          </button>
+        )}
+        {!locked && (
+          <button type="button" onClick={() => setConfirmingRemove(true)} className="text-error/70 text-[11px] font-semibold px-2 py-1 hover:bg-error-bg hover:text-error rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">Remove</button>
+        )}
       </div>
       {open && (
         <div className="px-3 pb-3 pt-1 border-t border-bone/70">
@@ -98,6 +106,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   const meta = SECTION_META_BY_TYPE[section.type];
   const cardRef = useRef<HTMLDivElement>(null);
   const hidden = section.enabled === false;
+  const locked = !!meta?.locked;
 
   // Clicking a section in the live preview should surface its card here —
   // auto-expand it and scroll it into view, the same "select it and I'll
@@ -123,16 +132,24 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
           className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
           {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </button>
-        <button type="button" onClick={() => onChange({ ...section, enabled: !hidden ? false : true })} aria-label={hidden ? 'Show section' : 'Hide section'} title={hidden ? 'Show section' : 'Hide section'}
-          className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
-          {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
-        </button>
-        <button type="button" onClick={onDuplicate} aria-label="Duplicate section" title="Duplicate section"
-          className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
-          <Copy size={14} />
-        </button>
-        <button type="button" onClick={() => setConfirmingRemove(true)} aria-label="Remove section"
-          className="w-7 h-7 flex items-center justify-center text-error/70 rounded-md hover:bg-error-bg hover:text-error bg-transparent border-none cursor-pointer shrink-0 transition-colors"><Trash2 size={14} /></button>
+        {locked ? (
+          <span title="Core content — always shown, can't be removed" className="w-7 h-7 flex items-center justify-center text-slate shrink-0">
+            <Lock size={13} />
+          </span>
+        ) : (
+          <>
+            <button type="button" onClick={() => onChange({ ...section, enabled: !hidden ? false : true })} aria-label={hidden ? 'Show section' : 'Hide section'} title={hidden ? 'Show section' : 'Hide section'}
+              className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
+              {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+            <button type="button" onClick={onDuplicate} aria-label="Duplicate section" title="Duplicate section"
+              className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
+              <Copy size={14} />
+            </button>
+            <button type="button" onClick={() => setConfirmingRemove(true)} aria-label="Remove section"
+              className="w-7 h-7 flex items-center justify-center text-error/70 rounded-md hover:bg-error-bg hover:text-error bg-transparent border-none cursor-pointer shrink-0 transition-colors"><Trash2 size={14} /></button>
+          </>
+        )}
       </div>
       {confirmingRemove && (
         <ConfirmDialog
@@ -185,11 +202,14 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
                     }}
                     pageOptions={pageOptions}
                     storeId={storeId}
-                   
+                    locked={locked}
                   />
                 )}
               </SortableList>
-              {meta.allowedBlockTypes.length === 1 ? (
+              {/* A locked section's blocks are a fixed, required set (see
+                 `sectionRegistry.ts`'s `SectionMeta.locked`) — reorder/hide
+                 only, never add another. */}
+              {!locked && (meta.allowedBlockTypes.length === 1 ? (
                 <button type="button" onClick={() => onChange({ ...section, blocks: [...section.blocks, { type: meta.allowedBlockTypes[0], settings: { ...meta.defaultBlockSettings } }] })}
                   className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left flex items-center gap-1 px-1 hover:underline">
                   <Plus size={13} /> Add {meta.blockLabel.toLowerCase()}
@@ -204,7 +224,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
                     onClick: () => onChange({ ...section, blocks: [...section.blocks, { type: bt, settings: {} }] }),
                   }))}
                 />
-              )}
+              ))}
             </div>
           )}
         </div>
@@ -213,7 +233,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes, colorSchemes = [] }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes, colorSchemes = [], helperText }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -239,11 +259,25 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
    *  `SectionCard`'s Color Scheme picker. Optional, defaults to empty (just
    *  the "Theme default" option) for any caller that hasn't loaded them. */
   colorSchemes?: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
+  /** Shown as a small info banner above the list — e.g. explaining that a
+   *  Product/Search/Cart/Blog template already has real, locked core
+   *  content (a merchant can only add what surrounds it) instead of leaving
+   *  them to wonder why a "Main Product" card they can't delete is there,
+   *  or reading a plain section list as blank/incomplete. Omitted = no
+   *  banner, unchanged from before this prop existed. */
+  helperText?: string;
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
   return (
     <div className="flex flex-col gap-3">
+      {helperText && (
+        <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-brand-pale-orange/60 border border-brand-orange/15">
+          <Info size={15} className="text-brand-orange shrink-0 mt-0.5" />
+          <p className="text-[12.5px] text-charcoal leading-relaxed">{helperText}</p>
+        </div>
+      )}
+
       {sections.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-3 py-14 border-2 border-dashed border-bone rounded-2xl bg-white/60 text-center px-6">
           <div className="w-12 h-12 rounded-xl bg-brand-pale-orange flex items-center justify-center">

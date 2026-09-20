@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
 import { atelierTheme as t } from '../theme.config';
@@ -41,9 +41,14 @@ export function AtelierSearchPage() {
     );
   }
 
+  // `search_results` (the locked core section, seeded server-side) is NOT
+  // re-rendered here — `AtelierProductGrid` below is already the real
+  // results grid; rendering it again would duplicate the grid on the page.
+  const surrounding = sections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-      {sections.length > 0 && <div style={{ marginBottom: '32px' }}><AtelierSectionRenderer sections={sections} /></div>}
+      {surrounding.length > 0 && <div style={{ marginBottom: '32px' }}><AtelierSectionRenderer sections={surrounding} /></div>}
       <AtelierProductGrid heading={`Results for "${q}"`} search={q} />
     </main>
   );

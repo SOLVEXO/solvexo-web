@@ -400,7 +400,14 @@ export function AtelierEditCodePage() {
           ) : selected.kind === 'assets' ? (
             <AssetsPanel storeId={storeId} />
           ) : selected.kind === 'json' ? (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            // `xl:grid-cols-2` splits the column ~50/50, capping the Live
+            // Preview at ~530px regardless of device — so "tablet" (768px)
+            // and "desktop" (100%) both clamped to that same 530px, looking
+            // identical. Stacking to one full-width column for tablet/mobile
+            // (unchanged for desktop) gives the preview its full ~1160px
+            // content width to actually show a real, distinct 768px/390px
+            // box — same `device` state, no new logic.
+            <div className={device === 'desktop' ? 'grid grid-cols-1 xl:grid-cols-2 gap-4' : 'flex flex-col gap-4'}>
               <div className="flex flex-col gap-2 min-w-0">
                 {jsonError && <p className="text-[12px] text-error px-1">{jsonError}</p>}
                 <textarea
