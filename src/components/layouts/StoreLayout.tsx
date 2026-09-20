@@ -1006,7 +1006,12 @@ function readCachedStore(storeId: string): StoreData | null {
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
-function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
+// Exported so `ThemeEditorLayout` can reuse the exact same store-fetching
+// logic (real store data, per-store favicon, notification scoping) instead
+// of duplicating it — the dedicated fullscreen theme editor shell needs the
+// identical `useStoreWorkspace()` context every store page already gets,
+// just without the sidebar/notification-bell/store-switcher chrome around it.
+export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const { storeId = '' } = useParams<{ storeId: string }>();
   // Scopes the shared notification bell (top navbar + Account "Notifications"
   // tab) to just this store for as long as the seller is inside its
@@ -1236,6 +1241,35 @@ function GatedOutlet() {
   return <Outlet />;
 }
 
+// A 'staff' session is a real, separate identity (see StaffMember/
+// PermissionsGuard on the backend) — allowed into a store workspace, but
+// ONLY for the one store its login is scoped to (`storeId` on the stored
+// user, set at staff login — see StaffLoginPage). This is a UX convenience
+// mirroring the backend's own real enforcement (`PermissionsGuard` already
+// 403s a mismatched store server-side no matter what this check does) —
+// never the actual security boundary.
+//
+// Extracted so `ThemeEditorLayout` (the dedicated fullscreen theme editor
+// shell — Customize/Header&Footer/Edit Code, deliberately NOT nested under
+// `StoreLayout`'s own sidebar chrome) can apply the exact same access rule
+// without duplicating it. Returns the redirect path (with the same
+// `?redirect=` convention `SellerLayout`'s guard already uses) or `null`
+// when access is allowed.
+export function resolveStoreAccessRedirect(routeStoreId: string | undefined, currentPath: string): string | null {
+  const user = TokenStorage.getUser<{ role?: AppRole; storeId?: string }>();
+  const isSeller = user?.role === 'seller';
+  const isScopedStaff = user?.role === 'staff' && user.storeId === routeStoreId;
+  if (!TokenStorage.isLoggedIn() || !(isSeller || isScopedStaff)) {
+    // A staff session whose `storeId` doesn't match this URL also lands
+    // here (wrong store), not silently — since staff-login is per-store, no
+    // generic redirect can guess the right login URL, so this falls back to
+    // the seller login.
+    const loginPath = user?.role === 'staff' ? `/staff-login/${user.storeId}` : '/login';
+    return `${loginPath}?redirect=${encodeURIComponent(currentPath)}`;
+  }
+  return null;
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
   const { pathname: currentPath } = useLocation();
@@ -1243,27 +1277,8 @@ export function StoreLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);
 
-  // A 'staff' session is a real, separate identity (see StaffMember/
-  // PermissionsGuard on the backend) — allowed into this same dashboard
-  // shell, but ONLY for the one store its login is scoped to (`storeId` on
-  // the stored user, set at staff login — see StaffLoginPage). This is a
-  // UX convenience mirroring the backend's own real enforcement
-  // (`PermissionsGuard` already 403s a mismatched store server-side no
-  // matter what this check does) — never the actual security boundary.
-  const user = TokenStorage.getUser<{ role?: AppRole; storeId?: string }>();
-  const isSeller = user?.role === 'seller';
-  const isScopedStaff = user?.role === 'staff' && user.storeId === routeStoreId;
-  if (!TokenStorage.isLoggedIn() || !(isSeller || isScopedStaff)) {
-    // Same `?redirect=` convention as SellerLayout's guard — a buyer/
-    // logged-out visitor hitting a store-workspace URL directly (e.g. the
-    // verification page) lands back on it after logging in, instead of a
-    // bare /login that drops where they were headed. A staff session whose
-    // `storeId` doesn't match this URL also lands here (wrong store), not
-    // silently — since staff-login is per-store, no generic redirect can
-    // guess the right login URL, so this falls back to the seller login.
-    const loginPath = user?.role === 'staff' ? `/staff-login/${user.storeId}` : '/login';
-    return <Navigate to={`${loginPath}?redirect=${encodeURIComponent(currentPath)}`} replace />;
-  }
+  const accessRedirect = resolveStoreAccessRedirect(routeStoreId, currentPath);
+  if (accessRedirect) return <Navigate to={accessRedirect} replace />;
 
   return (
     <StoreWorkspaceProvider>

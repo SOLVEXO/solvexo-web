@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2, FileJson, FileCode, Folder, Save, CheckCircle2, UploadCloud, AlertCircle, Image as ImageIcon, ExternalLink, Monitor, Tablet, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
+import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
 import {
   apiListStorePages, apiUpdateStorePageSections, apiPublishStorePage,
   type StorePageData,
@@ -327,29 +328,45 @@ export function AtelierEditCodePage() {
 
   return (
     <div className="bg-[#FAF9F5] min-h-full">
-      <StorePageHeader
+      <EditorTopBar
+        exitTo={`/store/${storeId}/online-store/themes`}
         title={`Edit Code — ${manifest.name}`}
         subtitle="Developer workspace — each templates/*.json is the same real draft document the Customize page edits, just as raw data."
-        actions={
-          selected?.kind === 'json' ? (
-            <div className="flex items-center gap-2">
-              {jsonError ? (
-                <span className="flex items-center gap-1 text-[12px] text-error"><AlertCircle size={13} /> Invalid JSON</span>
-              ) : dirty ? (
-                <span className="text-[12px] text-slate">Unsaved changes</span>
-              ) : (
-                <span className="flex items-center gap-1 text-[12px] text-success"><CheckCircle2 size={13} /> Saved</span>
-              )}
-              <button onClick={handleSaveDraft} disabled={saving || !!jsonError} className="flex items-center gap-1.5 px-3.5 py-[8px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
-                {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save Draft
-              </button>
-              <button onClick={handlePublish} disabled={publishing} className="flex items-center gap-1.5 px-4 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: '#D97757' }}>
-                {publishing ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} Publish
-              </button>
+      >
+        <PreviewButton storeId={storeId} />
+        {selected?.kind === 'json' && (
+          <div className="flex items-center gap-2">
+            {/* Device toggle moved here from the Live Preview panel's own
+               mini-header (Phase 2 consistency with Customize/Header&Footer's
+               top bar) — same `device`/`setDevice` state, no behavior change. */}
+            <div className="flex items-center gap-1 border border-bone rounded-lg p-1 bg-white">
+              {(['desktop', 'tablet', 'mobile'] as const).map(d => {
+                const Icon = d === 'desktop' ? Monitor : d === 'tablet' ? Tablet : Smartphone;
+                return (
+                  <button key={d} type="button" onClick={() => setDevice(d)} aria-label={d}
+                    className="p-1.5 rounded-md border-none cursor-pointer"
+                    style={{ background: device === d ? '#F1EDE5' : 'transparent', color: device === d ? '#161412' : '#8C8A82' }}>
+                    <Icon size={13} />
+                  </button>
+                );
+              })}
             </div>
-          ) : undefined
-        }
-      />
+            {jsonError ? (
+              <span className="flex items-center gap-1 text-[12px] text-error"><AlertCircle size={13} /> Invalid JSON</span>
+            ) : dirty ? (
+              <span className="text-[12px] text-slate">Unsaved changes</span>
+            ) : (
+              <span className="flex items-center gap-1 text-[12px] text-success"><CheckCircle2 size={13} /> Saved</span>
+            )}
+            <button onClick={handleSaveDraft} disabled={saving || !!jsonError} className="flex items-center gap-1.5 px-3.5 py-[8px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save Draft
+            </button>
+            <button onClick={handlePublish} disabled={publishing} className="flex items-center gap-1.5 px-4 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: '#D97757' }}>
+              {publishing ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} Publish
+            </button>
+          </div>
+        )}
+      </EditorTopBar>
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-0 px-4 lg:px-7 py-5">
         <div className="flex flex-col gap-4 pr-4 border-r border-bone">
@@ -396,21 +413,10 @@ export function AtelierEditCodePage() {
               </div>
 
               <div className="flex flex-col gap-2 min-w-0">
-                <div className="flex items-center justify-between px-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Live Preview</p>
-                  <div className="flex items-center gap-1 border border-bone rounded-lg p-1 bg-white">
-                    {(['desktop', 'tablet', 'mobile'] as const).map(d => {
-                      const Icon = d === 'desktop' ? Monitor : d === 'tablet' ? Tablet : Smartphone;
-                      return (
-                        <button key={d} type="button" onClick={() => setDevice(d)} aria-label={d}
-                          className="p-1.5 rounded-md border-none cursor-pointer"
-                          style={{ background: device === d ? '#F1EDE5' : 'transparent', color: device === d ? '#161412' : '#8C8A82' }}>
-                          <Icon size={13} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* Device toggle now lives in the top bar (see `EditorTopBar`
+                   usage above) — kept out of this mini-header to avoid two
+                   controls for the same `device` state. */}
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate px-1">Live Preview</p>
                 <div className="border border-bone rounded-xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 300px)' }}>
                   <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-3">
                     <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: getThemePreviewComponents(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID).theme.colors.bg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>

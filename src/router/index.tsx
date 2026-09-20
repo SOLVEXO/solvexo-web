@@ -12,6 +12,7 @@ import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
+import { ThemeEditorLayout } from '@/components/layouts/ThemeEditorLayout';
 import { RequireRole }  from './RequireRole';
 
 // ── Every route below is code-split via React.lazy() — this used to be ~100
@@ -366,9 +367,13 @@ const mainRouter = createBrowserRouter([
           // `apiGetStoreTheme(storeId)` — so this is purely a legibility fix,
           // not a functional one; `ThemeLibraryPage.tsx`'s links now build
           // this segment from the real `entry.id` instead of hardcoding it.
-          { path: 'online-store/themes/:themeId/customize', element: <AtelierCustomizePage /> },
-          { path: 'online-store/themes/:themeId/edit-code', element: <AtelierEditCodePage /> },
-          { path: 'online-store/themes/:themeId/header-footer', element: <AtelierHeaderFooterPage /> },
+          // Customize / Edit Code / Header & Footer moved OUT of this array —
+          // Phase 2 of the Online Store rebuild gives them their own
+          // dedicated fullscreen editor shell (`ThemeEditorLayout`, no
+          // dashboard sidebar/bell/switcher chrome), registered as a sibling
+          // route below, next to `ThemeDemoPreview` (which already used this
+          // same "not nested under StoreLayout" pattern for the identical
+          // reason). See that route block's own comment.
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/menus',                element: <MenuManagerPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
@@ -415,6 +420,25 @@ const mainRouter = createBrowserRouter([
       // `ThemeLibraryPage.tsx` still resolves to this exact route — only
       // where it's registered in the tree changed, not the URL.
       { path: '/store/:storeId/online-store/themes/:themeId/preview', element: <ThemeDemoPreview /> },
+
+      // ── Dedicated fullscreen Theme Editor (Phase 2) ────────────────────
+      // Customize / Header & Footer / Edit Code — a distraction-free editor
+      // shell, not a dashboard page with extra buttons. Deliberately NOT
+      // nested under `StoreLayout` (same reasoning as `ThemeDemoPreview`
+      // just above): no sidebar, no notification bell, no store switcher.
+      // `ThemeEditorLayout` still resolves the identical `useStoreWorkspace()`
+      // context via the same `StoreWorkspaceProvider` `StoreLayout` uses, so
+      // none of these three pages needed any data-fetching change — only
+      // their own top bar (`StorePageHeader` → `EditorTopBar`) changed.
+      {
+        path: '/store/:storeId/online-store/themes/:themeId',
+        element: <ThemeEditorLayout />,
+        children: [
+          { path: 'customize',      element: <AtelierCustomizePage /> },
+          { path: 'edit-code',      element: <AtelierEditCodePage /> },
+          { path: 'header-footer',  element: <AtelierHeaderFooterPage /> },
+        ],
+      },
 
       // Real, shareable "see this before it's live" link — public, no auth,
       // no dashboard chrome (same reasoning as the Theme Demo Preview route

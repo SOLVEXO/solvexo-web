@@ -4,21 +4,21 @@ import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
   CheckCircle, Clock, Globe, ExternalLink,
   ArrowRight, Settings, AlertTriangle, Lightbulb,
-  Megaphone, ClipboardList, Plus, History, Wallet,
+  Megaphone, ClipboardList, Plus, History, Wallet, Flame,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
 import { AreaChart } from '@/components/comman/charts';
-import { MetricCard, SkeletonBox, Button, FilterDropdown, CopyIconButton } from '@/components/comman/ui';
+import { MetricCard, SkeletonBox, Button, FilterDropdown, CopyIconButton, StatusBadge } from '@/components/comman/ui';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday, apiSellerAnalyticsSalesForecast,
   type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData, type SellerSalesForecastData,
 } from '@/api/services/analytics/analytics';
 import type { AnalyticsRangePreset } from '@/components/comman/analytics/analyticsFilters';
-import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from '@/api/services/product';
+import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders, apiGetTrendingProducts, type SellerOrder } from '@/api/services/product';
 import { apiGetSellerReturns } from '@/api/services/orders';
 import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
-import { apiUpdateStore } from '@/api/services/store';
+import { apiUpdateStore, type PublicStoreProduct } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetFinanceDashboard, type FinanceWallet } from '@/api/services/finance';
 import { apiGetActivityLog, type ActivityLogEntry, type ActivityCategory } from '@/api/services/activityLog';
@@ -337,10 +337,13 @@ function RecentActivityCard({ storeId }: { storeId: string }) {
     // it stretches to match Setup Guide's height, with the footer pinned to
     // the bottom (mt-auto below) so a short activity list doesn't leave the
     // "View activity" link stranded mid-card.
-    <div className={`dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden flex flex-col ${collapsed ? 'self-start' : 'h-full'}`}>
+    <div className={`dash-section-enter surface-panel rounded-2xl overflow-hidden flex flex-col ${collapsed ? 'self-start' : 'h-full'}`}>
       {/* Same header shape as SetupGuideCard's own header (icon badge +
          title + inline subtitle + chevron, border only while expanded) — so
-         the two collapsed cards land on the exact same height. */}
+         the two collapsed cards land on the exact same height. Uses
+         surface-panel (not a hand-rolled bg-white/border-bone) so it matches
+         every other card on this page — this was the one card still on the
+         old pattern, a leftover inconsistency fixed here. */}
       <button
         onClick={() => setCollapsed(c => !c)}
         className={`w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-0 cursor-pointer text-left shrink-0 ${!collapsed ? 'border-b border-[#f3f2ec]' : ''}`}
@@ -381,6 +384,131 @@ function RecentActivityCard({ storeId }: { storeId: string }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Recent Orders — the last 5 real orders (same data/endpoint OrderList.tsx
+// itself uses), so opening Home also answers "what did I just sell" without
+// leaving the page. Not a duplicate of anything else here: the Metrics row's
+// "Orders (30d)" card and Needs Attention's pending-orders row are both
+// plain counts — this is the only place on the page showing actual order
+// rows. Self-hiding for a brand-new store with zero orders yet, same
+// convention as RecentActivityCard/AvailableBalanceBanner below. ───────────
+function RecentOrdersCard({ storeId, currency }: { storeId: string; currency?: string | null }) {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState<SellerOrder[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetSellerOrders(storeId, 1, 5)
+      .then(res => { if (!cancelled) setOrders(res.data.orders); })
+      .catch(() => { if (!cancelled) setOrders([]); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  if (!orders || orders.length === 0) return null;
+
+  return (
+    <div className="dash-section-enter surface-panel rounded-2xl overflow-hidden flex flex-col h-full">
+      <div className="px-4 py-3 border-b border-[#f3f2ec] flex items-center gap-2.5 shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-brand-pale-orange text-brand-orange flex items-center justify-center shrink-0">
+          <Package size={13} />
+        </div>
+        <p className="flex-1 text-[13px] font-bold text-charcoal">Recent Orders</p>
+      </div>
+      <div className="flex-1 flex flex-col divide-y divide-[#f3f2ec]">
+        {orders.map(o => (
+          <button
+            key={o.orderId}
+            onClick={() => navigate(`/store/${storeId}/orders/detail/${o.orderId}`)}
+            className="flex items-center gap-3 px-4 py-2.5 bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors w-full"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-semibold text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
+                #{o.orderNumber} · {o.customer.name}
+              </p>
+              <p className="text-[11px] text-slate mt-[1px] overflow-hidden text-ellipsis whitespace-nowrap">{o.product}</p>
+            </div>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <span className="text-[12px] font-bold text-carbon tabular-nums">{formatMoneyCompact(o.amount, o.currency ?? currency)}</span>
+              <StatusBadge status={o.status} size="sm" />
+            </div>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => navigate(`/store/${storeId}/orders`)}
+        className="mt-auto w-full px-4 py-2.5 border-t border-[#f3f2ec] text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left shrink-0"
+      >
+        View all orders →
+      </button>
+    </div>
+  );
+}
+
+// ── Top Products — the real 7-day trending leaderboard (same ranking the
+// storefront's own "Trending" section uses, `ProductsService.getTrendingProducts`),
+// not the all-time best-sellers list — a Home page reads better as "what's
+// hot right now" than a lifetime leaderboard that barely changes week to
+// week. Not a duplicate of anything else here — no other section on this
+// page names individual products. Self-hiding when nothing has sold in the
+// last 7 days yet. No fabricated "units sold" figure — the shared
+// PublicStoreProduct shape this endpoint returns doesn't carry that number
+// back to the client, so only real fields (name/image/price) are shown. ───
+function TopProductsCard({ storeId, currency }: { storeId: string; currency?: string | null }) {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetTrendingProducts(storeId, 5)
+      .then(res => { if (!cancelled) setProducts(res.data.products); })
+      .catch(() => { if (!cancelled) setProducts([]); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  if (!products || products.length === 0) return null;
+
+  return (
+    <div className="dash-section-enter surface-panel rounded-2xl overflow-hidden flex flex-col h-full">
+      <div className="px-4 py-3 border-b border-[#f3f2ec] flex items-center gap-2.5 shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-[#fff4e5] text-[#B36200] flex items-center justify-center shrink-0">
+          <Flame size={13} />
+        </div>
+        <div className="flex-1 flex items-baseline gap-2 min-w-0">
+          <p className="text-[13px] font-bold text-charcoal shrink-0">Top Products</p>
+          <span className="text-[11px] text-slate truncate">Last 7 days</span>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col divide-y divide-[#f3f2ec]">
+        {products.map((p, i) => (
+          <button
+            key={p._id}
+            onClick={() => navigate(`/store/${storeId}/products/detail/${p._id}`)}
+            className="flex items-center gap-3 px-4 py-2.5 bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors w-full"
+          >
+            <span className="text-[11px] font-bold text-slate w-4 shrink-0 tabular-nums">{i + 1}</span>
+            <div className="w-8 h-8 rounded-lg bg-cream border border-bone overflow-hidden shrink-0 flex items-center justify-center">
+              {p.images?.[0]
+                ? <img loading="lazy" decoding="async" src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                : <ShoppingBag size={13} className="text-slate" />}
+            </div>
+            <span className="flex-1 min-w-0 text-[12.5px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
+              {p.name}
+            </span>
+            <span className="text-[12px] font-bold text-carbon tabular-nums shrink-0">
+              {formatMoneyCompact(p.defaultVariantPrice, currency)}
+            </span>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => navigate(`/store/${storeId}/products`)}
+        className="mt-auto w-full px-4 py-2.5 border-t border-[#f3f2ec] text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left shrink-0"
+      >
+        View all products →
+      </button>
     </div>
   );
 }
@@ -721,12 +849,40 @@ function useRevenueOverviewAll(storeId: string) {
 // View store). Deliberately carries NO metrics — those already have a
 // dedicated, customizable row right below it, and repeating them here just
 // duplicated the same numbers twice on one page.
-function getTimeGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 5) return 'Working late';
+// Best-effort seller-store "local time" zone — Solvexo doesn't store an
+// explicit timezone on a store yet, only `StoreData.country` (Business
+// Verification's own closed `COUNTRY_OPTIONS` list: PK/US/GB/AE/AU/CA/
+// 'OTHER' — see VerificationFormFields.tsx). Each of those 6 real codes maps
+// to its single or most-populous real IANA zone below; US/AU/CA genuinely
+// span several zones, so this is a disclosed representative approximation
+// for those three, not a precise per-address lookup — there's no store
+// address/lat-long captured anywhere to do better than that today. Falls
+// back to the viewer's own browser zone for 'OTHER'/unset/unrecognized
+// codes, never a hardcoded guess.
+const STORE_COUNTRY_TIMEZONE: Record<string, string> = {
+  PK: 'Asia/Karachi',
+  US: 'America/New_York',
+  GB: 'Europe/London',
+  AE: 'Asia/Dubai',
+  AU: 'Australia/Sydney',
+  CA: 'America/Toronto',
+};
+
+function getTimeGreeting(countryCode?: string | null): string {
+  const zone = (countryCode && STORE_COUNTRY_TIMEZONE[countryCode]) || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  let h: number;
+  try {
+    // hour12: false can return "24" for midnight in some locales — normalize
+    // with %24 rather than trust it's always 0-23.
+    h = Number(new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', hour12: false }).format(new Date())) % 24;
+  } catch {
+    h = new Date().getHours(); // unrecognized zone string — fall back to the device clock rather than crash
+  }
+  if (h < 5)  return 'Working late';
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 21) return 'Good evening';
+  return 'Good night';
 }
 
 function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWorkspace>['store']; storeId: string }) {
@@ -758,7 +914,7 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
           </div>
           <div className="min-w-0">
             <p className="text-[12px] font-semibold text-brand-orange uppercase tracking-[0.08em] mb-1">
-              {getTimeGreeting()}
+              {getTimeGreeting(store?.country)}
             </p>
             <h1 className="text-[24px] sm:text-[27px] font-bold text-carbon tracking-tight leading-tight overflow-hidden text-ellipsis whitespace-nowrap max-w-[280px] sm:max-w-none">
               {store?.name ?? 'Your Store'}
@@ -969,6 +1125,14 @@ export default function StoreDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
             {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />}
             <RecentActivityCard storeId={storeId} />
+          </div>
+
+          {/* Recent Orders + Top Products, side by side — both self-hiding,
+             so a brand-new store with no sales yet loses this row entirely
+             rather than showing two empty cards. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <RecentOrdersCard storeId={storeId} currency={store?.baseCurrency} />
+            <TopProductsCard storeId={storeId} currency={store?.baseCurrency} />
           </div>
 
         </div>

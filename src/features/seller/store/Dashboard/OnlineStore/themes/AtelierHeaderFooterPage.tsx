@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2, Plus, RotateCcw, History, Undo2, Redo2, Monitor, Tablet, Smartphone, Megaphone } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, Toggle } from '@/components/comman/ui';
+import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
 import {
   apiGetStoreTheme, apiUpdateStoreHeader, apiUpdateStoreFooter, apiPublishStoreTheme, apiRevertStoreThemeDraft,
   apiListStoreThemeVersions, apiRestoreStoreThemeVersion,
@@ -377,17 +378,20 @@ export function AtelierHeaderFooterPage() {
 
   return (
     <div className="bg-[#FAF9F5] min-h-full">
-      <StorePageHeader
+      <EditorTopBar
+        exitTo={`/store/${storeId}/online-store/themes`}
         title={`Header & Footer — ${manifest.name}`}
         subtitle={tab === 'announcement'
           ? 'A message strip shown across your whole storefront. Saving here takes effect immediately — there is no separate Publish step.'
           : 'Navigation links, footer columns, social links, and copyright text. Edits save to a draft — nothing goes live until you Publish.'}
-        actions={
+      >
+        {
           // Same split as Customize's toolbar: a horizontally-scrollable
           // group for device toggle/undo/redo/history, and a shrink-0 group
           // for Save Draft/Publish/Discard so those stay reachable without
           // scrolling on a narrow (390px) viewport.
-          <div className="flex items-center gap-2 flex-wrap max-w-[calc(100vw-100px)] lg:max-w-none justify-end">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <PreviewButton storeId={storeId} />
             <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
               <div className="shrink-0 flex items-center gap-1 border border-bone rounded-lg p-1 bg-white mr-1">
                 {(['desktop', 'tablet', 'mobile'] as const).map(d => {
@@ -432,7 +436,7 @@ export function AtelierHeaderFooterPage() {
             </div>
           </div>
         }
-      />
+      </EditorTopBar>
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 px-4 lg:px-7 py-5">
         <div className="flex flex-col gap-4">

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
+import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
 import {
   apiListStorePages, apiUpdateStorePageSections, apiPublishStorePage, apiRevertStorePageDraft,
   apiListStorePageVersions, apiRestoreStorePageVersion,
@@ -354,17 +355,20 @@ export function AtelierCustomizePage() {
 
   return (
     <div className="bg-[#FAF9F5] min-h-full">
-      <StorePageHeader
+      <EditorTopBar
+        exitTo={`/store/${storeId}/online-store/themes`}
         title={`Customize — ${manifest.name}`}
         subtitle="Edits save to a draft — nothing goes live until you Publish."
-        actions={
+      >
+        {
           // Two groups: the left one scrolls horizontally on narrow screens
           // (min-w-0 + overflow-x-auto lets it actually shrink instead of
           // pushing the page wide); Save Draft/Publish/Discard stay in their
           // own shrink-0 group so they're always reachable without scrolling,
           // even on a 390px viewport. The whole cluster still wraps beneath
           // the title if there's truly no room for either group at all.
-          <div className="flex items-center gap-2 flex-wrap max-w-[calc(100vw-100px)] lg:max-w-none justify-end">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <PreviewButton storeId={storeId} />
             <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
               <select
                 value={scope}
@@ -418,19 +422,7 @@ export function AtelierCustomizePage() {
             </div>
 
             {scope !== 'theme' && (
-              // `relative z-20`: this group sits in the same top-bar flex row
-              // as `StoreLayout`'s `<StoreSwitcher>` (its trigger has no
-              // z-index of its own, i.e. z-auto). The row to its left
-              // (scope/template selects, device icons, undo/redo/history)
-              // wraps internally on narrow/mid viewports — see the
-              // `flex-wrap` note above — which can push this button group's
-              // real hit-box to visually sit right where StoreSwitcher's
-              // trigger renders. Without an explicit higher stacking order,
-              // whichever element is later in paint order can win the click
-              // at that overlap, which is what let a click squarely on the
-              // visible "Publish" button open "Switch Store" instead of
-              // publishing. Publish/Save Draft/Discard must always win.
-              <div className="relative z-20 flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {editor.hasUnpublishedChanges && (
                   <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
                     <RotateCcw size={13} /> Discard Draft
@@ -442,7 +434,7 @@ export function AtelierCustomizePage() {
             )}
           </div>
         }
-      />
+      </EditorTopBar>
 
       {scope === 'theme' ? (
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5 px-4 lg:px-7 py-5 items-start">
