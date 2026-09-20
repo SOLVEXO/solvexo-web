@@ -139,7 +139,7 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
 
   const openNew = () => { setForm(EMPTY_STAFF_FORM); setError(''); setFormOpen('new'); };
   const openEdit = (member: StaffMember) => {
-    setForm({ name: member.name, email: member.email, password: '', role: member.role, roleId: member.roleId ?? '' });
+    setForm({ name: member.name, email: member.email, role: member.role, roleId: member.roleId ?? '' });
     setError('');
     setFormOpen(member);
   };
