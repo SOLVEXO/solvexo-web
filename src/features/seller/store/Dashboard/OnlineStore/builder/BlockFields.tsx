@@ -1,8 +1,17 @@
 import { Field, Toggle } from '@/components/comman/ui';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import { SortableList } from './Sortable';
-import { SchemaForm } from './SchemaForm';
+import { SchemaForm, type FieldSchema, type FieldKind } from './SchemaForm';
 import { BLOCK_SCHEMAS } from './sectionRegistry';
+import { isAppBlockType, findInstalledAppBlock, type AppCatalogEntry, type AppBlockFieldKind } from '@/api/services/apps';
+import type { MetafieldOwnerResource } from '@/api/services/metafields';
+
+// Phase 8 — App Blocks. `boolean` (the backend/API's own field-kind name,
+// matching Nest's plain-JS naming) maps to `SchemaForm`'s `checkbox` kind;
+// every other kind name matches 1:1.
+const APP_FIELD_KIND_MAP: Record<AppBlockFieldKind, FieldKind> = {
+  text: 'text', textarea: 'textarea', number: 'number', select: 'select', boolean: 'checkbox',
+};
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 
@@ -15,14 +24,45 @@ export interface PageOption { slug: string; title: string }
  *  other block type is driven by `BLOCK_SCHEMAS[type]` (`sectionRegistry.ts`)
  *  through the generic `SchemaForm` — this file used to have a hand-written
  *  `switch` case per type instead. */
-export function BlockFields({ type, settings, onChange, pageOptions, storeId }: {
+export function BlockFields({ type, settings, onChange, pageOptions, storeId, installedApps, ownerResource }: {
   type: string;
   settings: Record<string, any>;
   onChange: (next: Record<string, any>) => void;
   pageOptions: PageOption[];
   storeId: string;
+  /** Phase 8 — the store's real, currently-installed apps (fetched once by
+   *  the page that renders `PageSectionsEditor`), only ever consulted when
+   *  `type` is app-block-shaped. Omitted everywhere that can't have app
+   *  blocks at all (Header/Footer's own `BlockRow`), which is fine — those
+   *  block types never match `isAppBlockType` anyway. */
+  installedApps?: AppCatalogEntry[];
+  /** Phase 9 — Dynamic Sources; see `SchemaForm`'s own doc comment. */
+  ownerResource?: MetafieldOwnerResource | null;
 }) {
   const set = (patch: Record<string, any>) => onChange({ ...settings, ...patch });
+
+  if (isAppBlockType(type)) {
+    const found = findInstalledAppBlock(installedApps ?? [], type);
+    if (!found) {
+      return (
+        <p className="text-[12px] text-error bg-error-bg rounded-lg px-3 py-2.5">
+          This app block is no longer available — the app it came from may have been uninstalled. Remove this block, or reinstall the app.
+        </p>
+      );
+    }
+    const schema: FieldSchema[] = found.block.settingsSchema.map(f => ({
+      key: f.key, label: f.label, kind: APP_FIELD_KIND_MAP[f.kind], required: f.required, maxLength: f.maxLength, options: f.options,
+    }));
+    return (
+      <div className="flex flex-col gap-2">
+        <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate">{found.app.name}</p>
+        <SchemaForm schema={schema} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} />
+      </div>
+    );
+    // No `ownerResource` here — an app block's own schema (from the
+    // catalog, `AppBlockField[]`) has no `metafieldKeyPicker` kind at all
+    // (see `APP_FIELD_KIND_MAP`), so there's nothing for it to read.
+  }
 
   switch (type) {
     case 'nav_link': {
@@ -93,7 +133,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId }: 
     default: {
       const schema = BLOCK_SCHEMAS[type];
       if (!schema) return null;
-      return <SchemaForm schema={schema} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} />;
+      return <SchemaForm schema={schema} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />;
     }
   }
 }

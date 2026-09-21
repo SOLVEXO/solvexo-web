@@ -11,7 +11,7 @@ import {
 } from '@/api/services/metafields';
 
 const RESOURCE_LABELS: Record<MetafieldOwnerResource, string> = {
-  product: 'Products', category: 'Categories', collection: 'Collections', page: 'Pages',
+  product: 'Products', category: 'Categories', collection: 'Collections', page: 'Pages', article: 'Blog Articles',
 };
 
 /** Create AND edit — `editing` switches Save to call

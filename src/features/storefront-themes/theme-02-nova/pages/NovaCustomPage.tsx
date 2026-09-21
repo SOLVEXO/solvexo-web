@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiGetPublicStorePage, type StorePageData } from '@/api/services/storePages';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { NovaContentBlocks } from '../components/NovaContentBlocks';
 import { NovaNotFoundPage } from './NovaNotFoundPage';
@@ -21,6 +22,8 @@ export function NovaCustomPage() {
   const [page, setPage] = useState<StorePageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Dynamic Sources (Phase 9) — see AtelierCustomPage's identical comment.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!pageSlug) return;
@@ -30,6 +33,13 @@ export function NovaCustomPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [store.storeId, pageSlug]);
+
+  useEffect(() => {
+    if (!page) { setDynamicSourceValues({}); return; }
+    apiGetPublicMetafieldValues(store.storeId, 'page', page._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, page]);
 
   useStorefrontSeo({
     title: page?.seo.metaTitle || page?.title || undefined,
@@ -56,16 +66,23 @@ export function NovaCustomPage() {
     <main className="mx-auto" style={{ maxWidth: '760px', padding: `48px ${t.layout.containerPadX}` }}>
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '28px' }}>{page.title}</h1>
       <div className="flex flex-col gap-8" style={{ fontFamily: t.fonts.body, color: t.colors.ink, fontSize: '14.5px', lineHeight: 1.75 }}>
-        {richTextSections.map((section, i) => (
-          <div key={section._id ?? i}>
-            {section.settings?.heading && (
-              <h2 style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 700, color: t.colors.ink, marginBottom: '10px' }}>
-                {section.settings.heading}
-              </h2>
-            )}
-            <NovaContentBlocks blocks={section.blocks.map(b => ({ type: b.type, settings: b.settings }))} />
-          </div>
-        ))}
+        {richTextSections.map((section, i) => {
+          // Dynamic Sources (Phase 9) — see AtelierCustomPage's identical comment.
+          const headingNs = section.settings?.dynamicSourceNamespace || 'custom';
+          const headingKey = section.settings?.dynamicSourceKey;
+          const boundHeading = headingKey ? dynamicSourceValues[`${headingNs}:${headingKey}`] : undefined;
+          const heading = boundHeading !== undefined ? boundHeading : section.settings?.heading;
+          return (
+            <div key={section._id ?? i}>
+              {heading && (
+                <h2 style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 700, color: t.colors.ink, marginBottom: '10px' }}>
+                  {heading}
+                </h2>
+              )}
+              <NovaContentBlocks blocks={section.blocks.map(b => ({ type: b.type, settings: b.settings }))} dynamicSourceValues={dynamicSourceValues} />
+            </div>
+          );
+        })}
         {richTextSections.length === 0 && (
           <p style={{ color: t.colors.inkMuted }}>This page has no content yet.</p>
         )}

@@ -7,6 +7,7 @@ import {
 } from '@/api/services/storeBlog';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierContentBlocks } from '../components/AtelierContentBlocks';
@@ -84,6 +85,12 @@ export function AtelierBlogPostPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [templateSections, setTemplateSections] = useState<Section[]>([]);
+  // Dynamic Sources (Phase 9) — this real post's own metafield values,
+  // resolved against BOTH its own fixed body content AND the shared
+  // Article template's surrounding sections below — same "one shared
+  // template, resolved per real instance" pattern the Product Template
+  // already used before this phase.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!postSlug) return;
@@ -93,6 +100,13 @@ export function AtelierBlogPostPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [store.storeId, postSlug]);
+
+  useEffect(() => {
+    if (!post) { setDynamicSourceValues({}); return; }
+    apiGetPublicMetafieldValues(store.storeId, 'article', post._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, post]);
 
   // A shared "article" template, same on every post in the blog — matches
   // real Shopify convention (all articles in a blog share one article.json
@@ -140,7 +154,7 @@ export function AtelierBlogPostPage() {
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15, marginBottom: '20px' }}>{post.title}</h1>
       {post.coverImage && <img src={post.coverImage} alt={post.title} className="w-full object-cover" style={{ maxHeight: '440px', marginBottom: '28px' }} />}
       <div className="flex flex-col gap-5">
-        <AtelierContentBlocks blocks={post.content} />
+        <AtelierContentBlocks blocks={post.content} dynamicSourceValues={dynamicSourceValues} />
       </div>
       {post.commentsEnabled && <CommentsSection storeId={store.storeId} postId={post._id} />}
       {/* `article_content` (the locked core section, seeded server-side) is
@@ -148,7 +162,7 @@ export function AtelierBlogPostPage() {
          is it; rendering it again would duplicate that content. */}
       {(() => {
         const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
-        return surrounding.length > 0 && <div style={{ marginTop: '48px' }}><AtelierSectionRenderer sections={surrounding} /></div>;
+        return surrounding.length > 0 && <div style={{ marginTop: '48px' }}><AtelierSectionRenderer sections={surrounding} dynamicSourceValues={dynamicSourceValues} /></div>;
       })()}
     </article>
   );

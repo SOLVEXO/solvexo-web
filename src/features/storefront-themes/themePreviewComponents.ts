@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { Section, SectionType } from '@/api/services/storefrontTypes';
+import type { Section, SectionType, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 /**
@@ -34,6 +34,14 @@ export interface ThemePreviewComponents {
     selectable?: boolean;
     selectedSectionId?: string | null;
     onSelectSection?: (sectionId: string) => void;
+    /** Phase 5 — see `CoreSectionPreviewContext`'s own doc comment
+     *  (`api/services/storefrontTypes.ts`). */
+    previewContext?: CoreSectionPreviewContext;
+    /** Phase 9 — Dynamic Sources; see `AtelierLivePreview.tsx`'s own doc
+     *  comment. Already accepted by every theme's real `SectionRenderer`
+     *  (`atelierSectionRenderer.tsx`/`novaSectionRenderer.tsx`) — this
+     *  interface just hadn't caught up. */
+    dynamicSourceValues?: Record<string, string>;
   }>;
   Navbar: ComponentType;
   Footer: ComponentType;

@@ -58,11 +58,19 @@ export const SECTION_META: SectionMeta[] = [
     defaultSettings: { heading: '', alignment: 'left' },
     allowedBlockTypes: ['heading', 'paragraph', 'image', 'quote', 'list', 'divider'], blockLabel: 'Block',
     defaultBlockSettings: { text: '' },
-    settingsSchema: withHeading([
+    // Deliberately NOT `withHeading(...)` here — this section's own
+    // `heading` setting is the one place (alongside `paragraph`/`heading`
+    // blocks below) Phase 9 wires a Dynamic Sources picker onto; every
+    // OTHER section using `withHeading` stays exactly as it was, since
+    // ripping a picker onto every section's heading at once would be a far
+    // bigger, uncontrolled change than this phase's scope.
+    settingsSchema: [
+      HEADING_FIELD,
+      { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind heading to a custom field (optional)', pairsWith: 'heading' },
       { key: 'alignment', kind: 'select', label: 'Text alignment', options: [
         { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
       ] },
-    ]),
+    ],
   },
   {
     type: 'featured_products', label: 'Featured Products', description: 'A curated strip of products — pinned, best sellers, trending, new arrivals, a category, or hand-picked.',
@@ -278,26 +286,29 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
   ],
+  // "Dynamic Sources" — dynamicSourceKey, when set, binds this block's
+  // `text` to one of the store's own real custom fields instead of a
+  // static value (namespace is always 'custom' — resolved at render time,
+  // see `AtelierContentBlocks.tsx`/`NovaContentBlocks.tsx`). A real
+  // dropdown of the store's own definitions, not two raw text inputs a
+  // seller had to type exact-match by hand (silently no-op'd on any typo —
+  // found during the Catalog audit; Phase 9 also closed the "silent no-op"
+  // half server-side — see `MetafieldsService.assertDynamicSourceBindingsValid`).
+  // `MetafieldKeyPickerField` resolves which resource type's fields to
+  // offer from the real editing context (Product/Collection Template, a
+  // custom Page, Blog Article Template) — a scope with no single real
+  // resource (Home, Search, Cart, Blog Index) shows an explanatory disabled
+  // state instead of an empty/misleading picker.
   heading: [
-    { key: 'text', kind: 'text', label: 'Heading text', required: true, maxLength: 150 },
+    { key: 'text', kind: 'text', label: 'Heading text', maxLength: 150, hint: 'Leave blank if binding to a custom field below.' },
+    { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a custom field (optional)', pairsWith: 'text' },
     { key: 'level', kind: 'select', label: 'Size', options: [
       { value: 'h2', label: 'Large (H2)' }, { value: 'h3', label: 'Medium (H3)' }, { value: 'h4', label: 'Small (H4)' },
     ] },
   ],
-  // "Dynamic Sources" — dynamicSourceKey, when set, binds this paragraph to
-  // one of the store's own real Product custom fields instead of static
-  // `text` (namespace is always 'custom' — resolved at render time, see
-  // `AtelierProductPage.tsx`/`RichTextSection.tsx`). A real dropdown of the
-  // store's own definitions, not two raw text inputs a seller had to type
-  // exact-match by hand (silently no-op'd on any typo — found during the
-  // Catalog audit). Only meaningful inside a Product Template's sections; a
-  // plain Home-page paragraph has no single "current resource" to bind to,
-  // so a seller who picks one on a Home section just gets an empty
-  // paragraph there — not validated against page context, a disclosed v1
-  // limitation.
   paragraph: [
-    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a product custom field below.' },
-    { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a product custom field (optional)' },
+    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a custom field below.' },
+    { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a custom field (optional)', pairsWith: 'text' },
   ],
   image: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },

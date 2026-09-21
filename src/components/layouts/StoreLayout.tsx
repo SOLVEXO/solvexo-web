@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin,
+  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -132,6 +132,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages',     requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-menus',     Icon: ListTree,   label: 'Menus',     path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog',      requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-apps',      Icon: Blocks,     label: 'Apps',      path: 'online-store/apps',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
       // Moved out of Marketing.tsx — these three are store-content/design
       // features (no promotion/targeting/scheduling logic tying them to

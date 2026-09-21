@@ -6,7 +6,7 @@ import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementType } f
 import type { StoreThemeData } from '@/api/services/storeTheme';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { CartProvider } from '@/contexts/CartContext';
-import type { Section } from '@/api/services/storefrontTypes';
+import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
@@ -80,7 +80,7 @@ export interface AnnouncementBarPreviewValue {
  *  section safe even then — it intercepts before any real link/button/form
  *  in that section's markup can fire, and reports the section id instead. */
 export function AtelierLivePreview({
-  sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride,
+  sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
 }: {
   sections: Section[];
   showChrome: boolean;
@@ -89,6 +89,12 @@ export function AtelierLivePreview({
   interactive?: boolean;
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  /** Phase 5 — real data for whichever Blog/Article a merchant picked in
+   *  Customize's resource picker, threaded straight through to the active
+   *  theme's `SectionRenderer` (see `CoreSectionPreviewContext`'s own doc
+   *  comment). Omitted everywhere except the Customize page's blogIndex/
+   *  blogArticle scopes. */
+  previewContext?: CoreSectionPreviewContext;
   /** Renders through THIS theme's components instead of `draftTheme`'s own
    *  `themeDefinitionId` — used by the Theme Library's "Preview" action on
    *  an installed-but-not-active theme, so a seller can see a CANDIDATE
@@ -98,6 +104,15 @@ export function AtelierLivePreview({
    *  Code, all editing the theme that's actually being customized) omits
    *  this and gets the normal `draftTheme?.themeDefinitionId` resolution. */
   themeIdOverride?: string;
+  /** Phase 9 — Dynamic Sources: real metafield values (keyed `"namespace:key"`)
+   *  for whichever real Product/Collection/Page/Article the seller has
+   *  currently picked in Customize's resource picker — resolves a bound
+   *  paragraph/heading/section-heading the same way the real storefront
+   *  already does (see `AtelierProductPage.tsx`). `{}`/omitted for every
+   *  scope with no single real resource (Home, Search, Cart, Blog Index) —
+   *  a bound field just falls back to its static value there, same as
+   *  before this prop existed. */
+  dynamicSourceValues?: Record<string, string>;
 }) {
   const [store, setStore] = useState<PublicStoreData | null>(null);
   const { store: workspaceStore } = useStoreWorkspace();
@@ -163,6 +178,8 @@ export function AtelierLivePreview({
             selectable={interactive}
             selectedSectionId={selectedSectionId}
             onSelectSection={onSelectSection}
+            previewContext={previewContext}
+            dynamicSourceValues={dynamicSourceValues}
           />
         </div>
         {showChrome && <Footer />}

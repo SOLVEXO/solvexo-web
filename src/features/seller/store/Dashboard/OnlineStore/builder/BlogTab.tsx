@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, FileText, Trash2, Eye, EyeOff, Loader2, CalendarClock, MessageSquare, Check, Ban, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Modal, Button, Field, ImageUpload, DateTimePickerModal, Toggle } from '@/components/comman/ui';
+import { MetafieldsEditor } from '../customize/MetafieldsEditor';
 import {
   apiListBlogPosts, apiCreateBlogPost, apiUpdateBlogPost, apiUpdateBlogContent,
   apiPublishBlogPost, apiUnpublishBlogPost, apiDeleteBlogPost,
@@ -222,6 +223,11 @@ export function BlogTab({ storeId }: { storeId: string }) {
                 <textarea key={`${selected._id}-seoDescription`} className={ta} defaultValue={selected.seoDescription ?? ''} onBlur={e => handleSaveMeta({ seoDescription: e.target.value })} placeholder={selected.excerpt || 'Briefly describe this post for search engines...'} />
               </Field>
             </div>
+
+            {/* Phase 9 — Dynamic Sources: lets a seller set this real post's
+               own custom field values, so the Blog Article template's
+               bound paragraph/heading has something real to resolve. */}
+            <MetafieldsEditor storeId={storeId} ownerResource="article" ownerId={selected._id} />
 
             <div className="flex items-center justify-between">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-slate">Content</p>

@@ -23,13 +23,21 @@ export const atelierThemeManifest: ThemeManifest = {
   supportsAnnouncementBar: true,
 
   templates: [
-    { id: 'home', label: 'Home', showChrome: true, resource: { kind: 'store-page' } },
-    { id: 'product', label: 'Product', showChrome: false, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
-    { id: 'collection', label: 'Collection', showChrome: false, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
-    { id: 'search', label: 'Search', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
-    { id: 'cart', label: 'Cart', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
-    { id: 'blogIndex', label: 'Blog (Journal) Index', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false } },
-    { id: 'blogArticle', label: 'Blog Article', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false } },
+    { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },
+    { id: 'product', label: 'Product', group: 'products', showChrome: false, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'collection', label: 'Collection', group: 'collections', showChrome: false, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
+    // Phase 5 — any real merchant-created custom page (About Us, Shipping
+    // Policy, …), picked via the Customize editor's own resource picker
+    // (see `AtelierCustomizePage.tsx`). Reuses the exact same `store-page`
+    // draft/publish/version-history machinery Home already had — a custom
+    // page was always fully section-editable via the standalone Pages
+    // screen, this just makes it reachable from Customize too, without a
+    // second editing surface.
+    { id: 'pages', label: 'Pages', group: 'pages', showChrome: true, resource: { kind: 'store-page', pageType: 'custom' } },
+    { id: 'search', label: 'Search', group: 'search', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
+    { id: 'cart', label: 'Cart', group: 'cart', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
+    { id: 'blogIndex', label: 'Blog (Journal) Index', group: 'blogs', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
+    { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
   ],
 
   themeSettingsFields: [

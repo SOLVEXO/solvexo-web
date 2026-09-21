@@ -76,6 +76,7 @@ const SellerAreaRedirect = lazy(() => import('@/features/seller/SellerAreaRedire
 const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
 const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MenuManagerPage').then(m => ({ default: m.MenuManagerPage })));
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
+const AppsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/apps/AppsPage').then(m => ({ default: m.AppsPage })));
 const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
 const AtelierCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage').then(m => ({ default: m.AtelierCustomizePage })));
 const AtelierEditCodePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage').then(m => ({ default: m.AtelierEditCodePage })));
@@ -377,6 +378,7 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/menus',                element: <MenuManagerPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
+          { path: 'online-store/apps',                 element: <AppsPage /> },
           { path: 'online-store/banners',              element: <StoreBanners /> },
           { path: 'online-store/announcement-bar',     element: <StoreAnnouncementBar /> },
           { path: 'online-store/featured',             element: <StoreFeaturedCollections /> },

@@ -1,5 +1,5 @@
 import { ImageOff, Search, ShoppingCart, Newspaper } from 'lucide-react';
-import type { Section, Block } from '@/api/services/storefrontTypes';
+import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 
@@ -106,26 +106,35 @@ registerAtelierSection('cart_summary', (_section: Section, _blocks: Block[], col
   </PlaceholderShell>
 ));
 
-registerAtelierSection('blog_post_list', (_section: Section, _blocks: Block[], colors: AtelierSectionColors) => (
-  <PlaceholderShell label="Blog Posts" colors={colors}>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="flex flex-col gap-2">
-          <div style={{ aspectRatio: '4/3', background: colors.bgAlt }} />
-          <div className="flex items-center gap-1.5" style={{ color: colors.inkMuted }}>
-            <Newspaper size={12} /> <span style={{ fontFamily: t.fonts.body, fontSize: '11px' }}>Sample Post {i}</span>
+registerAtelierSection('blog_post_list', (_section: Section, _blocks: Block[], colors: AtelierSectionColors, _dynamicSourceValues, previewContext?: CoreSectionPreviewContext) => {
+  // Phase 5 — a real selected Blog's own recent post titles when the
+  // merchant picked one in Customize's resource picker; falls back to the
+  // generic sample when none is selected yet (or on the real storefront,
+  // which never renders this type at all — see the file's own doc comment).
+  const titles = previewContext?.recentPostTitles?.length ? previewContext.recentPostTitles : ['Sample Post 1', 'Sample Post 2', 'Sample Post 3'];
+  return (
+    <PlaceholderShell label={previewContext?.blogName ? `Blog Posts — ${previewContext.blogName}` : 'Blog Posts'} colors={colors}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {titles.slice(0, 3).map((title, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <div style={{ aspectRatio: '4/3', background: colors.bgAlt }} />
+            <div className="flex items-center gap-1.5" style={{ color: colors.inkMuted }}>
+              <Newspaper size={12} /> <span style={{ fontFamily: t.fonts.body, fontSize: '11px' }}>{title}</span>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
-  </PlaceholderShell>
-));
+        ))}
+      </div>
+    </PlaceholderShell>
+  );
+});
 
-registerAtelierSection('article_content', (_section: Section, _blocks: Block[], colors: AtelierSectionColors) => (
+registerAtelierSection('article_content', (_section: Section, _blocks: Block[], colors: AtelierSectionColors, _dynamicSourceValues, previewContext?: CoreSectionPreviewContext) => (
   <PlaceholderShell label="Article Content" colors={colors}>
-    <div style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: colors.ink, marginBottom: '10px' }}>Sample Article Title</div>
+    <div style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: colors.ink, marginBottom: '10px' }}>
+      {previewContext?.articleTitle || 'Sample Article Title'}
+    </div>
     <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: colors.inkMuted, lineHeight: 1.7 }}>
-      A sample article body would appear here — this article's real title and content, rendered as-is.
+      {previewContext?.articleExcerpt || "A sample article body would appear here — this article's real title and content, rendered as-is."}
     </p>
   </PlaceholderShell>
 ));

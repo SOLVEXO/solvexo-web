@@ -1,5 +1,6 @@
 import { atelierTheme as t } from '../theme.config';
 import { renderRichText } from '@/utils/richText';
+import { AppBlockRenderer } from '@/features/storefront/AppBlockRenderer';
 
 export interface ContentBlock {
   type: string;
@@ -24,12 +25,19 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
     <>
       {blocks.map((block, i) => {
         switch (block.type) {
-          case 'heading':
+          case 'heading': {
+            // Dynamic Sources (Phase 9) — same resolution as `paragraph`
+            // below; see that case's own comment for the namespace fallback.
+            const ns = block.settings.dynamicSourceNamespace || 'custom';
+            const key = block.settings.dynamicSourceKey;
+            const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
+            const text = boundText !== undefined ? boundText : block.settings.text;
             return (
               <p key={i} style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 600, color: t.colors.ink }}>
-                {block.settings.text}
+                {text}
               </p>
             );
+          }
           case 'paragraph': {
             // Namespace is no longer a seller-editable field (the picker
             // only ever writes `dynamicSourceKey` now — see
@@ -82,6 +90,22 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
           case 'divider':
             return <hr key={i} style={{ border: 0, borderTop: `1px solid ${t.colors.border}` }} />;
           default:
+            // Phase 8 — App Blocks. `heading`/`paragraph`/etc above are this
+            // theme's own fixed vocabulary; an app-provided block (`Block.type`
+            // shaped `app:<appId>:<key>`) renders through the shared,
+            // fixed-registry `AppBlockRenderer` instead — see that file's own
+            // doc comment for the real security boundary this represents.
+            // Anything else unknown still silently renders nothing, unchanged.
+            if (block.type.startsWith('app:')) {
+              return (
+                <AppBlockRenderer
+                  key={i}
+                  type={block.type}
+                  settings={block.settings}
+                  colors={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, accent: t.colors.accent, border: t.colors.border, bg: t.colors.bgAlt }}
+                />
+              );
+            }
             return null;
         }
       })}

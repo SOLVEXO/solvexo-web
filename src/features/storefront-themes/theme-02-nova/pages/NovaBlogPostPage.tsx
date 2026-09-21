@@ -7,7 +7,8 @@ import {
 } from '@/api/services/storeBlog';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
 import { NovaContentBlocks } from '../components/NovaContentBlocks';
 import { NovaButton } from '../components/NovaButton';
@@ -86,6 +87,8 @@ export function NovaBlogPostPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [templateSections, setTemplateSections] = useState<Section[]>([]);
+  // Dynamic Sources (Phase 9) — see AtelierBlogPostPage's identical comment.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!postSlug) return;
@@ -95,6 +98,13 @@ export function NovaBlogPostPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [store.storeId, postSlug]);
+
+  useEffect(() => {
+    if (!post) { setDynamicSourceValues({}); return; }
+    apiGetPublicMetafieldValues(store.storeId, 'article', post._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, post]);
 
   useEffect(() => {
     apiGetPublicCollectionTemplate(store.storeId, 'page', 'blog-article')
@@ -138,10 +148,16 @@ export function NovaBlogPostPage() {
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 700, color: t.colors.ink, lineHeight: 1.15, marginBottom: '20px' }}>{post.title}</h1>
       {post.coverImage && <img src={post.coverImage} alt={post.title} className="w-full object-cover" style={{ maxHeight: '440px', marginBottom: '28px', borderRadius: t.radius.md }} />}
       <div className="flex flex-col gap-5">
-        <NovaContentBlocks blocks={post.content} />
+        <NovaContentBlocks blocks={post.content} dynamicSourceValues={dynamicSourceValues} />
       </div>
       {post.commentsEnabled && <CommentsSection storeId={store.storeId} postId={post._id} />}
-      {templateSections.length > 0 && <div style={{ marginTop: '48px' }}><NovaSectionRenderer sections={templateSections} /></div>}
+      {/* `article_content` (the locked core section, seeded server-side) is
+         NOT re-rendered here — see the identical comment in
+         `AtelierBlogPostPage.tsx`. */}
+      {(() => {
+        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <div style={{ marginTop: '48px' }}><NovaSectionRenderer sections={surrounding} dynamicSourceValues={dynamicSourceValues} /></div>;
+      })()}
     </article>
   );
 }

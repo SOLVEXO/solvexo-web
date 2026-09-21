@@ -66,14 +66,14 @@ export function EditorTopBar({ exitTo, title, subtitle, children }: {
  * mechanism yet for Home/Product/Collection/etc. section content, and
  * building one is out of scope for this pass (shell/chrome only).
  */
-export function PreviewButton({ storeId }: { storeId: string }) {
+export function PreviewButton({ storeId, installedThemeId }: { storeId: string; installedThemeId?: string }) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
     setLoading(true);
     try {
-      const res = await apiCreatePreviewLink(storeId);
+      const res = await apiCreatePreviewLink(storeId, installedThemeId);
       window.open(`${window.location.origin}/theme-preview/${storeId}/${res.data.token}`, '_blank', 'noopener');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to open preview.');

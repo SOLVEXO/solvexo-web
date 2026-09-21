@@ -8,6 +8,8 @@ import { BlockFields, type PageOption } from './BlockFields';
 import { SortableList } from './Sortable';
 import { AddSectionModal } from './AddSectionModal';
 import { ConfirmDialog } from './ConfirmDialog';
+import { buildAppBlockType, findInstalledAppBlock, type AppCatalogEntry } from '@/api/services/apps';
+import type { MetafieldOwnerResource } from '@/api/services/metafields';
 
 /** Strips `_id` so a duplicated block/section is persisted as a genuinely
  *  new document rather than colliding with the original's id. */
@@ -17,7 +19,7 @@ function cloneWithoutId<T extends { _id?: string }>(item: T): T {
   return { ...rest } as T;
 }
 
-function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked }: {
+function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {
   block: Block;
   sectionType: string;
   onChange: (next: Block) => void;
@@ -30,10 +32,22 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
    *  `product_main`'s 7 items), so it can be hidden/reordered but never
    *  removed or duplicated. */
   locked?: boolean;
+  /** Phase 8 — threaded down to `BlockFields` for app-block settings
+   *  lookup; `undefined` everywhere that never has app blocks at all. */
+  installedApps?: AppCatalogEntry[];
+  /** Phase 9 — Dynamic Sources; see `SchemaForm`'s own doc comment. */
+  ownerResource?: MetafieldOwnerResource | null;
 }) {
   const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
-  const label = block.settings.label || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
+  // An app block's own real label (e.g. "Rating Badge") stands in for the
+  // parent section's generic child-block placeholder ("Block") once every
+  // settings-derived fallback comes up empty — showing the raw `app:...`
+  // type string or a meaningless "Block" here would fail this phase's own
+  // "show block name" requirement for a freshly-added, not-yet-configured
+  // app block.
+  const appBlockDef = installedApps ? findInstalledAppBlock(installedApps, block.type)?.block : undefined;
+  const label = block.settings.label || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
   const hidden = block.enabled === false;
 
   return (
@@ -61,7 +75,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
       </div>
       {open && (
         <div className="px-3 pb-3 pt-1 border-t border-bone/70">
-          <BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} />
+          <BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} installedApps={installedApps} ownerResource={ownerResource} />
         </div>
       )}
       {confirmingRemove && (
@@ -77,7 +91,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
   );
 }
 
-function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes }: {
+function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource }: {
   section: Section;
   /** Same id shape `AtelierSectionRenderer` computes (`section._id ?? index`,
    *  stringified) — lets a click in the live preview and a card here refer
@@ -99,6 +113,14 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
    *  the theme (see `Section.colorSchemeId` / each theme's own
    *  `resolveSectionColors`). Empty array renders just the "Theme default" option. */
   colorSchemes: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
+  /** Phase 8 — the store's real installed apps; used to offer that
+   *  section's supported app blocks in "+ Add block", and threaded down
+   *  to `BlockRow`/`BlockFields` for settings rendering. Optional/omitted
+   *  everywhere app blocks don't apply (Header/Footer's own editor never
+   *  passes this at all). */
+  installedApps?: AppCatalogEntry[];
+  /** Phase 9 — Dynamic Sources; see `SchemaForm`'s own doc comment. */
+  ownerResource?: MetafieldOwnerResource | null;
 
 }) {
   const [open, setOpen] = useState(true);
@@ -107,6 +129,16 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   const cardRef = useRef<HTMLDivElement>(null);
   const hidden = section.enabled === false;
   const locked = !!meta?.locked;
+  // Phase 8 — this section's own real, installed app blocks (empty for
+  // every section type that isn't in the backend's
+  // `APP_BLOCK_CAPABLE_SECTION_TYPES` allow-list, since no real app ever
+  // declares a `supportedSectionTypes` entry the backend would reject —
+  // see `apps/app-catalog.ts`'s own `rich_text`-only demo entry).
+  const appBlockOptions = (installedApps ?? []).flatMap(app =>
+    app.installed
+      ? app.blocks.filter(b => b.supportedSectionTypes.includes(section.type)).map(block => ({ app, block }))
+      : [],
+  );
 
   // Clicking a section in the live preview should surface its card here —
   // auto-expand it and scroll it into view, the same "select it and I'll
@@ -162,7 +194,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
       )}
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
-          <SectionFields type={section.type} settings={section.settings ?? {}} onChange={settings => onChange({ ...section, settings })} storeId={storeId} pageOptions={pageOptions} />
+          <SectionFields type={section.type} settings={section.settings ?? {}} onChange={settings => onChange({ ...section, settings })} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />
 
           <div className="flex flex-col gap-1.5">
             <label className="text-[10.5px] font-bold uppercase tracking-wide text-slate px-1">Color Scheme</label>
@@ -176,7 +208,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
             </select>
           </div>
 
-          {meta && meta.allowedBlockTypes.length > 0 && (
+          {meta && (meta.allowedBlockTypes.length > 0 || appBlockOptions.length > 0) && (
             <div className="flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1">
               <p className="text-[10.5px] font-bold uppercase tracking-wide text-slate px-1">{meta.blockLabel}s</p>
               <SortableList
@@ -203,13 +235,17 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
                     pageOptions={pageOptions}
                     storeId={storeId}
                     locked={locked}
+                    installedApps={installedApps}
+                    ownerResource={ownerResource}
                   />
                 )}
               </SortableList>
               {/* A locked section's blocks are a fixed, required set (see
                  `sectionRegistry.ts`'s `SectionMeta.locked`) — reorder/hide
-                 only, never add another. */}
-              {!locked && (meta.allowedBlockTypes.length === 1 ? (
+                 only, never add another (app blocks never apply to a
+                 locked core section either — none of `APP_BLOCK_CAPABLE_
+                 SECTION_TYPES` overlaps with `CORE_SECTION_TYPES`). */}
+              {!locked && (meta.allowedBlockTypes.length === 1 && appBlockOptions.length === 0 ? (
                 <button type="button" onClick={() => onChange({ ...section, blocks: [...section.blocks, { type: meta.allowedBlockTypes[0], settings: { ...meta.defaultBlockSettings } }] })}
                   className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left flex items-center gap-1 px-1 hover:underline">
                   <Plus size={13} /> Add {meta.blockLabel.toLowerCase()}
@@ -219,10 +255,29 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
                   align="left"
                   trigger={<span className="text-[12px] font-semibold text-brand-orange cursor-pointer flex items-center gap-1"><Plus size={13} /> Add block</span>}
                   triggerClassName="self-start px-1 py-0.5 bg-transparent border-none cursor-pointer"
-                  items={meta.allowedBlockTypes.map(bt => ({
-                    label: bt.replace(/_/g, ' '),
-                    onClick: () => onChange({ ...section, blocks: [...section.blocks, { type: bt, settings: {} }] }),
-                  }))}
+                  items={[
+                    ...meta.allowedBlockTypes.map(bt => ({
+                      label: bt.replace(/_/g, ' '),
+                      onClick: () => onChange({ ...section, blocks: [...section.blocks, { type: bt, settings: {} }] }),
+                    })),
+                    // Phase 8 — App Blocks, shown as their own labeled
+                    // group (a disabled header item, same pattern
+                    // `ScopePicker.tsx` uses) only when this section
+                    // actually has any real, installed ones.
+                    ...(appBlockOptions.length > 0 ? [
+                      { label: <span className="text-[10.5px] font-bold uppercase tracking-wide text-slate/70">App Blocks</span>, onClick: () => {}, disabled: true },
+                      ...appBlockOptions.map(({ app, block }) => ({
+                        label: (
+                          <span className="flex flex-col items-start pl-1">
+                            <span>{block.label}</span>
+                            <span className="text-[10.5px] text-slate">{app.name}</span>
+                          </span>
+                        ),
+                        title: block.description,
+                        onClick: () => onChange({ ...section, blocks: [...section.blocks, { type: buildAppBlockType(app.id, block.key), settings: {} }] }),
+                      })),
+                    ] : []),
+                  ]}
                 />
               ))}
             </div>
@@ -233,7 +288,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes, colorSchemes = [], helperText }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes, colorSchemes = [], helperText, installedApps, ownerResource }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -266,6 +321,16 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
    *  or reading a plain section list as blank/incomplete. Omitted = no
    *  banner, unchanged from before this prop existed. */
   helperText?: string;
+  /** Phase 8 — the store's real installed apps (fetched once by whichever
+   *  page renders this editor). Optional; omitted everywhere app blocks
+   *  don't apply (e.g. Header/Footer's own, separate editor). */
+  installedApps?: AppCatalogEntry[];
+  /** Phase 9 — Dynamic Sources: the real resource type (product/collection/
+   *  page/article) whatever's currently being edited belongs to — `null`/
+   *  `undefined` for a scope with no single real resource to bind against
+   *  (Home, Search, Cart, Blog Index). Threaded straight through to every
+   *  `SectionCard`/`BlockRow`'s settings form. */
+  ownerResource?: MetafieldOwnerResource | null;
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -325,6 +390,8 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   pageOptions={pageOptions}
                   storeId={storeId}
                   colorSchemes={colorSchemes}
+                  installedApps={installedApps}
+                  ownerResource={ownerResource}
                 />
               );
             }}

@@ -955,6 +955,14 @@ export const ENDPOINTS = {
     DELETE: (storeId: string, assetId: string, force?: boolean) => `/api/media-library/${storeId}/${assetId}${force ? '?force=true' : ''}`,
   },
 
+  // ── APP BLOCKS (Phase 8 — a fixed, code-defined app catalog; install/
+  // uninstall is real per-store state, see `apps/app-catalog.ts` on the backend) ─
+  APPS: {
+    CATALOG:   (storeId: string) => `/api/apps/${storeId}`,
+    INSTALL:   (storeId: string, appId: string) => `/api/apps/${storeId}/install/${appId}`,
+    UNINSTALL: (storeId: string, appId: string) => `/api/apps/${storeId}/uninstall/${appId}`,
+  },
+
   // ── PROMOTIONS (seller-requested paid platform placements) ────────────────
   PROMOTIONS: {
     PREVIEW_PRICE: '/api/promotions/preview-price',

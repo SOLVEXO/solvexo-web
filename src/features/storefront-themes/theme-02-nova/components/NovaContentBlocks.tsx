@@ -1,5 +1,6 @@
 import { novaTheme as t } from '../theme.config';
 import { renderRichText } from '@/utils/richText';
+import { AppBlockRenderer } from '@/features/storefront/AppBlockRenderer';
 
 export interface ContentBlock {
   type: string;
@@ -18,12 +19,19 @@ export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: Con
     <>
       {blocks.map((block, i) => {
         switch (block.type) {
-          case 'heading':
+          case 'heading': {
+            // Dynamic Sources (Phase 9) — see AtelierContentBlocks.tsx's
+            // identical comment on the `paragraph` case just below.
+            const ns = block.settings.dynamicSourceNamespace || 'custom';
+            const key = block.settings.dynamicSourceKey;
+            const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
+            const text = boundText !== undefined ? boundText : block.settings.text;
             return (
               <p key={i} style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>
-                {block.settings.text}
+                {text}
               </p>
             );
+          }
           case 'paragraph': {
             // See AtelierContentBlocks.tsx's identical comment — namespace
             // is no longer seller-editable (always 'custom' in practice).
@@ -72,6 +80,18 @@ export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: Con
           case 'divider':
             return <hr key={i} style={{ border: 0, borderTop: `1.5px solid ${t.colors.border}` }} />;
           default:
+            // Phase 8 — App Blocks. See the identical comment in
+            // `AtelierContentBlocks.tsx` for the full rationale.
+            if (block.type.startsWith('app:')) {
+              return (
+                <AppBlockRenderer
+                  key={i}
+                  type={block.type}
+                  settings={block.settings}
+                  colors={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, accent: t.colors.accent, border: t.colors.border, bg: t.colors.bgAlt }}
+                />
+              );
+            }
             return null;
         }
       })}

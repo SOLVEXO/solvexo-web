@@ -63,9 +63,21 @@ export interface ThemeSettingsFieldDef {
  *  `TemplateScope`/`SCOPE_CONFIG`, extracted here so a generic Customize
  *  page can build its scope switcher from this list instead of a hardcoded
  *  union type. */
+/** Phase 5 — which labeled group a scope surfaces under in the Customize
+ *  editor's Shopify-style template picker (`ScopePicker.tsx`). Purely a UI
+ *  grouping key; doesn't change how a scope is stored/addressed (`resource`
+ *  below still owns that). `'pages'`/`'blogs'`/`'articles'` are the three
+ *  groups whose scope also carries a `resourcePicker` (see below) letting a
+ *  merchant pick WHICH real page/blog/article to work with, instead of
+ *  editing one fixed document the way Home/Product/Search/Cart do. */
+export type ThemeTemplateScopeGroup = 'home' | 'products' | 'collections' | 'pages' | 'blogs' | 'articles' | 'cart' | 'search';
+
 export interface ThemeTemplateScopeDef {
   id: string;
   label: string;
+  /** Which group this scope is listed under in the Customize editor's
+   *  template picker — see `ThemeTemplateScopeGroup`. */
+  group: ThemeTemplateScopeGroup;
   /** Whether the live preview for this scope renders full site chrome
    *  (navbar/announcement bar/footer) or just the section content in
    *  isolation — Home shows chrome; a product/collection/search/cart/blog
@@ -74,16 +86,24 @@ export interface ThemeTemplateScopeDef {
    *  matches what a buyer actually sees there. */
   showChrome: boolean;
   /** How this scope's `Section[]` document is stored/addressed on the
-   *  backend — a real `StorePage` (Home, one per store) or a real
-   *  `CollectionTemplate` row (every other scope), reusing the same
+   *  backend — a real `StorePage` (Home, one per store, or Phase 5: any
+   *  real merchant-created custom page, picked via `resourcePicker`) or a
+   *  real `CollectionTemplate` row (every other scope), reusing the same
    *  `resourceType`/`templateKey` addressing `AtelierCustomizePage.tsx`
    *  already established (search/cart/blog reuse the `page` resourceType
    *  bucket with a distinguishing `templateKey`, since the backend's
    *  `resourceType` enum has no dedicated values for them — see that file's
-   *  own doc comment for why). */
+   *  own doc comment for why).
+   *
+   *  `pageType: 'custom'` and `previewPicker` are both Phase 5 additions —
+   *  neither changes what document is edited (a custom page IS its own
+   *  document, picked by id; a blog/article `previewPicker` only changes
+   *  what real data the live preview shows alongside the one shared
+   *  Blog-Index/Blog-Article template — see `CoreSectionPreviewContext`). */
   resource:
-    | { kind: 'store-page' }
-    | { kind: 'collection-template'; resourceType: ResourceTemplateType; templateKey: string; allowAltTemplates: boolean };
+    | { kind: 'store-page'; pageType: 'home' }
+    | { kind: 'store-page'; pageType: 'custom' }
+    | { kind: 'collection-template'; resourceType: ResourceTemplateType; templateKey: string; allowAltTemplates: boolean; previewPicker?: 'blog' | 'article' };
 }
 
 export interface ThemeManifest {

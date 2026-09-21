@@ -7,6 +7,7 @@ import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { currencySymbol } from '@/utils/currency';
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
+import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetCategoryById } from '@/api/services/categories';
 import {
@@ -218,6 +219,14 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
 
           {isEdit && (
             <TemplateKeyPicker storeId={storeId} resourceType="collection" value={templateKey} onChange={setTemplateKey} />
+          )}
+
+          {/* Phase 9 — Dynamic Sources: lets a seller actually set this
+             collection's own custom field values, so a Collection Template
+             paragraph/heading bound to one has something real to resolve.
+             Edit mode only — a real `collection._id` is required. */}
+          {isEdit && collection && (
+            <MetafieldsEditor storeId={storeId} ownerResource="collection" ownerId={collection._id} />
           )}
 
           <div>

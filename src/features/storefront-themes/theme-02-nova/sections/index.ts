@@ -23,5 +23,6 @@ import './TrustBadgesSection';
 import './FeaturedCategoryGridSection';
 import './NewsletterSection';
 import './MetaobjectListSection';
+import './CoreSections';
 
 export { NovaSectionRenderer, getRegisteredNovaSectionTypes } from './novaSectionRenderer';

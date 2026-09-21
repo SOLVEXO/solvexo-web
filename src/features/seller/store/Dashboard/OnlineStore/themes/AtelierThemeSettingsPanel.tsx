@@ -121,8 +121,9 @@ function ThemeSettingsField({ field, colors, onChange }: {
  *  just those 3 into the current working copy — preserving everything else
  *  still unsaved, rather than overwriting the whole colors object from the
  *  server's last-saved state. */
-function SavedPalettes({ storeId, schemes, current, onSchemesChanged, onApplied }: {
+function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesChanged, onApplied }: {
   storeId: string;
+  installedThemeId: string | undefined;
   schemes: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
   current: { bgColor: string; textColor: string; primaryColor: string };
   onSchemesChanged: (doc: StoreThemeData) => void;
@@ -137,7 +138,7 @@ function SavedPalettes({ storeId, schemes, current, onSchemesChanged, onApplied 
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      const res = await apiCreateColorScheme(storeId, { name: newName.trim(), ...current });
+      const res = await apiCreateColorScheme(storeId, { name: newName.trim(), ...current }, installedThemeId);
       onSchemesChanged(res.data);
       setNewName('');
       toast.success('Palette saved.');
@@ -151,7 +152,7 @@ function SavedPalettes({ storeId, schemes, current, onSchemesChanged, onApplied 
   const handleApply = async (schemeId: string) => {
     setBusyId(schemeId);
     try {
-      const res = await apiApplyColorScheme(storeId, schemeId);
+      const res = await apiApplyColorScheme(storeId, schemeId, installedThemeId);
       onApplied(res.data);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not apply this palette.');
@@ -163,7 +164,7 @@ function SavedPalettes({ storeId, schemes, current, onSchemesChanged, onApplied 
   const handleDelete = async (schemeId: string) => {
     setBusyId(schemeId);
     try {
-      const res = await apiDeleteColorScheme(storeId, schemeId);
+      const res = await apiDeleteColorScheme(storeId, schemeId, installedThemeId);
       onSchemesChanged(res.data);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not delete this palette.');
@@ -245,8 +246,13 @@ function SavedPalettes({ storeId, schemes, current, onSchemesChanged, onApplied 
  *  text, so this is a zero-visible-change refactor for Atelier today — but a
  *  second theme's manifest now renders its own field set here with no new
  *  code in this component, which is the actual point. */
-export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
+export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftChange }: {
   storeId: string;
+  /** The specific installed theme row this panel edits — resolved by the
+   *  parent from the URL's `:themeId` (see `useResolvedThemeInstance`).
+   *  Every call below threads it through so Theme Settings always acts on
+   *  the theme selected in the URL, never silently on whichever is active. */
+  installedThemeId: string | undefined;
   /** Fires on every keystroke/change so the parent can feed the live working
    *  copy into the shared `AtelierLivePreview`, exactly like every other
    *  scope's instant-preview behavior. */
@@ -268,7 +274,7 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
 
   useEffect(() => {
     setLoading(true);
-    apiGetStoreTheme(storeId).then(res => {
+    apiGetStoreTheme(storeId, installedThemeId).then(res => {
       setDoc(res.data);
       editor.load(
         { colors: res.data.theme, customCss: res.data.customCss ?? '' },
@@ -276,7 +282,7 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
       );
     }).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
+  }, [storeId, installedThemeId]);
 
   // Live-feed the in-progress working copy up to the parent so the shared
   // preview reflects every keystroke, same as the section editors do.
@@ -307,8 +313,8 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
     editor.markSaving();
     try {
       const [colorsRes] = await Promise.all([
-        apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors),
-        apiUpdateStoreCustomCss(storeId, editor.workingCopy.customCss || null),
+        apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors, installedThemeId),
+        apiUpdateStoreCustomCss(storeId, editor.workingCopy.customCss || null, installedThemeId),
       ]);
       setDoc(colorsRes.data);
       editor.markSaved({ colors: colorsRes.data.draft.theme, customCss: colorsRes.data.draft.customCss ?? '' });
@@ -327,11 +333,11 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
       // always promotes exactly what the merchant currently sees.
       if (editor.dirty && editor.workingCopy) {
         await Promise.all([
-          apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors),
-          apiUpdateStoreCustomCss(storeId, editor.workingCopy.customCss || null),
+          apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors, installedThemeId),
+          apiUpdateStoreCustomCss(storeId, editor.workingCopy.customCss || null, installedThemeId),
         ]);
       }
-      const res = await apiPublishStoreTheme(storeId);
+      const res = await apiPublishStoreTheme(storeId, installedThemeId);
       setDoc(res.data);
       editor.markPublished({ colors: res.data.theme, customCss: res.data.customCss ?? '' });
       flash(true, 'Published — your storefront is now live with these changes.');
@@ -344,7 +350,7 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
   const handleDiscard = async () => {
     setDiscarding(true);
     try {
-      const res = await apiRevertStoreThemeDraft(storeId);
+      const res = await apiRevertStoreThemeDraft(storeId, installedThemeId);
       setDoc(res.data);
       editor.discardDraft({ colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' });
       flash(true, 'Draft discarded — reverted to your published version.');
@@ -358,13 +364,13 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
   const openVersions = () => {
     setVersionsOpen(true);
     setVersionsLoading(true);
-    apiListStoreThemeVersions(storeId).then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
+    apiListStoreThemeVersions(storeId, installedThemeId).then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
   };
 
   const restoreVersion = async (versionId: string) => {
     setRestoringVersionId(versionId);
     try {
-      const res = await apiRestoreStoreThemeVersion(storeId, versionId);
+      const res = await apiRestoreStoreThemeVersion(storeId, versionId, installedThemeId);
       setDoc(res.data);
       editor.discardDraft({ colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' });
       setVersionsOpen(false);
@@ -422,6 +428,7 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
 
       <SavedPalettes
         storeId={storeId}
+        installedThemeId={installedThemeId}
         schemes={doc?.draft.theme.colorSchemes ?? []}
         current={{ bgColor: c.bgColor, textColor: c.textColor, primaryColor: c.primaryColor }}
         onSchemesChanged={setDoc}

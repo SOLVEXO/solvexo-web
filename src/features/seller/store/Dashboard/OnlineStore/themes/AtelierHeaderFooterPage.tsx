@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Loader2, Plus, RotateCcw, History, Undo2, Redo2, Monitor, Tablet, Smartphone, Megaphone } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, Plus, RotateCcw, History, Undo2, Redo2, Monitor, Tablet, Smartphone, Megaphone, Eye, EyeOff, Copy } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, Toggle } from '@/components/comman/ui';
@@ -17,6 +18,7 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { VersionHistoryModal, type VersionRow } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
+import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { apiListStorePages } from '@/api/services/storePages';
 import { apiListMenus, type Menu } from '@/api/services/menus';
 import { AtelierLivePreview } from './AtelierLivePreview';
@@ -68,19 +70,46 @@ const FOOTER_BLOCK_OPTIONS: { type: string; label: string; defaults: Record<stri
   { type: 'copyright_text', label: 'Copyright text', defaults: { text: '' } },
 ];
 
-function BlockRow({ block, onChange, onRemove, pageOptions, storeId }: {
-  block: Block; onChange: (next: Block) => void; onRemove: () => void; pageOptions: PageOption[]; storeId: string;
+// Phase 7 — strips `_id` so a duplicated block persists as a genuinely new
+// document rather than colliding with the original's id. Same helper
+// `PageSectionsEditor.tsx` already has for its own blocks; not shared
+// across files since it's a 3-line pure function, not worth a new module.
+function cloneBlockWithoutId<T extends { _id?: string }>(item: T): T {
+  const { _id, ...rest } = item;
+  void _id;
+  return { ...rest } as T;
+}
+
+function BlockRow({ block, onChange, onRemove, onDuplicate, pageOptions, storeId }: {
+  block: Block; onChange: (next: Block) => void; onRemove: () => void;
+  /** Phase 7 — was missing here (unlike every other block list in the
+   *  app — see `PageSectionsEditor.tsx`'s own `BlockRow`); real gap, no
+   *  merchant could hide a nav link/footer block without deleting it, or
+   *  quickly clone one. Closed with the identical Eye/Copy affordances,
+   *  same icons/behavior, for consistency. */
+  onDuplicate: () => void;
+  pageOptions: PageOption[]; storeId: string;
 }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const label = block.settings.label || block.settings.heading || block.settings.platform || block.settings.text || block.type;
+  const hidden = block.enabled === false;
   return (
-    <div className="border border-bone rounded-lg bg-white">
-      <div className="flex items-center gap-2 px-3 py-2">
+    <div className={`border border-bone rounded-lg bg-white ${hidden ? 'opacity-50' : ''}`}>
+      <div className="flex items-center gap-1.5 px-3 py-2">
         <button type="button" onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-0">
           <span className="text-[12.5px] font-medium text-charcoal truncate capitalize">{label || String(block.type).replace(/_/g, ' ')}</span>
+          {hidden && <span className="text-[10px] font-bold uppercase tracking-wide text-slate shrink-0">Hidden</span>}
         </button>
-        <button type="button" onClick={() => setConfirming(true)} className="text-error text-[11px] font-semibold px-2 py-1 hover:bg-error-bg rounded-md bg-transparent border-none cursor-pointer">Remove</button>
+        <button type="button" onClick={() => onChange({ ...block, enabled: hidden ? true : false })} aria-label={hidden ? 'Show' : 'Hide'} title={hidden ? 'Show' : 'Hide'}
+          className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0">
+          {hidden ? <EyeOff size={13} /> : <Eye size={13} />}
+        </button>
+        <button type="button" onClick={onDuplicate} aria-label="Duplicate" title="Duplicate"
+          className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0">
+          <Copy size={13} />
+        </button>
+        <button type="button" onClick={() => setConfirming(true)} className="text-error text-[11px] font-semibold px-2 py-1 hover:bg-error-bg rounded-md bg-transparent border-none cursor-pointer shrink-0">Remove</button>
       </div>
       {open && <div className="px-3 pb-3 pt-1 border-t border-bone/70"><BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} /></div>}
       {confirming && (
@@ -203,6 +232,12 @@ export function AtelierHeaderFooterPage() {
   const toast = useToast();
   const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
 
+  // Same P0 fix as `AtelierCustomizePage.tsx` — resolves the URL's
+  // `:themeId` to this theme's own installed row so Header/Footer edits
+  // never land on a different, active theme instead.
+  const themeInstance = useResolvedThemeInstance(storeId);
+  const installedThemeId = themeInstance.status === 'ready' ? themeInstance.installedThemeId : undefined;
+
   const [tab, setTab] = useState<'header' | 'footer' | 'announcement'>('header');
   const [themeDoc, setThemeDoc] = useState<StoreThemeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -248,8 +283,9 @@ export function AtelierHeaderFooterPage() {
   useUndoRedoShortcuts(editor.undo, editor.redo, true);
 
   const load = useCallback(() => {
+    if (themeInstance.status !== 'ready') return;
     setLoading(true);
-    apiGetStoreTheme(storeId)
+    apiGetStoreTheme(storeId, themeInstance.installedThemeId)
       .then(res => {
         setThemeDoc(res.data);
         editor.load({ header: res.data.header, footer: res.data.footer }, { header: res.data.draft.header, footer: res.data.draft.footer });
@@ -258,7 +294,7 @@ export function AtelierHeaderFooterPage() {
     apiListStorePages(storeId).then(res => setPageOptions(res.data.filter(p => p.type === 'custom').map(p => ({ slug: p.slug, title: p.title })))).catch(() => {});
     apiListMenus(storeId).then(res => setMenus(res.data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
+  }, [storeId, themeInstance.status, installedThemeId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -271,8 +307,8 @@ export function AtelierHeaderFooterPage() {
     editor.markSaving();
     try {
       const [hRes, fRes] = await Promise.all([
-        apiUpdateStoreHeader(storeId, headerDraft),
-        apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, undefined, footerDraft.menuId),
+        apiUpdateStoreHeader(storeId, headerDraft, installedThemeId),
+        apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, installedThemeId, footerDraft.menuId),
       ]);
       editor.markSaved({ header: hRes.data.draft.header, footer: fRes.data.draft.footer });
       flash(true, 'Draft saved — Publish to make it live.');
@@ -283,11 +319,16 @@ export function AtelierHeaderFooterPage() {
   };
 
   const handlePersistRemoval = async (kind: 'header' | 'footer', next: HeaderFooterDraft) => {
+    // Same real bug/fix as `AtelierCustomizePage.tsx`'s `handlePersist` —
+    // see that function's own comment. `editor.workingCopy` here still
+    // holds the pre-removal value at this point in the call stack.
+    const rollbackTo = editor.workingCopy;
     try {
-      if (kind === 'header') await apiUpdateStoreHeader(storeId, next.header);
-      else await apiUpdateStoreFooter(storeId, next.footer.blocks, next.footer.footerStyle, undefined, next.footer.menuId);
+      if (kind === 'header') await apiUpdateStoreHeader(storeId, next.header, installedThemeId);
+      else await apiUpdateStoreFooter(storeId, next.footer.blocks, next.footer.footerStyle, installedThemeId, next.footer.menuId);
       editor.markSaved(next);
     } catch (err) {
+      if (rollbackTo) editor.discardDraft(rollbackTo);
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
     }
   };
@@ -300,11 +341,11 @@ export function AtelierHeaderFooterPage() {
       // always promotes exactly what the merchant currently sees.
       if (editor.dirty && headerDraft && footerDraft) {
         await Promise.all([
-          apiUpdateStoreHeader(storeId, headerDraft),
-          apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, undefined, footerDraft.menuId),
+          apiUpdateStoreHeader(storeId, headerDraft, installedThemeId),
+          apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, installedThemeId, footerDraft.menuId),
         ]);
       }
-      const res = await apiPublishStoreTheme(storeId);
+      const res = await apiPublishStoreTheme(storeId, installedThemeId);
       setThemeDoc(res.data);
       editor.markPublished({ header: res.data.header, footer: res.data.footer });
       flash(true, 'Published — your storefront is now live with these changes.');
@@ -317,7 +358,7 @@ export function AtelierHeaderFooterPage() {
   const handleDiscard = async () => {
     setDiscarding(true);
     try {
-      const res = await apiRevertStoreThemeDraft(storeId);
+      const res = await apiRevertStoreThemeDraft(storeId, installedThemeId);
       setThemeDoc(res.data);
       editor.discardDraft({ header: res.data.draft.header, footer: res.data.draft.footer });
       flash(true, 'Draft discarded — reverted to your published header/footer.');
@@ -331,13 +372,13 @@ export function AtelierHeaderFooterPage() {
   const openVersions = () => {
     setVersionsOpen(true);
     setVersionsLoading(true);
-    apiListStoreThemeVersions(storeId).then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
+    apiListStoreThemeVersions(storeId, installedThemeId).then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
   };
 
   const restoreVersion = async (versionId: string) => {
     setRestoringVersionId(versionId);
     try {
-      const res = await apiRestoreStoreThemeVersion(storeId, versionId);
+      const res = await apiRestoreStoreThemeVersion(storeId, versionId, installedThemeId);
       setThemeDoc(res.data);
       editor.discardDraft({ header: res.data.draft.header, footer: res.data.draft.footer });
       setVersionsOpen(false);
@@ -372,8 +413,21 @@ export function AtelierHeaderFooterPage() {
 
   const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding;
 
-  if (storeLoading || loading || !headerDraft || !footerDraft) {
+  if (storeLoading || themeInstance.status === 'loading' || loading || !headerDraft || !footerDraft) {
     return <div className="p-7 flex flex-col gap-4"><SkeletonBox width={240} height={22} rounded="6px" /><SkeletonBox height={400} rounded="16px" /></div>;
+  }
+
+  // Safe rejection for an invalid/uninstalled/cross-store theme id — never
+  // silently falls back to editing whichever theme happens to be active.
+  if (themeInstance.status === 'not-found') {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 text-center py-24 px-6">
+        <p className="text-[14px] font-bold text-charcoal">This theme isn't installed on this store.</p>
+        <Link to={`/store/${storeId}/online-store/themes`} className="text-[13px] font-semibold no-underline" style={{ color: '#D97757' }}>
+          Back to Themes
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -391,7 +445,7 @@ export function AtelierHeaderFooterPage() {
           // for Save Draft/Publish/Discard so those stay reachable without
           // scrolling on a narrow (390px) viewport.
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <PreviewButton storeId={storeId} />
+            <PreviewButton storeId={storeId} installedThemeId={installedThemeId} />
             <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
               <div className="shrink-0 flex items-center gap-1 border border-bone rounded-lg p-1 bg-white mr-1">
                 {(['desktop', 'tablet', 'mobile'] as const).map(d => {
@@ -481,6 +535,12 @@ export function AtelierHeaderFooterPage() {
                       editor.edit(next);
                       handlePersistRemoval('header', next);
                     }}
+                    onDuplicate={() => {
+                      const copy = cloneBlockWithoutId(block);
+                      const blocks = [...headerDraft.blocks];
+                      blocks.splice(i + 1, 0, copy);
+                      editor.edit(prev => ({ ...prev!, header: { ...headerDraft, blocks } }));
+                    }}
                     pageOptions={pageOptions}
                     storeId={storeId}
                   />
@@ -527,6 +587,12 @@ export function AtelierHeaderFooterPage() {
                       const next = { header: headerDraft, footer: nextFooter };
                       editor.edit(next);
                       handlePersistRemoval('footer', next);
+                    }}
+                    onDuplicate={() => {
+                      const copy = cloneBlockWithoutId(block);
+                      const blocks = [...footerDraft.blocks];
+                      blocks.splice(i + 1, 0, copy);
+                      editor.edit(prev => ({ ...prev!, footer: { ...footerDraft, blocks } }));
                     }}
                     pageOptions={pageOptions}
                     storeId={storeId}

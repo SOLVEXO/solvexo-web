@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, Button, Field, Toggle } from '@/components/comman/ui';
 import { apiUpdateStorePage, type StorePageData, type StorePagePolicyType } from '@/api/services/storePages';
+import { MetafieldsEditor } from '../customize/MetafieldsEditor';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const textarea = `${inp} resize-none`;
@@ -138,6 +139,16 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
                 {POLICY_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </Field>
+          </div>
+        )}
+
+        {/* Phase 9 — Dynamic Sources: lets a seller set this page's own
+           custom field values (Home has no single "current resource" to
+           attach one to, matching the backend's own rejection of a
+           dynamic-source binding on the Home page). */}
+        {!isHome && (
+          <div className="border-t border-bone pt-3">
+            <MetafieldsEditor storeId={storeId} ownerResource="page" ownerId={page._id} />
           </div>
         )}
 

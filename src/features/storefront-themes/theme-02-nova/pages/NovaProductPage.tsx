@@ -12,7 +12,7 @@ import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
 import { NovaButton } from '../components/NovaButton';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -159,6 +159,16 @@ export function NovaProductPage() {
     image: product?.images?.[0] || undefined,
   });
 
+  // Phase 4 (Nova parity): the template now always carries a real, LOCKED
+  // `product_main` section (seeded server-side — see
+  // `collection-template/core-sections.util.ts`, theme-agnostic) purely so
+  // the Customize editor's section list/preview shows this fixed content
+  // instead of looking blank. It is NOT re-rendered here via the generic
+  // section renderer (see the `isBlockOn`/`NovaSectionRenderer` call below)
+  // — instead, `isBlockOn` reads its 7 blocks' real `enabled` flags so a
+  // merchant hiding one of them in the editor has a real effect here, not a
+  // no-op. A store whose published template predates this resolves every
+  // block to "on", byte-identical to before this existed.
   useEffect(() => {
     if (!product) return;
     apiGetPublicCollectionTemplate(store.storeId, 'product', product.templateKey || 'default')
@@ -178,6 +188,9 @@ export function NovaProductPage() {
       navigate(`/product/${product.slug}`, { replace: true });
     }
   }, [product, slug, navigate]);
+
+  const productMainSection = templateSections.find(s => s.type === 'product_main');
+  const isBlockOn = (blockType: string) => productMainSection ? productMainSection.blocks.find(b => b.type === blockType)?.enabled !== false : true;
 
   const variants = detail?.variants ?? [];
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
@@ -216,12 +229,14 @@ export function NovaProductPage() {
   return (
     <main>
       <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
-        <Gallery images={allImages} name={product.name} />
+        {isBlockOn('product_media') && <Gallery images={allImages} name={product.name} />}
 
         <div className="flex flex-col">
-          <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, lineHeight: 1.15 }}>
-            {product.name}
-          </h1>
+          {isBlockOn('product_title') && (
+            <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, lineHeight: 1.15 }}>
+              {product.name}
+            </h1>
+          )}
 
           {product.averageRating > 0 && (
             <div className="flex items-center gap-1.5 mt-2">
@@ -232,25 +247,27 @@ export function NovaProductPage() {
             </div>
           )}
 
-          <div className="flex items-baseline gap-3 mt-4 mb-6">
-            <span style={{ fontFamily: t.fonts.display, fontSize: '24px', color: t.colors.ink, fontWeight: 700 }}>
-              {symbol}{displayPrice != null ? fmt2(displayPrice) : ''}
-            </span>
-            {displayCompareAt != null && (
-              <>
-                <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
-                  {symbol}{fmt2(displayCompareAt)}
-                </span>
-                {pctOff != null && (
-                  <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '3px 9px', borderRadius: '9999px' }}>−{pctOff}%</span>
-                )}
-              </>
-            )}
-          </div>
+          {isBlockOn('product_price') && (
+            <div className="flex items-baseline gap-3 mt-4 mb-6">
+              <span style={{ fontFamily: t.fonts.display, fontSize: '24px', color: t.colors.ink, fontWeight: 700 }}>
+                {symbol}{displayPrice != null ? fmt2(displayPrice) : ''}
+              </span>
+              {displayCompareAt != null && (
+                <>
+                  <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
+                    {symbol}{fmt2(displayCompareAt)}
+                  </span>
+                  {pctOff != null && (
+                    <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '3px 9px', borderRadius: '9999px' }}>−{pctOff}%</span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
-          <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />
+          {isBlockOn('product_variant_picker') && <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />}
 
-          {!isDigital && (
+          {isBlockOn('product_quantity') && !isDigital && (
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: '9999px' }}>
                 <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
@@ -278,16 +295,18 @@ export function NovaProductPage() {
             </button>
           )}
 
-          <NovaButton
-            disabled={stock <= 0}
-            loading={adding === activeVariant?._id}
-            onClick={handleAddToCart}
-            style={{ width: '100%', justifyContent: 'center' }}
-          >
-            {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-          </NovaButton>
+          {isBlockOn('product_buy_buttons') && (
+            <NovaButton
+              disabled={stock <= 0}
+              loading={adding === activeVariant?._id}
+              onClick={handleAddToCart}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+            </NovaButton>
+          )}
 
-          {product.description && (
+          {isBlockOn('product_description') && product.description && (
             <div className="mt-8 pt-8" style={{ borderTop: `1.5px solid ${t.colors.border}` }}>
               <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '10px' }}>Description</p>
               <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{product.description}</p>
@@ -300,7 +319,13 @@ export function NovaProductPage() {
         <ProductReviewsSection productId={product._id} />
       </div>
 
-      {templateSections.length > 0 && <NovaSectionRenderer sections={templateSections} dynamicSourceValues={dynamicSourceValues} />}
+      {/* `product_main` (the locked core section, seeded server-side) is
+         NOT re-rendered here — see the identical comment in
+         `AtelierProductPage.tsx` for the full rationale. */}
+      {(() => {
+        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <NovaSectionRenderer sections={surrounding} dynamicSourceValues={dynamicSourceValues} />;
+      })()}
 
       {previewOpen && (
         <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>

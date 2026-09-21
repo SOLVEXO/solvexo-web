@@ -72,6 +72,43 @@ export interface ColorScheme {
   primaryColor: string;
 }
 
+/**
+ * Phase 7 — the reusable "section group" contract `StorefrontHeader` and
+ * `StorefrontFooter` (below) already satisfy structurally, named explicitly
+ * here as this phase's required extension point rather than left implicit.
+ *
+ * A real Shopify `header-group.json`/`footer-group.json` is an ARRAY of
+ * independently addable/removable/reorderable SECTIONS (e.g. a separate
+ * "logo" section, a separate "menu" section, stackable in any order) — a
+ * genuinely different shape from what exists here today: one fixed
+ * `blocks: Block[]` list plus a few scalar layout fields. Converting to that
+ * shape was evaluated and deliberately NOT done this pass, because it would
+ * buy no real merchant capability in this codebase specifically:
+ * `AtelierNavbar`/`AtelierFooter` (and Nova's equivalents) render a FIXED
+ * layout — one logo slot, one flat nav-link row; one columns/social/
+ * copyright arrangement — with no place in their render tree for a second,
+ * independently-positioned section, and `headerStyle`/`footerStyle` are
+ * deliberately NOT swappable-by-the-merchant today (see
+ * `AtelierHeaderFooterPage.tsx`'s own doc comment). Forcing a `Section[]`
+ * wrapper around a group that can only ever meaningfully hold ONE section
+ * would be exactly the "abstraction for its own sake" this phase's own
+ * instructions warn against — there is nothing real to add/remove/reorder
+ * at the SECTION level, only at the block level (which already works).
+ *
+ * So: a `SectionGroupLike` group is what Header/Footer already are — an
+ * ordered list of independently addable/removable/reorderable `Block`s
+ * (hide/duplicate were the one genuinely missing capability, closed this
+ * pass in `AtelierHeaderFooterPage.tsx`'s `BlockRow`) plus the group's own
+ * settings. A future theme that DOES need multiple independently-orderable
+ * header/footer sections can extend this to `sections: SectionGroupLike[]`
+ * without this shape changing — the clean extension point this phase's
+ * requirements ask for, without inventing unused code today.
+ */
+export interface SectionGroupLike {
+  blocks: Block[];
+  settings: Record<string, unknown>;
+}
+
 export interface StorefrontHeader {
   logoSource:    'store' | 'custom';
   customLogoUrl: string | null;

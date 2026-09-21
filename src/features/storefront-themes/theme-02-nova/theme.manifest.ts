@@ -10,14 +10,18 @@ import { registerThemeManifest, type ThemeManifest } from '../themeManifest';
  * `AtelierThemeSettingsPanel.tsx` or `AtelierCustomizePage.tsx` (both
  * already read generically from `getThemeManifest(...)`) to support it.
  *
- *  - `templates` lists 6 scopes — Home, Product, Collection, Search, Blog
- *    Index, Blog Article — matching the 7 routes this theme actually
- *    implements (see `theme.config.ts`'s README) MINUS Cart, which Nova has
- *    no page for at all; listing a 'cart' scope here would let a merchant
- *    open a Cart customize screen that edits data Nova never renders
- *    (`ThemedRoute` falls back to Atelier's real Cart page instead), which
- *    would be actively misleading rather than just incomplete. Every scope
- *    that IS listed here is fully real and functional.
+ *  - `templates` lists 7 scopes — Home, Product, Collection, Search, Cart,
+ *    Blog Index, Blog Article. **Correction (Phase 4, Nova parity pass):**
+ *    this comment used to say Cart was deliberately excluded because "Nova
+ *    has no page for at all" — that was true when this file was first
+ *    written (Nova was an 8/18-route proof-of-concept then) but went stale
+ *    once Nova reached full 18/18 route parity with Atelier (see
+ *    `registry.ts`'s `pages.cart: NovaCartPage` — a real, independent,
+ *    fully-functional Nova cart page, not a fallback). Verified directly
+ *    against `registry.ts` before adding this scope back, not assumed from
+ *    the old comment. Every scope listed here is fully real and functional
+ *    — there is no theme scope in this file that isn't backed by a real,
+ *    working page.
  *  - `themeSettingsFields` matches the exact same `StorefrontColors` subset
  *    `applyMerchantThemeOverrides` in this theme's own `theme.config.ts`
  *    actually reads — same reasoning as Atelier's manifest: no field is
@@ -29,12 +33,16 @@ export const novaThemeManifest: ThemeManifest = {
   supportsAnnouncementBar: true,
 
   templates: [
-    { id: 'home', label: 'Home', showChrome: true, resource: { kind: 'store-page' } },
-    { id: 'product', label: 'Product', showChrome: false, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
-    { id: 'collection', label: 'Collection', showChrome: false, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
-    { id: 'search', label: 'Search', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
-    { id: 'blogIndex', label: 'Blog (Stories) Index', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false } },
-    { id: 'blogArticle', label: 'Blog Article', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false } },
+    { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },
+    { id: 'product', label: 'Product', group: 'products', showChrome: false, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'collection', label: 'Collection', group: 'collections', showChrome: false, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
+    // Phase 5 — same generalization as Atelier's manifest, see its own
+    // comment on this same entry.
+    { id: 'pages', label: 'Pages', group: 'pages', showChrome: true, resource: { kind: 'store-page', pageType: 'custom' } },
+    { id: 'search', label: 'Search', group: 'search', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
+    { id: 'cart', label: 'Cart', group: 'cart', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
+    { id: 'blogIndex', label: 'Blog (Stories) Index', group: 'blogs', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
+    { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
   ],
 
   themeSettingsFields: [

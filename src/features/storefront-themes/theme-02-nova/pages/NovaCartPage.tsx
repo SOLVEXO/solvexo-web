@@ -6,7 +6,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { NovaSectionRenderer } from '../sections';
 import { NovaButton } from '../components/NovaButton';
@@ -232,7 +232,13 @@ export function NovaCartPage() {
         </div>
       )}
 
-      {templateSections.length > 0 && <div style={{ marginTop: '56px' }}><NovaSectionRenderer sections={templateSections} /></div>}
+      {/* `cart_items`/`cart_summary` (the two locked core sections, seeded
+         server-side) are NOT re-rendered here — see the identical comment
+         in `AtelierCartPage.tsx`. */}
+      {(() => {
+        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+        return surrounding.length > 0 && <div style={{ marginTop: '56px' }}><NovaSectionRenderer sections={surrounding} /></div>;
+      })()}
     </main>
   );
 }

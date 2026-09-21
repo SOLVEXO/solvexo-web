@@ -63,6 +63,22 @@ export const SECTION_TYPES = [
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 
+/** Phase 5 (unified Pages/Blog/Article discovery in Customize) — real data
+ *  for whichever real Blog/Article a merchant picked in the Customize
+ *  editor's resource picker, fed into `blog_post_list`/`article_content`'s
+ *  render functions (see each theme's `CoreSections.tsx`) so the editor's
+ *  live preview shows THAT real blog's name/recent posts or THAT real
+ *  article's title/excerpt instead of the generic "Sample…" placeholder.
+ *  Never reaches the real storefront — those pages already render their
+ *  own real content directly (see `AtelierBlogIndexPage`/`AtelierBlogPostPage`
+ *  and their Nova counterparts), this is editor-preview-only context. */
+export interface CoreSectionPreviewContext {
+  blogName?: string;
+  recentPostTitles?: string[];
+  articleTitle?: string;
+  articleExcerpt?: string;
+}
+
 /** Every core/locked section type — see the comment above. Shared by the
  *  Customize editor (`PageSectionsEditor`/`sectionRegistry`, which hide the
  *  Remove/Duplicate/Hide/Drag controls for these) and each theme's own

@@ -4,7 +4,7 @@ import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import type { PageOption } from './BlockFields';
 import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
-import { apiListMetafieldDefinitions, type MetafieldDefinition } from '@/api/services/metafields';
+import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOwnerResource } from '@/api/services/metafields';
 
 /**
  * The schema-driven settings engine — this is the piece that was entirely
@@ -60,6 +60,13 @@ export interface FieldSchema {
   clears?: string[];
   /** Conditional visibility — reads the section/block's OTHER settings, e.g. `s => s.source === 'category'`. Replaces what used to be an inline `{settings.x === 'y' && …}` JSX guard. */
   showIf?: (settings: Record<string, any>) => boolean;
+  /** 'metafieldKeyPicker' only — Phase 9, Dynamic Sources: the sibling
+   *  field's `key` this picker overrides once a real custom field is
+   *  connected (e.g. `paragraph`'s `dynamicSourceKey` row pairs with its
+   *  own `text` row). `SchemaForm` dims that field and shows why, so the
+   *  seller can always see which value is actually in control — see this
+   *  field's own render logic below. */
+  pairsWith?: string;
 }
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -125,30 +132,59 @@ function MetaobjectTypePickerField({ value, storeId, onChange }: { value: string
   );
 }
 
-// "Dynamic Sources" — binds a paragraph block to one of this store's own
-// real Product custom fields instead of static text (see
-// AtelierContentBlocks.tsx/NovaContentBlocks.tsx's identical consumer side).
-// Previously this was two raw text inputs (namespace + key) a seller had to
-// type by hand, exact-match, with a silent no-op on any typo — found during
-// the Catalog audit. A real dropdown of the store's own definitions removes
-// that entire error class; namespace is always 'custom' today (see
-// MetafieldDefinition's own doc comment), so this field only needs to store
-// the key.
-function MetafieldKeyPickerField({ value, storeId, onChange }: { value: string | undefined; storeId: string; onChange: (key: string) => void }) {
+// "Dynamic Sources" — binds a field (a paragraph/heading block's `text`, or
+// a rich_text section's own `heading`) to one of this store's own real
+// custom fields instead of a static value (see
+// AtelierContentBlocks.tsx/NovaContentBlocks.tsx's identical consumer
+// side). Previously this was two raw text inputs (namespace + key) a
+// seller had to type by hand, exact-match, with a silent no-op on any typo
+// — found during the Catalog audit. A real dropdown of the store's own
+// definitions removes that entire error class; namespace is always
+// 'custom' today (see MetafieldDefinition's own doc comment), so this
+// field only needs to store the key.
+//
+// Phase 9 — generalized beyond the original Product-only, paragraph-only
+// MVP: `ownerResource` is now the real context of whatever's being edited
+// (resolved by `AtelierCustomizePage.tsx` per scope — Product Template →
+// 'product', Collection Template → 'collection', a custom Page → 'page',
+// Blog Article Template → 'article'), not a hardcoded literal — a store's
+// own Category-scoped fields are deliberately never offered here, since no
+// Customize scope represents a single real Category to resolve one
+// against. `json`-typed fields are filtered out — this field always feeds
+// a plain-text-rendering setting, and a raw JSON blob pasted inline would
+// be a real, visible footgun (matches the backend's own
+// `DYNAMIC_SOURCE_INCOMPATIBLE_TYPES`, kept in sync by hand).
+function MetafieldKeyPickerField({ value, storeId, ownerResource, onChange }: { value: string | undefined; storeId: string; ownerResource?: MetafieldOwnerResource | null; onChange: (key: string) => void }) {
   const [defs, setDefs] = useState<MetafieldDefinition[] | null>(null);
 
   useEffect(() => {
-    apiListMetafieldDefinitions(storeId, 'product').then(res => setDefs(res.data)).catch(() => setDefs([]));
-  }, [storeId]);
+    if (!ownerResource) { setDefs([]); return; }
+    setDefs(null);
+    apiListMetafieldDefinitions(storeId, ownerResource).then(res => setDefs(res.data.filter(d => d.type !== 'json'))).catch(() => setDefs([]));
+  }, [storeId, ownerResource]);
 
+  if (!ownerResource) {
+    return <div className={`${inp} text-slate`}>Dynamic sources aren't available in this context — there's no single real item here to bind a custom field to.</div>;
+  }
   if (defs === null) return <div className={inp}>Loading custom fields…</div>;
-  if (defs.length === 0) return <div className={`${inp} text-slate`}>No product custom fields yet — create one under "Custom Fields" in the sidebar first.</div>;
+  if (defs.length === 0) {
+    return <div className={`${inp} text-slate`}>No {ownerResource} custom fields yet — create one under "Custom Fields" in the sidebar first.</div>;
+  }
+
+  const connected = defs.find(d => d.key === value);
 
   return (
-    <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
-      <option value="">— Use the plain text above —</option>
-      {defs.map(d => <option key={d._id} value={d.key}>{d.name}</option>)}
-    </select>
+    <div className="flex flex-col gap-1.5">
+      <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
+        <option value="">— Use the plain value above —</option>
+        {defs.map(d => <option key={d._id} value={d.key}>{d.name}</option>)}
+      </select>
+      {connected && (
+        <p className="flex items-center gap-1 text-[11px] font-semibold text-success">
+          🔗 Connected — resolves to this {ownerResource}'s real "{connected.name}" value
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -169,7 +205,7 @@ function ItemListField({ items, onChange, max = 20 }: { items: string[]; onChang
   );
 }
 
-function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: (patch: Record<string, any>) => void, storeId: string, pageOptions: PageOption[]) {
+function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: (patch: Record<string, any>) => void, storeId: string, pageOptions: PageOption[], ownerResource?: MetafieldOwnerResource | null) {
   const value = settings[field.key];
   // Wraps `set` so every field's change also nulls out whatever `clears`
   // declares — one mechanism for every "picking A un-picks B" case (source
@@ -256,7 +292,15 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
       return <MetaobjectTypePickerField value={value} storeId={storeId} onChange={type => set({ [field.key]: type })} />;
 
     case 'metafieldKeyPicker':
-      return <MetafieldKeyPickerField value={value} storeId={storeId} onChange={key => set({ [field.key]: key })} />;
+      // Real, previously-latent bug found via end-to-end testing: this only
+      // ever wrote `dynamicSourceKey`, never the sibling `dynamicSourceNamespace`
+      // the backend's `assertDynamicSource` requires set together (see
+      // `section-settings.validator.ts`) — every save through this picker
+      // was rejected with a 400 the moment it was actually exercised.
+      // Namespace is always 'custom' (no UI to choose another — see
+      // `MetafieldDefinition`'s own doc comment), so it's set as a fixed
+      // pair with the key, and cleared together too.
+      return <MetafieldKeyPickerField value={value} storeId={storeId} ownerResource={ownerResource} onChange={key => set({ [field.key]: key, dynamicSourceNamespace: key ? 'custom' : '' })} />;
 
     case 'itemList':
       return <ItemListField items={Array.isArray(value) ? value : []} onChange={next => set({ [field.key]: next })} max={field.max} />;
@@ -267,15 +311,28 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 }
 
 /** Generic renderer for any `FieldSchema[]` — powers both section settings and (non-recursive) block settings. */
-export function SchemaForm({ schema, settings, onChange, storeId, pageOptions }: {
+export function SchemaForm({ schema, settings, onChange, storeId, pageOptions, ownerResource }: {
   schema: FieldSchema[];
   settings: Record<string, any>;
   onChange: (next: Record<string, any>) => void;
   storeId: string;
   pageOptions?: PageOption[];
+  /** Phase 9 — Dynamic Sources: the real resource type whatever's currently
+   *  being edited belongs to (see `MetafieldKeyPickerField`'s own doc
+   *  comment). `undefined`/`null` for any caller that never has a
+   *  `metafieldKeyPicker` field in its schema at all — harmless either way,
+   *  since that field kind is the only thing that reads it. */
+  ownerResource?: MetafieldOwnerResource | null;
 }) {
   const set = (patch: Record<string, any>) => onChange({ ...settings, ...patch });
   const visible = schema.filter(f => !f.showIf || f.showIf(settings));
+  // Phase 9 — a field currently overridden by a connected dynamic source
+  // (see `FieldSchema.pairsWith`) — dimmed below so it's always visually
+  // clear which value (the static one, or the connected custom field) is
+  // actually in control, rather than showing two live-looking inputs.
+  const boundAwayKeys = new Set(
+    schema.filter(f => f.kind === 'metafieldKeyPicker' && f.pairsWith && !!settings[f.key]).map(f => f.pairsWith as string),
+  );
 
   const rows: FieldSchema[][] = [];
   for (let i = 0; i < visible.length; i++) {
@@ -288,15 +345,18 @@ export function SchemaForm({ schema, settings, onChange, storeId, pageOptions }:
     <div className="flex flex-col gap-2">
       {rows.map((row, i) => (
         <div key={row.map(f => f.key).join('+') || i} className={row.length === 2 ? 'grid grid-cols-2 gap-2' : undefined}>
-          {row.map(field => (
-            field.kind === 'checkbox' ? (
-              <div key={field.key}>{renderField(field, settings, set, storeId, pageOptions ?? [])}</div>
+          {row.map(field => {
+            const dimmed = boundAwayKeys.has(field.key);
+            return field.kind === 'checkbox' ? (
+              <div key={field.key} className={dimmed ? 'opacity-50 pointer-events-none' : undefined}>{renderField(field, settings, set, storeId, pageOptions ?? [], ownerResource)}</div>
             ) : (
-              <Field key={field.key} label={field.label} required={field.required} hint={field.hint}>
-                {renderField(field, settings, set, storeId, pageOptions ?? [])}
+              <Field key={field.key} label={field.label} required={field.required} hint={dimmed ? 'Unused — a custom field is connected below.' : field.hint}>
+                <div className={dimmed ? 'opacity-50 pointer-events-none' : undefined}>
+                  {renderField(field, settings, set, storeId, pageOptions ?? [], ownerResource)}
+                </div>
               </Field>
-            )
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>

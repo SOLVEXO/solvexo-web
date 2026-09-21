@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Section, Block } from '@/api/services/storefrontTypes';
+import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { resolveSectionColors, type AtelierSectionColors } from '../theme.config';
 
@@ -16,8 +16,15 @@ import { resolveSectionColors, type AtelierSectionColors } from '../theme.config
  *  renderer is invoked from a resource-scoped template (`AtelierProductPage`
  *  passes it; the general Home/Pages editor doesn't, since there's no single
  *  "current resource" there) — see `RichTextSection.tsx`'s `paragraph` block,
- *  the one consumer today. */
-type SectionRenderFn = (section: Section, blocks: Block[], colors: AtelierSectionColors, dynamicSourceValues: Record<string, string>) => ReactNode;
+ *  the one consumer today.
+ *
+ *  Fifth argument (Phase 5) is `previewContext` — real data for whichever
+ *  Blog/Article a merchant picked in the Customize editor's resource picker
+ *  (see `CoreSectionPreviewContext`'s own doc comment). Only ever set when
+ *  Customize's live preview renders `blog_post_list`/`article_content`;
+ *  every other caller (including the real storefront, which never renders
+ *  these core types at all) omits it. */
+type SectionRenderFn = (section: Section, blocks: Block[], colors: AtelierSectionColors, dynamicSourceValues: Record<string, string>, previewContext?: CoreSectionPreviewContext) => ReactNode;
 
 /** Atelier's own open section registry — mirrors the app's established
  *  self-registration pattern (each section file calls `registerAtelierSection`
@@ -63,13 +70,15 @@ interface AtelierSectionRendererProps {
   /** Dynamic Sources lookup — see `SectionRenderFn`'s own doc comment.
    *  Omitted/empty everywhere except a resource-scoped template render. */
   dynamicSourceValues?: Record<string, string>;
+  /** Phase 5 — see `SectionRenderFn`'s own doc comment. */
+  previewContext?: CoreSectionPreviewContext;
 }
 
 /** Renders a real `Section[]` (as authored via the seller's Pages editor)
  *  through Atelier's own section components. Unknown/unregistered types and
  *  `enabled: false` sections are skipped silently — matches the legacy
  *  engine's own established convention (missing `enabled` behaves like `true`). */
-export function AtelierSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, dynamicSourceValues }: AtelierSectionRendererProps) {
+export function AtelierSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, dynamicSourceValues, previewContext }: AtelierSectionRendererProps) {
   const { theme } = useStorefront();
   const colorSchemes = theme?.theme.colorSchemes;
   const dynamicValues = dynamicSourceValues ?? {};
@@ -83,7 +92,7 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
           if (!render) return null;
           const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
           const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
-          return <div key={section._id ?? i} style={{ background: colors.bg }}>{render(section, blocks, colors, dynamicValues)}</div>;
+          return <div key={section._id ?? i} style={{ background: colors.bg }}>{render(section, blocks, colors, dynamicValues, previewContext)}</div>;
         })}
       </>
     );
@@ -118,7 +127,7 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
               onSelectSection?.(sectionId);
             }}
           >
-            {render(section, blocks, colors, dynamicValues)}
+            {render(section, blocks, colors, dynamicValues, previewContext)}
           </div>
         );
       })}

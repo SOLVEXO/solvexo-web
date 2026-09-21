@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import type { Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
 import { NovaCollectionScopeProvider } from '../sections/collectionScope';
@@ -19,6 +20,8 @@ export function NovaCollectionPage() {
   const { store } = useStorefront();
   const [collection, setCollection] = useState<PublicCollectionSummary | null | undefined>(undefined);
   const [sections, setSections] = useState<Section[] | undefined>(undefined);
+  // Dynamic Sources (Phase 9) — see AtelierCollectionPage's identical comment.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setCollection(undefined);
@@ -26,6 +29,13 @@ export function NovaCollectionPage() {
       .then(res => setCollection(res.data))
       .catch(() => setCollection(null));
   }, [store.storeId, slugOrId]);
+
+  useEffect(() => {
+    if (!collection) { setDynamicSourceValues({}); return; }
+    apiGetPublicMetafieldValues(store.storeId, 'collection', collection._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, collection]);
 
   useEffect(() => {
     if (collection === undefined) return;
@@ -67,7 +77,7 @@ export function NovaCollectionPage() {
         )}
       </div>
       <NovaCollectionScopeProvider value={collection._id}>
-        <NovaSectionRenderer sections={sections} />
+        <NovaSectionRenderer sections={sections} dynamicSourceValues={dynamicSourceValues} />
       </NovaCollectionScopeProvider>
       {!hasGridAnchor && <NovaProductGrid collectionId={collection._id} />}
     </main>

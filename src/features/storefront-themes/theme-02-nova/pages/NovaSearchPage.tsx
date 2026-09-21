@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
-import type { Section } from '@/api/services/storefrontTypes';
+import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
 import { NovaProductGrid } from '../components/NovaProductGrid';
 import { novaTheme as t } from '../theme.config';
@@ -32,9 +32,14 @@ export function NovaSearchPage() {
     );
   }
 
+  // `search_results` (the locked core section, seeded server-side) is NOT
+  // re-rendered here — `NovaProductGrid` below is already the real results
+  // grid; see the identical comment in `AtelierSearchPage.tsx`.
+  const surrounding = sections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
+
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-      {sections.length > 0 && <div style={{ marginBottom: '32px' }}><NovaSectionRenderer sections={sections} /></div>}
+      {surrounding.length > 0 && <div style={{ marginBottom: '32px' }}><NovaSectionRenderer sections={surrounding} /></div>}
       <NovaProductGrid heading={`Results for "${q}"`} search={q} />
     </main>
   );

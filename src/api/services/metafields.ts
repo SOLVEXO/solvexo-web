@@ -12,7 +12,9 @@ export const METAFIELD_TYPES = [
 ] as const;
 export type MetafieldType = (typeof METAFIELD_TYPES)[number];
 
-export const METAFIELD_OWNER_RESOURCES = ['product', 'category', 'collection', 'page'] as const;
+// 'article' (Phase 9 — Dynamic Sources) is a real BlogPost — see the
+// backend schema's own comment.
+export const METAFIELD_OWNER_RESOURCES = ['product', 'category', 'collection', 'page', 'article'] as const;
 export type MetafieldOwnerResource = (typeof METAFIELD_OWNER_RESOURCES)[number];
 
 export const METAFIELD_TYPE_LABELS: Record<MetafieldType, string> = {

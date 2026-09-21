@@ -399,7 +399,7 @@ export function PagesPage() {
                   )}
                 </div>
               </div>
-              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={effectiveSupportedSectionTypes} colorSchemes={colorSchemes} />
+              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={effectiveSupportedSectionTypes} colorSchemes={colorSchemes} ownerResource={selectedPage?.type === 'custom' ? 'page' : null} />
             </>
           ) : (
             <div className="bg-white border border-bone rounded-2xl p-10 text-center">

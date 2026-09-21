@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import type { Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierCollectionScopeProvider } from '../sections/collectionScope';
@@ -23,6 +24,10 @@ export function AtelierCollectionPage() {
   const { store } = useStorefront();
   const [collection, setCollection] = useState<PublicCollectionSummary | null | undefined>(undefined);
   const [sections, setSections] = useState<Section[] | undefined>(undefined);
+  // Dynamic Sources (Phase 9) — this collection's own real metafield
+  // values, same fetch/shape `AtelierProductPage.tsx` already uses for a
+  // Product's own paragraph/heading bindings.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setCollection(undefined);
@@ -30,6 +35,13 @@ export function AtelierCollectionPage() {
       .then(res => setCollection(res.data))
       .catch(() => setCollection(null));
   }, [store.storeId, slugOrId]);
+
+  useEffect(() => {
+    if (!collection) { setDynamicSourceValues({}); return; }
+    apiGetPublicMetafieldValues(store.storeId, 'collection', collection._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, collection]);
 
   useEffect(() => {
     if (collection === undefined) return;
@@ -71,7 +83,7 @@ export function AtelierCollectionPage() {
         )}
       </div>
       <AtelierCollectionScopeProvider value={collection._id}>
-        <AtelierSectionRenderer sections={sections} />
+        <AtelierSectionRenderer sections={sections} dynamicSourceValues={dynamicSourceValues} />
       </AtelierCollectionScopeProvider>
       {!hasGridAnchor && <AtelierProductGrid collectionId={collection._id} />}
     </main>
