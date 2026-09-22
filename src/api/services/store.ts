@@ -590,6 +590,8 @@ export interface StoreCustomer {
   notes:          string;
   isArchived:     boolean;
   marketingOptIn: boolean;
+  /** Real GDPR erasure marker — this store's own data for this customer has been scrubbed (see apiEraseCustomerData). */
+  isErased:       boolean;
 }
 
 export interface GetStoreCustomersParams {
@@ -699,5 +701,26 @@ export function apiUpdateStoreCustomer(storeId: string, customerId: string, payl
 export function apiUpdateStoreCustomerMeta(storeId: string, customerId: string, payload: UpdateStoreCustomerMetaPayload) {
   return client.patch<never, ApiResponse<{ tags: string[]; notes: string; marketingOptIn: boolean }>>(
     ENDPOINTS.STORE.CUSTOMERS.UPDATE_META(storeId, customerId), payload,
+  );
+}
+
+/** GET /api/store/:storeId/customers/:customerId/export-data  (seller only) —
+ *  real GDPR "right to access": a downloadable JSON bundle of everything
+ *  THIS store holds about one customer (profile, this store's own tags/
+ *  notes, orders placed here, reviews left here). */
+export function apiExportCustomerData(storeId: string, customerId: string) {
+  return client.get<never, Blob>(
+    ENDPOINTS.STORE.CUSTOMERS.EXPORT_DATA(storeId, customerId), { responseType: 'blob' },
+  );
+}
+
+/** POST /api/store/:storeId/customers/:customerId/erase-data  (seller only) —
+ *  real GDPR "right to erasure", scoped to this store's own data only (tags/
+ *  notes + this store's own order shipping-address snapshots) — never the
+ *  buyer's shared platform account, which isn't this store's data to erase.
+ *  Irreversible. */
+export function apiEraseCustomerData(storeId: string, customerId: string) {
+  return client.post<never, ApiResponse<{ isErased: boolean; ordersScrubbed: number }>>(
+    ENDPOINTS.STORE.CUSTOMERS.ERASE_DATA(storeId, customerId),
   );
 }

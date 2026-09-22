@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { clsx } from 'clsx';
-import { Send, Loader2, X, Mic, MicOff } from 'lucide-react';
-import type { Message } from '@/api/services/messaging';
+import { Send, Loader2, X, Mic, MicOff, Link2 } from 'lucide-react';
+import type { Message, LinkPreviewData } from '@/api/services/messaging';
 import { EmojiPicker } from './EmojiPicker';
 import { AttachmentMenu } from './AttachmentMenu';
 
@@ -18,6 +18,10 @@ interface MessageInputProps {
   replyTo?:       Message | null;
   onCancelReply?: () => void;
   onShareProduct?: () => void;
+  /** Resolved server-side (SSRF-guarded) from the first URL in `value` — see useLinkPreviewDraft. */
+  linkPreview?:        LinkPreviewData | null;
+  linkPreviewLoading?: boolean;
+  onDismissLinkPreview?: () => void;
 }
 
 const MAX_TEXTAREA_H = 120;
@@ -85,6 +89,7 @@ function useVoiceRecorder(onReady: (file: File) => void) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function MessageInput({
   value, onChange, onSend, onFileSelect, onFileTooLarge, uploading, uploadProgress, sending, replyTo, onCancelReply, onShareProduct,
+  linkPreview, linkPreviewLoading, onDismissLinkPreview,
 }: MessageInputProps) {
   const canSend = value.trim().length > 0 && !sending;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -158,6 +163,23 @@ export function MessageInput({
             <p className="text-[12px] text-slate truncate">{replyTo.text ?? `[${replyTo.type}]`}</p>
           </div>
           <button onClick={onCancelReply} aria-label="Cancel reply" className="p-1 rounded-full hover:bg-bone cursor-pointer bg-transparent border-none text-slate shrink-0">
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
+      {(linkPreviewLoading || linkPreview) && (
+        <div className="flex items-center gap-2 mb-[8px] px-3 py-[7px] bg-cream rounded-[10px] border-l-[3px] border-brand-orange transition-all duration-200 ease-out starting:opacity-0 starting:-translate-y-1">
+          {linkPreview?.image && (
+            <img loading="lazy" decoding="async" src={linkPreview.image} alt="" className="w-9 h-9 rounded-[6px] object-cover shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="flex items-center gap-[4px] text-[11px] font-semibold text-brand-deep-orange">
+              <Link2 size={11} /> {linkPreviewLoading ? 'Fetching link preview…' : (linkPreview?.siteName ?? 'Link preview')}
+            </p>
+            <p className="text-[12px] text-slate truncate">{linkPreview?.title ?? linkPreview?.url ?? '…'}</p>
+          </div>
+          <button onClick={onDismissLinkPreview} aria-label="Dismiss link preview" className="p-1 rounded-full hover:bg-bone cursor-pointer bg-transparent border-none text-slate shrink-0">
             <X size={13} />
           </button>
         </div>

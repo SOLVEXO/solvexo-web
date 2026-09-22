@@ -67,9 +67,25 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
   switch (type) {
     case 'nav_link': {
       const children: any[] = settings.children ?? [];
+      // Real, reported bug: both themes' navbars (`AtelierNavbar.tsx`/
+      // `NovaNavbar.tsx`) already render their own fixed, built-in "Shop"
+      // dropdown (real categories/collections) alongside whatever custom
+      // nav links the seller adds here — a seller who also types "Shop" as
+      // a custom link's label ends up with it showing twice, with no
+      // indication why. A real theme-authoring constraint (this reserved
+      // word is fixed chrome, not editable content) is surfaced here as a
+      // plain warning rather than silently blocking the label — the seller
+      // might genuinely want a second, differently-targeted "Shop" link.
+      const label = (settings.label ?? '').trim().toLowerCase();
+      const collidesWithBuiltInShop = label === 'shop';
       return (
         <div className="flex flex-col gap-2">
           <Field label="Label"><input className={inp} value={settings.label ?? ''} onChange={e => set({ label: e.target.value })} /></Field>
+          {collidesWithBuiltInShop && (
+            <p className="text-[11.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2">
+              Your theme already shows a built-in "Shop" menu (your categories/collections) in the navbar. Adding another link labeled "Shop" will show it twice — consider a different label, e.g. "New Arrivals" or a specific collection's name.
+            </p>
+          )}
           <LinkTargetFields value={settings as LinkTarget} onChange={next => onChange({ ...settings, ...next })} pageOptions={pageOptions} storeId={storeId} />
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-charcoal">Highlight as button</span>

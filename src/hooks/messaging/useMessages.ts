@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   apiGetMessages, apiSendMessage, apiSearchMessages, apiEditMessage,
-  apiDeleteMessage, apiMarkMessageSeen,
-  type Message, type SendMessagePayload,
+  apiDeleteMessage, apiMarkMessageSeen, apiToggleReaction,
+  type Message, type SendMessagePayload, type MessageReaction,
 } from '@/api/services/messaging';
 import { acquireMessagingSocket, releaseMessagingSocket, getMessagingSocket } from '@/api/messagingSocket';
 
@@ -75,6 +75,10 @@ export function useMessages(conversationId: string | null) {
       setMessages(prev => prev.map(m => m._id === messageId ? { ...m, isDeleted: true, text: null } : m));
     }
 
+    function handleReaction({ messageId, reactions }: { messageId: string; reactions: MessageReaction[] }) {
+      setMessages(prev => prev.map(m => m._id === messageId ? { ...m, reactions } : m));
+    }
+
     function handleTyping(body: { conversationId: string; userId: string; isTyping: boolean }) {
       if (body.conversationId !== conversationId) return;
       setOtherTyping(body.isTyping);
@@ -99,6 +103,7 @@ export function useMessages(conversationId: string | null) {
     socket.on('message:deleted', handleDeleted);
     socket.on('typing', handleTyping);
     socket.on('message:seen', handleSeen);
+    socket.on('message:reaction', handleReaction);
 
     return () => {
       socket.emit('leave-conversation', conversationId);
@@ -109,6 +114,7 @@ export function useMessages(conversationId: string | null) {
       socket.off('message:deleted', handleDeleted);
       socket.off('typing', handleTyping);
       socket.off('message:seen', handleSeen);
+      socket.off('message:reaction', handleReaction);
       releaseMessagingSocket();
     };
   }, [conversationId]);
@@ -177,6 +183,8 @@ export function useMessages(conversationId: string | null) {
         isDeleted: false,
         deletedAt: null,
         isFlagged: false,
+        reactions: [],
+        linkPreview: 'linkPreview' in payload ? (payload.linkPreview ?? null) : null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -227,6 +235,38 @@ export function useMessages(conversationId: string | null) {
     await apiMarkMessageSeen(messageId, conversationId);
   }
 
+  // Optimistic local toggle (same removes/replaces logic as the backend, see
+  // MessagingService.toggleReaction) — the socket `message:reaction` echo
+  // that follows just re-applies the same authoritative array, so this never
+  // drifts even if the optimistic guess was wrong (e.g. a race with another
+  // device's own reaction to the same message).
+  async function react(messageId: string, emoji: string, myUserId: string | null) {
+    setMessages(prev => prev.map(m => {
+      if (m._id !== messageId) return m;
+      // `m.reactions` can be absent on a message that predates this field
+      // (e.g. served from a cache/path that didn't normalize it) — guard
+      // rather than assume it's always an array.
+      const current = m.reactions ?? [];
+      const existing = current.find(r => r.userId === myUserId);
+      let reactions: MessageReaction[];
+      if (existing && existing.emoji === emoji) {
+        reactions = current.filter(r => r.userId !== myUserId);
+      } else if (existing) {
+        reactions = current.map(r => r.userId === myUserId ? { ...r, emoji, reactedAt: new Date().toISOString() } : r);
+      } else {
+        reactions = [...current, { userId: myUserId ?? '', emoji, reactedAt: new Date().toISOString() }];
+      }
+      return { ...m, reactions };
+    }));
+    try {
+      const res = await apiToggleReaction(messageId, emoji);
+      setMessages(prev => prev.map(m => m._id === messageId ? { ...m, reactions: res.reactions } : m));
+    } catch {
+      // Reverted by the next refetch/socket sync — a reaction is low-stakes
+      // enough that a silent local rollback isn't worth its own error UI.
+    }
+  }
+
   function sendTyping(isTyping: boolean) {
     if (!conversationId) return;
     getMessagingSocket()?.emit('typing', { conversationId, isTyping });
@@ -239,7 +279,7 @@ export function useMessages(conversationId: string | null) {
   }
 
   return {
-    messages, loading, sending, error, hasMore, loadingMore, refetch, loadMore, send, retry, edit, remove, markSeen,
+    messages, loading, sending, error, hasMore, loadingMore, refetch, loadMore, send, retry, edit, remove, markSeen, react,
     otherOnline, otherTyping, sendTyping,
   };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   Check, Zap, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
   XCircle, RotateCcw, Loader2, type LucideIcon,
@@ -91,9 +91,20 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   }, [storeId]);
   useEffect(load, [load]);
 
+  // A fresh key per confirm-modal open (not per component mount — this page
+  // stays mounted across many unrelated plan-change attempts over time, so a
+  // single component-lifetime key would make the backend's
+  // IdempotencyInterceptor wrongly replay a cached response from a PRIOR,
+  // different plan change). Reused across retries of the same attempt while
+  // this modal stays open, which is the actual double-charge case this
+  // guards against (a slow request the seller retries, or a network-level
+  // auto-retry).
+  const changePlanIdempotencyKeyRef = useRef<string | null>(null);
+
   // ── Confirm-plan-change modal — fetch the exact proration preview the moment it opens ──
   useEffect(() => {
-    if (!confirmingPlan) { setPreview(null); return; }
+    if (!confirmingPlan) { setPreview(null); changePlanIdempotencyKeyRef.current = null; return; }
+    changePlanIdempotencyKeyRef.current = `platform-plan-change-${storeId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let cancelled = false;
     setPreviewLoading(true);
     apiPreviewPlatformPlanChange(storeId, confirmingPlan._id, interval)
@@ -108,7 +119,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     setChangingId(confirmingPlan._id);
     setActionError('');
     try {
-      await apiChangePlatformPlan(storeId, confirmingPlan._id, interval);
+      await apiChangePlatformPlan(storeId, confirmingPlan._id, interval, true, changePlanIdempotencyKeyRef.current ?? undefined);
       setConfirmingPlan(null);
       load();
     } catch (err) {
@@ -223,9 +234,13 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
       };
     }
     if (isCancelPending && current) {
+      const endDate = new Date(current.currentPeriodEnd).toDateString();
+      const outcome = current.legacyFreeEligible
+        ? `move to the free tier on ${endDate}`
+        : `end on ${endDate}, and selling will be paused until you choose a new plan`;
       return {
         tone: 'warning' as const, Icon: XCircle,
-        text: `Your plan will move to the free tier on ${new Date(current.currentPeriodEnd).toDateString()}. You keep full access until then.`,
+        text: `Your plan will ${outcome}. You keep full access until then.`,
         actionLabel: 'Reactivate', onAction: submitReactivate,
       };
     }
@@ -303,7 +318,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                 <p className="text-[13px] font-bold text-carbon">Current Plan — {entitlements.currentPlanName}</p>
                 <p className="text-[11.5px] text-slate mt-[3px]">
                   {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
-                  Renews {new Date(current.nextBillingDate).toLocaleDateString()}
+                  {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -360,7 +375,13 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         <div id="platform-plans-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map(plan => {
             const isCurrent = current?.platformPlanId === plan._id;
-            const price = interval === 'yearly' && plan.yearlyPriceUSD != null ? plan.yearlyPriceUSD : plan.monthlyPriceUSD;
+            // Mirrors the backend's own computeProration: a yearly interval
+            // with no explicit yearlyPriceUSD is charged monthly x 12, never
+            // the bare monthly figure — this card must show that same number
+            // or it understates what "Switch to this plan" will actually bill.
+            const price = interval === 'yearly'
+              ? (plan.yearlyPriceUSD ?? Math.round((plan.monthlyPriceUSD ?? 0) * 12 * 100) / 100)
+              : plan.monthlyPriceUSD;
             return (
               <div key={plan._id} className="bg-white border rounded-[10px] px-5 py-4 flex flex-col" style={{ borderColor: isCurrent ? '#D97757' : '#E8E6DC', borderWidth: isCurrent ? 2 : 1 }}>
                 <div className="flex items-start justify-between mb-1">
@@ -525,7 +546,11 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         >
           <p className="text-[13px] text-charcoal mb-3">
             You'll keep full access to <strong>{entitlements?.currentPlanName}</strong> until{' '}
-            {current && new Date(current.currentPeriodEnd).toDateString()}, then your store moves to the free plan. You can reactivate any time before that.
+            {current && new Date(current.currentPeriodEnd).toDateString()}, then{' '}
+            {current?.legacyFreeEligible
+              ? 'your store moves to the free plan.'
+              : 'selling will be paused until you choose a new plan.'}
+            {' '}You can reactivate any time before that.
           </p>
           <label className="block text-[11.5px] font-medium text-slate mb-1.5">Reason (optional — helps us improve)</label>
           <Textarea value={cancelReason} onChange={e => setCancelReason(e.target.value)} rows={3} placeholder="Too expensive, missing a feature, switching platforms…" />

@@ -4,6 +4,7 @@ import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useMessages } from '@/hooks/messaging/useMessages';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { apiStartConversation, apiUploadAttachment, type Conversation } from '@/api/services/messaging';
 import { ChatWindow } from '@/components/comman/messaging';
 import { novaTheme as t } from '../theme.config';
@@ -30,7 +31,7 @@ export function NovaMessagesPage() {
 
   const conversationId = conversation?._id ?? null;
   const {
-    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove, markSeen, hasMore, loadMore,
+    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove, markSeen, react, hasMore, loadMore,
     otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(conversationId);
   const [uploading, setUploading] = useState(false);
@@ -61,20 +62,37 @@ export function NovaMessagesPage() {
     }
   };
 
+  // Mobile: near-full-screen, edge-to-edge chat panel — see AtelierMessagesPage's
+  // doc comment above for the reasoning and the disclosed scope boundary
+  // (navbar/footer still wrap this page; a true full-screen takeover would
+  // need to touch the shared theme `Layout` every storefront page uses).
+  const isDesktop = useIsDesktop();
+
   return (
-    <main className="mx-auto" style={{ maxWidth: '820px', padding: `48px ${t.layout.containerPadX}` }}>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink, marginBottom: '20px' }}>
-        Message {store.name}
-      </h1>
+    <main
+      className={isDesktop ? 'mx-auto' : 'w-full'}
+      style={isDesktop ? { maxWidth: '820px', padding: `48px ${t.layout.containerPadX}` } : { padding: 0 }}
+    >
+      {isDesktop && (
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink, marginBottom: '20px' }}>
+          Message {store.name}
+        </h1>
+      )}
 
       {starting ? (
-        <div className="flex items-center justify-center" style={{ height: '400px', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md }}>
+        <div
+          className="flex items-center justify-center"
+          style={isDesktop ? { height: '400px', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md } : { height: '80dvh' }}
+        >
           <Loader2 size={20} className="animate-spin" style={{ color: t.colors.inkMuted }} />
         </div>
       ) : startError ? (
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{startError}</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger, padding: isDesktop ? 0 : `16px ${t.layout.containerPadX}` }}>{startError}</p>
       ) : (
-        <div className="flex" style={{ height: '600px', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, overflow: 'hidden' }}>
+        <div
+          className="flex"
+          style={isDesktop ? { height: '600px', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, overflow: 'hidden' } : { height: '80dvh', overflow: 'hidden' }}
+        >
           <ChatWindow
             open
             headerName={store.name}
@@ -94,6 +112,7 @@ export function NovaMessagesPage() {
             onEditMessage={(id, text) => void edit(id, text)}
             onDeleteMessage={id => void remove(id)}
             onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}
+            onReact={(id, emoji) => void react(id, emoji, profile?._id ?? null)}
             otherOnline={otherOnline}
             otherTyping={otherTyping}
             onTyping={sendTyping}

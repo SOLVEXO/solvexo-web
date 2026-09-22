@@ -19,12 +19,32 @@ export function EmojiPicker({ onSelect, className }: EmojiPickerProps) {
     const onOutside = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     };
+    // Escape to close (was missing — every other popover/menu in this app
+    // closes on Escape, this one silently didn't) and close on scroll of the
+    // message thread behind it, so a stale-positioned panel never lingers
+    // visually once the composer/button it's anchored to has moved.
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onScroll = () => setOpen(false);
     document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
+    document.addEventListener('keydown', onEsc);
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener('mousedown', onOutside);
+      document.removeEventListener('keydown', onEsc);
+      document.removeEventListener('scroll', onScroll, true);
+    };
   }, [open]);
 
   return (
-    <div ref={rootRef} className={clsx('relative', className)}>
+    // `isolate` gives this popover its own stacking context — this app's
+    // message rows use `content-visibility: auto` as a lightweight
+    // virtualization substitute (see MessageThread.tsx), and an absolutely-
+    // positioned overlay that crosses a `content-visibility` row's own
+    // layout/paint containment boundary can otherwise show duplicated/
+    // stale-looking paint artifacts; isolating this popover's own stacking
+    // context keeps its paint fully self-contained regardless of what's
+    // behind it.
+    <div ref={rootRef} className={clsx('relative isolate', className)}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}

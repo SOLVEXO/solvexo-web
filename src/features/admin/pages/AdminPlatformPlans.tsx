@@ -33,23 +33,33 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
 type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
 
 // `soon: true` = verified (by grepping every call site in the backend) that
-// NO feature module actually checks this flag yet — the underlying feature
-// (abandoned-cart recovery, email campaigns, seller-facing API/webhooks,
-// tiered analytics, marketplace-featured-badge placement) doesn't exist in
-// the codebase at all today. Toggling it in the admin form saves the value
-// but changes nothing for the seller — marked "(soon)" so admin never
-// mistakes it for a working gate. `dedicatedAccountManager`/`prioritySupport`
-// are deliberately NOT marked `soon` — those are real ops/human promises
-// (route a seller to priority support queue, assign an account manager),
-// exactly like Shopify's own plan tiers, never meant to be code-enforced.
+// NO feature module actually checks this flag yet. Toggling it in the admin
+// form saves the value but changes nothing for the seller — marked "(soon)"
+// so admin never mistakes it for a working gate. `dedicatedAccountManager`/
+// `prioritySupport` are deliberately NOT marked `soon` — those are real
+// ops/human promises (route a seller to priority support queue, assign an
+// account manager), exactly like Shopify's own plan tiers, never meant to be
+// code-enforced. `advancedAnalyticsAllowed`/`apiWebhooksAllowed` stay `soon`
+// — no seller-facing "advanced" analytics tier or API/webhooks system exists
+// in the codebase at all to gate. `marketplaceFeaturedBadge` also stays
+// `soon` — the underlying gate itself is real (Store.badges), but its one
+// consumer (admin marketplace-listing curation) was disconnected in the
+// marketplace-to-standalone-store pivot, so the badge has nowhere left to
+// actually surface; re-marking this "working" would be as misleading as the
+// prior "soon" mislabel was for the two below.
+// `abandonedCartRecoveryAllowed`/`emailCampaignsAllowed` are REAL now — both
+// have a full, working backend module already; they were only ever missing
+// the plan-entitlement check itself, now wired into AbandonedCartService/
+// EmailCampaignsService (see EntitlementsService.assertFeatureAllowed call
+// sites there).
 const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string; soon?: boolean }[] = [
   { key: 'customDomainAllowed', label: 'Custom domain' },
   { key: 'whiteLabelAllowed', label: 'White label' },
   { key: 'loyaltyProgramAllowed', label: 'Loyalty program' },
   { key: 'subscriptionProductsAllowed', label: 'Store subscriptions' },
   { key: 'advancedAnalyticsAllowed', label: 'Advanced analytics', soon: true },
-  { key: 'abandonedCartRecoveryAllowed', label: 'Abandoned cart recovery', soon: true },
-  { key: 'emailCampaignsAllowed', label: 'Email campaigns', soon: true },
+  { key: 'abandonedCartRecoveryAllowed', label: 'Abandoned cart recovery' },
+  { key: 'emailCampaignsAllowed', label: 'Email campaigns' },
   { key: 'apiWebhooksAllowed', label: 'API & webhooks', soon: true },
   { key: 'dedicatedAccountManager', label: 'Dedicated account manager' },
   { key: 'prioritySupport', label: 'Priority support' },

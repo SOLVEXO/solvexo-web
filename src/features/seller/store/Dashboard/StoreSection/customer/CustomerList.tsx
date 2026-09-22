@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus } from 'lucide-react';
+import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta,
   apiExportStoreCustomers, apiBulkTagCustomers, apiBulkArchiveCustomers, apiCreateStoreCustomer,
+  apiExportCustomerData, apiEraseCustomerData,
   type StoreCustomer, type StoreCustomerSegment, type StoreCustomerView, type GetStoreCustomersParams,
 } from '@/api/services/store';
 import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
@@ -86,6 +87,13 @@ export default function StoreCustomerList() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
 
+  // Real GDPR export/erase — see apiExportCustomerData/apiEraseCustomerData's
+  // own doc comments for the exact scope.
+  const [exportingData, setExportingData] = useState(false);
+  const [eraseConfirmOpen, setEraseConfirmOpen] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [eraseError, setEraseError] = useState('');
+
   // Debounce search input 300ms before it hits the server — every other
   // filter below applies immediately since changing a dropdown/date is
   // already a deliberate, infrequent action.
@@ -160,6 +168,8 @@ export default function StoreCustomerList() {
     setTags(c.tags ?? []);
     setMarketingOptIn(c.marketingOptIn ?? false);
     setTagInput('');
+    setEraseConfirmOpen(false);
+    setEraseError('');
   }
 
   async function saveMeta(nextTags: string[], nextNotes: string, nextMarketingOptIn: boolean) {
@@ -221,6 +231,42 @@ export default function StoreCustomerList() {
       URL.revokeObjectURL(url);
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleExportCustomerData() {
+    if (!sel) return;
+    setExportingData(true);
+    try {
+      const blob = await apiExportCustomerData(storeId, sel._id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customer-${sel._id}-data.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingData(false);
+    }
+  }
+
+  async function handleEraseCustomerData() {
+    if (!sel) return;
+    setErasing(true);
+    setEraseError('');
+    try {
+      await apiEraseCustomerData(storeId, sel._id);
+      setEraseConfirmOpen(false);
+      setCustomers(prev => prev.map(c => c._id === sel._id ? { ...c, isErased: true, tags: [], notes: '' } : c));
+      setSel(prev => prev ? { ...prev, isErased: true, tags: [], notes: '' } : prev);
+      setTags([]);
+      setNotes('');
+    } catch (err) {
+      setEraseError(err instanceof Error ? err.message : 'Failed to erase customer data.');
+    } finally {
+      setErasing(false);
     }
   }
 
@@ -405,6 +451,11 @@ export default function StoreCustomerList() {
                     {initialsOf(sel.name)}
                   </div>
                   <p className="text-[15px] font-bold text-carbon mb-[3px]">{sel.name}</p>
+                  {sel.isErased && (
+                    <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full bg-red-50 text-red-600 text-[10px] font-semibold mb-1">
+                      <ShieldAlert size={11} /> Data erased
+                    </span>
+                  )}
                   <p className="text-xs text-slate">Customer since {fmtDate(sel.createdAt)}</p>
                   <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#f0eee6] w-full justify-center">
                     <div className="text-center">
@@ -522,6 +573,23 @@ export default function StoreCustomerList() {
                     Subscribed to marketing emails
                   </label>
                 </div>
+
+                <div className="mt-4 pt-4 border-t border-[#f0eee6]">
+                  <label className="text-xs font-medium text-graphite mb-[7px] block">Privacy (GDPR)</label>
+                  <p className="text-[10.5px] text-slate mb-2.5 leading-[1.4]">
+                    Only covers what THIS store holds — their account is shared across stores, so it isn't erased or exported here.
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    <Button size="xs" variant="outline" icon={<Download size={12} />} loading={exportingData} onClick={handleExportCustomerData} className="w-full justify-center">
+                      Export Customer Data
+                    </Button>
+                    {!sel.isErased && (
+                      <Button size="xs" variant="danger" icon={<ShieldAlert size={12} />} onClick={() => setEraseConfirmOpen(true)} className="w-full justify-center">
+                        Erase Customer Data
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -578,6 +646,25 @@ export default function StoreCustomerList() {
             placeholder="e.g. VIP, Wholesale — comma separated"
             className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border"
           />
+        </Modal>
+      )}
+
+      {eraseConfirmOpen && sel && (
+        <Modal
+          title="Erase this customer's data?"
+          onClose={() => { if (!erasing) setEraseConfirmOpen(false); }}
+          footer={<>
+            <Button variant="ghost" onClick={() => setEraseConfirmOpen(false)} disabled={erasing}>Cancel</Button>
+            <Button variant="danger" onClick={handleEraseCustomerData} loading={erasing}>Erase Data</Button>
+          </>}
+        >
+          {eraseError && <p className="text-[12px] text-error mb-3">{eraseError}</p>}
+          <p className="text-[13px] text-charcoal mb-2.5">
+            This permanently clears <strong>{sel.name}</strong>'s tags/notes you've kept, and redacts their name/phone/address on this store's own past orders. This cannot be undone.
+          </p>
+          <p className="text-[11.5px] text-slate leading-[1.4]">
+            Their account and order totals are untouched — the account is shared across every store they've shopped at, not owned by this one, and order records are kept for accounting.
+          </p>
         </Modal>
       )}
     </>

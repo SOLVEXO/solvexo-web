@@ -53,6 +53,11 @@ export interface StorePlatformSubscription {
   amountUSD: number; status: string; startedAt: string; trialEndsAt: string | null; currentPeriodEnd: string; nextBillingDate: string;
   cancelAtPeriodEnd: boolean; cancelReason: string | null; failedPaymentAttempts: number;
   creditBalanceUSD: number; stripeCustomerId: string | null;
+  // Pre-trial-model stores only (see backend schema comment) — controls
+  // whether a cancellation/dunning-exhaustion/trial-expiry actually lands on
+  // the free plan (true) or locks the store pending a new plan choice
+  // (false, every store onboarded under the current trial-based model).
+  legacyFreeEligible: boolean;
   plan?: PlatformPlan | null;
 }
 
@@ -171,8 +176,18 @@ export function apiGetStoreInvoices(storeId: string, query: { page?: number; lim
  * right now and the trial ends immediately, never a "pick now, pay when the
  * trial ends" deferred commitment.
  */
-export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly', billImmediately = true) {
-  return client.patch<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval, billImmediately });
+/** `idempotencyKey` should be generated once per confirm ATTEMPT (e.g. once
+ *  when the confirm modal opens) and reused across retries of that same
+ *  submission, exactly like `apiReceivePurchaseOrder` — without it, a slow
+ *  request the seller retries (or a network-level auto-retry) can create a
+ *  second real Stripe charge/subscription for the same plan change. The
+ *  backend's `IdempotencyInterceptor`/`changePlan` already honor this header
+ *  when present; this was previously the one caller not sending it. */
+export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly', billImmediately = true, idempotencyKey?: string) {
+  return client.patch<never, ApiResponse<StorePlatformSubscription>>(
+    `${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval, billImmediately },
+    idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
+  );
 }
 
 /** Exact proration math for a would-be plan change — no charge, no write. Call this before showing a confirm dialog. */

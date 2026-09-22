@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, type LucideIcon } from 'lucide-react';
+import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, Lock, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
+import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
   apiGetJoinableCampaigns, apiJoinCampaign, apiLeaveCampaign,
@@ -45,6 +46,23 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
 const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', startDate: '', expiryDate: '' };
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
+
+/** Same "Requires the X plan" convention as StoreSettings.tsx's Custom
+ *  Domain/White Label fields — here replacing a whole tab's content, since
+ *  Abandoned Cart Recovery / Email Campaigns are each a full feature rather
+ *  than a single settings field. */
+function LockedFeatureCard({ label, description, requiredPlan }: { label: string; description: string; requiredPlan: string | null }) {
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-6 py-10 flex flex-col items-center text-center gap-2.5">
+      <div className="w-10 h-10 rounded-full bg-[#f3f2ec] flex items-center justify-center text-slate">
+        <Lock size={17} />
+      </div>
+      <p className="text-[14.5px] font-bold text-carbon">{label} is locked on your plan</p>
+      <p className="text-[12.5px] text-slate max-w-[420px]">{description}</p>
+      <p className="text-[12px] font-semibold text-brand-orange mt-1">Requires the {requiredPlan ?? 'a higher'} plan — upgrade from Billing.</p>
+    </div>
+  );
+}
 
 function EmailCampaignFormModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ name: '', subject: '', message: '', audience: 'all' as EmailCampaignAudience });
@@ -247,6 +265,20 @@ export function StoreMarketing() {
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load coupons.'))
       .finally(() => setLoading(false));
   }, [storeId]);
+
+  // Plan entitlements — gates the Abandoned Cart / Email Campaigns tabs below
+  // (both are real, fully working features whose only actual restriction is
+  // the plan's own abandonedCartRecoveryAllowed/emailCampaignsAllowed flag;
+  // the backend already rejects the underlying action either way, this just
+  // stops a seller building/sending on a tab that will fail rather than
+  // finding out only after the fact).
+  const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {});
+  }, [storeId]);
+  const cartFeature = entitlements?.abandonedCartRecoveryAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
+  const emailFeature = entitlements?.emailCampaignsAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
 
   // Platform-wide sale campaigns (admin-created) this store can opt into
   const [campaigns, setCampaigns] = useState<JoinableCampaign[]>([]);
@@ -848,7 +880,13 @@ export function StoreMarketing() {
         )}
 
         {/* Abandoned Cart Recovery Tab */}
-        {tab === 'cart' && (
+        {tab === 'cart' && cartFeature && !cartFeature.allowed ? (
+          <LockedFeatureCard
+            label="Abandoned Cart Recovery"
+            description="A buyer who leaves items in their cart would get one automatic reminder email once your delay has passed."
+            requiredPlan={cartFeature.requiredPlan}
+          />
+        ) : tab === 'cart' && (
           <div className="flex flex-col gap-4">
             <div>
               <p className="text-[15px] font-bold text-carbon">Abandoned Cart Recovery</p>
@@ -973,7 +1011,13 @@ export function StoreMarketing() {
         )}
 
         {/* Email Campaigns Tab */}
-        {tab === 'email' && (
+        {tab === 'email' && emailFeature && !emailFeature.allowed ? (
+          <LockedFeatureCard
+            label="Email Campaigns"
+            description="Compose and send a real bulk email to a segment of your own store's customers."
+            requiredPlan={emailFeature.requiredPlan}
+          />
+        ) : tab === 'email' && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>

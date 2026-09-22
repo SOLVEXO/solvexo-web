@@ -14,6 +14,11 @@ export interface Address {
   state:        string;
   city:         string;
   zipCode:      string;
+  // Real bug fix: this field already existed on the backend schema (added
+  // for revenue-by-country analytics) but was missing from this frontend
+  // type entirely, so no page ever collected or read it — the real reason
+  // checkout's shipping-zone matching could never check country at all.
+  country:      string | null;
   latitude:     number | null;
   longitude:    number | null;
   isDefault:    boolean;
@@ -32,6 +37,7 @@ export interface AddressPayload {
   state:        string;
   city:         string;
   zipCode:      string;
+  country?:     string | null;
   latitude?:    number | null;
   longitude?:   number | null;
   isDefault?:   boolean;

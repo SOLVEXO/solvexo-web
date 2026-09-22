@@ -215,6 +215,8 @@ export const ENDPOINTS = {
       BULK_ARCHIVE:  (storeId: string) => `/api/store/${storeId}/customers/bulk-archive`,
       UPDATE:        (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
       UPDATE_META:   (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/meta`,
+      EXPORT_DATA:   (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/export-data`,
+      ERASE_DATA:    (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/erase-data`,
     },
   },
 
@@ -623,14 +625,22 @@ export const ENDPOINTS = {
   },
 
   // ── ADDRESS ────────────────────────────────────────────────────────────────
+  // `AddressController` (`solvexo-api/src/address/address.controller.ts`) is
+  // registered as `@Controller('address')` — no `api/` prefix, unlike almost
+  // every other controller in this backend. These 6 paths previously all had
+  // a leading `/api/` that doesn't exist on the real route, so every one of
+  // them 404'd silently (a buyer's saved addresses never loaded anywhere —
+  // checkout, account, shipping-zone matching — found while live-verifying
+  // the shipping-zone country-matching fix, since that fix depends on a
+  // real address actually loading).
   ADDRESS: {
-    ADD: '/api/address/add-address',
-    GET_ALL: '/api/address/getMyAddresses',
-    GET_DEFAULT: '/api/address/getDefaultAddress',
-    UPDATE: '/api/address/update-address',
-    GET_BY_ID: (addressId: string) => `/api/address/get-address-by-id/${addressId}`,
-    SET_DEFAULT: (addressId: string) => `/api/address/setDefaultAddress/${addressId}`,
-    DELETE: (addressId: string) => `/api/address/delete-address/${addressId}`,
+    ADD: '/address/add-address',
+    GET_ALL: '/address/getMyAddresses',
+    GET_DEFAULT: '/address/getDefaultAddress',
+    UPDATE: '/address/update-address',
+    GET_BY_ID: (addressId: string) => `/address/get-address-by-id/${addressId}`,
+    SET_DEFAULT: (addressId: string) => `/address/setDefaultAddress/${addressId}`,
+    DELETE: (addressId: string) => `/address/delete-address/${addressId}`,
   },
 
   SHIPPING: {
@@ -817,6 +827,8 @@ export const ENDPOINTS = {
       EDIT:      (messageId: string) => `/api/messaging/messages/${messageId}`,
       DELETE:    (messageId: string) => `/api/messaging/messages/${messageId}`,
       MARK_SEEN: (messageId: string) => `/api/messaging/messages/${messageId}/seen`,
+      REACT:     (messageId: string) => `/api/messaging/messages/${messageId}/reaction`,
+      LINK_PREVIEW: '/api/messaging/link-preview',
     },
     MODERATION: {
       BLOCK:   '/api/messaging/block',

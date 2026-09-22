@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, memo } from 'react';
 import { clsx } from 'clsx';
 import {
   Check, CheckCheck, Clock, AlertCircle, FileText, Video as VideoIcon, Play, Pause,
-  Reply as ReplyIcon, ChevronDown, Pencil, Trash2, X as XIcon, ShoppingBag,
+  Reply as ReplyIcon, ChevronDown, Pencil, Trash2, X as XIcon, ShoppingBag, SmilePlus, Link2,
 } from 'lucide-react';
 import type { Message } from '@/api/services/messaging';
 import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
@@ -27,7 +27,12 @@ interface MessageBubbleProps {
   onDelete?:        (id: string) => void;
   onReply?:         (m: Message) => void;
   onRetry?:         (message: OptimisticMessage) => void;
+  onReact?:         (messageId: string, emoji: string) => void;
+  currentUserId?:   string | null;
 }
+
+// WhatsApp/Instagram's fixed quick-react set.
+const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
 
 function formatFileSize(bytes?: number): string {
   if (!bytes) return '';
@@ -49,8 +54,18 @@ function VoiceNoteBubble({ url, own }: { url: string; own: boolean }) {
     playing ? a.pause() : a.play();
   };
 
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-  const pct = duration > 0 ? (current / duration) * 100 : 0;
+  // `s` can arrive as Infinity/NaN — a real, known Chrome bug: a MediaRecorder-
+  // produced WebM/Opus blob (exactly how this app records voice notes, see
+  // MessageInput.tsx) has no fixed duration in its container header, so
+  // `HTMLMediaElement.duration` reports `Infinity` until something forces a
+  // real seek. Guarding here is the permanent backstop regardless of browser
+  // quirks; the `onLoadedMetadata` handler below is the actual fix (forces
+  // that seek so a real, finite duration is what ever reaches this function).
+  const fmt = (s: number) => {
+    if (!Number.isFinite(s) || s < 0) return '0:00';
+    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+  };
+  const pct = duration > 0 && Number.isFinite(duration) ? (current / duration) * 100 : 0;
 
   return (
     <div className="flex items-center gap-[10px] min-w-[180px]">
@@ -61,7 +76,21 @@ function VoiceNoteBubble({ url, own }: { url: string; own: boolean }) {
         onPause={() => setPlaying(false)}
         onEnded={() => { setPlaying(false); setCurrent(0); }}
         onTimeUpdate={() => setCurrent(audioRef.current?.currentTime ?? 0)}
-        onLoadedMetadata={() => setDuration(audioRef.current?.duration ?? 0)}
+        onLoadedMetadata={() => {
+          const a = audioRef.current;
+          if (!a) return;
+          if (Number.isFinite(a.duration)) { setDuration(a.duration); return; }
+          // The known Chrome/MediaRecorder workaround: seeking to a huge
+          // timestamp forces the browser to actually scan the file and
+          // resolve a real duration, which then fires a real `timeupdate`.
+          const onSeeked = () => {
+            a.removeEventListener('timeupdate', onSeeked);
+            if (Number.isFinite(a.duration)) setDuration(a.duration);
+            a.currentTime = 0;
+          };
+          a.addEventListener('timeupdate', onSeeked);
+          a.currentTime = 1e101;
+        }}
         preload="metadata"
         className="hidden"
       />
@@ -179,6 +208,133 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
   );
 }
 
+// ── Quick-react popover (WhatsApp-style: a hover/tap button reveals a row of
+// 6 fixed emoji) ────────────────────────────────────────────────────────────
+function QuickReactBar({ own, onPick }: { own: boolean; onPick: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative isolate">
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="React"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={clsx(
+          'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-150 w-[18px] h-[18px] rounded-full flex items-center justify-center border-none cursor-pointer outline-none',
+          own ? 'bg-black/15 text-white hover:bg-black/25' : 'bg-black/8 text-charcoal hover:bg-black/15',
+        )}
+        title="React"
+      >
+        <SmilePlus size={11} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className={clsx(
+            'absolute top-[22px] z-30 flex items-center gap-[2px] bg-white border border-bone rounded-full py-[4px] px-[5px] shadow-sm',
+            own ? 'right-0' : 'left-0',
+          )}
+        >
+          {QUICK_REACTIONS.map(emoji => (
+            <button
+              key={emoji}
+              role="menuitem"
+              onClick={() => { onPick(emoji); setOpen(false); }}
+              className="text-[17px] leading-none w-7 h-7 flex items-center justify-center rounded-full hover:bg-cream hover:scale-125 transition-transform cursor-pointer bg-transparent border-none"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Reaction pills — grouped by emoji, tap to toggle your own ──────────────────
+function ReactionPills({
+  reactions, own, currentUserId, onToggle,
+}: {
+  reactions:     { userId: string; emoji: string }[];
+  own:           boolean;
+  currentUserId?: string | null;
+  onToggle:      (emoji: string) => void;
+}) {
+  if (!reactions.length) return null;
+  const grouped = reactions.reduce<Record<string, number>>((acc, r) => {
+    acc[r.emoji] = (acc[r.emoji] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className={clsx('flex flex-wrap gap-[3px] -mt-[8px] mb-[4px] relative z-10', own ? 'justify-end' : 'justify-start')}>
+      {Object.entries(grouped).map(([emoji, count]) => {
+        const mine = reactions.some(r => r.emoji === emoji && r.userId === currentUserId);
+        return (
+          <button
+            key={emoji}
+            onClick={() => onToggle(emoji)}
+            className={clsx(
+              'flex items-center gap-[3px] text-[11.5px] leading-none rounded-full px-[7px] py-[3px] cursor-pointer border transition-colors',
+              mine ? 'bg-brand-pale-orange border-brand-orange/40' : 'bg-white border-bone hover:bg-cream',
+            )}
+          >
+            <span>{emoji}</span>
+            {count > 1 && <span className="text-slate">{count}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Link-preview card (WhatsApp/Instagram unfurl) ───────────────────────────────
+function LinkPreviewCard({ preview, own }: { preview: NonNullable<Message['linkPreview']>; own: boolean }) {
+  return (
+    <a
+      href={preview.url}
+      target="_blank"
+      rel="noreferrer"
+      className={clsx(
+        'block mt-[6px] rounded-[10px] overflow-hidden border no-underline',
+        own ? 'border-white/25 bg-white/10' : 'border-bone bg-cream',
+      )}
+    >
+      {preview.image && (
+        <img loading="lazy" decoding="async" src={preview.image} alt="" className="w-full max-h-[160px] object-cover block" />
+      )}
+      <div className="px-[10px] py-[8px]">
+        {preview.siteName && (
+          <p className={clsx('flex items-center gap-[4px] text-[10px] uppercase tracking-[0.04em] mb-[2px]', own ? 'text-white/70' : 'text-slate')}>
+            <Link2 size={10} /> {preview.siteName}
+          </p>
+        )}
+        {preview.title && (
+          <p className={clsx('text-[12.5px] font-semibold line-clamp-2', own ? 'text-white' : 'text-charcoal')}>{preview.title}</p>
+        )}
+        {preview.description && (
+          <p className={clsx('text-[11.5px] line-clamp-2 mt-[2px]', own ? 'text-white/80' : 'text-slate')}>{preview.description}</p>
+        )}
+      </div>
+    </a>
+  );
+}
+
 // ── Delete confirmation modal ─────────────────────────────────────────────────
 function DeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   return (
@@ -204,6 +360,7 @@ function DeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm:
 export const MessageBubble = memo(function MessageBubble({
   message, own, isLastInGroup, seenByOther, avatarName, avatarImage, showAvatar,
   editing, editText, onEditTextChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete, onReply, onRetry,
+  onReact, currentUserId,
 }: MessageBubbleProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -307,9 +464,9 @@ export const MessageBubble = memo(function MessageBubble({
                   message._failed && 'ring-2 ring-error/50',
                 )}
               >
-                {/* ▾ menu trigger — top corner, shows on hover */}
+                {/* ▾ menu + 😊 react triggers — top corner, shows on hover */}
                 {!message._pending && !message._failed && (
-                  <div className={clsx('absolute top-[5px] z-10', own ? 'left-[5px]' : 'right-[5px]')}>
+                  <div className={clsx('absolute top-[5px] z-10 flex items-center gap-[3px]', own ? 'left-[5px] flex-row-reverse' : 'right-[5px]')}>
                     <BubbleMenu
                       own={own}
                       canEdit={own && message.type === 'text'}
@@ -317,6 +474,7 @@ export const MessageBubble = memo(function MessageBubble({
                       onEdit={onStartEdit ? () => onStartEdit(message) : undefined}
                       onDelete={onDelete ? () => setConfirmDelete(true) : undefined}
                     />
+                    {onReact && <QuickReactBar own={own} onPick={emoji => onReact(message._id, emoji)} />}
                   </div>
                 )}
 
@@ -332,10 +490,13 @@ export const MessageBubble = memo(function MessageBubble({
 
                 {/* Text */}
                 {message.type === 'text' && (
-                  <p className={clsx('text-[14px] leading-[1.45] whitespace-pre-wrap break-words', own ? 'pl-[18px]' : 'pr-[18px]')}>
-                    {message.text}
-                    {message.isEdited && <span className={clsx('text-[10px] ml-1', own ? 'text-white/60' : 'text-slate')}>(edited)</span>}
-                  </p>
+                  <>
+                    <p className={clsx('text-[14px] leading-[1.45] whitespace-pre-wrap break-words', own ? 'pl-[18px]' : 'pr-[18px]')}>
+                      {message.text}
+                      {message.isEdited && <span className={clsx('text-[10px] ml-1', own ? 'text-white/60' : 'text-slate')}>(edited)</span>}
+                    </p>
+                    {message.linkPreview && <LinkPreviewCard preview={message.linkPreview} own={own} />}
+                  </>
                 )}
 
                 {/* Product share */}
@@ -411,6 +572,15 @@ export const MessageBubble = memo(function MessageBubble({
                   </div>
                 )}
               </div>
+            )}
+
+            {message.reactions?.length > 0 && (
+              <ReactionPills
+                reactions={message.reactions}
+                own={own}
+                currentUserId={currentUserId}
+                onToggle={emoji => onReact?.(message._id, emoji)}
+              />
             )}
 
             {/* Time + status */}

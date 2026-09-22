@@ -898,7 +898,11 @@ export function OnboardingPage() {
       if (form.selectedPlanId) {
         const plan = plans.find(p => p._id === form.selectedPlanId);
         try {
-          await apiChangePlatformPlan(store._id, form.selectedPlanId, 'monthly');
+          // Keyed off store._id — this call fires at most once per store's
+          // onboarding completion, so retrying the exact same submission
+          // (network hiccup, impatient double-click) must reuse the same
+          // key rather than risk a second real Stripe charge/subscription.
+          await apiChangePlatformPlan(store._id, form.selectedPlanId, 'monthly', true, `platform-plan-onboarding-${store._id}`);
         } catch (err) {
           setPlanWarning(
             `We couldn't complete your ${plan?.name ?? 'plan'} payment (${err instanceof Error ? err.message : 'card declined'}) — your store is live on the free trial instead. You can try again any time from Billing.`,

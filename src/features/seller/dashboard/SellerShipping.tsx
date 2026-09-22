@@ -9,6 +9,7 @@ import { Button, SkeletonBox, EmptyState, Modal, Field, Input, Select, Toggle, A
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import type { ShippingZone, ShippingCarrier } from '@/api/services/shipping';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { COUNTRY_OPTIONS } from '@/utils/countries';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
@@ -79,8 +80,11 @@ function ZoneFormModal({ storeId, zoneType, zone, onClose, onSaved }: {
     >
       {error && <p className="text-[12px] text-error mb-3">{error}</p>}
       {!isLocal && (
-        <Field label="Country" required>
-          <Input value={country} onChange={e => setCountry(e.target.value)} placeholder="Pakistan" />
+        <Field label="Country" required hint="Picked from a real list — checkout matches this exactly against a buyer's own country, so a typo here would silently hide this zone from every buyer.">
+          <Select value={country} onChange={e => setCountry(e.target.value)}>
+            <option value="" disabled>Select country</option>
+            {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+          </Select>
         </Field>
       )}
       {!isLocal && (

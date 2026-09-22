@@ -10,6 +10,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetLiveShippingRates, type LiveShippingRate } from '@/api/services/shipping';
 import { apiGetMyAddresses, apiAddAddress, type Address, type AddressPayload } from '@/api/services/address';
+import { COUNTRY_OPTIONS, isSameCountry } from '@/utils/countries';
 import {
   apiCreateCheckout, apiAddShippingToCheckout, apiApplyCoupon, apiRemoveCoupon, apiApplyGiftCard, apiRemoveGiftCard,
   type Checkout, type CheckoutSummary,
@@ -25,7 +26,7 @@ import { atelierTheme as t } from '../theme.config';
 
 const EMPTY_ADDR: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '',
-  addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '', isDefault: true,
+  addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '', country: '', isDefault: true,
 };
 
 const inputStyle = { fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, border: `1px solid ${t.colors.border}`, padding: '10px 12px', width: '100%', outline: 'none' as const, background: '#FFFFFF' };
@@ -179,10 +180,35 @@ export function AtelierCheckoutPage() {
   // zones, so a live rate always shows regardless of address.
   const liveZoneEntries = zones.filter(z => z.isLiveRate);
   const flatZoneEntries = zones.filter(z => !z.isLiveRate);
-  const matchingFlatZones = selectedAddr
-    ? flatZoneEntries.filter(z => z.city.toLowerCase() === selectedAddr.city.toLowerCase() || z.province.toLowerCase() === selectedAddr.state.toLowerCase())
+  // Real bug fix: this used to match by city/province ONLY — country was
+  // never checked at all (the address type didn't even have a `country`
+  // field), and when nothing matched it silently fell back to showing
+  // EVERY zone, including ones for a completely different country. Country
+  // is now the required first filter; city/province only refine WITHIN the
+  // buyer's real country, and a zero-match no longer falls back to showing
+  // every other country's zones — see `noMatchingZone` below instead.
+  const countryZones = selectedAddr
+    ? flatZoneEntries.filter(z => isSameCountry(z.country, selectedAddr.country))
     : flatZoneEntries;
-  const effectiveZones = [...liveZoneEntries, ...(matchingFlatZones.length > 0 ? matchingFlatZones : flatZoneEntries)];
+  const matchingFlatZones = selectedAddr
+    ? (() => {
+        // `z.city`/`z.province` are nullable on a country-only zone (no
+        // city/province set at all) — a bare `.toLowerCase()` crashed the
+        // whole page the moment a buyer picked an address against a
+        // country-only zone, caught via a real live browser reproduction.
+        const refined = countryZones.filter(z =>
+          (z.city && z.city.toLowerCase() === selectedAddr.city.toLowerCase()) ||
+          (z.province && z.province.toLowerCase() === selectedAddr.state.toLowerCase()),
+        );
+        return refined.length > 0 ? refined : countryZones;
+      })()
+    : flatZoneEntries;
+  const effectiveZones = [...liveZoneEntries, ...matchingFlatZones];
+  // A real "we don't ship there" state — only meaningful once the buyer has
+  // actually picked an address and the store has at least one flat zone
+  // configured at all (a store with zero zones yet is a setup gap, not a
+  // "we don't ship to you" message).
+  const noMatchingZone = !!selectedAddr && flatZoneEntries.length > 0 && liveZoneEntries.length === 0 && matchingFlatZones.length === 0;
   useEffect(() => {
     if (!selectedZoneId && effectiveZones.length > 0) setSelectedZoneId(effectiveZones[0]._id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -264,7 +290,7 @@ export function AtelierCheckoutPage() {
   useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
 
   const handleAddAddress = async () => {
-    if (!newAddr.recipientName || !newAddr.phoneNumber || !newAddr.addressLine1 || !newAddr.city || !newAddr.state || !newAddr.zipCode) {
+    if (!newAddr.recipientName || !newAddr.phoneNumber || !newAddr.addressLine1 || !newAddr.city || !newAddr.state || !newAddr.zipCode || !newAddr.country) {
       setAddrError('Please fill in every field.');
       return;
     }
@@ -463,6 +489,10 @@ export function AtelierCheckoutPage() {
                     <input style={inputStyle} placeholder="State/Province" value={newAddr.state} onChange={e => setNewAddr(a => ({ ...a, state: e.target.value }))} />
                     <input style={inputStyle} placeholder="Zip code" value={newAddr.zipCode} onChange={e => setNewAddr(a => ({ ...a, zipCode: e.target.value }))} />
                   </div>
+                  <select style={inputStyle} value={newAddr.country ?? ''} onChange={e => setNewAddr(a => ({ ...a, country: e.target.value }))}>
+                    <option value="" disabled>Select country</option>
+                    {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                  </select>
                   {addrError && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{addrError}</p>}
                   <div className="flex items-center gap-3 mt-1">
                     <AtelierButton onClick={handleAddAddress} loading={savingAddr}>Save Address</AtelierButton>
@@ -507,7 +537,11 @@ export function AtelierCheckoutPage() {
               {zonesLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : effectiveZones.length === 0 ? (
-                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No shipping methods are available yet.</p>
+                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
+                  {noMatchingZone
+                    ? "Sorry, this store doesn't currently ship to your address's country."
+                    : 'No shipping methods are available yet.'}
+                </p>
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {effectiveZones.map(z => (

@@ -10,6 +10,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetLiveShippingRates, type LiveShippingRate } from '@/api/services/shipping';
 import { apiGetMyAddresses, apiAddAddress, type Address, type AddressPayload } from '@/api/services/address';
+import { COUNTRY_OPTIONS, isSameCountry } from '@/utils/countries';
 import {
   apiCreateCheckout, apiAddShippingToCheckout, apiApplyCoupon, apiRemoveCoupon, apiApplyGiftCard, apiRemoveGiftCard,
   type Checkout, type CheckoutSummary,
@@ -24,7 +25,7 @@ import { novaTheme as t } from '../theme.config';
 
 const EMPTY_ADDR: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '',
-  addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '', isDefault: true,
+  addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '', country: '', isDefault: true,
 };
 
 const inputStyle = { fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.sm, padding: '10px 12px', width: '100%', outline: 'none' as const, background: '#FFFFFF' };
@@ -146,10 +147,27 @@ export function NovaCheckoutPage() {
   const selectedAddr = addresses.find(a => a._id === selectedAddrId) ?? null;
   const liveZoneEntries = zones.filter(z => z.isLiveRate);
   const flatZoneEntries = zones.filter(z => !z.isLiveRate);
-  const matchingFlatZones = selectedAddr
-    ? flatZoneEntries.filter(z => z.city.toLowerCase() === selectedAddr.city.toLowerCase() || z.province.toLowerCase() === selectedAddr.state.toLowerCase())
+  // Real bug fix (same as AtelierCheckoutPage.tsx) — country was never
+  // checked at all, and a zero-match silently fell back to showing every
+  // OTHER country's zones too. Country is now the required first filter;
+  // city/province only refine WITHIN the buyer's real country.
+  const countryZones = selectedAddr
+    ? flatZoneEntries.filter(z => isSameCountry(z.country, selectedAddr.country))
     : flatZoneEntries;
-  const effectiveZones = [...liveZoneEntries, ...(matchingFlatZones.length > 0 ? matchingFlatZones : flatZoneEntries)];
+  const matchingFlatZones = selectedAddr
+    ? (() => {
+        // `z.city`/`z.province` are nullable on a country-only zone — a bare
+        // `.toLowerCase()` crashed the page for that case (same fix as
+        // AtelierCheckoutPage.tsx, caught via a live browser reproduction).
+        const refined = countryZones.filter(z =>
+          (z.city && z.city.toLowerCase() === selectedAddr.city.toLowerCase()) ||
+          (z.province && z.province.toLowerCase() === selectedAddr.state.toLowerCase()),
+        );
+        return refined.length > 0 ? refined : countryZones;
+      })()
+    : flatZoneEntries;
+  const effectiveZones = [...liveZoneEntries, ...matchingFlatZones];
+  const noMatchingZone = !!selectedAddr && flatZoneEntries.length > 0 && liveZoneEntries.length === 0 && matchingFlatZones.length === 0;
   useEffect(() => {
     if (!selectedZoneId && effectiveZones.length > 0) setSelectedZoneId(effectiveZones[0]._id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,7 +247,7 @@ export function NovaCheckoutPage() {
   useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
 
   const handleAddAddress = async () => {
-    if (!newAddr.recipientName || !newAddr.phoneNumber || !newAddr.addressLine1 || !newAddr.city || !newAddr.state || !newAddr.zipCode) {
+    if (!newAddr.recipientName || !newAddr.phoneNumber || !newAddr.addressLine1 || !newAddr.city || !newAddr.state || !newAddr.zipCode || !newAddr.country) {
       setAddrError('Please fill in every field.');
       return;
     }
@@ -429,6 +447,10 @@ export function NovaCheckoutPage() {
                     <input style={inputStyle} placeholder="State/Province" value={newAddr.state} onChange={e => setNewAddr(a => ({ ...a, state: e.target.value }))} />
                     <input style={inputStyle} placeholder="Zip code" value={newAddr.zipCode} onChange={e => setNewAddr(a => ({ ...a, zipCode: e.target.value }))} />
                   </div>
+                  <select style={inputStyle} value={newAddr.country ?? ''} onChange={e => setNewAddr(a => ({ ...a, country: e.target.value }))}>
+                    <option value="" disabled>Select country</option>
+                    {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                  </select>
                   {addrError && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{addrError}</p>}
                   <div className="flex items-center gap-3 mt-1">
                     <NovaButton onClick={handleAddAddress} loading={savingAddr}>Save Address</NovaButton>
@@ -473,7 +495,11 @@ export function NovaCheckoutPage() {
               {zonesLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : effectiveZones.length === 0 ? (
-                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No shipping methods are available yet.</p>
+                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
+                  {noMatchingZone
+                    ? "Sorry, this store doesn't currently ship to your address's country."
+                    : 'No shipping methods are available yet.'}
+                </p>
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {effectiveZones.map(z => (

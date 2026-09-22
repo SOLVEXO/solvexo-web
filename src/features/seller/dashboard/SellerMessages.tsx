@@ -87,7 +87,7 @@ export function SellerMessages() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { conversation, pin, mute, archive, restore, remove } = useConversation(activeId);
   const {
-    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove: removeMessage, markSeen, hasMore, loadMore,
+    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove: removeMessage, markSeen, react, hasMore, loadMore,
     otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
@@ -289,6 +289,7 @@ export function SellerMessages() {
           onEditMessage={(id, text) => void edit(id, text)}
           onDeleteMessage={id => void removeMessage(id)}
           onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}
+          onReact={(id, emoji) => void react(id, emoji, profile?._id ?? null)}
           otherOnline={otherOnline}
           otherTyping={otherTyping}
           onTyping={sendTyping}

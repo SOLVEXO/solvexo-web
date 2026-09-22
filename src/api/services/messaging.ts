@@ -77,6 +77,16 @@ export interface MessageReplyTo {
   senderRole?: SenderRole;
 }
 
+export interface MessageReaction { userId: string; emoji: string; reactedAt: string }
+
+export interface LinkPreviewData {
+  url:         string;
+  title:       string | null;
+  description: string | null;
+  image:       string | null;
+  siteName:    string | null;
+}
+
 export interface ProductSharePayload { productId: string }
 
 // The server enriches productShare with catalog data once a message is sent.
@@ -106,6 +116,8 @@ export interface Message {
   isDeleted:       boolean;
   deletedAt:       string | null;
   isFlagged:       boolean;
+  reactions:       MessageReaction[];
+  linkPreview:     LinkPreviewData | null;
   createdAt:       string;
   updatedAt:       string;
 }
@@ -135,7 +147,7 @@ export interface StartConversationPayload { storeId: string }
 export interface ListConversationsParams   { storeId?: string; page?: number; limit?: number; isArchived?: boolean; isPinned?: boolean }
 export interface SearchConversationsParams { q: string; storeId?: string }
 
-export interface SendTextMessagePayload       { type: 'text'; text: string; replyTo?: MessageReplyTo }
+export interface SendTextMessagePayload       { type: 'text'; text: string; replyTo?: MessageReplyTo; linkPreview?: LinkPreviewData }
 export interface SendAttachmentMessagePayload { type: 'image' | 'video' | 'pdf' | 'document' | 'voice'; attachments: MessageAttachment[]; replyTo?: MessageReplyTo }
 export interface SendProductSharePayload      { type: 'product_share'; productShare: ProductSharePayload; replyTo?: MessageReplyTo }
 export type SendMessagePayload = SendTextMessagePayload | SendAttachmentMessagePayload | SendProductSharePayload;
@@ -254,6 +266,22 @@ export function apiMarkMessageSeen(messageId: string, conversationId: string) {
   // rejects outright (it only accepts an object/array at the top level), so
   // every call was failing with a 400 before ever reaching the controller.
   return client.post<never, { seen: boolean }>(ENDPOINTS.MESSAGING.MESSAGES.MARK_SEEN(messageId), undefined, { params: { conversationId } });
+}
+
+// WhatsApp/Instagram-style tap-an-emoji reaction — tapping the same emoji you
+// already reacted with removes it, a different emoji replaces it (server-side
+// toggle logic, see MessagingService.toggleReaction).
+export function apiToggleReaction(messageId: string, emoji: string) {
+  return client.post<never, { reactions: MessageReaction[] }>(ENDPOINTS.MESSAGING.MESSAGES.REACT(messageId), { emoji });
+}
+
+// Resolves a URL into an unfurl card BEFORE sending — the composer calls this
+// as the sender types/pastes a link, shows a dismissible preview, then passes
+// the resolved result back on the actual apiSendMessage call so it's baked
+// into the stored message. Returns null if the URL has no extractable
+// metadata (or failed/timed out) — the composer just shows no preview then.
+export function apiGetLinkPreview(url: string) {
+  return client.get<never, LinkPreviewData | null>(ENDPOINTS.MESSAGING.MESSAGES.LINK_PREVIEW, { params: { url } });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

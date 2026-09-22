@@ -4,6 +4,7 @@ import type { ActionMenuItem } from '@/components/comman/ui';
 import type { Message, SendMessagePayload } from '@/api/services/messaging';
 import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { useSearchMessages } from '@/hooks/messaging/useMessages';
+import { useLinkPreviewDraft } from '@/hooks/messaging/useLinkPreviewDraft';
 import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
 import { ChatHeader, type ChatHeaderShortcut } from './ChatHeader';
 import { MessageThread } from './MessageThread';
@@ -39,6 +40,7 @@ interface ChatWindowProps {
   onEditMessage:   (id: string, text: string) => void;
   onDeleteMessage: (id: string) => void;
   onRetry:         (message: OptimisticMessage, payload: SendMessagePayload) => void;
+  onReact?:        (messageId: string, emoji: string) => void;
 
   otherOnline?:    boolean;
   otherTyping?:    boolean;
@@ -54,7 +56,7 @@ interface ChatWindowProps {
 }
 
 function payloadFromMessage(m: OptimisticMessage): SendMessagePayload | null {
-  if (m.type === 'text') return { type: 'text', text: m.text ?? '', ...(m.replyTo ? { replyTo: m.replyTo } : {}) };
+  if (m.type === 'text') return { type: 'text', text: m.text ?? '', ...(m.replyTo ? { replyTo: m.replyTo } : {}), ...(m.linkPreview ? { linkPreview: m.linkPreview } : {}) };
   if (m.type === 'product_share' && m.productShare) return { type: 'product_share', productShare: { productId: m.productShare.productId } };
   if (['image', 'video', 'pdf', 'document', 'voice'].includes(m.type) && (m.attachments?.length ?? 0)) {
     return { type: m.type as 'image' | 'video' | 'pdf' | 'document' | 'voice', attachments: m.attachments, ...(m.replyTo ? { replyTo: m.replyTo } : {}) };
@@ -69,7 +71,7 @@ function payloadFromMessage(m: OptimisticMessage): SendMessagePayload | null {
 export function ChatWindow({
   open, headerName, headerImage, headerVerified, subtitleOverride, menuItems, onBack, shortcuts,
   messages, msgLoading, currentUserId, otherPartyId, hasMore, loadingMore, onLoadMore,
-  sending, uploading, uploadProgress, onSend, onUpload, onFileTooLarge, onEditMessage, onDeleteMessage, onRetry,
+  sending, uploading, uploadProgress, onSend, onUpload, onFileTooLarge, onEditMessage, onDeleteMessage, onRetry, onReact,
   otherOnline, otherTyping, onTyping, conversationId, storeId, error,
 }: ChatWindowProps) {
   const [text,      setText]      = useState('');
@@ -81,6 +83,7 @@ export function ChatWindow({
   const [sharingProduct, setSharingProduct] = useState(false);
   const [query, setQuery] = useState('');
   const { results, search, loading: searching } = useSearchMessages(conversationId ?? null);
+  const linkDraft = useLinkPreviewDraft(text);
   const swipeHandlers = useEdgeSwipeBack(onBack);
 
   if (!open) {
@@ -99,9 +102,15 @@ export function ChatWindow({
 
   const handleSend = () => {
     if (!text.trim()) return;
-    onSend({ type: 'text', text: text.trim(), ...(replyTo ? { replyTo: { messageId: replyTo._id, text: replyTo.text, type: replyTo.type, senderId: replyTo.senderId, senderRole: replyTo.senderRole } } : {}) });
+    onSend({
+      type: 'text',
+      text: text.trim(),
+      ...(replyTo ? { replyTo: { messageId: replyTo._id, text: replyTo.text, type: replyTo.type, senderId: replyTo.senderId, senderRole: replyTo.senderRole } } : {}),
+      ...(linkDraft.preview ? { linkPreview: linkDraft.preview } : {}),
+    });
     setText('');
     setReplyTo(null);
+    linkDraft.reset();
     onTyping?.(false);
   };
 
@@ -212,6 +221,7 @@ export function ChatWindow({
         onDelete={onDeleteMessage}
         onReply={setReplyTo}
         onRetry={handleRetry}
+        onReact={onReact}
       />
 
       <MessageInput
@@ -226,6 +236,9 @@ export function ChatWindow({
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
         onShareProduct={storeId ? () => setShowProductShare(true) : undefined}
+        linkPreview={linkDraft.preview}
+        linkPreviewLoading={linkDraft.loading}
+        onDismissLinkPreview={linkDraft.dismiss}
       />
 
       {showProductShare && storeId && (

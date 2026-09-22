@@ -27,6 +27,7 @@ interface MessageThreadProps {
   onDelete:      (id: string) => void;
   onReply:       (m: Message) => void;
   onRetry:       (m: OptimisticMessage) => void;
+  onReact?:      (messageId: string, emoji: string) => void;
 }
 
 function TypingBubble({ name, image }: { name: string; image?: string | null }) {
@@ -53,7 +54,7 @@ function TypingBubble({ name, image }: { name: string; image?: string | null }) 
 // on new messages unless the reader has scrolled up into history.
 export function MessageThread({
   messages, loading, loadingMore, currentUserId, otherPartyId, otherPartyName, otherPartyImage, otherTyping,
-  hasMore, onLoadMore, editingId, editText, onEditTextChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete, onReply, onRetry,
+  hasMore, onLoadMore, editingId, editText, onEditTextChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete, onReply, onRetry, onReact,
 }: MessageThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
@@ -162,6 +163,8 @@ export function MessageThread({
                           onDelete={own ? onDelete : undefined}
                           onReply={onReply}
                           onRetry={onRetry}
+                          onReact={onReact}
+                          currentUserId={currentUserId}
                         />
                       );
                     })}

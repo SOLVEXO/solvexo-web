@@ -14,7 +14,7 @@ import {
   Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
-import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, type StorePlatformSubscription } from '@/api/services/platformPlans';
+import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -32,6 +32,11 @@ interface StoreWorkspaceValue {
   loading:  boolean;
   error:    string;
   refetch:  () => void;
+  // `null` while unloaded/loading — nav-gating (see `visibleNavForUser`)
+  // treats that as "don't hide anything yet" (same convention
+  // StoreSettings.tsx's Custom Domain/White Label fields already use), so a
+  // nav item never flashes hidden-then-visible before this resolves.
+  entitlements: EntitlementsSummary | null;
 }
 
 const StoreWorkspaceCtx = createContext<StoreWorkspaceValue | null>(null);
@@ -60,7 +65,11 @@ export function useStoreWorkspace(): StoreWorkspaceValue {
 // `settings.general.manage`/`settings.taxes.manage`/`settings.domains.manage`
 // content on one page) — a single string here would otherwise hide the
 // whole page from a staff member granted only one of those.
-export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string; requiredPermission?: string | string[] }
+// `requiredEntitlement` — a PlatformPlan.limits boolean feature key this
+// whole nav item's destination is gated by (see EntitlementsService). Unlike
+// `requiredPermission` (staff-only, a seller/admin always passes), this
+// applies to EVERY role — it's the store's own plan, not who's logged in.
+export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string; requiredPermission?: string | string[]; requiredEntitlement?: string }
 
 // ── Sidebar structure ──────────────────────────────────────────────────────
 // Restructured to match Shopify's admin nav: a short, always-visible flat
@@ -194,8 +203,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // OR'd with `giftcards.manage` (issue/adjust balance) — a staff
       // member granted only that, not general view, still needs a nav path.
       { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards',    requiredPermission: ['giftcards.view', 'giftcards.manage'] },
-      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'] },
-      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['subscriptions.view', 'subscriptions.manage', 'subscriptions.subscribers.manage'] },
+      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' },
+      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['subscriptions.view', 'subscriptions.manage', 'subscriptions.subscribers.manage'], requiredEntitlement: 'subscriptionProductsAllowed' },
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
       { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],
@@ -261,10 +270,23 @@ export function hasNavPermission(user: { role?: AppRole; permissions?: string[] 
     : granted.has(requiredPermission);
 }
 
-export function visibleNavForUser(user: { role?: AppRole; permissions?: string[] } | null): typeof NAV {
-  if (!user || user.role !== 'staff') return NAV;
+// The store's own plan, not who's logged in — applies to a seller/admin the
+// same as a staff session, unlike `hasNavPermission` above. `entitlements ===
+// null` (not yet loaded) always passes, so a nav item never flashes visible
+// then hidden while the fetch is in flight — same convention StoreSettings'
+// Custom Domain/White Label fields already use for this exact shape of data.
+function hasNavEntitlement(entitlements: EntitlementsSummary | null, requiredEntitlement?: string): boolean {
+  if (!requiredEntitlement || !entitlements) return true;
+  const feature = entitlements[requiredEntitlement] as { allowed: boolean } | undefined;
+  return feature?.allowed !== false;
+}
+
+export function visibleNavForUser(user: { role?: AppRole; permissions?: string[] } | null, entitlements: EntitlementsSummary | null = null): typeof NAV {
   return NAV
-    .map(section => ({ ...section, items: section.items.filter(item => hasNavPermission(user, item.requiredPermission)) }))
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => hasNavPermission(user, item.requiredPermission) && hasNavEntitlement(entitlements, item.requiredEntitlement)),
+    }))
     .filter(section => section.items.length > 0);
 }
 
@@ -305,9 +327,10 @@ export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeI
   excludeGroups?: string[]; excludeItemIds?: string[];
 }) {
   const navigate = useNavigate();
+  const { entitlements } = useStoreWorkspace();
   const hiddenGroups = new Set(['Overview', ...excludeGroups]);
   const hiddenItems = new Set(excludeItemIds);
-  const nav = visibleNavForUser(TokenStorage.getUser());
+  const nav = visibleNavForUser(TokenStorage.getUser(), entitlements);
   return (
     <div className="flex flex-col gap-4">
       {nav.filter(section => !hiddenGroups.has(section.group))
@@ -418,9 +441,10 @@ function StoreBottomNav() {
 function buildPaletteItems(
   navigate: (path: string) => void,
   storeId: string,
+  entitlements: EntitlementsSummary | null,
 ): CommandPaletteItem[] {
   const result: CommandPaletteItem[] = [];
-  visibleNavForUser(TokenStorage.getUser()).forEach(section => {
+  visibleNavForUser(TokenStorage.getUser(), entitlements).forEach(section => {
     section.items.forEach(item => {
       result.push({
         id:       item.id,
@@ -447,10 +471,10 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // nav entries on navigation instead of one bg instantly disappearing while
   // another instantly appears — scoped per sidebar instance via useId().
   const navPillId = useId();
-  const { store, storeId, loading } = useStoreWorkspace();
+  const { store, storeId, loading, entitlements } = useStoreWorkspace();
   const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
-  const paletteItems = buildPaletteItems(navigate, storeId);
+  const paletteItems = buildPaletteItems(navigate, storeId, entitlements);
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -458,7 +482,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // see `DEFAULT_COLLAPSED_GROUPS`. Lazy-init reads localStorage once; every
   // toggle re-persists so the seller's open/closed choice survives a reload.
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(loadCollapsedGroups);
-  const nav = visibleNavForUser(TokenStorage.getUser());
+  const nav = visibleNavForUser(TokenStorage.getUser(), entitlements);
   const toggleGroup = (group: string) => {
     setCollapsedGroups(prev => {
       const next = new Set(prev);
@@ -1022,6 +1046,18 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(() => readCachedStore(storeId) === null);
   const [error,   setError]   = useState('');
   const [tick,    setTick]    = useState(0);
+  const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
+
+  // Fetched once here (not per-page) so every nav consumer (StoreSidebar,
+  // StoreBottomNav, StoreNavMenu, the command palette) reads the exact same
+  // plan state via `useStoreWorkspace()` — see `visibleNavForUser`'s
+  // `entitlements` param below.
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetStoreEntitlements(storeId).then(res => { if (!cancelled) setEntitlements(res.data); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [storeId, tick]);
 
   // Browser tab icon reflects THIS store's own favicon (falling back to its
   // logo, then Solvexo's default) for as long as the seller is inside this
@@ -1061,7 +1097,7 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const refetch = () => setTick(t => t + 1);
 
   return (
-    <StoreWorkspaceCtx.Provider value={{ store, storeId, loading, error, refetch }}>
+    <StoreWorkspaceCtx.Provider value={{ store, storeId, loading, error, refetch, entitlements }}>
       {children}
     </StoreWorkspaceCtx.Provider>
   );
