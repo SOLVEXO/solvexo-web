@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, Percent, Truck } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
@@ -761,6 +762,19 @@ function ShippingIntegrationCard({ integration, storeId, onChanged }: { integrat
   const [pendingDisconnect, setPendingDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const isConnected = integration.status === 'connected';
+  // Shopify rule: live (third-party calculated) rates at checkout are a plan
+  // feature (Advanced and up); labels + tracking work on every plan. Same
+  // gate the backend applies in CheckoutService (calculatedShippingRatesAllowed).
+  const { entitlements } = useStoreWorkspace();
+  const liveRatesFeature = entitlements?.calculatedShippingRatesAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
+  const liveRatesLocked = liveRatesFeature ? !liveRatesFeature.allowed : false;
+  const liveRatesLockNote = liveRatesLocked && (
+    <p className="text-[12px] text-slate">
+      Live carrier rates at checkout aren't included in your plan{liveRatesFeature?.requiredPlan ? ` — available on ${liveRatesFeature.requiredPlan}` : ''}.
+      {' '}Labels and tracking still work.{' '}
+      <Link to={`/store/${storeId}/plan-billing`} className="font-semibold text-brand-orange hover:underline">Upgrade plan</Link>
+    </p>
+  );
 
   async function confirmDisconnect() {
     if (!integration.id) return;
@@ -794,6 +808,7 @@ function ShippingIntegrationCard({ integration, storeId, onChanged }: { integrat
       {!isConnected ? (
         <>
           <p className="text-[12.5px] text-slate mb-3">Not connected — this store still uses its flat per-zone shipping rates (Shipping) for every order.</p>
+          {liveRatesLockNote && <div className="mb-3">{liveRatesLockNote}</div>}
           <Button size="sm" onClick={() => setShowConnect(true)}>Connect Shippo</Button>
         </>
       ) : (
@@ -801,7 +816,9 @@ function ShippingIntegrationCard({ integration, storeId, onChanged }: { integrat
           {integration.lastError && (
             <p className="flex items-center gap-1.5 text-[12px] text-error"><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
           )}
-          <p className="text-[12px] text-slate">Buyers now see real live carrier rates at checkout alongside your flat zones.</p>
+          {liveRatesLocked
+            ? liveRatesLockNote
+            : <p className="text-[12px] text-slate">Buyers now see real live carrier rates at checkout alongside your flat zones.</p>}
           <div>
             <Button size="sm" variant="outline" onClick={() => setPendingDisconnect(true)}>Disconnect</Button>
           </div>

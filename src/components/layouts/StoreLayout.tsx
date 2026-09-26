@@ -758,37 +758,42 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
            page). */}
         {open ? (
           <div className="px-4 py-3 border-t border-dark-active shrink-0">
-            {isTrialing ? (
+            {(isTrialing || isTrialEndedSidebar) ? (
+              // Same card before AND after the trial ends — only the words
+              // change: badge "Trial" → "Trial Ended", "N days left" → "0 days
+              // left", the bar stays (full once ended), and the hh:mm:ss line
+              // becomes the real trial length + end date.
               <div className="relative mt-[8px] mb-[10px]">
-                {/* Trial floats half-in/half-out over the card's top-left
-                   corner — smaller than before, and the wrapper now
-                   reserves real space above the card (`mt-[8px]`) for it
-                   to sit in, instead of relying on the outer footer's own
-                   padding (which the sidebar's container was clipping
-                   into). Days-left stays a normal pill inside the card. */}
+                {/* Badge floats half-in/half-out over the card's top-left
+                   corner — the wrapper reserves real space above the card
+                   (`mt-[8px]`) for it, instead of relying on the outer
+                   footer's own padding (which the sidebar's container was
+                   clipping into). Days-left stays a normal pill inside. */}
                 <span className="absolute -top-[7px] left-[10px] z-10 inline-flex items-center px-[7px] py-[3px] rounded-full bg-white text-brand-deep-orange text-[8px] font-extrabold uppercase tracking-[0.05em] shadow-sm">
-                  Trial
+                  {isTrialing ? 'Trial' : 'Trial Ended'}
                 </span>
                 <div className="bg-brand-orange rounded-[10px] px-3 py-[10px]">
                   <div className="flex justify-end mb-[10px]">
                     <span className="inline-flex items-center gap-1 px-[9px] py-[4px] rounded-full bg-white/15 text-white text-[9.5px] font-semibold shrink-0">
                       <Clock size={10} className="text-white" />
-                      {trialTimeLeft?.days} day{trialTimeLeft?.days === 1 ? '' : 's'} left
+                      {isTrialing
+                        ? `${trialTimeLeft?.days} day${trialTimeLeft?.days === 1 ? '' : 's'} left`
+                        : '0 days left'}
                     </span>
                   </div>
                   <div className="h-[5px] bg-white/25 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-white rounded-full transition-[width] duration-300"
-                      style={{ width: `${trialProgressPct}%` }}
+                      style={{ width: `${isTrialing ? trialProgressPct : 100}%` }}
                     />
                   </div>
-                  {/* Finer hh:mm:ss detail, directly under the bar — lighter,
-                     compact plain text (no pill chrome) so it reads as a
-                     secondary detail under the headline day count above, not
-                     a second competing badge. */}
+                  {/* Under the bar: live hh:mm:ss while running; once ended,
+                     the real trial length + end date in the same spot. */}
                   <div className="flex justify-end mb-[11px] mt-[4px]">
                     <span className="text-white/65 text-[8.5px] font-medium tabular-nums">
-                      {trialTimeLeft && `${String(trialTimeLeft.hours).padStart(2, '0')}h ${String(trialTimeLeft.minutes).padStart(2, '0')}m ${String(trialTimeLeft.seconds).padStart(2, '0')}s`}
+                      {isTrialing
+                        ? (trialTimeLeft && `${String(trialTimeLeft.hours).padStart(2, '0')}h ${String(trialTimeLeft.minutes).padStart(2, '0')}m ${String(trialTimeLeft.seconds).padStart(2, '0')}s`)
+                        : (trialEndedSummary ? `${trialEndedSummary.days}-day trial · ended ${trialEndedSummary.endedOn}` : 'Trial ended')}
                     </span>
                   </div>
                   <button
@@ -798,25 +803,6 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                     Choose a Plan
                   </button>
                 </div>
-              </div>
-            ) : isTrialEndedSidebar ? (
-              <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
-                <div className="mb-[10px]">
-                  <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
-                    Trial Ended
-                  </span>
-                  {trialEndedSummary && (
-                    <p className="text-white/75 text-[9.5px] mt-[7px] leading-[1.4]">
-                      Your {trialEndedSummary.days}-day trial ended on {trialEndedSummary.endedOn}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => navigate(`/store/${storeId}/plan-billing`)}
-                  className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
-                >
-                  Choose a Plan
-                </button>
               </div>
             ) : currentPlanLabel && (
               <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">

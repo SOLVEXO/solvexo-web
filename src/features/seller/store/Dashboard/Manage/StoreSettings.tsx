@@ -391,7 +391,11 @@ export function ProductTypesTab() {
 
 // ── Payment Methods (incl. "Markets" — which currencies checkout accepts) ──
 export function PaymentMethodsTab() {
-  const { store, storeId, loading, refetch } = useStoreWorkspace();
+  const { store, storeId, loading, refetch, entitlements } = useStoreWorkspace();
+  // Plan "markets" limit — how many checkout currencies this store may
+  // accept, its own currency included (-1 = unlimited). Same rule the
+  // backend enforces on save (StoreService.updateStore).
+  const maxMarkets = typeof entitlements?.maxMarkets === 'number' ? entitlements.maxMarkets : -1;
   const [codEnabled, setCodEnabled] = useState(true);
   const [paymentCaptureMethod, setPaymentCaptureMethod] = useState<'automatic' | 'manual'>('automatic');
   // `null` is a real, distinct state here — "no restriction, every platform
@@ -482,18 +486,35 @@ export function PaymentMethodsTab() {
         <div className="mt-6 border-t border-bone pt-[18px]">
           <p className="text-[12px] font-semibold text-charcoal mb-1">Markets</p>
           <p className="text-[11px] text-slate mb-3">Which currencies can buyers pay in at checkout on your store?</p>
+          {maxMarkets !== -1 && (
+            <p className="text-[11px] text-slate mb-3">
+              Your plan allows up to <span className="font-semibold text-charcoal">{maxMarkets}</span> {maxMarkets === 1 ? 'currency' : 'currencies'}, your store currency included. Upgrade your plan for more.
+            </p>
+          )}
 
           <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream mb-2">
             <div>
               <p className="text-[13px] font-medium text-charcoal">Restrict to specific currencies</p>
               <p className="text-[11px] text-slate">
-                {enabledCurrencies === null ? 'Off — buyers can pay in any currency this platform supports.' : 'On — buyers can only pay in the currencies checked below.'}
+                {enabledCurrencies !== null
+                  ? 'On — buyers can only pay in the currencies checked below.'
+                  : maxMarkets === -1
+                    ? 'Off — buyers can pay in any currency this platform supports.'
+                    : `Off — buyers can pay in your store currency plus the first ${Math.max(0, maxMarkets - 1)} other supported ${maxMarkets - 1 === 1 ? 'currency' : 'currencies'}.`}
               </p>
             </div>
             <Toggle
               checked={enabledCurrencies !== null}
               ariaLabel="Restrict which currencies buyers can pay in"
-              onChange={v => setEnabledCurrencies(v ? [...platformCurrencies] : null)}
+              onChange={v => {
+                if (!v) { setEnabledCurrencies(null); return; }
+                // With a plan limit, seed only what fits — store currency first.
+                const base = store?.baseCurrency;
+                const ordered = base && platformCurrencies.includes(base)
+                  ? [base, ...platformCurrencies.filter(c => c !== base)]
+                  : [...platformCurrencies];
+                setEnabledCurrencies(maxMarkets === -1 ? ordered : ordered.slice(0, Math.max(1, maxMarkets)));
+              }}
             />
           </div>
 
@@ -502,12 +523,13 @@ export function PaymentMethodsTab() {
               {platformCurrencies.map(c => {
                 const isBase = c === store?.baseCurrency;
                 const checked = enabledCurrencies.includes(c);
+                const atLimit = maxMarkets !== -1 && enabledCurrencies.length >= maxMarkets;
                 return (
                   <div key={c} className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
                     <p className="text-[13px] font-medium text-charcoal">{c}{isBase ? ' (your store currency)' : ''}</p>
                     <Toggle
                       checked={checked}
-                      disabled={isBase}
+                      disabled={isBase || (!checked && atLimit)}
                       ariaLabel={`Accept ${c} at checkout`}
                       onChange={v => {
                         if (isBase && !v) return; // can never disable your own store currency

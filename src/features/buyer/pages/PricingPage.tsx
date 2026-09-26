@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowRight, Sparkles, User, Lock, Receipt, MessageSquare, ChevronDown } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
@@ -10,28 +10,17 @@ import { apiBrowsePlatformPlans, apiGetPublicTrialSettings, type PlatformPlan } 
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
-import { Marquee } from '@/components/comman/motion/Marquee';
 import { PlanCard } from '@/components/comman/ui/PlanCard';
 
 const SERIF = "'Lora', Georgia, serif";
 
-// ── Add-ons exact from reference ──────────────────────────────────────────────
-// "Priority Marketplace Placement" ($29/mo, `priority_marketplace_placement`
-// in platform-addons.service.ts) removed from this sellable list — its only
-// real effect is setting `Store.badges: ['featured']`, which is read solely
-// by the Admin Marketplace module's featured-listing curation — one of the 5
-// admin modules already unlinked from nav in the marketplace-to-standalone-
-// store pivot (see CLAUDE.md). It's a real, still-billable feature that no
-// longer does anything visible to anyone; stopped selling it here rather
-// than leave sellers paying for it unknowingly. Existing active purchases of
-// it are untouched — canceling/refunding those is a billing decision, not a
-// UI fix, and wasn't done here.
+// ── Add-ons — only what a seller can really buy (GET /addons/catalog:
+// Extra AI Credits). Staff seats, tax compliance, SMS and priority placement
+// were discontinued — Shopify doesn't sell those as platform add-ons (staff
+// comes with the plan; tax/SMS are apps). Keep this in sync with
+// ADDON_PRICING in platform-addons.service.ts.
 const ADDONS: { Icon: LucideIcon; name: string; price: string; unit: string }[] = [
-  { Icon: Sparkles,       name: 'Extra AI Credits',              price: '$10',   unit: 'per 500 credits'       },
-  { Icon: User,           name: 'Additional Staff Seats',         price: '$5',    unit: 'per seat / month'      },
-  { Icon: Lock,           name: 'Custom Domain SSL',              price: 'Free',  unit: 'included on Pro+'      },
-  { Icon: Receipt,        name: 'Advanced Tax Compliance',        price: '$15',   unit: 'per month'             },
-  { Icon: MessageSquare,  name: 'SMS Notifications',              price: '$0.05', unit: 'per message'           },
+  { Icon: Sparkles, name: 'Extra AI Credits', price: '$10', unit: '500 credits · one-time' },
 ];
 
 // ── FAQ fallback (shown until admin adds FAQs under the "pricing" category) ───
@@ -170,16 +159,14 @@ export function PricingPage() {
         ))}
       </RevealStagger>
 
-      {/* ── Add-ons — a slow ambient marquee instead of a 6-up card grid,
-         matching the same "supporting content gets quieter motion" pattern
-         used for ForSellersPage's feature strip. ── */}
-      <div className="pb-16 overflow-hidden">
+      {/* ── Add-ons — just the real one(s), static (a marquee of one card
+         would only repeat it). ── */}
+      <div className="pb-16">
         <div className="px-4 md:px-8 lg:px-12 max-w-[1200px] mx-auto">
-          <SectionHeading title="Add-ons & extras" subtitle="Extend your plan with exactly what you need." className="mb-7" />
-        </div>
-        <Marquee duration={34}>
+          <SectionHeading title="Add-ons" subtitle="Need more AI credits than your plan includes? Top up anytime." className="mb-7" />
+          <div className="flex flex-wrap gap-4">
           {ADDONS.map(a => (
-            <div key={a.name} className="flex items-center gap-3 rounded-2xl border border-bone bg-white px-5 py-[14px] mx-2.5 w-[270px] shrink-0">
+            <div key={a.name} className="flex items-center gap-3 rounded-2xl border border-bone bg-white px-5 py-[14px] w-full max-w-[320px]">
               <a.Icon size={24} className="text-brand-orange flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-[12.5px] font-semibold text-carbon mb-[2px] truncate">{a.name}</p>
@@ -190,7 +177,8 @@ export function PricingPage() {
               </span>
             </div>
           ))}
-        </Marquee>
+          </div>
+        </div>
       </div>
 
       {/* ── FAQ — a real expand/collapse accordion (one open at a time,

@@ -11,8 +11,9 @@ import { SkeletonBox } from '@/components/comman/ui';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan,
   apiPreviewPlatformPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
-  apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices,
+  apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices, apiGetAddonCatalog,
   type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary, type AddonPurchase, type AddonType,
+  type AddonCatalogItem,
   type PlatformPlanInvoice, type PlanChangePreview,
 } from '@/api/services/platformPlans';
 
@@ -24,6 +25,9 @@ const INVOICE_STATUS_STYLE: Record<string, string> = {
   partially_refunded: 'bg-bone text-slate',
 };
 
+// Labels for every add-on that can appear on a past purchase. Only what
+// GET /addons/catalog returns can be bought now (Extra AI Credits) — the
+// others were discontinued; Shopify doesn't sell them as platform add-ons.
 const ADDON_LABELS: Record<AddonType, string> = {
   extra_ai_credits: 'Extra AI Credits (+500)',
   extra_staff_seat: 'Extra Staff Seat',
@@ -31,6 +35,11 @@ const ADDON_LABELS: Record<AddonType, string> = {
   advanced_tax_compliance: 'Advanced Tax Compliance',
   sms_notifications: 'SMS Notifications',
 };
+
+/** One key per confirm attempt — reused if that same purchase is retried, so it can't charge twice. */
+function newAddonIdempotencyKey(storeId: string, addonType: string): string {
+  return `platform-addon-${storeId}-${addonType}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 function daysUntil(dateStr: string): number {
   return Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
@@ -67,6 +76,10 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const [changingId, setChangingId] = useState<string | null>(null);
   const [interval, setInterval_] = useState<'monthly' | 'yearly'>('monthly');
   const [addonModal, setAddonModal] = useState(false);
+  const [catalog, setCatalog] = useState<AddonCatalogItem[] | null>(null);
+  const [catalogError, setCatalogError] = useState('');
+  const [buyingAddon, setBuyingAddon] = useState<AddonCatalogItem | null>(null);
+  const addonIdempotencyKeyRef = useRef<string | null>(null);
   const [confirmingPlan, setConfirmingPlan] = useState<PlatformPlan | null>(null);
   const [preview, setPreview] = useState<PlanChangePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -169,12 +182,35 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     }
   }
 
-  async function handlePurchaseAddon(type: AddonType) {
+  // Opens the picker and loads the real catalog (with prices) fresh each time.
+  function openAddonPicker() {
+    setActionError('');
+    setCatalog(null); setCatalogError('');
+    setAddonModal(true);
+    apiGetAddonCatalog()
+      .then(res => setCatalog(res.data))
+      .catch(err => setCatalogError(err instanceof Error ? err.message : 'Failed to load add-ons.'));
+  }
+
+  function openAddonConfirm(item: AddonCatalogItem) {
+    addonIdempotencyKeyRef.current = newAddonIdempotencyKey(storeId, item.addonType);
+    setActionError('');
+    setBuyingAddon(item);
+  }
+
+  function closeAddonFlow() {
+    setAddonModal(false);
+    setBuyingAddon(null);
+    addonIdempotencyKeyRef.current = null;
+  }
+
+  async function handlePurchaseAddon() {
+    if (!buyingAddon) return;
     setAddonBusy(true);
     setActionError('');
     try {
-      await apiPurchaseAddon(storeId, type, 1);
-      setAddonModal(false);
+      await apiPurchaseAddon(storeId, buyingAddon.addonType, 1, addonIdempotencyKeyRef.current ?? undefined);
+      closeAddonFlow();
       load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to purchase add-on.');
@@ -407,19 +443,25 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Add-ons</p>
-            <Button size="sm" icon={<Zap size={13} />} onClick={() => setAddonModal(true)}>Add Add-on</Button>
+            <Button size="sm" icon={<Zap size={13} />} onClick={openAddonPicker}>Buy add-on</Button>
           </div>
           {addons.length === 0 ? (
-            <p className="px-5 py-6 text-center text-[13px] text-slate">No active add-ons.</p>
+            <p className="px-5 py-6 text-center text-[13px] text-slate">No add-on purchases yet.</p>
           ) : (
             <div className="flex flex-col">
               {addons.map(a => (
                 <div key={a._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-carbon">{ADDON_LABELS[a.addonType]}</p>
-                    <p className="text-[11px] text-slate">Qty {a.quantity} · ${a.amountUSD.toFixed(2)}/mo</p>
+                    <p className="text-[13px] font-medium text-carbon">{ADDON_LABELS[a.addonType] ?? a.addonType}</p>
+                    <p className="text-[11px] text-slate">
+                      Qty {a.quantity} · ${(a.priceUSD ?? 0).toFixed(2)}{a.recurring ? '/mo' : ' one-time'} · {new Date(a.createdAt).toLocaleDateString()}
+                      {a.status === 'canceled' && <span> · Canceled</span>}
+                    </p>
                   </div>
-                  <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer shrink-0">Cancel</button>
+                  {/* Only a still-active monthly add-on has anything left to cancel — a one-time purchase was already delivered. */}
+                  {a.recurring && a.status === 'active' && (
+                    <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer shrink-0">Cancel</button>
+                  )}
                 </div>
               ))}
             </div>
@@ -461,17 +503,42 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         </div>
       </div>
 
-      {addonModal && (
-        <Modal title="Add an Add-on" width={420} onClose={() => setAddonModal(false)}>
+      {addonModal && !buyingAddon && (
+        <Modal title="Buy an add-on" width={420} onClose={closeAddonFlow}>
           <div className="flex flex-col gap-2">
-            {(Object.keys(ADDON_LABELS) as AddonType[]).map(type => (
-              <button key={type} disabled={addonBusy} onClick={() => handlePurchaseAddon(type)}
-                className="text-left px-3.5 py-3 rounded-lg bg-cream border border-bone cursor-pointer hover:border-brand-orange/40 disabled:opacity-50 disabled:cursor-wait">
-                <span className="text-[13px] font-medium text-charcoal">{ADDON_LABELS[type]}</span>
+            {catalog === null && !catalogError && <SkeletonBox height={64} rounded="8px" />}
+            {catalogError && <p className="text-[12px] text-error">{catalogError}</p>}
+            {catalog?.length === 0 && <p className="text-[13px] text-slate">No add-ons are available right now.</p>}
+            {catalog?.map(item => (
+              <button key={item.addonType} onClick={() => openAddonConfirm(item)}
+                className="text-left px-3.5 py-3 rounded-lg bg-cream border border-bone cursor-pointer hover:border-brand-orange/40">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="text-[13px] font-medium text-charcoal">{item.label}</span>
+                  <span className="text-[13px] font-semibold text-carbon whitespace-nowrap">${item.priceUSD.toFixed(2)}{item.recurring ? '/mo' : ''}</span>
+                </span>
+                <span className="block text-[11.5px] text-slate mt-0.5">{item.description}</span>
               </button>
             ))}
           </div>
-          {actionError && <p className="text-[12px] text-error mt-3">{actionError}</p>}
+        </Modal>
+      )}
+
+      {buyingAddon && (
+        <Modal title="Confirm purchase" width={420} onClose={closeAddonFlow}
+          footer={<>
+            <Button variant="outline" onClick={() => { setBuyingAddon(null); setActionError(''); }} disabled={addonBusy}>Back</Button>
+            <Button onClick={handlePurchaseAddon} loading={addonBusy}>Pay ${buyingAddon.priceUSD.toFixed(2)}</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal">
+            <strong>{buyingAddon.label}</strong> — {buyingAddon.unitLabel}
+          </p>
+          <p className="text-[12.5px] text-slate mt-1.5">
+            {buyingAddon.recurring
+              ? `$${buyingAddon.priceUSD.toFixed(2)} will be charged to your card on file now and every month until you cancel.`
+              : `$${buyingAddon.priceUSD.toFixed(2)} will be charged to your card on file now. One-time charge — no subscription.`}
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
       )}
 

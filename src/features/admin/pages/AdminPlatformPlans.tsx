@@ -29,7 +29,12 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
   apiWebhooksAllowed: false, dedicatedAccountManager: false, prioritySupport: false, marketplaceFeaturedBadge: false,
   advancedSeoToolsAllowed: false, seoAiSuggestionsAllowed: false, searchConsoleIntegrationAllowed: false, customRedirectsAllowed: false,
   maxActiveStoreBanners: 4, maxActivePromotions: 1,
+  calculatedShippingRatesAllowed: false, maxMarkets: 3,
 };
+
+// Plans saved before these two fields existed get the same defaults the
+// backend applies (NEW_FIELD_DEFAULTS in entitlements.service.ts).
+const NEW_LIMIT_DEFAULTS: PlatformPlanLimits = { calculatedShippingRatesAllowed: false, maxMarkets: 3 };
 
 type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
 
@@ -64,6 +69,8 @@ const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string; soon?: 
   { key: 'seoAiSuggestionsAllowed', label: 'AI SEO suggestions' },
   { key: 'searchConsoleIntegrationAllowed', label: 'Search Console integration' },
   { key: 'customRedirectsAllowed', label: 'Custom redirects' },
+  // Shopify: third-party calculated (live carrier) rates at checkout — Advanced and up.
+  { key: 'calculatedShippingRatesAllowed', label: 'Live shipping rates' },
 ];
 
 // ── Trial Settings — the ONE platform-wide "Solvexo Free Trial" policy.
@@ -178,7 +185,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
   const [sortOrder, setSortOrder] = useState(p ? String(p.sortOrder ?? 0) : '0');
   const [isPubliclyVisible, setIsPubliclyVisible] = useState(p?.isPubliclyVisible ?? true);
   const [featuresText, setFeaturesText] = useState(p?.featureBullets?.join('\n') ?? '');
-  const [limits, setLimits] = useState<PlatformPlanLimits>(p?.limits ?? DEFAULT_LIMITS);
+  const [limits, setLimits] = useState<PlatformPlanLimits>(p?.limits ? { ...NEW_LIMIT_DEFAULTS, ...p.limits } : DEFAULT_LIMITS);
   const [introOfferEnabled, setIntroOfferEnabled] = useState(p?.introOfferEnabled ?? false);
   const [introPriceUSD, setIntroPriceUSD] = useState(p?.introPriceUSD != null ? String(p.introPriceUSD) : '');
   const [introDurationCycles, setIntroDurationCycles] = useState(p?.introDurationCycles != null ? String(p.introDurationCycles) : '3');
@@ -384,6 +391,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                 />
                 <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
                 <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
+                <Input label="Max markets / currencies (-1=∞)" type="number" min={-1} value={limits.maxMarkets ?? ''} onChange={e => setLimit('maxMarkets', Number(e.target.value))} />
                 <Input label="Grace period (days)" type="number" min={0} value={gracePeriodDays} onChange={e => setGracePeriodDays(e.target.value)} />
               </div>
               <p className="text-[11px] text-slate leading-[1.5] -mt-1 mb-3">
@@ -393,6 +401,9 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                 <span className="font-semibold text-charcoal">Solvexo's fee</span> is the cut Solvexo keeps from every sale a
                 seller makes on this plan — e.g. 5 means Solvexo keeps $5 out of every $100 sold. <span className="font-semibold text-charcoal">Uptime guarantee</span> is
                 just a marketing number shown to sellers (e.g. "99.9% uptime") — leave it blank to not show one.
+              </p>
+              <p className="text-[11px] text-slate leading-[1.5] mt-1.5">
+                <span className="font-semibold text-charcoal">Max markets</span> — how many currencies a store can sell in at checkout, its own currency included (Store Settings → Markets). Minimum 1.
               </p>
             </div>
 
@@ -686,7 +697,7 @@ function AddonsPanel() {
     { key: 'storeId', header: 'Store', render: a => <span className="text-charcoal">{a.storeId.slice(-6).toUpperCase()}</span> },
     { key: 'addonType', header: 'Add-on', render: a => <span className="text-graphite">{ADDON_LABELS[a.addonType] ?? a.addonType}</span> },
     { key: 'quantity', header: 'Qty', render: a => <span className="text-graphite">{a.quantity}</span> },
-    { key: 'amountUSD', header: 'Amount', render: a => <span className="font-semibold text-success">${(a.amountUSD ?? 0).toFixed(2)}</span> },
+    { key: 'priceUSD', header: 'Amount', render: a => <span className="font-semibold text-success">${(a.priceUSD ?? 0).toFixed(2)}{a.recurring ? '/mo' : ''}</span> },
     { key: 'status', header: 'Status', render: a => <Badge color={a.status === 'active' ? 'green' : a.status === 'canceled' ? 'gray' : 'orange'} size="sm" className="capitalize">{a.status}</Badge> },
     { key: 'createdAt', header: 'Date', render: a => <span className="text-slate whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString()}</span> },
   ];

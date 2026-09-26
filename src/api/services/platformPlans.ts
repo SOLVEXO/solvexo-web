@@ -13,6 +13,10 @@ export interface PlatformPlanLimits {
   advancedSeoToolsAllowed?: boolean; seoAiSuggestionsAllowed?: boolean;
   searchConsoleIntegrationAllowed?: boolean; customRedirectsAllowed?: boolean;
   maxActiveStoreBanners?: number; maxActivePromotions?: number;
+  /** Live carrier (third-party calculated) shipping rates at checkout — Shopify gives this on Advanced and up. */
+  calculatedShippingRatesAllowed?: boolean;
+  /** How many checkout currencies (markets) the store can sell in, base currency included. -1 = unlimited. */
+  maxMarkets?: number;
 }
 
 export interface PlatformPlan {
@@ -32,11 +36,26 @@ export interface PlatformPlan {
   gracePeriodDays: number;
 }
 
+/** Every add-on type that can appear on an old purchase record. Only
+ *  `PurchasableAddonType` can be bought now — the rest were discontinued. */
 export type AddonType = 'extra_ai_credits' | 'extra_staff_seat' | 'priority_marketplace_placement' | 'advanced_tax_compliance' | 'sms_notifications';
+export type PurchasableAddonType = 'extra_ai_credits';
 
+/** One row of GET /addons/catalog — the real price, straight from the backend. */
+export interface AddonCatalogItem {
+  addonType: PurchasableAddonType;
+  priceUSD: number;
+  recurring: boolean;
+  unitLabel: string;
+  label: string;
+  description: string;
+}
+
+/** Mirrors platform-addon-purchase.schema.ts — the charged total is `priceUSD` (there is no `amountUSD` field). */
 export interface AddonPurchase {
   _id: string; storeId: string; addonType: AddonType; quantity: number;
-  amountUSD: number; status: string; createdAt: string;
+  priceUSD: number; recurring: boolean; nextBillingDate: string | null;
+  status: 'active' | 'canceled'; createdAt: string;
 }
 
 export interface PlatformPlanInvoice {
@@ -80,6 +99,8 @@ export interface EntitlementsSummary {
   maxProducts: { limit: number; used: number; allowed: boolean };
   maxStaffAccounts: { limit: number; used: number; allowed: boolean };
   maxPosLocations: { limit: number; used: number; allowed: boolean };
+  /** Checkout currencies (markets) the plan allows, base included. -1 = unlimited. */
+  maxMarkets?: number;
   aiCredits: { monthlyAllowance: number; balance: number };
   transactionFeeRate: number;
   dedicatedAccountManager: boolean;
@@ -212,8 +233,17 @@ export function apiCreatePlatformBillingPortalSession(storeId: string, returnUrl
   return client.post<never, ApiResponse<{ url: string }>>(`${BASE}/${storeId}/billing-portal`, { returnUrl });
 }
 
-export function apiPurchaseAddon(storeId: string, addonType: AddonType, quantity = 1) {
-  return client.post<never, ApiResponse<AddonPurchase>>(`${BASE}/${storeId}/addons`, { addonType, quantity });
+/** Add-ons a seller can buy right now, with their real prices. */
+export function apiGetAddonCatalog() {
+  return client.get<never, ApiResponse<AddonCatalogItem[]>>(`${BASE}/addons/catalog`);
+}
+
+/** `idempotencyKey` — one per confirm attempt, reused on retries, so a slow request retried can't charge twice (the endpoint has IdempotencyInterceptor). */
+export function apiPurchaseAddon(storeId: string, addonType: PurchasableAddonType, quantity = 1, idempotencyKey?: string) {
+  return client.post<never, ApiResponse<AddonPurchase>>(
+    `${BASE}/${storeId}/addons`, { addonType, quantity },
+    idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
+  );
 }
 
 export function apiListStoreAddons(storeId: string) {
