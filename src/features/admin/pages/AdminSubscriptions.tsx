@@ -12,6 +12,7 @@ import {
   type StoreBreakdownRow, type PaymentAttempt, type DashboardData, type SellerPlan, type WebhookEvent,
   type LtvData, type RevenueBreakdown, type ChurnCohort, type SubscriptionInvoice,
 } from '@/api/services/subscriptions';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 type Tab = 'stores' | 'failures' | 'webhooks' | 'insights';
 type FailureRow = PaymentAttempt & { store: { name: string } | null; customer: { name: string; email: string } | null };
@@ -396,7 +397,7 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
 
 export function AdminSubscriptions() {
   usePageTitle('Subscriptions');
-  const [tab, setTab] = useState<Tab>('stores');
+  const { activeTab: tab, setActiveTab: setTab, isVisited, paneClassName } = useKeepAliveTabs<Tab>('stores');
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof apiAdminGetOverview>>['data'] | null>(null);
   const [stores, setStores] = useState<StoreBreakdownRow[]>([]);
   const [failures, setFailures] = useState<FailureRow[]>([]);
@@ -482,26 +483,29 @@ export function AdminSubscriptions() {
             ))}
           </div>
 
-          {tab === 'webhooks' ? (
-            <WebhooksPanel />
-          ) : tab === 'insights' ? (
-            <InsightsPanel />
-          ) : tab === 'stores' ? (
-            <Table
-              columns={storeColumns}
-              data={stores}
-              keyExtractor={s => s.storeId}
-              loading={loading}
-              emptyState={{ title: 'No stores with active plans yet.' }}
-            />
-          ) : (
-            <Table
-              columns={failureColumns}
-              data={failures}
-              keyExtractor={f => f._id}
-              loading={loading}
-              emptyState={{ title: 'No payment failures. 🎉' }}
-            />
+          {isVisited('webhooks') && <div className={paneClassName('webhooks')}><WebhooksPanel /></div>}
+          {isVisited('insights') && <div className={paneClassName('insights')}><InsightsPanel /></div>}
+          {isVisited('stores') && (
+            <div className={paneClassName('stores')}>
+              <Table
+                columns={storeColumns}
+                data={stores}
+                keyExtractor={s => s.storeId}
+                loading={loading}
+                emptyState={{ title: 'No stores with active plans yet.' }}
+              />
+            </div>
+          )}
+          {isVisited('failures') && (
+            <div className={paneClassName('failures')}>
+              <Table
+                columns={failureColumns}
+                data={failures}
+                keyExtractor={f => f._id}
+                loading={loading}
+                emptyState={{ title: 'No payment failures. 🎉' }}
+              />
+            </div>
           )}
         </div>
       </div>

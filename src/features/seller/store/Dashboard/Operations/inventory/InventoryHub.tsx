@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import {
   Boxes, Truck, AlertTriangle, ClipboardCheck, TrendingUp,
 } from 'lucide-react';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 import { StoreInventory } from './Inventory';
 import InventoryReports from './InventoryReports';
@@ -38,7 +38,7 @@ const TABS: Tab[] = [
  *  its management inside this one module's tab bar was a real
  *  architectural mismatch, not just a UI nicety.** */
 export function InventoryHub() {
-  const [activeTab, setActiveTab] = useState('stock');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('stock');
 
   return (
     <>
@@ -48,11 +48,13 @@ export function InventoryHub() {
         <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
       </div>
 
-      {activeTab === 'stock'           && <StoreInventory embedded />}
-      {activeTab === 'purchase-orders' && <PurchaseOrdersList embedded />}
-      {activeTab === 'reorder'         && <ReorderSuggestions embedded />}
-      {activeTab === 'counts'          && <StockCountsTab />}
-      {activeTab === 'reports'         && <InventoryReports embedded />}
+      {/* Each tab stays mounted (hidden via CSS) once visited, instead of
+         unmounting on switch — a repeat visit is instant, no refetch/skeleton. */}
+      {isVisited('stock')           && <div className={paneClassName('stock')}><StoreInventory embedded /></div>}
+      {isVisited('purchase-orders') && <div className={paneClassName('purchase-orders')}><PurchaseOrdersList embedded /></div>}
+      {isVisited('reorder')         && <div className={paneClassName('reorder')}><ReorderSuggestions embedded /></div>}
+      {isVisited('counts')          && <div className={paneClassName('counts')}><StockCountsTab /></div>}
+      {isVisited('reports')         && <div className={paneClassName('reports')}><InventoryReports embedded /></div>}
     </>
   );
 }

@@ -10,6 +10,7 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { NotificationsPanel, PasteImageUrl } from '@/components/comman/ui';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 type Section = 'profile' | 'security' | 'notifications';
 
@@ -43,7 +44,7 @@ function ProfileSkeleton() {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function AdminSettings({ embedded = false }: { embedded?: boolean } = {}) {
-  const [active, setActive] = useState<Section>('profile');
+  const { activeTab: active, setActiveTab: setActive, isVisited, paneClassName } = useKeepAliveTabs<Section>('profile');
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
@@ -96,8 +97,8 @@ export function AdminSettings({ embedded = false }: { embedded?: boolean } = {})
         </div>
 
         {/* Profile */}
-        {active === 'profile' && (
-          <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6">
+        {isVisited('profile') && (
+          <div className={`${paneClassName('profile')} bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6`}>
             <p className="text-[16px] font-bold text-charcoal mb-[22px]">Profile</p>
 
             {profileLoading ? <ProfileSkeleton /> : (
@@ -207,8 +208,8 @@ export function AdminSettings({ embedded = false }: { embedded?: boolean } = {})
         )}
 
         {/* Email & Password section */}
-        {active === 'security' && (
-          <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6">
+        {isVisited('security') && (
+          <div className={`${paneClassName('security')} bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6`}>
             <p className="text-[16px] font-bold text-charcoal mb-[22px]">Email &amp; Password</p>
 
             <div className="mb-5">
@@ -264,8 +265,8 @@ export function AdminSettings({ embedded = false }: { embedded?: boolean } = {})
         )}
 
         {/* Notifications section */}
-        {active === 'notifications' && (
-          <NotificationsPanel />
+        {isVisited('notifications') && (
+          <div className={paneClassName('notifications')}><NotificationsPanel /></div>
         )}
       </div>
     </div>

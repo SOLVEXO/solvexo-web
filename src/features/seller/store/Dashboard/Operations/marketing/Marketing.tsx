@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, Lock, type LucideIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { EmptyState, SkeletonBox, Modal, Button } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import {
@@ -47,22 +47,6 @@ const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', 
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
-/** Same "Requires the X plan" convention as StoreSettings.tsx's Custom
- *  Domain/White Label fields — here replacing a whole tab's content, since
- *  Abandoned Cart Recovery / Email Campaigns are each a full feature rather
- *  than a single settings field. */
-function LockedFeatureCard({ label, description, requiredPlan }: { label: string; description: string; requiredPlan: string | null }) {
-  return (
-    <div className="bg-white border border-bone rounded-[10px] px-6 py-10 flex flex-col items-center text-center gap-2.5">
-      <div className="w-10 h-10 rounded-full bg-[#f3f2ec] flex items-center justify-center text-slate">
-        <Lock size={17} />
-      </div>
-      <p className="text-[14.5px] font-bold text-carbon">{label} is locked on your plan</p>
-      <p className="text-[12.5px] text-slate max-w-[420px]">{description}</p>
-      <p className="text-[12px] font-semibold text-brand-orange mt-1">Requires the {requiredPlan ?? 'a higher'} plan — upgrade from Billing.</p>
-    </div>
-  );
-}
 
 function EmailCampaignFormModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ name: '', subject: '', message: '', audience: 'all' as EmailCampaignAudience });
@@ -250,6 +234,12 @@ function AffiliateFormModal({ storeId, onClose, onSaved }: { storeId: string; on
 export function StoreMarketing() {
   const { store, storeId } = useStoreWorkspace();
   const [tab, setTab] = useState<Tab>('coupons');
+  // Every tab below lives in this ONE component (never unmounted on switch) —
+  // its own useEffect gates on `tab === 'x'`, but without this guard, that
+  // effect re-fires (and refetches) every single time the tab is revisited,
+  // since `tab` is in its own dependency array. This tracks which tabs have
+  // already loaded once so a repeat visit is instant, no refetch/skeleton.
+  const loadedTabsRef = useRef(new Set<Tab>());
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -287,7 +277,8 @@ export function StoreMarketing() {
   const [campaignBusyId, setCampaignBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!storeId || tab !== 'platform') return;
+    if (!storeId || tab !== 'platform' || loadedTabsRef.current.has('platform')) return;
+    loadedTabsRef.current.add('platform');
     setCampaignsLoading(true);
     apiGetJoinableCampaigns(storeId)
       .then(res => setCampaigns(res.data ?? []))
@@ -320,7 +311,8 @@ export function StoreMarketing() {
   const [cartItemsLoading, setCartItemsLoading] = useState(true);
 
   useEffect(() => {
-    if (!storeId || tab !== 'cart') return;
+    if (!storeId || tab !== 'cart' || loadedTabsRef.current.has('cart')) return;
+    loadedTabsRef.current.add('cart');
     setCartSettingsLoading(true);
     apiGetAbandonedCartSettings(storeId)
       .then(res => setCartSettings(res.data))
@@ -381,7 +373,8 @@ export function StoreMarketing() {
   }
 
   useEffect(() => {
-    if (!storeId || tab !== 'email') return;
+    if (!storeId || tab !== 'email' || loadedTabsRef.current.has('email')) return;
+    loadedTabsRef.current.add('email');
     refreshEmailCampaigns();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, tab]);
@@ -454,7 +447,8 @@ export function StoreMarketing() {
   }
 
   useEffect(() => {
-    if (!storeId || tab !== 'affiliate') return;
+    if (!storeId || tab !== 'affiliate' || loadedTabsRef.current.has('affiliate')) return;
+    loadedTabsRef.current.add('affiliate');
     refreshAffiliateData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, tab]);
@@ -532,7 +526,8 @@ export function StoreMarketing() {
   const [pixelSettingsSaved, setPixelSettingsSaved] = useState(false);
 
   useEffect(() => {
-    if (!storeId || tab !== 'pixels') return;
+    if (!storeId || tab !== 'pixels' || loadedTabsRef.current.has('pixels')) return;
+    loadedTabsRef.current.add('pixels');
     setPixelSettingsLoading(true);
     apiGetTrackingPixelSettings(storeId)
       .then(res => setPixelSettings(res.data))
@@ -881,7 +876,7 @@ export function StoreMarketing() {
 
         {/* Abandoned Cart Recovery Tab */}
         {tab === 'cart' && cartFeature && !cartFeature.allowed ? (
-          <LockedFeatureCard
+          <PlanFeatureLock
             label="Abandoned Cart Recovery"
             description="A buyer who leaves items in their cart would get one automatic reminder email once your delay has passed."
             requiredPlan={cartFeature.requiredPlan}
@@ -1012,7 +1007,7 @@ export function StoreMarketing() {
 
         {/* Email Campaigns Tab */}
         {tab === 'email' && emailFeature && !emailFeature.allowed ? (
-          <LockedFeatureCard
+          <PlanFeatureLock
             label="Email Campaigns"
             description="Compose and send a real bulk email to a segment of your own store's customers."
             requiredPlan={emailFeature.requiredPlan}

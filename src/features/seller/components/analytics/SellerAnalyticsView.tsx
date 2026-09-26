@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, DollarSign, Package, Users, Globe2 } from 'lucide-react';
 import { TabBar, type Tab } from '@/components/comman/ui';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { AnalyticsFilterBar } from '@/components/comman/analytics/AnalyticsFilterBar';
 import { SavedReportsPanel } from './SavedReportsPanel';
 import { useSellerAnalyticsExport } from '@/hooks/seller/useSellerAnalytics';
@@ -53,7 +54,7 @@ interface SellerAnalyticsViewProps {
  * Export (PDF/CSV) stays single-store only — hidden when `storeId` is null.
  */
 export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewProps) {
-  const [activeTab, setActiveTab] = useState('overview');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_SELLER_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
   const { exportReport, exporting } = useSellerAnalyticsExport();
@@ -96,11 +97,11 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'overview'  && <SellerOverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} currency={currency} />}
-      {activeTab === 'revenue'   && <SellerRevenueTab params={params} currency={currency} />}
-      {activeTab === 'products'  && <SellerProductsTab params={params} currency={currency} />}
-      {activeTab === 'customers' && <SellerCustomersTab params={params} currency={currency} />}
-      {activeTab === 'traffic'   && <SellerTrafficPaymentsTab params={params} currency={currency} />}
+      {isVisited('overview')  && <div className={paneClassName('overview')}><SellerOverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} currency={currency} /></div>}
+      {isVisited('revenue')   && <div className={paneClassName('revenue')}><SellerRevenueTab params={params} currency={currency} /></div>}
+      {isVisited('products')  && <div className={paneClassName('products')}><SellerProductsTab params={params} currency={currency} /></div>}
+      {isVisited('customers') && <div className={paneClassName('customers')}><SellerCustomersTab params={params} currency={currency} /></div>}
+      {isVisited('traffic')   && <div className={paneClassName('traffic')}><SellerTrafficPaymentsTab params={params} currency={currency} /></div>}
     </div>
   );
 }

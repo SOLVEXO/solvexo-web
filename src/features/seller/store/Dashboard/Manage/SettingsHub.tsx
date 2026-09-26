@@ -7,6 +7,7 @@ import {
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { NotificationsPanel } from '@/components/comman/ui';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiSellerAnalyticsOverview } from '@/api/services/analytics/analytics';
 import { formatMoneyCompact } from '@/utils/currency';
@@ -160,7 +161,7 @@ export default function SettingsHub() {
   // SellerSettings' own `?tab=` handling elsewhere in this app.
   const [searchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs(
     requestedTab && TABS.some(t => t.id === requestedTab) ? requestedTab : 'store-profile',
   );
   // Mobile-only drill-in state — mirrors SellerSettings.tsx's own
@@ -242,19 +243,21 @@ export default function SettingsHub() {
          so those three get it added here instead, matching each component's
          own pre-existing behavior. Hidden on mobile until a section is
          opened (mobileDrilledIn) — always shown on desktop. */}
+      {/* Each tab stays mounted (hidden via CSS) once visited, instead of
+         unmounting on switch — a repeat visit is instant, no refetch/skeleton. */}
       <div className={mobileDrilledIn ? '' : 'hidden lg:block'}>
-        {activeTab === 'store-profile'    && <StoreProfileTab />}
-        {activeTab === 'product-types'    && <ProductTypesTab />}
-        {activeTab === 'payment-methods'  && <PaymentMethodsTab />}
-        {activeTab === 'domains'          && <DomainSettingsTab />}
-        {activeTab === 'privacy'          && <PrivacyTab />}
-        {activeTab === 'notifications' && <div className="px-4 lg:px-7 py-6"><NotificationsPanel /></div>}
-        {activeTab === 'billing'       && <StorePlanBilling embedded />}
-        {activeTab === 'integrations'  && <StoreIntegrations embedded />}
-        {activeTab === 'staff'         && <StaffPage embedded />}
-        {activeTab === 'custom-fields' && <div className="px-4 lg:px-7 py-6"><MetafieldDefinitionsPage embedded /></div>}
-        {activeTab === 'content-types' && <div className="px-4 lg:px-7 py-6"><MetaobjectTypesPage embedded /></div>}
-        {activeTab === 'activity'      && <div className="px-4 lg:px-7 py-6"><ActivityLogTab /></div>}
+        {isVisited('store-profile')    && <div className={paneClassName('store-profile')}><StoreProfileTab /></div>}
+        {isVisited('product-types')    && <div className={paneClassName('product-types')}><ProductTypesTab /></div>}
+        {isVisited('payment-methods')  && <div className={paneClassName('payment-methods')}><PaymentMethodsTab /></div>}
+        {isVisited('domains')          && <div className={paneClassName('domains')}><DomainSettingsTab /></div>}
+        {isVisited('privacy')          && <div className={paneClassName('privacy')}><PrivacyTab /></div>}
+        {isVisited('notifications') && <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6'}><NotificationsPanel /></div>}
+        {isVisited('billing')       && <div className={paneClassName('billing')}><StorePlanBilling embedded /></div>}
+        {isVisited('integrations')  && <div className={paneClassName('integrations')}><StoreIntegrations embedded /></div>}
+        {isVisited('staff')         && <div className={paneClassName('staff')}><StaffPage embedded /></div>}
+        {isVisited('custom-fields') && <div className={paneClassName('custom-fields') + ' px-4 lg:px-7 py-6'}><MetafieldDefinitionsPage embedded /></div>}
+        {isVisited('content-types') && <div className={paneClassName('content-types') + ' px-4 lg:px-7 py-6'}><MetaobjectTypesPage embedded /></div>}
+        {isVisited('activity')      && <div className={paneClassName('activity') + ' px-4 lg:px-7 py-6'}><ActivityLogTab /></div>}
       </div>
     </>
   );

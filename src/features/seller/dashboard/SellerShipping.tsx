@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/bui
 import type { ShippingZone, ShippingCarrier } from '@/api/services/shipping';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
@@ -363,7 +364,7 @@ function CarriersTab({ storeId }: { storeId: string }) {
 export function SellerShipping() {
   usePageTitle('Shipping');
   const { storeId } = useStoreWorkspace();
-  const [activeTab, setActiveTab] = useState('zones');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('zones');
 
   return (
     <>
@@ -395,9 +396,9 @@ export function SellerShipping() {
           </div>
         </div>
 
-        {activeTab === 'zones' && <ZoneList storeId={storeId} zoneType="shipping" />}
-        {activeTab === 'local' && <ZoneList storeId={storeId} zoneType="local_delivery" />}
-        {activeTab === 'carriers' && <CarriersTab storeId={storeId} />}
+        {isVisited('zones')    && <div className={paneClassName('zones')}><ZoneList storeId={storeId} zoneType="shipping" /></div>}
+        {isVisited('local')    && <div className={paneClassName('local')}><ZoneList storeId={storeId} zoneType="local_delivery" /></div>}
+        {isVisited('carriers') && <div className={paneClassName('carriers')}><CarriersTab storeId={storeId} /></div>}
 
         {activeTab === 'labels' && (
           <div className="bg-white border border-bone rounded-[10px] px-6 py-10 flex flex-col items-center text-center gap-2">

@@ -11,6 +11,7 @@ import {
   type LoyaltyProgram, type LoyaltyOverview, type LoyaltyMember, type LoyaltyTransaction,
   type Reward, type RewardType, type LoyaltyTier, type RewardVoucher, type VoucherStatus,
 } from '@/api/services/loyalty';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 type TabId = 'overview' | 'tiers' | 'rewards' | 'vouchers' | 'members' | 'earning-rules';
 
@@ -44,7 +45,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
 
 export function StoreLoyalty() {
   const { storeId } = useStoreWorkspace();
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs<TabId>('overview');
 
   const [program, setProgram] = useState<LoyaltyProgram | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -100,12 +101,12 @@ export function StoreLoyalty() {
           </div>
         </div>
 
-        {activeTab === 'overview' && <OverviewTab storeId={storeId} />}
-        {activeTab === 'tiers' && program && <TiersTab storeId={storeId} program={program} onSaved={setProgram} />}
-        {activeTab === 'rewards' && <RewardsTab storeId={storeId} showCreate={showCreateReward} onCloseCreate={() => setShowCreateReward(false)} />}
-        {activeTab === 'vouchers' && <VouchersTab storeId={storeId} />}
-        {activeTab === 'members' && <MembersTab storeId={storeId} onAward={setAwardingMember} />}
-        {activeTab === 'earning-rules' && program && <EarningRulesTab storeId={storeId} program={program} onSaved={setProgram} />}
+        {isVisited('overview') && <div className={paneClassName('overview')}><OverviewTab storeId={storeId} /></div>}
+        {isVisited('tiers') && program && <div className={paneClassName('tiers')}><TiersTab storeId={storeId} program={program} onSaved={setProgram} /></div>}
+        {isVisited('rewards') && <div className={paneClassName('rewards')}><RewardsTab storeId={storeId} showCreate={showCreateReward} onCloseCreate={() => setShowCreateReward(false)} /></div>}
+        {isVisited('vouchers') && <div className={paneClassName('vouchers')}><VouchersTab storeId={storeId} /></div>}
+        {isVisited('members') && <div className={paneClassName('members')}><MembersTab storeId={storeId} onAward={setAwardingMember} /></div>}
+        {isVisited('earning-rules') && program && <div className={paneClassName('earning-rules')}><EarningRulesTab storeId={storeId} program={program} onSaved={setProgram} /></div>}
       </div>
 
       {showSettings && program && (

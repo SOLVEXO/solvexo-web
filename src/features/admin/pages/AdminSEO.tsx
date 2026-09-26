@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import {
   LineChart, Settings, ListChecks, FileText, FolderTree, HelpCircle,
   Map, ArrowRightLeft, Link2, Plug, Radar,
 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { TabBar, type Tab } from '@/components/comman/ui';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 import { AnalyticsTab } from './seo/AnalyticsTab';
 import { SettingsTab } from './seo/SettingsTab';
@@ -34,7 +34,7 @@ const TABS: Tab[] = [
 
 export function AdminSEO() {
   usePageTitle('SEO');
-  const [activeTab, setActiveTab] = useState('analytics');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('analytics');
 
   return (
     <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
@@ -45,17 +45,17 @@ export function AdminSEO() {
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'analytics'     && <AnalyticsTab />}
-      {activeTab === 'settings'      && <SettingsTab />}
-      {activeTab === 'rules'         && <RulesTab />}
-      {activeTab === 'landing-pages' && <LandingPagesTab />}
-      {activeTab === 'categories'    && <CategoryMetaTab />}
-      {activeTab === 'faqs'          && <FaqMetaTab />}
-      {activeTab === 'sitemap'       && <SitemapTab />}
-      {activeTab === 'redirects'     && <RedirectsTab />}
-      {activeTab === 'canonical'     && <CanonicalTab />}
-      {activeTab === 'integrations'  && <IntegrationsTab />}
-      {activeTab === 'monitoring'    && <MonitoringTab />}
+      {isVisited('analytics')     && <div className={paneClassName('analytics')}><AnalyticsTab /></div>}
+      {isVisited('settings')      && <div className={paneClassName('settings')}><SettingsTab /></div>}
+      {isVisited('rules')         && <div className={paneClassName('rules')}><RulesTab /></div>}
+      {isVisited('landing-pages') && <div className={paneClassName('landing-pages')}><LandingPagesTab /></div>}
+      {isVisited('categories')    && <div className={paneClassName('categories')}><CategoryMetaTab /></div>}
+      {isVisited('faqs')          && <div className={paneClassName('faqs')}><FaqMetaTab /></div>}
+      {isVisited('sitemap')       && <div className={paneClassName('sitemap')}><SitemapTab /></div>}
+      {isVisited('redirects')     && <div className={paneClassName('redirects')}><RedirectsTab /></div>}
+      {isVisited('canonical')     && <div className={paneClassName('canonical')}><CanonicalTab /></div>}
+      {isVisited('integrations')  && <div className={paneClassName('integrations')}><IntegrationsTab /></div>}
+      {isVisited('monitoring')    && <div className={paneClassName('monitoring')}><MonitoringTab /></div>}
     </div>
   );
 }

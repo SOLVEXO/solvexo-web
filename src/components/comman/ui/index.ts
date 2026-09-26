@@ -1,6 +1,8 @@
 // ─── Solvexo UI Component Library ───────────────────────────────────────────
 
 export { Button }                             from './Button';
+export { PlanFeatureLock }                    from './PlanFeatureLock';
+export type { PlanFeatureFlag }               from './PlanFeatureLock';
 export type { ButtonVariant, ButtonSize }     from './Button';
 
 export { Badge, StatusBadge }                from './Badge';

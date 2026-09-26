@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useId, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useId, Suspense, type ReactNode } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
@@ -1275,7 +1275,13 @@ function StoreWorkspaceError({ error, onRetry }: { error: string; onRetry: () =>
 function GatedOutlet() {
   const { loading, error, refetch } = useStoreWorkspace();
   if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
-  return <Outlet />;
+  // Local Suspense boundary (same reasoning/pattern as PublicLayout/BuyerLayout)
+  // so a not-yet-loaded-this-session lazy route chunk suspends only this
+  // content area, not RootLayout's outer big-spinner Suspense — otherwise
+  // every first-visit-this-session page change inside the store workspace
+  // blanked the whole screen (sidebar included) behind PageSpinner. No
+  // fallback markup: RootLayout's TopProgressBar already signals "loading".
+  return <Suspense fallback={null}><Outlet /></Suspense>;
 }
 
 // A 'staff' session is a real, separate identity (see StaffMember/

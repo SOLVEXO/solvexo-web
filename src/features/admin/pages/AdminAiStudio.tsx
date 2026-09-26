@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { LayoutDashboard, ListChecks, Wallet, Receipt, Sparkles } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { TabBar, AdminPageHeader, type Tab } from '@/components/comman/ui';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 import { OverviewTab } from './ai-studio/OverviewTab';
 import { GenerationsTab } from './ai-studio/GenerationsTab';
@@ -19,7 +19,7 @@ const TABS: Tab[] = [
 
 export function AdminAiStudio() {
   usePageTitle('AI Studio');
-  const [activeTab, setActiveTab] = useState('overview');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
 
   return (
     <div>
@@ -28,11 +28,11 @@ export function AdminAiStudio() {
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'overview'     && <OverviewTab />}
-      {activeTab === 'generations'  && <GenerationsTab />}
-      {activeTab === 'wallets'      && <WalletsTab />}
-      {activeTab === 'transactions' && <TransactionsTab />}
-      {activeTab === 'generate'     && <PlatformGenerateTab />}
+      {isVisited('overview')     && <div className={paneClassName('overview')}><OverviewTab /></div>}
+      {isVisited('generations')  && <div className={paneClassName('generations')}><GenerationsTab /></div>}
+      {isVisited('wallets')      && <div className={paneClassName('wallets')}><WalletsTab /></div>}
+      {isVisited('transactions') && <div className={paneClassName('transactions')}><TransactionsTab /></div>}
+      {isVisited('generate')     && <div className={paneClassName('generate')}><PlatformGenerateTab /></div>}
       </div>
     </div>
   );

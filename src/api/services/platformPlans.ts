@@ -28,6 +28,8 @@ export interface PlatformPlan {
   introOfferEnabled: boolean;
   introPriceUSD: number | null;
   introDurationCycles: number | null;
+  /** Days a locked/trial-ended store's storefront stays browsable before it's hidden from buyers — see SellerPlatformSubscriptionsService.expireGracePeriods. Checkout is blocked immediately regardless, unaffected by this. */
+  gracePeriodDays: number;
 }
 
 export type AddonType = 'extra_ai_credits' | 'extra_staff_seat' | 'priority_marketplace_placement' | 'advanced_tax_compliance' | 'sms_notifications';
@@ -229,6 +231,7 @@ export interface CreatePlatformPlanPayload {
   trialDays?: number; featureBullets?: string[]; limits: PlatformPlanLimits;
   isPubliclyVisible?: boolean;
   introOfferEnabled?: boolean; introPriceUSD?: number; introDurationCycles?: number;
+  gracePeriodDays?: number;
 }
 
 export function apiAdminCreatePlatformPlan(payload: CreatePlatformPlanPayload) {
@@ -292,4 +295,21 @@ export function apiAdminListAddonPurchases(query: { page?: number; limit?: numbe
 
 export function apiAdminRefundPlatformInvoice(invoiceId: string, amountUSD?: number, reason?: string) {
   return client.post<never, ApiResponse<never>>(`${BASE}/admin/invoices/${invoiceId}/refund`, { amountUSD, reason });
+}
+
+// ── Admin manual override — real support tools (unlock/extend/assign/lock a specific store's subscription) ──
+export function apiAdminUnlockStore(storeId: string, reason?: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/unlock`, { reason });
+}
+
+export function apiAdminExtendSubscription(storeId: string, days: number, reason?: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/extend`, { days, reason });
+}
+
+export function apiAdminAssignPlan(storeId: string, planId: string, reason?: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/assign-plan`, { planId, reason });
+}
+
+export function apiAdminLockStore(storeId: string, reason?: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/lock`, { reason });
 }

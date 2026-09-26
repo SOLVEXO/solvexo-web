@@ -18,6 +18,7 @@ import { FinancePayoutsTab } from './finance/FinancePayoutsTab';
 import { FinancePayoutMethodsTab } from './finance/FinancePayoutMethodsTab';
 import { FinanceTransactionsTab } from './finance/FinanceTransactionsTab';
 import { FinanceReportsTab } from './finance/FinanceReportsTab';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 const TABS: Tab[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={14} /> },
@@ -31,7 +32,7 @@ const TABS: Tab[] = [
 
 export function AdminFinance() {
   usePageTitle('Finance');
-  const [activeTab, setActiveTab] = useState('overview');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_ADMIN_FINANCE_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
   const { exportReport, exporting } = useAdminFinanceExport();
@@ -88,13 +89,13 @@ export function AdminFinance() {
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'overview' && <FinanceOverviewTab params={params} />}
-      {activeTab === 'revenue' && <FinanceRevenueTab params={params} />}
-      {activeTab === 'sellers' && <FinanceSellersTab />}
-      {activeTab === 'payouts' && <FinancePayoutsTab />}
-      {activeTab === 'payout-methods' && <FinancePayoutMethodsTab />}
-      {activeTab === 'transactions' && <FinanceTransactionsTab params={params} />}
-      {activeTab === 'reports' && <FinanceReportsTab params={params} />}
+      {isVisited('overview') && <div className={paneClassName('overview')}><FinanceOverviewTab params={params} /></div>}
+      {isVisited('revenue') && <div className={paneClassName('revenue')}><FinanceRevenueTab params={params} /></div>}
+      {isVisited('sellers') && <div className={paneClassName('sellers')}><FinanceSellersTab /></div>}
+      {isVisited('payouts') && <div className={paneClassName('payouts')}><FinancePayoutsTab /></div>}
+      {isVisited('payout-methods') && <div className={paneClassName('payout-methods')}><FinancePayoutMethodsTab /></div>}
+      {isVisited('transactions') && <div className={paneClassName('transactions')}><FinanceTransactionsTab params={params} /></div>}
+      {isVisited('reports') && <div className={paneClassName('reports')}><FinanceReportsTab params={params} /></div>}
     </div>
   );
 }

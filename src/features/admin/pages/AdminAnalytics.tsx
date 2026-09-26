@@ -25,6 +25,7 @@ import { ProductsTab } from './analytics/ProductsTab';
 import { OrdersTab } from './analytics/OrdersTab';
 import { PaymentsTab } from './analytics/PaymentsTab';
 import { PlatformTab } from './analytics/PlatformTab';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 async function searchStoresByName(query: string): Promise<EntityOption[]> {
   const res = await apiSearchStores(query, 1, 8);
@@ -58,7 +59,7 @@ const TABS: Tab[] = [
  */
 export function AdminAnalytics() {
   usePageTitle('Analytics');
-  const [activeTab, setActiveTab] = useState('overview');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
   const { exportReport, exporting } = useAdminAnalyticsExport();
@@ -115,14 +116,14 @@ export function AdminAnalytics() {
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'overview'  && <OverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} />}
-      {activeTab === 'revenue'   && <RevenueTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} />}
-      {activeTab === 'sellers'   && <SellersTab params={params} />}
-      {activeTab === 'customers' && <CustomersTab params={params} />}
-      {activeTab === 'products'  && <ProductsTab params={params} />}
-      {activeTab === 'orders'    && <OrdersTab params={params} />}
-      {activeTab === 'payments'  && <PaymentsTab params={params} />}
-      {activeTab === 'platform'  && <PlatformTab params={params} />}
+      {isVisited('overview')  && <div className={paneClassName('overview')}><OverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} /></div>}
+      {isVisited('revenue')   && <div className={paneClassName('revenue')}><RevenueTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} /></div>}
+      {isVisited('sellers')   && <div className={paneClassName('sellers')}><SellersTab params={params} /></div>}
+      {isVisited('customers') && <div className={paneClassName('customers')}><CustomersTab params={params} /></div>}
+      {isVisited('products')  && <div className={paneClassName('products')}><ProductsTab params={params} /></div>}
+      {isVisited('orders')    && <div className={paneClassName('orders')}><OrdersTab params={params} /></div>}
+      {isVisited('payments')  && <div className={paneClassName('payments')}><PaymentsTab params={params} /></div>}
+      {isVisited('platform')  && <div className={paneClassName('platform')}><PlatformTab params={params} /></div>}
     </div>
   );
 }

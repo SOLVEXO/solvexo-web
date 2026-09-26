@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { clsx } from 'clsx';
-import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Copy, Clock, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Copy, Clock, Sparkles, Unlock, Lock, CalendarPlus, ArrowRightLeft } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
@@ -12,6 +12,7 @@ import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
   apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
   apiAdminRefundPlatformInvoice, apiAdminGetTrialSettings, apiAdminUpdateTrialSettings,
+  apiAdminUnlockStore, apiAdminExtendSubscription, apiAdminAssignPlan, apiAdminLockStore,
   type PlatformPlan, type PlatformPlanLimits, type StorePlatformSubscription, type AddonPurchase, type TrialSettings,
 } from '@/api/services/platformPlans';
 
@@ -32,38 +33,33 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
 
 type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
 
-// `soon: true` = verified (by grepping every call site in the backend) that
-// NO feature module actually checks this flag yet. Toggling it in the admin
-// form saves the value but changes nothing for the seller — marked "(soon)"
-// so admin never mistakes it for a working gate. `dedicatedAccountManager`/
-// `prioritySupport` are deliberately NOT marked `soon` — those are real
-// ops/human promises (route a seller to priority support queue, assign an
-// account manager), exactly like Shopify's own plan tiers, never meant to be
-// code-enforced. `advancedAnalyticsAllowed`/`apiWebhooksAllowed` stay `soon`
-// — no seller-facing "advanced" analytics tier or API/webhooks system exists
-// in the codebase at all to gate. `marketplaceFeaturedBadge` also stays
-// `soon` — the underlying gate itself is real (Store.badges), but its one
-// consumer (admin marketplace-listing curation) was disconnected in the
-// marketplace-to-standalone-store pivot, so the badge has nowhere left to
-// actually surface; re-marking this "working" would be as misleading as the
-// prior "soon" mislabel was for the two below.
-// `abandonedCartRecoveryAllowed`/`emailCampaignsAllowed` are REAL now — both
-// have a full, working backend module already; they were only ever missing
-// the plan-entitlement check itself, now wired into AbandonedCartService/
-// EmailCampaignsService (see EntitlementsService.assertFeatureAllowed call
-// sites there).
+// This list is the admin-editable feature checklist for a plan — the whole
+// point is that anything toggled ON here must be either a real, enforced
+// backend gate (so a buying seller genuinely gets it) or an explicit,
+// intentional human/ops promise (dedicatedAccountManager/prioritySupport —
+// real Shopify plans do this too: "priority support" is fulfilled by a
+// person, not code). A toggle that does NOTHING at all is worse than not
+// having it — it lets an admin build/sell a plan that lies to the seller.
+// `advancedAnalyticsAllowed`, `apiWebhooksAllowed`, and
+// `marketplaceFeaturedBadge` were REMOVED from this list for exactly that
+// reason: no seller-facing "advanced" analytics tier, no seller API/webhooks
+// system, and no reachable place left for a "featured" badge to actually
+// show (its one consumer, admin marketplace-listing curation, was
+// disconnected in the marketplace-to-standalone-store pivot) exist in this
+// codebase to back them. The `PlatformPlanLimits` schema fields themselves
+// are untouched (any existing plan that already had one of these `true`
+// keeps that stored value, harmlessly unused) — only the admin UI's ability
+// to toggle them going forward is removed. Don't re-add any of the three
+// here until the underlying feature is actually built.
 const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string; soon?: boolean }[] = [
   { key: 'customDomainAllowed', label: 'Custom domain' },
   { key: 'whiteLabelAllowed', label: 'White label' },
   { key: 'loyaltyProgramAllowed', label: 'Loyalty program' },
   { key: 'subscriptionProductsAllowed', label: 'Store subscriptions' },
-  { key: 'advancedAnalyticsAllowed', label: 'Advanced analytics', soon: true },
   { key: 'abandonedCartRecoveryAllowed', label: 'Abandoned cart recovery' },
   { key: 'emailCampaignsAllowed', label: 'Email campaigns' },
-  { key: 'apiWebhooksAllowed', label: 'API & webhooks', soon: true },
   { key: 'dedicatedAccountManager', label: 'Dedicated account manager' },
   { key: 'prioritySupport', label: 'Priority support' },
-  { key: 'marketplaceFeaturedBadge', label: 'Marketplace featured badge', soon: true },
   { key: 'advancedSeoToolsAllowed', label: 'Advanced SEO tools' },
   { key: 'seoAiSuggestionsAllowed', label: 'AI SEO suggestions' },
   { key: 'searchConsoleIntegrationAllowed', label: 'Search Console integration' },
@@ -186,6 +182,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
   const [introOfferEnabled, setIntroOfferEnabled] = useState(p?.introOfferEnabled ?? false);
   const [introPriceUSD, setIntroPriceUSD] = useState(p?.introPriceUSD != null ? String(p.introPriceUSD) : '');
   const [introDurationCycles, setIntroDurationCycles] = useState(p?.introDurationCycles != null ? String(p.introDurationCycles) : '3');
+  const [gracePeriodDays, setGracePeriodDays] = useState(p?.gracePeriodDays != null ? String(p.gracePeriodDays) : '3');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -249,6 +246,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
         introOfferEnabled,
         introPriceUSD: introOfferEnabled && introPriceUSD ? Number(introPriceUSD) : undefined,
         introDurationCycles: introOfferEnabled && introDurationCycles ? Number(introDurationCycles) : undefined,
+        gracePeriodDays: gracePeriodDays.trim() === '' ? undefined : Number(gracePeriodDays),
       };
       if (isEdit) await apiAdminUpdatePlatformPlan(p!._id, payload);
       else await apiAdminCreatePlatformPlan(payload);
@@ -386,7 +384,11 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                 />
                 <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
                 <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
+                <Input label="Grace period (days)" type="number" min={0} value={gracePeriodDays} onChange={e => setGracePeriodDays(e.target.value)} />
               </div>
+              <p className="text-[11px] text-slate leading-[1.5] -mt-1 mb-3">
+                <span className="font-semibold text-charcoal">Grace period</span> — how many days a store on this plan stays browsable to buyers after payment fails/trial ends before its storefront is hidden. Selling/checkout is blocked immediately either way; this only controls browsing.
+              </p>
               <p className="text-[11px] text-slate leading-[1.5]">
                 <span className="font-semibold text-charcoal">Solvexo's fee</span> is the cut Solvexo keeps from every sale a
                 seller makes on this plan — e.g. 5 means Solvexo keeps $5 out of every $100 sold. <span className="font-semibold text-charcoal">Uptime guarantee</span> is
@@ -402,18 +404,16 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                   const active = !!limits[f.key];
                   return (
                     <button key={f.key} type="button" onClick={() => setLimit(f.key, !active)}
-                      title={f.soon ? 'Not built yet — turning this on saves the setting but doesn\'t unlock anything for the seller today.' : undefined}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer transition-colors duration-fast"
                       style={{ background: active ? '#D97757' : '#fff', color: active ? '#fff' : '#5A5852', borderColor: active ? '#D97757' : '#E8E6DC' }}>
                       {active && <Check size={11} className="shrink-0" />}
                       {f.label}
-                      {f.soon && <span className="opacity-70">(soon)</span>}
                     </button>
                   );
                 })}
               </div>
               <p className="text-[10.5px] text-slate mt-1.5">
-                "(soon)" tags aren't built yet — toggling them saves the setting but doesn't change anything for the seller today.
+                Every feature above is a real, enforced gate — a seller on this plan gets exactly what's toggled on, nothing more.
               </p>
             </div>
 
@@ -486,8 +486,15 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
   );
 }
 
+// Real support tools for a specific store's subscription — before these
+// existed, unlocking a wrongly-locked store, comping a plan, extending a
+// period, or force-locking a store required a direct database edit. Every
+// action requires a real backend admin-only endpoint (never a client-side
+// fake) and is logged server-side via ActivityLogService.
+type AdminSubAction = 'unlock' | 'extend' | 'assign' | 'lock';
+
 // ── Subscribers modal ────────────────────────────────────────────────────────
-function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () => void }) {
+function SubscribersModal({ plan, allPlans, onClose }: { plan: PlatformPlan; allPlans: PlatformPlan[]; onClose: () => void }) {
   const [subs, setSubs] = useState<StorePlatformSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [refunding, setRefunding] = useState(false);
@@ -497,9 +504,55 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
   const [refundError, setRefundError] = useState('');
   const [refundSuccess, setRefundSuccess] = useState(false);
 
-  useEffect(() => {
+  const [actionTarget, setActionTarget] = useState<{ sub: StorePlatformSubscription; action: AdminSubAction } | null>(null);
+  const [actionReason, setActionReason] = useState('');
+  const [actionDays, setActionDays] = useState('7');
+  const [actionPlanId, setActionPlanId] = useState('');
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
+
+  function refresh() {
+    setLoading(true);
     apiAdminGetPlatformPlanSubscribers(plan._id, { limit: 50 }).then(res => setSubs(res.data.subscribers ?? [])).finally(() => setLoading(false));
-  }, [plan._id]);
+  }
+  useEffect(refresh, [plan._id]);
+
+  function openAction(sub: StorePlatformSubscription, action: AdminSubAction) {
+    setActionTarget({ sub, action });
+    setActionReason('');
+    setActionDays('7');
+    setActionPlanId(allPlans.find(p => p._id !== sub.platformPlanId)?._id ?? '');
+    setActionError('');
+  }
+
+  async function submitAction() {
+    if (!actionTarget) return;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      const { sub, action } = actionTarget;
+      if (action === 'unlock') await apiAdminUnlockStore(sub.storeId, actionReason.trim() || undefined);
+      else if (action === 'lock') await apiAdminLockStore(sub.storeId, actionReason.trim() || undefined);
+      else if (action === 'extend') {
+        const days = Number(actionDays);
+        if (!Number.isFinite(days) || days <= 0) { setActionError('Enter a valid number of days.'); setActionBusy(false); return; }
+        await apiAdminExtendSubscription(sub.storeId, days, actionReason.trim() || undefined);
+      } else if (action === 'assign') {
+        if (!actionPlanId) { setActionError('Choose a plan to assign.'); setActionBusy(false); return; }
+        await apiAdminAssignPlan(sub.storeId, actionPlanId, actionReason.trim() || undefined);
+      }
+      setActionTarget(null);
+      refresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Action failed.');
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  const ACTION_TITLE: Record<AdminSubAction, string> = {
+    unlock: 'Unlock Store', lock: 'Lock Store', extend: 'Extend Billing Period', assign: 'Assign Plan (No Charge)',
+  };
 
   function openRefund() {
     setInvoiceId('');
@@ -537,7 +590,19 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
                 <p className="font-semibold text-charcoal">Store {s.storeId.slice(-6).toUpperCase()}</p>
                 <p className="text-[11px] text-slate">{s.billingInterval} — ${s.amountUSD.toFixed(2)} — {s.status}</p>
               </div>
-              <button onClick={openRefund} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer">Refund…</button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button onClick={openRefund} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer">Refund…</button>
+                <ActionMenu
+                  ariaLabel={`Support actions for store ${s.storeId}`}
+                  items={[
+                    ['locked', 'trial_ended', 'past_due'].includes(s.status)
+                      ? { label: 'Unlock Store', icon: <Unlock size={13} />, onClick: () => openAction(s, 'unlock') }
+                      : { label: 'Force Lock', icon: <Lock size={13} />, danger: true, onClick: () => openAction(s, 'lock') },
+                    { label: 'Extend Period…', icon: <CalendarPlus size={13} />, onClick: () => openAction(s, 'extend') },
+                    { label: 'Assign Plan (No Charge)…', icon: <ArrowRightLeft size={13} />, onClick: () => openAction(s, 'assign') },
+                  ]}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -565,6 +630,43 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
               {refundError && <p className="text-[12px] text-error">{refundError}</p>}
             </div>
           )}
+        </Modal>
+      )}
+
+      {actionTarget && (
+        <Modal mobileSheet
+          title={ACTION_TITLE[actionTarget.action]}
+          onClose={() => setActionTarget(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setActionTarget(null)} disabled={actionBusy}>Cancel</Button>
+              <Button variant={actionTarget.action === 'lock' ? 'danger' : 'primary'} onClick={submitAction} loading={actionBusy}>
+                {ACTION_TITLE[actionTarget.action]}
+              </Button>
+            </>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <p className="text-[12.5px] text-slate">
+              Store {actionTarget.sub.storeId.slice(-6).toUpperCase()} — currently <strong>{actionTarget.sub.status}</strong>.
+            </p>
+            {actionTarget.action === 'extend' && (
+              <Input label="Extend by (days)" type="number" min={1} value={actionDays} onChange={e => setActionDays(e.target.value)} />
+            )}
+            {actionTarget.action === 'assign' && (
+              <div>
+                <label className="block text-[12px] font-medium text-charcoal mb-1.5">Plan to assign</label>
+                <select value={actionPlanId} onChange={e => setActionPlanId(e.target.value)}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border">
+                  <option value="">Choose a plan…</option>
+                  {allPlans.filter(p => p.status === 'active').map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                </select>
+                <p className="text-[11px] text-slate mt-1">No charge is made — any live Stripe subscription for this store is cancelled first.</p>
+              </div>
+            )}
+            <Textarea label="Reason (logged for support/audit, not shown to the seller verbatim)" value={actionReason} onChange={e => setActionReason(e.target.value)} rows={2} />
+            {actionError && <p className="text-[12px] text-error">{actionError}</p>}
+          </div>
         </Modal>
       )}
     </Modal>
@@ -850,7 +952,7 @@ export function AdminPlatformPlans() {
           onSaved={() => { setDuplicateSource(null); load(); }}
         />
       )}
-      {viewingSubscribersFor && <SubscribersModal plan={viewingSubscribersFor} onClose={() => setViewingSubscribersFor(null)} />}
+      {viewingSubscribersFor && <SubscribersModal plan={viewingSubscribersFor} allPlans={plans} onClose={() => setViewingSubscribersFor(null)} />}
 
       {archiving && (
         <Modal mobileSheet

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Megaphone, HelpCircle, Quote, MessageCircle, type LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
@@ -6,6 +5,7 @@ import { AdminAnnouncements } from './AdminAnnouncements';
 import { AdminFaqs } from './AdminFaqs';
 import { AdminTestimonials } from './AdminTestimonials';
 import { AdminContactMessages } from './AdminContactMessages';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 // ── Site Content — consolidates 4 previously-separate top-level admin pages
 // (Announcements, FAQs, Testimonials, Contact Messages) into one nav entry.
@@ -26,7 +26,7 @@ const TABS: { id: ContentTab; label: string; Icon: LucideIcon }[] = [
 
 export function AdminSiteContent() {
   usePageTitle('Site Content');
-  const [tab, setTab] = useState<ContentTab>('announcements');
+  const { activeTab: tab, setActiveTab: setTab, isVisited, paneClassName } = useKeepAliveTabs<ContentTab>('announcements');
 
   return (
     <div>
@@ -49,10 +49,10 @@ export function AdminSiteContent() {
         </div>
       </div>
 
-      {tab === 'announcements' && <AdminAnnouncements />}
-      {tab === 'faqs' && <AdminFaqs />}
-      {tab === 'testimonials' && <AdminTestimonials />}
-      {tab === 'contact' && <AdminContactMessages />}
+      {isVisited('announcements') && <div className={paneClassName('announcements')}><AdminAnnouncements /></div>}
+      {isVisited('faqs') && <div className={paneClassName('faqs')}><AdminFaqs /></div>}
+      {isVisited('testimonials') && <div className={paneClassName('testimonials')}><AdminTestimonials /></div>}
+      {isVisited('contact') && <div className={paneClassName('contact')}><AdminContactMessages /></div>}
     </div>
   );
 }
