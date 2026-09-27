@@ -16,7 +16,6 @@ import { TokenStorage, getRoleRedirect, RememberedAccount, type AppRole } from '
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { getSellerAcquisitionFields } from '@/utils/sellerAcquisitionAttribution';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
-import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
@@ -168,7 +167,6 @@ export function RegisterPage() {
       subtext="Create your free Solvexo account and launch a store built around how you sell."
       highlights={HIGHLIGHTS}
       maxWidth="max-w-[520px]"
-      visual={isSeller ? <DashboardMockup /> : <MarketplaceMockup />}
     >
       <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
         {showChooser

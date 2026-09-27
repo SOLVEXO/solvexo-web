@@ -852,7 +852,13 @@ export function PublicMegaNavbar() {
             // enter") so closing the menu reads as responsive rather than
             // taking the same unhurried beat as opening it.
             exit={{ clipPath: 'inset(0% 0% 100% 0%)', transition: { duration: 0.36, ease: NAV_EASE } }}
-            className="lg:hidden fixed left-0 right-0 top-[64px] bottom-0 z-[55] bg-cream"
+            className={clsx(
+              'lg:hidden fixed left-0 right-0 bottom-0 z-[55] bg-cream',
+              // Must always match the header's own live height above
+              // (`scrolled ? 'h-[72px]' : 'h-[64px]'`) — a mismatch here
+              // gaps/overlaps the overlay against the actual header bar.
+              scrolled ? 'top-[72px]' : 'top-[64px]',
+            )}
           >
             <motion.div
               variants={navListVariants}

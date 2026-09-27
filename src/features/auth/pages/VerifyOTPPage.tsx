@@ -9,7 +9,6 @@ import { runSchema, otpSchema } from '@/utils/validation/schemas';
 import { AuthContext, apiResendOtp, apiForgotPassword, apiVerifyResetOtp, type AppRole } from '@/api/services/auth';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
-import { InboxMockup, IdentityMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { useToast } from '@/contexts/ToastContext';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
@@ -150,7 +149,6 @@ export function VerifyOTPPage() {
         ? "Enter the code we sent to confirm your identity before resetting your password."
         : 'Verify your email address to finish setting up your Solvexo account.'}
       highlights={isIdentity ? IDENTITY_HIGHLIGHTS : EMAIL_HIGHLIGHTS}
-      visual={isIdentity ? <IdentityMockup /> : <InboxMockup />}
     >
       <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
         {isIdentity ? 'Verify your identity' : 'Verify your email'}

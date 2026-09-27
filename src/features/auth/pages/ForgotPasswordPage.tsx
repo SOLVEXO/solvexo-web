@@ -7,7 +7,6 @@ import { Input } from '@/components/comman/ui/Input';
 import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
-import { SecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
@@ -49,7 +48,6 @@ export function ForgotPasswordPage() {
       heading="Forgot your way in? No problem."
       subtext="We'll email you a secure code to get you straight back into your account."
       highlights={HIGHLIGHTS}
-      visual={<SecurityMockup />}
     >
       <div className="size-11 rounded-xl bg-brand-pale-orange flex items-center justify-center mb-4 mx-auto lg:mx-0">
         <Mail size={19} className="text-brand-orange" />

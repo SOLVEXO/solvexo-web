@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, LifeBuoy, Clock, Send, Check, ArrowRight } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button, Input, Textarea, Select } from '@/components/comman/ui';
+import { Button, Input, Textarea, Select, Footer } from '@/components/comman/ui';
 import { apiSubmitContact } from '@/api/services/contact';
 import { RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -132,6 +132,8 @@ export function ContactUsPage() {
           )}
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

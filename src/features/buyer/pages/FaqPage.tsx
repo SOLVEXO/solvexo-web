@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { Search, ChevronDown, HelpCircle, LifeBuoy, MessageCircle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs, useFaqCategories } from '@/hooks/useFaqs';
-import { Button, SkeletonBox } from '@/components/comman/ui';
+import { Button, SkeletonBox, Footer } from '@/components/comman/ui';
 import type { Faq } from '@/api/services/faq';
 import { Reveal } from '@/components/comman/motion/Reveal';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
@@ -190,6 +190,8 @@ export function FaqPage() {
           </PremiumCard>
         </Reveal>
       </div>
+
+      <Footer />
     </div>
   );
 }

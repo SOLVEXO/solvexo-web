@@ -24,7 +24,6 @@ import {
 import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
 import { PlanCard } from '@/components/comman/ui/PlanCard';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
-import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
@@ -927,7 +926,6 @@ export function OnboardingPage() {
         heading="Your store, your way."
         subtext="A few quick steps and your store goes live — no waiting on review."
         highlights={ONBOARDING_HIGHLIGHTS}
-        visual={<SellerDashboardMockup />}
         bare
       >
         <div className="flex-1 flex items-center justify-center px-6 py-6">
@@ -945,7 +943,6 @@ export function OnboardingPage() {
         heading="You're all set."
         subtext="Your store is live on Solvexo — start building your storefront right away."
         highlights={ONBOARDING_HIGHLIGHTS}
-        visual={<SellerDashboardMockup />}
         bare
       >
         <div className="flex-1 flex items-start justify-center px-6 py-6">
@@ -974,7 +971,6 @@ export function OnboardingPage() {
       heading="Your store, your way."
       subtext="A few quick steps and your store goes live — no waiting on review."
       highlights={ONBOARDING_HIGHLIGHTS}
-      visual={<SellerDashboardMockup />}
       bare
     >
       <div className="flex-1 flex items-start justify-center px-6 py-6">

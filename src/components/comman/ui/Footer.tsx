@@ -283,7 +283,7 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
                   key={label}
                   role="img"
                   aria-label={label}
-                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] select-none"
+                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] select-none opacity-40"
                 >
                   <Glyph />
                 </div>
@@ -304,13 +304,15 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
             <SolvexoIcon size={16} />
             <p className="text-[12px] text-[#8b8985]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
           </div>
-          <button
-            type="button"
-            onClick={scrollToTop}
-            className="group flex items-center gap-1.5 py-1 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
-          >
-            Back to top <ArrowUp size={13} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
-          </button>
+          <MagneticButton>
+            <button
+              type="button"
+              onClick={scrollToTop}
+              className="group flex items-center gap-1.5 py-1 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+            >
+              Back to top <ArrowUp size={13} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
+            </button>
+          </MagneticButton>
         </div>
       </div>
     </footer>

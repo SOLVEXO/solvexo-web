@@ -14,7 +14,6 @@ import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
-import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
@@ -204,7 +203,6 @@ export function LoginPage() {
       heading={<>Back to your <span className="text-brand-orange">store</span></>}
       subtext="Sign in to manage your products, orders, and storefront — all in one place."
       highlights={HIGHLIGHTS}
-      visual={<MarketplaceMockup />}
     >
       <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">
         <span className="text-brand-orange">Sign in</span> to Solvexo

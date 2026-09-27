@@ -9,7 +9,6 @@ import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { useLogin } from '@/hooks/auth/useLogin';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
-import { AdminControlMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const HIGHLIGHTS = [
   { Icon: Shield,   text: 'Manage users, sellers and marketplace policy' },
@@ -60,7 +59,6 @@ export function AdminLoginPage() {
       subtext="Sign in with your administrator credentials to access the Solvexo control panel."
       highlights={HIGHLIGHTS}
       accentIconClass="text-error"
-      visual={<AdminControlMockup />}
     >
       <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">
         Admin Sign In

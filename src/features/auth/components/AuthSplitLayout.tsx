@@ -21,12 +21,6 @@ interface AuthSplitLayoutProps {
   highlights?:     AuthHighlight[];
   accentIconClass?: string;
   maxWidth?:       string;
-  /** @deprecated No longer rendered — the branding panel's own real
-   *  background photo (region-detected, see `useAuthVisual`) replaced the
-   *  per-screen abstract mockup illustration this used to show. Kept in the
-   *  prop type only so existing callers (`visual={<DashboardMockup/>}` etc.)
-   *  don't need touching; the value is now simply ignored. */
-  visual?:         ReactNode;
   /** Skips the centered maxWidth/white-card wrapper — for screens (like the seller
    *  onboarding wizard) that need the full 65% panel and manage their own inner
    *  layout/scroll (e.g. a sticky sub-header above scrolling step content). */
@@ -158,9 +152,8 @@ export function AuthSplitLayout({
 
           {/* `overflow-hidden` (not `overflow-y-auto`) + clamp()-based, viewport-height-
              relative sizing below — this content must always fit, never scroll, on any
-             screen height, so every gap/font-size (and each mockup's own padding, see
-             AuthMockups.tsx) shrinks together as the panel shrinks rather than
-             overflowing and needing a scrollbar. */}
+             screen height, so every gap/font-size shrinks together as the panel shrinks
+             rather than overflowing and needing a scrollbar. */}
           <div className="relative z-10 flex flex-col justify-between h-full w-full overflow-hidden p-[clamp(16px,3vh,40px)]">
             {brandingHeader ?? <div />}
 
