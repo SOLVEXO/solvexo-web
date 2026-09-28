@@ -181,6 +181,26 @@ export interface AdminSellerFinancialDetailsData {
   recentPayouts: PayoutRow[];
 }
 
+// ── D2. Cross-store seller rollup (Clients workspace's Finance tab) — same
+// balance shape as above, summed per-currency across every store the seller
+// owns, rather than one store's own balance. ────────────────────────────────
+
+export interface SellerFinanceRollupBalanceRow {
+  currency: string;
+  availableBalance: number;
+  pendingBalance: number;
+  totalRevenue: number;
+  totalFees: number;
+  totalRefunds: number;
+  totalPayouts: number;
+}
+
+export interface AdminSellerFinancialRollupData {
+  seller: { name: string; email: string };
+  balances: SellerFinanceRollupBalanceRow[];
+  recentPayouts: PayoutRow[];
+}
+
 // ── E/F. Transactions ────────────────────────────────────────────────────────────
 
 export interface TransactionRow {
@@ -360,6 +380,14 @@ export function apiAdminSellerFinancialDetails(storeId: string) {
 
 export function apiAdminSellerTransactions(storeId: string, params: AdminTransactionsParams = {}) {
   return client.get<never, ApiResponse<AdminTransactionsData>>(`${ENDPOINTS.FINANCE.ADMIN.SELLER_TRANSACTIONS(storeId)}${qs(params)}`);
+}
+
+export function apiAdminSellerFinancialRollup(sellerId: string) {
+  return client.get<never, ApiResponse<AdminSellerFinancialRollupData>>(ENDPOINTS.FINANCE.ADMIN.SELLER_ROLLUP(sellerId));
+}
+
+export function apiAdminSellerTransactionsBySeller(sellerId: string, params: AdminTransactionsParams = {}) {
+  return client.get<never, ApiResponse<AdminTransactionsData>>(`${ENDPOINTS.FINANCE.ADMIN.SELLER_TRANSACTIONS_BY_SELLER(sellerId)}${qs(params)}`);
 }
 
 export interface ManualPayoutPayload { amount: number; payoutMethodId?: string; notes?: string }

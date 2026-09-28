@@ -28,6 +28,16 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── CLIENTS (Admin — the "Clients" workspace: one seller/business + every
+  // store they own, composed from Users/Analytics/Finance/platform-plans
+  // rather than a seller-by-seller trip across 5 separate admin pages) ──────
+  CLIENTS: {
+    OVERVIEW:   (sellerId: string) => `/api/admin/clients/${sellerId}/overview`,
+    FINANCE:    (sellerId: string) => `/api/admin/clients/${sellerId}/finance`,
+    MODERATION: (sellerId: string) => `/api/admin/clients/${sellerId}/moderation`,
+    ACTIVITY:   (sellerId: string) => `/api/admin/clients/${sellerId}/activity`,
+  },
+
   // ── PLATFORM CONFIG (Admin) ────────────────────────────────────────────────
   PLATFORM_CONFIG: {
     GET:                  '/api/admin/platform-config',
@@ -1144,6 +1154,11 @@ export const ENDPOINTS = {
       SELLER_BALANCES:       '/api/admin/finance/sellers/balances',
       SELLER_DETAIL:         (storeId: string) => `/api/admin/finance/sellers/${storeId}`,
       SELLER_TRANSACTIONS:   (storeId: string) => `/api/admin/finance/sellers/${storeId}/transactions`,
+      // Cross-store rollup (Clients workspace's Finance tab) — a distinct
+      // path segment from the store-scoped routes above so `sellerId` never
+      // collides with `storeId` on the same route shape.
+      SELLER_ROLLUP:              (sellerId: string) => `/api/admin/finance/sellers-by-id/${sellerId}/summary`,
+      SELLER_TRANSACTIONS_BY_SELLER: (sellerId: string) => `/api/admin/finance/sellers-by-id/${sellerId}/transactions`,
       MANUAL_PAYOUT:         (storeId: string) => `/api/admin/finance/sellers/${storeId}/payouts/manual`,
       TRANSACTIONS:          '/api/admin/finance/transactions',
       PAYOUT_QUEUE:          '/api/admin/finance/payouts',

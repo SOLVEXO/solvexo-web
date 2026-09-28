@@ -51,11 +51,22 @@ export function RealAppQr({ size = 74, className }: { size?: number; className?:
 // look off since Google's own badge guidelines never render it single-color.
 export function AppleGlyph({ size = 18, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={clsx('text-white shrink-0', className)}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={clsx('shrink-0', className ?? 'text-white')}>
       <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
     </svg>
   );
 }
+/** The Android robot head in its official green (#3DDC84) — path from
+ *  simple-icons (CC0). For "Android app" labels; store badges use the
+ *  Google Play mark instead. */
+export function AndroidGlyph({ size = 18, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={clsx('shrink-0', className ?? 'text-[#3DDC84]')}>
+      <path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0117-.7438-1.7917-1.8447-3.1337-2.7402-3.9727a12.1004 12.1004 0 0 0-2.0547-1.5352c.6641-1.1481 1.3284-2.2963 1.9922-3.4453.2102-.3656.1644-.8202-.1113-1.1386a.9205.9205 0 0 0-.0762-.0782c-.4895-.4498-1.3155-.3452-1.6719.2276zM6.5918 12.6758c.551 0 .998.4474.998.998 0 .5517-.447.9981-.998.9981-.5507 0-.998-.4464-.998-.998 0-.5507.4473-.998.998-.998zm10.8184 0c.551 0 .998.4474.998.998 0 .5517-.447.9981-.998.9981-.5507 0-.998-.4464-.998-.998 0-.5507.4473-.998.998-.998z" />
+    </svg>
+  );
+}
+
 export function GooglePlayGlyph({ size = 15, className }: { size?: number; className?: string }) {
   const h = size * (129.2 / 120.9);
   return (

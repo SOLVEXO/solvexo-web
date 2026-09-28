@@ -154,16 +154,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
-    // Own store's branded app request + Solvexo POS access — a real sales
-    // channel (how buyers reach this store), not store configuration, so it
-    // deliberately does NOT live inside Settings — matches Shopify's own
-    // treatment of Point of Sale as its own channel, never a Settings item.
-    group: 'Sales Channels',
-    items: [
-      { id: 'mobile-app', Icon: Smartphone, label: 'Mobile App', path: 'mobile-app' },
-    ],
-  },
-  {
     group: 'Customers',
     collapsible: true,
     groupIcon: Users,
@@ -219,6 +209,16 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     group: 'Finance',
     items: [
       { id: 'finance', Icon: Wallet, label: 'Finance', path: 'finance', requiredPermission: 'finance.payouts.view' },
+    ],
+  },
+  {
+    // Own store's branded app request + Solvexo POS access — a real sales
+    // channel (how buyers reach this store), not store configuration, so it
+    // deliberately does NOT live inside Settings — matches Shopify's own
+    // treatment of Point of Sale as its own channel, never a Settings item.
+    group: 'Sales Channels',
+    items: [
+      { id: 'mobile-app', Icon: Smartphone, label: 'Mobile App', path: 'mobile-app' },
     ],
   },
   {

@@ -35,8 +35,9 @@ function RiskBadge({ risk }: { risk: RiskLevel }) {
   return <Badge color={r.color} size="sm"><r.Icon size={10} /> {r.label}</Badge>;
 }
 
-// ── Report detail modal ───────────────────────────────────────────────────────
-function ReportDetailModal({ report, onClose, onApproved }: { report: ModerationReportRow; onClose: () => void; onApproved: () => void }) {
+// ── Report detail modal — also reused unchanged by the Clients workspace's
+// Moderation tab (AdminClientDetail.tsx), not a second, duplicated modal. ──
+export function ReportDetailModal({ report, onClose, onApproved }: { report: ModerationReportRow; onClose: () => void; onApproved: () => void }) {
   const { approve, processingId, error } = useModerationActions();
 
   async function handleApprove() {

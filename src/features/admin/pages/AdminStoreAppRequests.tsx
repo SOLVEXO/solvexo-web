@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { clsx } from 'clsx';
-import { Smartphone, Bot, Apple, ExternalLink, Eye } from 'lucide-react';
+import { Smartphone, ExternalLink, Eye } from 'lucide-react';
+import { AppleGlyph, AndroidGlyph } from '@/components/comman/ui/AppPromoParts';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   apiAdminListStoreAppRequests, apiAdminUpdatePlatformStatus,
@@ -47,12 +48,11 @@ function formatDate(iso: string) {
 
 // ── One platform's editable status row inside the review modal ────────────
 function PlatformEditor({
-  requestId, platform, label, Icon, state, onUpdated,
+  requestId, platform, label, state, onUpdated,
 }: {
   requestId: string;
   platform: 'android' | 'ios';
   label: string;
-  Icon: typeof Apple;
   state: AdminStoreAppRequest['android'];
   onUpdated: (updated: AdminStoreAppRequest) => void;
 }) {
@@ -85,7 +85,7 @@ function PlatformEditor({
   if (!state.requested) {
     return (
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#f7f6f1] text-[12.5px] text-slate">
-        <Icon size={14} /> {label} not requested
+        {platform === 'ios' ? <AppleGlyph size={14} className="text-slate" /> : <AndroidGlyph size={14} />} {label} not requested
       </div>
     );
   }
@@ -93,7 +93,7 @@ function PlatformEditor({
   return (
     <div className="border border-bone rounded-lg p-3 flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
-        <Icon size={15} className="text-charcoal" />
+        {platform === 'ios' ? <AppleGlyph size={15} className="text-charcoal" /> : <AndroidGlyph size={15} />}
         <p className="text-[13px] font-bold text-charcoal flex-1">{label}</p>
         <StatusBadge status={state.status} size="sm" />
       </div>
@@ -163,8 +163,8 @@ function ReviewModal({ request, onClose, onChanged }: {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <PlatformEditor requestId={request._id} platform="android" label="Android" Icon={Bot} state={request.android} onUpdated={onChanged} />
-          <PlatformEditor requestId={request._id} platform="ios" label="iOS" Icon={Apple} state={request.ios} onUpdated={onChanged} />
+          <PlatformEditor requestId={request._id} platform="android" label="Android" state={request.android} onUpdated={onChanged} />
+          <PlatformEditor requestId={request._id} platform="ios" label="iOS" state={request.ios} onUpdated={onChanged} />
         </div>
       </div>
     </Modal>
@@ -228,13 +228,13 @@ export function AdminStoreAppRequests() {
     {
       key: 'android', header: 'Android',
       render: r => r.android.requested ? (
-        <span className="inline-flex items-center gap-1.5"><Bot size={12} className="text-slate shrink-0" /><StatusBadge status={r.android.status} size="sm" /></span>
+        <span className="inline-flex items-center gap-1.5"><AndroidGlyph size={13} /><StatusBadge status={r.android.status} size="sm" /></span>
       ) : <span className="text-slate text-[12px]">—</span>,
     },
     {
       key: 'ios', header: 'iOS',
       render: r => r.ios.requested ? (
-        <span className="inline-flex items-center gap-1.5"><Apple size={12} className="text-slate shrink-0" /><StatusBadge status={r.ios.status} size="sm" /></span>
+        <span className="inline-flex items-center gap-1.5"><AppleGlyph size={13} className="text-charcoal" /><StatusBadge status={r.ios.status} size="sm" /></span>
       ) : <span className="text-slate text-[12px]">—</span>,
     },
     { key: 'createdAt', header: 'Submitted', render: r => <span className="whitespace-nowrap">{formatDate(r.createdAt)}</span> },

@@ -33,8 +33,10 @@ function initialsOf(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]).join('').toUpperCase() || '—';
 }
 
-// ── A store's own customers (buyers) — opened from inside SellerDetailModal ──
-function StoreCustomersModal({ store, onClose }: { store: SellerStore; onClose: () => void }) {
+// ── A store's own customers (buyers) — opened from inside SellerDetailModal,
+// and reused unchanged by the Clients workspace's Stores/Customers tabs
+// (AdminClientDetail.tsx) rather than a second, duplicated implementation. ──
+export function StoreCustomersModal({ store, onClose }: { store: SellerStore; onClose: () => void }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const query = useMemo(() => ({ search: search || undefined, page, limit: 10 }), [search, page]);

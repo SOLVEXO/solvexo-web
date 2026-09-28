@@ -26,7 +26,7 @@ interface AdminNavItem {
 export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'overview',      Icon: LayoutDashboard, label: 'Overview',        path: '/admin'               },
   { id: 'analytics',     Icon: BarChart3,       label: 'Analytics',       path: '/admin/analytics'     },
-  { id: 'users',         Icon: Users,           label: 'Users & Sellers', path: '/admin/users'         },
+  { id: 'clients',       Icon: Users,           label: 'Clients',         path: '/admin/clients'       },
   { id: 'moderation',    Icon: Shield,          label: 'Moderation',      path: '/admin/moderation'    },
   { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
@@ -121,7 +121,7 @@ interface AdminModule {
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'], collapsible: true },
-  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation'], collapsible: true },
+  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['clients', 'moderation'], collapsible: true },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter'], collapsible: true },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments'], collapsible: true },
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
@@ -215,7 +215,7 @@ export function AdminNavMenu({ excludeItemIds = [] }: { excludeItemIds?: string[
 // it doesn't double as a menu of everything.
 const ADMIN_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
   { id: 'overview',   Icon: LayoutDashboard, label: 'Overview',    path: '/admin'            },
-  { id: 'users',      Icon: Users,           label: 'Users',       path: '/admin/users'      },
+  { id: 'clients',    Icon: Users,           label: 'Clients',     path: '/admin/clients'    },
   { id: 'finance',    Icon: DollarSign,      label: 'Finance',     path: '/admin/finance'    },
   { id: 'moderation', Icon: Shield,          label: 'Moderation',  path: '/admin/moderation' },
   { id: 'settings',   Icon: Settings,        label: 'Settings',    path: '/admin/settings'   },

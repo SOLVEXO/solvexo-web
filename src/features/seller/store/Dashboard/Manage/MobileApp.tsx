@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import QRCode from 'qrcode';
 import {
-  Smartphone, Apple, Bot, CheckCircle2, ExternalLink, CreditCard,
+  Smartphone, CheckCircle2, ExternalLink, CreditCard,
   Send, Search, Hammer, UploadCloud, Rocket, XCircle, Check, Sparkles, Wrench, Zap, Clock,
-  Barcode, Users, Wallet, RotateCcw, BarChart2, ShieldCheck, Play,
+  Barcode, Users, Wallet, RotateCcw, BarChart2, ShieldCheck,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Card, Button, Field, Input, Textarea, FileDropSelect, EmptyState } from '@/components/comman/ui';
@@ -15,7 +15,7 @@ import {
 } from '@/api/services/storeAppRequests';
 import { apiGetPosAppInfo } from '@/api/services/store';
 import { apiGetStorePlatformPlan } from '@/api/services/platformPlans';
-import { GOOGLE_PLAY_URL } from '@/components/comman/ui/AppPromoParts';
+import { GOOGLE_PLAY_URL, AppleGlyph, GooglePlayGlyph, AndroidGlyph } from '@/components/comman/ui/AppPromoParts';
 import { currencySymbol } from '@/utils/currency';
 
 // ── Two completely separate mobile-app products a seller can get, both
@@ -251,8 +251,8 @@ function PlatformPipeline({ state, platform }: { state: StoreAppPlatformState; p
 }
 
 // ── Per-platform status card ─────────────────────────────────────────────
-function PlatformStatusCard({ label, platform, Icon, state, payFlow }: {
-  label: string; platform: 'android' | 'ios'; Icon: typeof Apple; state: StoreAppPlatformState;
+function PlatformStatusCard({ label, platform, state, payFlow }: {
+  label: string; platform: 'android' | 'ios'; state: StoreAppPlatformState;
   // Present only when this platform hasn't been paid for/requested yet —
   // renders the shared pay-flow so a seller who already bought Android can
   // come back and buy iOS later (or vice versa) without resubmitting anything.
@@ -262,7 +262,7 @@ function PlatformStatusCard({ label, platform, Icon, state, payFlow }: {
     return (
       <div className="flex-1 min-w-0 flex flex-col gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-bone bg-[#faf9f5]">
         <div className="flex items-center gap-2.5">
-          <Icon size={15} className="text-slate shrink-0" />
+          {platform === 'ios' ? <AppleGlyph size={16} className="text-slate" /> : <AndroidGlyph size={16} />}
           <span className="flex-1 text-[12.5px] font-medium text-slate">{label} not requested</span>
         </div>
         {payFlow}
@@ -272,7 +272,7 @@ function PlatformStatusCard({ label, platform, Icon, state, payFlow }: {
   return (
     <div className="flex-1 min-w-0 flex flex-col gap-3 px-3.5 py-3.5 rounded-xl border border-bone bg-white">
       <div className="flex items-center gap-2">
-        <Icon size={15} className="text-charcoal shrink-0" />
+        {platform === 'ios' ? <AppleGlyph size={16} className="text-charcoal" /> : <AndroidGlyph size={16} />}
         <span className="flex-1 text-[13px] font-bold text-charcoal">{label}</span>
         {state.status === 'published' && (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-success">
@@ -433,7 +433,7 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
           <p className="text-[13px] font-bold text-carbon">{latest.appName}</p>
           <div className="flex flex-col lg:flex-row gap-4 items-start">
             <PlatformStatusCard
-              label="Android" platform="android" Icon={Bot} state={latest.android}
+              label="Android" platform="android" state={latest.android}
               payFlow={!latest.android.requested ? (
                 <PlatformPayFlow
                   label="Android"
@@ -447,7 +447,7 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
               ) : undefined}
             />
             <PlatformStatusCard
-              label="iOS" platform="ios" Icon={Apple} state={latest.ios}
+              label="iOS" platform="ios" state={latest.ios}
               payFlow={!latest.ios.requested ? (
                 <PlatformPayFlow
                   label="iOS"
@@ -496,18 +496,15 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
 // "Download on the" / uses its own logo mark, never "Get it on". A caller
 // passing the wrong `eyebrow`/`Icon` for a platform is the exact bug this
 // was built to stop happening again. ──────────────────────────────────────
-function StoreBadge({ href, Icon, iconColor, eyebrow, label, filled }: {
-  href: string; Icon: typeof Bot; iconColor: string; eyebrow: string; label: string;
-  /** Play Store's glyph is a solid triangle — Apple's logo mark is already
-   *  solid by nature, so this only needs to be true for the Play icon. */
-  filled?: boolean;
+function StoreBadge({ href, platform, eyebrow, label }: {
+  href: string; platform: 'android' | 'ios'; eyebrow: string; label: string;
 }) {
   return (
     <a
       href={href} target="_blank" rel="noopener noreferrer"
       className="inline-flex items-center gap-2.5 px-3.5 h-[44px] rounded-[10px] bg-black text-white no-underline border border-white/15 transition-transform duration-150 hover:-translate-y-px"
     >
-      <Icon size={20} className={clsx('shrink-0', iconColor)} fill={filled ? 'currentColor' : 'none'} />
+      {platform === 'ios' ? <AppleGlyph size={24} className="text-white" /> : <GooglePlayGlyph size={21} />}
       <span className="flex flex-col leading-tight">
         <span className="text-[8.5px] text-white/85 tracking-[0.02em]">{eyebrow}</span>
         <span className="text-[15px] font-semibold -mt-[1px]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{label}</span>
@@ -633,14 +630,14 @@ function PosAccessSection({ storeId }: { storeId: string }) {
 
       <div className="mt-5 flex flex-col sm:flex-row gap-4">
         <PosPlatformPanel
-          label="Android" Icon={Play} iconColor="text-[#00D46A]" iconFilled
+          label="Android" platform="android"
           storeName="Google Play" badgeLabel="Google Play" badgeEyebrow="GET IT ON"
           url={androidUrl}
           notPublishedText="Google Play listing isn't configured yet — please check back soon."
           altText="Scan to open Solvexo POS on Google Play"
         />
         <PosPlatformPanel
-          label="iOS" Icon={Apple} iconColor="text-charcoal"
+          label="iOS" platform="ios"
           storeName="the App Store" badgeLabel="App Store" badgeEyebrow="Download on the"
           // No real App Store listing exists yet (see StoreService.
           // getPosAppInfo) — POS_APP_IOS_URL is genuinely unset. This QR is
@@ -663,15 +660,15 @@ function PosAccessSection({ storeId }: { storeId: string }) {
 // yet" state — reused for both Android and iOS so neither is a special
 // case. Only ever renders a REAL scannable code for a URL that actually
 // exists; never a placeholder QR pointing nowhere. ──────────────────────
-function PosPlatformPanel({ label, Icon, iconColor, iconFilled, storeName, badgeLabel, badgeEyebrow, url, notPublishedText, altText, isDemo }: {
-  label: string; Icon: typeof Bot; iconColor: string;
+function PosPlatformPanel({ label, platform, storeName, badgeLabel, badgeEyebrow, url, notPublishedText, altText, isDemo }: {
+  label: string;
+  /** Picks the real brand mark — Apple logo / 4-colour Google Play triangle. */
+  platform: 'android' | 'ios';
   /** Used in the descriptive sentence, which needs the article — "on the App Store". */
   storeName: string;
   /** The badge's own bold text, WITHOUT the article — real badges say
    *  "App Store" / "Google Play", never "the App Store". */
   badgeLabel: string;
-  /** Play Store's glyph is a solid triangle; Apple's logo mark is already solid by nature. */
-  iconFilled?: boolean;
   /** Each platform's OWN real badge wording — "GET IT ON" for Google Play,
    *  "Download on the" for the App Store. Never share one string across
    *  both; that's exactly how the old badge ended up saying "Get it on the
@@ -697,7 +694,7 @@ function PosPlatformPanel({ label, Icon, iconColor, iconFilled, storeName, badge
   if (!url) {
     return (
       <div className="flex-1 min-w-0 rounded-2xl border border-dashed border-bone bg-white px-4 py-5 flex items-center gap-2.5">
-        <Icon size={16} className="text-slate shrink-0" />
+        {platform === 'ios' ? <AppleGlyph size={16} className="text-slate" /> : <GooglePlayGlyph size={15} />}
         <span className="text-[12px] font-medium text-slate leading-[1.5]">{notPublishedText}</span>
       </div>
     );
@@ -720,14 +717,14 @@ function PosPlatformPanel({ label, Icon, iconColor, iconFilled, storeName, badge
         </div>
         <div className="flex-1 min-w-0 flex flex-col items-center sm:items-start gap-2 text-center sm:text-left">
           <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-charcoal">
-            <Icon size={13} className={clsx(iconColor, 'shrink-0')} fill={iconFilled ? 'currentColor' : 'none'} /> Get it for {label}
+            {platform === 'ios' ? <AppleGlyph size={15} className="text-charcoal" /> : <GooglePlayGlyph size={13} />} Get it for {label}
           </span>
           <p className="text-[11px] text-slate leading-[1.5]">
             {isDemo
               ? "Preview only — this QR/badge doesn't point to a real App Store listing yet."
               : `Scan with your phone's camera, or tap the badge. Payment for the app itself happens on ${storeName} — nothing to pay here in your Solvexo dashboard.`}
           </p>
-          <StoreBadge href={url} Icon={Icon} iconColor={iconColor} filled={iconFilled} eyebrow={badgeEyebrow} label={badgeLabel} />
+          <StoreBadge href={url} platform={platform} eyebrow={badgeEyebrow} label={badgeLabel} />
         </div>
       </div>
     </div>

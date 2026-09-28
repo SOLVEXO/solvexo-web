@@ -128,19 +128,30 @@ export function apiGetPublicTrialSettings() {
 }
 
 // ── Seller ────────────────────────────────────────────────────────────────────
+export interface SellerPlatformOverview {
+  storeCount: number;
+  totalPlatformSpendUSD: number;
+  stores: Array<{
+    storeId: string;
+    storeName: string;
+    storeSlug: string;
+    storeStatus: string;
+    platformPlan: { id: string; name: string; isFree: boolean } | null;
+    subscriptionStatus: string;
+    nextBillingDate: string | null;
+    totalPaidUSD: number;
+  }>;
+}
+
 export function apiGetSellerPlatformOverview() {
-  return client.get<never, ApiResponse<{
-    stores: Array<{
-      storeId: string;
-      storeName: string;
-      storeSlug: string;
-      storeStatus: string;
-      platformPlan: { id: string; name: string; isFree: boolean } | null;
-      subscriptionStatus: string;
-      nextBillingDate: string | null;
-      totalPaidUSD: number;
-    }>;
-  }>>(`${BASE}/seller/overview`);
+  return client.get<never, ApiResponse<SellerPlatformOverview>>(`${BASE}/seller/overview`);
+}
+
+// ── Admin — Clients workspace's Subscription/Billing tab. Same underlying
+// cross-store rollup as apiGetSellerPlatformOverview above, just admin-
+// authorized and keyed by an explicit sellerId instead of the caller's own. ──
+export function apiAdminGetSellerPlatformOverview(sellerId: string) {
+  return client.get<never, ApiResponse<SellerPlatformOverview>>(`${BASE}/admin/sellers/${sellerId}/overview`);
 }
 
 // ── Onboarding wizard's Payment step (no store exists yet) ─────────────────

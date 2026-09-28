@@ -141,7 +141,8 @@ const MetaobjectEntriesPage = lazy(() => import('@/features/seller/store/Dashboa
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
 const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
-const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers').then(m => ({ default: m.AdminUsers })));
+const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
+const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
 const AdminModeration = lazy(() => import('@/features/admin/pages/AdminModeration').then(m => ({ default: m.AdminModeration })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
 const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
@@ -467,7 +468,15 @@ const mainRouter = createBrowserRouter([
         children: [
           { index: true,          element: <AdminOverview /> },
           { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
-          { path: 'users',        element: <RequireRole role="admin"><AdminUsers /></RequireRole> },
+          // "Users & Sellers" is now the "Clients" workspace — same seller
+          // data, opening into a full per-client workspace instead of a
+          // modal. Old URL redirected (bookmarks/deep-links still land
+          // somewhere real) rather than 404ing — AdminUsers.tsx itself is
+          // left on disk, unreferenced, same "disconnect, don't delete"
+          // convention as the content-page redirects below.
+          { path: 'users',        element: <Navigate to="../clients" replace /> },
+          { path: 'clients',      element: <RequireRole role="admin"><AdminClients /></RequireRole> },
+          { path: 'clients/:id',  element: <RequireRole role="admin"><AdminClientDetail /></RequireRole> },
           { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
           { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
