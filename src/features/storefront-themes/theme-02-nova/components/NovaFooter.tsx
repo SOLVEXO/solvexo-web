@@ -24,6 +24,7 @@ export function NovaFooter() {
   const { store, theme, resolveLink } = useStorefront();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [pendingConfirm, setPendingConfirm] = useState(false);
   // Real, previously-unwired data: `showInFooter`/`policyType` have existed
   // on StorePage (and been editable from Page Settings) with no consumer
   // anywhere — a seller could tag their Privacy Policy page and toggle "Show
@@ -61,7 +62,9 @@ export function NovaFooter() {
     if (!email.trim() || status === 'loading') return;
     setStatus('loading');
     try {
-      await apiSubscribeNewsletter(email.trim());
+      const res = await apiSubscribeNewsletter(email.trim(), { storeId: store.storeId, source: 'store_footer' });
+      // Double opt-in stores: nothing is subscribed until they confirm by email.
+      setPendingConfirm(!!res.data?.pendingConfirmation);
       setStatus('done');
     } catch {
       setStatus('error');
@@ -144,7 +147,7 @@ export function NovaFooter() {
         <div>
           <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>Stay in the loop</p>
           {status === 'done' ? (
-            <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#8B7CFF' }}>Thank you — you're subscribed.</p>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#8B7CFF' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-2">
               <label htmlFor="nova-footer-newsletter" className="sr-only">Your email</label>

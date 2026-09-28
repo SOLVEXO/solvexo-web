@@ -236,7 +236,7 @@ function StoreMatchRow({ store, query, onClick }: { store: PublicStoreListItem; 
     >
       <span className="w-14 h-14 rounded-[10px] overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center">
         {store.logo
-          ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
+          ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="max-w-full max-h-full object-contain" />
           : <StoreIcon size={20} className="text-brand-orange opacity-50" />}
       </span>
       <div className="flex-1 min-w-0">
@@ -695,7 +695,7 @@ export function SearchBox({
                         >
                           <span className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center">
                             {s.logo
-                              ? <img loading="lazy" decoding="async" src={s.logo} alt="" className="w-full h-full object-cover" />
+                              ? <img loading="lazy" decoding="async" src={s.logo} alt="" className="max-w-full max-h-full object-contain" />
                               : <StoreIcon size={12} className="text-brand-orange opacity-60" />}
                           </span>
                           <span className="truncate">{s.name}</span>

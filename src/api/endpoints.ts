@@ -101,6 +101,26 @@ export const ENDPOINTS = {
   // ── NEWSLETTER (public) ─────────────────────────────────────────────────────
   NEWSLETTER: {
     SUBSCRIBE: '/api/newsletter/subscribe',
+    SUBSCRIBE_ME: '/api/newsletter/subscribe-me',
+    // Seller — a store's own subscriber list
+    STORE_SUBSCRIBERS:       (storeId: string) => `/api/newsletter/stores/${storeId}/subscribers`,
+    STORE_SUBSCRIBERS_EXPORT:(storeId: string) => `/api/newsletter/stores/${storeId}/subscribers/export`,
+    STORE_SUBSCRIBERS_IMPORT:(storeId: string) => `/api/newsletter/stores/${storeId}/subscribers/import`,
+    STORE_SUBSCRIBER:        (storeId: string, id: string) => `/api/newsletter/stores/${storeId}/subscribers/${id}`,
+    // Admin — Solvexo's own platform list + broadcasts
+    ADMIN_SUBSCRIBERS:        '/api/admin/newsletter/subscribers',
+    ADMIN_SUBSCRIBERS_EXPORT: '/api/admin/newsletter/subscribers/export',
+    ADMIN_SUBSCRIBER:         (id: string) => `/api/admin/newsletter/subscribers/${id}`,
+    ADMIN_BROADCASTS:         '/api/admin/newsletter/broadcasts',
+  },
+
+  // ── MARKETING AUTOMATIONS ───────────────────────────────────────────────────
+  MARKETING_AUTOMATIONS: {
+    SETTINGS:      (storeId: string) => `/api/marketing-automations/${storeId}/settings`,
+    STATS:         (storeId: string) => `/api/marketing-automations/${storeId}/stats`,
+    TEST:          (storeId: string, section: string) => `/api/marketing-automations/${storeId}/test/${section}`,
+    PUBLIC_CONFIG: (storeId: string) => `/api/marketing-automations/public/${storeId}`,
+    BACK_IN_STOCK: '/api/marketing-automations/back-in-stock',
   },
 
   // ── CONTENT MODERATION (Admin) ──────────────────────────────────────────────
@@ -509,6 +529,7 @@ export const ENDPOINTS = {
     DELETE:            (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}`,
     SEND:              (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}/send`,
     SCHEDULE:          (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}/schedule`,
+    TEST:              (storeId: string, campaignId: string) => `/api/email-campaigns/${storeId}/${campaignId}/test`,
   },
 
   // ── AFFILIATE PROGRAM ─────────────────────────────────────────────────────

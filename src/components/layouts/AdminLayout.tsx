@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Layers, Search, Sparkles, LogOut, Landmark, Percent, Coins, Activity,
-  TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone,
+  TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -45,6 +45,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
   // tabbed page — see ADMIN_MODULES' doc comment below for why.
   { id: 'content',       Icon: ImageIcon,       label: 'Site Content',    path: '/admin/content'       },
+  { id: 'newsletter',    Icon: Mail,            label: 'Newsletter',      path: '/admin/newsletter'    },
   { id: 'config',        Icon: Settings,        label: 'Platform Config', path: '/admin/config'        },
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
 ];
@@ -121,7 +122,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'], collapsible: true },
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation'], collapsible: true },
-  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'], collapsible: true },
+  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter'], collapsible: true },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments'], collapsible: true },
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },

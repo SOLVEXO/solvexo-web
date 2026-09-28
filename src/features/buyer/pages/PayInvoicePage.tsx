@@ -58,7 +58,7 @@ export default function PayInvoicePage() {
       <div className="max-w-md w-full bg-white border border-bone rounded-2xl overflow-hidden">
         <div className="px-6 py-5 border-b border-bone flex items-center gap-3">
           {invoice.storeLogo
-            ? <img src={invoice.storeLogo} alt={invoice.storeName} className="w-10 h-10 rounded-lg object-cover" />
+            ? <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0"><img src={invoice.storeLogo} alt={invoice.storeName} className="max-w-full max-h-full object-contain" /></div>
             : <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center"><Package size={18} className="text-brand-orange" /></div>}
           <div>
             <p className="text-[14px] font-bold text-charcoal">{invoice.storeName}</p>

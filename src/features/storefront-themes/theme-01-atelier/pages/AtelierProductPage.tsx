@@ -15,6 +15,8 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
+import { atelierInput } from '../components/atelierFormStyles';
+import { useBackInStock } from '../../useBackInStock';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
@@ -209,6 +211,8 @@ export function AtelierProductPage() {
   const displayCompareAt = activeVariant?.compareAtPrice != null ? convert(activeVariant.compareAtPrice, activeVariant.currency) : null;
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
+  // "Notify me when available" — only for a physical variant that's sold out.
+  const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && stock <= 0);
 
   const handleAddToCart = async () => {
     if (!product || !activeVariant) return;
@@ -313,6 +317,35 @@ export function AtelierProductPage() {
             >
               {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
             </AtelierButton>
+          )}
+
+          {backInStock.show && (
+            <div className="mt-4" style={{ border: `1px solid ${t.colors.border}`, padding: '14px 16px', background: t.colors.bgAlt }}>
+              {backInStock.status === 'done' || backInStock.status === 'available' ? (
+                <p className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.success }}>
+                  <CheckCircle2 size={14} className="mt-[2px] shrink-0" /> {backInStock.message}
+                </p>
+              ) : (
+                <form onSubmit={backInStock.submit} className="flex flex-col gap-2.5 atelier-form">
+                  <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink }}>Get notified when it's back</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      required
+                      value={backInStock.email}
+                      onChange={e => backInStock.setEmail(e.target.value)}
+                      placeholder="Your email"
+                      aria-label="Email for back-in-stock alert"
+                      style={atelierInput}
+                    />
+                    <AtelierButton type="submit" loading={backInStock.status === 'loading'} style={{ flexShrink: 0 }}>Notify me</AtelierButton>
+                  </div>
+                  {backInStock.status === 'error' && (
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{backInStock.message}</p>
+                  )}
+                </form>
+              )}
+            </div>
           )}
 
           {isBlockOn('product_description') && product.description && (

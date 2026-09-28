@@ -251,7 +251,7 @@ function Step1StoreInfo({ form, setForm, onNext }: {
             {logoUploading
               ? <Loader2 size={28} className="text-brand-orange animate-spin" />
               : preview
-                ? <img loading="lazy" decoding="async" src={preview} alt="logo" className="w-full h-full object-cover" />
+                ? <img loading="lazy" decoding="async" src={preview} alt="logo" className="max-w-full max-h-full object-contain" />
                 : <Camera size={28} className="text-brand-orange" />}
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} disabled={logoUploading} />
           </label>

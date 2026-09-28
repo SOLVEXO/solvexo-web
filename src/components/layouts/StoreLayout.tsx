@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useId, Suspense, type R
 import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks,
+  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks, MailCheck,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -172,6 +172,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // not general view (e.g. a data-entry-only role) still needs a nav
       // path to the list that create/edit actually happens from.
       { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
+      { id: 'subscribers', Icon: MailCheck,    label: 'Subscribers', path: 'customer/subscribers', requiredPermission: ['customers.view', 'customers.edit'] },
       { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: 'customers.view' },
       { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
     ],
@@ -311,6 +312,22 @@ function loadCollapsedGroups(): Set<string> {
 
 function saveCollapsedGroups(groups: Set<string>) {
   try { localStorage.setItem(SIDEBAR_COLLAPSED_GROUPS_KEY, JSON.stringify([...groups])); } catch { /* per-viewer convenience only */ }
+}
+
+// Sidebar trial-nudge card is on by default. Dismissing it doesn't lose it
+// for good — same as a collapsed nav group above, it collapses down to a
+// small row that re-expands the full card on click (see the `trialCardDismissed`
+// branch below), and that collapsed/expanded choice is what's remembered here.
+function isTrialCardDismissed(storeId: string): boolean {
+  try { return localStorage.getItem(`solvexo:trial-nudge-dismissed:${storeId}`) === '1'; } catch { return false; }
+}
+
+function dismissTrialCard(storeId: string) {
+  try { localStorage.setItem(`solvexo:trial-nudge-dismissed:${storeId}`, '1'); } catch { /* per-viewer convenience only */ }
+}
+
+function showTrialCard(storeId: string) {
+  try { localStorage.removeItem(`solvexo:trial-nudge-dismissed:${storeId}`); } catch { /* per-viewer convenience only */ }
 }
 
 // ── Shared grouped nav menu — the mobile "account hub" content for a store
@@ -572,6 +589,19 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const currentPlanLabel = platformSub?.plan
     ? (platformSub.plan.isFree ? 'Free Plan' : `${platformSub.plan.name} Plan`)
     : null;
+  // Seller's own per-store "don't show this trial card again" choice — see
+  // `isTrialCardDismissed`'s comment. Re-read whenever storeId changes (the
+  // seller switched stores without this component remounting) so one
+  // store's dismissal doesn't carry into another's — the "adjust state
+  // during render" pattern below, not an effect, since it only needs to run
+  // when storeId itself changes, not after every render.
+  const [trialCardState, setTrialCardState] = useState(() => ({ storeId, dismissed: storeId ? isTrialCardDismissed(storeId) : false }));
+  let trialCardDismissed = trialCardState.dismissed;
+  if (trialCardState.storeId !== storeId) {
+    trialCardDismissed = storeId ? isTrialCardDismissed(storeId) : false;
+    setTrialCardState({ storeId, dismissed: trialCardDismissed });
+  }
+  const setTrialCardDismissed = (dismissed: boolean) => setTrialCardState({ storeId, dismissed });
 
   const toggleBtn = (
     <button
@@ -758,53 +788,121 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
            page). */}
         {open ? (
           <div className="px-4 py-3 border-t border-dark-active shrink-0">
-            {(isTrialing || isTrialEndedSidebar) ? (
-              // Same card before AND after the trial ends — only the words
-              // change: badge "Trial" → "Trial Ended", "N days left" → "0 days
-              // left", the bar stays (full once ended), and the hh:mm:ss line
-              // becomes the real trial length + end date.
-              <div className="relative mt-[8px] mb-[10px]">
-                {/* Badge floats half-in/half-out over the card's top-left
-                   corner — the wrapper reserves real space above the card
-                   (`mt-[8px]`) for it, instead of relying on the outer
-                   footer's own padding (which the sidebar's container was
-                   clipping into). Days-left stays a normal pill inside. */}
-                <span className="absolute -top-[7px] left-[10px] z-10 inline-flex items-center px-[7px] py-[3px] rounded-full bg-white text-brand-deep-orange text-[8px] font-extrabold uppercase tracking-[0.05em] shadow-sm">
-                  {isTrialing ? 'Trial' : 'Trial Ended'}
-                </span>
-                <div className="bg-brand-orange rounded-[10px] px-3 py-[10px]">
-                  <div className="flex justify-end mb-[10px]">
-                    <span className="inline-flex items-center gap-1 px-[9px] py-[4px] rounded-full bg-white/15 text-white text-[9.5px] font-semibold shrink-0">
-                      <Clock size={10} className="text-white" />
-                      {isTrialing
-                        ? `${trialTimeLeft?.days} day${trialTimeLeft?.days === 1 ? '' : 's'} left`
-                        : '0 days left'}
-                    </span>
-                  </div>
-                  <div className="h-[5px] bg-white/25 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-white rounded-full transition-[width] duration-300"
-                      style={{ width: `${isTrialing ? trialProgressPct : 100}%` }}
-                    />
-                  </div>
-                  {/* Under the bar: live hh:mm:ss while running; once ended,
-                     the real trial length + end date in the same spot. */}
-                  <div className="flex justify-end mb-[11px] mt-[4px]">
-                    <span className="text-white/65 text-[8.5px] font-medium tabular-nums">
-                      {isTrialing
-                        ? (trialTimeLeft && `${String(trialTimeLeft.hours).padStart(2, '0')}h ${String(trialTimeLeft.minutes).padStart(2, '0')}m ${String(trialTimeLeft.seconds).padStart(2, '0')}s`)
-                        : (trialEndedSummary ? `${trialEndedSummary.days}-day trial · ended ${trialEndedSummary.endedOn}` : 'Trial ended')}
-                    </span>
-                  </div>
+            <AnimatePresence initial={false} mode="wait">
+              {(isTrialing || isTrialEndedSidebar) && (trialCardDismissed ? (
+                // Collapsed state — same row/chevron language as a collapsed
+                // nav group above (see `isCollapsed` in the nav section):
+                // dismissing never loses the card for good, it just shrinks
+                // to this one-line summary, and clicking it re-expands the
+                // full card below.
+                <motion.button
+                  key="trial-pill"
+                  type="button"
+                  onClick={() => { if (storeId) showTrialCard(storeId); setTrialCardDismissed(false); }}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  title="Show trial card"
+                  className={clsx(
+                    'w-full flex items-center gap-2 mt-[8px] mb-[10px] pl-[6px] pr-3 py-[6px] rounded-full border-0 cursor-pointer text-left',
+                    'bg-gradient-to-r from-brand-orange to-brand-deep-orange',
+                    'hover:brightness-[1.06] active:scale-[0.98] transition-all duration-150',
+                  )}
+                >
+                  {/* Icon sits in its own soft chip (bg-white/20), same
+                     treatment as the hh:mm:ss clock badge inside the
+                     expanded card — reads as a polished status pill
+                     instead of a flat, plain rectangle. */}
+                  <span className="size-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <Clock size={11} className="text-white" />
+                  </span>
+                  <span className="flex-1 min-w-0 text-[11px] font-semibold text-white truncate">
+                    {isTrialing
+                      ? `Trial · ${trialTimeLeft?.days} day${trialTimeLeft?.days === 1 ? '' : 's'} left`
+                      : 'Trial ended'}
+                  </span>
+                  {/* Same white-circle chevron chip as the expanded card's
+                     own collapse button — one consistent toggle look in
+                     both states, not a plain bare icon here. */}
+                  <span className="size-[16px] rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+                    <ChevronDown size={11} className="text-brand-deep-orange rotate-180" />
+                  </span>
+                </motion.button>
+              ) : (
+                // Same card before AND after the trial ends — only the words
+                // change: badge "Trial" → "Trial Ended", "N days left" → "0 days
+                // left", the bar stays (full once ended), and the hh:mm:ss line
+                // becomes the real trial length + end date. Slides up from the
+                // bottom on first appearance (and slides back down on dismiss)
+                // rather than just popping in — motion.div + AnimatePresence
+                // handle both the enter and the exit transition here.
+                <motion.div
+                  key="trial-card"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 16 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative mt-[8px] mb-[10px]"
+                >
+                  {/* Badge floats half-in/half-out over the card's top-left
+                     corner — the wrapper reserves real space above the card
+                     (`mt-[8px]`) for it, instead of relying on the outer
+                     footer's own padding (which the sidebar's container was
+                     clipping into). Days-left stays a normal pill inside. */}
+                  <span className="absolute -top-[7px] left-[10px] z-10 inline-flex items-center px-[7px] py-[3px] rounded-full bg-white text-brand-deep-orange text-[8px] font-extrabold uppercase tracking-[0.05em] shadow-sm">
+                    {isTrialing ? 'Trial' : 'Trial Ended'}
+                  </span>
+                  {/* Collapse — same chevron-toggle language as the nav
+                     group above, just inverted: pointing down here means
+                     "collapse down to the pill", and that pill's own chevron
+                     points up meaning "bring it back up" — not an X, this
+                     never dismisses the card for good, it just shrinks it
+                     to the one-line pill above, remembered per store (see
+                     `dismissTrialCard`) until clicked open again. */}
                   <button
-                    onClick={() => navigate(`/store/${storeId}/plan-billing`)}
-                    className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                    onClick={() => { if (storeId) dismissTrialCard(storeId); setTrialCardDismissed(true); }}
+                    title="Collapse"
+                    aria-label="Collapse trial card"
+                    className="absolute -top-[7px] right-[6px] z-10 size-[16px] rounded-full bg-white flex items-center justify-center text-brand-deep-orange hover:text-charcoal shadow-sm cursor-pointer border-0"
                   >
-                    Choose a Plan
+                    <ChevronDown size={11} />
                   </button>
-                </div>
-              </div>
-            ) : currentPlanLabel && (
+                  <div className="bg-brand-orange rounded-[10px] px-3 py-[10px]">
+                    <div className="flex justify-end mb-[10px]">
+                      <span className="inline-flex items-center gap-1 px-[9px] py-[4px] rounded-full bg-white/15 text-white text-[9.5px] font-semibold shrink-0">
+                        <Clock size={10} className="text-white" />
+                        {isTrialing
+                          ? `${trialTimeLeft?.days} day${trialTimeLeft?.days === 1 ? '' : 's'} left`
+                          : '0 days left'}
+                      </span>
+                    </div>
+                    <div className="h-[5px] bg-white/25 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-white rounded-full transition-[width] duration-300"
+                        style={{ width: `${isTrialing ? trialProgressPct : 100}%` }}
+                      />
+                    </div>
+                    {/* Under the bar: live hh:mm:ss while running; once ended,
+                       the real trial length + end date in the same spot. */}
+                    <div className="flex justify-end mb-[11px] mt-[4px]">
+                      <span className="text-white/65 text-[8.5px] font-medium tabular-nums">
+                        {isTrialing
+                          ? (trialTimeLeft && `${String(trialTimeLeft.hours).padStart(2, '0')}h ${String(trialTimeLeft.minutes).padStart(2, '0')}m ${String(trialTimeLeft.seconds).padStart(2, '0')}s`)
+                          : (trialEndedSummary ? `${trialEndedSummary.days}-day trial · ended ${trialEndedSummary.endedOn}` : 'Trial ended')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+                      className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                    >
+                      Choose a Plan
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {!(isTrialing || isTrialEndedSidebar) && currentPlanLabel && (
               <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
                 <div className="mb-[10px]">
                   <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">

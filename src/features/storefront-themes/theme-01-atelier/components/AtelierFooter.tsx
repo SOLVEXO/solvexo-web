@@ -29,6 +29,7 @@ export function AtelierFooter() {
   const { store, theme, resolveLink } = useStorefront();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [pendingConfirm, setPendingConfirm] = useState(false);
   // Same fix as NovaFooter.tsx: `showInFooter`/`policyType` existed on
   // StorePage (editable from Page Settings) with no storefront consumer —
   // this wires those flagged pages into a real legal-links row.
@@ -62,7 +63,9 @@ export function AtelierFooter() {
     if (!email.trim() || status === 'loading') return;
     setStatus('loading');
     try {
-      await apiSubscribeNewsletter(email.trim());
+      const res = await apiSubscribeNewsletter(email.trim(), { storeId: store.storeId, source: 'store_footer' });
+      // Double opt-in stores: nothing is subscribed until they confirm by email.
+      setPendingConfirm(!!res.data?.pendingConfirmation);
       setStatus('done');
     } catch {
       setStatus('error');
@@ -137,7 +140,7 @@ export function AtelierFooter() {
         <div>
           <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B2A6', marginBottom: '14px' }}>Stay in touch</p>
           {status === 'done' ? (
-            <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.accent }}>Thank you — you're subscribed.</p>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.accent }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-2">
               <label htmlFor="atelier-footer-newsletter" className="sr-only">Your email</label>

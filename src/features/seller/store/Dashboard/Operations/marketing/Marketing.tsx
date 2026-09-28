@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, type LucideIcon } from 'lucide-react';
+import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
@@ -14,9 +14,12 @@ import {
   type AbandonedCartSettings, type AbandonedCartStats, type AbandonedCartItem,
 } from '@/api/services/abandonedCart';
 import {
-  apiCreateEmailCampaign, apiListEmailCampaigns, apiPreviewEmailCampaignAudience, apiDeleteEmailCampaign, apiSendEmailCampaignNow, apiScheduleEmailCampaign,
+  apiListEmailCampaigns, apiDeleteEmailCampaign, apiSendEmailCampaignNow, apiScheduleEmailCampaign,
   type EmailCampaign, type EmailCampaignAudience, type EmailCampaignStatus,
 } from '@/api/services/emailCampaigns';
+import { EmailCampaignTestModal } from './EmailCampaignTestModal';
+import { EmailCampaignEditor } from './EmailCampaignEditor';
+import { MarketingAutomations } from './MarketingAutomations';
 import {
   apiGetAffiliateProgram, apiUpdateAffiliateProgram, apiGetAffiliateStats, apiListAffiliateReferrals,
   apiCreateAffiliate, apiListAffiliates, apiUpdateAffiliate, apiDeleteAffiliate, apiPayAffiliate,
@@ -32,12 +35,13 @@ import {
 // backend endpoints. Removed here to stop maintaining two copies of the
 // same feature; the dedicated pages are untouched and still fully wired.
 
-type Tab = 'coupons' | 'platform' | 'email' | 'cart' | 'affiliate' | 'pixels';
+type Tab = 'coupons' | 'platform' | 'email' | 'automations' | 'cart' | 'affiliate' | 'pixels';
 
 const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'coupons',   label: 'Coupons',        Icon: TagIcon      },
   { id: 'platform',  label: 'Platform Sales', Icon: Megaphone    },
   { id: 'email',     label: 'Email Campaigns', Icon: Mail         },
+  { id: 'automations', label: 'Automations',   Icon: Zap          },
   { id: 'cart',      label: 'Abandoned Cart',  Icon: ShoppingCart },
   { id: 'affiliate', label: 'Affiliate',       Icon: Handshake    },
   { id: 'pixels',    label: 'Tracking Pixels', Icon: Target       },
@@ -47,76 +51,6 @@ const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', 
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
-
-function EmailCampaignFormModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ name: '', subject: '', message: '', audience: 'all' as EmailCampaignAudience });
-  const [audiencePreview, setAudiencePreview] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    apiPreviewEmailCampaignAudience(storeId, form.audience)
-      .then(res => setAudiencePreview(res.data.recipientCount))
-      .catch(() => setAudiencePreview(null));
-  }, [storeId, form.audience]);
-
-  async function submit() {
-    if (!form.name || !form.subject || !form.message) { setError('Please fill in name, subject and message.'); return; }
-    setError('');
-    setSaving(true);
-    try {
-      await apiCreateEmailCampaign(storeId, form);
-      onSaved();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create campaign.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Modal
-      title="New Email Campaign"
-      onClose={onClose}
-      mobileSheet
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={saving}>Create Draft</Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        <div>
-          <label className="block text-[12px] font-medium text-charcoal mb-1.5">Campaign name (internal only)</label>
-          <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="September clearance blast" className={INPUT_CLS} />
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-charcoal mb-1.5">Send to</label>
-          <select value={form.audience} onChange={e => setForm(f => ({ ...f, audience: e.target.value as EmailCampaignAudience }))}
-            className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-            <option value="all">All customers</option>
-            <option value="buyers">Past buyers only</option>
-            <option value="abandoned">Abandoned cart (didn't buy)</option>
-          </select>
-          {audiencePreview !== null && (
-            <p className="text-[11px] text-slate mt-1">~{audiencePreview.toLocaleString()} recipient{audiencePreview === 1 ? '' : 's'} right now</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-charcoal mb-1.5">Email subject</label>
-          <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="20% off everything this weekend only" className={INPUT_CLS} />
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-charcoal mb-1.5">Email message</label>
-          <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={5} className={`${INPUT_CLS} resize-none`} placeholder="Hi {{customerName}}, ..." />
-          <p className="text-[11px] text-slate mt-1">Use {'{{customerName}}'} and {'{{storeName}}'} — replaced automatically for each recipient.</p>
-        </div>
-        {error && <p className="text-[12px] text-error">{error}</p>}
-      </div>
-    </Modal>
-  );
-}
 
 function EmailCampaignScheduleModal({ storeId, campaign, onClose, onScheduled }: { storeId: string; campaign: EmailCampaign; onClose: () => void; onScheduled: () => void }) {
   const [scheduledAt, setScheduledAt] = useState('');
@@ -361,8 +295,10 @@ export function StoreMarketing() {
   const [emailCampaignsLoading, setEmailCampaignsLoading] = useState(true);
   const [emailCampaignsError, setEmailCampaignsError] = useState('');
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
   const [schedulingCampaign, setSchedulingCampaign] = useState<EmailCampaign | null>(null);
   const [campaignActionBusyId, setCampaignActionBusyId] = useState<string | null>(null);
+  const [testingCampaign, setTestingCampaign] = useState<EmailCampaign | null>(null);
 
   function refreshEmailCampaigns() {
     setEmailCampaignsLoading(true);
@@ -414,7 +350,7 @@ export function StoreMarketing() {
   };
 
   const EMAIL_CAMPAIGN_AUDIENCE_LABEL: Record<EmailCampaignAudience, string> = {
-    all: 'All customers', buyers: 'Past buyers', abandoned: "Abandoned cart (didn't buy)",
+    all: 'All subscribers', buyers: 'Subscribed buyers', abandoned: 'Subscribed, abandoned cart',
   };
 
   // Affiliate Program
@@ -1088,10 +1024,12 @@ export function StoreMarketing() {
                             <div className="flex items-center gap-2.5">
                               {c.status === 'draft' && (
                                 <>
+                                  <button onClick={() => setEditingCampaign(c)} disabled={busy} className="text-[11px] font-semibold text-charcoal hover:underline disabled:opacity-50">Edit</button>
                                   <button onClick={() => handleSendCampaignNow(c)} disabled={busy} className="text-[11px] font-semibold text-brand-orange hover:underline disabled:opacity-50">Send Now</button>
                                   <button onClick={() => setSchedulingCampaign(c)} disabled={busy} className="text-[11px] font-semibold text-charcoal hover:underline disabled:opacity-50">Schedule</button>
                                 </>
                               )}
+                              <button onClick={() => setTestingCampaign(c)} className="text-[11px] font-semibold text-charcoal hover:underline">Send test</button>
                               {['draft', 'scheduled'].includes(c.status) && (
                                 <button onClick={() => handleDeleteCampaign(c)} disabled={busy} className="text-slate hover:text-error disabled:opacity-50" title="Delete">
                                   <Trash2 size={13} />
@@ -1109,13 +1047,21 @@ export function StoreMarketing() {
           </div>
         )}
 
-        {showCampaignModal && (
-          <EmailCampaignFormModal
+        {(showCampaignModal || editingCampaign) && (
+          <EmailCampaignEditor
             storeId={storeId}
-            onClose={() => setShowCampaignModal(false)}
-            onSaved={() => { setShowCampaignModal(false); refreshEmailCampaigns(); }}
+            store={store}
+            campaign={editingCampaign}
+            onClose={() => { setShowCampaignModal(false); setEditingCampaign(null); refreshEmailCampaigns(); }}
+            onSaved={() => refreshEmailCampaigns()}
           />
         )}
+
+        {testingCampaign && (
+          <EmailCampaignTestModal storeId={storeId} campaign={testingCampaign} onClose={() => setTestingCampaign(null)} />
+        )}
+
+        {tab === 'automations' && <MarketingAutomations storeId={storeId} emailFeature={emailFeature} />}
 
         {schedulingCampaign && (
           <EmailCampaignScheduleModal

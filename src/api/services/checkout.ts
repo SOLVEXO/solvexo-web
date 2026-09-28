@@ -1,6 +1,7 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 import { getCheckoutAttributionFields } from '@/utils/promotionAttribution';
+import { getAffiliateRef } from '@/utils/affiliateAttribution';
 import type { VariantOption } from './product';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -194,6 +195,7 @@ export function apiCreateCheckout(payload: CreateCheckoutPayload) {
   return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, {
     ...payload,
     ...getCheckoutAttributionFields(),
+    attributedAffiliateCode: getAffiliateRef(),
     currencyPreference: getCurrencyPreference(),
   });
 }

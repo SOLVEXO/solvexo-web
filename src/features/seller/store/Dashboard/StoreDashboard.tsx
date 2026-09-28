@@ -909,7 +909,7 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-14 h-14 rounded-2xl bg-brand-pale-orange border border-[#eee0d5] flex items-center justify-center overflow-hidden shrink-0">
             {store?.logo
-              ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
+              ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="max-w-full max-h-full object-contain" />
               : <Globe size={22} className="text-brand-orange" />}
           </div>
           <div className="min-w-0">

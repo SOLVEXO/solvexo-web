@@ -149,7 +149,7 @@ export function ImageUpload({
             {uploading
               ? <Loader2 size={22} className="text-brand-orange animate-spin" />
               : url
-                ? <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
+                ? <img loading="lazy" decoding="async" src={url} alt="" className="max-w-full max-h-full object-contain" />
                 : <Camera size={22} className="text-brand-orange" />}
             <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
           </label>

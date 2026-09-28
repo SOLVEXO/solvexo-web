@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { Section } from '@/api/services/storefrontTypes';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { NovaButton } from '../components/NovaButton';
 import { novaInput } from '../components/novaFormStyles';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
@@ -14,15 +15,19 @@ import { registerNovaSection } from './novaSectionRenderer';
  *  "disclosed scope" doc comment) rather than leaving a merchant who adds
  *  a Newsletter section on a Nova store with it silently not rendering. */
 function NewsletterSection({ section, colors }: { section: Section; colors: NovaSectionColors }) {
+  const { store } = useStorefront();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [pendingConfirm, setPendingConfirm] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || status === 'loading') return;
     setStatus('loading');
     try {
-      await apiSubscribeNewsletter(email.trim());
+      const res = await apiSubscribeNewsletter(email.trim(), { storeId: store.storeId, source: 'store_section' });
+      // Double opt-in stores: nothing is subscribed until they confirm by email.
+      setPendingConfirm(!!res.data?.pendingConfirmation);
       setStatus('done');
     } catch { setStatus('error'); }
   };
@@ -35,7 +40,7 @@ function NewsletterSection({ section, colors }: { section: Section; colors: Nova
         </h2>
         {section.settings.subtext && <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: colors.inkMuted }}>{section.settings.subtext}</p>}
         {status === 'done' ? (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: colors.success, marginTop: '8px' }}>Thank you — you're subscribed.</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: colors.success, marginTop: '8px' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
         ) : (
           <form onSubmit={submit} className="flex gap-2 w-full" style={{ marginTop: '8px' }}>
             <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email" style={novaInput} />

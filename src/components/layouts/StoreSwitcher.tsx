@@ -63,7 +63,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
           isLight ? 'size-5 text-[8px]' : 'size-6 text-[9px]',
         )}>
           {currentStore?.logo
-            ? <img loading="lazy" decoding="async" src={currentStore.logo} className="w-full h-full object-cover" alt="" />
+            ? <img loading="lazy" decoding="async" src={currentStore.logo} className="max-w-full max-h-full object-contain" alt="" />
             : currentStore
               ? initials
               : <StoreIcon size={isLight ? 11 : 13} className="text-white" />}
@@ -147,7 +147,7 @@ function StoreSwitcherItem({ label, sub, logo, active, light, onClick }: {
         'size-[26px] rounded-[7px] shrink-0 overflow-hidden flex items-center justify-center text-[9px] font-bold',
         light ? 'bg-bone text-slate' : 'bg-charcoal text-slate',
       )}>
-        {logo ? <img loading="lazy" decoding="async" src={logo} alt={label} className="w-full h-full object-cover" /> : initials}
+        {logo ? <img loading="lazy" decoding="async" src={logo} alt={label} className="max-w-full max-h-full object-contain" /> : initials}
       </div>
       <div className="flex-1 min-w-0">
         <p className={clsx('text-[12px] font-medium truncate', light ? 'text-charcoal' : 'text-dark-text')}>{label}</p>

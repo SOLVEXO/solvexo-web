@@ -122,7 +122,7 @@ function Newsletter() {
     setLoading(true);
     setError('');
     try {
-      const res = await apiSubscribeNewsletter(email.trim());
+      const res = await apiSubscribeNewsletter(email.trim(), { source: 'platform_footer' });
       setSub(true);
       void res;
     } catch (err) {
@@ -254,8 +254,8 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
                 <Mail size={15} className="text-brand-orange" />
               </span>
               <div>
-                <p className="text-[16px] sm:text-[17px] font-bold text-white leading-tight tracking-[-0.01em]">Get deals before anyone else</p>
-                <p className="text-[12px] text-[#8b8985] mt-1">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+                <p className="text-[16px] sm:text-[17px] font-bold text-white leading-tight tracking-[-0.01em]">Grow your business with Solvexo</p>
+                <p className="text-[12px] text-[#8b8985] mt-1">Product updates, new features, selling tips and merchant-only offers — straight to your inbox.</p>
               </div>
             </div>
             <Newsletter />

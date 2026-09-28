@@ -15,6 +15,8 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
 import { NovaButton } from '../components/NovaButton';
+import { novaInput } from '../components/novaFormStyles';
+import { useBackInStock } from '../../useBackInStock';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { novaTheme as t } from '../theme.config';
@@ -204,6 +206,8 @@ export function NovaProductPage() {
   const displayCompareAt = activeVariant?.compareAtPrice != null ? convert(activeVariant.compareAtPrice, activeVariant.currency) : null;
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
+  // "Notify me when available" — only for a physical variant that's sold out.
+  const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && stock <= 0);
 
   const handleAddToCart = async () => {
     if (!product || !activeVariant) return;
@@ -304,6 +308,35 @@ export function NovaProductPage() {
             >
               {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
             </NovaButton>
+          )}
+
+          {backInStock.show && (
+            <div className="mt-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '14px 16px', background: t.colors.bgAlt }}>
+              {backInStock.status === 'done' || backInStock.status === 'available' ? (
+                <p className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', fontWeight: 600, color: t.colors.success }}>
+                  <CheckCircle2 size={15} className="mt-[2px] shrink-0" /> {backInStock.message}
+                </p>
+              ) : (
+                <form onSubmit={backInStock.submit} className="flex flex-col gap-2.5">
+                  <p style={{ fontFamily: t.fonts.display, fontSize: '14px', fontWeight: 700, color: t.colors.ink }}>Get notified when it's back</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      required
+                      value={backInStock.email}
+                      onChange={e => backInStock.setEmail(e.target.value)}
+                      placeholder="Your email"
+                      aria-label="Email for back-in-stock alert"
+                      style={novaInput}
+                    />
+                    <NovaButton type="submit" loading={backInStock.status === 'loading'} style={{ flexShrink: 0 }}>Notify me</NovaButton>
+                  </div>
+                  {backInStock.status === 'error' && (
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{backInStock.message}</p>
+                  )}
+                </form>
+              )}
+            </div>
           )}
 
           {isBlockOn('product_description') && product.description && (

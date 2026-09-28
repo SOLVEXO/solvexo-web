@@ -42,7 +42,7 @@ export function StoreFeatureCard({ store, onClick, className }: {
           <div className="w-14 h-14 rounded-2xl bg-white border border-bone p-[3px]">
             <div className="w-full h-full rounded-[13px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
               {store.logo
-                ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
+                ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="max-w-full max-h-full object-contain" />
                 : <Store size={22} className="text-brand-orange" />}
             </div>
           </div>

@@ -4,6 +4,15 @@ import { ENDPOINTS } from '../endpoints';
 export type EmailCampaignAudience = 'all' | 'buyers' | 'abandoned';
 export type EmailCampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
 
+/** Optional filters ANDed on top of the audience (all optional). */
+export interface EmailCampaignSegment {
+  minOrders?:            number;
+  minTotalSpent?:        number;
+  orderedWithinDays?:    number;
+  notOrderedWithinDays?: number;
+  tags?:                 string[];
+}
+
 export interface EmailCampaign {
   _id:             string;
   storeId:         string;
@@ -11,6 +20,9 @@ export interface EmailCampaign {
   subject:         string;
   message:         string;
   audience:        EmailCampaignAudience;
+  segment?:        EmailCampaignSegment | null;
+  /** Drag-and-drop editor design (see marketing/emailDesign.ts) — `message` is its rendered HTML. */
+  design?:         object | null;
   status:          EmailCampaignStatus;
   scheduledAt:     string | null;
   sentAt:          string | null;
@@ -27,6 +39,8 @@ export interface CreateEmailCampaignPayload {
   subject:  string;
   message:  string;
   audience: EmailCampaignAudience;
+  segment?: EmailCampaignSegment | null;
+  design?:  object | null;
 }
 
 export type UpdateEmailCampaignPayload = Partial<CreateEmailCampaignPayload>;
@@ -67,6 +81,16 @@ export function apiDeleteEmailCampaign(storeId: string, campaignId: string) {
 /** POST /api/email-campaigns/:storeId/:campaignId/send */
 export function apiSendEmailCampaignNow(storeId: string, campaignId: string) {
   return client.post<never, ApiResponse<EmailCampaign>>(ENDPOINTS.EMAIL_CAMPAIGNS.SEND(storeId, campaignId));
+}
+
+/** POST /api/email-campaigns/:storeId/audience-preview — with segment filters */
+export function apiPreviewEmailCampaignSegment(storeId: string, audience: EmailCampaignAudience, segment?: EmailCampaignSegment | null) {
+  return client.post<never, ApiResponse<{ recipientCount: number }>>(ENDPOINTS.EMAIL_CAMPAIGNS.AUDIENCE_PREVIEW(storeId), { audience, segment: segment ?? null });
+}
+
+/** POST /api/email-campaigns/:storeId/:campaignId/test — sends "[Test] ..." to `email`, or to the seller's own account email */
+export function apiSendEmailCampaignTest(storeId: string, campaignId: string, email?: string) {
+  return client.post<never, ApiResponse<null>>(ENDPOINTS.EMAIL_CAMPAIGNS.TEST(storeId, campaignId), email ? { email } : {});
 }
 
 /** POST /api/email-campaigns/:storeId/:campaignId/schedule */

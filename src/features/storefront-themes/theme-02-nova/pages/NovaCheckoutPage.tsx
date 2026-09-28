@@ -20,6 +20,7 @@ import { apiGetCheckoutPaymentMethods, apiInitiateCheckoutPaymentMethod, type Pu
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiSubscribeMeToStore } from '@/api/services/newsletter';
 import { NovaButton } from '../components/NovaButton';
 import { novaTheme as t } from '../theme.config';
 
@@ -126,6 +127,13 @@ export function NovaCheckoutPage() {
   const [polling, setPolling] = useState(false);
   const [placedOrders, setPlacedOrders] = useState<PlacedOrder[] | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // "Email me with news and offers" — unticked by default (consent must be
+  // an explicit action), recorded when the buyer actually commits to paying.
+  const [emailMeOffers, setEmailMeOffers] = useState(false);
+  const recordMarketingConsent = () => {
+    if (emailMeOffers) apiSubscribeMeToStore(store.storeId).catch(() => { /* never blocks the order */ });
+  };
 
   useEffect(() => {
     if (!loggedIn || isDigital) { setAddrLoading(false); return; }
@@ -314,6 +322,7 @@ export function NovaCheckoutPage() {
 
   const handleStripeConfirmed = () => {
     if (!checkout) return;
+    recordMarketingConsent();
     setPolling(true);
     setPlaceError('');
     let stopped = false;
@@ -347,6 +356,7 @@ export function NovaCheckoutPage() {
     setPlacing(true); setPlaceError('');
     try {
       const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
+      recordMarketingConsent();
       await clearCart();
       setPlacedOrders(res.data.orders);
     } catch (err) {
@@ -367,6 +377,7 @@ export function NovaCheckoutPage() {
       const cancelUrl = `${window.location.origin}/checkout`;
       const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl);
       if (res.data.redirectUrl) {
+        recordMarketingConsent();
         window.location.href = res.data.redirectUrl;
         return;
       }
@@ -564,6 +575,11 @@ export function NovaCheckoutPage() {
                     <AlertCircle size={13} className="mt-[1px] shrink-0" /> {placeError}
                   </div>
                 )}
+
+                <label className="flex items-center gap-2.5 cursor-pointer" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>
+                  <input type="checkbox" checked={emailMeOffers} onChange={e => setEmailMeOffers(e.target.checked)} />
+                  Email me with news and offers from {store.name}
+                </label>
 
                 {selectedMethod === 'stripe' && (
                   !isStripeConfigured() ? (

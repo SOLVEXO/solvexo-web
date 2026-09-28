@@ -21,6 +21,7 @@ import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/componen
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiSubscribeMeToStore } from '@/api/services/newsletter';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierTheme as t } from '../theme.config';
 
@@ -156,6 +157,13 @@ export function AtelierCheckoutPage() {
   const [polling, setPolling] = useState(false);
   const [placedOrders, setPlacedOrders] = useState<PlacedOrder[] | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // "Email me with news and offers" — unticked by default (consent must be
+  // an explicit action), recorded when the buyer actually commits to paying.
+  const [emailMeOffers, setEmailMeOffers] = useState(false);
+  const recordMarketingConsent = () => {
+    if (emailMeOffers) apiSubscribeMeToStore(store.storeId).catch(() => { /* never blocks the order */ });
+  };
 
   useEffect(() => {
     if (!loggedIn || isDigital) { setAddrLoading(false); return; }
@@ -357,6 +365,7 @@ export function AtelierCheckoutPage() {
 
   const handleStripeConfirmed = () => {
     if (!checkout) return;
+    recordMarketingConsent();
     setPolling(true);
     setPlaceError('');
     let stopped = false;
@@ -390,6 +399,7 @@ export function AtelierCheckoutPage() {
     setPlacing(true); setPlaceError('');
     try {
       const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
+      recordMarketingConsent();
       await clearCart();
       setPlacedOrders(res.data.orders);
     } catch (err) {
@@ -412,6 +422,7 @@ export function AtelierCheckoutPage() {
       const cancelUrl = `${window.location.origin}/checkout`;
       const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl);
       if (res.data.redirectUrl) {
+        recordMarketingConsent();
         window.location.href = res.data.redirectUrl;
         return;
       }
@@ -606,6 +617,11 @@ export function AtelierCheckoutPage() {
                     <AlertCircle size={13} className="mt-[1px] shrink-0" /> {placeError}
                   </div>
                 )}
+
+                <label className="flex items-center gap-2.5 cursor-pointer" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.ink }}>
+                  <input type="checkbox" checked={emailMeOffers} onChange={e => setEmailMeOffers(e.target.checked)} />
+                  Email me with news and offers from {store.name}
+                </label>
 
                 {selectedMethod === 'stripe' && (
                   !isStripeConfigured() ? (

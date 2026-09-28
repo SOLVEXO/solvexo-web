@@ -95,6 +95,7 @@ const StoreAddProduct = lazy(() => import('@/features/seller/store/Dashboard/Sto
 const StoreEditProduct = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
 const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
 const StoreCustomerList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
+const StoreSubscribers = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/Subscribers'));
 const SettingsHub = lazy(() => import('@/features/seller/store/Dashboard/Manage/SettingsHub'));
 const StoreStaff = lazy(() => import('@/features/seller/store/Dashboard/Manage/Staff'));
 const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
@@ -144,6 +145,7 @@ const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers').then(m
 const AdminModeration = lazy(() => import('@/features/admin/pages/AdminModeration').then(m => ({ default: m.AdminModeration })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
 const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
+const AdminNewsletter = lazy(() => import('@/features/admin/pages/AdminNewsletter').then(m => ({ default: m.AdminNewsletter })));
 const AdminPlatformPlans = lazy(() => import('@/features/admin/pages/AdminPlatformPlans').then(m => ({ default: m.AdminPlatformPlans })));
 const AdminFinance = lazy(() => import('@/features/admin/pages/AdminFinance').then(m => ({ default: m.AdminFinance })));
 const AdminThemeCatalog = lazy(() => import('@/features/admin/pages/AdminThemeCatalog').then(m => ({ default: m.AdminThemeCatalog })));
@@ -335,6 +337,7 @@ const mainRouter = createBrowserRouter([
           { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
           { path: 'products/detail/:productId',       element: <StoreProductDetail /> },
           { path: 'customer/list',                    element: <StoreCustomerList /> },
+          { path: 'customer/subscribers',             element: <StoreSubscribers /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
           // Settings hub — one tabbed page (General/Billing/Integrations/Staff/
           // Custom Fields/Content Types/Activity Log) replacing 6 separate
@@ -468,6 +471,7 @@ const mainRouter = createBrowserRouter([
           { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
           { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
+          { path: 'newsletter',   element: <AdminNewsletter /> },
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
           { path: 'manual-payments', element: <RequireRole role="admin"><AdminManualPayments /></RequireRole> },

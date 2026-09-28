@@ -14,6 +14,7 @@ import { useFavicon } from '@/hooks/useFavicon';
 import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
 import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
 import { CookieConsentBanner } from './CookieConsentBanner';
+import { captureAffiliateRef } from '@/utils/affiliateAttribution';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -60,6 +61,10 @@ export function StorefrontLayout() {
   // this instead of firing unconditionally.
   const [cookieConsent, setCookieConsent] = useState<CookieConsentCategories | null>(null);
   const { setCurrency } = useCurrencyPreference();
+
+  // Affiliate referral links land here with ?ref=CODE — remembered for
+  // checkout attribution (see utils/affiliateAttribution.ts).
+  useEffect(() => { captureAffiliateRef(); }, []);
 
   useEffect(() => {
     let cancelled = false;

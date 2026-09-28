@@ -79,11 +79,13 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
         />
         {logo ? (
-          <img
-            loading="lazy" decoding="async"
-            src={logo} alt={name ?? 'Store'}
-            className="relative size-24 rounded-full object-cover ring-4 ring-white/40"
-          />
+          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center overflow-hidden">
+            <img
+              loading="lazy" decoding="async"
+              src={logo} alt={name ?? 'Store'}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
         ) : (
           <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center text-white text-[26px] font-bold">
             {name ? name.slice(0, 2).toUpperCase() : 'ST'}
