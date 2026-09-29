@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, LogOut, Landmark, Percent, Coins, Activity,
+  BarChart3, Layers, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -26,8 +26,9 @@ interface AdminNavItem {
 export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'overview',      Icon: LayoutDashboard, label: 'Overview',        path: '/admin'               },
   { id: 'analytics',     Icon: BarChart3,       label: 'Analytics',       path: '/admin/analytics'     },
-  { id: 'clients',       Icon: Users,           label: 'Clients',         path: '/admin/clients'       },
-  { id: 'moderation',    Icon: Shield,          label: 'Moderation',      path: '/admin/moderation'    },
+  // Moderation is a tab inside this page now (AdminClients.tsx), not its
+  // own nav destination — see that file's own comment.
+  { id: 'clients',       Icon: Users,           label: 'Clients Manage',  path: '/admin/clients'       },
   { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
   { id: 'theme-catalog', Icon: Palette,         label: 'Theme Catalog',   path: '/admin/theme-catalog' },
@@ -37,7 +38,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'store-app-requests', Icon: Smartphone, label: 'Store App Requests', path: '/admin/store-app-requests' },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
-  { id: 'manual-payments', Icon: Landmark,      label: 'Manual Payments', path: '/admin/manual-payments' },
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
@@ -121,9 +121,16 @@ interface AdminModule {
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'], collapsible: true },
-  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['clients', 'moderation'], collapsible: true },
+  // Just one destination now (Moderation moved inside it as a tab — see
+  // AdminClients.tsx), so this is a bare top-level link, same as
+  // Content/Analytics below, not a group needing its own heading.
+  { id: 'clients',   label: 'Clients Manage',        Icon: Users,          ids: ['clients'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter'], collapsible: true },
-  { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments'], collapsible: true },
+  // Manual bank-transfer verification moved to each seller's own Store
+  // Workspace (money lands directly in the seller's own bank account now,
+  // never Solvexo's — see ManualPaymentsService) — just one destination
+  // here again, same treatment as Clients Manage above.
+  { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance'] },
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
   { id: 'activity',  label: 'Activity Log',          Icon: Activity,       ids: ['activity-log'] },
@@ -135,7 +142,7 @@ export const ADMIN_MODULES: AdminModule[] = [
 // starts collapsed, a group containing the current route force-expands
 // itself regardless (see `groupHasActiveItem` in AdminSidebar), and the
 // choice is remembered per-browser via localStorage.
-const DEFAULT_COLLAPSED_ADMIN_GROUPS = ['Commerce', 'Users & Communication', 'Growth', 'Finance'];
+const DEFAULT_COLLAPSED_ADMIN_GROUPS = ['Commerce', 'Growth', 'Finance'];
 const ADMIN_SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:admin-sidebar:collapsed-groups';
 
 function loadCollapsedAdminGroups(): Set<string> {
@@ -217,7 +224,6 @@ const ADMIN_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[
   { id: 'overview',   Icon: LayoutDashboard, label: 'Overview',    path: '/admin'            },
   { id: 'clients',    Icon: Users,           label: 'Clients',     path: '/admin/clients'    },
   { id: 'finance',    Icon: DollarSign,      label: 'Finance',     path: '/admin/finance'    },
-  { id: 'moderation', Icon: Shield,          label: 'Moderation',  path: '/admin/moderation' },
   { id: 'settings',   Icon: Settings,        label: 'Settings',    path: '/admin/settings'   },
 ];
 

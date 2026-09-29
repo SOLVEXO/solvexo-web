@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, Pencil, Trash2, HelpCircle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminFaqs } from '@/hooks/admin/useAdminFaqs';
@@ -66,7 +66,7 @@ function FaqFormModal({ faq, onClose, onSaved }: { faq: Faq | null; onClose: () 
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export function AdminFaqs() {
+export function AdminFaqs({ tabs }: { tabs?: ReactNode } = {}) {
   usePageTitle('FAQs');
   const { faqs, stats, loading, error, refetch } = useAdminFaqs();
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -147,6 +147,7 @@ export function AdminFaqs() {
         </div>
         <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">Add FAQ</Button>
       </div>
+      {tabs}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, Percent, Truck } from 'lucide-react';
+import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, Percent, Truck, Landmark } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE_URL } from '@/api/client';
 import {
-  apiListStoreIntegrations, apiConnectSafepay, apiConnectWhatsApp, apiTestIntegration,
+  apiListStoreIntegrations, apiConnectSafepay, apiConnectBankTransfer, apiConnectWhatsApp, apiTestIntegration,
   apiUpdateIntegration, apiDisconnectIntegration, apiConnectTax, apiConnectShipping,
   type StoreIntegrationsList, type StoreIntegrationView, type PaymentProviderKey, type ShippingOriginAddress,
 } from '@/api/services/integrations';
@@ -35,6 +35,7 @@ const PROVIDER_BRAND: Record<PaymentProviderKey, { name: string; color: string; 
   jazzcash:  { name: 'JazzCash',  color: '#D2232A', bg: '#FBE9EA' },
   easypaisa: { name: 'Easypaisa', color: '#0A8043', bg: '#E7F5EE' },
   payfast:   { name: 'PayFast',   color: '#0B5FFF', bg: '#E8F0FF' },
+  bank_transfer: { name: 'Bank Transfer', color: '#1E7A3C', bg: '#E3F4EA' },
 };
 
 // Safepay gets its own drawn logomark (a shield + checkmark, in Safepay's
@@ -74,7 +75,7 @@ function ProviderMonogram({ provider, size = 42 }: { provider: PaymentProviderKe
       className="rounded-[10px] flex items-center justify-center shrink-0 font-bold"
       style={{ width: size, height: size, background: brand.bg, color: brand.color, fontSize: size * 0.42 }}
     >
-      {provider === 'safepay' ? <SafepayMark size={size} /> : brand.name.charAt(0)}
+      {provider === 'safepay' ? <SafepayMark size={size} /> : provider === 'bank_transfer' ? <Landmark size={size * 0.5} /> : brand.name.charAt(0)}
     </div>
   );
 }
@@ -217,6 +218,190 @@ function SafepayConnectModal({ storeId, onClose, onSaved }: { storeId: string; o
       </Field>
       {error && <p className="text-[12px] text-error -mt-1">{error}</p>}
     </Modal>
+  );
+}
+
+// ── Bank Transfer connect form — the seller's own bank account, shown to the
+// buyer at checkout. No secret key, no webhook, no live "Test" call: the
+// buyer sends money directly here and uploads a screenshot as proof, which
+// the seller reviews from the Payment Proofs page. Doubles as "Edit" —
+// re-submitting just overwrites the stored details (see connect's doc). ──────
+function BankTransferConnectModal({ storeId, initial, onClose, onSaved }: {
+  storeId: string; initial?: StoreIntegrationView['config']; onClose: () => void; onSaved: (v: StoreIntegrationView) => void;
+}) {
+  const [bankName, setBankName] = useState(initial?.bankName ?? '');
+  const [accountTitle, setAccountTitle] = useState(initial?.accountTitle ?? '');
+  const [accountNumber, setAccountNumber] = useState(initial?.accountNumber ?? '');
+  const [iban, setIban] = useState(initial?.iban ?? '');
+  const [jazzcashNumber, setJazzcashNumber] = useState(initial?.jazzcashNumber ?? '');
+  const [easypaisaNumber, setEasypaisaNumber] = useState(initial?.easypaisaNumber ?? '');
+  const [instructions, setInstructions] = useState(initial?.instructions ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    if (!bankName.trim() || !accountTitle.trim() || !accountNumber.trim()) {
+      setError('Bank name, account title and account number are all required.');
+      return;
+    }
+    setSaving(true); setError('');
+    try {
+      const res = await apiConnectBankTransfer(storeId, {
+        bankName: bankName.trim(), accountTitle: accountTitle.trim(), accountNumber: accountNumber.trim(),
+        iban: iban.trim() || undefined,
+        jazzcashNumber: jazzcashNumber.trim() || undefined,
+        easypaisaNumber: easypaisaNumber.trim() || undefined,
+        instructions: instructions.trim() || undefined,
+      });
+      onSaved(res.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save your bank details.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      title={initial ? 'Edit Bank Transfer Details' : 'Connect Bank Transfer'}
+      width={460}
+      onClose={onClose}
+      mobileSheet
+      footer={<>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={submit} loading={saving}>Save</Button>
+      </>}
+    >
+      <div className="flex items-start gap-2 rounded-[10px] bg-[#E3F4EA] px-3.5 py-3 mb-4">
+        <Landmark size={15} className="shrink-0 mt-[1px]" style={{ color: '#1E7A3C' }} />
+        <p className="text-[11.5px] leading-[1.5]" style={{ color: '#1E5A32' }}>
+          Buyers see these details at checkout and transfer directly into your own account — money never passes
+          through Solvexo. Once they upload a screenshot, review it from this store's Payment Proofs page.
+        </p>
+      </div>
+      <Field label="Bank Name" required>
+        <Input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Meezan Bank" />
+      </Field>
+      <Field label="Account Title" required>
+        <Input value={accountTitle} onChange={e => setAccountTitle(e.target.value)} placeholder="Your business name" />
+      </Field>
+      <Field label="Account Number" required>
+        <Input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="font-mono" />
+      </Field>
+      <Field label="IBAN"><Input value={iban} onChange={e => setIban(e.target.value)} className="font-mono" /></Field>
+      <Field label="JazzCash Number"><Input value={jazzcashNumber} onChange={e => setJazzcashNumber(e.target.value)} /></Field>
+      <Field label="Easypaisa Number"><Input value={easypaisaNumber} onChange={e => setEasypaisaNumber(e.target.value)} /></Field>
+      <Field label="Instructions for buyer"><Input value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="Optional note shown at checkout" /></Field>
+      {error && <p className="text-[12px] text-error -mt-1">{error}</p>}
+    </Modal>
+  );
+}
+
+function BankTransferIntegrationCard({ integration, storeId, onChanged }: {
+  integration: StoreIntegrationView; storeId: string; onChanged: () => void;
+}) {
+  const toast = useToast();
+  const [showConnect, setShowConnect] = useState(false);
+  const [togglingCheckout, setTogglingCheckout] = useState(false);
+  const [pendingDisconnect, setPendingDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [checkedOverride, setCheckedOverride] = useState<boolean | null>(null);
+  const isCheckoutEnabled = checkedOverride ?? integration.isEnabledForCheckout;
+  useEffect(() => {
+    if (checkedOverride !== null && integration.isEnabledForCheckout === checkedOverride) {
+      setCheckedOverride(null);
+    }
+  }, [integration.isEnabledForCheckout, checkedOverride]);
+
+  const isConnected = integration.status === 'connected';
+
+  async function toggleCheckout(next: boolean) {
+    if (!integration.id) return;
+    setCheckedOverride(next);
+    setTogglingCheckout(true);
+    try {
+      await apiUpdateIntegration(storeId, integration.id, { isEnabledForCheckout: next });
+      onChanged();
+    } catch (err) {
+      setCheckedOverride(null);
+      toast.error(err instanceof Error ? err.message : 'Failed to update checkout setting.');
+    } finally {
+      setTogglingCheckout(false);
+    }
+  }
+
+  async function confirmDisconnect() {
+    if (!integration.id) return;
+    setDisconnecting(true);
+    try {
+      await apiDisconnectIntegration(storeId, integration.id);
+      setPendingDisconnect(false);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect.');
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <ProviderMonogram provider="bank_transfer" />
+          <div className="min-w-0">
+            <p className="text-[14.5px] font-bold text-carbon truncate">Bank Transfer</p>
+            <div className="flex items-center gap-1.5 mt-[3px]">
+              <span className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full bg-cream text-slate">PKR</span>
+            </div>
+          </div>
+        </div>
+        <StatusPill status={integration.status} />
+      </div>
+
+      {!isConnected ? (
+        <>
+          <p className="text-[12.5px] text-slate mb-3">Buyers transfer straight into your own bank account and upload a screenshot as proof — you review it yourself, no gateway needed.</p>
+          <Button size="sm" onClick={() => setShowConnect(true)}>Connect</Button>
+        </>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-x-5 gap-y-1">
+            <span className="text-[11.5px] text-slate">{integration.config?.bankName}</span>
+            <span className="text-[11.5px] text-slate font-mono">{integration.config?.accountNumber}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Toggle checked={isCheckoutEnabled} disabled={togglingCheckout} onChange={toggleCheckout} ariaLabel="Enable Bank Transfer at checkout" />
+              <span className="text-[12.5px] text-graphite">Enabled at checkout</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowConnect(true)}>Edit</Button>
+              <Button size="sm" variant="outline" onClick={() => setPendingDisconnect(true)}>Disconnect</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConnect && (
+        <BankTransferConnectModal
+          storeId={storeId}
+          initial={isConnected ? integration.config : undefined}
+          onClose={() => setShowConnect(false)}
+          onSaved={() => { setShowConnect(false); onChanged(); }}
+        />
+      )}
+      {pendingDisconnect && (
+        <ConfirmDialog
+          title="Disconnect Bank Transfer"
+          message="Buyers will no longer see this option at checkout. You can reconnect it any time."
+          confirmLabel="Disconnect"
+          loading={disconnecting}
+          onCancel={() => setPendingDisconnect(false)}
+          onConfirm={confirmDisconnect}
+        />
+      )}
+    </div>
   );
 }
 
@@ -890,7 +1075,9 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
               <p className="text-[12px] text-slate mb-3">Only one is ever active at checkout at a time — enable the one you want buyers to see.</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {data.payment.map(integration => (
-                  <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
+                  integration.provider === 'bank_transfer'
+                    ? <BankTransferIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
+                    : <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
                 ))}
               </div>
             </div>

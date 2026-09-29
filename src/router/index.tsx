@@ -104,6 +104,7 @@ const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
+const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
 const DraftOrdersList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList'));
 const DraftOrderForm = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm'));
 const PurchaseOrdersList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/purchaseOrders/PurchaseOrdersList'));
@@ -143,7 +144,6 @@ const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').
 const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
-const AdminModeration = lazy(() => import('@/features/admin/pages/AdminModeration').then(m => ({ default: m.AdminModeration })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
 const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
 const AdminNewsletter = lazy(() => import('@/features/admin/pages/AdminNewsletter').then(m => ({ default: m.AdminNewsletter })));
@@ -157,7 +157,6 @@ const AdminThemeCatalog = lazy(() => import('@/features/admin/pages/AdminThemeCa
 // directly by AdminSiteContent itself (not lazy from here) — see its own
 // doc comment.
 const AdminSiteContent = lazy(() => import('@/features/admin/pages/AdminSiteContent').then(m => ({ default: m.AdminSiteContent })));
-const AdminManualPayments = lazy(() => import('@/features/admin/pages/AdminManualPayments').then(m => ({ default: m.AdminManualPayments })));
 const AdminCommissionRules = lazy(() => import('@/features/admin/pages/AdminCommissionRules').then(m => ({ default: m.AdminCommissionRules })));
 const AdminConfig = lazy(() => import('@/features/admin/pages/AdminConfig').then(m => ({ default: m.AdminConfig })));
 const AdminFxSettings = lazy(() => import('@/features/admin/pages/AdminFxSettings').then(m => ({ default: m.AdminFxSettings })));
@@ -328,6 +327,7 @@ const mainRouter = createBrowserRouter([
           { path: 'dashboard',                        element: <StoreDashboard /> },
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
+          { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },
           { path: 'draft-orders/:draftId',             element: <DraftOrderForm /> },
           { path: 'purchase-orders',                  element: <PurchaseOrdersList /> },
@@ -477,13 +477,14 @@ const mainRouter = createBrowserRouter([
           { path: 'users',        element: <Navigate to="../clients" replace /> },
           { path: 'clients',      element: <RequireRole role="admin"><AdminClients /></RequireRole> },
           { path: 'clients/:id',  element: <RequireRole role="admin"><AdminClientDetail /></RequireRole> },
-          { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
+          // Moderation is a tab inside Clients Manage now (AdminClients.tsx
+          // renders AdminModeration directly, embedded) — not its own route.
+          { path: 'moderation',   element: <Navigate to="../clients" replace /> },
           { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
           { path: 'newsletter',   element: <AdminNewsletter /> },
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
-          { path: 'manual-payments', element: <RequireRole role="admin"><AdminManualPayments /></RequireRole> },
           { path: 'fx-settings', element: <RequireRole role="admin"><AdminFxSettings /></RequireRole> },
           { path: 'commission-rules', element: <RequireRole role="admin"><AdminCommissionRules /></RequireRole> },
           { path: 'content',      element: <RequireRole role="admin"><AdminSiteContent /></RequireRole> },

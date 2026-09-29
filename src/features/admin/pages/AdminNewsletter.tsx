@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MailCheck, MailX, Mail, Download, Trash2, Send } from 'lucide-react';
+import { MailCheck, MailX, Mail, Download, Trash2, Send, Users } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
@@ -339,14 +339,16 @@ export function AdminNewsletter() {
   return (
     <div>
       <AdminPageHeader title="Newsletter" subtitle="People who subscribed on the Solvexo website, and broadcasts to them." />
+      <TabBar
+        tabs={[
+          { id: 'subscribers', label: 'Subscribers', icon: <Users size={14} /> },
+          { id: 'broadcasts', label: 'Broadcasts', icon: <Send size={14} /> },
+        ]}
+        active={tab}
+        onChange={id => setTab(id as 'subscribers' | 'broadcasts')}
+        className="px-4 sm:px-7 mt-5"
+      />
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
-        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <TabBar
-            tabs={[{ id: 'subscribers', label: 'Subscribers' }, { id: 'broadcasts', label: 'Broadcasts' }]}
-            active={tab}
-            onChange={id => setTab(id as 'subscribers' | 'broadcasts')}
-          />
-        </div>
         {/* Both stay mounted so switching tabs keeps filters and a half-written draft. */}
         <div className={tab === 'subscribers' ? '' : 'hidden'}><SubscribersTab onSummary={setActiveSubscribers} /></div>
         <div className={tab === 'broadcasts' ? '' : 'hidden'}><BroadcastsTab activeSubscribers={activeSubscribers} /></div>

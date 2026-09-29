@@ -1,28 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  apiAdminListManualPayments, apiAdminApproveManualPayment, apiAdminRejectManualPayment,
-  type AdminManualPaymentProof, type ManualPaymentProofStatus,
+  apiSellerListManualPayments, apiSellerApproveManualPayment, apiSellerRejectManualPayment,
+  type SellerManualPaymentProof, type ManualPaymentProofStatus,
 } from '@/api/services/manualPayment';
 
-export function useAdminManualPayments(status?: ManualPaymentProofStatus) {
-  const [proofs,  setProofs]  = useState<AdminManualPaymentProof[]>([]);
+export function useSellerManualPayments(storeId: string, status?: ManualPaymentProofStatus) {
+  const [proofs,  setProofs]  = useState<SellerManualPaymentProof[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
 
   const refetch = useCallback(() => {
+    if (!storeId) return Promise.resolve();
     setLoading(true);
-    return apiAdminListManualPayments(status)
+    return apiSellerListManualPayments(storeId, status)
       .then(res => setProofs(res.data.proofs ?? []))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load manual payments.'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load payment proofs.'))
       .finally(() => setLoading(false));
-  }, [status]);
+  }, [storeId, status]);
 
   useEffect(() => { refetch(); }, [refetch]);
 
   return { proofs, loading, error, refetch };
 }
 
-export function useApproveManualPayment() {
+export function useApproveManualPayment(storeId: string) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,7 +31,7 @@ export function useApproveManualPayment() {
     setSubmitting(true);
     setError('');
     try {
-      await apiAdminApproveManualPayment(proofId);
+      await apiSellerApproveManualPayment(storeId, proofId);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve payment.');
@@ -38,12 +39,12 @@ export function useApproveManualPayment() {
     } finally {
       setSubmitting(false);
     }
-  }, []);
+  }, [storeId]);
 
   return { approve, submitting, error };
 }
 
-export function useRejectManualPayment() {
+export function useRejectManualPayment(storeId: string) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,7 +52,7 @@ export function useRejectManualPayment() {
     setSubmitting(true);
     setError('');
     try {
-      await apiAdminRejectManualPayment(proofId, reason);
+      await apiSellerRejectManualPayment(storeId, proofId, reason);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reject payment.');
@@ -59,7 +60,7 @@ export function useRejectManualPayment() {
     } finally {
       setSubmitting(false);
     }
-  }, []);
+  }, [storeId]);
 
   return { reject, submitting, error };
 }

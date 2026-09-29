@@ -819,6 +819,13 @@ export function apiGetSellerOrderDetail(storeId: string, orderId: string) {
   );
 }
 
+/** Admin equivalent — Clients workspace's Orders tab (the seller-tagged route above 403s for an admin caller). */
+export function apiAdminGetOrderDetail(storeId: string, orderId: string) {
+  return client.get<never, ApiResponse<SellerOrderDetail>>(
+    ENDPOINTS.ORDERS.ADMIN_ORDER_DETAIL(storeId, orderId),
+  );
+}
+
 /** Same status/type/time filters as `apiGetSellerOrders` — capped at 5000 rows server-side. Was previously a permanently-disabled "Coming Soon" button with no backend route behind it. */
 export function apiExportOrdersCsv(storeId: string, params?: { status?: string; type?: string; time?: string }) {
   return client.get<never, Blob>(ENDPOINTS.SELLER_ACCOUNT.EXPORT_ORDERS_CSV(storeId), {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Plus, Pencil, Trash2, Quote, Check, X, User, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminTestimonials } from '@/hooks/admin/useAdminTestimonials';
@@ -218,7 +218,7 @@ const SOURCE_FILTER_OPTIONS = [
   { value: 'seller', label: 'Submitted by Seller' },
 ];
 
-export function AdminTestimonials() {
+export function AdminTestimonials({ tabs }: { tabs?: ReactNode } = {}) {
   usePageTitle('Testimonials');
   const { testimonials, stats, loading, error, refetch } = useAdminTestimonials();
   const pending = testimonials.filter(t => t.status === 'pending');
@@ -315,6 +315,7 @@ export function AdminTestimonials() {
         </div>
         <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">Add Testimonial</Button>
       </div>
+      {tabs}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (

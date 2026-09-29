@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, DollarSign, Store, Send, Receipt, FileText, Landmark } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Send, Receipt, FileText, Landmark } from 'lucide-react';
 import { Button, Input, TabBar, type Tab } from '@/components/comman/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminFinanceExport } from '@/hooks/admin/useAdminFinance';
@@ -13,7 +13,10 @@ import {
 } from '../components/finance/financeFilters';
 import { FinanceOverviewTab } from './finance/FinanceOverviewTab';
 import { FinanceRevenueTab } from './finance/FinanceRevenueTab';
-import { FinanceSellersTab } from './finance/FinanceSellersTab';
+// FinanceSellersTab retired — fully superseded by the Clients Manage
+// workspace's own Finance tab (per-client rollup, better than this
+// flat per-store list). File left on disk, unreferenced, same
+// "disconnect, don't delete" convention as AdminUsers.tsx.
 import { FinancePayoutsTab } from './finance/FinancePayoutsTab';
 import { FinancePayoutMethodsTab } from './finance/FinancePayoutMethodsTab';
 import { FinanceTransactionsTab } from './finance/FinanceTransactionsTab';
@@ -23,7 +26,6 @@ import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 const TABS: Tab[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={14} /> },
   { id: 'revenue', label: 'Revenue', icon: <DollarSign size={14} /> },
-  { id: 'sellers', label: 'Sellers', icon: <Store size={14} /> },
   { id: 'payouts', label: 'Payouts', icon: <Send size={14} /> },
   { id: 'payout-methods', label: 'Payout Methods', icon: <Landmark size={14} /> },
   { id: 'transactions', label: 'Transactions', icon: <Receipt size={14} /> },
@@ -91,7 +93,6 @@ export function AdminFinance() {
 
       {isVisited('overview') && <div className={paneClassName('overview')}><FinanceOverviewTab params={params} /></div>}
       {isVisited('revenue') && <div className={paneClassName('revenue')}><FinanceRevenueTab params={params} /></div>}
-      {isVisited('sellers') && <div className={paneClassName('sellers')}><FinanceSellersTab /></div>}
       {isVisited('payouts') && <div className={paneClassName('payouts')}><FinancePayoutsTab /></div>}
       {isVisited('payout-methods') && <div className={paneClassName('payout-methods')}><FinancePayoutMethodsTab /></div>}
       {isVisited('transactions') && <div className={paneClassName('transactions')}><FinanceTransactionsTab params={params} /></div>}

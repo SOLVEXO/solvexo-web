@@ -97,8 +97,15 @@ export function ReportDetailModal({ report, onClose, onApproved }: { report: Mod
   );
 }
 
-export function AdminModeration() {
-  usePageTitle('Moderation');
+interface AdminModerationProps {
+  /** true when rendered as a tab inside another page (the Clients Manage
+   *  workspace's Moderation tab) — suppresses this page's own title/header
+   *  since the parent page already owns those. */
+  embedded?: boolean;
+}
+
+export function AdminModeration({ embedded = false }: AdminModerationProps = {}) {
+  usePageTitle(embedded ? '' : 'Moderation');
   const { data: stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useModerationStats();
 
   const [search, setSearch] = useState('');
@@ -158,8 +165,8 @@ export function AdminModeration() {
 
   return (
     <>
-      <AdminPageHeader title="Content Moderation" subtitle="Review flagged listings, sellers, and reports." />
-      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
+      {!embedded && <AdminPageHeader title="Content Moderation" subtitle="Review flagged listings, sellers, and reports." />}
+      <div className={embedded ? 'flex flex-col gap-5' : 'px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5'}>
       {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       {statsError ? (

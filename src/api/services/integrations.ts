@@ -4,7 +4,7 @@ import { ENDPOINTS } from '../endpoints';
 // ── Types — mirror solvexo-api's `src/integrations` module exactly ─────────
 
 export type IntegrationType = 'payment' | 'whatsapp' | 'tax' | 'shipping';
-export type PaymentProviderKey = 'safepay' | 'jazzcash' | 'easypaisa' | 'payfast' | 'stripe';
+export type PaymentProviderKey = 'safepay' | 'jazzcash' | 'easypaisa' | 'payfast' | 'stripe' | 'bank_transfer';
 export type IntegrationMode = 'sandbox' | 'live';
 export type IntegrationStatus = 'not_connected' | 'connected' | 'disabled' | 'error' | 'needs_reauth';
 
@@ -68,6 +68,28 @@ export interface ConnectSafepayPayload {
 export function apiConnectSafepay(storeId: string, payload: ConnectSafepayPayload) {
   return client.post<never, ApiResponse<StoreIntegrationView>>(
     ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'payment', 'safepay'),
+    payload,
+  );
+}
+
+// The seller's own bank account, shown to the buyer at checkout — not a
+// secret credential like every other provider here (no webhook, no API
+// calls), which is why `connect` doubles as "edit" (re-submitting just
+// overwrites the stored config, same upsert the backend already does).
+export interface ConnectBankTransferPayload {
+  bankName: string;
+  accountTitle: string;
+  accountNumber: string;
+  iban?: string;
+  jazzcashNumber?: string;
+  easypaisaNumber?: string;
+  instructions?: string;
+}
+
+/** POST /api/store/:storeId/integrations/payment/bank_transfer/connect */
+export function apiConnectBankTransfer(storeId: string, payload: ConnectBankTransferPayload) {
+  return client.post<never, ApiResponse<StoreIntegrationView>>(
+    ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'payment', 'bank_transfer'),
     payload,
   );
 }

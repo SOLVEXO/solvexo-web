@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { MessageCircle, Eye, Trash2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminContact } from '@/hooks/admin/useAdminContact';
@@ -33,7 +33,7 @@ function DetailModal({ submission, onClose }: { submission: ContactSubmission; o
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export function AdminContactMessages() {
+export function AdminContactMessages({ tabs }: { tabs?: ReactNode } = {}) {
   usePageTitle('Contact Messages');
   const { submissions, stats, loading, error, refetch } = useAdminContact();
   const [statusFilter, setStatusFilter] = useState('');
@@ -114,6 +114,7 @@ export function AdminContactMessages() {
         title="Contact Messages"
         subtitle={`${stats.new} new · ${stats.read} read · ${stats.resolved} resolved`}
       />
+      {tabs}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (

@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks, MailCheck,
+  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks, MailCheck, Landmark,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -107,6 +107,11 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: 'draft_orders.view' },
+      // Only shows up once this store connects its own "Bank Transfer" in
+      // Integrations — buyers who pay that way upload a proof here for the
+      // seller to review/approve (money lands in the seller's own bank
+      // account, never Solvexo's — see ManualPaymentsService).
+      { id: 'payment-proofs', Icon: Landmark, label: 'Payment Proofs', path: 'payment-proofs', requiredPermission: 'orders.record_payment' },
       { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns', requiredPermission: 'orders.return' },
       { id: 'disputes', Icon: AlertTriangle, label: 'Disputes', path: 'disputes', requiredPermission: 'orders.disputes_manage' },
       { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping', requiredPermission: 'settings.shipping.manage' },

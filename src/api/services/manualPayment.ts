@@ -44,7 +44,7 @@ export interface ManualPaymentProof {
   updatedAt: string;
 }
 
-export interface AdminManualPaymentProof extends ManualPaymentProof {
+export interface SellerManualPaymentProof extends ManualPaymentProof {
   buyerName: string;
   buyerEmail: string;
 }
@@ -52,8 +52,9 @@ export interface AdminManualPaymentProof extends ManualPaymentProof {
 // ─────────────────────────────────────────────────────────────────────────────
 // BUYER
 // ─────────────────────────────────────────────────────────────────────────────
-export function apiGetManualPaymentBankDetails() {
-  return client.get<never, { success: boolean; data: ManualPaymentBankDetails }>(ENDPOINTS.MANUAL_PAYMENT.BANK_DETAILS);
+/** The seller's own bank account for this one store — see STORE_INTEGRATIONS' 'bank_transfer' provider. */
+export function apiGetManualPaymentBankDetails(storeId: string) {
+  return client.get<never, { success: boolean; data: ManualPaymentBankDetails }>(ENDPOINTS.MANUAL_PAYMENT.BANK_DETAILS, { params: { storeId } });
 }
 
 export function apiSubmitManualPayment(
@@ -95,30 +96,30 @@ export function apiReuploadManualPayment(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN
+// SELLER — this store's own manual-payment-proof review queue
 // ─────────────────────────────────────────────────────────────────────────────
-export interface AdminManualPaymentQueue {
-  proofs: AdminManualPaymentProof[];
+export interface SellerManualPaymentQueue {
+  proofs: SellerManualPaymentProof[];
   total: number;
   page: number;
   limit: number;
   pages: number;
 }
 
-export function apiAdminListManualPayments(status?: ManualPaymentProofStatus, page = 1, limit = 20) {
-  return client.get<never, { success: boolean; data: AdminManualPaymentQueue }>(ENDPOINTS.MANUAL_PAYMENT.ADMIN.LIST, {
+export function apiSellerListManualPayments(storeId: string, status?: ManualPaymentProofStatus, page = 1, limit = 20) {
+  return client.get<never, { success: boolean; data: SellerManualPaymentQueue }>(ENDPOINTS.MANUAL_PAYMENT.SELLER.LIST(storeId), {
     params: { status, page, limit },
   });
 }
 
-export function apiAdminGetManualPayment(proofId: string) {
-  return client.get<never, { success: boolean; data: AdminManualPaymentProof }>(ENDPOINTS.MANUAL_PAYMENT.ADMIN.GET(proofId));
+export function apiSellerGetManualPayment(storeId: string, proofId: string) {
+  return client.get<never, { success: boolean; data: SellerManualPaymentProof }>(ENDPOINTS.MANUAL_PAYMENT.SELLER.GET(storeId, proofId));
 }
 
-export function apiAdminApproveManualPayment(proofId: string) {
-  return client.patch<never, { success: boolean; data: ManualPaymentProof }>(ENDPOINTS.MANUAL_PAYMENT.ADMIN.APPROVE(proofId));
+export function apiSellerApproveManualPayment(storeId: string, proofId: string) {
+  return client.patch<never, { success: boolean; data: ManualPaymentProof }>(ENDPOINTS.MANUAL_PAYMENT.SELLER.APPROVE(storeId, proofId));
 }
 
-export function apiAdminRejectManualPayment(proofId: string, reason: string) {
-  return client.patch<never, { success: boolean; data: ManualPaymentProof }>(ENDPOINTS.MANUAL_PAYMENT.ADMIN.REJECT(proofId), { reason });
+export function apiSellerRejectManualPayment(storeId: string, proofId: string, reason: string) {
+  return client.patch<never, { success: boolean; data: ManualPaymentProof }>(ENDPOINTS.MANUAL_PAYMENT.SELLER.REJECT(storeId, proofId), { reason });
 }

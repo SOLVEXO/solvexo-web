@@ -69,6 +69,8 @@ export const ENDPOINTS = {
   },
 
   // ── MANUAL BANK TRANSFER (buyer, Pakistan track) ───────────────────────────
+  // Settles into the SELLER's own bank account (see STORE_INTEGRATIONS 'bank_transfer'
+  // provider) — review/approve is a per-store seller action below, not a platform-admin one.
   MANUAL_PAYMENT: {
     BANK_DETAILS: '/api/payment/manual-transfer/bank-details',
     SUBMIT:       '/api/payment/manual-transfer/submit',
@@ -76,11 +78,11 @@ export const ENDPOINTS = {
     STATUS:       (proofId: string) => `/api/payment/manual-transfer/${proofId}`,
     REUPLOAD:     (proofId: string) => `/api/payment/manual-transfer/${proofId}/reupload`,
 
-    ADMIN: {
-      LIST:    '/api/admin/manual-payments',
-      GET:     (proofId: string) => `/api/admin/manual-payments/${proofId}`,
-      APPROVE: (proofId: string) => `/api/admin/manual-payments/${proofId}/approve`,
-      REJECT:  (proofId: string) => `/api/admin/manual-payments/${proofId}/reject`,
+    SELLER: {
+      LIST:    (storeId: string) => `/api/store/${storeId}/manual-payments`,
+      GET:     (storeId: string, proofId: string) => `/api/store/${storeId}/manual-payments/${proofId}`,
+      APPROVE: (storeId: string, proofId: string) => `/api/store/${storeId}/manual-payments/${proofId}/approve`,
+      REJECT:  (storeId: string, proofId: string) => `/api/store/${storeId}/manual-payments/${proofId}/reject`,
     },
   },
 
@@ -822,6 +824,14 @@ export const ENDPOINTS = {
     DOWNLOAD_URL:  '/api/orders/download-url',
     SELLER_CANCEL:   (storeId: string, orderId: string) => `/api/orders/seller-cancel/${storeId}/${orderId}`,
     SELLER_REFUND:   (storeId: string, orderId: string) => `/api/orders/seller-refund/${storeId}/${orderId}`,
+    // Admin-authorized equivalent of the detail view ONLY (Clients
+    // workspace's Orders tab) — the seller-tagged route above 403s for an
+    // admin caller. Deliberately view-only: Solvexo stores are independent
+    // (Shopify-style), not a curated marketplace — a seller's own order
+    // data is theirs to act on, never admin's to cancel/refund on their
+    // behalf, however well-intentioned. No ADMIN_CANCEL/ADMIN_REFUND here
+    // by design (built once, then deliberately removed).
+    ADMIN_ORDER_DETAIL: (storeId: string, orderId: string) => `/api/orders/admin-orders/${storeId}/${orderId}`,
     RECORD_PAYMENT:  (storeId: string, orderId: string) => `/api/orders/record-payment/${storeId}/${orderId}`,
     PAYMENT_RECORDS: (storeId: string, orderId: string) => `/api/orders/payment-records/${storeId}/${orderId}`,
 

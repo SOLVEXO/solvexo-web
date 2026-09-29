@@ -7,7 +7,10 @@ import { useClientOverview } from '@/hooks/admin/useAdminClients';
 import { useAdminUserActions } from '@/hooks/admin/useAdminUsers';
 import { AdminPageHeader, Button, Modal, StatusBadge, SkeletonBox } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { ArrowLeft, Ban, CheckCircle2 } from 'lucide-react';
+import {
+  ArrowLeft, Ban, CheckCircle2, LayoutDashboard, Store, Users, ShoppingCart,
+  RefreshCw, DollarSign, Activity as ActivityIcon, Shield,
+} from 'lucide-react';
 import { OverviewTab } from './clients/OverviewTab';
 import { StoresTab } from './clients/StoresTab';
 import { CustomersTab } from './clients/CustomersTab';
@@ -20,14 +23,14 @@ import { ModerationTab } from './clients/ModerationTab';
 type ClientTab = 'overview' | 'stores' | 'customers' | 'orders' | 'billing' | 'finance' | 'activity' | 'moderation';
 
 const BASE_TABS: Tab[] = [
-  { id: 'overview',   label: 'Overview' },
-  { id: 'stores',     label: 'Stores' },
-  { id: 'customers',  label: 'Customers' },
-  { id: 'orders',     label: 'Orders' },
-  { id: 'billing',    label: 'Subscription' },
-  { id: 'finance',    label: 'Finance' },
-  { id: 'activity',   label: 'Activity' },
-  { id: 'moderation', label: 'Moderation' },
+  { id: 'overview',   label: 'Overview',     icon: <LayoutDashboard size={14} /> },
+  { id: 'stores',     label: 'Stores',       icon: <Store size={14} /> },
+  { id: 'customers',  label: 'Customers',    icon: <Users size={14} /> },
+  { id: 'orders',     label: 'Orders',       icon: <ShoppingCart size={14} /> },
+  { id: 'billing',    label: 'Subscription', icon: <RefreshCw size={14} /> },
+  { id: 'finance',    label: 'Finance',      icon: <DollarSign size={14} /> },
+  { id: 'activity',   label: 'Activity',     icon: <ActivityIcon size={14} /> },
+  { id: 'moderation', label: 'Moderation',   icon: <Shield size={14} /> },
 ];
 
 function initialsOf(name: string) {
@@ -129,12 +132,10 @@ export function AdminClientDetail() {
         <ArrowLeft size={12} /> Back to Clients
       </button>
 
-      <div className="bg-white border-b border-bone mt-3">
-        <TabBar tabs={tabs} active={activeTab} onChange={(t) => setActiveTab(t as ClientTab)} className="px-4 sm:px-7 border-b-0" />
-      </div>
+      <TabBar tabs={tabs} active={activeTab} onChange={(t) => setActiveTab(t as ClientTab)} className="px-4 sm:px-7 mt-5" />
 
       <div className="px-4 sm:px-7 py-6">
-        {isVisited('overview')   && <div className={paneClassName('overview')}><OverviewTab overview={overview} onGoToTab={(t) => setActiveTab(t)} /></div>}
+        {isVisited('overview')   && <div className={paneClassName('overview')}><OverviewTab overview={overview} onGoToTab={(t) => setActiveTab(t as ClientTab)} /></div>}
         {isVisited('stores')     && <div className={paneClassName('stores')}><StoresTab stores={seller.stores} onChanged={refetch} /></div>}
         {isVisited('customers')  && <div className={paneClassName('customers')}><CustomersTab sellerId={sellerId} stores={seller.stores} /></div>}
         {isVisited('orders')     && <div className={paneClassName('orders')}><OrdersTab sellerId={sellerId} /></div>}

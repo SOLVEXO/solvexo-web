@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Landmark, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
-import { useAdminManualPayments, useApproveManualPayment, useRejectManualPayment } from '@/hooks/admin/useAdminManualPayments';
-import type { AdminManualPaymentProof, ManualPaymentProofStatus } from '@/api/services/manualPayment';
+import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useSellerManualPayments, useApproveManualPayment, useRejectManualPayment } from '@/hooks/store/useSellerManualPayments';
+import type { SellerManualPaymentProof, ManualPaymentProofStatus } from '@/api/services/manualPayment';
 import { Button, Modal, StatusBadge, Textarea, Table, type TableColumn } from '@/components/comman/ui';
 
 const STATUS_LABEL: Record<ManualPaymentProofStatus, string> = {
@@ -14,9 +14,9 @@ function formatDate(iso: string) {
 }
 
 // ── Detail / review modal ─────────────────────────────────────────────────────
-function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProof; onClose: () => void; onDone: () => void }) {
-  const { approve, submitting: approving, error: approveError } = useApproveManualPayment();
-  const { reject, submitting: rejecting, error: rejectError } = useRejectManualPayment();
+function ReviewModal({ storeId, proof, onClose, onDone }: { storeId: string; proof: SellerManualPaymentProof; onClose: () => void; onDone: () => void }) {
+  const { approve, submitting: approving, error: approveError } = useApproveManualPayment(storeId);
+  const { reject, submitting: rejecting, error: rejectError } = useRejectManualPayment(storeId);
   const [rejecting_, setRejecting] = useState(false);
   const [confirmingApprove, setConfirmingApprove] = useState(false);
   const [reason, setReason] = useState('');
@@ -34,7 +34,7 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
 
   return (
     <Modal mobileSheet
-      title="Manual Payment Review"
+      title="Payment Proof Review"
       width={560}
       onClose={onClose}
       footer={
@@ -107,7 +107,7 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
 
         {confirmingApprove && (
           <p className="text-[12px] text-charcoal bg-cream border border-bone rounded-md px-2.5 py-2">
-            This marks the order{proof.orderIds.length !== 1 ? 's' : ''} as paid and credits the seller. Confirm the transfer amount and reference above match the buyer's actual bank transfer before approving.
+            This marks the order{proof.orderIds.length !== 1 ? 's' : ''} as paid. Confirm the transfer amount and reference above actually arrived in your bank account before approving.
           </p>
         )}
 
@@ -118,13 +118,13 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export function AdminManualPayments() {
-  usePageTitle('Manual Payments');
+export function StorePaymentProofs() {
+  const { storeId } = useStoreWorkspace();
   const [statusFilter, setStatusFilter] = useState<ManualPaymentProofStatus | ''>('pending');
-  const { proofs, loading, error, refetch } = useAdminManualPayments(statusFilter || undefined);
-  const [viewing, setViewing] = useState<AdminManualPaymentProof | null>(null);
+  const { proofs, loading, error, refetch } = useSellerManualPayments(storeId, statusFilter || undefined);
+  const [viewing, setViewing] = useState<SellerManualPaymentProof | null>(null);
 
-  const columns: TableColumn<AdminManualPaymentProof>[] = [
+  const columns: TableColumn<SellerManualPaymentProof>[] = [
     {
       key: 'buyer', header: 'Buyer',
       render: p => (
@@ -165,14 +165,12 @@ export function AdminManualPayments() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Manual Payments</h1>
-          <p className="text-[12px] text-slate mt-[2px]">Bank-transfer payments (Pakistan track) awaiting proof verification.</p>
-        </div>
-      </div>
+      <StorePageHeader
+        title="Payment Proofs"
+        subtitle="Bank-transfer payments into your own account — review the buyer's proof before an order counts as paid."
+      />
 
-      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-4">
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ManualPaymentProofStatus | '')}
@@ -191,7 +189,7 @@ export function AdminManualPayments() {
               keyExtractor={p => p._id}
               loading={loading}
               onRowClick={setViewing}
-              emptyState={{ icon: <Landmark size={28} className="text-slate" />, title: 'No manual payments found', description: 'Bank-transfer submissions will show up here for review.' }}
+              emptyState={{ icon: <Landmark size={28} className="text-slate" />, title: 'No payment proofs found', description: 'Bank-transfer submissions from buyers will show up here for review.' }}
             />
           )}
         </div>
@@ -199,6 +197,7 @@ export function AdminManualPayments() {
 
       {viewing && (
         <ReviewModal
+          storeId={storeId}
           proof={viewing}
           onClose={() => setViewing(null)}
           onDone={() => { setViewing(null); refetch(); }}

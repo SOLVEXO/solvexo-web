@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminAnnouncements, useAnnouncementActions } from '@/hooks/admin/useAdminAnnouncements';
 import type { Announcement, AnnouncementAudience, AnnouncementStatus } from '@/api/services/announcements/adminAnnouncements';
@@ -125,7 +125,7 @@ function ScheduleModal({ announcement, onClose, onSaved }: { announcement: Annou
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function AdminAnnouncements() {
+export function AdminAnnouncements({ tabs }: { tabs?: ReactNode } = {}) {
   usePageTitle('Announcements');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -224,6 +224,7 @@ export function AdminAnnouncements() {
   return (
     <>
       <AdminPageHeader title="Announcements" subtitle="Broadcast platform-wide messages to users and sellers." />
+      {tabs}
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <CreateAnnouncementCard onCreated={refetch} />
 

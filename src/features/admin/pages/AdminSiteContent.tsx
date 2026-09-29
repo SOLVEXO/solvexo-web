@@ -1,6 +1,6 @@
-import { Megaphone, HelpCircle, Quote, MessageCircle, type LucideIcon } from 'lucide-react';
+import { Megaphone, HelpCircle, Quote, MessageCircle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
+import { TabBar, type Tab } from '@/components/comman/ui';
 import { AdminAnnouncements } from './AdminAnnouncements';
 import { AdminFaqs } from './AdminFaqs';
 import { AdminTestimonials } from './AdminTestimonials';
@@ -11,48 +11,34 @@ import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 // (Announcements, FAQs, Testimonials, Contact Messages) into one nav entry.
 // All 4 manage the SAME kind of thing — Solvexo's own public marketing site
 // content — not seller-facing store tooling, so they never needed 4 separate
-// sidebar slots. Each page component below is completely untouched (same
-// file, same exports, same backend calls) — only how it's reached changed,
-// from its own route to a tab here. Each still renders its own inline
-// header/stats strip when active, which doubles as this tab's sub-header.
+// sidebar slots. Each page component below is completely untouched apart
+// from accepting one extra `tabs` slot — same file, same exports, same
+// backend calls — only how it's reached changed, from its own route to a
+// tab here. `tabs` (this hub's shared TabBar) is rendered BY each child,
+// right under its own sticky header and above its own content — same
+// title-then-tabs vertical order as AdminAnalytics/AdminSEO — instead of
+// this parent stacking a second, redundant title above the tabs itself.
 type ContentTab = 'announcements' | 'faqs' | 'testimonials' | 'contact';
 
-const TABS: { id: ContentTab; label: string; Icon: LucideIcon }[] = [
-  { id: 'announcements', label: 'Announcements',    Icon: Megaphone     },
-  { id: 'faqs',           label: 'FAQs',              Icon: HelpCircle    },
-  { id: 'testimonials',   label: 'Testimonials',      Icon: Quote         },
-  { id: 'contact',        label: 'Contact Messages',  Icon: MessageCircle },
+const TABS: Tab[] = [
+  { id: 'announcements', label: 'Announcements',    icon: <Megaphone size={14} />     },
+  { id: 'faqs',           label: 'FAQs',             icon: <HelpCircle size={14} />    },
+  { id: 'testimonials',   label: 'Testimonials',     icon: <Quote size={14} />         },
+  { id: 'contact',        label: 'Contact Messages', icon: <MessageCircle size={14} /> },
 ];
 
 export function AdminSiteContent() {
   usePageTitle('Site Content');
   const { activeTab: tab, setActiveTab: setTab, isVisited, paneClassName } = useKeepAliveTabs<ContentTab>('announcements');
 
+  const tabBar = <TabBar tabs={TABS} active={tab} onChange={(id) => setTab(id as ContentTab)} className="px-4 sm:px-7 mt-5" />;
+
   return (
     <div>
-      <AdminPageHeader title="Site Content" subtitle="Solvexo's own public site — announcements, FAQs, testimonials, and the contact inbox." />
-
-      <div className="px-4 sm:px-7 pt-2">
-        <div className="border-b border-bone overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-0.5 w-max">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className="flex items-center gap-1.5 shrink-0 whitespace-nowrap px-3 sm:px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent -mb-px transition-colors duration-150 hover:text-brand-orange rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-                style={{ borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`, color: tab === t.id ? '#D97757' : '#8C8A82' }}
-              >
-                <t.Icon size={14} className="shrink-0" /> {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {isVisited('announcements') && <div className={paneClassName('announcements')}><AdminAnnouncements /></div>}
-      {isVisited('faqs') && <div className={paneClassName('faqs')}><AdminFaqs /></div>}
-      {isVisited('testimonials') && <div className={paneClassName('testimonials')}><AdminTestimonials /></div>}
-      {isVisited('contact') && <div className={paneClassName('contact')}><AdminContactMessages /></div>}
+      {isVisited('announcements') && <div className={paneClassName('announcements')}><AdminAnnouncements tabs={tabBar} /></div>}
+      {isVisited('faqs') && <div className={paneClassName('faqs')}><AdminFaqs tabs={tabBar} /></div>}
+      {isVisited('testimonials') && <div className={paneClassName('testimonials')}><AdminTestimonials tabs={tabBar} /></div>}
+      {isVisited('contact') && <div className={paneClassName('contact')}><AdminContactMessages tabs={tabBar} /></div>}
     </div>
   );
 }

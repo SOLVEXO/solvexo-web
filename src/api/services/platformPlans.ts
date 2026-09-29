@@ -154,6 +154,17 @@ export function apiAdminGetSellerPlatformOverview(sellerId: string) {
   return client.get<never, ApiResponse<SellerPlatformOverview>>(`${BASE}/admin/sellers/${sellerId}/overview`);
 }
 
+/** Admin equivalent of `apiGetStoreInvoices` — for the Clients workspace's Billing tab, so an admin can see which invoice to refund. */
+export function apiAdminListInvoices(storeId: string, query: { page?: number; limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (query.page) qs.set('page', String(query.page));
+  if (query.limit) qs.set('limit', String(query.limit));
+  const s = qs.toString();
+  return client.get<never, ApiResponse<{ invoices: PlatformPlanInvoice[]; total: number; page: number; limit: number; pages: number }>>(
+    `${BASE}/admin/stores/${storeId}/invoices${s ? `?${s}` : ''}`,
+  );
+}
+
 // ── Onboarding wizard's Payment step (no store exists yet) ─────────────────
 export function apiCreateOnboardingSetupIntent() {
   return client.post<never, ApiResponse<{ clientSecret: string; customerId: string }>>(`${BASE}/onboarding/setup-intent`, {});
