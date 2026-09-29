@@ -4,14 +4,12 @@ import { ENDPOINTS } from '../../endpoints';
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
-export type AnnouncementAudience = 'all' | 'sellers' | 'buyers';
 export type AnnouncementStatus = 'draft' | 'published' | 'scheduled';
 
 export interface Announcement {
   _id: string;
   title: string;
   message: string;
-  audience: AnnouncementAudience;
   status: AnnouncementStatus;
   scheduledAt: string | null;
   publishedAt: string | null;
@@ -22,7 +20,6 @@ export interface Announcement {
 
 export interface AnnouncementQuery {
   status?: AnnouncementStatus;
-  audience?: AnnouncementAudience;
   search?: string;
   page?: number;
   limit?: number;
@@ -38,12 +35,11 @@ export interface AnnouncementListData {
 export interface CreateAnnouncementPayload {
   title: string;
   message: string;
-  audience?: AnnouncementAudience;
   status?: AnnouncementStatus;
   scheduledAt?: string;
 }
 
-export type UpdateAnnouncementPayload = Partial<Pick<CreateAnnouncementPayload, 'title' | 'message' | 'audience' | 'scheduledAt'>>;
+export type UpdateAnnouncementPayload = Partial<Pick<CreateAnnouncementPayload, 'title' | 'message' | 'scheduledAt'>>;
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 

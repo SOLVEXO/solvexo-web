@@ -22,9 +22,10 @@ const STYLE: Record<StoreAnnouncementType, { Icon: LucideIcon; bg: string; borde
   holiday:  { Icon: PartyPopper,  bg: 'bg-brand-pale-orange', border: 'border-brand-orange/20', text: 'text-brand-deep-orange' },
 };
 
-/** Per-store dismissible announcement bar — same dismiss-persistence UI pattern
- *  as the platform-wide `AnnouncementBanner`, but seller-controlled content and
- *  scoped by `storeId` so dismissing one store's message never hides another's. */
+/** Per-store dismissible announcement bar — seller-controlled content, scoped
+ *  by `storeId` so dismissing one store's message never hides another's.
+ *  Platform-wide Announcements (admin broadcast) are a separate, unrelated
+ *  system — they arrive as real per-store Notifications instead, not a banner. */
 export function StoreAnnouncementBar({ storeId, message, type, ctaLabel, ctaLink, className }: StoreAnnouncementBarProps) {
   const id = `store:${storeId}:${message}`;
   const [dismissedIds, setDismissedIds] = useState<string[]>(getDismissedBannerIds());

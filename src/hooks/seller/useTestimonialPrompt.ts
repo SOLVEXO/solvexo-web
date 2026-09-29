@@ -3,7 +3,7 @@ import { apiGetMyTestimonialSubmission } from '@/api/services/testimonials';
 
 // Per-browser, not per-seller-account — same simplification `RememberedAccount`
 // and other one-time dismissal flags in this codebase already make (see
-// AnnouncementBanner's per-announcement-id localStorage dismissal).
+// StoreAnnouncementBar's per-id localStorage dismissal).
 const DISMISS_KEY = 'solvexo:testimonialPromptDismissed';
 
 /**

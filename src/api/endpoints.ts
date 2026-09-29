@@ -105,9 +105,6 @@ export const ENDPOINTS = {
     UPDATE:     (id: string) => `/api/admin/announcements/${id}`,
     SET_STATUS: (id: string) => `/api/admin/announcements/${id}/status`,
     DELETE:     (id: string) => `/api/admin/announcements/${id}`,
-
-    // Public — buyer/seller consumption
-    ACTIVE: '/api/announcements/active',
   },
 
   // ── NEWSLETTER (public) ─────────────────────────────────────────────────────
@@ -388,15 +385,18 @@ export const ENDPOINTS = {
 
   // ── ACTIVITY LOG ──────────────────────────────────────────────────────────
   ACTIVITY_LOG: {
-    LIST:   (storeId: string) => `/api/activity-log/${storeId}`,
-    STATS:  (storeId: string) => `/api/activity-log/${storeId}/stats`,
-    EXPORT: (storeId: string) => `/api/activity-log/${storeId}/export`,
+    LIST:     (storeId: string) => `/api/activity-log/${storeId}`,
+    STATS:    (storeId: string) => `/api/activity-log/${storeId}/stats`,
+    EXPORT:   (storeId: string) => `/api/activity-log/${storeId}/export`,
+    TIMELINE: (storeId: string, targetId: string) => `/api/activity-log/${storeId}/timeline/${targetId}`,
   },
 
   // ── ACTIVITY LOG (Admin, platform-wide) ─────────────────────────────────────
   ADMIN_ACTIVITY_LOG: {
-    LIST:   '/api/admin/activity-log',
-    EXPORT: '/api/admin/activity-log/export',
+    LIST:     '/api/admin/activity-log',
+    STATS:    '/api/admin/activity-log/stats',
+    EXPORT:   '/api/admin/activity-log/export',
+    TIMELINE: (targetId: string) => `/api/admin/activity-log/timeline/${targetId}`,
   },
 
   // ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
@@ -452,7 +452,11 @@ export const ENDPOINTS = {
       LTV:               '/api/subscriptions/admin/ltv',
       REVENUE_BREAKDOWN: '/api/subscriptions/admin/revenue-breakdown',
       CHURN_COHORTS:     '/api/subscriptions/admin/churn-cohorts',
-      INVOICE_REFUND:    (invoiceId: string) => `/api/subscriptions/admin/invoices/${invoiceId}/refund`,
+      // Admin subscription-invoice refund route removed by design — a
+      // seller's own customer's money is theirs to act on, never admin's to
+      // touch on their behalf. See SubscriptionsController's own doc
+      // comment. (Platform-plan invoice refund is a separate, untouched
+      // endpoint — see apiAdminRefundPlatformInvoice in platformPlans.ts.)
       WEBHOOKS:          '/api/subscriptions/admin/webhooks',
       WEBHOOK_RETRY:     (id: string) => `/api/subscriptions/admin/webhooks/${id}/retry`,
     },

@@ -717,8 +717,15 @@ function AddonsPanel() {
   );
 }
 
-export function AdminPlatformPlans() {
-  usePageTitle('Platform Plans');
+interface AdminPlatformPlansProps {
+  /** true when rendered as a tab inside AdminBilling.tsx — suppresses this
+   *  page's own title/header since the parent page already owns those (same
+   *  convention as AdminModeration's own `embedded` prop). */
+  embedded?: boolean;
+}
+
+export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps = {}) {
+  usePageTitle(embedded ? '' : 'Platform Plans');
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [revenue, setRevenue] = useState<{ mrr: number; arr: number; activeSubscribers: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -782,18 +789,28 @@ export function AdminPlatformPlans() {
 
   return (
     <div>
-      <AdminPageHeader
-        title="Platform Plans"
-        subtitle="Seller-to-Solvexo billing tiers, limits, and add-ons."
-        actions={
-          <>
-            <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
-              {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
-            </Button>
-            <Button size="sm" icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
-          </>
-        }
-      />
+      {!embedded && (
+        <AdminPageHeader
+          title="Platform Plans"
+          subtitle="Seller-to-Solvexo billing tiers, limits, and add-ons."
+          actions={
+            <>
+              <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
+                {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
+              </Button>
+              <Button size="sm" icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
+            </>
+          }
+        />
+      )}
+      {embedded && (
+        <div className="px-4 sm:px-7 pt-5 flex items-center justify-end gap-2">
+          <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
+            {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
+          </Button>
+          <Button size="sm" icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
+        </div>
+      )}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}

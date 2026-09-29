@@ -18,12 +18,14 @@ export interface DateTimePickerModalProps {
   value: string;
   onChange: (v: string) => void;
   onClose: () => void;
+  /** Defaults to the original "Schedule Go-Live" copy (product scheduling) — override for other callers (e.g. Announcements). */
+  title?: string;
 }
 
 type Mode = 'hour' | 'minute';
 type Sel  = { y: number; m: number; d: number };
 
-export function DateTimePickerModal({ value, onChange, onClose }: DateTimePickerModalProps) {
+export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedule Go-Live' }: DateTimePickerModalProps) {
   const titleId   = useId();
 
   const init = value ? new Date(value) : null;
@@ -100,7 +102,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <CalendarClock size={15} className="text-brand-orange" />
             </div>
             <div>
-              <p id={titleId} className="text-[14px] font-bold text-charcoal leading-tight">Schedule Go-Live</p>
+              <p id={titleId} className="text-[14px] font-bold text-charcoal leading-tight">{title}</p>
               <p className="text-[11px] text-slate mt-[1px]">Choose date &amp; time</p>
             </div>
           </div>

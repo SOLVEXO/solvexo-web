@@ -1,15 +1,32 @@
 import { useMemo, useState } from 'react';
-import { Activity as ActivityIcon, Download, ShieldAlert } from 'lucide-react';
+import { Activity as ActivityIcon, Download, ShieldAlert, X } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminActivityLog } from '@/hooks/admin/useAdminActivityLog';
+import { useAdminActivityStats } from '@/hooks/admin/useAdminActivityStats';
 import {
-  apiExportAdminActivityLog, ADMIN_ACTIVITY_CATEGORIES,
+  apiExportAdminActivityLog, apiGetAdminActivityTimeline, ADMIN_ACTIVITY_CATEGORIES,
   type AdminActivityLogEntry, type AdminActivityCategory,
 } from '@/api/services/activityLog';
-import { Table, Badge, Button, SearchInput, FilterDropdown, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
+import { Table, Badge, Button, SearchInput, FilterDropdown, AdminPageHeader, ActivityLogDetailModal, type TableColumn } from '@/components/comman/ui';
 import type { BadgeColor } from '@/types';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
+import { timeAgo } from '@/utils/timeAgo';
+
+// The only `targetType`s admin actually has a real page for — everything
+// else stays plain text in the detail modal rather than a broken/fake link.
+function resolveTargetHref(targetType: string | null, targetId: string | null): string | null {
+  if (!targetType || !targetId) return null;
+  if (targetType === 'seller') return `/admin/clients/${targetId}`;
+  return null;
+}
+
+const ROLE_OPTIONS = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'seller', label: 'Seller' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'system', label: 'System' },
+];
 
 const PAGE_SIZE = 20;
 
@@ -46,16 +63,21 @@ function daysAgo(n: number): string {
   return d.toISOString();
 }
 
-export function AdminActivityLog() {
+export function AdminActivityLog({ embedded = false }: { embedded?: boolean } = {}) {
   usePageTitle('Activity Log');
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [actorRole, setActorRole] = useState('');
+  const [actorFilter, setActorFilter] = useState<{ id: string; name: string } | null>(null);
   const [dateRange, setDateRange] = useState('last30');
   const [securityOnly, setSecurityOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [viewing, setViewing] = useState<AdminActivityLogEntry | null>(null);
+
+  const { data: stats } = useAdminActivityStats();
 
   // Memoized on `dateRange` alone — `daysAgo()` calls `new Date()` internally,
   // so recomputing it inline on every render (as this used to) produced a
@@ -76,10 +98,12 @@ export function AdminActivityLog() {
       limit: PAGE_SIZE,
       search: search || undefined,
       category: (category || undefined) as AdminActivityCategory | undefined,
+      actorRole: actorRole || undefined,
+      actorId: actorFilter?.id,
       isSecurityAlert: securityOnly || undefined,
       from,
     }),
-    [page, search, category, securityOnly, from],
+    [page, search, category, actorRole, actorFilter, securityOnly, from],
   );
 
   const { data, loading, error, refetch } = useAdminActivityLog(query);
@@ -122,26 +146,60 @@ export function AdminActivityLog() {
       key: 'actorName', header: 'Actor',
       render: r => (
         <div className="max-w-[160px]">
-          <p className="text-graphite truncate m-0">{r.actorName ?? '—'}</p>
+          {r.actorId ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); setActorFilter({ id: r.actorId!, name: r.actorName ?? r.actorId! }); setPage(1); }}
+              className="text-graphite truncate m-0 bg-transparent border-none p-0 cursor-pointer hover:text-brand-orange hover:underline text-left"
+              title="View only this actor's activity"
+            >
+              {r.actorName ?? r.actorId}
+            </button>
+          ) : (
+            <p className="text-graphite truncate m-0">—</p>
+          )}
           {r.actorRole && <p className="text-[11px] text-slate m-0">{r.actorRole}</p>}
         </div>
       ),
     },
-    { key: 'ip', header: 'IP', render: r => <span className="text-slate whitespace-nowrap">{r.ip ?? '—'}</span> },
+    {
+      key: 'ip', header: 'Where from',
+      render: r => (
+        <div className="whitespace-nowrap">
+          <p className="text-slate m-0">{r.ip ?? '—'}</p>
+          {(r.location?.city || r.location?.country) && (
+            <p className="text-[11px] text-slate/80 m-0">{[r.location?.city, r.location?.country].filter(Boolean).join(', ')}</p>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
     <>
-      <AdminPageHeader
-        title="Activity Log"
-        subtitle="Platform-wide audit trail — every seller store plus platform-level actions, in one place."
-        actions={
-          <Button variant="outline" size="sm" icon={<Download size={12} />} loading={exporting} onClick={handleExport}>
-            Export CSV
-          </Button>
-        }
-      />
+      {!embedded && (
+        <AdminPageHeader
+          title="Activity Log"
+          subtitle="Platform-wide audit trail — every seller store plus platform-level actions, in one place."
+        />
+      )}
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
+
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: 'Total Events', value: stats.totalEvents.toLocaleString(), sub: 'Last 90 days' },
+            { label: 'Actions Today', value: String(stats.actionsToday), sub: `${stats.activeActorsToday} actor(s) active` },
+            { label: 'Security Alerts', value: String(stats.securityAlerts), sub: stats.securityAlerts === 0 ? 'No threats' : 'Review recommended' },
+            { label: 'Last Login', value: stats.lastLogin ? timeAgo(stats.lastLogin.at) : '—', sub: stats.lastLogin ? [stats.lastLogin.actorName, stats.lastLogin.location?.city].filter(Boolean).join(' · ') : '' },
+          ].map(m => (
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[24px] font-bold text-carbon leading-[1.15]">{m.value}</p>
+              {m.sub && <p className="text-xs text-slate mt-1">{m.sub}</p>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {exportError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{exportError}</div>}
 
@@ -149,6 +207,7 @@ export function AdminActivityLog() {
         <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
           <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Search action, actor, description…" className="flex-1 max-w-[280px]" />
           <FilterDropdown placeholder="All Categories" options={CATEGORY_OPTIONS} value={category} onChange={v => { setCategory(v); setPage(1); }} />
+          <FilterDropdown placeholder="All Roles" options={ROLE_OPTIONS} value={actorRole} onChange={v => { setActorRole(v); setPage(1); }} />
           <FilterDropdown options={DATE_RANGE_OPTIONS} value={dateRange} onChange={v => { setDateRange(v); setPage(1); }} />
           <label className="flex items-center gap-1.5 text-[13px] text-graphite cursor-pointer select-none px-1">
             <input
@@ -159,7 +218,20 @@ export function AdminActivityLog() {
             />
             Security alerts only
           </label>
+          <Button variant="outline" size="sm" icon={<Download size={12} />} loading={exporting} onClick={handleExport} className="ml-auto">
+            Export CSV
+          </Button>
         </div>
+
+        {actorFilter && (
+          <div className="px-5 py-2 border-b border-bone bg-cream flex items-center gap-2">
+            <span className="text-[12px] text-graphite">Filtered to actor:</span>
+            <span className="text-[12px] font-semibold text-charcoal">{actorFilter.name}</span>
+            <button onClick={() => { setActorFilter(null); setPage(1); }} className="ml-1 w-5 h-5 rounded-full bg-white border border-bone flex items-center justify-center cursor-pointer text-slate hover:text-charcoal">
+              <X size={11} />
+            </button>
+          </div>
+        )}
 
         {error ? (
           <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
@@ -169,12 +241,22 @@ export function AdminActivityLog() {
             data={data?.logs ?? []}
             keyExtractor={r => r._id}
             loading={loading}
+            onRowClick={setViewing}
             emptyState={{ icon: <ActivityIcon size={28} className="text-slate/50" />, title: 'No activity matches your filters', description: 'Try adjusting your search, category, or date range.' }}
             pagination={{ page, total: data?.pagination?.total ?? 0, perPage: PAGE_SIZE, onChange: setPage, label: 'events' }}
           />
         )}
       </div>
       </div>
+
+      {viewing && (
+        <ActivityLogDetailModal
+          entry={viewing}
+          onClose={() => setViewing(null)}
+          targetHref={resolveTargetHref(viewing.targetType, viewing.targetId)}
+          fetchTimeline={apiGetAdminActivityTimeline}
+        />
+      )}
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
-import { AnnouncementBanner } from '@/components/comman/ui';
 
 // ── BuyerLayout ───────────────────────────────────────────────────────────────
 // Thin shell for buyer-facing pages. Used to also render a fixed mobile
@@ -10,11 +9,12 @@ import { AnnouncementBanner } from '@/components/comman/ui';
 // seller's own storefront subdomain now), so both were removed outright
 // rather than left dead in the tree (TypeScript's `noUnusedLocals` doesn't
 // allow an unused top-level component to just sit there unlinked, unlike a
-// route/page which stays reachable by direct URL).
+// route/page which stays reachable by direct URL). Platform Announcements
+// were removed from here for the same "buyer isn't Solvexo's customer"
+// reason — they now only reach sellers (see AdminAnnouncementsService).
 export function BuyerLayout() {
   return (
     <>
-      <AnnouncementBanner audience="buyers" />
       {/* Local Suspense boundary (same reasoning as PublicLayout) so a
          first-visit-this-session page under this branch doesn't blank the
          whole screen via RootLayout's outer big-spinner Suspense — no

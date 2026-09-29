@@ -145,9 +145,12 @@ const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics'
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
-const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
+// AdminSubscriptions and AdminPlatformPlans are no longer their own routes —
+// both are now tabs inside AdminBilling below (AdminBilling.tsx imports them
+// directly, embedded, same convention as AdminClients.tsx importing
+// AdminModeration directly rather than lazily as a standalone route).
+const AdminBilling = lazy(() => import('@/features/admin/pages/AdminBilling').then(m => ({ default: m.AdminBilling })));
 const AdminNewsletter = lazy(() => import('@/features/admin/pages/AdminNewsletter').then(m => ({ default: m.AdminNewsletter })));
-const AdminPlatformPlans = lazy(() => import('@/features/admin/pages/AdminPlatformPlans').then(m => ({ default: m.AdminPlatformPlans })));
 const AdminFinance = lazy(() => import('@/features/admin/pages/AdminFinance').then(m => ({ default: m.AdminFinance })));
 const AdminThemeCatalog = lazy(() => import('@/features/admin/pages/AdminThemeCatalog').then(m => ({ default: m.AdminThemeCatalog })));
 // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
@@ -481,9 +484,14 @@ const mainRouter = createBrowserRouter([
           // renders AdminModeration directly, embedded) — not its own route.
           { path: 'moderation',   element: <Navigate to="../clients" replace /> },
           { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
-          { path: 'subscriptions',element: <AdminSubscriptions /> },
+          { path: 'billing',      element: <AdminBilling /> },
+          // Subscriptions and Platform Plans merged into one Billing page
+          // (two outer tabs) — old URLs redirect rather than 404ing for
+          // anyone with one bookmarked/linked, same convention as the
+          // `users`→`clients` and `moderation`→`clients` redirects above.
+          { path: 'subscriptions',element: <Navigate to="../billing" replace /> },
+          { path: 'platform-plans',element: <Navigate to="../billing" replace /> },
           { path: 'newsletter',   element: <AdminNewsletter /> },
-          { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
           { path: 'fx-settings', element: <RequireRole role="admin"><AdminFxSettings /></RequireRole> },
           { path: 'commission-rules', element: <RequireRole role="admin"><AdminCommissionRules /></RequireRole> },

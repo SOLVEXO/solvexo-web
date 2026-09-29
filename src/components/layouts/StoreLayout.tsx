@@ -20,7 +20,7 @@ import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { useFavicon } from '@/hooks/useFavicon';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { NotificationBell, AnnouncementBanner, Modal, Button, CopyIconButton } from '@/components/comman/ui';
+import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
@@ -1417,7 +1417,9 @@ export function StoreLayout() {
       <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
         <StoreSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <AnnouncementBanner audience="sellers" />
+          {/* Platform announcements now arrive as real per-store Notifications
+             (see AdminAnnouncementsService.broadcast) — the seller sees them
+             in the bell above, not a separate dismissable banner here. */}
           <PlatformBillingBanner />
           <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
             <GatedOutlet />

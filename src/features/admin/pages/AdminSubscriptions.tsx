@@ -8,14 +8,16 @@ import {
   apiAdminGetOverview, apiAdminGetStoreBreakdown, apiAdminGetStoreDetail,
   apiAdminGetPaymentFailures, apiAdminGetSubscriptionDetail, apiAdminSuspendPlan, apiAdminUnsuspendPlan,
   apiAdminGetWebhookHistory, apiAdminRetryWebhook, apiAdminGetLtv, apiAdminGetRevenueBreakdown,
-  apiAdminGetChurnCohorts, apiAdminRefundInvoice,
+  apiAdminGetChurnCohorts,
   type StoreBreakdownRow, type PaymentAttempt, type DashboardData, type SellerPlan, type WebhookEvent,
   type LtvData, type RevenueBreakdown, type ChurnCohort, type SubscriptionInvoice,
 } from '@/api/services/subscriptions';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 type Tab = 'stores' | 'failures' | 'webhooks' | 'insights';
-type FailureRow = PaymentAttempt & { store: { name: string } | null; customer: { name: string; email: string } | null };
+// No `customer` field here by design — see the backend's own doc comment on
+// SubscriptionsService.adminGetPaymentFailures for the privacy reasoning.
+type FailureRow = PaymentAttempt & { store: { name: string } | null };
 
 const WEBHOOK_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   processed: { bg: '#E3F4EA', color: '#1E7A3C' },
@@ -281,9 +283,6 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
   const [data, setData] = useState<SubscriptionDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [refundingId, setRefundingId] = useState<string | null>(null);
-  const [confirmingRefund, setConfirmingRefund] = useState<SubscriptionInvoice | null>(null);
-  const [refundError, setRefundError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -294,21 +293,6 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
       .finally(() => setLoading(false));
   }, [subId]);
   useEffect(load, [load]);
-
-  async function refund() {
-    if (!confirmingRefund) return;
-    setRefundingId(confirmingRefund._id);
-    setRefundError('');
-    try {
-      await apiAdminRefundInvoice(confirmingRefund._id);
-      setConfirmingRefund(null);
-      load();
-    } catch (err) {
-      setRefundError(err instanceof Error ? err.message : 'Refund failed.');
-    } finally {
-      setRefundingId(null);
-    }
-  }
 
   return (
     <Modal mobileSheet title="Subscription Detail" width={600} onClose={onClose}>
@@ -334,7 +318,6 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-2 text-[12px]">
             <div><p className="text-slate">Store</p><p className="font-semibold text-charcoal">{data.store?.name ?? '—'}</p></div>
-            <div><p className="text-slate">Customer</p><p className="font-semibold text-charcoal">{data.customer?.name ?? '—'} ({data.customer?.email ?? '—'})</p></div>
             <div><p className="text-slate">Plan</p><p className="font-semibold text-charcoal">{data.plan?.name ?? '—'}</p></div>
             <div><p className="text-slate">Status</p><p className="font-semibold text-charcoal">{data.status}</p></div>
             <div><p className="text-slate">Failed attempts</p><p className="font-semibold text-charcoal">{data.failedPaymentAttempts}</p></div>
@@ -360,12 +343,6 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
               {(data.invoices ?? []).map((inv: SubscriptionInvoice) => (
                 <div key={inv._id} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded bg-cream">
                   <span className="text-slate">{inv.invoiceNumber} · {inv.status} · ${inv.amountUSD.toFixed(2)}</span>
-                  {['paid', 'partially_refunded'].includes(inv.status) && (
-                    <button onClick={() => { setConfirmingRefund(inv); setRefundError(''); }}
-                      className="px-2 py-[3px] bg-white border border-bone rounded-[5px] text-[11px] text-error cursor-pointer">
-                      Refund
-                    </button>
-                  )}
                 </div>
               ))}
               {(data.invoices ?? []).length === 0 && <p className="text-[12px] text-slate">No invoices recorded.</p>}
@@ -373,30 +350,19 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
           </div>
         </div>
       )}
-
-      {confirmingRefund && (
-        <Modal mobileSheet
-          title="Refund Invoice"
-          onClose={() => setConfirmingRefund(null)}
-          footer={
-            <>
-              <Button variant="ghost" onClick={() => setConfirmingRefund(null)} disabled={refundingId === confirmingRefund._id}>Cancel</Button>
-              <Button variant="danger" onClick={refund} loading={refundingId === confirmingRefund._id}>Refund</Button>
-            </>
-          }
-        >
-          <p className="text-[13px] text-charcoal leading-[1.6]">
-            Refund invoice <strong>{confirmingRefund.invoiceNumber}</strong> for <strong>${confirmingRefund.amountUSD.toFixed(2)}</strong>?
-          </p>
-          {refundError && <p className="text-[12px] text-error mt-2">{refundError}</p>}
-        </Modal>
-      )}
     </Modal>
   );
 }
 
-export function AdminSubscriptions() {
-  usePageTitle('Subscriptions');
+interface AdminSubscriptionsProps {
+  /** true when rendered as a tab inside AdminBilling.tsx — suppresses this
+   *  page's own title/header since the parent page already owns those (same
+   *  convention as AdminModeration's own `embedded` prop). */
+  embedded?: boolean;
+}
+
+export function AdminSubscriptions({ embedded = false }: AdminSubscriptionsProps = {}) {
+  usePageTitle(embedded ? '' : 'Subscriptions');
   const { activeTab: tab, setActiveTab: setTab, isVisited, paneClassName } = useKeepAliveTabs<Tab>('stores');
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof apiAdminGetOverview>>['data'] | null>(null);
   const [stores, setStores] = useState<StoreBreakdownRow[]>([]);
@@ -441,7 +407,6 @@ export function AdminSubscriptions() {
   const failureColumns: TableColumn<FailureRow>[] = [
     { key: 'createdAt', header: 'Date', render: f => <span className="text-slate whitespace-nowrap">{new Date(f.createdAt).toLocaleString()}</span> },
     { key: 'store', header: 'Store', render: f => <span className="text-charcoal">{f.store?.name ?? '—'}</span> },
-    { key: 'customer', header: 'Customer', render: f => <span className="text-graphite">{f.customer?.name ?? '—'}</span> },
     { key: 'attemptType', header: 'Type', render: f => <span className="text-slate">{f.attemptType} #{f.attemptNumber}</span> },
     { key: 'amountUSD', header: 'Amount', render: f => <span className="font-semibold text-error">${f.amountUSD.toFixed(2)}</span> },
     { key: 'failureReason', header: 'Reason', render: f => <span className="text-slate max-w-[180px] truncate block">{f.failureReason ?? '—'}</span> },
@@ -453,10 +418,12 @@ export function AdminSubscriptions() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10">
-        <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Subscriptions</h1>
-        <p className="text-[12px] text-slate mt-[2px]">Platform-wide subscription revenue, store breakdown, and payment failures.</p>
-      </div>
+      {!embedded && (
+        <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10">
+          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Subscriptions</h1>
+          <p className="text-[12px] text-slate mt-[2px]">Platform-wide subscription revenue, store breakdown, and payment failures.</p>
+        </div>
+      )}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}

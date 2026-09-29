@@ -3,9 +3,9 @@ import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import {
-  LayoutDashboard, Users, Shield, Store, DollarSign, Settings, UserCog,
+  LayoutDashboard, Users, Shield, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, LogOut, Percent, Coins, Activity,
+  BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -30,13 +30,18 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // own nav destination — see that file's own comment.
   { id: 'clients',       Icon: Users,           label: 'Clients Manage',  path: '/admin/clients'       },
   { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
-  { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
+  // Subscriptions (seller's own customer billing) and Platform Plans
+  // (seller-to-Solvexo SaaS billing) merged into one "Billing" page
+  // (AdminBilling.tsx, two outer tabs) — same "disconnect, don't delete"
+  // convention as commission-rules/fx-settings/config below: both old routes
+  // still exist and redirect (see router/index.tsx), just no longer their
+  // own nav entries.
+  { id: 'billing',       Icon: RefreshCw,       label: 'Billing',         path: '/admin/billing'       },
   { id: 'theme-catalog', Icon: Palette,         label: 'Theme Catalog',   path: '/admin/theme-catalog' },
   // Seller white-label branded-app requests — see MobileApp.tsx (seller
   // side) and StoreAppRequestsModule (backend) for the full flow. Distinct
   // from Solvexo's own POS app, which needs no admin review at all.
   { id: 'store-app-requests', Icon: Smartphone, label: 'Store App Requests', path: '/admin/store-app-requests' },
-  { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
@@ -109,40 +114,51 @@ interface AdminModule {
 // (grandfathered legacy stores' `Store.categoryId`, the disconnected
 // Marketplace/EducationMarketplace pages, SEO/sitemap) are all untouched —
 // only the admin-facing management PAGE was removed.
-// 'commission-rules'/'fx-settings'/'config' are no longer their own module
-// entries — all 3 are now tabs inside the consolidated Settings hub
-// (AdminSettingsHub.tsx, mirrors the seller-side SettingsHub.tsx) reached via
-// the single 'settings' item below. Their ADMIN_NAV entries/routes/pages stay
-// fully intact and reachable by direct URL, same "disconnect, don't delete"
-// convention as everywhere else in this file — only removed from module
-// membership. Commerce/People/Growth/Finance are now collapsible (closed by
-// default, see DEFAULT_COLLAPSED_GROUPS below) to keep the sidebar compact,
-// matching the same accordion treatment StoreLayout's NAV already uses.
+// 'commission-rules'/'fx-settings'/'config'/'activity-log' are no longer
+// their own module entries — all 4 are now tabs inside the consolidated
+// Settings hub (AdminSettingsHub.tsx, mirrors the seller-side
+// SettingsHub.tsx) reached via the single 'settings' item below. Their
+// ADMIN_NAV entries/routes/pages stay fully intact and reachable by direct
+// URL, same "disconnect, don't delete" convention as everywhere else in this
+// file — only removed from module membership. Growth/Finance are collapsible
+// (closed by default, see DEFAULT_COLLAPSED_GROUPS below) to keep the
+// sidebar compact, matching the same accordion treatment StoreLayout's NAV
+// already uses.
+//
+// 'commerce' (the old Subscriptions + Platform Plans collapsible group) is
+// gone too — those two pages merged into one page (AdminBilling.tsx, two
+// inner tabs), so there's now just one destination ('billing' below), same
+// bare-link treatment as Clients Manage/Content just below it.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'store-app-requests'], collapsible: true },
+  { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
+  { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance'] },
+  { id: 'billing',   label: 'Billing',               Icon: RefreshCw,      ids: ['billing'] },
   // Just one destination now (Moderation moved inside it as a tab — see
   // AdminClients.tsx), so this is a bare top-level link, same as
   // Content/Analytics below, not a group needing its own heading.
   { id: 'clients',   label: 'Clients Manage',        Icon: Users,          ids: ['clients'] },
+  // Standalone, not under Billing — this is a mobile-app-build request
+  // queue (seller white-label branded apps), unrelated to buyer-subscribes-
+  // to-seller-plan monitoring or Solvexo's own SaaS plan catalog, which is
+  // what Billing actually is.
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter'], collapsible: true },
   // Manual bank-transfer verification moved to each seller's own Store
   // Workspace (money lands directly in the seller's own bank account now,
   // never Solvexo's — see ManualPaymentsService) — just one destination
   // here again, same treatment as Clients Manage above.
-  { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance'] },
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
-  { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
-  { id: 'activity',  label: 'Activity Log',          Icon: Activity,       ids: ['activity-log'] },
+
+  { id: 'store-app-requests', label: 'Store App Requests', Icon: Smartphone, ids: ['store-app-requests'] },
   { id: 'settings',  label: 'Settings',              Icon: UserCog,        ids: ['settings'] },
 ];
 
-// Which collapsible modules (Commerce/People/Growth/Finance) start closed —
-// same accordion convention as StoreLayout's NAV: every collapsible group
-// starts collapsed, a group containing the current route force-expands
-// itself regardless (see `groupHasActiveItem` in AdminSidebar), and the
-// choice is remembered per-browser via localStorage.
-const DEFAULT_COLLAPSED_ADMIN_GROUPS = ['Commerce', 'Growth', 'Finance'];
+// Which collapsible modules (Growth/Finance) start closed — same accordion
+// convention as StoreLayout's NAV: every collapsible group starts collapsed,
+// a group containing the current route force-expands itself regardless (see
+// `groupHasActiveItem` in AdminSidebar), and the choice is remembered
+// per-browser via localStorage.
+const DEFAULT_COLLAPSED_ADMIN_GROUPS = ['Growth', 'Finance'];
 const ADMIN_SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:admin-sidebar:collapsed-groups';
 
 function loadCollapsedAdminGroups(): Set<string> {

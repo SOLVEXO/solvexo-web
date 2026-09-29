@@ -3,12 +3,21 @@ import { useActivityLogLive } from '@/hooks/useActivityLogLive';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import {
-  apiGetActivityLog, apiGetActivityStats, apiExportActivityLog,
+  apiGetActivityLog, apiGetActivityStats, apiExportActivityLog, apiGetActivityTimeline,
   type ActivityLogEntry, type ActivityCategory, type ActivityLogStats,
 } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
-import { ChevronLeft, ChevronRight, Activity as ActivityIcon, Download } from 'lucide-react';
-import { EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { ChevronLeft, ChevronRight, Activity as ActivityIcon, Download, X } from 'lucide-react';
+import { EmptyState, SkeletonBox, ActivityLogDetailModal } from '@/components/comman/ui';
+
+// The only `targetType`s a seller actually has a real page for — everything
+// else stays plain text in the detail modal rather than a broken/fake link.
+function resolveTargetHref(storeId: string, targetType: string | null, targetId: string | null): string | null {
+  if (!targetType || !targetId) return null;
+  if (targetType === 'order') return `/store/${storeId}/orders/detail/${targetId}`;
+  if (targetType === 'product' || targetType === 'listing') return `/store/${storeId}/products/edit/${targetId}`;
+  return null;
+}
 
 type FilterCategory = 'all' | ActivityCategory;
 const PAGE_SIZE = 10;
@@ -51,6 +60,8 @@ export function ActivityLogTab() {
   const [dateRange, setDateRange] = useState('last7');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [actorFilter, setActorFilter] = useState<{ id: string; name: string } | null>(null);
+  const [viewing, setViewing] = useState<ActivityLogEntry | null>(null);
 
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -74,6 +85,7 @@ export function ActivityLogTab() {
       page, limit: PAGE_SIZE,
       category: category === 'all' ? undefined : category,
       search: search || undefined,
+      actorId: actorFilter?.id,
       from,
     })
       .then(res => { if (!cancelled) { setLogs(res.data?.logs ?? []); setTotal(res.data?.pagination?.total ?? 0); } })
@@ -81,14 +93,15 @@ export function ActivityLogTab() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, category, dateRange, search, page]);
+  }, [storeId, category, dateRange, search, page, actorFilter]);
 
   const onLiveEvent = useCallback((entry: ActivityLogEntry) => {
     if (page !== 1) return;
     if (category !== 'all' && entry.category !== category) return;
+    if (actorFilter && entry.actorId !== actorFilter.id) return;
     setLogs(prev => [entry, ...prev].slice(0, PAGE_SIZE));
     setTotal(t => t + 1);
-  }, [page, category]);
+  }, [page, category, actorFilter]);
 
   const live = useActivityLogLive(storeId, onLiveEvent);
 
@@ -181,6 +194,16 @@ export function ActivityLogTab() {
             </div>
           </div>
 
+          {actorFilter && (
+            <div className="px-4 py-2 border-b border-bone bg-cream flex items-center gap-2">
+              <span className="text-[12px] text-graphite">Filtered to:</span>
+              <span className="text-[12px] font-semibold text-charcoal">{actorFilter.name}</span>
+              <button onClick={() => { setActorFilter(null); setPage(1); }} className="ml-1 w-5 h-5 rounded-full bg-white border border-bone flex items-center justify-center cursor-pointer text-slate hover:text-charcoal">
+                <X size={11} />
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div className="p-4 flex flex-col gap-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -209,20 +232,35 @@ export function ActivityLogTab() {
               const roleLabel = actorRole ? actorRole.charAt(0).toUpperCase() + actorRole.slice(1) : '';
               const cs = item.isSecurityAlert ? { bg: '#FDECEA', color: '#C0392B' } : (categoryStyle[item.category] ?? { bg: '#F0EEE6', color: '#5A5852' });
               const catLabel = item.isSecurityAlert ? 'Security Alert' : item.category.charAt(0).toUpperCase() + item.category.slice(1);
+              const locationLabel = [item.location?.city, item.location?.country].filter(Boolean).join(', ');
               return (
-                <div key={item._id} className="px-4 py-[14px] transition-colors duration-150 hover:bg-cream" style={{ borderBottom: i < logs.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
+                <div
+                  key={item._id}
+                  onClick={() => setViewing(item)}
+                  className="px-4 py-[14px] transition-colors duration-150 hover:bg-cream cursor-pointer"
+                  style={{ borderBottom: i < logs.length - 1 ? '1px solid #F0EEE6' : 'none' }}
+                >
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">
                       {initialsOf(actorName)}
                     </div>
-                    <span className="text-[13px] font-semibold text-carbon">{actorName}</span>
+                    {item.actorId ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setActorFilter({ id: item.actorId!, name: actorName }); setPage(1); }}
+                        className="text-[13px] font-semibold text-carbon bg-transparent border-none p-0 cursor-pointer hover:text-brand-orange hover:underline"
+                      >
+                        {actorName}
+                      </button>
+                    ) : (
+                      <span className="text-[13px] font-semibold text-carbon">{actorName}</span>
+                    )}
                     {roleLabel && <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold bg-[#eaf0fb] text-[#2156a8]">{roleLabel}</span>}
                     <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: cs.bg, color: cs.color }}>{catLabel}</span>
                     <span className="ml-auto text-[11px] text-slate shrink-0">{timeAgo(item.createdAt)}</span>
                   </div>
                   <p className="text-[13px] font-semibold text-carbon pl-[38px] mb-0.5">{actionTitle(item.action)}</p>
                   {item.description && <p className="text-xs text-slate pl-[38px] mb-0.5">{item.description}</p>}
-                  {item.ip && <p className="text-[11px] text-dark-text pl-[38px]">IP: {item.ip}</p>}
+                  {item.ip && <p className="text-[11px] text-dark-text pl-[38px]">IP: {item.ip}{item.device ? ` · ${item.device}` : ''}{locationLabel ? ` · ${locationLabel}` : ''}</p>}
                 </div>
               );
             })
@@ -242,6 +280,15 @@ export function ActivityLogTab() {
           </div>
         </div>
       </div>
+
+      {viewing && (
+        <ActivityLogDetailModal
+          entry={viewing}
+          onClose={() => setViewing(null)}
+          targetHref={resolveTargetHref(storeId, viewing.targetType, viewing.targetId)}
+          fetchTimeline={(targetId) => apiGetActivityTimeline(storeId, targetId)}
+        />
+      )}
     </div>
   );
 }

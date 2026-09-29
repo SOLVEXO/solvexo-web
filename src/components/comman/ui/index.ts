@@ -76,13 +76,14 @@ export { DateTimePickerModal }               from './DateTimePickerModal';
 export type { DateTimePickerModalProps }     from './DateTimePickerModal';
 
 export { Modal }                             from './Modal';
+export { ActivityLogDetailModal }            from './ActivityLogDetailModal';
+export type { ActivityLogDetailEntry }       from './ActivityLogDetailModal';
 export type { ModalProps }                   from './Modal';
 
 export { StarRating }                        from './StarRating';
 
 export { ComingSoonBanner }                  from './ComingSoonBanner';
 
-export { AnnouncementBanner }                 from './AnnouncementBanner';
 export { StoreAnnouncementBar }               from './StoreAnnouncementBar';
 
 export { DealsBanner, useCountdown, CountdownUnit } from './DealsBanner';

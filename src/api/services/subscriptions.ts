@@ -439,17 +439,21 @@ export function apiAdminUnsuspendPlan(id: string) {
   return client.patch<never, ApiResponse<SubscriptionPlan>>(ENDPOINTS.SUBSCRIPTIONS.ADMIN.UNSUSPEND_PLAN(id));
 }
 
+// No `customer` field here by design — a seller's own customer's name/email
+// is theirs, never admin's to see for a platform-wide dunning/retry view
+// (same privacy principle as SubscriptionsService.adminGetPaymentFailures's
+// own doc comment on the backend). Store name and every aggregate field
+// (amount, failure reason, dates, attempt type) stay.
 export function apiAdminGetPaymentFailures(query: { page?: number; limit?: number; storeId?: string; attemptType?: string; from?: string; to?: string } = {}) {
   return client.get<never, ApiResponse<{ pagination: Pagination; failures: Array<PaymentAttempt & {
     store: { name: string; slug: string } | null;
-    customer: { name: string; email: string } | null;
   }> }>>(`${ENDPOINTS.SUBSCRIPTIONS.ADMIN.PAYMENT_FAILURES}${qs(query)}`);
 }
 
+// No `customer` field here either, same reasoning as apiAdminGetPaymentFailures above.
 export function apiAdminGetSubscriptionDetail(id: string) {
   return client.get<never, ApiResponse<Subscription & {
     store: { name: string; slug: string; sellerId: string } | null;
-    customer: { name: string; email: string; phone?: string } | null;
     plan: { name: string; monthlyPriceUSD: number; yearlyPriceUSD: number | null } | null;
     invoices: SubscriptionInvoice[];
     paymentAttempts: PaymentAttempt[];
@@ -483,10 +487,6 @@ export function apiAdminGetRevenueBreakdown(query: { from?: string; to?: string 
 export interface ChurnCohort { cohort: string; totalStarted: number; stillActive: number; retentionPercent: number }
 export function apiAdminGetChurnCohorts(query: { months?: number } = {}) {
   return client.get<never, ApiResponse<ChurnCohort[]>>(`${ENDPOINTS.SUBSCRIPTIONS.ADMIN.CHURN_COHORTS}${qs(query)}`);
-}
-
-export function apiAdminRefundInvoice(invoiceId: string, amountUSD?: number, reason?: string) {
-  return client.post<never, ApiResponse<SubscriptionInvoice>>(ENDPOINTS.SUBSCRIPTIONS.ADMIN.INVOICE_REFUND(invoiceId), { amountUSD, reason });
 }
 
 export interface WebhookEvent {

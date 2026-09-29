@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
-import { EmptyState, SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Table, TabBar, type TableColumn, type Tab } from '@/components/comman/ui';
 import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2, Plus, Ticket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -15,13 +15,13 @@ import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 
 type TabId = 'overview' | 'tiers' | 'rewards' | 'vouchers' | 'members' | 'earning-rules';
 
-const TABS: { id: TabId; Icon: LucideIcon; label: string }[] = [
-  { id: 'overview',      Icon: Star,     label: 'Overview'        },
-  { id: 'tiers',         Icon: Trophy,   label: 'Tiers'           },
-  { id: 'rewards',       Icon: Gift,     label: 'Rewards Catalog' },
-  { id: 'vouchers',      Icon: Ticket,   label: 'Vouchers'        },
-  { id: 'members',       Icon: Users,    label: 'Member Activity' },
-  { id: 'earning-rules', Icon: Settings, label: 'Earning Rules'   },
+const TABS: Tab[] = [
+  { id: 'overview',      label: 'Overview',        icon: <Star size={14} />     },
+  { id: 'tiers',         label: 'Tiers',           icon: <Trophy size={14} />   },
+  { id: 'rewards',       label: 'Rewards Catalog', icon: <Gift size={14} />     },
+  { id: 'vouchers',      label: 'Vouchers',        icon: <Ticket size={14} />   },
+  { id: 'members',       label: 'Member Activity', icon: <Users size={14} />    },
+  { id: 'earning-rules', label: 'Earning Rules',   icon: <Settings size={14} /> },
 ];
 
 const TIER_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
@@ -82,24 +82,7 @@ export function StoreLoyalty() {
           </div>
         )}
 
-        <div className="border-b border-bone overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-0.5 w-max">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-colors duration-150 hover:text-brand-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-                style={{
-                  background: activeTab === tab.id ? '#fff' : 'transparent',
-                  color: activeTab === tab.id ? '#141413' : '#8C8A82',
-                  borderBottom: activeTab === tab.id ? '2px solid #D97757' : '2px solid transparent',
-                }}
-              >
-                <tab.Icon size={13} /> {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TabBar tabs={TABS} active={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
 
         {isVisited('overview') && <div className={paneClassName('overview')}><OverviewTab storeId={storeId} /></div>}
         {isVisited('tiers') && program && <div className={paneClassName('tiers')}><TiersTab storeId={storeId} program={program} onSaved={setProgram} /></div>}

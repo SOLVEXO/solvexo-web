@@ -19,6 +19,9 @@ export const ADMIN_ACTIVITY_CATEGORIES: AdminActivityCategory[] = [
   'seo', 'ai_studio', 'announcements', 'moderation', 'promotions',
 ];
 
+/** City/country resolved from `ip` — see the backend's `resolveLocationFromIp`. Null for a private/local IP. */
+export interface ActivityLogLocation { city: string | null; country: string | null }
+
 export interface ActivityLogEntry {
   _id:             string;
   storeId:         string;
@@ -32,7 +35,11 @@ export interface ActivityLogEntry {
   targetType:      string | null;
   ip:              string | null;
   userAgent:       string | null;
+  /** Read-time enrichment, never persisted — see backend's `ActivityLogService.enrich`. */
+  location:        ActivityLogLocation | null;
+  device:          string | null;
   isSecurityAlert: boolean;
+  metadata:        Record<string, any> | null;
   createdAt:       string;
 }
 
@@ -51,7 +58,7 @@ export interface ActivityLogStats {
   staffActionsToday: number;
   activeStaffToday: number;
   securityAlerts:   number;
-  lastLogin: { at: string; actorName: string | null; ip: string | null; userAgent: string | null } | null;
+  lastLogin: { at: string; actorName: string | null; ip: string | null; location: ActivityLogLocation | null; device: string | null } | null;
 }
 
 interface ApiResponse<T> { success: boolean; data: T }
@@ -73,6 +80,11 @@ export function apiGetActivityLog(storeId: string, query: ActivityLogQuery = {})
 /** GET /api/activity-log/:storeId/stats */
 export function apiGetActivityStats(storeId: string) {
   return client.get<never, ApiResponse<ActivityLogStats>>(ENDPOINTS.ACTIVITY_LOG.STATS(storeId));
+}
+
+/** GET /api/activity-log/:storeId/timeline/:targetId — every logged event for one entity (e.g. one order), chronological. */
+export function apiGetActivityTimeline(storeId: string, targetId: string) {
+  return client.get<never, ApiResponse<ActivityLogEntry[]>>(ENDPOINTS.ACTIVITY_LOG.TIMELINE(storeId, targetId));
 }
 
 /** GET /api/activity-log/:storeId/export — triggers a CSV file download */
@@ -105,8 +117,19 @@ export interface AdminActivityLogEntry {
   targetType:      string | null;
   ip:              string | null;
   userAgent:       string | null;
+  location:        ActivityLogLocation | null;
+  device:          string | null;
   isSecurityAlert: boolean;
+  metadata:        Record<string, any> | null;
   createdAt:       string;
+}
+
+export interface AdminActivityLogStats {
+  totalEvents:      number;
+  actionsToday:     number;
+  activeActorsToday: number;
+  securityAlerts:   number;
+  lastLogin: { at: string; actorName: string | null; ip: string | null; location: ActivityLogLocation | null; device: string | null } | null;
 }
 
 export interface AdminActivityLogQuery {
@@ -132,6 +155,16 @@ interface AdminPaginatedLogs {
 /** GET /api/admin/activity-log */
 export function apiGetAdminActivityLog(query: AdminActivityLogQuery = {}) {
   return client.get<never, ApiResponse<AdminPaginatedLogs>>(ENDPOINTS.ADMIN_ACTIVITY_LOG.LIST, { params: query });
+}
+
+/** GET /api/admin/activity-log/stats */
+export function apiGetAdminActivityStats() {
+  return client.get<never, ApiResponse<AdminActivityLogStats>>(ENDPOINTS.ADMIN_ACTIVITY_LOG.STATS);
+}
+
+/** GET /api/admin/activity-log/timeline/:targetId — every logged event for one entity, platform-wide, chronological. */
+export function apiGetAdminActivityTimeline(targetId: string) {
+  return client.get<never, ApiResponse<AdminActivityLogEntry[]>>(ENDPOINTS.ADMIN_ACTIVITY_LOG.TIMELINE(targetId));
 }
 
 /** GET /api/admin/activity-log/export — triggers a CSV file download */
