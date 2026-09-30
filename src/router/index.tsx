@@ -307,8 +307,8 @@ const mainRouter = createBrowserRouter([
       // "/signup" spelling used to silently fall through to the catch-all
       // and land on the homepage with no error, no signup form, nothing.
       { path: '/signup',          element: <RegisterPage /> },
-      { path: '/onboard',      element: <OnboardingEntry /> },
-      { path: '/onboard/:sessionId', element: <OnboardingPage /> },
+      { path: '/onboard',      element: <OnboardingPage /> },
+      { path: '/onboard/:sessionId', element: <OnboardingEntry /> }, // legacy links with a random id in the path
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },

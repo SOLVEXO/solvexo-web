@@ -55,7 +55,7 @@ export interface CreateStorePayload {
   name:         string;
   logo?:        string;
   description?: string;
-  sellerType:   SellerType;
+  sellerType?:  SellerType;
   productTypes: ProductType[];
   /** The currency this seller prices their products in — chosen once here,
    *  required, and locked forever the moment the store has its first
@@ -76,6 +76,7 @@ export interface UpdateStorePayload {
   tagline?:      string;
   contactEmail?: string;
   contactPhone?: string;
+  sellerType?:  SellerType;
   productTypes?: ProductType[];
   codEnabled?:  boolean;
   paymentCaptureMethod?: 'automatic' | 'manual';

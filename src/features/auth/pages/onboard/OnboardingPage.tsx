@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { useNavigate, useParams, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
@@ -9,23 +9,22 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
-  ShieldCheck, CreditCard,
+  ShieldCheck,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import { PasteImageUrl } from '@/components/comman/ui';
-import { apiGetEnabledCurrencies, apiSuggestLocation, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
+import { apiGetEnabledCurrencies, apiSuggestLocation, apiUpdateStore, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import {
   apiGetOnboardingProgress, apiSaveOnboardingDraft,
-  apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod,
   apiGetPublicTrialSettings, apiBrowsePlatformPlans, apiChangePlatformPlan,
   type PlatformPlan,
 } from '@/api/services/platformPlans';
-import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
-import { PlanCard } from '@/components/comman/ui/PlanCard';
+import { OnboardingCheckoutPage, OnboardingPlansPage } from './OnboardingCheckout';
+import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
-import { motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 
 const ONBOARDING_HIGHLIGHTS = [
   { Icon: Store,     text: 'A store built around how you sell' },
@@ -62,32 +61,40 @@ const ONBOARDING_HIGHLIGHTS = [
 const STEPS = ['Store Info', 'Payment', 'Seller Type', 'What You Sell'];
 const TOTAL_STEPS = STEPS.length;
 
-// URL-facing slug for each step — mirrors Shopify's own onboarding/signup
-// URLs (a per-session id + a real segment identifying where the seller is),
-// instead of one flat static `/onboard`. The bare `/onboard` route (see
-// `OnboardingEntry` below) mints a fresh session id and redirects into this
-// shape immediately. The id itself carries no server-side session state of
-// its own — the real resumable state is still the seller's
-// backend-persisted draft (`onboardingDraft`, see below) — it exists purely
-// so the URL reflects where the seller actually is, the same way Shopify's
-// does.
+// Every step (and the "View all plans" sheet on top of the checkout) has its
+// own readable URL, and the URL is the source of truth for where the wizard is:
 //
-// The step lives in the QUERY string (`?step=payment`), not the URL path,
-// deliberately — `RootLayout.tsx` keys its page-level `<ErrorBoundary>` by
-// `pathname` (app-wide, so any route always remounts cleanly past a caught
-// error). `pathname` doesn't include the query string, so putting the step
-// there keeps `/onboard/:sessionId` stable across every step change — the
-// wizard advances without ever remounting or re-fetching. Putting it in the
-// path instead was tried and caused exactly that: every Back/Next/step-click
-// change the pathname, so RootLayout remounted the whole page and re-ran its
-// draft-resume fetch every time, visible as the page "reloading" repeatedly.
-const STEP_SLUGS = ['store-info', 'payment', 'seller-type', 'what-you-sell'];
+//   /onboard?step=store-info
+//   /onboard?step=checkout
+//   /onboard?step=checkout&view=plans     ← "View all plans"
+//   /onboard?step=seller-type
+//   /onboard?step=what-you-sell
+//
+// The step lives in the QUERY string, not the URL path, deliberately —
+// `RootLayout.tsx` keys its page-level `<ErrorBoundary>` by `pathname` (app-wide,
+// so any route always remounts cleanly past a caught error). `pathname` doesn't
+// include the query string, so keeping the path a constant `/onboard` means the
+// wizard advances without ever remounting or re-fetching. (Putting the step in
+// the path was tried and made every Back/Next remount the page and re-run the
+// draft-resume fetch, visible as the page "reloading" repeatedly.)
+//
+// A reload therefore lands on exactly the step in the URL — the backend draft
+// only restores the form's data and how far the seller has actually got (the
+// URL can never run ahead of that), and is used as the landing step only for a
+// bare `/onboard` with no `?step=`.
+const STEP_SLUGS = ['store-info', 'checkout', 'seller-type', 'what-you-sell'];
+/** `payment` was the old slug for the checkout step — keep old links working. */
+const slugToStep = (slug: string | null): number | null => {
+  if (slug === 'payment') return 2;
+  const i = STEP_SLUGS.indexOf(slug ?? '');
+  return i === -1 ? null : i + 1;
+};
+const onboardUrl = (n: number, view?: 'plans') => `/onboard?step=${STEP_SLUGS[n - 1]}${view ? `&view=${view}` : ''}`;
 
-/** `/onboard` → `/onboard/:sessionId?step=store-info`. A brand new random id
- *  every visit (not tied to the seller's own id — never expose that in a URL). */
+/** Old `/onboard/:sessionId?step=…` links (a random id in the path) → `/onboard?step=…`. */
 export function OnboardingEntry() {
-  const [sessionId] = useState(() => crypto.randomUUID());
-  return <Navigate to={`/onboard/${sessionId}?step=${STEP_SLUGS[0]}`} replace />;
+  const { search } = useLocation();
+  return <Navigate to={`/onboard${search}`} replace />;
 }
 
 // Every step shares this exact outer width so the progress header (badge +
@@ -135,6 +142,15 @@ interface StoreForm {
   // plan mid-trial → trial ends immediately, real charge now" code path,
   // instead of a second, parallel billing implementation.
   selectedPlanId: string | null;
+  // The store is created the moment the seller pays on the checkout step (the
+  // plan is bought against a store), not at the last step — these two let a
+  // reload/back-navigation resume without creating a second store or
+  // charging twice. `paidPlanId` is set only after the charge succeeded.
+  createdStoreId: string | null;
+  paidPlanId: string | null;
+  // Plan billing interval chosen on the plans page — persisted with the draft so a
+  // reload keeps it. Optional because drafts saved before this existed lack it.
+  billing?: OnboardingBilling;
 }
 
 // Fallback only — Step1StoreInfo now shows a real picker (populated from the
@@ -308,257 +324,6 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   );
 }
 
-// ── Step 2 — Choose how to get started (stays in the narrow wizard column) ─────
-// Just the trial default + a single "Or choose a plan now" entry point.
-// Actually browsing/paying for a real plan happens on a genuine full-screen
-// page (`PlansFullPage`, below) opened via `onOpenPlans` — rendered by
-// `OnboardingPage` completely outside the wizard's split-screen layout, not
-// squeezed into this narrow column. Skipping — or completing either path —
-// never blocks anything: every store gets its own real trial regardless (see
-// ensureDefaultSubscription on the backend) unless the seller explicitly
-// picks and pays for a plan on that full page, in which case the trial is
-// skipped entirely for that store (see handleFinalSubmit).
-function Step2Payment({ form, onNext, onBack, trialDurationDays, plans, onOpenPlans }: {
-  form: StoreForm; onNext: () => void; onBack: () => void; trialDurationDays: number;
-  plans: PlatformPlan[]; onOpenPlans: () => void;
-}) {
-  const selectedPlan = form.selectedPlanId ? plans.find(p => p._id === form.selectedPlanId) ?? null : null;
-  const hasSelectablePlans = plans.some(p => !p.isCustomPricing);
-
-  return (
-    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <div className={NARROW_CONTENT}>
-        <div className="mb-7 text-center">
-          <h1 className="text-[28px] font-bold text-carbon mb-2">Choose how to get started</h1>
-          <p className="text-[14px] text-slate">
-            Start free and decide later, or pick a plan now if you already know what you need.
-          </p>
-        </div>
-
-        <div className={clsx(
-          'rounded-xl border-2 px-[18px] py-[16px] mb-4',
-          !selectedPlan ? 'border-brand-orange bg-brand-pale-orange/30' : 'border-bone',
-        )}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[13.5px] font-bold text-carbon mb-[2px]">Start with a free {trialDurationDays}-day trial</p>
-              <p className="text-[12px] text-slate">Full platform access, no card needed. Choose a plan any time before or after your trial ends.</p>
-            </div>
-            <div className={clsx('size-5 rounded-full border-2 flex items-center justify-center shrink-0', !selectedPlan ? 'border-brand-orange bg-brand-orange' : 'border-bone')}>
-              {!selectedPlan && <Check size={10} className="text-white" />}
-            </div>
-          </div>
-        </div>
-
-        {selectedPlan ? (
-          <div className="rounded-xl border-2 border-brand-orange bg-brand-pale-orange/30 px-[18px] py-[16px] mb-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[13.5px] font-bold text-carbon mb-[2px]">
-                  {selectedPlan.name}
-                  {selectedPlan.badge && <span className="ml-2 text-[10px] font-semibold text-brand-deep-orange bg-white px-[7px] py-[2px] rounded-full align-middle">{selectedPlan.badge}</span>}
-                </p>
-                <p className="text-[12px] text-slate">
-                  {selectedPlan.isFree ? 'Free forever — active immediately, no trial.' : `$${selectedPlan.monthlyPriceUSD}/mo — payment confirmed, no trial.`}
-                </p>
-              </div>
-              <button type="button" onClick={onOpenPlans} className="text-[12px] font-semibold text-brand-orange hover:text-brand-deep-orange shrink-0">
-                Change
-              </button>
-            </div>
-          </div>
-        ) : hasSelectablePlans ? (
-          <button
-            type="button"
-            onClick={onOpenPlans}
-            className="w-full rounded-xl border-2 border-dashed border-bone hover:border-brand-orange/50 px-[18px] py-[16px] mb-6 text-left cursor-pointer transition-colors duration-150 bg-transparent"
-          >
-            <p className="text-[13.5px] font-bold text-carbon mb-[2px]">Or choose a plan now</p>
-            <p className="text-[12px] text-slate">Browse plans and pay right away — skip the trial entirely.</p>
-          </button>
-        ) : null}
-
-        <div className="flex items-start justify-end mb-5">
-          <button type="button" onClick={onNext} className="text-[12.5px] font-semibold text-slate hover:text-carbon shrink-0">
-            Skip — decide later
-          </button>
-        </div>
-
-        <div className="flex gap-[10px]">
-          <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
-            <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
-          </Button>
-          <MagneticButton className="flex-1">
-            <Button variant="primary" size="lg" fullWidth onClick={onNext}>
-              Continue <ArrowRight size={14} className="inline align-middle ml-1" />
-            </Button>
-          </MagneticButton>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Full-screen "Choose a plan" page ────────────────────────────────────────────
-// Opened from Step 2's "Or choose a plan now" — rendered by `OnboardingPage`
-// completely OUTSIDE the wizard's `AuthSplitLayout` split-screen column, as a
-// real full-viewport page (`fixed inset-0`), so it can show the exact same
-// wide, multi-column `PlanCard` grid + billing toggle the public Pricing page
-// uses, at full size — never squeezed into a ~480px wizard column. Two
-// internal phases: browsing the grid, and (once a paid plan is tapped) a
-// focused card-entry screen for that one plan. Selecting a plan here (paying
-// for it, if it's not free) closes back to the wizard step with the choice
-// applied; "Back to onboarding" with nothing chosen leaves the trial default
-// untouched.
-function PlansFullPage({ plans, trialDurationDays, selectedPlanId, onClose, onConfirmPlan }: {
-  plans: PlatformPlan[]; trialDurationDays: number; selectedPlanId: string | null;
-  onClose: () => void; onConfirmPlan: (planId: string) => void;
-}) {
-  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
-  const [payingPlan, setPayingPlan] = useState<PlatformPlan | null>(null);
-  const [clientSecret, setClientSecret] = useState('');
-  const [intentError, setIntentError] = useState('');
-  const [cardConfirmed, setCardConfirmed] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const stripeReady = isStripeConfigured();
-  const selectablePlans = plans.filter(p => !p.isCustomPricing).sort((a, b) => a.sortOrder - b.sortOrder);
-
-  useEffect(() => {
-    if (!stripeReady || !payingPlan) return;
-    let cancelled = false;
-    apiCreateOnboardingSetupIntent()
-      .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
-      .catch(() => { if (!cancelled) setIntentError('Could not load the card form right now — try again, or go back and start with the free trial instead.'); });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stripeReady, payingPlan?._id]);
-
-  const pickPlan = (plan: PlatformPlan) => {
-    if (plan.isFree) { onConfirmPlan(plan._id); return; }
-    setPayingPlan(plan);
-    setClientSecret(''); setIntentError(''); setCardConfirmed(false);
-  };
-
-  const handleConfirmed = async (setupIntentId: string) => {
-    setConfirming(true);
-    try {
-      await apiConfirmOnboardingPaymentMethod(setupIntentId);
-      setCardConfirmed(true);
-    } catch {
-      setIntentError('We saved your card with Stripe, but could not confirm it on our side — try again.');
-    } finally {
-      setConfirming(false);
-    }
-  };
-
-  // `data-lenis-prevent` — this page renders `fixed`, outside RootLayout's
-  // normal document flow, so it never contributes to the global Lenis
-  // smooth-scroll wrapper's `scrollHeight` (see SmoothScroll.tsx). Without
-  // this attribute Lenis still intercepts every wheel/touch event over this
-  // whole viewport-covering overlay and tries to scroll that (now-empty)
-  // outer container instead — native scroll on THIS div's own
-  // `overflow-y-auto` never runs, which is exactly why the page didn't
-  // scroll before this was added. Lenis's own documented escape hatch for a
-  // nested, independently-scrollable region.
-  return (
-    <div className="fixed inset-0 z-50 bg-cream overflow-y-auto" data-lenis-prevent>
-      {payingPlan ? (
-        <div className="max-w-[480px] mx-auto px-4 pt-6 pb-12">
-          <button
-            type="button"
-            onClick={() => setPayingPlan(null)}
-            className="text-[12.5px] font-semibold text-slate hover:text-carbon inline-flex items-center gap-1.5 mb-5"
-          >
-            <ArrowLeft size={13} /> Back to plans
-          </button>
-          <div className="mb-7">
-            <h1 className="text-[24px] font-bold text-carbon mb-2">Pay for {payingPlan.name}</h1>
-            <p className="text-[13.5px] text-slate leading-[1.6]">
-              {payingPlan.introOfferEnabled && payingPlan.introPriceUSD != null && payingPlan.introDurationCycles != null
-                ? `You'll be charged $${payingPlan.introPriceUSD} right now, then $${payingPlan.monthlyPriceUSD}/mo after ${payingPlan.introDurationCycles} month${payingPlan.introDurationCycles === 1 ? '' : 's'} — no trial.`
-                : `You'll be charged $${payingPlan.monthlyPriceUSD}/mo right now — no trial.`}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-bone bg-white px-[18px] py-[16px] mb-6">
-            {cardConfirmed ? (
-              <div className="flex items-center gap-2 rounded-lg bg-success-bg px-[14px] py-[12px]">
-                <ShieldCheck size={16} className="text-success shrink-0" />
-                <p className="text-[12.5px] text-success">Card confirmed — you'll launch directly on {payingPlan.name}.</p>
-              </div>
-            ) : stripeReady ? (
-              clientSecret ? (
-                <div>
-                  <StripeCardSetup clientSecret={clientSecret} onConfirmed={handleConfirmed} />
-                  {confirming && <p className="text-[11px] text-slate mt-2">Confirming…</p>}
-                </div>
-              ) : intentError ? (
-                <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] text-[12.5px] text-error">
-                  <AlertTriangle size={14} className="shrink-0" /> {intentError}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 size={20} className="text-brand-orange animate-spin" />
-                </div>
-              )
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-cream px-[14px] py-[10px] text-[12.5px] text-slate">
-                <CreditCard size={14} className="shrink-0" /> Card setup isn't available right now — go back and start with the free trial instead.
-              </div>
-            )}
-          </div>
-
-          <Button variant="primary" size="lg" fullWidth onClick={() => onConfirmPlan(payingPlan._id)} disabled={!cardConfirmed}>
-            Confirm & Continue <ArrowRight size={14} className="inline align-middle ml-1" />
-          </Button>
-        </div>
-      ) : (
-        <div className="px-4 md:px-8 lg:px-12 pt-6 pb-16 max-w-[1200px] mx-auto">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[12.5px] font-semibold text-slate hover:text-carbon inline-flex items-center gap-1.5 mb-6"
-          >
-            <ArrowLeft size={13} /> Back to onboarding
-          </button>
-          <div className="text-center max-w-[640px] mx-auto mb-10">
-            <h1 className="text-[28px] md:text-[34px] font-bold text-carbon mb-3">Choose your plan</h1>
-            <p className="text-[14px] text-slate">
-              Pick a plan and pay right away to skip the {trialDurationDays}-day trial — or go back and start free.
-            </p>
-          </div>
-
-          {selectablePlans.some(p => !p.isFree) && (
-            <div className="flex justify-center mb-8">
-              <div className="inline-flex bg-bone rounded-[10px] p-1" role="group" aria-label="Billing interval">
-                {(['monthly', 'annual'] as const).map(b => (
-                  <button key={b} type="button" onClick={() => setBilling(b)} aria-pressed={billing === b}
-                    className={clsx('px-6 py-2 rounded-lg cursor-pointer flex items-center gap-[6px] transition-all duration-200 border-0', billing === b ? 'bg-white' : 'bg-transparent')}>
-                    <span className={clsx('text-[13px] capitalize', billing === b ? 'font-semibold text-carbon' : 'font-normal text-slate')}>{b}</span>
-                    {b === 'annual' && <span className="text-[10px] font-semibold text-success">Save 20%</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap justify-center gap-4">
-            {selectablePlans.map(plan => (
-              <PlanCard
-                key={plan._id}
-                plan={plan}
-                billing={billing}
-                selected={selectedPlanId === plan._id}
-                ctaLabel={plan.isFree ? 'Select — Free' : 'Select & Pay'}
-                onCta={() => pickPlan(plan)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Step 3 — Seller Type ──────────────────────────────────────────────────────
 function Step3SellerType({ form, setForm, onNext, onBack }: {
@@ -673,8 +438,10 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
       <div className="flex items-start gap-2 text-left mb-5 bg-success-bg rounded-xl px-[14px] py-[12px]">
         <ShieldCheck size={16} className="text-success shrink-0 mt-[1px]" />
         <p className="text-[12.5px] text-success leading-[1.6]">
-          {selectedPlan
-            ? `Your store goes live immediately — no waiting on review. You'll launch directly on the ${selectedPlan.name} plan, no trial.`
+          {selectedPlan && form.paidPlanId
+            ? `Your store goes live immediately — no waiting on review. You're already on the ${selectedPlan.name} plan.`
+            : selectedPlan
+            ? `Your store goes live immediately — no waiting on review. You'll launch on the ${selectedPlan.name} plan.`
             : `Your store goes live immediately — no waiting on review, no card needed. Your free ${trialDurationDays}-day trial starts the moment you launch.`}
         </p>
       </div>
@@ -703,75 +470,30 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
   );
 }
 
-// ── Terminal state — store created and live ───────────────────────────────────
-// Same flat, no-card treatment as the old Review step used to have.
-function StoreReadyConfirmation({ store, planWarning }: { store: StoreData | null; planWarning: string }) {
-  const navigate = useNavigate();
-  return (
-    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <div className={clsx(NARROW_CONTENT, 'text-center')}>
-        <motion.div
-          className="size-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4"
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <Check size={26} className="text-success" />
-        </motion.div>
-        <h1 className="text-[28px] font-bold text-carbon mb-[10px]">Your store is live!</h1>
-        <p className="text-[14px] text-slate leading-[1.7] mb-7 max-w-[420px] mx-auto">
-          {store?.name || 'Your store'} is ready on Solvexo — start adding products and customizing your storefront right away.
-        </p>
-        {planWarning && (
-          <div className="flex items-start gap-2 text-left mb-6 bg-error-bg rounded-xl px-[14px] py-[12px] max-w-[420px] mx-auto">
-            <AlertTriangle size={15} className="text-error shrink-0 mt-[1px]" />
-            <p className="text-[12.5px] text-error leading-[1.6]">{planWarning}</p>
-          </div>
-        )}
-        <MagneticButton className="block">
-          <Button variant="primary" size="lg" fullWidth onClick={() => navigate(`/store/${store?._id}/dashboard`, { replace: true })}>
-            Go to My Store Dashboard <ArrowRight size={14} className="inline align-middle ml-1" />
-          </Button>
-        </MagneticButton>
-      </div>
-    </div>
-  );
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
 export function OnboardingPage() {
   usePageTitle('Onboarding');
   const createStore = useCreateStore();
   const navigate = useNavigate();
-  // Falls back to a fresh id if this page is ever reached without one
-  // (defensive only — the router always routes here via OnboardingEntry).
-  const { sessionId: routeSessionId } = useParams<{ sessionId: string }>();
-  const [sessionId] = useState(() => routeSessionId || crypto.randomUUID());
-  const [step, setStep]         = useState(1);
-  // Only the setter is read directly — the current value still flows into
-  // `saveDraft` (so resuming a reload restores the right furthest-reached
-  // step on the backend), but nothing renders it any more now that the
-  // step-progress indicator (and its click-to-jump-back affordance) is gone.
-  const [, setMaxReached] = useState(1);
-  // 'wizard' → the 4-step form (Store Info, Payment, Seller Type, What You
-  // Sell — Payment is inline as step 2 now, not a separate post-creation
-  // phase); 'ready' → the final "Your store is live" confirmation, shown
-  // directly once the last step submits.
-  const [phase, setPhase] = useState<'wizard' | 'ready'>('wizard');
-  // A genuine full-screen page, not a step — opened from Step 2's "Or choose
-  // a plan now" and rendered completely outside the wizard's split-screen
-  // layout (see the render branch below, right after the `phase === 'ready'`
-  // one) so the plan grid gets real full-page width instead of the narrow
-  // wizard column.
-  const [showPlansPage, setShowPlansPage] = useState(false);
+  const [searchParams] = useSearchParams();
+  // Furthest step the seller has actually reached (from the backend draft,
+  // advanced as they go) — the URL is never allowed to run ahead of it.
+  const [maxReached, setMaxReached] = useState(1);
+  // The step the draft was last saved on — only the landing step for a bare
+  // `/onboard` with no `?step=` (an explicit URL always wins).
+  const [resumeStep, setResumeStep] = useState<number | null>(null);
+  // Bumped after every failed charge so a retry gets a fresh Stripe
+  // idempotency key (a reused key would just replay the failed response).
+  const chargeAttempt = useRef(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [planWarning, setPlanWarning] = useState('');
   const [form, setForm] = useState<StoreForm>({
     storeName: '', description: '', logo: '',
     sellerType: '', sellerKey: '', productTypes: [], baseCurrency: DEFAULT_CURRENCY,
-    selectedPlanId: null,
+    selectedPlanId: null, createdStoreId: null, paidPlanId: null,
   });
+  // Monthly or annual, from the plans page's toggle (defaults to monthly).
+  const billing: OnboardingBilling = form.billing ?? 'monthly';
   // Real published plans, fetched once — feeds Step2Payment's plan picker and
   // Step4's/the ready screen's "you'll launch on X" copy. Same public
   // endpoint the Pricing page uses.
@@ -808,22 +530,37 @@ export function OnboardingPage() {
           // — a seller who reloads mid-onboarding after a step-order change
           // deploys could otherwise resume onto a step index that no longer
           // exists, or lands on the wrong step's slug in the URL.
-          const resumeStep = Math.min(draft.step, TOTAL_STEPS);
-          const resumeMax  = Math.min(draft.maxReached, TOTAL_STEPS);
-          setStep(resumeStep);
-          setMaxReached(resumeMax);
+          setResumeStep(Math.min(draft.step, TOTAL_STEPS));
+          setMaxReached(Math.min(draft.maxReached, TOTAL_STEPS));
           setForm(prev => ({ ...prev, ...(draft.form as Partial<StoreForm>) }));
-          // Resumed onto a later step than the entry redirect assumed —
-          // correct the URL's step query param to match (e.g. reload mid-wizard).
-          navigate(`/onboard/${sessionId}?step=${STEP_SLUGS[resumeStep - 1]}`, { replace: true });
         }
       })
       // A failed resume-check isn't fatal — the wizard just starts fresh.
       .catch(() => {})
       .finally(() => { if (!cancelled) setProgressLoading(false); });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The URL decides the step. It's clamped so it can never run ahead of the
+  // furthest step actually reached, nor past step 1 before a store name exists
+  // (a hand-typed `?step=seller-type` just lands on the right earlier step).
+  const wantedStep = slugToStep(searchParams.get('step')) ?? resumeStep ?? 1;
+  const storeNamed = form.storeName.trim().length > 0;
+  const step = progressLoading ? 1 : Math.max(1, Math.min(wantedStep, maxReached, storeNamed ? TOTAL_STEPS : 1));
+  // "View all plans" is a sheet over the checkout step, addressable by URL so a
+  // reload keeps it open.
+  const showPlansPage = step === 2 && searchParams.get('view') === 'plans';
+
+  // Keep the address bar canonical: fills in a missing `?step=`, rewrites the
+  // old `payment` slug, and pulls an out-of-range step back to where the seller
+  // really is (replace, so it never stacks a history entry).
+  useEffect(() => {
+    if (progressLoading) return;
+    const wantView = showPlansPage ? 'plans' : null;
+    if (searchParams.get('step') !== STEP_SLUGS[step - 1] || searchParams.get('view') !== wantView) {
+      navigate(onboardUrl(step, showPlansPage ? 'plans' : undefined), { replace: true });
+    }
+  }, [progressLoading, step, showPlansPage, searchParams, navigate]);
 
   // Store setup is a seller-only flow — a logged-out visitor is sent to
   // /login (redirect back here after), and a logged-in buyer is sent to
@@ -843,47 +580,84 @@ export function OnboardingPage() {
   const saveDraft = (nextStep: number, nextMaxReached: number) => {
     apiSaveOnboardingDraft({ step: nextStep, maxReached: nextMaxReached, form: form as unknown as Record<string, unknown> }).catch(() => {});
   };
-  // Every step change also rewrites the URL's `?step=` query param (replace,
-  // not push — matches Shopify's own behavior of not stacking a browser-
-  // history entry per wizard step) so the URL always reflects where the
-  // seller actually is, WITHOUT touching `pathname` (see the STEP_SLUGS
-  // comment above for why that distinction matters here).
-  const goToUrlStep = (n: number) => navigate(`/onboard/${sessionId}?step=${STEP_SLUGS[n - 1]}`, { replace: true });
+  // Moving between steps is just a navigation — the step is derived from the
+  // URL above. Going forward pushes a history entry so the browser's own Back
+  // button works; the wizard's Back button replaces so it never piles entries up.
+  const goToStep = (n: number, replace = false) => navigate(onboardUrl(n), { replace });
   const next = () => {
-    setStep(s => {
-      const n = Math.min(s + 1, TOTAL_STEPS);
-      setMaxReached(m => { const newMax = Math.max(m, n); saveDraft(n, newMax); return newMax; });
-      goToUrlStep(n);
-      return n;
-    });
+    const n = Math.min(step + 1, TOTAL_STEPS);
+    const newMax = Math.max(maxReached, n);
+    setMaxReached(newMax);
+    saveDraft(n, newMax);
+    goToStep(n);
   };
-  const back   = () => setStep(s => { const n = Math.max(s - 1, 1); goToUrlStep(n); return n; });
+  const back = () => goToStep(Math.max(step - 1, 1), true);
+  // Like `next`, but for a transition that also changes the form in the same
+  // tick — `next` would persist the stale `form` from this render's closure.
+  const advanceWith = (nf: StoreForm, n: number) => {
+    setForm(nf);
+    const newMax = Math.max(maxReached, n);
+    setMaxReached(newMax);
+    apiSaveOnboardingDraft({ step: n, maxReached: newMax, form: nf as unknown as Record<string, unknown> }).catch(() => {});
+    goToStep(n);
+  };
 
-  // The ONE place the store gets created — right after step 4, the last step
-  // now that Review is gone. Store creation and the automatic per-store
-  // trial are unconditional (see StoreService.createStore's
-  // `selfServeActivation` and `ensureDefaultSubscription`) — no
-  // `platformPlanId` is sent as part of the create-store call itself, so the
-  // store always starts on its normal trial first, exactly like before.
-  //
-  // If the seller picked a real plan on Step 2 (`form.selectedPlanId`), the
-  // ALREADY-EXISTING mid-trial "buy a plan now" endpoint (PATCH
-  // :storeId/change-plan, billImmediately: true) is called right after —
-  // this is the exact same code path the Billing Center uses for a mid-trial
-  // purchase, so it reuses all its tested proration/Stripe-charge/webhook
-  // logic instead of a second, parallel implementation. The card was already
-  // confirmed against the seller's Stripe customer in Step2Payment, so
-  // Stripe charges it immediately and the trial ends right there — matching
-  // the platform-wide "trial and a paid plan never coexist" rule. A failed
-  // charge here does NOT fail the whole store creation — the store still
-  // exists, just left on its normal trial, and the seller sees a clear
-  // warning on the next screen instead of a dead end.
+  // Step 2 (Shopify-style checkout) — card submit CHARGES IMMEDIATELY. A plan is
+  // bought against a store, so the store is created here (name/logo/currency
+  // only — seller type and product types are filled in by the later steps via
+  // apiUpdateStore) and then the ALREADY-EXISTING mid-trial "buy a plan now"
+  // endpoint (PATCH :storeId/change-plan, billImmediately: true — the same
+  // code path the Billing Center uses) charges the card just confirmed against
+  // the seller's Stripe customer; the trial ends right there. The store id is
+  // persisted to the draft BEFORE charging, so a declined card / reload never
+  // creates a second store — the retry reuses it. Throws with a seller-facing
+  // message on failure; the checkout page shows it inline.
+  const handleSubscribe = async (planId: string) => {
+    let storeId = form.createdStoreId;
+    if (!storeId) {
+      const store = await createStore.execute({
+        name:         form.storeName,
+        logo:         form.logo || undefined,
+        description:  form.description,
+        productTypes: [],
+        baseCurrency: form.baseCurrency,
+      });
+      if (!store) throw new Error('We could not create your store. Please try again.');
+      storeId = store._id;
+      const withStore = { ...form, createdStoreId: storeId };
+      setForm(withStore);
+      apiSaveOnboardingDraft({ step: 2, maxReached: 2, form: withStore as unknown as Record<string, unknown> }).catch(() => {});
+    }
+    try {
+      await apiChangePlatformPlan(storeId, planId, billing === 'annual' ? 'yearly' : 'monthly', true,
+        `platform-plan-onboarding-${storeId}-${planId}-${chargeAttempt.current}`);
+    } catch (err) {
+      chargeAttempt.current += 1;
+      throw new Error(err instanceof Error && err.message ? err.message : 'Your card was declined — please try again or use a different card.', { cause: err });
+    }
+    advanceWith({ ...form, createdStoreId: storeId, selectedPlanId: planId, paidPlanId: planId }, 3);
+  };
+
+  // Last step — finishes the store. A seller who paid on the checkout step
+  // already has a store (`form.createdStoreId`): it just gets its seller type
+  // and product types filled in. A seller who skipped to the free trial has no
+  // store yet, so it's created here with everything at once (the automatic
+  // per-store trial starts unconditionally — see StoreService.createStore and
+  // `ensureDefaultSubscription`). Picking the free plan is applied right after
+  // via the same change-plan call; a failure there never fails the launch.
   const handleFinalSubmit = async () => {
     setSubmitError('');
     setSubmitting(true);
     try {
-      let store = createStore.store;
-      if (!store) {
+      let store: StoreData | null;
+      if (form.createdStoreId) {
+        const res = await apiUpdateStore({
+          storeId:      form.createdStoreId,
+          sellerType:   form.sellerType as SellerType,
+          productTypes: [...new Set(form.productTypes)],
+        });
+        store = res.data?._id ? res.data : ({ ...res.data, _id: form.createdStoreId } as StoreData);
+      } else {
         store = await createStore.execute({
           name:         form.storeName,
           logo:         form.logo || undefined,
@@ -893,22 +667,19 @@ export function OnboardingPage() {
           baseCurrency: form.baseCurrency,
         });
         if (!store) { setSubmitError(createStore.error || 'Failed to create store. Please try again.'); return; }
-      }
-      if (form.selectedPlanId) {
-        const plan = plans.find(p => p._id === form.selectedPlanId);
-        try {
-          // Keyed off store._id — this call fires at most once per store's
-          // onboarding completion, so retrying the exact same submission
-          // (network hiccup, impatient double-click) must reuse the same
-          // key rather than risk a second real Stripe charge/subscription.
-          await apiChangePlatformPlan(store._id, form.selectedPlanId, 'monthly', true, `platform-plan-onboarding-${store._id}`);
-        } catch (err) {
-          setPlanWarning(
-            `We couldn't complete your ${plan?.name ?? 'plan'} payment (${err instanceof Error ? err.message : 'card declined'}) — your store is live on the free trial instead. You can try again any time from Billing.`,
-          );
+        const freePlan = plans.find(p => p._id === form.selectedPlanId && p.isFree);
+        if (freePlan) {
+          try {
+            await apiChangePlatformPlan(store._id, freePlan._id, 'monthly', true, `platform-plan-onboarding-${store._id}`);
+          } catch {
+            // The store is live on its trial either way; plans can be changed from Billing.
+          }
         }
       }
-      setPhase('ready');
+      // Onboarding is finished: reset the draft (so a later /onboard for another store
+      // starts fresh instead of resuming this one) and go straight to the dashboard.
+      await apiSaveOnboardingDraft({ step: 1, maxReached: 1, form: {} }).catch(() => {});
+      navigate(`/store/${store._id}/dashboard`, { replace: true });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create store. Please try again.');
     } finally {
@@ -935,32 +706,39 @@ export function OnboardingPage() {
     );
   }
 
-  if (phase === 'ready') {
+  // Step 2 is a full-viewport Shopify-style checkout, outside the split layout.
+  // "View all plans" slides up over it (and back down on close) — the checkout
+  // stays mounted underneath so the card form and what's typed in it survive.
+  if (step === 2) {
+    const checkoutPlan = pickCheckoutPlan(plans, form.selectedPlanId);
     return (
-      <AuthSplitLayout
-        panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
-        pageContext="onboarding"
-        heading="You're all set."
-        subtext="Your store is live on Solvexo — start building your storefront right away."
-        highlights={ONBOARDING_HIGHLIGHTS}
-        bare
-      >
-        <div className="flex-1 flex items-start justify-center px-6 py-6">
-          <StoreReadyConfirmation store={createStore.store} planWarning={planWarning} />
-        </div>
-      </AuthSplitLayout>
-    );
-  }
-
-  if (showPlansPage) {
-    return (
-      <PlansFullPage
-        plans={plans}
-        trialDurationDays={trialDurationDays}
-        selectedPlanId={form.selectedPlanId}
-        onClose={() => setShowPlansPage(false)}
-        onConfirmPlan={planId => { setForm({ ...form, selectedPlanId: planId }); setShowPlansPage(false); }}
-      />
+      <>
+        <OnboardingCheckoutPage
+          plans={plans}
+          selectedPlanId={form.selectedPlanId}
+          billing={billing}
+          paidPlanId={form.paidPlanId}
+          trialDurationDays={trialDurationDays}
+          onSubscribe={handleSubscribe}
+          onContinue={() => advanceWith({ ...form, selectedPlanId: checkoutPlan?._id ?? null }, 3)}
+          onStartTrial={() => advanceWith({ ...form, selectedPlanId: null }, 3)}
+          onViewPlans={() => navigate(onboardUrl(2, 'plans'))}
+          onBack={back}
+        />
+        <AnimatePresence>
+          {showPlansPage && (
+            <OnboardingPlansPage
+              key="plans"
+              plans={plans}
+              selectedPlanId={form.selectedPlanId}
+              billing={billing}
+              onBillingChange={b => setForm(f => ({ ...f, billing: b }))}
+              onClose={() => navigate(onboardUrl(2), { replace: true })}
+              onSelect={planId => { setForm({ ...form, selectedPlanId: planId }); navigate(onboardUrl(2), { replace: true }); }}
+            />
+          )}
+        </AnimatePresence>
+      </>
     );
   }
 
@@ -976,12 +754,6 @@ export function OnboardingPage() {
       <div className="flex-1 flex items-start justify-center px-6 py-6">
         <StepPane step={step}>
           {step === 1 && <Step1StoreInfo form={form} setForm={setForm} onNext={next} />}
-          {step === 2 && (
-            <Step2Payment
-              form={form} onNext={next} onBack={back} trialDurationDays={trialDurationDays} plans={plans}
-              onOpenPlans={() => setShowPlansPage(true)}
-            />
-          )}
           {step === 3 && <Step3SellerType form={form} setForm={setForm} onNext={next} onBack={back} />}
           {step === 4 && (
             <Step4WhatYouSell

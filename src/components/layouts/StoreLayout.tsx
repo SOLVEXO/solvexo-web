@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useId, Suspense, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useId, lazy, Suspense, type ReactNode } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
@@ -1265,6 +1265,34 @@ function PlatformBillingBanner() {
   return null;
 }
 
+// ── Trial-expired gate — Shopify's blocking "Your trial has expired. Select a
+// plan." page. Shown only to the store OWNER (a staff session can't pay for the
+// store's plan) while the store's trial has ended or it is locked, over every
+// workspace page except the Billing Center itself (`/plan-billing`, the escape
+// hatch so the older billing screen is never unreachable). Lazy-loaded so the
+// Stripe checkout code only ships when it's actually needed. ──
+const TrialExpiredGate = lazy(() => import('@/components/layouts/TrialExpiredGate'));
+
+function TrialExpiredGateHost() {
+  const { storeId } = useStoreWorkspace();
+  const { pathname } = useLocation();
+  const [status, setStatus] = useState<string | null>(null);
+  const isOwner = TokenStorage.getUser<{ role?: AppRole }>()?.role === 'seller';
+
+  useEffect(() => {
+    if (!storeId || !isOwner) return;
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId)
+      .then(res => { if (!cancelled) setStatus(res.data.status); })
+      .catch(() => {}); // non-critical — never block the workspace over a failed status read
+    return () => { cancelled = true; };
+  }, [storeId, isOwner]);
+
+  if (!isOwner || (status !== 'trial_ended' && status !== 'locked')) return null;
+  if (pathname.endsWith('/plan-billing')) return null;
+  return <Suspense fallback={null}><TrialExpiredGate storeId={storeId} /></Suspense>;
+}
+
 // ── Trial billing pill — small, Shopify-style ("Get 3 months for
 // $1/month · Select a plan") compact badge, NOT a full-width banner. Lives
 // ONLY on `StoreDashboard.tsx` (rendered explicitly there, above its store-
@@ -1427,6 +1455,7 @@ export function StoreLayout() {
         </div>
       </div>
       <StoreBottomNav />
+      <TrialExpiredGateHost />
     </StoreWorkspaceProvider>
   );
 }
