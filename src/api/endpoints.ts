@@ -411,7 +411,6 @@ export const ENDPOINTS = {
     MY_CANCEL:    (id: string) => `/api/subscriptions/my/${id}/cancel`,
     MY_CHANGE_PLAN: (id: string) => `/api/subscriptions/my/${id}/change-plan`,
     MY_TIMELINE:  (id: string) => `/api/subscriptions/my/${id}/timeline`,
-    MY_SETUP_INTENT: '/api/subscriptions/my/setup-intent',
     MY_BILLING_PORTAL: '/api/subscriptions/my/billing-portal',
     MY_BENEFITS:  (storeId: string) => `/api/subscriptions/my/benefits/${storeId}`,
     MY_CREDITS:   '/api/subscriptions/my/credits',

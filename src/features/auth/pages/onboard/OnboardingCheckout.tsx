@@ -24,11 +24,13 @@ const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day
 // card charges it immediately — `onSubscribe` (owned by OnboardingPage) creates
 // the store if it doesn't exist yet and buys the plan with billImmediately.
 export function OnboardingCheckoutPage({
-  plans, selectedPlanId, billing, paidPlanId, trialDurationDays,
+  plans, selectedPlanId, billing, paidPlanId, trialDurationDays, hasCardOnFile = false,
   onSubscribe, onContinue, onStartTrial, onViewPlans, onBack,
 }: {
   plans: PlatformPlan[]; selectedPlanId: string | null; billing: OnboardingBilling;
   paidPlanId: string | null; trialDurationDays: number;
+  /** The seller already has a card saved — offer one-click "Subscribe" instead of the card form. */
+  hasCardOnFile?: boolean;
   /** Charges the plan now. Throws an Error whose message is shown to the seller. */
   onSubscribe: (planId: string) => Promise<void>;
   onContinue: () => void; onStartTrial?: () => void; onViewPlans: () => void; onBack?: () => void;
@@ -42,7 +44,7 @@ export function OnboardingCheckoutPage({
   const [domainOpen, setDomainOpen] = useState(false);
   // True once Stripe + our backend confirmed a card for this seller — a failed
   // charge can then be retried without re-typing the card.
-  const [cardOnFile, setCardOnFile] = useState(false);
+  const [cardOnFile, setCardOnFile] = useState(hasCardOnFile);
   const paid = !!plan && paidPlanId === plan._id;
   const needsCardForm = !!plan && !plan.isFree && !paid && !cardOnFile;
 

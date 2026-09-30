@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
+import { savePendingPlan } from '@/utils/pendingPlan';
 
 /** The one handler every "Sell on Solvexo" / "Start Selling" CTA in the app
  *  should call — never a raw `navigate('/onboard')`. Deliberately instant —
@@ -37,5 +38,11 @@ export function useSellEntry() {
     navigate('/seller/stores');
   }, [navigate]);
 
-  return { go, loading: false };
+  /** Same entry, but remembers the plan (and monthly/annual) the visitor picked on the Pricing page so the onboarding checkout opens on it. */
+  const goWithPlan = useCallback((planId: string, billing: 'monthly' | 'annual') => {
+    savePendingPlan(planId, billing);
+    go();
+  }, [go]);
+
+  return { go, goWithPlan, loading: false };
 }

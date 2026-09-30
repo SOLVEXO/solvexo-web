@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
 import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { takePendingPlan } from '@/utils/pendingPlan';
 import { Button } from '@/components/comman/ui/Button';
 import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
@@ -540,6 +541,18 @@ export function OnboardingPage() {
       .finally(() => { if (!cancelled) setProgressLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  // A plan picked on the public Pricing page (see `savePendingPlan`) becomes the
+  // checkout's preselected plan — applied once, after the draft has loaded (so it
+  // wins over a stale draft pick) and never over a plan that's already paid for.
+  const pendingPlanApplied = useRef(false);
+  useEffect(() => {
+    if (progressLoading || plans.length === 0 || pendingPlanApplied.current) return;
+    pendingPlanApplied.current = true;
+    const pending = takePendingPlan();
+    if (!pending || !plans.some(p => p._id === pending.planId)) return;
+    setForm(f => (f.paidPlanId ? f : { ...f, selectedPlanId: pending.planId, billing: pending.billing }));
+  }, [progressLoading, plans]);
 
   // The URL decides the step. It's clamped so it can never run ahead of the
   // furthest step actually reached, nor past step 1 before a store name exists

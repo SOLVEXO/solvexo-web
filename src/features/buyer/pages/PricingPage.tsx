@@ -41,7 +41,7 @@ function getFallbackFaqs(trialDurationDays: number) { return [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept all major credit cards (Visa, Mastercard, Amex), PayPal, Apple Pay, and bank transfer for annual plans.',
+    a: 'We accept all major credit and debit cards (Visa, Mastercard, American Express and Discover). Payments are processed securely by Stripe — we never see or store your card number.',
   },
   {
     q: 'Is there a free trial?',
@@ -151,10 +151,10 @@ export function PricingPage() {
             key={plan._id}
             plan={plan}
             billing={billing === 'annual' ? 'annual' : 'monthly'}
-            ctaLabel={plan.isCustomPricing ? 'Contact Sales' : plan.isFree ? 'Start Free' : `Start ${trialDurationDays}-Day Free Trial`}
+            ctaLabel={plan.isCustomPricing ? 'Contact Sales' : plan.isFree ? 'Start Free' : `Try ${plan.name}`}
             onCta={() => plan.isCustomPricing
               ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
-              : sellEntry.go()}
+              : sellEntry.goWithPlan(plan._id, billing)}
           />
         ))}
       </RevealStagger>

@@ -29,6 +29,8 @@ interface StripeCardSetupProps {
   onConfirmed: (setupIntentId: string) => void;
   /** Overrides the submit button label (default "Save Card & Continue"). */
   submitLabel?: string;
+  /** `setup` (default) saves the card via a SetupIntent; `payment` charges a PaymentIntent (one-off purchases). */
+  intent?: 'setup' | 'payment';
   /** Overrides the reassurance line under the button. */
   footnote?: string;
 }
@@ -138,7 +140,7 @@ function CardBrands() {
 
 type CardKey = 'number' | 'expiry' | 'cvc';
 
-function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote }: StripeCardSetupProps) {
+function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote, intent = 'setup' }: StripeCardSetupProps) {
   const stripe   = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -174,25 +176,28 @@ function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote }: StripeC
     setSubmitting(true);
     setError('');
 
-    const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
-      payment_method: {
-        card,
-        billing_details: {
-          address: { line1: address.trim(), postal_code: postal.trim(), country, city: city.trim() },
-        },
+    const paymentMethod = {
+      card,
+      billing_details: {
+        address: { line1: address.trim(), postal_code: postal.trim(), country, city: city.trim() },
       },
-    });
+    };
+
+    // SetupIntent → just saves the card; PaymentIntent → charges it (one-off purchases).
+    const { error: confirmError, intentObj } = intent === 'payment'
+      ? await stripe.confirmCardPayment(clientSecret, { payment_method: paymentMethod }).then(r => ({ error: r.error, intentObj: r.paymentIntent }))
+      : await stripe.confirmCardSetup(clientSecret, { payment_method: paymentMethod }).then(r => ({ error: r.error, intentObj: r.setupIntent }));
 
     if (confirmError) {
-      setError(confirmError.message ?? 'Card setup failed. Please check your details and try again.');
+      setError(confirmError.message ?? (intent === 'payment' ? 'Payment failed. Please check your details and try again.' : 'Card setup failed. Please check your details and try again.'));
       setSubmitting(false);
       return;
     }
-    if (setupIntent && setupIntent.status === 'succeeded') {
-      onConfirmed(setupIntent.id);
+    if (intentObj && intentObj.status === 'succeeded') {
+      onConfirmed(intentObj.id);
       return;
     }
-    setError('Card setup did not complete. Please try again.');
+    setError(intent === 'payment' ? 'Payment did not complete. Please try again.' : 'Card setup did not complete. Please try again.');
     setSubmitting(false);
   };
 
@@ -259,13 +264,13 @@ function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote }: StripeC
  *  if VITE_STRIPE_PUBLISHABLE_KEY isn't set. Callers should check
  *  isStripeConfigured() first and show a fallback state instead of mounting
  *  this. */
-export function StripeCardSetup({ clientSecret, onConfirmed, submitLabel, footnote }: StripeCardSetupProps) {
+export function StripeCardSetup({ clientSecret, onConfirmed, submitLabel, footnote, intent }: StripeCardSetupProps) {
   const promise = getStripe();
   if (!promise) return null;
 
   return (
     <Elements stripe={promise}>
-      <SetupForm clientSecret={clientSecret} onConfirmed={onConfirmed} submitLabel={submitLabel} footnote={footnote} />
+      <SetupForm clientSecret={clientSecret} onConfirmed={onConfirmed} submitLabel={submitLabel} footnote={footnote} intent={intent} />
     </Elements>
   );
 }

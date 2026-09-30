@@ -260,10 +260,6 @@ export function apiGetSubscriptionTimeline(id: string) {
   return client.get<never, ApiResponse<SubscriptionTimelineEvent[]>>(ENDPOINTS.SUBSCRIPTIONS.MY_TIMELINE(id));
 }
 
-export function apiCreateSetupIntent() {
-  return client.post<never, ApiResponse<{ clientSecret: string }>>(ENDPOINTS.SUBSCRIPTIONS.MY_SETUP_INTENT);
-}
-
 export function apiCreateBillingPortalSession(returnUrl: string) {
   return client.post<never, ApiResponse<{ url: string }>>(ENDPOINTS.SUBSCRIPTIONS.MY_BILLING_PORTAL, { returnUrl });
 }

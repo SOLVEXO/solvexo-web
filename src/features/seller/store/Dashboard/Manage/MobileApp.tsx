@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Card, Button, Field, Input, Textarea, FileDropSelect, EmptyState } from '@/components/comman/ui';
-import { StripeCardPayment, isStripeConfigured } from '@/components/comman/ui/StripeCardPayment';
+import { StripeCardSetup, isStripeConfigured } from '@/features/auth/pages/onboard/StripeCardSetup';
 import {
   apiGetStoreAppRequests, apiCreateStoreAppRequest, apiCreatePlatformPaymentIntent, apiConfirmPlatformPayment,
   type StoreAppRequest, type StoreAppPlatformState, type StoreAppPlatformStatus,
@@ -105,12 +105,12 @@ function PlatformPayFlow({ label, priceLabel, onCreateIntent, onConfirm }: {
 
   if (clientSecret) {
     return (
-      <div className="max-w-[320px]">
+      <div className="max-w-[400px]">
         <div className="rounded-lg border border-bone bg-white px-3 py-2.5 mb-2.5 flex items-center justify-between gap-3">
           <span className="text-[11.5px] font-semibold text-charcoal">{priceLabel}</span>
           <span className="text-[14px] font-bold text-charcoal shrink-0">{currencySymbol(currency)}{(amount ?? 0).toFixed(2)}</span>
         </div>
-        <StripeCardPayment clientSecret={clientSecret} submitLabel={`Pay ${currencySymbol(currency)}${(amount ?? 0).toFixed(2)}`} onConfirmed={handleConfirmed} />
+        <StripeCardSetup intent="payment" clientSecret={clientSecret} submitLabel={`Pay ${currencySymbol(currency)}${(amount ?? 0).toFixed(2)}`} footnote="Secured by Stripe — your card is charged right away" onConfirmed={handleConfirmed} />
         {paying && <p className="mt-2 text-[11.5px] text-slate">Confirming your payment…</p>}
         {error && <p className="mt-2 text-[12px] text-error">{error}</p>}
       </div>

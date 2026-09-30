@@ -1271,7 +1271,7 @@ function PlatformBillingBanner() {
 // workspace page except the Billing Center itself (`/plan-billing`, the escape
 // hatch so the older billing screen is never unreachable). Lazy-loaded so the
 // Stripe checkout code only ships when it's actually needed. ──
-const TrialExpiredGate = lazy(() => import('@/components/layouts/TrialExpiredGate'));
+const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
 function TrialExpiredGateHost() {
   const { storeId } = useStoreWorkspace();
@@ -1290,7 +1290,7 @@ function TrialExpiredGateHost() {
 
   if (!isOwner || (status !== 'trial_ended' && status !== 'locked')) return null;
   if (pathname.endsWith('/plan-billing')) return null;
-  return <Suspense fallback={null}><TrialExpiredGate storeId={storeId} /></Suspense>;
+  return <Suspense fallback={null}><PlanCheckoutFlow storeId={storeId} title="Your trial has expired. Select a plan." /></Suspense>;
 }
 
 // ── Trial billing pill — small, Shopify-style ("Get 3 months for

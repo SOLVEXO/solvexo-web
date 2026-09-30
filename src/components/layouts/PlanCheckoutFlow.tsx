@@ -1,25 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
+import { Loader2 } from 'lucide-react';
 import {
-  apiBrowsePlatformPlans, apiChangePlatformPlan, apiGetPublicTrialSettings,
+  apiBrowsePlatformPlans, apiChangePlatformPlan, apiGetOnboardingProgress, apiGetPublicTrialSettings,
   type PlatformPlan,
 } from '@/api/services/platformPlans';
 import { OnboardingCheckoutPage, OnboardingPlansPage } from '@/features/auth/pages/onboard/OnboardingCheckout';
 import { pickCheckoutPlan, type OnboardingBilling } from '@/features/auth/pages/onboard/onboardingPlans';
 
-// Shopify's "Your trial has expired. Select a plan." — a blocking full-screen
-// page shown over a store workspace whose trial ended (or that is locked). It
-// reuses the onboarding plans sheet and Stripe checkout exactly as they are,
-// only pointed at THIS existing store: picking a plan opens the checkout, and
-// paying it calls the same mid-trial change-plan endpoint the Billing Center
-// uses (billImmediately: true). Once paid the page reloads so every part of
-// the workspace (sidebar card, banner, entitlements) picks up the new plan.
-export default function TrialExpiredGate({ storeId }: { storeId: string }) {
+// The Shopify-style "select a plan" sheet + Stripe checkout, pointed at an
+// EXISTING store. Used in two places:
+//   • TrialExpiredGate (StoreLayout) — blocking full page once a trial ends;
+//     starts on the plans sheet, no close button.
+//   • Billing Center (StorePlanBilling) — opened over the page when a seller picks
+//     a paid plan that needs a card (no card yet / still on trial / on the free
+//     plan); starts straight on the checkout for that plan, closable.
+// Paying calls the same change-plan endpoint the old confirm modal used
+// (billImmediately: true), then reloads so every part of the workspace (sidebar
+// card, banners, entitlements, billing tab) picks up the new plan.
+export default function PlanCheckoutFlow({
+  storeId, title, initialPlanId, initialBilling = 'monthly', onClose,
+}: {
+  storeId: string;
+  /** Heading on the plans sheet. */
+  title?: string;
+  /** Skip the plans sheet and open the checkout for this plan. */
+  initialPlanId?: string;
+  initialBilling?: OnboardingBilling;
+  /** Omit for a blocking gate (nothing to go back to). */
+  onClose?: () => void;
+}) {
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [trialDays, setTrialDays] = useState(3);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [billing, setBilling] = useState<OnboardingBilling>('monthly');
-  const [view, setView] = useState<'plans' | 'checkout'>('plans');
+  // null until we know whether the seller already has a card saved, so the
+  // checkout can offer one-click "Subscribe" instead of asking for it again.
+  const [cardOnFile, setCardOnFile] = useState<boolean | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(initialPlanId ?? null);
+  const [billing, setBilling] = useState<OnboardingBilling>(initialBilling);
+  const [view, setView] = useState<'plans' | 'checkout'>(initialPlanId ? 'checkout' : 'plans');
   const [paidPlanId, setPaidPlanId] = useState<string | null>(null);
   // Bumped after every failed charge so a retry gets a fresh Stripe idempotency
   // key (a reused key would just replay the failed response).
@@ -28,6 +46,9 @@ export default function TrialExpiredGate({ storeId }: { storeId: string }) {
   useEffect(() => {
     apiBrowsePlatformPlans().then(res => setPlans(res.data)).catch(() => {});
     apiGetPublicTrialSettings().then(res => setTrialDays(res.data.durationDays)).catch(() => {});
+    apiGetOnboardingProgress()
+      .then(res => setCardOnFile(!!res.data.hasPlatformPaymentMethod))
+      .catch(() => setCardOnFile(false));
   }, []);
 
   const interval = billing === 'annual' ? 'yearly' : 'monthly';
@@ -35,7 +56,7 @@ export default function TrialExpiredGate({ storeId }: { storeId: string }) {
   const subscribe = async (planId: string) => {
     try {
       await apiChangePlatformPlan(storeId, planId, interval, true,
-        `platform-plan-gate-${storeId}-${planId}-${chargeAttempt.current}`);
+        `platform-plan-checkout-${storeId}-${planId}-${interval}-${chargeAttempt.current}`);
     } catch (err) {
       chargeAttempt.current += 1;
       throw new Error(err instanceof Error && err.message ? err.message : 'Your card was declined — please try again or use a different card.', { cause: err });
@@ -48,11 +69,19 @@ export default function TrialExpiredGate({ storeId }: { storeId: string }) {
   const finish = async () => {
     const plan = pickCheckoutPlan(plans, selectedPlanId);
     if (plan && plan.isFree && paidPlanId !== plan._id) {
-      try { await apiChangePlatformPlan(storeId, plan._id, 'monthly', true, `platform-plan-gate-${storeId}-${plan._id}-free`); }
+      try { await apiChangePlatformPlan(storeId, plan._id, 'monthly', true, `platform-plan-checkout-${storeId}-${plan._id}-free`); }
       catch { return; }
     }
     window.location.reload();
   };
+
+  if (cardOnFile === null) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-cream flex items-center justify-center">
+        <Loader2 size={24} className="text-brand-orange animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[70]">
@@ -63,6 +92,7 @@ export default function TrialExpiredGate({ storeId }: { storeId: string }) {
           billing={billing}
           paidPlanId={paidPlanId}
           trialDurationDays={trialDays}
+          hasCardOnFile={cardOnFile}
           onSubscribe={subscribe}
           onContinue={finish}
           onViewPlans={() => setView('plans')}
@@ -72,13 +102,14 @@ export default function TrialExpiredGate({ storeId }: { storeId: string }) {
       <AnimatePresence>
         {view === 'plans' && (
           <OnboardingPlansPage
-            key="gate-plans"
-            title="Your trial has expired. Select a plan."
+            key="plan-flow-plans"
+            title={title}
             plans={plans}
             selectedPlanId={selectedPlanId}
             billing={billing}
             onBillingChange={setBilling}
             onSelect={planId => { setSelectedPlanId(planId); setView('checkout'); }}
+            onClose={onClose}
           />
         )}
       </AnimatePresence>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   Check, Zap, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
   XCircle, RotateCcw, Loader2, type LucideIcon,
@@ -6,6 +6,8 @@ import {
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
+import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
+import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
 import { Textarea } from '@/components/comman/ui/Input';
 import { SkeletonBox } from '@/components/comman/ui';
 import {
@@ -16,6 +18,9 @@ import {
   type AddonCatalogItem,
   type PlatformPlanInvoice, type PlanChangePreview,
 } from '@/api/services/platformPlans';
+
+// Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
+const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
 const INVOICE_STATUS_STYLE: Record<string, string> = {
   paid: 'bg-[#e3f4ea] text-[#1e7a3c]',
@@ -81,6 +86,11 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const [buyingAddon, setBuyingAddon] = useState<AddonCatalogItem | null>(null);
   const addonIdempotencyKeyRef = useRef<string | null>(null);
   const [confirmingPlan, setConfirmingPlan] = useState<PlatformPlan | null>(null);
+  // Set when the seller picks a paid plan that needs a card — opens the full checkout.
+  const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
+  // Add-ons charge the card on file — when there isn't one, ask for it first.
+  const { cardOnFile, refresh: refreshCardOnFile } = usePlatformCardOnFile();
+  const [addCardOpen, setAddCardOpen] = useState(false);
   const [preview, setPreview] = useState<PlanChangePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [cancelingAddon, setCancelingAddon] = useState<AddonPurchase | null>(null);
@@ -204,8 +214,9 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     addonIdempotencyKeyRef.current = null;
   }
 
-  async function handlePurchaseAddon() {
+  async function handlePurchaseAddon(skipCardCheck = false) {
     if (!buyingAddon) return;
+    if (!skipCardCheck && cardOnFile === false) { setAddCardOpen(true); return; }
     setAddonBusy(true);
     setActionError('');
     try {
@@ -424,15 +435,29 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                   {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
                 </div>
-                <p className="text-[20px] font-bold text-brand-orange mb-2">
+                <p className="text-[20px] font-bold text-brand-orange">
                   {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : `$${price}/${interval === 'yearly' ? 'yr' : 'mo'}`}
+                </p>
+                {/* Intro offer (monthly only — same rule the backend applies when it creates the subscription). */}
+                <p className="text-[11.5px] font-medium text-success mb-2 min-h-[16px]">
+                  {interval === 'monthly' && !isCurrent && !plan.isFree && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null
+                    ? `Start at $${plan.introPriceUSD}/mo for ${plan.introDurationCycles} month${plan.introDurationCycles === 1 ? '' : 's'}, then $${plan.monthlyPriceUSD}/mo`
+                    : ' '}
                 </p>
                 <ul className="flex flex-col gap-1.5 mb-4 p-0 list-none flex-1">
                   {plan.featureBullets.map(f => (
                     <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite"><Check size={12} className="text-brand-orange mt-[2px] shrink-0" />{f}</li>
                   ))}
                 </ul>
-                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent} loading={changingId === plan._id} onClick={() => { setConfirmingPlan(plan); setActionError(''); }}>
+                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent} loading={changingId === plan._id} onClick={() => {
+                  setActionError('');
+                  // First paid purchase (no Stripe customer yet, still on trial/locked, or coming
+                  // from the free plan) needs a card → full checkout. An already-paying store
+                  // keeps the proration confirm modal.
+                  const needsCheckout = !plan.isFree && !plan.isCustomPricing
+                    && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree);
+                  if (needsCheckout) setCheckoutPlanId(plan._id); else setConfirmingPlan(plan);
+                }}>
                   {isCurrent ? 'Current Plan' : 'Switch to this plan'}
                 </Button>
               </div>
@@ -503,6 +528,17 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         </div>
       </div>
 
+      {checkoutPlanId && (
+        <Suspense fallback={null}>
+          <PlanCheckoutFlow
+            storeId={storeId}
+            initialPlanId={checkoutPlanId}
+            initialBilling={interval === 'yearly' ? 'annual' : 'monthly'}
+            onClose={() => setCheckoutPlanId(null)}
+          />
+        </Suspense>
+      )}
+
       {addonModal && !buyingAddon && (
         <Modal title="Buy an add-on" width={420} onClose={closeAddonFlow}>
           <div className="flex flex-col gap-2">
@@ -527,7 +563,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         <Modal title="Confirm purchase" width={420} onClose={closeAddonFlow}
           footer={<>
             <Button variant="outline" onClick={() => { setBuyingAddon(null); setActionError(''); }} disabled={addonBusy}>Back</Button>
-            <Button onClick={handlePurchaseAddon} loading={addonBusy}>Pay ${buyingAddon.priceUSD.toFixed(2)}</Button>
+            <Button onClick={() => handlePurchaseAddon()} loading={addonBusy}>{cardOnFile === false ? 'Add card & pay' : 'Pay'} ${buyingAddon.priceUSD.toFixed(2)}</Button>
           </>}
         >
           <p className="text-[13px] text-charcoal">
@@ -540,6 +576,14 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
           </p>
           {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
+      )}
+
+      {addCardOpen && buyingAddon && (
+        <AddPlatformCardModal
+          reason={`Add a card to buy ${buyingAddon.label} ($${buyingAddon.priceUSD.toFixed(2)}). It will be charged right after you save it.`}
+          onClose={() => setAddCardOpen(false)}
+          onSaved={() => { setAddCardOpen(false); refreshCardOnFile(); void handlePurchaseAddon(true); }}
+        />
       )}
 
       {confirmingPlan && (

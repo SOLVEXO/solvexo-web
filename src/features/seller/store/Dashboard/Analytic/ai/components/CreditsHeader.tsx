@@ -3,6 +3,8 @@ import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { apiPurchaseAddon } from '@/api/services/platformPlans';
+import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
+import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
 import type { AiCreditsOverview } from '@/api/services/aiStudio';
 
 interface CreditsHeaderProps {
@@ -15,12 +17,16 @@ interface CreditsHeaderProps {
 export function CreditsHeader({ storeId, credits, loading, onCreditsChanged }: CreditsHeaderProps) {
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState('');
+  // Credits are charged to the card on file — ask for one first when there isn't any.
+  const { cardOnFile, refresh: refreshCardOnFile } = usePlatformCardOnFile();
+  const [addCardOpen, setAddCardOpen] = useState(false);
 
   const balance = credits?.balance ?? 0;
   const allowance = credits?.monthlyAllowance ?? 0;
   const usedPct = allowance > 0 ? Math.min(100, Math.round(((credits?.usedThisMonth ?? 0) / allowance) * 100)) : 0;
 
-  const handleBuyCredits = async () => {
+  const handleBuyCredits = async (skipCardCheck = false) => {
+    if (!skipCardCheck && cardOnFile === false) { setAddCardOpen(true); return; }
     setBuying(true);
     setBuyError('');
     try {
@@ -67,10 +73,17 @@ export function CreditsHeader({ storeId, credits, loading, onCreditsChanged }: C
           <p className="text-[48px] sm:text-[56px] font-bold text-brand-orange leading-none">{balance}</p>
         )}
         <p className="text-[13px] text-[#b0aea8] mt-1">AI credits left this month</p>
-        <Button variant="secondary" size="sm" loading={buying} onClick={handleBuyCredits} className="mt-3">
+        <Button variant="secondary" size="sm" loading={buying} onClick={() => handleBuyCredits()} className="mt-3">
           Buy 500 Credits
         </Button>
       </div>
+      {addCardOpen && (
+        <AddPlatformCardModal
+          reason="Add a card to buy 500 AI credits ($10.00). It will be charged right after you save it."
+          onClose={() => setAddCardOpen(false)}
+          onSaved={() => { setAddCardOpen(false); refreshCardOnFile(); void handleBuyCredits(true); }}
+        />
+      )}
     </div>
   );
 }
