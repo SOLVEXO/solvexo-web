@@ -342,7 +342,9 @@ export function apiImportProductsCsv(storeId: string, file: File) {
   return client.post<never, ApiResponse<ImportProductsCsvResult>>(
     ENDPOINTS.PRODUCT.IMPORT_CSV(storeId),
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    // Rows are created one-by-one server-side (up to 500), so this legitimately
+    // outlasts the client's default 15s timeout.
+    { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300_000 },
   );
 }
 
