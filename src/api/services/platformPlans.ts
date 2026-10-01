@@ -20,7 +20,7 @@ export interface PlatformPlanLimits {
 }
 
 export interface PlatformPlan {
-  _id: string; name: string; description: string | null; badge: string | null;
+  _id: string; /** Set for the four core plans defined by the platform (basic/grow/advanced/enterprise). */ key?: string | null; name: string; description: string | null; badge: string | null;
   sortOrder: number; isFree: boolean; isCustomPricing: boolean;
   monthlyPriceUSD: number | null; yearlyPriceUSD: number | null;
   /** @deprecated no longer read anywhere — trial duration is platform-wide now, see PublicTrialSettings/apiGetPublicTrialSettings. */

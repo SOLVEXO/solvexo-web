@@ -28,15 +28,31 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
   const price = product.subscriberPrice ?? product.defaultVariantPrice;
   const onSale = product.compareAtPrice != null && product.defaultVariantPrice != null && product.compareAtPrice > product.defaultVariantPrice;
 
+  const soldOut = product.inStock === false;
+  const second = product.images?.[1];
   const media = product.images?.[0] ? (
-    <img
-      src={cloudinaryUrl(product.images[0], 480)}
-      srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
-      sizes="(min-width: 1024px) 25vw, 50vw"
-      alt={product.name}
-      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-      loading="lazy"
-    />
+    <>
+      <img
+        src={cloudinaryUrl(product.images[0], 480)}
+        srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
+        sizes="(min-width: 1024px) 25vw, 50vw"
+        alt={product.name}
+        className={`w-full h-full object-cover transition-transform duration-500 ${second ? '' : 'group-hover:scale-[1.03]'}`}
+        loading="lazy"
+      />
+      {/* Shopify-style: the second product image fades in on hover. */}
+      {second && (
+        <img
+          src={cloudinaryUrl(second, 480)}
+          srcSet={cloudinarySrcSet(second, CARD_WIDTHS)}
+          sizes="(min-width: 1024px) 25vw, 50vw"
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          loading="lazy"
+        />
+      )}
+    </>
   ) : (
     <div className="w-full h-full flex items-center justify-center">
       <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
@@ -51,6 +67,14 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
           <div className="block w-full h-full">{media}</div>
         ) : (
           <Link to={`/product/${product.slug}`} className="block w-full h-full">{media}</Link>
+        )}
+        {(soldOut || onSale) && (
+          <span
+            className="absolute top-3 left-3 pointer-events-none"
+            style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.04em', padding: '4px 9px', background: soldOut ? t.colors.ink : t.colors.accent, color: '#FFFFFF' }}
+          >
+            {soldOut ? 'Sold out' : 'Sale'}
+          </span>
         )}
         {product.variantId && (
           <button

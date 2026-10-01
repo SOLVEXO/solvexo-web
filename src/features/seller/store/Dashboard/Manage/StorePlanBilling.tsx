@@ -451,6 +451,8 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                 </ul>
                 <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent} loading={changingId === plan._id} onClick={() => {
                   setActionError('');
+                  // Enterprise has no self-serve checkout — it's agreed with sales and assigned by an admin.
+                  if (plan.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`; return; }
                   // First paid purchase (no Stripe customer yet, still on trial/locked, or coming
                   // from the free plan) needs a card → full checkout. An already-paying store
                   // keeps the proration confirm modal.
@@ -458,7 +460,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree);
                   if (needsCheckout) setCheckoutPlanId(plan._id); else setConfirmingPlan(plan);
                 }}>
-                  {isCurrent ? 'Current Plan' : 'Switch to this plan'}
+                  {isCurrent ? 'Current Plan' : plan.isCustomPricing ? 'Contact sales' : 'Switch to this plan'}
                 </Button>
               </div>
             );

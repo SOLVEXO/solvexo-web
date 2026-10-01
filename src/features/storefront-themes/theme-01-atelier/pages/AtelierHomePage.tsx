@@ -298,7 +298,11 @@ export function AtelierHomePage() {
   // not stack below it — rendering both was the exact cause of a real
   // "duplicate hero" bug found in QA. Stays showing during the initial
   // load (`sections === null`) since we don't yet know either way.
-  const hasCustomHero = sections?.some(s => s.type === 'hero') ?? false;
+  // Only counts when it actually has a visible slide — an empty Hero/Slider
+  // (no slides yet) renders nothing, and must not hide the Store Banners.
+  const hasCustomHero = sections?.some(
+    s => s.type === 'hero' && s.enabled !== false && s.blocks?.some(b => b.enabled !== false && b.settings?.imageUrl),
+  ) ?? false;
   // Real Store Banners are this theme's second hero source — a merchant who
   // built a custom `hero` section in the Page editor still wins (that's a
   // deliberate content-authoring choice, and stacking two full-bleed heroes

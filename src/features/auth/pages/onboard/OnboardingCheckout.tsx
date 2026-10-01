@@ -9,7 +9,7 @@ import {
   type PlatformPlan,
 } from '@/api/services/platformPlans';
 import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
-import { selectablePlans as selectable, pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
+import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
 
 /** Same-day-next-month arithmetic, clamped so Jan 31 + 1 month is Feb 28/29, not Mar 3. */
 function addMonths(d: Date, n: number): Date {
@@ -274,42 +274,76 @@ export function OnboardingCheckoutPage({
 
 // ── "View all plans" — Shopify-style: plan columns on top, "Compare plans" grid below ──
 type Cell = string | boolean | null;
-const num = (v: number | undefined, suffix = ''): Cell => v === undefined ? null : v < 0 ? 'Unlimited' : `${v}${suffix}`;
+const fmt = (n: number) => n.toLocaleString('en-US');
+const num = (v: number | undefined): Cell => v === undefined ? null : v < 0 ? 'Unlimited' : fmt(v);
 const flag = (v: boolean | undefined): Cell => v === undefined ? null : v;
+/** A feature with no plan gate in Solvexo — every plan has it. */
+const ALL: (p: PlatformPlan) => Cell = () => true;
+const moPrice = (n: number | null | undefined): Cell => typeof n === 'number' ? `$${n % 1 ? n.toFixed(2) : n}/mo` : null;
 
+// The compare table, grouped by Solvexo module. Rows with `ALL` are features that exist
+// in the product but aren't gated by plan (so every plan includes them); every other row
+// reads the plan's real, backend-enforced limit — see platform-plan.catalog.ts in the API.
+// Never add a row for something Solvexo doesn't actually do (no analytics tier, no API/webhooks).
 const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) => Cell }[] }[] = [
   { group: 'Pricing', rows: [
-    { label: 'Pay monthly', get: p => p.isFree ? 'Free' : `$${p.monthlyPriceUSD ?? 0}/mo` },
-    { label: 'Pay yearly', get: p => p.isFree ? 'Free' : `$${Math.round((p.yearlyPriceUSD ?? (p.monthlyPriceUSD ?? 0) * 12) / 12)}/mo` },
+    { label: 'Pay monthly', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.monthlyPriceUSD) },
+    { label: 'Pay yearly (per month)', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.yearlyPriceUSD != null ? Math.round(p.yearlyPriceUSD / 12) : null) },
+    { label: 'Transaction fee on sales', get: p => p.limits.transactionFeeRate === undefined ? null : `${Number((p.limits.transactionFeeRate * 100).toFixed(2))}%` },
   ] },
-  { group: 'Core features', rows: [
-    { label: 'Products', get: p => num(p.limits.maxProducts) },
-    { label: 'Staff accounts', get: p => num(p.limits.maxStaffAccounts) },
-    { label: 'POS locations', get: p => num(p.limits.maxPosLocations) },
-    { label: 'Selling markets (currencies)', get: p => num(p.limits.maxMarkets) },
-    { label: 'AI credits per month', get: p => num(p.limits.aiCreditsPerMonth) },
-    { label: 'Subscription products', get: p => flag(p.limits.subscriptionProductsAllowed) },
-    { label: 'Live carrier shipping rates', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
-  ] },
-  { group: 'Marketing & growth', rows: [
-    { label: 'Email campaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
-    { label: 'Abandoned checkout recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-    { label: 'Loyalty program', get: p => flag(p.limits.loyaltyProgramAllowed) },
-    { label: 'Active promotions', get: p => num(p.limits.maxActivePromotions) },
-    { label: 'Active store banners', get: p => num(p.limits.maxActiveStoreBanners) },
-    { label: 'Advanced SEO tools', get: p => flag(p.limits.advancedSeoToolsAllowed) },
-    { label: 'Advanced analytics', get: p => flag(p.limits.advancedAnalyticsAllowed) },
-  ] },
-  { group: 'Customization', rows: [
+  { group: 'Online store', rows: [
+    { label: 'Themes & theme editor', get: ALL },
+    { label: 'Pages, blog & menus', get: ALL },
+    { label: 'Store banners', get: p => num(p.limits.maxActiveStoreBanners) },
     { label: 'Custom domain', get: p => flag(p.limits.customDomainAllowed) },
-    { label: 'White label', get: p => flag(p.limits.whiteLabelAllowed) },
-    { label: 'API & webhooks', get: p => flag(p.limits.apiWebhooksAllowed) },
-    { label: 'Custom redirects', get: p => flag(p.limits.customRedirectsAllowed) },
+    { label: 'White-label branding', get: p => flag(p.limits.whiteLabelAllowed) },
+  ] },
+  { group: 'Products & orders', rows: [
+    { label: 'Products', get: p => num(p.limits.maxProducts) },
+    { label: 'Orders, draft orders, returns & disputes', get: ALL },
+    { label: 'Gift cards', get: ALL },
+    { label: 'Discount codes', get: ALL },
+    { label: 'Customer subscriptions & memberships', get: p => flag(p.limits.subscriptionProductsAllowed) },
+  ] },
+  { group: 'Inventory & POS', rows: [
+    { label: 'Inventory, purchase orders & stock counts', get: ALL },
+    { label: 'POS / inventory locations', get: p => num(p.limits.maxPosLocations) },
+  ] },
+  { group: 'Team', rows: [
+    { label: 'Staff accounts', get: p => num(p.limits.maxStaffAccounts) },
+    { label: 'Staff roles & permissions', get: ALL },
+  ] },
+  { group: 'Marketing', rows: [
+    { label: 'Email campaigns & automations', get: p => flag(p.limits.emailCampaignsAllowed) },
+    { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
+    { label: 'Loyalty & rewards program', get: p => flag(p.limits.loyaltyProgramAllowed) },
+    { label: 'Active promotions', get: p => num(p.limits.maxActivePromotions) },
+    { label: 'Newsletter, affiliates & tracking pixels', get: ALL },
+    { label: 'Customer reviews & messaging', get: ALL },
+  ] },
+  { group: 'SEO', rows: [
+    { label: 'SEO audit & score tools', get: p => flag(p.limits.advancedSeoToolsAllowed) },
+    { label: 'Custom redirects & canonical rules', get: p => flag(p.limits.customRedirectsAllowed) },
+    { label: 'AI SEO suggestions', get: p => flag(p.limits.seoAiSuggestionsAllowed) },
+    { label: 'Google Search Console integration', get: p => flag(p.limits.searchConsoleIntegrationAllowed) },
+  ] },
+  { group: 'Shipping & currencies', rows: [
+    { label: 'Shipping zones, rates & labels', get: ALL },
+    { label: 'Live carrier shipping rates at checkout', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
+    { label: 'Selling currencies (markets)', get: p => num(p.limits.maxMarkets) },
+  ] },
+  { group: 'AI Studio', rows: [
+    { label: 'AI Studio tools', get: ALL },
+    { label: 'AI credits every month', get: p => num(p.limits.aiCreditsPerMonth) },
+  ] },
+  { group: 'Apps & channels', rows: [
+    { label: 'Payments & shipping integrations (Stripe, bank transfer, WhatsApp, Shippo)', get: ALL },
+    { label: 'Custom fields & content types', get: ALL },
+    { label: 'Mobile app request', get: ALL },
   ] },
   { group: 'Support', rows: [
     { label: 'Priority support', get: p => flag(p.limits.prioritySupport) },
     { label: 'Dedicated account manager', get: p => flag(p.limits.dedicatedAccountManager) },
-    { label: 'Uptime SLA', get: p => p.limits.slaUptimePercent ? `${p.limits.slaUptimePercent}%` : null },
   ] },
 ];
 
@@ -336,7 +370,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
   /** Omit to hide the close button (a blocking gate has nothing to go back to). */
   onClose?: () => void; title?: string;
 }) {
-  const list = selectable(plans);
+  const list = [...plans].sort((a, b) => a.sortOrder - b.sortOrder);
   const current = pickCheckoutPlan(plans, selectedPlanId)?._id ?? null;
   // One label column + one column per plan — shared by the sticky header and every row.
   const cols = { gridTemplateColumns: `minmax(0,1.6fr) repeat(${list.length}, minmax(0,1fr))` };
@@ -345,7 +379,12 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
     billing === 'monthly' && !p.isFree && p.introOfferEnabled && p.introPriceUSD != null && p.introDurationCycles != null
       ? { price: p.introPriceUSD, cycles: p.introDurationCycles } : null;
 
-  const pickLabel = (p: PlatformPlan) => current === p._id ? `Continue with ${p.name}` : p.isFree ? 'Choose Free' : `Select ${p.name}`;
+  const pickLabel = (p: PlatformPlan) => p.isCustomPricing ? 'Contact sales' : current === p._id ? `Continue with ${p.name}` : p.isFree ? 'Choose Free' : `Select ${p.name}`;
+  // Enterprise has no self-serve checkout — it's a sales conversation, then an admin assigns it.
+  const choose = (p: PlatformPlan) => {
+    if (p.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${p.name} Plan Inquiry`)}`; return; }
+    onSelect(p._id);
+  };
   const btn = 'rounded-full bg-brand-orange text-white font-semibold cursor-pointer border-0 transition-colors duration-200 hover:bg-brand-deep-orange';
 
   // `data-lenis-prevent` — this page renders `fixed`, outside RootLayout's flow,
@@ -422,13 +461,13 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
                   <p className="text-[13px] text-slate mt-1 mb-4 min-h-[36px] leading-[1.4]">{p.description ?? ' '}</p>
                   <div className="flex items-baseline gap-[6px] mb-1">
                     {intro && <span className="text-[15px] text-slate line-through">${monthly}</span>}
-                    <span className="text-[26px] font-semibold text-carbon leading-none">{p.isFree ? 'Free' : `$${intro ? intro.price : perMonth}`}</span>
-                    {!p.isFree && <span className="text-[12px] text-slate">/mo</span>}
+                    <span className="text-[26px] font-semibold text-carbon leading-none">{p.isCustomPricing ? 'Custom' : p.isFree ? 'Free' : `$${intro ? intro.price : perMonth}`}</span>
+                    {!p.isFree && !p.isCustomPricing && <span className="text-[12px] text-slate">/mo</span>}
                   </div>
                   <p className="text-[12px] text-slate mb-4 min-h-[16px]">
-                    {p.isFree ? ' ' : intro ? `for ${intro.cycles} month${intro.cycles === 1 ? '' : 's'}, then $${monthly}/mo` : annual ? `billed $${yearlyTotal} yearly` : ' '}
+                    {p.isFree || p.isCustomPricing ? ' ' : intro ? `for ${intro.cycles} month${intro.cycles === 1 ? '' : 's'}, then $${monthly}/mo` : annual ? `billed $${yearlyTotal} yearly` : ' '}
                   </p>
-                  <button type="button" onClick={() => onSelect(p._id)} className={clsx(btn, 'w-full py-[11px] text-[14px] mb-5')}>
+                  <button type="button" onClick={() => choose(p)} className={clsx(btn, 'w-full py-[11px] text-[14px] mb-5')}>
                     {pickLabel(p)}
                   </button>
                   <ul className="flex flex-col gap-[9px]">
@@ -447,7 +486,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
               <div className="grid items-center gap-x-7 gap-y-4 py-4" style={cols}>
                 <h2 className="text-[20px] md:text-[26px] font-semibold tracking-[-0.01em] text-carbon">Compare plans</h2>
                 {list.map(p => (
-                  <button key={p._id} type="button" onClick={() => onSelect(p._id)}
+                  <button key={p._id} type="button" onClick={() => choose(p)}
                     className={clsx(btn, 'w-full py-[9px] md:py-[10px] px-2 text-[12px] md:text-[14px] truncate')}>
                     {pickLabel(p)}
                   </button>

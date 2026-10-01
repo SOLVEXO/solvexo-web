@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { clsx } from 'clsx';
-import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Copy, Clock, Sparkles, Unlock, Lock, CalendarPlus, ArrowRightLeft } from 'lucide-react';
+import { Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Clock, Sparkles, Unlock, Lock, CalendarPlus, ArrowRightLeft } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
@@ -190,6 +190,10 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
   const [introPriceUSD, setIntroPriceUSD] = useState(p?.introPriceUSD != null ? String(p.introPriceUSD) : '');
   const [introDurationCycles, setIntroDurationCycles] = useState(p?.introDurationCycles != null ? String(p.introDurationCycles) : '3');
   const [gracePeriodDays, setGracePeriodDays] = useState(p?.gracePeriodDays != null ? String(p.gracePeriodDays) : '3');
+  // A core plan (Basic/Grow/Advanced/Enterprise) is defined by the platform: its kind, order and
+  // feature text are fixed; the admin sets price, offer, naming, visibility and limit values.
+  const isCore = isEdit && !!(plan as PlatformPlan).key;
+  const isCustom = !!p?.isCustomPricing;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -204,10 +208,10 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
 
   function validateStep(step: number): string {
     if (step === 1 && !name.trim()) return 'Plan name is required.';
-    if (step === 2 && !isFree && !monthlyPrice.trim()) {
+    if (step === 2 && !isFree && !isCustom && !monthlyPrice.trim()) {
       return 'Monthly price is required for a paid plan — or turn on "Free plan" if it should cost nothing.';
     }
-    if (step === 2 && introOfferEnabled && (!introPriceUSD || !introDurationCycles)) {
+    if (step === 2 && !isCustom && introOfferEnabled && (!introPriceUSD || !introDurationCycles)) {
       return 'Intro price and duration are both required when the intro offer is on.';
     }
     if (step === 2 && introOfferEnabled && monthlyPrice && Number(introPriceUSD) >= Number(monthlyPrice)) {
@@ -228,7 +232,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
 
   async function submit() {
     if (!name.trim()) { setError('Plan name is required.'); return; }
-    if (!isFree && !monthlyPrice.trim()) {
+    if (!isFree && !isCustom && !monthlyPrice.trim()) {
       setError('Monthly price is required for a paid plan — or check "Free plan" if it should cost nothing.');
       return;
     }
@@ -240,6 +244,11 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
       setError('Intro price should be lower than the regular monthly price — otherwise it isn\'t really an intro discount.');
       return;
     }
+    // Limit/feature changes reach every store already on the plan immediately — make the admin say yes to that.
+    const onPlan = isEdit ? (plan as PlatformPlan).subscriberCount ?? 0 : 0;
+    if (isEdit && onPlan > 0 && !window.confirm(
+      `${onPlan} store${onPlan === 1 ? ' is' : 's are'} on "${(plan as PlatformPlan).name}". Changes to its limits and features apply to them right away (a new price only affects new subscribers). Save these changes?`,
+    )) return;
     setError(''); setSaving(true);
     try {
       const payload = {
@@ -317,17 +326,23 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
         {wizardStep === 2 && (
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[12.5px] font-medium text-charcoal">Free plan (no charge)</p>
-                  <p className="text-[11px] text-slate mt-1 leading-[1.5]">
-                    Only turn this on if you want a permanent $0 tier. It's a one-way door — a free plan can't be archived later
-                    (the platform always needs a fallback).
-                  </p>
+              {!isCore && (
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[12.5px] font-medium text-charcoal">Free plan (no charge)</p>
+                    <p className="text-[11px] text-slate mt-1 leading-[1.5]">
+                      Only turn this on if you want a permanent $0 tier. It's a one-way door — a free plan can't be archived later
+                      (the platform always needs a fallback).
+                    </p>
+                  </div>
+                  <Toggle checked={isFree} onChange={setIsFree} ariaLabel="Free plan (no charge)" />
                 </div>
-                <Toggle checked={isFree} onChange={setIsFree} ariaLabel="Free plan (no charge)" />
-              </div>
-              {isFree ? (
+              )}
+              {isCustom ? (
+                <div className="text-[12px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2.5 leading-[1.5]">
+                  This is a Contact Sales plan — it has no self-serve price. Agree the deal with the customer, then assign this plan to their store.
+                </div>
+              ) : isFree ? (
                 <div className="text-[12px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2.5">
                   This plan is free — sellers on it are never billed, so pricing fields are hidden.
                 </div>
@@ -343,7 +358,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
               </p>
             </div>
 
-            {!isFree && (
+            {!isFree && !isCustom && (
               <div>
                 <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
                   <Sparkles size={12} className="text-brand-orange" /> Intro offer (optional)
@@ -428,7 +443,13 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
               </p>
             </div>
 
-            <Textarea label="Feature bullets (one per line — shown as a checklist on the plan card)" rows={3} value={featuresText} onChange={e => setFeaturesText(e.target.value)} />
+            {isCore ? (
+              <div className="text-[12px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2.5 leading-[1.5]">
+                The feature list on the plan card and the compare table is generated from the limits and features above, so it can never disagree with what a seller really gets.
+              </div>
+            ) : (
+              <Textarea label="Feature bullets (one per line — shown as a checklist on the plan card)" rows={3} value={featuresText} onChange={e => setFeaturesText(e.target.value)} />
+            )}
           </div>
         )}
 
@@ -440,7 +461,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Input
-                    label="Sort order (lower = shown first)" type="number" value={sortOrder}
+                    label="Sort order (lower = shown first)" type="number" value={sortOrder} disabled={isCore}
                     onChange={e => setSortOrder(e.target.value)}
                   />
                   <p className="text-[11px] text-slate mt-1">Controls left-to-right order on the pricing page and plan cards here.</p>
@@ -792,13 +813,12 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
       {!embedded && (
         <AdminPageHeader
           title="Platform Plans"
-          subtitle="Seller-to-Solvexo billing tiers, limits, and add-ons."
+          subtitle="Manage prices, intro offers and limits for the platform's plans. What each plan includes is defined by the platform."
           actions={
             <>
               <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
                 {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
               </Button>
-              <Button size="sm" icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
             </>
           }
         />
@@ -808,7 +828,6 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
           <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
             {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
           </Button>
-          <Button size="sm" icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
         </div>
       )}
 
@@ -860,8 +879,7 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
               <EmptyState
                 icon={<Layers size={28} className="text-slate/50" />}
                 title="No platform plans yet."
-                description="Create your first plan — sellers pick one during onboarding and it drives every product, staff and feature limit."
-                action={{ label: 'Create Plan', icon: <Plus size={14} />, onClick: () => setEditing('new') }}
+                description="The platform's four plans (Basic, Grow, Advanced, Enterprise) are created automatically when the server starts. If none appear, the server hasn't synced yet — check the API logs."
               />
             </Card>
           ) : (
@@ -881,6 +899,7 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
                         <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                         <div className="flex items-center gap-1.5 shrink-0">
                           {plan.isPubliclyVisible === false && <Badge color="gray" size="sm">Hidden</Badge>}
+                          {plan.key && <Badge color="blue" size="sm">Core plan</Badge>}
                           {plan.isFree && <Badge color="blue" size="sm">Always available</Badge>}
                           {plan.badge && <Badge color="orange" size="sm">{plan.badge}</Badge>}
                         </div>
@@ -944,7 +963,6 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
                           ariaLabel={`More actions for ${plan.name}`}
                           items={[
                             { label: 'Subscribers', icon: <Eye size={13} />, onClick: () => setViewingSubscribersFor(plan) },
-                            { label: 'Duplicate', icon: <Copy size={13} />, onClick: () => setDuplicateSource(plan) },
                             plan.status === 'archived'
                               ? {
                                   label: restoringId === plan._id ? 'Restoring…' : 'Restore', icon: <RotateCcw size={13} />,
@@ -952,7 +970,7 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
                                 }
                               : {
                                   label: 'Archive', icon: <Archive size={13} />, danger: true,
-                                  disabled: plan.isFree, title: plan.isFree ? 'The free/default plan cannot be archived' : undefined,
+                                  disabled: plan.isFree || !!plan.key, title: plan.key ? "Core plans can't be archived — turn off \"visible to sellers\" to hide one" : plan.isFree ? 'The free/default plan cannot be archived' : undefined,
                                   onClick: () => { setArchiving(plan); setArchiveError(''); setArchiveForceNeeded(false); },
                                 },
                           ]}

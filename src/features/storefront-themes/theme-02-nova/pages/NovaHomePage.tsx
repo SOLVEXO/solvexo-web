@@ -272,7 +272,11 @@ export function NovaHomePage() {
   // not stack below it — rendering both was the exact cause of a real
   // "duplicate hero" bug found in QA. Stays showing during the initial
   // load (`sections === null`) since we don't yet know either way.
-  const hasCustomHero = sections?.some(s => s.type === 'hero') ?? false;
+  // Only counts when it actually has a visible slide — an empty Hero/Slider
+  // (no slides yet) renders nothing, and must not hide the Store Banners.
+  const hasCustomHero = sections?.some(
+    s => s.type === 'hero' && s.enabled !== false && s.blocks?.some(b => b.enabled !== false && b.settings?.imageUrl),
+  ) ?? false;
   // Real Store Banners are this theme's second hero source — same priority
   // as `AtelierHomePage`: a merchant-built custom hero section still wins
   // (never stack two full-bleed heroes), otherwise real banners now show

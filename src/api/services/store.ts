@@ -434,7 +434,10 @@ export interface PublicStoreData {
 export interface PublicStoreProductsParams {
   page?:         number;
   limit?:        number;
-  sort?:         'newest' | 'price_asc' | 'price_desc' | 'best_rated';
+  sort?:         'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'price_asc' | 'price_desc' | 'best_rated';
+  availability?: 'in_stock' | 'out_of_stock';
+  minPrice?:     number;
+  maxPrice?:     number;
   type?:         'all' | 'physical' | 'digital';
   categoryId?:   string;
   collectionId?: string;
@@ -457,6 +460,8 @@ export interface PublicStoreProduct {
   // real Add-to-Cart/wishlist action via the shared ProductCard component.
   variantId?:          string | null;
   stock?:              number | null;
+  /** True when any active variant can be bought (unlimited or stock > 0). */
+  inStock?:            boolean;
   compareAtPrice?:     number | null;
   // Present only when the requester has an active, discount-granting
   // subscription to this store — resolved server-side only.
@@ -489,6 +494,9 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
   if (params?.tag)          query.set('tag',          params.tag);
   if (params?.search)       query.set('search',       params.search);
   if (params?.onSale)       query.set('onSale',       'true');
+  if (params?.availability) query.set('availability', params.availability);
+  if (params?.minPrice != null) query.set('minPrice', String(params.minPrice));
+  if (params?.maxPrice != null) query.set('maxPrice', String(params.maxPrice));
   const qs = query.toString();
   return client.get<never, ApiResponse<PublicStoreProductsData>>(
     `${ENDPOINTS.STORE.PUBLIC_PRODUCTS(storeId)}${qs ? `?${qs}` : ''}`,
