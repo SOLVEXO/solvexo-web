@@ -396,7 +396,7 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                 <Input label="Max POS locations" type="number" value={limits.maxPosLocations ?? ''} onChange={e => setLimit('maxPosLocations', Number(e.target.value))} />
                 <Input label="AI credits/mo" type="number" value={limits.aiCreditsPerMonth ?? ''} onChange={e => setLimit('aiCreditsPerMonth', Number(e.target.value))} />
                 <Input
-                  label="Solvexo's fee (%)" type="number" step="0.1" min={0} max={100}
+                  label="Third-party gateway fee (%)" type="number" step="0.1" min={0} max={100}
                   value={limits.transactionFeeRate != null ? Math.round(limits.transactionFeeRate * 1000) / 10 : ''}
                   onChange={e => setLimit('transactionFeeRate', e.target.value === '' ? 0 : Number(e.target.value) / 100)}
                 />

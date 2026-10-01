@@ -419,7 +419,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
           </div>
         </div>
 
-        <div id="platform-plans-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="platform-plans-list" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {plans.map(plan => {
             const isCurrent = current?.platformPlanId === plan._id;
             // Mirrors the backend's own computeProration: a yearly interval
@@ -456,8 +456,10 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                   // First paid purchase (no Stripe customer yet, still on trial/locked, or coming
                   // from the free plan) needs a card → full checkout. An already-paying store
                   // keeps the proration confirm modal.
+                  // A store that is "active" but has no card saved (e.g. assigned its plan by an admin)
+                  // also needs the checkout — the proration modal can only charge a card already on file.
                   const needsCheckout = !plan.isFree && !plan.isCustomPricing
-                    && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree);
+                    && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree || cardOnFile === false);
                   if (needsCheckout) setCheckoutPlanId(plan._id); else setConfirmingPlan(plan);
                 }}>
                   {isCurrent ? 'Current Plan' : plan.isCustomPricing ? 'Contact sales' : 'Switch to this plan'}

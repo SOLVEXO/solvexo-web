@@ -80,8 +80,27 @@ export interface AdminFinanceOverviewCurrencyRow {
   lifetimeTotals: { totalRevenue: number; totalFees: number; totalRefunds: number; totalPayouts: number };
 }
 
+/** Every currency rolled up into USD at the latest FX rate — the platform owner's headline view. */
+export interface AdminFinanceConsolidatedUSD {
+  currency: 'USD';
+  gmv: number;
+  netRevenue: number;
+  refunds: number;
+  totalOrders: number;
+  platformEarnings: number;
+  platformCommission: number;
+  subscriptionRevenue: number;
+  paymentProcessingFees: number;
+  sellerBalances: { totalAvailable: number; totalPending: number };
+  /** Portion of gmv / platformEarnings that came from non-USD (PKR) stores, already in USD. */
+  pkrShare: { gmv: number; platformEarnings: number };
+}
+
 export interface AdminFinanceOverviewData {
   period: FinancePeriod;
+  consolidatedUSD: AdminFinanceConsolidatedUSD;
+  fxRates: Record<string, number>;
+  unconvertibleCurrencies: string[];
   byCurrency: AdminFinanceOverviewCurrencyRow[];
   sellersWithBalance: number;
   flaggedSellersCount: number;
@@ -94,11 +113,11 @@ export interface AdminFinanceOverviewData {
 // ── B. Revenue / commission trends ──────────────────────────────────────────────
 
 export interface RevenueByCurrency { currency: string; grossRevenue: number; netRevenue: number }
-export interface RevenuePoint { date: string; byCurrency: RevenueByCurrency[] }
+export interface RevenuePoint { date: string; byCurrency: RevenueByCurrency[]; usd: { grossRevenue: number; netRevenue: number } }
 export interface AdminFinanceRevenueOverTimeData { granularity: AnalyticsGranularity; series: RevenuePoint[] }
 
 export interface CommissionByCurrency { currency: string; commission: number; processingFees: number }
-export interface CommissionPoint { date: string; byCurrency: CommissionByCurrency[] }
+export interface CommissionPoint { date: string; byCurrency: CommissionByCurrency[]; usd: { commission: number; processingFees: number } }
 export interface AdminFinanceCommissionOverTimeData { granularity: AnalyticsGranularity; series: CommissionPoint[] }
 
 // ── C. Seller balances ───────────────────────────────────────────────────────────
@@ -116,9 +135,15 @@ export interface SellerBalanceRow {
   totalRefunds: number;
   totalPayouts: number;
   currency: string;
+  /** USD equivalents at the latest rate (null if no rate is set for the currency). */
+  availableBalanceUSD: number | null;
+  pendingBalanceUSD: number | null;
+  totalRevenueUSD: number | null;
+  totalPayoutsUSD: number | null;
 }
 
 export interface AdminSellerBalancesData {
+  totalsUSD: { availableBalance: number; pendingBalance: number };
   pagination: Pagination;
   sellers: SellerBalanceRow[];
 }
@@ -153,6 +178,8 @@ export interface PayoutRow {
   storeName?: string;
   sellerId: string;
   amount: number;
+  /** USD equivalent at the latest rate (null if no rate is set). Present on admin listings. */
+  amountUSD?: number | null;
   currency: string;
   payoutMethodId: string;
   payoutMethodSnapshot: { type: string; bankName: string | null; accountLast4: string } | null;
@@ -171,11 +198,14 @@ export interface PayoutRow {
 export interface AdminSellerFinancialDetailsData {
   store: { storeId: string; name: string; sellerId: string };
   seller: { name: string; email: string } | null;
+  /** All of the store's currency wallets summed and converted to USD. */
   balance: {
     availableBalance: number; pendingBalance: number;
     totalRevenue: number; totalFees: number; totalRefunds: number; totalPayouts: number;
-    currency: string;
+    currency: 'USD';
   };
+  /** USD wallet only — what an admin manual payout (no payout method) can actually debit. */
+  manualPayoutAvailableUSD: number;
   payoutSchedule: { frequency: string; isEnabled: boolean; minimumAmount: number; nextPayoutAt: string | null };
   payoutMethods: PayoutMethodRow[];
   recentPayouts: PayoutRow[];
@@ -198,6 +228,8 @@ export interface SellerFinanceRollupBalanceRow {
 export interface AdminSellerFinancialRollupData {
   seller: { name: string; email: string };
   balances: SellerFinanceRollupBalanceRow[];
+  /** Every currency summed and converted to USD. */
+  totalsUSD: { availableBalance: number; pendingBalance: number; totalRevenue: number; totalFees: number; totalRefunds: number; totalPayouts: number; currency: 'USD' };
   recentPayouts: PayoutRow[];
 }
 
@@ -215,6 +247,7 @@ export interface TransactionRow {
    *  column already uses — just previously missing from this type). */
   currency: string;
   amount: number;
+  amountUSD?: number | null;
   balanceBefore: number;
   balanceAfter: number;
   description: string;
@@ -244,14 +277,16 @@ export interface AdminPayoutQueueData {
   statusCounts: Record<PayoutStatus, { count: number; amount: number }>;
 }
 
-export interface ClearingResultData { processed: number; totalAmount: number; byCurrency: { currency: string; amount: number }[] }
+export interface ClearingResultData { processed: number; totalAmount: number; totalUSD: number; byCurrency: { currency: string; amount: number }[] }
 
 // ── H. Reports ────────────────────────────────────────────────────────────────────
 
-export interface RefundByStoreRow { storeId: string; storeName: string; currency: string; totalRefunded: number; count: number }
+export interface RefundByStoreRow { storeId: string; storeName: string; currency: string; totalRefunded: number; totalRefundedUSD: number | null; count: number }
 export interface RefundByCurrencyRow { currency: string; totalRefunded: number; count: number }
 export interface AdminRefundReportData {
   period: FinancePeriod;
+  totalRefundedUSD: number;
+  totalRefundCount: number;
   byCurrency: RefundByCurrencyRow[];
   byStore: RefundByStoreRow[];
   note: string;
@@ -262,6 +297,8 @@ export interface TaxReportRow {
   storeId: string;
   storeName: string;
   sellerId: string;
+  /** Currency the report's amounts are denominated in (older reports predate this field → USD). */
+  currency?: string;
   period: 'q1' | 'q2' | 'q3' | 'q4' | 'annual';
   year: number;
   fromDate: string;
@@ -286,8 +323,15 @@ export interface SettlementByCurrencyRow {
   adjustments: number;
   outstandingObligation: { availableBalance: number; pendingBalance: number; totalOwedToSellers: number };
 }
+export interface SettlementConsolidatedUSD {
+  currency: 'USD';
+  grossSales: number; platformFeesCollected: number; refundsIssued: number; payoutsDisbursed: number; adjustments: number;
+  availableBalance: number; pendingBalance: number; totalOwedToSellers: number;
+}
 export interface AdminSettlementReportData {
   period: FinancePeriod;
+  consolidatedUSD: SettlementConsolidatedUSD;
+  unconvertibleCurrencies: string[];
   byCurrency: SettlementByCurrencyRow[];
   note: string;
 }
@@ -304,6 +348,7 @@ export interface MonthlyReportByCurrency {
 export interface MonthlyReportRow {
   month: string;
   byCurrency: MonthlyReportByCurrency[];
+  usd: { gmv: number; refunds: number; payouts: number; platformCommission: number; subscriptionRevenue: number; platformEarnings: number };
 }
 
 export interface AdminMonthlyReportData { monthly: MonthlyReportRow[] }
@@ -330,6 +375,8 @@ export interface ReconciliationRunRow {
   _id: string;
   runAt: string;
   results: ReconciliationCurrencyResult[];
+  /** Sum of every currency's drift converted to USD. */
+  totalDriftUSD: number;
   hasAnyDiscrepancy: boolean;
   createdAt: string;
 }

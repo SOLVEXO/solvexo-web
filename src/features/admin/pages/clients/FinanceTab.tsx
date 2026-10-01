@@ -4,6 +4,7 @@ import { MetricCard, Table, SkeletonBox } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
+import { UsdAmount } from '../../components/finance/UsdAmount';
 import type { TransactionRow, PayoutRow } from '@/api/services/finance/adminFinance';
 import { Wallet, Receipt } from 'lucide-react';
 
@@ -30,7 +31,7 @@ export function FinanceTab({ sellerId }: FinanceTabProps) {
       header: 'Amount',
       render: (t) => (
         <span className={`text-[13px] font-semibold ${t.amount >= 0 ? 'text-success' : 'text-error'}`}>
-          {t.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(t.amount))}
+          <UsdAmount usd={t.amountUSD} native={t.amount} currency={t.currency} signed />
         </span>
       ),
     },
@@ -38,7 +39,7 @@ export function FinanceTab({ sellerId }: FinanceTabProps) {
 
   const payoutColumns: TableColumn<PayoutRow>[] = [
     { key: 'createdAt', header: 'Date', render: (p) => <span className="text-[13px] text-slate whitespace-nowrap">{formatDate(p.createdAt)}</span> },
-    { key: 'amount', header: 'Amount', render: (p) => <span className="text-[13px] font-semibold text-charcoal">{formatCurrency(p.amount)}</span> },
+    { key: 'amount', header: 'Amount', render: (p) => <span className="text-[13px] font-semibold text-charcoal"><UsdAmount usd={p.amountUSD} native={p.amount} currency={p.currency} /></span> },
     { key: 'status', header: 'Status', render: (p) => <span className="text-[12.5px] text-charcoal capitalize">{p.status}</span> },
   ];
 
@@ -56,16 +57,11 @@ export function FinanceTab({ sellerId }: FinanceTabProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {(rollup?.balances ?? []).length === 0 ? (
-          <MetricCard label="Available Balance" value={formatCurrency(0)} />
-        ) : (
-          rollup!.balances.flatMap((b) => [
-            <MetricCard key={`${b.currency}-available`} label={`Available (${b.currency})`} value={formatCurrency(b.availableBalance)} icon={<Wallet size={16} />} />,
-            <MetricCard key={`${b.currency}-pending`} label={`Pending (${b.currency})`} value={formatCurrency(b.pendingBalance)} />,
-            <MetricCard key={`${b.currency}-revenue`} label={`Lifetime Revenue (${b.currency})`} value={formatCurrency(b.totalRevenue)} />,
-            <MetricCard key={`${b.currency}-payouts`} label={`Lifetime Payouts (${b.currency})`} value={formatCurrency(b.totalPayouts)} />,
-          ])
-        )}
+        {/* USD only — every currency wallet is converted by the API. */}
+        <MetricCard label="Available (USD)" value={formatCurrency(rollup?.totalsUSD?.availableBalance ?? 0)} icon={<Wallet size={16} />} />
+        <MetricCard label="Pending (USD)" value={formatCurrency(rollup?.totalsUSD?.pendingBalance ?? 0)} />
+        <MetricCard label="Lifetime Revenue (USD)" value={formatCurrency(rollup?.totalsUSD?.totalRevenue ?? 0)} />
+        <MetricCard label="Lifetime Payouts (USD)" value={formatCurrency(rollup?.totalsUSD?.totalPayouts ?? 0)} />
       </div>
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">

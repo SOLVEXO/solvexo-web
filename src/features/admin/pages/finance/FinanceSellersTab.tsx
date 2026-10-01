@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { SearchInput, FilterDropdown, Table, type TableColumn } from '@/components/comman/ui';
+import { SearchInput, FilterDropdown, Table, MetricCard, type TableColumn } from '@/components/comman/ui';
 import { useAdminSellerBalances } from '@/hooks/admin/useAdminFinance';
 import type { SellerBalanceRow, SellerBalancesParams } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatMoneyCompact } from '@/utils/currency';
+import { UsdAmount } from '../../components/finance/UsdAmount';
 import { Users } from 'lucide-react';
 import { SellerFinancialDetailsModal } from '../../components/finance/SellerFinancialDetailsModal';
 
@@ -29,10 +30,10 @@ export function FinanceSellersTab() {
         <p className="text-[11px] text-slate">{r.storeName}</p>
       </div>
     ) },
-    { key: 'availableBalance', header: 'Available', align: 'right', render: (r) => formatMoneyCompact(r.availableBalance, r.currency) },
-    { key: 'pendingBalance', header: 'Pending', align: 'right', render: (r) => formatMoneyCompact(r.pendingBalance, r.currency) },
-    { key: 'totalRevenue', header: 'Lifetime Revenue', align: 'right', render: (r) => formatMoneyCompact(r.totalRevenue, r.currency) },
-    { key: 'totalPayouts', header: 'Lifetime Payouts', align: 'right', render: (r) => formatMoneyCompact(r.totalPayouts, r.currency) },
+    { key: 'availableBalance', header: 'Available', align: 'right', render: (r) => <UsdAmount usd={r.availableBalanceUSD} native={r.availableBalance} currency={r.currency} /> },
+    { key: 'pendingBalance', header: 'Pending', align: 'right', render: (r) => <UsdAmount usd={r.pendingBalanceUSD} native={r.pendingBalance} currency={r.currency} /> },
+    { key: 'totalRevenue', header: 'Lifetime Revenue', align: 'right', render: (r) => <UsdAmount usd={r.totalRevenueUSD} native={r.totalRevenue} currency={r.currency} /> },
+    { key: 'totalPayouts', header: 'Lifetime Payouts', align: 'right', render: (r) => <UsdAmount usd={r.totalPayoutsUSD} native={r.totalPayouts} currency={r.currency} /> },
   ];
 
   return (
@@ -41,6 +42,13 @@ export function FinanceSellersTab() {
         <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search seller name, email, or store…" />
         <FilterDropdown options={SORT_OPTIONS} value={sort} onChange={(v) => setSort(v as NonNullable<SellerBalancesParams['sort']>)} />
       </div>
+
+      {balances.data?.totalsUSD && (
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Total Available (owed, USD)" value={formatMoneyCompact(balances.data.totalsUSD.availableBalance, 'USD')} />
+          <MetricCard label="Total Pending (owed, USD)" value={formatMoneyCompact(balances.data.totalsUSD.pendingBalance, 'USD')} />
+        </div>
+      )}
 
       <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3">

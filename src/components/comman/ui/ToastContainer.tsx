@@ -21,7 +21,8 @@ const BASE: Record<ToastVariant, ToastStyle> = {
 };
 
 const ORANGE: ToastStyle = { icon: ShoppingBag, tint: 'bg-brand-pale-orange text-brand-deep-orange', accent: 'bg-brand-orange', shadow: 'shadow-[0_14px_32px_-12px_rgba(217,119,87,0.38)]' };
-const VIOLET: ToastStyle = { icon: ShieldCheck, tint: 'bg-accent-violet-bg text-accent-violet',      accent: 'bg-accent-violet', shadow: 'shadow-[0_14px_32px_-12px_rgba(124,58,237,0.32)]' };
+// Identity/account toasts use the Solvexo brand orange (was off-theme violet).
+const VIOLET: ToastStyle = { icon: ShieldCheck, tint: 'bg-brand-pale-orange text-brand-deep-orange', accent: 'bg-brand-orange', shadow: 'shadow-[0_14px_32px_-12px_rgba(217,119,87,0.38)]' };
 const AMBER:  ToastStyle = { icon: Star,        tint: 'bg-warning-bg text-warning',                  accent: 'bg-warning',       shadow: 'shadow-[0_14px_32px_-12px_rgba(192,139,30,0.38)]' };
 const BLUE:   ToastStyle = { icon: Package,     tint: 'bg-info-bg text-info',                        accent: 'bg-info',          shadow: 'shadow-[0_14px_32px_-12px_rgba(26,114,194,0.38)]' };
 const GREEN:  ToastStyle = { icon: CreditCard,  tint: 'bg-success-bg text-success',                  accent: 'bg-success',       shadow: 'shadow-[0_14px_32px_-12px_rgba(45,138,78,0.38)]' };
@@ -81,15 +82,15 @@ export function ToastContainer() {
             onMouseLeave={() => resume(t.id)}
             className={clsx(
               t.leaving ? 'toast-leave' : 'toast-enter',
-              'pointer-events-auto relative flex items-start gap-3 w-[320px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-bone bg-white pl-4 pr-3 py-3',
+              'pointer-events-auto relative flex items-start gap-3 w-[340px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-bone bg-white/95 backdrop-blur-md pl-4 pr-3 py-3.5',
               style.shadow,
             )}
           >
             <span className={clsx('absolute left-0 top-0 bottom-0 w-[3px]', style.accent)} />
-            <span className={clsx('flex items-center justify-center size-8 rounded-[10px] shrink-0', style.tint)}>
-              <Icon size={16} />
+            <span className={clsx('flex items-center justify-center size-9 rounded-xl shrink-0 ring-1 ring-inset ring-black/[0.04]', style.tint)}>
+              <Icon size={17} strokeWidth={2.2} />
             </span>
-            <p className="text-[12.5px] font-medium text-charcoal leading-snug flex-1 min-w-0 pt-[3px]">{t.message}</p>
+            <p className="text-[13px] font-semibold text-charcoal leading-snug flex-1 min-w-0 pt-[7px]">{t.message}</p>
             <button
               onClick={() => dismiss(t.id)}
               aria-label="Dismiss"

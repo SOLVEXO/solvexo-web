@@ -6,6 +6,7 @@ import type { PayoutRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
 import { formatMoneyCompact } from '@/utils/currency';
+import { UsdAmount } from '../../components/finance/UsdAmount';
 import { FinanceStatusBadge } from '../../components/finance/FinanceStatusBadge';
 
 const STATUS_OPTIONS = [
@@ -58,7 +59,7 @@ export function FinancePayoutsTab() {
 
   const columns: TableColumn<PayoutRow>[] = [
     { key: 'storeName', header: 'Store', render: (p) => p.storeName ?? p.storeId },
-    { key: 'amount', header: 'Amount', align: 'right', render: (p) => formatMoneyCompact(p.amount, p.currency) },
+    { key: 'amount', header: 'Amount', align: 'right', render: (p) => <UsdAmount usd={p.amountUSD} native={p.amount} currency={p.currency} /> },
     { key: 'method', header: 'Method', render: (p) => p.payoutMethodSnapshot?.bankName || p.payoutMethodSnapshot?.type || '—' },
     {
       key: 'rail', header: 'Rail',
@@ -103,9 +104,9 @@ export function FinancePayoutsTab() {
 
       {clearing.result && (
         <p className="text-[12px] text-slate bg-cream border border-bone rounded-lg px-3 py-2">
-          Cleared {clearing.result.processed} transaction(s), {clearing.result.byCurrency.length === 0
+          Cleared {clearing.result.processed} transaction(s), {clearing.result.processed === 0
             ? 'nothing'
-            : clearing.result.byCurrency.map((c) => formatMoneyCompact(c.amount, c.currency)).join(' + ')} moved to available balance.
+            : formatMoneyCompact(clearing.result.totalUSD ?? 0, 'USD')} moved to available balance.
         </p>
       )}
       {(error || clearing.error) && <p className="text-[12px] text-error">{error || clearing.error}</p>}

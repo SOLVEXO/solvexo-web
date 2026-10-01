@@ -32,8 +32,8 @@ function getFallbackFaqs(trialDurationDays: number) { return [
     a: "Yes. You can upgrade or downgrade your plan at any time. Changes take effect immediately and we'll prorate any billing differences.",
   },
   {
-    q: 'What counts as a transaction fee?',
-    a: 'Transaction fees apply to each sale made through your Solvexo store. Digital product sales, physical sales, and POS sales all count.',
+    q: 'Does Solvexo take a commission on my sales?',
+    a: 'No. Solvexo does not take a commission on card payments processed through Solvexo Payments — you only pay the card processing fee — and there is no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through another payment gateway such as SafePay or JazzCash.',
   },
   {
     q: 'Do you offer discounts for educators or non-profits?',
@@ -137,10 +137,10 @@ export function PricingPage() {
           where the missing columns would have been. Card visuals live in the
           shared `PlanCard` component (also used by onboarding's plan picker)
           so the two can never visually drift apart. ── */}
-      <RevealStagger className="flex flex-wrap justify-center gap-4 px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto" step={0.1} y={22}>
+      <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 min-[1100px]:grid-cols-4 gap-4 px-4 md:px-8 lg:px-10 pb-16 max-w-[1320px] mx-auto" itemClassName="h-full" step={0.1} y={22}>
         {plansLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="w-full sm:w-[300px] rounded-[20px] p-7 bg-white border-2 border-bone animate-pulse h-[420px]" />
+            <div key={i} className="w-full rounded-[20px] p-7 bg-white border-2 border-bone animate-pulse h-[420px]" />
           ))
         ) : plans.length === 0 ? (
           <div className="text-center py-10 text-[13px] text-slate">

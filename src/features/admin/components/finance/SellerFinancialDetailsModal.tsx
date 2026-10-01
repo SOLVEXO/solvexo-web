@@ -7,6 +7,7 @@ import { TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkelet
 import { formatDate } from '@/components/comman/analytics/format';
 import { formatMoneyCompact } from '@/utils/currency';
 import { FinanceStatusBadge } from './FinanceStatusBadge';
+import { UsdAmount } from './UsdAmount';
 
 interface SellerFinancialDetailsModalProps {
   storeId: string;
@@ -39,7 +40,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
   };
 
   const payoutColumns: TableColumn<PayoutRow>[] = [
-    { key: 'amount', header: 'Amount', align: 'right', render: (p) => formatMoneyCompact(p.amount, p.currency) },
+    { key: 'amount', header: 'Amount', align: 'right', render: (p) => <UsdAmount usd={p.amountUSD} native={p.amount} currency={p.currency} /> },
     { key: 'status', header: 'Status', render: (p) => <FinanceStatusBadge status={p.status} /> },
     { key: 'createdAt', header: 'Requested', render: (p) => formatDate(p.createdAt) },
   ];
@@ -47,7 +48,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
   const txColumns: TableColumn<TransactionRow>[] = [
     { key: 'description', header: 'Description' },
     { key: 'type', header: 'Type' },
-    { key: 'amount', header: 'Amount', align: 'right', render: (t) => `${t.amount >= 0 ? '+' : ''}${formatMoneyCompact(t.amount, t.currency)}` },
+    { key: 'amount', header: 'Amount', align: 'right', render: (t) => <UsdAmount usd={t.amountUSD} native={t.amount} currency={t.currency} signed /> },
     { key: 'status', header: 'Status', render: (t) => <FinanceStatusBadge status={t.status} /> },
     { key: 'createdAt', header: 'Date', render: (t) => formatDate(t.createdAt) },
   ];
@@ -63,19 +64,19 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Available</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.availableBalance, d.balance.currency)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.availableBalance, 'USD')}</p>
             </div>
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Pending</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.pendingBalance, d.balance.currency)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.pendingBalance, 'USD')}</p>
             </div>
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Lifetime Revenue</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.totalRevenue, d.balance.currency)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.totalRevenue, 'USD')}</p>
             </div>
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Lifetime Payouts</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.totalPayouts, d.balance.currency)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.totalPayouts, 'USD')}</p>
             </div>
           </div>
 
@@ -93,7 +94,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
           {showManualForm && (
             <div className="border border-bone rounded-lg p-3 flex flex-col gap-2">
               <Input
-                label={`Amount (available: ${formatMoneyCompact(d.balance.availableBalance, d.balance.currency)})`}
+                label={`Amount in USD (available for manual payout: ${formatMoneyCompact(d.manualPayoutAvailableUSD, 'USD')})`}
                 type="number"
                 min={0.01}
                 step={0.01}

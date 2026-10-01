@@ -211,6 +211,11 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
           {meta && (meta.allowedBlockTypes.length > 0 || appBlockOptions.length > 0) && (
             <div className="flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1">
               <p className="text-[10.5px] font-bold uppercase tracking-wide text-slate px-1">{meta.blockLabel}s</p>
+              {section.type === 'hero' && section.blocks.length === 0 && (
+                <p className="text-[12px] text-slate px-1">
+                  No slides added — this section is showing your Store Banners (Online Store → Banners) here. Add a slide to use your own slides instead.
+                </p>
+              )}
               <SortableList
                 items={section.blocks}
                 keyFor={(b, i) => b._id ?? `new-${i}`}

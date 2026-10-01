@@ -109,7 +109,7 @@ export function VerifyOTPPage() {
   const isIdentity = ctx?.flow === 'forgot';
 
   const handleChange = (i: number, val: string) => {
-    const next = [...otp]; next[i] = val; setOtp(next); setError('');
+    setOtp(prev => { const next = [...prev]; next[i] = val; return next; }); setError('');
   };
 
   const handleVerify = async () => {

@@ -37,8 +37,8 @@ export function OverviewTab({ overview, onGoToTab }: OverviewTabProps) {
           </div>
           {primaryBalance ? (
             <>
-              <p className="text-[22px] font-bold text-carbon">{formatCurrency(primaryBalance.availableBalance)}</p>
-              <p className="text-[11.5px] text-slate mt-1">Available balance ({primaryBalance.currency}) — click to see full breakdown</p>
+              <p className="text-[22px] font-bold text-carbon">{formatCurrency(finance.totalsUSD?.availableBalance ?? 0)}</p>
+              <p className="text-[11.5px] text-slate mt-1">Available balance (USD) — click to see full breakdown</p>
             </>
           ) : (
             <p className="text-[12.5px] text-slate">No balance activity yet.</p>

@@ -54,6 +54,7 @@ export function Reveal({ children, className, delay = 0, y = 18, once = true, as
 export function RevealStagger({
   children,
   className,
+  itemClassName,
   step = 0.08,
   y = 18,
 }: {
@@ -63,13 +64,15 @@ export function RevealStagger({
   // stable keys before staggering.
   children: ReactNode;
   className?: string;
+  /** Class for each child's reveal wrapper — e.g. `h-full` so grid cards stretch to one height. */
+  itemClassName?: string;
   step?: number;
   y?: number;
 }) {
   return (
     <div className={className}>
       {Children.toArray(children).map((child, i) => (
-        <Reveal key={i} delay={i * step} y={y}>
+        <Reveal key={i} className={itemClassName} delay={i * step} y={y}>
           {child}
         </Reveal>
       ))}

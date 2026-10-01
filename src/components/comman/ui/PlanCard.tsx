@@ -32,7 +32,7 @@ export function PlanCard({ plan, billing, ctaLabel, onCta, selected, className }
     <PremiumCard
       tone={isFeatured ? 'dark' : 'light'}
       className={clsx(
-        'w-full sm:w-[300px] p-7', isFeatured && 'border-brand-orange!',
+        'flex h-full w-full flex-col p-6', isFeatured && 'border-brand-orange!',
         selected && 'ring-2 ring-brand-orange ring-offset-2 ring-offset-cream',
         className,
       )}
@@ -91,7 +91,7 @@ export function PlanCard({ plan, billing, ctaLabel, onCta, selected, className }
 
       <div className={clsx('h-px mb-5', isFeatured ? 'bg-[rgba(255,255,255,0.1)]' : 'bg-bone')} />
 
-      <div className="flex flex-col gap-[10px]">
+      <div className="flex flex-1 flex-col gap-[10px]">
         {(plan.featureBullets ?? []).map(f => (
           <div key={f} className="flex gap-2 items-start">
             <Check size={13} className="text-success flex-shrink-0 mt-[1px]" />

@@ -25,6 +25,8 @@ function OrderDetailModal({ order, onClose }: { order: OrderListRow; onClose: ()
     (p: { storeId: string; orderId: string }) => apiAdminGetOrderDetail(p.storeId, p.orderId),
     { storeId: order.storeId, orderId: order.orderId },
   );
+  // The API converts non-USD orders using the rate saved on the order; null = no rate on file.
+  const usd = (n: number | null | undefined) => (n == null ? '—' : formatCurrency(n));
 
   return (
     <Modal
@@ -63,16 +65,16 @@ function OrderDetailModal({ order, onClose }: { order: OrderListRow; onClose: ()
               <div key={item._id} className="flex items-center gap-3 border border-bone rounded-lg px-3 py-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-[12.5px] font-medium text-charcoal truncate">{item.name}</p>
-                  <p className="text-[11px] text-slate">Qty {item.quantity} · {formatCurrency(item.price)} each{item.refundedAmount > 0 ? ` · ${formatCurrency(item.refundedAmount)} refunded` : ''}</p>
+                  <p className="text-[11px] text-slate">Qty {item.quantity} · {usd(item.price)} each{item.refundedAmount > 0 ? ` · ${usd(item.refundedAmount)} refunded` : ''}</p>
                 </div>
-                <span className="text-[12.5px] font-semibold text-charcoal">{formatCurrency(item.totalPrice)}</span>
+                <span className="text-[12.5px] font-semibold text-charcoal">{usd(item.totalPrice)}</span>
               </div>
             ))}
           </div>
 
           <div className="flex items-center justify-between text-[13px] pt-2 border-t border-bone">
-            <span className="text-slate">Subtotal ({data.currency})</span>
-            <span className="font-semibold text-charcoal">{formatCurrency(data.sellerOrder.subtotal)}</span>
+            <span className="text-slate">Subtotal (USD)</span>
+            <span className="font-semibold text-charcoal">{usd(data.sellerOrder.subtotal)}</span>
           </div>
           <p className="text-[11px] text-slate">Placed {formatDate(data.createdAt)} · {data.paymentType}{data.isPaid ? ' · Paid' : ' · Not paid yet'}</p>
         </div>

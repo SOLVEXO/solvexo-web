@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { StoreBannersHero } from '../components/AtelierBannerCarousel';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -65,7 +66,8 @@ function HeroSlide({ block, colors }: { block: Block; colors: AtelierSectionColo
 
 function HeroSection({ blocks, colors }: { blocks: Block[]; colors: AtelierSectionColors }) {
   const [active, setActive] = useState(0);
-  if (blocks.length === 0) return null;
+  // No slides of its own → show the store's Store Banners at this position.
+  if (blocks.length === 0) return <StoreBannersHero />;
   const slide = blocks[Math.min(active, blocks.length - 1)];
 
   return (

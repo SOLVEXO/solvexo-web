@@ -289,7 +289,8 @@ const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) =>
   { group: 'Pricing', rows: [
     { label: 'Pay monthly', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.monthlyPriceUSD) },
     { label: 'Pay yearly (per month)', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.yearlyPriceUSD != null ? Math.round(p.yearlyPriceUSD / 12) : null) },
-    { label: 'Transaction fee on sales', get: p => p.limits.transactionFeeRate === undefined ? null : `${Number((p.limits.transactionFeeRate * 100).toFixed(2))}%` },
+    { label: 'No Solvexo commission on card sales, COD or bank transfer (card processing fee only)', get: ALL },
+    { label: 'Third-party payment gateway fee (SafePay, JazzCash…)', get: p => p.limits.transactionFeeRate === undefined ? null : `${Number((p.limits.transactionFeeRate * 100).toFixed(2))}%` },
   ] },
   { group: 'Online store', rows: [
     { label: 'Themes & theme editor', get: ALL },
