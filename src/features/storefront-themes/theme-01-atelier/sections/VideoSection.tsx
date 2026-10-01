@@ -18,8 +18,11 @@ function toEmbedUrl(url: string): string | null {
 }
 
 registerAtelierSection('video', (section: Section, _blocks, colors: AtelierSectionColors) => {
-  const embed = section.settings.videoUrl ? toEmbedUrl(section.settings.videoUrl) : null;
-  if (!embed) return null;
+  const pasted: string | undefined = section.settings.videoUrl || undefined;
+  const embed = !section.settings.videoFileUrl && pasted ? toEmbedUrl(pasted) : null;
+  // Uploaded file, or any other pasted https link (played as a direct video file).
+  const fileUrl: string | undefined = section.settings.videoFileUrl || (embed ? undefined : pasted);
+  if (!embed && !fileUrl) return null;
   return (
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto flex flex-col gap-6" style={{ maxWidth: t.layout.maxWidth }}>
@@ -29,7 +32,11 @@ registerAtelierSection('video', (section: Section, _blocks, colors: AtelierSecti
           </h2>
         )}
         <div style={{ aspectRatio: ASPECT[section.settings.aspectRatio] ?? '16/9', background: colors.bgAlt }}>
-          <iframe src={embed} title={section.settings.heading ?? 'Video'} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          {fileUrl ? (
+            <video src={fileUrl} controls playsInline preload="metadata" className="w-full h-full" style={{ objectFit: 'contain', background: '#000' }} />
+          ) : (
+          <iframe src={embed!} title={section.settings.heading ?? 'Video'} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          )}
         </div>
       </div>
     </div>

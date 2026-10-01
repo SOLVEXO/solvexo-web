@@ -22,6 +22,7 @@ import './FaqSection';
 import './TrustBadgesSection';
 import './FeaturedCategoryGridSection';
 import './NewsletterSection';
+import './BlogPostsSection';
 import './MetaobjectListSection';
 import './CoreSections';
 

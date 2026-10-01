@@ -15,6 +15,7 @@ import './VideoSection';
 import './FeaturedCategoryGridSection';
 import './TrustBadgesSection';
 import './NewsletterSection';
+import './BlogPostsSection';
 import './DropCountdownSection';
 import './MetaobjectListSection';
 import './CoreSections';

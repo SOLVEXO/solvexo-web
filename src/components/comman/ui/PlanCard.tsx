@@ -32,7 +32,7 @@ export function PlanCard({ plan, billing, ctaLabel, onCta, selected, className }
     <PremiumCard
       tone={isFeatured ? 'dark' : 'light'}
       className={clsx(
-        'flex h-full w-full flex-col p-6', isFeatured && 'border-brand-orange!',
+        'flex h-full w-full flex-col p-4 min-[1100px]:p-6', isFeatured && 'border-brand-orange!',
         selected && 'ring-2 ring-brand-orange ring-offset-2 ring-offset-cream',
         className,
       )}
@@ -55,10 +55,10 @@ export function PlanCard({ plan, billing, ctaLabel, onCta, selected, className }
         {plan.isCustomPricing ? (
           <p className={clsx('text-[28px] font-bold', isFeatured ? 'text-white' : 'text-carbon')}>Custom</p>
         ) : plan.isFree ? (
-          <p className={clsx('text-[36px] font-bold', isFeatured ? 'text-white' : 'text-carbon')}>Free</p>
+          <p className={clsx('text-[28px] min-[1100px]:text-[36px] font-bold', isFeatured ? 'text-white' : 'text-carbon')}>Free</p>
         ) : (
           <div className="flex items-baseline gap-1">
-            <span className={clsx('text-[36px] font-bold', isFeatured ? 'text-brand-orange' : 'text-carbon')}>
+            <span className={clsx('text-[28px] min-[1100px]:text-[36px] font-bold', isFeatured ? 'text-brand-orange' : 'text-carbon')}>
               <AnimatedCounter value={monthlyEquivalent} format={n => `$${Math.round(n)}`} duration={0.8} />
             </span>
             <span className={clsx('text-[13px]', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>/month</span>

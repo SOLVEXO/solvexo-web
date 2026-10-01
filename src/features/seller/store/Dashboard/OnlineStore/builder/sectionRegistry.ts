@@ -130,13 +130,14 @@ export const SECTION_META: SectionMeta[] = [
     settingsSchema: withHeading([]),
   },
   {
-    type: 'video', label: 'Video', description: 'A YouTube or Vimeo embed.',
+    type: 'video', label: 'Video', description: 'A video link (YouTube, Vimeo, any .mp4 link) or an uploaded video file.',
     Icon: Video, color: '#EF4444',
-    defaultSettings: { heading: '', videoUrl: '', aspectRatio: '16:9' },
+    defaultSettings: { heading: '', videoUrl: '', videoFileUrl: '', aspectRatio: '16:9' },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
-      { key: 'videoUrl', kind: 'url', label: 'Video URL', required: true, hint: 'YouTube or Vimeo link', placeholder: 'https://youtube.com/watch?v=…' },
+      { key: 'videoUrl', kind: 'url', label: 'Video URL', hint: 'Any video link (YouTube, Vimeo, or a direct .mp4 link) — or upload a file below', placeholder: 'https://…', showIf: s => !s.videoFileUrl },
+      { key: 'videoFileUrl', kind: 'video', label: 'Upload video file', hint: 'MP4 / WebM / MOV, up to 100MB. Replaces the link above.' },
       { key: 'aspectRatio', kind: 'select', label: 'Aspect ratio', options: [
         { value: '16:9', label: '16:9' }, { value: '4:3', label: '4:3' }, { value: '1:1', label: '1:1' },
       ] },
@@ -159,6 +160,18 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: ['trust_badge_item'], blockLabel: 'Badge',
     defaultBlockSettings: { icon: 'truck', text: '' },
     settingsSchema: [], // no section-level settings at all — content is entirely the badge blocks
+  },
+  {
+    type: 'blog_posts', label: 'Latest Blog Posts', description: 'Your latest blog posts — a card grid linking to each article.',
+    Icon: Newspaper, color: '#DC2626',
+    defaultSettings: { heading: 'From the journal', limit: 3 },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'limit', kind: 'select', label: 'Number of posts', numeric: true, options: [
+        { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '6', label: '6' }, { value: '9', label: '9' }, { value: '12', label: '12' },
+      ] },
+    ]),
   },
   {
     type: 'newsletter', label: 'Newsletter', description: 'An email signup — subscribes to your store\'s newsletter.',

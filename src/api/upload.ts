@@ -20,7 +20,8 @@ interface UploadApiResponse<T> { success: boolean; message: string; data: T }
 export function apiUploadPublicFile(file: File) {
   const fd = new FormData();
   fd.append('file', file);
-  return client.post<never, UploadApiResponse<PublicUploadData>>(ENDPOINTS.UPLOAD.PUBLIC_FILE, fd);
+  // Videos can be up to 100MB — outlasts the client's default 15s timeout.
+  return client.post<never, UploadApiResponse<PublicUploadData>>(ENDPOINTS.UPLOAD.PUBLIC_FILE, fd, { timeout: 600_000 });
 }
 
 /** The "paste an image URL" alternative to `apiUploadPublicFile` — re-hosts

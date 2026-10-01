@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Field, ImageUpload, Toggle } from '@/components/comman/ui';
+import { useUpload } from '@/hooks/upload/useUpload';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import type { PageOption } from './BlockFields';
@@ -32,7 +33,7 @@ import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOw
 
 export type FieldKind =
   | 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
-  | 'image' | 'url' | 'link' | 'datetime'
+  | 'image' | 'video' | 'url' | 'link' | 'datetime'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
   | 'metaobjectTypePicker' | 'metafieldKeyPicker'
   | 'itemList';
@@ -188,6 +189,34 @@ function MetafieldKeyPickerField({ value, storeId, ownerResource, onChange }: { 
   );
 }
 
+/** Upload a video file (public Cloudinary upload) and keep its URL — the
+ *  alternative to pasting a YouTube/Vimeo link, like Shopify's Video section. */
+function VideoUploadField({ value, onChange }: { value: string | undefined; onChange: (url: string) => void }) {
+  const { upload, uploading, error } = useUpload('public');
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('video/')) return;
+    upload(file).then(d => onChange(d.url)).catch(() => {});
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      {value ? (
+        <>
+          <video src={value} controls className="w-full rounded-lg bg-black max-h-[220px]" />
+          <button type="button" onClick={() => onChange('')} className="text-[12px] font-semibold text-error bg-transparent border-none cursor-pointer text-left">Remove video</button>
+        </>
+      ) : (
+        <label className={`flex items-center justify-center py-6 rounded-lg border-2 border-dashed border-bone text-[13px] text-slate ${uploading ? 'cursor-wait opacity-60' : 'cursor-pointer hover:border-brand-orange'}`}>
+          {uploading ? 'Uploading video…' : 'Click to upload a video'}
+          <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={onFile} disabled={uploading} />
+        </label>
+      )}
+      {error && <p className="text-[11px] text-error">{error}</p>}
+    </div>
+  );
+}
+
 function ItemListField({ items, onChange, max = 20 }: { items: string[]; onChange: (next: string[]) => void; max?: number }) {
   const list = items.length > 0 ? items : [''];
   return (
@@ -256,6 +285,12 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'image':
       return <ImageUpload value={value ? [value] : []} onChange={urls => set({ [field.key]: urls[0] ?? '' })} maxFiles={1} storeId={storeId} />;
+
+    case 'video':
+      return <VideoUploadField value={value} onChange={url => set({ [field.key]: url })} />;
+
+    case 'video':
+      return <VideoUploadField value={value} onChange={url => set({ [field.key]: url })} />;
 
     case 'link':
       return (

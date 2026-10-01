@@ -137,7 +137,7 @@ export function PricingPage() {
           where the missing columns would have been. Card visuals live in the
           shared `PlanCard` component (also used by onboarding's plan picker)
           so the two can never visually drift apart. ── */}
-      <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 min-[1100px]:grid-cols-4 gap-4 px-4 md:px-8 lg:px-10 pb-16 max-w-[1320px] mx-auto" itemClassName="h-full" step={0.1} y={22}>
+      <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-4 gap-3 lg:gap-4 px-4 md:px-4 lg:px-10 pb-16 max-w-[1320px] mx-auto" itemClassName="h-full" step={0.1} y={22}>
         {plansLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="w-full rounded-[20px] p-7 bg-white border-2 border-bone animate-pulse h-[420px]" />

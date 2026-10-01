@@ -414,7 +414,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
         )}
 
         <motion.div
-          className="px-4 md:px-[88px] pt-10 pb-20 max-w-[1360px] mx-auto"
+          className="px-4 md:px-10 lg:px-[88px] pt-10 pb-20 max-w-[1360px] mx-auto"
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           <h1 className="text-[26px] md:text-[34px] font-semibold tracking-[-0.01em] text-carbon text-center mb-6">{title}</h1>
@@ -439,7 +439,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
           )}
 
           {/* One card per plan */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))' }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
             {list.map(p => {
               const intro = introOf(p);
               const monthly = p.monthlyPriceUSD ?? 0;
@@ -483,7 +483,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
 
           {/* Compare plans — straight on the sheet, no card around it */}
           <div className="mt-14">
-            <div className="sticky top-0 z-20 -mx-4 md:-mx-[88px] px-4 md:px-[88px] bg-cream border-b border-bone">
+            <div className="sticky top-0 z-20 -mx-4 md:-mx-10 lg:-mx-[88px] px-4 md:px-10 lg:px-[88px] bg-cream border-b border-bone">
               <div className="grid items-center gap-x-7 gap-y-4 py-4" style={cols}>
                 <h2 className="text-[20px] md:text-[26px] font-semibold tracking-[-0.01em] text-carbon">Compare plans</h2>
                 {list.map(p => (

@@ -26,6 +26,7 @@ export const SECTION_TYPES = [
   'featured_category_grid',
   'trust_badges',
   'newsletter',
+  'blog_posts',
   // Lists real entries of a seller-defined Metaobject type (see
   // `api/services/metaobjects.ts`) — `settings.metaobjectType` names which
   // one, resolved against the store's own live entries at render time.
