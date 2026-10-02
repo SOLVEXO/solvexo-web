@@ -84,7 +84,7 @@ export interface AdminOverviewData {
   totalRevenueChangePercent: number | null;
   platformEarnings: number;
   platformCommission: number;
-  subscriptionRevenue: number;
+ 
   totalOrders: number;
   totalOrdersChange: number;
   totalSellers: number;
@@ -99,8 +99,8 @@ export interface AdminOverviewData {
   cancelledOrders: number;
   // Phase 1 — Solvexo's OWN recurring revenue from sellers paying for their
   // platform plan (reused from the existing PlatformPlansService — a
-  // distinct stream from `subscriptionRevenue` above, which is buyer-VIP
-  // revenue). Platform-wide only — absent (not zero) whenever a
+  // distinct stream from order commission). Platform-wide only — absent
+  // (not zero) whenever a
   // storeId/sellerId drill-down is active, since a seller's platform plan
   // isn't a per-store figure.
   sellerPlatformMRR?: number;
@@ -122,7 +122,6 @@ export interface AdminRevenueOverTimeData { granularity: AnalyticsGranularity; s
 export interface AdminRevenueBreakdownPreviousPeriod {
   period: AnalyticsPeriod;
   oneTimeOrderRevenue: number;
-  recurringSubscriptionRevenue: number;
   platformCommissionRevenue: number;
   paymentProcessingFees: number;
   totalPlatformRevenue: number;
@@ -134,7 +133,6 @@ export interface NonUsdCommissionRow { currency: string; commission: number; pro
 export interface AdminRevenueBreakdownData {
   period: AnalyticsPeriod;
   oneTimeOrderRevenue: number;
-  recurringSubscriptionRevenue: number;
   platformCommissionRevenue: number;
   paymentProcessingFees: number;
   totalPlatformRevenue: number;
@@ -409,7 +407,7 @@ export interface AdminPlatformAlertsData {
   note: string;
 }
 
-// ── Query-string helper (mirrors the convention in services/subscriptions.ts) ──
+// ── Query-string helper ──
 
 function qs(query: Record<string, unknown> = {}) {
   const params = new URLSearchParams();

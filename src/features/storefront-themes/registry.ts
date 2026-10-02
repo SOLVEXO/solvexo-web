@@ -14,11 +14,11 @@ import { AtelierNewPasswordPage } from './theme-01-atelier/pages/AtelierNewPassw
 import { AtelierAccountPage } from './theme-01-atelier/pages/AtelierAccountPage';
 import { AtelierWishlistPage } from './theme-01-atelier/pages/AtelierWishlistPage';
 import { AtelierLoyaltyPage } from './theme-01-atelier/pages/AtelierLoyaltyPage';
+import { AtelierStoreCreditPage } from './theme-01-atelier/pages/AtelierStoreCreditPage';
 import { AtelierNotificationsPage } from './theme-01-atelier/pages/AtelierNotificationsPage';
 import { AtelierMessagesPage } from './theme-01-atelier/pages/AtelierMessagesPage';
 import { AtelierReturnsPage } from './theme-01-atelier/pages/AtelierReturnsPage';
 import { AtelierGiftCardsPage } from './theme-01-atelier/pages/AtelierGiftCardsPage';
-import { AtelierSubscriptionsPage } from './theme-01-atelier/pages/AtelierSubscriptionsPage';
 import { AtelierCategoryPage } from './theme-01-atelier/pages/AtelierCategoryPage';
 import { AtelierCollectionPage } from './theme-01-atelier/pages/AtelierCollectionPage';
 import { AtelierSearchPage } from './theme-01-atelier/pages/AtelierSearchPage';
@@ -70,11 +70,11 @@ import { NovaNewPasswordPage } from './theme-02-nova/pages/NovaNewPasswordPage';
 import { NovaAccountPage } from './theme-02-nova/pages/NovaAccountPage';
 import { NovaWishlistPage } from './theme-02-nova/pages/NovaWishlistPage';
 import { NovaLoyaltyPage } from './theme-02-nova/pages/NovaLoyaltyPage';
+import { NovaStoreCreditPage } from './theme-02-nova/pages/NovaStoreCreditPage';
 import { NovaNotificationsPage } from './theme-02-nova/pages/NovaNotificationsPage';
 import { NovaMessagesPage } from './theme-02-nova/pages/NovaMessagesPage';
 import { NovaReturnsPage } from './theme-02-nova/pages/NovaReturnsPage';
 import { NovaGiftCardsPage } from './theme-02-nova/pages/NovaGiftCardsPage';
-import { NovaSubscriptionsPage } from './theme-02-nova/pages/NovaSubscriptionsPage';
 import { NovaCategoryPage } from './theme-02-nova/pages/NovaCategoryPage';
 import { NovaCollectionPage } from './theme-02-nova/pages/NovaCollectionPage';
 import { NovaSearchPage } from './theme-02-nova/pages/NovaSearchPage';
@@ -104,7 +104,7 @@ import './theme-02-nova/theme.demoPreview';
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
-  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'subscriptions'
+  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'storeCredit'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 
@@ -210,7 +210,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       messages: AtelierMessagesPage,
       returns: AtelierReturnsPage,
       giftCards: AtelierGiftCardsPage,
-      subscriptions: AtelierSubscriptionsPage,
+      storeCredit: AtelierStoreCreditPage,
       category: AtelierCategoryPage,
       collection: AtelierCollectionPage,
       search: AtelierSearchPage,
@@ -259,7 +259,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       messages: NovaMessagesPage,
       returns: NovaReturnsPage,
       giftCards: NovaGiftCardsPage,
-      subscriptions: NovaSubscriptionsPage,
+      storeCredit: NovaStoreCreditPage,
       category: NovaCategoryPage,
       collection: NovaCollectionPage,
       search: NovaSearchPage,

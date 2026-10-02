@@ -41,11 +41,12 @@ export interface Checkout {
   subtotal:          number;
   shippingFee:       number;
   taxAmount:         number;
-  subscriberSavingsUSD?: number;
   couponCode?:       string | null;
   couponDiscountUSD?: number;
   giftCardCode?:       string | null;
   giftCardDiscountUSD?: number;
+  storeCreditApplied?: boolean;
+  storeCreditDiscountTotalUSD?: number;
   campaignDiscountTotalUSD?: number;
   totalAmount:       number;
   status:            string;
@@ -60,7 +61,6 @@ export interface CheckoutSummary {
   shippingFee: number;
   taxAmount:   number;
   totalAmount: number;
-  subscriberSavingsUSD?: number;
   campaignDiscountUSD?: number;
   autoDiscountUSD?: number;
   /** Only meaningful for a mixed physical+digital cart — see `allowedPaymentMethods`'s 'split' option. */
@@ -118,9 +118,17 @@ export interface RemoveGiftCardData {
 }
 interface RemoveGiftCardResponse { success: boolean; message: string; data: RemoveGiftCardData }
 
-export interface SubscriptionSavingsHint {
-  storeId: string; storeName: string; storeSlug: string; planId: string; planName: string; potentialSavingsUSD: number;
+export interface ApplyStoreCreditData {
+  checkoutId: string;
+  storeCreditApplied: boolean;
+  storeCreditDiscountUSD: number;
+  subtotal: number;
+  shippingFee: number;
+  totalAmount: number;
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
 }
+interface StoreCreditResponse { success: boolean; message: string; data: ApplyStoreCreditData }
 
 export interface CreateCheckoutPayload {
   addressId?:      string;
@@ -148,7 +156,6 @@ interface CreateCheckoutResponse {
     checkout:               Checkout;
     allowedPaymentMethods:  string[];
     summary:                CheckoutSummary;
-    subscriptionSavingsHints: SubscriptionSavingsHint[];
     appliedCampaigns:       AppliedCampaign[];
   };
 }
@@ -227,4 +234,12 @@ export function apiApplyGiftCard(payload: ApplyGiftCardPayload) {
 
 export function apiRemoveGiftCard(checkoutId: string) {
   return client.delete<never, RemoveGiftCardResponse>(ENDPOINTS.CHECKOUT.REMOVE_GIFT_CARD(checkoutId));
+}
+
+export function apiApplyStoreCredit(checkoutId: string) {
+  return client.post<never, StoreCreditResponse>(ENDPOINTS.CHECKOUT.APPLY_STORE_CREDIT, { checkoutId });
+}
+
+export function apiRemoveStoreCredit(checkoutId: string) {
+  return client.delete<never, StoreCreditResponse>(ENDPOINTS.CHECKOUT.REMOVE_STORE_CREDIT(checkoutId));
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert } from 'lucide-react';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
+import { TokenStorage } from '@/api/services/auth';
+import { CustomerStoreCreditCard } from './CustomerStoreCreditCard';
 import {
   apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta,
   apiExportStoreCustomers, apiBulkTagCustomers, apiBulkArchiveCustomers, apiCreateStoreCustomer,
@@ -501,6 +503,7 @@ export default function StoreCustomerList() {
                   </button>
                 </div>
 
+                <CustomerStoreCreditCard storeId={storeId} customerId={sel._id} fallbackCurrency={store?.baseCurrency} canEdit={hasNavPermission(TokenStorage.getUser(), 'customers.edit')} />
                 <div className="mt-4 pt-4 border-t border-[#f0eee6]">
                   <label className="text-xs font-medium text-graphite mb-[7px] block">Order History</label>
                   {ordersLoading ? (

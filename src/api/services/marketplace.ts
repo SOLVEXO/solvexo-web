@@ -23,15 +23,6 @@ export interface ProductVariant {
   isDelete:       boolean;
   createdAt:      string;
   updatedAt:      string;
-  // Present only when the requester has an active, discount-granting
-  // subscription to this product's store — resolved server-side only.
-  // The product itself is never hidden or gated; this is purely a price
-  // annotation shown alongside the regular price.
-  subscriberPrice?:    number;
-  youSaveUSD?:         number;
-  discountPercent?:    number;
-  subscriberPlanName?: string;
-  minOrderValueUSD?:   number | null;
 }
 
 export interface DigitalProduct {

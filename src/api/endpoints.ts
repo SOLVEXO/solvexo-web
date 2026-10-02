@@ -399,68 +399,6 @@ export const ENDPOINTS = {
     TIMELINE: (targetId: string) => `/api/admin/activity-log/timeline/${targetId}`,
   },
 
-  // ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
-  SUBSCRIPTIONS: {
-    // Buyer
-    BROWSE_PLANS: (storeId: string) => `/api/subscriptions/public/${storeId}/plans`,
-    SUBSCRIBE:    '/api/subscriptions/subscribe',
-    MY:           '/api/subscriptions/my',
-    MY_BY_ID:     (id: string) => `/api/subscriptions/my/${id}`,
-    MY_PAUSE:     (id: string) => `/api/subscriptions/my/${id}/pause`,
-    MY_RESUME:    (id: string) => `/api/subscriptions/my/${id}/resume`,
-    MY_CANCEL:    (id: string) => `/api/subscriptions/my/${id}/cancel`,
-    MY_CHANGE_PLAN: (id: string) => `/api/subscriptions/my/${id}/change-plan`,
-    MY_TIMELINE:  (id: string) => `/api/subscriptions/my/${id}/timeline`,
-    MY_BILLING_PORTAL: '/api/subscriptions/my/billing-portal',
-    MY_BENEFITS:  (storeId: string) => `/api/subscriptions/my/benefits/${storeId}`,
-    MY_CREDITS:   '/api/subscriptions/my/credits',
-    MY_CREDITS_SPEND: (storeId: string) => `/api/subscriptions/my/credits/${storeId}/spend`,
-    MY_NOTIFICATION_PREFS: '/api/subscriptions/my/notification-preferences',
-
-    // Seller (store-scoped)
-    PLANS: {
-      CREATE:    (storeId: string) => `/api/subscriptions/${storeId}/plans`,
-      LIST:      (storeId: string) => `/api/subscriptions/${storeId}/plans`,
-      GET_BY_ID: (storeId: string, id: string) => `/api/subscriptions/${storeId}/plans/${id}`,
-      UPDATE:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/plans/${id}`,
-      ARCHIVE:   (storeId: string, id: string) => `/api/subscriptions/${storeId}/plans/${id}`,
-      ESTIMATE_HEALTH: (storeId: string) => `/api/subscriptions/${storeId}/plans/estimate-health`,
-    },
-    DASHBOARD:   (storeId: string) => `/api/subscriptions/${storeId}/dashboard`,
-    EXPORT:      (storeId: string) => `/api/subscriptions/${storeId}/export`,
-    ANALYTICS_ADVANCED: (storeId: string) => `/api/subscriptions/${storeId}/analytics/advanced`,
-    SUBSCRIBERS: {
-      LIST:      (storeId: string) => `/api/subscriptions/${storeId}/subscribers`,
-      GET_BY_ID: (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}`,
-      PAUSE:     (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/pause`,
-      RESUME:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/resume`,
-      CANCEL:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/cancel`,
-      REFUND_INVOICE: (storeId: string, id: string, invoiceId: string) => `/api/subscriptions/${storeId}/subscribers/${id}/invoices/${invoiceId}/refund`,
-    },
-
-    // Admin
-    ADMIN: {
-      OVERVIEW:          '/api/subscriptions/admin/overview',
-      STORES:            '/api/subscriptions/admin/stores',
-      STORE_DETAIL:      (storeId: string) => `/api/subscriptions/admin/stores/${storeId}`,
-      SUSPEND_PLAN:      (id: string) => `/api/subscriptions/admin/plans/${id}/suspend`,
-      UNSUSPEND_PLAN:    (id: string) => `/api/subscriptions/admin/plans/${id}/unsuspend`,
-      PAYMENT_FAILURES:  '/api/subscriptions/admin/payment-failures',
-      SUB_DETAIL:        (id: string) => `/api/subscriptions/admin/subscriptions/${id}`,
-      SUB_PAYMENT_ATTEMPTS: (id: string) => `/api/subscriptions/admin/subscriptions/${id}/payment-attempts`,
-      LTV:               '/api/subscriptions/admin/ltv',
-      REVENUE_BREAKDOWN: '/api/subscriptions/admin/revenue-breakdown',
-      CHURN_COHORTS:     '/api/subscriptions/admin/churn-cohorts',
-      // Admin subscription-invoice refund route removed by design — a
-      // seller's own customer's money is theirs to act on, never admin's to
-      // touch on their behalf. See SubscriptionsController's own doc
-      // comment. (Platform-plan invoice refund is a separate, untouched
-      // endpoint — see apiAdminRefundPlatformInvoice in platformPlans.ts.)
-      WEBHOOKS:          '/api/subscriptions/admin/webhooks',
-      WEBHOOK_RETRY:     (id: string) => `/api/subscriptions/admin/webhooks/${id}/retry`,
-    },
-  },
-
   // ── MARKETING ─────────────────────────────────────────────────────────────
   MARKETING: {
     COUPONS: {
@@ -515,6 +453,13 @@ export const ENDPOINTS = {
     MY_BALANCE: (storeId: string) => `/api/loyalty/${storeId}/my-balance`,
     REDEEM:     (storeId: string) => `/api/loyalty/${storeId}/redeem`,
     VOUCHERS:   (storeId: string) => `/api/loyalty/${storeId}/vouchers`,
+  },
+
+  // ── STORE CREDIT ──────────────────────────────────────────────────────────
+  STORE_CREDIT: {
+    MY:       '/api/store-credit/my',
+    CUSTOMER: (storeId: string, customerId: string) => `/api/store-credit/${storeId}/customers/${customerId}`,
+    ADJUST:   (storeId: string, customerId: string) => `/api/store-credit/${storeId}/customers/${customerId}/adjust`,
   },
 
   // ── GIFT CARDS ────────────────────────────────────────────────────────────
@@ -691,6 +636,8 @@ export const ENDPOINTS = {
     REMOVE_COUPON: (checkoutId: string) => `/api/checkout/remove-coupon/${checkoutId}`,
     APPLY_GIFT_CARD: '/api/checkout/apply-gift-card',
     REMOVE_GIFT_CARD: (checkoutId: string) => `/api/checkout/remove-gift-card/${checkoutId}`,
+    APPLY_STORE_CREDIT: '/api/checkout/apply-store-credit',
+    REMOVE_STORE_CREDIT: (checkoutId: string) => `/api/checkout/remove-store-credit/${checkoutId}`,
     // New per-store connected gateways (Safepay et al) — only ever
     // non-empty for a single-store checkout, see CheckoutPaymentMethodsService.
     PAYMENT_METHODS: (checkoutId: string) => `/api/checkout/${checkoutId}/payment-methods`,
@@ -810,6 +757,7 @@ export const ENDPOINTS = {
 
   PAYMENT: {
     COD:              '/api/payment/cod-payment',
+    STORE_CREDIT_PAYMENT: '/api/payment/store-credit-payment',
     INITIATE_PAYMENT: '/api/payment/initiate-payment',
     STATUS:           '/api/payment/status',
     OPEN_DISPUTE_COUNT: (storeId: string) => `/api/payment/disputes/${storeId}/open-count`,
@@ -821,7 +769,7 @@ export const ENDPOINTS = {
   },
 
   ORDERS: {
-    MARK_PAID:     (id: string) => `/api/orders/mark-paid/${id}`,
+    MARK_PAID:     (storeId: string, id: string) => `/api/orders/mark-paid/${storeId}/${id}`,
     UPDATE_STATUS: '/api/orders/update-status',
     PURCHASE_SHIPPING_LABEL: '/api/orders/purchase-shipping-label',
     DOWNLOAD_URL:  '/api/orders/download-url',
@@ -1162,6 +1110,7 @@ export const ENDPOINTS = {
     },
     ADMIN: {
       OVERVIEW:              '/api/admin/finance/overview',
+      PLATFORM_REVENUE:      '/api/admin/finance/platform-revenue',
       REVENUE_OVER_TIME:     '/api/admin/finance/revenue-over-time',
       COMMISSION_OVER_TIME:  '/api/admin/finance/commission-over-time',
       SELLER_BALANCES:       '/api/admin/finance/sellers/balances',

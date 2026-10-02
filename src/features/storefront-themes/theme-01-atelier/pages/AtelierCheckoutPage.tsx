@@ -24,6 +24,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeMeToStore } from '@/api/services/newsletter';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierTheme as t } from '../theme.config';
+import { useStoreCredit } from '../../useStoreCredit';
 
 const EMPTY_ADDR: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '',
@@ -158,6 +159,14 @@ export function AtelierCheckoutPage() {
   const [placedOrders, setPlacedOrders] = useState<PlacedOrder[] | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Shopify-style store credit (outermost discount layer). A change in the
+  // applied credit changes the charge, so any cached Stripe client secret is stale.
+  const credit = useStoreCredit({
+    storeId: cart?.storeId, checkout, setCheckout, loggedIn,
+    onTotalChanged: () => { setClientSecret(null); setChargeAmount(null); },
+  });
+  const creditCoversAll = !!checkout?.storeCreditApplied && checkout.totalAmount <= 0;
+
   // "Email me with news and offers" — unticked by default (consent must be
   // an explicit action), recorded when the buyer actually commits to paying.
   const [emailMeOffers, setEmailMeOffers] = useState(false);
@@ -284,7 +293,7 @@ export function AtelierCheckoutPage() {
   }, [allowedMethods, extraMethods]);
 
   useEffect(() => {
-    if (selectedMethod !== 'stripe' || !checkout || !isStripeConfigured() || clientSecret) return;
+    if (selectedMethod !== 'stripe' || !checkout || !isStripeConfigured() || clientSecret || creditCoversAll) return;
     let cancelled = false;
     setInitiating(true);
     setInitiateErr('');
@@ -293,7 +302,7 @@ export function AtelierCheckoutPage() {
       .catch(err => { if (!cancelled) setInitiateErr(err instanceof Error ? err.message : 'Failed to start card payment.'); })
       .finally(() => { if (!cancelled) setInitiating(false); });
     return () => { cancelled = true; };
-  }, [selectedMethod, checkout, clientSecret]);
+  }, [selectedMethod, checkout, clientSecret, creditCoversAll]);
 
   useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
 
@@ -323,6 +332,7 @@ export function AtelierCheckoutPage() {
     try {
       const res = await apiApplyCoupon({ checkoutId: checkout._id, code: couponInput.trim() });
       setCheckout(c => c && { ...c, couponCode: res.data.couponCode, couponDiscountUSD: res.data.couponDiscountUSD, totalAmount: res.data.totalAmount });
+      await credit.resync();
       setCouponMsg(`Applied — you saved ${currencySymbol(checkout.currency)}${fmt2(res.data.couponDiscountUSD)}.`);
       setCouponInput('');
     } catch (err) {
@@ -336,6 +346,7 @@ export function AtelierCheckoutPage() {
     try {
       const res = await apiRemoveCoupon(checkout._id);
       setCheckout(c => c && { ...c, couponCode: null, couponDiscountUSD: 0, giftCardCode: null, giftCardDiscountUSD: 0, totalAmount: res.data.totalAmount });
+      await credit.resync();
       setCouponMsg('');
     } finally { setCouponBusy(false); }
   };
@@ -346,6 +357,7 @@ export function AtelierCheckoutPage() {
     try {
       const res = await apiApplyGiftCard({ checkoutId: checkout._id, code: giftCardInput.trim() });
       setCheckout(c => c && { ...c, giftCardCode: res.data.giftCardCode, giftCardDiscountUSD: res.data.giftCardDiscountUSD, totalAmount: res.data.totalAmount });
+      await credit.resync();
       setGiftCardMsg(`Applied — ${currencySymbol(checkout.currency)}${fmt2(res.data.giftCardDiscountUSD)} used.`);
       setGiftCardInput('');
     } catch (err) {
@@ -359,6 +371,7 @@ export function AtelierCheckoutPage() {
     try {
       const res = await apiRemoveGiftCard(checkout._id);
       setCheckout(c => c && { ...c, giftCardCode: null, giftCardDiscountUSD: 0, couponCode: null, couponDiscountUSD: 0, totalAmount: res.data.totalAmount });
+      await credit.resync();
       setGiftCardMsg('');
     } finally { setGiftCardBusy(false); }
   };
@@ -392,6 +405,15 @@ export function AtelierCheckoutPage() {
     setTimeout(() => {
       if (!stopped) { stopped = true; if (pollTimer.current) clearTimeout(pollTimer.current); setPolling(false); setPlaceError('Your payment was received and is being confirmed — check your orders in a moment.'); }
     }, 30_000);
+  };
+
+  const handlePlaceWithCredit = async () => {
+    if (!checkout || !creditCoversAll) return;
+    const orders = await credit.place();
+    if (!orders) return;
+    recordMarketingConsent();
+    await clearCart();
+    setPlacedOrders(orders);
   };
 
   const handlePlaceCod = async () => {
@@ -439,7 +461,8 @@ export function AtelierCheckoutPage() {
   const tax = summary?.taxAmount ?? 0;
   const couponDiscount = checkout?.couponDiscountUSD ?? 0;
   const giftCardDiscount = checkout?.giftCardDiscountUSD ?? 0;
-  const total = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount - giftCardDiscount);
+  const storeCreditDiscount = checkout?.storeCreditDiscountTotalUSD ?? 0;
+  const total = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount - giftCardDiscount - storeCreditDiscount);
   const currency = checkout?.currency ?? store.baseCurrency ?? 'USD';
   const symbol = currencySymbol(currency);
   // Same fix as NovaCheckoutPage.tsx: Order Summary's line items must read
@@ -581,6 +604,23 @@ export function AtelierCheckoutPage() {
               </div>
             ) : creatingCheckout || !checkout ? (
               <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
+            ) : creditCoversAll ? (
+              <div className="flex flex-col gap-3">
+                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Your store credit covers the full amount — no payment needed.</p>
+                {credit.placeError && (
+                  <div className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger, border: `1px solid ${t.colors.danger}`, padding: '10px 12px' }}>
+                    <AlertCircle size={13} className="mt-[1px] shrink-0" /> {credit.placeError}
+                  </div>
+                )}
+                <label className="flex items-center gap-2.5 cursor-pointer" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.ink }}>
+                  <input type="checkbox" checked={emailMeOffers} onChange={e => setEmailMeOffers(e.target.checked)} />
+                  Email me with news and offers from {store.name}
+                </label>
+                <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={credit.placing} onClick={handlePlaceWithCredit}>
+                  {!credit.placing && <PackageCheck size={14} style={{ marginRight: '4px' }} />}
+                  {credit.placing ? 'Placing order…' : 'Place order'}
+                </AtelierButton>
+              </div>
             ) : allowedMethods.length === 0 && extraMethods.length === 0 ? (
               <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No payment methods are available for this order yet.</p>
             ) : (
@@ -695,6 +735,7 @@ export function AtelierCheckoutPage() {
             {tax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Tax</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(tax)}</span></div>}
             {couponDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Coupon</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(couponDiscount)}</span></div>}
             {giftCardDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Gift card</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(giftCardDiscount)}</span></div>}
+            {storeCreditDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Store credit</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(storeCreditDiscount)}</span></div>}
           </div>
 
           {checkout && (
@@ -724,6 +765,22 @@ export function AtelierCheckoutPage() {
                 </div>
               )}
               {giftCardMsg && <p style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted }}>{giftCardMsg}</p>}
+
+              {credit.available && (
+                <div className="flex items-center justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '11.5px' }}>
+                  <span style={{ color: t.colors.ink }}>
+                    {checkout.storeCreditApplied
+                      ? <>Store credit <strong>-{symbol}{fmt2(storeCreditDiscount)}</strong> applied</>
+                      : <>Store credit available: {currencySymbol(credit.balanceCurrency)}{fmt2(credit.balance)}</>}
+                  </span>
+                  {checkout.storeCreditApplied ? (
+                    <button type="button" onClick={credit.remove} disabled={credit.busy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>Remove</button>
+                  ) : (
+                    <button type="button" onClick={credit.apply} disabled={credit.busy} className="shrink-0 cursor-pointer bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '6px 14px', border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>{credit.busy ? 'Applying…' : 'Apply'}</button>
+                  )}
+                </div>
+              )}
+              {credit.msg && <p role="alert" style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted }}>{credit.msg}</p>}
             </div>
           )}
 

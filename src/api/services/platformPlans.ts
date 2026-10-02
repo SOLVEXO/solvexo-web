@@ -6,7 +6,7 @@ export interface PlatformPlanLimits {
   maxProducts?: number; maxStaffAccounts?: number; maxPosLocations?: number;
   aiCreditsPerMonth?: number; transactionFeeRate?: number;
   customDomainAllowed?: boolean; whiteLabelAllowed?: boolean; loyaltyProgramAllowed?: boolean;
-  subscriptionProductsAllowed?: boolean; advancedAnalyticsAllowed?: boolean;
+  advancedAnalyticsAllowed?: boolean;
   abandonedCartRecoveryAllowed?: boolean; emailCampaignsAllowed?: boolean; apiWebhooksAllowed?: boolean;
   dedicatedAccountManager?: boolean; prioritySupport?: boolean; marketplaceFeaturedBadge?: boolean;
   slaUptimePercent?: number;
@@ -202,6 +202,31 @@ export function apiGetStorePlatformPlan(storeId: string) {
 
 export function apiGetStoreEntitlements(storeId: string) {
   return client.get<never, ApiResponse<EntitlementsSummary>>(`${BASE}/${storeId}/entitlements`);
+}
+
+/** A store's accrued (not yet billed) third-party transaction fees + its monthly bills. GET /api/transaction-fees/:storeId */
+export interface TransactionFeeBill {
+  _id: string;
+  periodKey: string; // 'YYYY-MM'
+  amountUSD: number;
+  saleCount: number;
+  status: 'creating' | 'invoiced' | 'paid' | 'payment_failed' | 'failed';
+  hostedInvoiceUrl: string | null;
+  createdAt: string;
+  breakdown: Array<{ currency: string; amount: number; amountUSD: number; saleCount: number }>;
+}
+export interface TransactionFeesOverview {
+  accrued: {
+    byCurrency: Array<{ currency: string; amount: number; saleCount: number }>;
+    estimatedUSD: number | null;
+    saleCount: number;
+    nextBillingDate: string;
+    minimumBillableUSD: number;
+  };
+  bills: TransactionFeeBill[];
+}
+export function apiGetTransactionFees(storeId: string) {
+  return client.get<never, ApiResponse<TransactionFeesOverview>>(`/api/transaction-fees/${storeId}`);
 }
 
 export function apiGetStoreInvoices(storeId: string, query: { page?: number; limit?: number } = {}) {

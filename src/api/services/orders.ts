@@ -164,8 +164,8 @@ interface DownloadLinkResponse {
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-export function apiMarkOrderPaid(orderId: string) {
-  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.MARK_PAID(orderId));
+export function apiMarkOrderPaid(storeId: string, orderId: string) {
+  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.MARK_PAID(storeId, orderId));
 }
 
 export function apiUpdateOrderStatus(payload: UpdateStatusPayload) {
@@ -213,7 +213,8 @@ export function apiCancelOrderAsSeller(storeId: string, orderId: string, payload
   return client.post<never, CancelOrderResponse>(ENDPOINTS.ORDERS.SELLER_CANCEL(storeId, orderId), payload);
 }
 
-export interface RefundOrderPayload { amount: number; reason?: string }
+/** `refundTo` defaults to the original payment method when omitted. */
+export interface RefundOrderPayload { amount: number; reason?: string; refundTo?: 'original' | 'store_credit' }
 interface RefundOrderResponse {
   success: boolean;
   message: string;

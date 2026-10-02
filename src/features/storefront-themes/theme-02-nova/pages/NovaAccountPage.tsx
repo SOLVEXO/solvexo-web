@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, Award, MessageCircle, Bell, RotateCcw, Gift, Star, ChevronRight } from 'lucide-react';
+import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, Award, MessageCircle, Bell, RotateCcw, Gift, Wallet, ChevronRight } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -144,7 +144,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
 
 /** Theme 02's own Account page — profile edit + real order history, the
  *  same storefront-local scope as `AtelierAccountPage` (no wishlist/
- *  subscriptions/messages tabs yet — a later phase, matching that page's
+ *  messages tabs yet — a later phase, matching that page's
  *  own disclosed boundary). */
 export function NovaAccountPage() {
   useStorefrontSeo({ title: 'My Account', noindex: true });
@@ -196,7 +196,7 @@ export function NovaAccountPage() {
           { to: '/notifications', icon: Bell, label: 'Notifications' },
           { to: '/returns', icon: RotateCcw, label: 'Returns' },
           { to: '/gift-cards', icon: Gift, label: 'Gift Cards' },
-          { to: '/subscriptions', icon: Star, label: 'Membership' },
+          { to: '/store-credit', icon: Wallet, label: 'Store credit' },
         ].map(link => (
           <Link
             key={link.to} to={link.to}

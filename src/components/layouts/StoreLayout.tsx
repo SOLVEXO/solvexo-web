@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown,
   ClipboardList, Megaphone, Star, Search, Wallet,
-  Truck, MessageSquare, FolderTree, RefreshCw, Undo2,
+  Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
   Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, Blocks, MailCheck, Landmark,
@@ -200,7 +200,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // member granted only that, not general view, still needs a nav path.
       { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards',    requiredPermission: ['giftcards.view', 'giftcards.manage'] },
       { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' },
-      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['subscriptions.view', 'subscriptions.manage', 'subscriptions.subscribers.manage'], requiredEntitlement: 'subscriptionProductsAllowed' },
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
       { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],

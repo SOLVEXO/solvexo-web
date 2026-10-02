@@ -204,16 +204,24 @@ function OverviewTab({ storeId }: { storeId: string }) {
 function TiersTab({ storeId, program, onSaved }: { storeId: string; program: LoyaltyProgram; onSaved: (p: LoyaltyProgram) => void }) {
   const [tiers, setTiers] = useState<LoyaltyTier[]>(program.tiers ?? []);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   function update(i: number, patch: Partial<LoyaltyTier>) {
     setTiers(prev => prev.map((t, idx) => idx === i ? { ...t, ...patch } : t));
   }
 
   async function save() {
+    setError('');
+    if (tiers.some(t => !t.name.trim())) {
+      setError('Every tier needs a name.');
+      return;
+    }
     setSaving(true);
     try {
       const res = await apiUpdateTiers(storeId, tiers);
       onSaved(res.data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save tiers.');
     } finally {
       setSaving(false);
     }
@@ -244,6 +252,7 @@ function TiersTab({ storeId, program, onSaved }: { storeId: string; program: Loy
           </button>
         </div>
       ))}
+      {error && <p role="alert" className="text-[12.5px] text-error">{error}</p>}
       <div className="flex gap-2">
         <button onClick={() => setTiers(prev => [...prev, { name: '', minPoints: 0, benefits: [] }])} className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
           + Add Tier

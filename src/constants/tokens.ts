@@ -132,7 +132,6 @@ export const PRODUCT_TYPES = [
   { id: 'digital',        icon: 'download',  label: 'Digital Downloads',     desc: 'PDFs, files, audio, video'   },
   { id: 'educational',    icon: 'book-open', label: 'Educational Resources', desc: 'Worksheets, lesson plans'    },
   { id: 'services',       icon: 'calendar',  label: 'Services / Bookings',  desc: 'Appointments and packages'   },
-  { id: 'subscriptions',  icon: 'repeat',    label: 'Subscriptions',         desc: 'Recurring membership access' },
   { id: 'pos',            icon: 'monitor',   label: 'In-Person / POS',      desc: 'Sell at a physical location'  },
 ] as const;
 
@@ -177,7 +176,7 @@ export const PRICING_PLANS = [
     features: [
       'Everything in Professional', 'Multi-location POS', 'Unlimited staff accounts',
       'AI Studio — 5,000 credits / mo', 'Loyalty & Rewards program',
-      'Subscription products', 'Advanced shipping rules',
+      'Advanced shipping rules',
       'API access & webhooks', 'Dedicated account manager',
       '0.5% transaction fee', 'White-label store option', 'SLA — 99.9% uptime',
     ],

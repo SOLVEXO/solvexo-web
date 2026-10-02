@@ -3,7 +3,7 @@ import { ENDPOINTS } from '../endpoints';
 import type { ActiveCampaignBadge } from './marketplace';
 
 export type SellerType  = 'creator' | 'educator' | 'retailer' | 'brand_business' | 'freelancer' | 'mix';
-export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services_bookings' | 'subscriptions' | 'in_person_pos';
+export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services_bookings' | 'in_person_pos';
 
 // Was a literal `'PKR' | 'USD'` union — now a real, admin-configurable
 // Markets list (see AdminConfigService.getEnabledCurrencies on the backend),
@@ -463,12 +463,6 @@ export interface PublicStoreProduct {
   /** True when any active variant can be bought (unlimited or stock > 0). */
   inStock?:            boolean;
   compareAtPrice?:     number | null;
-  // Present only when the requester has an active, discount-granting
-  // subscription to this store — resolved server-side only.
-  subscriberPrice?:    number;
-  youSaveUSD?:         number;
-  discountPercent?:    number;
-  subscriberPlanName?: string;
   activeCampaign?:     ActiveCampaignBadge | null;
 }
 

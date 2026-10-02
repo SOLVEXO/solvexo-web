@@ -290,7 +290,7 @@ export function StoreOrderList() {
                 onClick: () => {
                   if (busy) return;
                   setMarkingPaidId(o.orderId);
-                  apiMarkOrderPaid(o.orderId)
+                  apiMarkOrderPaid(storeId, o.orderId)
                     .then(() => setOrders(prev =>
                       prev.map(x => x.orderId === o.orderId ? { ...x, isPaid: true } : x)
                     ))
@@ -303,7 +303,10 @@ export function StoreOrderList() {
                 icon: <RefreshCw size={13} />,
                 onClick: () => changeStatus('processing'),
               }] : []),
-              ...(o.status !== 'completed' && o.status !== 'cancelled' ? [{
+              // Forward-only (mirrors the backend's isAllowedSellerOrderTransition): a
+              // delivered/completed/cancelled/refunded order can't be shipped again, and
+              // only an order that hasn't been closed out can be completed.
+              ...(['pending', 'processing', 'shipped'].includes(o.status) ? [{
                 label: 'Mark Shipped',
                 icon: <Truck size={13} />,
                 onClick: () => {
@@ -313,7 +316,8 @@ export function StoreOrderList() {
                   setSelectedCarrierId('');
                   setShippingOrder(o);
                 },
-              }, {
+              }] : []),
+              ...(['pending', 'processing', 'shipped', 'delivered'].includes(o.status) ? [{
                 label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Completed',
                 icon: <CheckCheck size={13} />,
                 onClick: () => changeStatus('completed'),

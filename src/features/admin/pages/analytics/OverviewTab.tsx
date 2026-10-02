@@ -43,7 +43,7 @@ export function OverviewTab({ params, compareToPreviousPeriod }: { params: BaseA
       trend: d.totalRevenueChangePercent != null ? formatPercent(d.totalRevenueChangePercent, { signed: true }) : undefined,
       trendUp: (d.totalRevenueChangePercent ?? 0) >= 0,
     },
-    { label: 'Platform Earnings', value: formatCurrency(d.platformEarnings), icon: <DollarSign size={16} />, sub: `Commission ${formatCurrency(d.platformCommission)} + Subs ${formatCurrency(d.subscriptionRevenue)}` },
+    { label: 'Platform Earnings', value: formatCurrency(d.platformEarnings), icon: <DollarSign size={16} />, sub: `Commission ${formatCurrency(d.platformCommission)}` },
     {
       label: 'Total Orders', value: formatNumber(d.totalOrders), icon: <ShoppingCart size={16} />,
       trend: `${d.totalOrdersChange >= 0 ? '+' : ''}${d.totalOrdersChange} vs prev.`, trendUp: d.totalOrdersChange >= 0,
@@ -61,7 +61,7 @@ export function OverviewTab({ params, compareToPreviousPeriod }: { params: BaseA
     { label: 'Cancelled Orders', value: formatNumber(d.cancelledOrders), icon: <ShoppingCart size={16} /> },
     // Phase 1 — Solvexo's own recurring revenue from sellers on a platform
     // plan (distinct from "Platform Earnings" above, which is order
-    // commission + buyer-VIP revenue). Platform-wide only — the backend
+    // commission). Platform-wide only — the backend
     // omits these fields entirely for a storeId/sellerId drill-down, so
     // they simply don't render rather than showing a stale/wrong figure.
     ...(d.sellerPlatformMRR != null ? [{ label: 'Seller Platform MRR', value: formatCurrency(d.sellerPlatformMRR), icon: <CreditCard size={16} />, sub: `ARR ${formatCurrency(d.sellerPlatformARR ?? 0)}` }] : []),

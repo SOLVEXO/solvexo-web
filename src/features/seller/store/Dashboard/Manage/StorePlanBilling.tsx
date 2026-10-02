@@ -13,10 +13,10 @@ import { SkeletonBox } from '@/components/comman/ui';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan,
   apiPreviewPlatformPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
-  apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices, apiGetAddonCatalog,
+  apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices, apiGetAddonCatalog, apiGetTransactionFees,
   type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary, type AddonPurchase, type AddonType,
   type AddonCatalogItem,
-  type PlatformPlanInvoice, type PlanChangePreview,
+  type PlatformPlanInvoice, type PlanChangePreview, type TransactionFeesOverview,
 } from '@/api/services/platformPlans';
 
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
@@ -44,6 +44,92 @@ const ADDON_LABELS: Record<AddonType, string> = {
 /** One key per confirm attempt — reused if that same purchase is retried, so it can't charge twice. */
 function newAddonIdempotencyKey(storeId: string, addonType: string): string {
   return `platform-addon-${storeId}-${addonType}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+const FEE_BILL_STATUS_STYLE: Record<string, string> = {
+  paid: 'bg-[#e3f4ea] text-[#1e7a3c]',
+  invoiced: 'bg-[#fdf2da] text-[#946200]',
+  creating: 'bg-[#fdf2da] text-[#946200]',
+  payment_failed: 'bg-[#fdecea] text-[#c0392b]',
+  failed: 'bg-[#fdecea] text-[#c0392b]',
+};
+
+/**
+ * Shopify's "third-party transaction fee": a plan-based % on sales paid through a gateway that isn't
+ * the platform's own card rail (the store's own gateway, or a custom rate). It is NOT taken from any
+ * sales balance — it accrues here and is billed once a month with the plan bill.
+ */
+function TransactionFeesCard({ storeId }: { storeId: string }) {
+  const [data, setData] = useState<TransactionFeesOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    setLoading(true); setError('');
+    apiGetTransactionFees(storeId)
+      .then(res => { if (!cancelled) setData(res.data); })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load transaction fees.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  const accrued = data?.accrued;
+  return (
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+      <div className="px-5 py-[14px] border-b border-bone">
+        <p className="text-[13px] font-bold text-carbon">Transaction fees</p>
+        <p className="text-[11px] text-slate mt-0.5">Charged on sales paid through a third-party gateway. Billed once a month with your plan — never deducted from your sales.</p>
+      </div>
+      {loading ? (
+        <div className="px-5 py-5"><SkeletonBox height={40} /></div>
+      ) : error ? (
+        <p role="alert" className="px-5 py-5 text-[13px] text-error">{error}</p>
+      ) : (
+        <>
+          <div className="px-5 py-4 border-b border-bone flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] text-slate uppercase tracking-wide">Accrued this period</p>
+              <p className="text-[20px] font-bold text-carbon">
+                {accrued && accrued.estimatedUSD != null ? `${accrued.estimatedUSD.toFixed(2)}` : '—'}
+              </p>
+              <p className="text-[11px] text-slate">
+                {accrued?.saleCount ?? 0} sale(s)
+                {accrued && accrued.byCurrency.length > 0 && ' · ' + accrued.byCurrency.map(c => `${c.amount.toFixed(2)} ${c.currency}`).join(', ')}
+              </p>
+            </div>
+            <p className="text-[11px] text-slate">
+              Next bill: {accrued ? new Date(accrued.nextBillingDate).toLocaleDateString() : '—'}
+              {accrued && ` (totals under ${accrued.minimumBillableUSD.toFixed(2)} roll into the next month)`}
+            </p>
+          </div>
+          {(data?.bills ?? []).length === 0 ? (
+            <p className="px-5 py-5 text-center text-[13px] text-slate">No transaction-fee bills yet.</p>
+          ) : (
+            <div className="flex flex-col">
+              {data!.bills.map(b => (
+                <div key={b._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-carbon">{b.periodKey}</p>
+                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)} · {b.saleCount} sale(s)</p>
+                  </div>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${FEE_BILL_STATUS_STYLE[b.status] ?? 'bg-bone text-slate'}`}>
+                      {b.status.replace('_', ' ')}
+                    </span>
+                    {b.hostedInvoiceUrl && (
+                      <a href={b.hostedInvoiceUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-brand-orange hover:underline">View invoice</a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 function daysUntil(dateStr: string): number {
@@ -530,6 +616,8 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             </div>
           )}
         </div>
+
+        <TransactionFeesCard storeId={storeId} />
       </div>
 
       {checkoutPlanId && (

@@ -24,7 +24,7 @@ const ADDON_LABELS: Record<string, string> = {
 
 const DEFAULT_LIMITS: PlatformPlanLimits = {
   maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 0, transactionFeeRate: 0.05,
-  customDomainAllowed: false, whiteLabelAllowed: false, loyaltyProgramAllowed: false, subscriptionProductsAllowed: false,
+  customDomainAllowed: false, whiteLabelAllowed: false, loyaltyProgramAllowed: false,
   advancedAnalyticsAllowed: false, abandonedCartRecoveryAllowed: false, emailCampaignsAllowed: false,
   apiWebhooksAllowed: false, dedicatedAccountManager: false, prioritySupport: false, marketplaceFeaturedBadge: false,
   advancedSeoToolsAllowed: false, seoAiSuggestionsAllowed: false, searchConsoleIntegrationAllowed: false, customRedirectsAllowed: false,
@@ -60,7 +60,6 @@ const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string; soon?: 
   { key: 'customDomainAllowed', label: 'Custom domain' },
   { key: 'whiteLabelAllowed', label: 'White label' },
   { key: 'loyaltyProgramAllowed', label: 'Loyalty program' },
-  { key: 'subscriptionProductsAllowed', label: 'Store subscriptions' },
   { key: 'abandonedCartRecoveryAllowed', label: 'Abandoned cart recovery' },
   { key: 'emailCampaignsAllowed', label: 'Email campaigns' },
   { key: 'dedicatedAccountManager', label: 'Dedicated account manager' },

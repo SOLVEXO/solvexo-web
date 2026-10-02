@@ -60,15 +60,13 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
   const nativeCompareAt = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;
   const vId         = defaultVariant?._id ?? '';
-  const nativeSubscriberPrice = defaultVariant?.subscriberPrice;
 
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const nativeCurrency = defaultVariant?.currency;
   const priceSymbol = currencySymbol(displayCurrency);
   const lowestPrice = nativeLowestPrice != null ? convert(nativeLowestPrice, nativeCurrency) : null;
   const compareAt = nativeCompareAt != null ? convert(nativeCompareAt, nativeCurrency) : null;
-  const subscriberPrice = nativeSubscriberPrice != null ? convert(nativeSubscriberPrice, nativeCurrency) : undefined;
-  const displayPrice    = subscriberPrice ?? lowestPrice;
+  const displayPrice    = lowestPrice;
   const pctOff = compareAt != null && displayPrice != null && compareAt > displayPrice
     ? Math.round((1 - displayPrice / compareAt) * 100)
     : null;
@@ -173,7 +171,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
             <div className="flex items-end justify-between gap-1">
               <div className="min-w-0">
                 <div className="flex items-baseline gap-[4px] flex-wrap">
-                  <span className={clsx('text-[13px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+                  <span className={'text-[13px] font-bold tracking-tight text-carbon'}>
                     {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
                   </span>
                   {compareAt != null && compareAt > (displayPrice ?? 0) && (
@@ -238,7 +236,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
           <div className="mt-auto flex items-end justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-baseline gap-[5px] flex-wrap">
-                <span className={clsx('text-[14.5px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+                <span className={'text-[14.5px] font-bold tracking-tight text-carbon'}>
                   {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
                 </span>
                 {compareAt != null && compareAt > (displayPrice ?? 0) && (

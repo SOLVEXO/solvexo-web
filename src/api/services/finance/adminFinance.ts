@@ -74,7 +74,7 @@ export interface AdminFinanceOverviewCurrencyRow {
   totalOrders: number;
   platformEarnings: number;
   platformCommission: number;
-  subscriptionRevenue: number;
+ 
   paymentProcessingFees: number;
   sellerBalances: { totalAvailable: number; totalPending: number };
   lifetimeTotals: { totalRevenue: number; totalFees: number; totalRefunds: number; totalPayouts: number };
@@ -89,7 +89,7 @@ export interface AdminFinanceConsolidatedUSD {
   totalOrders: number;
   platformEarnings: number;
   platformCommission: number;
-  subscriptionRevenue: number;
+ 
   paymentProcessingFees: number;
   sellerBalances: { totalAvailable: number; totalPending: number };
   /** Portion of gmv / platformEarnings that came from non-USD (PKR) stores, already in USD. */
@@ -342,13 +342,13 @@ export interface MonthlyReportByCurrency {
   refunds: number;
   payouts: number;
   platformCommission: number;
-  subscriptionRevenue: number;
+ 
   platformEarnings: number;
 }
 export interface MonthlyReportRow {
   month: string;
   byCurrency: MonthlyReportByCurrency[];
-  usd: { gmv: number; refunds: number; payouts: number; platformCommission: number; subscriptionRevenue: number; platformEarnings: number };
+  usd: { gmv: number; refunds: number; payouts: number; platformCommission: number; platformEarnings: number };
 }
 
 export interface AdminMonthlyReportData { monthly: MonthlyReportRow[] }
@@ -402,6 +402,26 @@ function qs(query: Record<string, unknown> = {}) {
 }
 
 // ── A. Dashboard overview ───────────────────────────────────────────────────────
+
+/** What sellers pay Solvexo (USD only): platform plans + collected third-party transaction fees. */
+export interface AdminPlatformRevenueData {
+  currency: 'USD';
+  range: FinancePeriod;
+  planRevenue: { grossUSD: number; refundedUSD: number; netUSD: number; invoiceCount: number };
+  transactionFees: {
+    collectedUSD: number;
+    billCount: number;
+    invoicedUnpaidUSD: number;
+    accruedUnbilledUSD: number;
+    unconvertibleCurrencies?: string[];
+  };
+  totalRevenueUSD: number;
+  note: string;
+}
+
+export function apiAdminFinancePlatformRevenue(params: AdminFinanceParams = {}) {
+  return client.get<never, ApiResponse<AdminPlatformRevenueData>>(`${ENDPOINTS.FINANCE.ADMIN.PLATFORM_REVENUE}${qs(params)}`);
+}
 
 export function apiAdminFinanceOverview(params: AdminFinanceParams = {}) {
   return client.get<never, ApiResponse<AdminFinanceOverviewData>>(`${ENDPOINTS.FINANCE.ADMIN.OVERVIEW}${qs(params)}`);

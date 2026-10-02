@@ -22,7 +22,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const inWishlist = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const symbol = currencySymbol(currency);
-  const price = product.subscriberPrice ?? product.defaultVariantPrice;
+  const price = product.defaultVariantPrice;
   const onSale = product.compareAtPrice != null && product.defaultVariantPrice != null && product.compareAtPrice > product.defaultVariantPrice;
 
   const media = product.images?.[0] ? (

@@ -8,7 +8,7 @@ import { takePendingPlan } from '@/utils/pendingPlan';
 import { Button } from '@/components/comman/ui/Button';
 import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
-  Package, Download, Calendar, Repeat, MonitorSmartphone,
+  Package, Download, Calendar, MonitorSmartphone,
   Sparkles, ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
   ShieldCheck,
 } from 'lucide-react';
@@ -118,7 +118,6 @@ const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; 
   { id: 'digital_downloads', Icon: Download,          title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
   { id: 'digital_downloads', Icon: BookOpen,          title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
   { id: 'services_bookings', Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
-  { id: 'subscriptions',     Icon: Repeat,            title: 'Subscriptions',         desc: 'Recurring membership access' },
   { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
 ];
 

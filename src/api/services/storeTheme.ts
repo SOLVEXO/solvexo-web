@@ -135,7 +135,6 @@ export interface IdentityBanner {
   showFollowButton:     boolean;
   showMessageButton:    boolean;
   showLoyaltyButton:    boolean;
-  showMembershipButton: boolean;
   layout:               IdentityBannerLayout;
   showBadges:           boolean;
   showFollowerCount:    boolean;

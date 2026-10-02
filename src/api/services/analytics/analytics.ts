@@ -169,7 +169,6 @@ export interface PaymentMethodRow { paymentType: string; label: string; orderCou
 
 export interface SellerRevenueBreakdownData {
   oneTimeOrderRevenue: number;
-  recurringSubscriptionRevenue: number;
   totalRevenue: number;
   note: string;
 }

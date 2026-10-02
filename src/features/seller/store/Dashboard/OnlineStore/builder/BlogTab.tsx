@@ -20,7 +20,7 @@ const ta  = `${inp} resize-y min-h-[70px]`;
 const CONTENT_BLOCK_TYPES = ['paragraph', 'heading', 'image', 'quote', 'list', 'divider'];
 
 function slugify(title: string) {
-  return title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+  return title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 export function BlogTab({ storeId }: { storeId: string }) {
@@ -118,8 +118,12 @@ export function BlogTab({ storeId }: { storeId: string }) {
 
   const handleSaveMeta = async (patch: Partial<{ title: string; excerpt: string; coverImage: string; authorName: string; seoTitle: string; seoDescription: string }>) => {
     if (!selected) return;
-    const res = await apiUpdateBlogPost(storeId, selected._id, patch);
-    setPosts(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+    try {
+      const res = await apiUpdateBlogPost(storeId, selected._id, patch);
+      setPosts(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+    } catch (err: unknown) {
+      flash(false, err instanceof Error ? err.message : 'Failed to save changes.');
+    }
   };
 
   const handleSaveContent = async () => {
@@ -206,21 +210,21 @@ export function BlogTab({ storeId }: { storeId: string }) {
         {selected ? (
           <>
             <div className="bg-white border border-bone rounded-xl p-4 flex flex-col gap-3">
-              <Field label="Title"><input className={inp} defaultValue={selected.title} onBlur={e => handleSaveMeta({ title: e.target.value })} /></Field>
-              <Field label="Excerpt"><textarea className={ta} defaultValue={selected.excerpt} onBlur={e => handleSaveMeta({ excerpt: e.target.value })} /></Field>
+              <Field label="Title"><input className={inp} maxLength={120} defaultValue={selected.title} onBlur={e => handleSaveMeta({ title: e.target.value })} /></Field>
+              <Field label="Excerpt"><textarea className={ta} maxLength={240} defaultValue={selected.excerpt} onBlur={e => handleSaveMeta({ excerpt: e.target.value })} /></Field>
               <Field label="Cover image"><ImageUpload value={selected.coverImage ? [selected.coverImage] : []} onChange={urls => handleSaveMeta({ coverImage: urls[0] ?? '' })} maxFiles={1} storeId={storeId} /></Field>
               <Field label="Author" hint="Shown as the byline on the published article.">
-                <input key={selected._id} className={inp} defaultValue={selected.authorName} onBlur={e => handleSaveMeta({ authorName: e.target.value })} placeholder="Your name" />
+                <input key={selected._id} className={inp} maxLength={120} defaultValue={selected.authorName} onBlur={e => handleSaveMeta({ authorName: e.target.value })} placeholder="Your name" />
               </Field>
             </div>
 
             <div className="bg-white border border-bone rounded-xl p-4 flex flex-col gap-3">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate">Search engine listing</p>
               <Field label="Page title" hint="Defaults to the post's own title.">
-                <input key={`${selected._id}-seoTitle`} className={inp} defaultValue={selected.seoTitle ?? ''} onBlur={e => handleSaveMeta({ seoTitle: e.target.value })} placeholder={selected.title} />
+                <input key={`${selected._id}-seoTitle`} className={inp} maxLength={70} defaultValue={selected.seoTitle ?? ''} onBlur={e => handleSaveMeta({ seoTitle: e.target.value })} placeholder={selected.title} />
               </Field>
               <Field label="Meta description" hint="Defaults to the post's excerpt.">
-                <textarea key={`${selected._id}-seoDescription`} className={ta} defaultValue={selected.seoDescription ?? ''} onBlur={e => handleSaveMeta({ seoDescription: e.target.value })} placeholder={selected.excerpt || 'Briefly describe this post for search engines...'} />
+                <textarea key={`${selected._id}-seoDescription`} className={ta} maxLength={320} defaultValue={selected.seoDescription ?? ''} onBlur={e => handleSaveMeta({ seoDescription: e.target.value })} placeholder={selected.excerpt || 'Briefly describe this post for search engines...'} />
               </Field>
             </div>
 

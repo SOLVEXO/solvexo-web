@@ -1,7 +1,7 @@
 import { DollarSign, Wallet, Clock, RotateCcw, ShoppingCart, Percent } from 'lucide-react';
 import { MetricCard } from '@/components/comman/ui';
 import { LineChart } from '@/components/comman/charts';
-import { useAdminFinanceOverview, useAdminFinanceRevenueOverTime } from '@/hooks/admin/useAdminFinance';
+import { useAdminFinanceOverview, useAdminFinanceRevenueOverTime, useAdminFinancePlatformRevenue } from '@/hooks/admin/useAdminFinance';
 import type { AdminFinanceParams, PayoutStatus } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
@@ -9,6 +9,39 @@ import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/f
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 
 const PAYOUT_STATUSES: PayoutStatus[] = ['pending', 'processing', 'completed', 'failed'];
+
+/** Solvexo's own revenue = what sellers pay it (plans + third-party transaction fees), USD only. */
+function PlatformRevenueSection({ params }: { params: AdminFinanceParams }) {
+  const rev = useAdminFinancePlatformRevenue(params);
+  const d = rev.data;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[12px] font-semibold text-slate uppercase tracking-[0.06em]">Solvexo revenue — paid by sellers (USD)</p>
+      {rev.error ? (
+        <AnalyticsErrorState message={rev.error} onRetry={rev.refetch} />
+      ) : rev.loading || !d ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <MetricCard label="Total revenue" value={formatMoneyCompact(d.totalRevenueUSD, 'USD')} icon={<DollarSign size={18} />} sub="Plans + collected transaction fees" />
+            <MetricCard label="Plans & subscriptions" value={formatMoneyCompact(d.planRevenue.netUSD, 'USD')} icon={<Wallet size={16} />} sub={`${formatNumber(d.planRevenue.invoiceCount)} paid invoice(s), net of ${formatMoneyCompact(d.planRevenue.refundedUSD, 'USD')} refunds`} />
+            <MetricCard label="Transaction fees collected" value={formatMoneyCompact(d.transactionFees.collectedUSD, 'USD')} icon={<Percent size={16} />} sub={`${formatNumber(d.transactionFees.billCount)} paid monthly bill(s)`} />
+            <MetricCard label="Fees not yet collected" value={formatMoneyCompact(d.transactionFees.invoicedUnpaidUSD + d.transactionFees.accruedUnbilledUSD, 'USD')} icon={<Clock size={16} />} sub={`Invoiced ${formatMoneyCompact(d.transactionFees.invoicedUnpaidUSD, 'USD')} · accrued ${formatMoneyCompact(d.transactionFees.accruedUnbilledUSD, 'USD')}`} />
+          </div>
+          {d.transactionFees.unconvertibleCurrencies && d.transactionFees.unconvertibleCurrencies.length > 0 && (
+            <p className="text-[11px] text-red-600">
+              No FX rate set for {d.transactionFees.unconvertibleCurrencies.join(', ')} — their accrued fees are excluded from the figure above. Set a rate in FX Settings.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export function FinanceOverviewTab({ params }: { params: AdminFinanceParams }) {
   const overview = useAdminFinanceOverview(params);
@@ -19,6 +52,8 @@ export function FinanceOverviewTab({ params }: { params: AdminFinanceParams }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <PlatformRevenueSection params={params} />
+
       {/* Each section fails independently — an overview-metrics error no
           longer blanks the whole tab, including the separately-fetched
           revenue chart below. */}
@@ -37,7 +72,7 @@ export function FinanceOverviewTab({ params }: { params: AdminFinanceParams }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <MetricCard label="GMV" value={formatMoneyCompact(d.consolidatedUSD.gmv, 'USD')} icon={<DollarSign size={18} />} sub={d.consolidatedUSD.pkrShare.gmv > 0 ? `incl. ${formatMoneyCompact(d.consolidatedUSD.pkrShare.gmv, 'USD')} from local-currency stores` : undefined} />
-              <MetricCard label="Platform Earnings" value={formatMoneyCompact(d.consolidatedUSD.platformEarnings, 'USD')} icon={<Percent size={18} />} sub={`Commission ${formatMoneyCompact(d.consolidatedUSD.platformCommission, 'USD')} + Subs ${formatMoneyCompact(d.consolidatedUSD.subscriptionRevenue, 'USD')}`} />
+              <MetricCard label="Platform Earnings" value={formatMoneyCompact(d.consolidatedUSD.platformEarnings, 'USD')} icon={<Percent size={18} />} sub={`Commission ${formatMoneyCompact(d.consolidatedUSD.platformCommission, 'USD')}`} />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

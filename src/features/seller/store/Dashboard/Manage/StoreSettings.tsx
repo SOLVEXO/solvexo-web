@@ -11,12 +11,11 @@ const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   digital_downloads:    'Digital Downloads',
   educational_resources:'Educational Resources',
   services_bookings:    'Services / Bookings',
-  subscriptions:        'Subscriptions',
   in_person_pos:        'In-Person / POS',
 };
 const ALL_PRODUCT_TYPES: ProductType[] = [
   'physical_products', 'digital_downloads', 'educational_resources',
-  'services_bookings', 'subscriptions', 'in_person_pos',
+  'services_bookings', 'in_person_pos',
 ];
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────

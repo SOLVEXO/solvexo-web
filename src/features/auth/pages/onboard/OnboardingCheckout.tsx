@@ -304,7 +304,6 @@ const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) =>
     { label: 'Orders, draft orders, returns & disputes', get: ALL },
     { label: 'Gift cards', get: ALL },
     { label: 'Discount codes', get: ALL },
-    { label: 'Customer subscriptions & memberships', get: p => flag(p.limits.subscriptionProductsAllowed) },
   ] },
   { group: 'Inventory & POS', rows: [
     { label: 'Inventory, purchase orders & stock counts', get: ALL },

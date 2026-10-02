@@ -86,6 +86,14 @@ export function apiPlaceCodOrder(payload: CodPaymentPayload) {
   return client.post<never, CodPaymentResponse>(ENDPOINTS.PAYMENT.COD, payload);
 }
 
+/** POST /api/payment/store-credit-payment — places the order when store credit
+ *  covers the WHOLE checkout total. `idempotencyKey`: one per place-order attempt. */
+export function apiStoreCreditPayment(payload: { checkoutId: string }, idempotencyKey: string) {
+  return client.post<never, CodPaymentResponse>(
+    ENDPOINTS.PAYMENT.STORE_CREDIT_PAYMENT, payload, { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
+}
+
 /** POST /api/payment/initiate-payment — creates (or reuses) a Stripe PaymentIntent
  *  for a checkout. Returns a clientSecret for Stripe Elements/PaymentElement.
  *  `paymentMode: 'split'` (mixed carts only) charges just the digital-items

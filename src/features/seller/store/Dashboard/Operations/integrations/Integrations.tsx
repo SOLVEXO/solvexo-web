@@ -460,7 +460,7 @@ function StripeConnectSection({ integration, onChanged }: { integration: StoreIn
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[12.5px] text-slate">
-        Connect your own Stripe account to receive buyer payments directly — Solvexo's commission is deducted automatically, and the rest lands in your bank account via Stripe's own payout schedule, instead of a manual payout request.
+        Connect your Stripe account to accept card payments at checkout — without it your store can't take cards (cash on delivery and bank transfer still work). Buyer payments go straight to your Stripe account and are paid out to your bank on Stripe's own schedule. Solvexo takes no commission on these sales; you only pay the card processing fee.
       </p>
       {integration.lastError && (
         // Amber, not red — this just means "not finished yet," not "broken"

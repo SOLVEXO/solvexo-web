@@ -61,10 +61,17 @@ function GiftCardSettingsCard({ storeId, storeCurrency }: { storeId: string; sto
   );
 
   const handleSave = async () => {
+    // The backend requires expiryMonths >= 1. It is only meaningful when
+    // cards DO expire; when "never expires" is on, keep the stored value.
+    if (!neverExpires && !(expiryMonths >= 1)) {
+      setSaveMsg({ ok: false, text: 'Enter at least 1 month, or turn on "Gift cards never expire".' });
+      return;
+    }
+    const safeExpiryMonths = neverExpires ? Math.max(1, settings?.expiryMonths ?? 12) : Math.floor(expiryMonths);
     setSaving(true);
     setSaveMsg(null);
     try {
-      const res = await apiUpdateGiftCardSettings(storeId, { purchaseEnabled, denominations, neverExpires, expiryMonths });
+      const res = await apiUpdateGiftCardSettings(storeId, { purchaseEnabled, denominations, neverExpires, expiryMonths: safeExpiryMonths });
       setSettings(res.data);
       setSaveMsg({ ok: true, text: 'Gift card settings saved.' });
     } catch (e) {

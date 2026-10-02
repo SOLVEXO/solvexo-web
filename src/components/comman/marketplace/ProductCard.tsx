@@ -179,8 +179,6 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const nativeCompareAt = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;
   const vId         = defaultVariant?._id ?? '';
-  const nativeSubscriberPrice = defaultVariant?.subscriberPrice;
-  const discountPercent = defaultVariant?.discountPercent;
 
   // Every price is converted from this product's own native (store)
   // currency into the buyer's currently-selected display currency — this is
@@ -192,7 +190,6 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const nativeCurrency = defaultVariant?.currency;
   const lowestPrice = nativeLowestPrice != null ? convert(nativeLowestPrice, nativeCurrency) : null;
   const compareAt = nativeCompareAt != null ? convert(nativeCompareAt, nativeCurrency) : null;
-  const subscriberPrice = nativeSubscriberPrice != null ? convert(nativeSubscriberPrice, nativeCurrency) : undefined;
   const priceSymbol = currencySymbol(displayCurrency);
   const pctOff = compareAt != null && lowestPrice != null && compareAt > lowestPrice
     ? Math.round((1 - lowestPrice / compareAt) * 100)
@@ -384,18 +381,12 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           )}
         </div>
 
-        {subscriberPrice != null && (
-          <p className="text-[9px] font-semibold text-brand-orange mt-[3px]">Members save {discountPercent}%</p>
-        )}
-
         <div className={clsx('flex items-center gap-3 min-w-0', isList ? 'justify-between flex-wrap mt-2 pt-2 border-t border-bone/70' : 'justify-start mt-auto pt-2')}>
           <div className="flex items-baseline gap-[5px] min-w-0">
-            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[14px]' : 'text-[14px] sm:text-[16px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-              {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
+            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[14px]' : 'text-[14px] sm:text-[16px]', 'text-carbon')}>
+              {lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
             </span>
-            {subscriberPrice != null && lowestPrice != null ? (
-              <span className="text-[10px] text-slate/70 line-through shrink-0">{priceSymbol} {lowestPrice.toLocaleString()}</span>
-            ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
+            {compareAt != null && compareAt > (lowestPrice ?? 0) && (
               <span className="text-[10px] text-slate/70 line-through shrink-0">{priceSymbol}{compareAt.toLocaleString()}</span>
             )}
           </div>

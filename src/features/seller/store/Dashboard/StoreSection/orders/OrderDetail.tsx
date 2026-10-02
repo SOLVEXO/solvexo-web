@@ -71,6 +71,7 @@ export function StoreOrderDetail() {
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [refundError, setRefundError] = useState('');
+  const [refundTo, setRefundTo] = useState<'original' | 'store_credit'>('original');
   const [paymentRecords, setPaymentRecords] = useState<OrderPaymentRecordRow[]>([]);
   const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -111,7 +112,7 @@ export function StoreOrderDetail() {
   const handleMarkPaid = () => {
     if (busy) return;
     setBusyAction('paid');
-    apiMarkOrderPaid(orderId)
+    apiMarkOrderPaid(storeId, orderId)
       .then(load)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
       .finally(() => setBusyAction(null));
@@ -207,7 +208,7 @@ export function StoreOrderDetail() {
     if (!amount || amount <= 0) { setRefundError('Enter a valid refund amount.'); return; }
     setBusyAction('refund');
     setRefundError('');
-    apiRefundOrderAsSeller(storeId, orderId, { amount, reason: refundReason.trim() || undefined })
+    apiRefundOrderAsSeller(storeId, orderId, { amount, reason: refundReason.trim() || undefined, refundTo })
       .then(() => { setShowRefundModal(false); setRefundAmount(''); setRefundReason(''); load(); })
       .catch((err: unknown) => setRefundError(err instanceof Error ? err.message : 'Failed to issue refund.'))
       .finally(() => setBusyAction(null));
@@ -251,7 +252,8 @@ export function StoreOrderDetail() {
   if (!detail) return null;
   const so = detail.sellerOrder;
   const canProcess  = so.status === 'pending';
-  const canShip     = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded' && !so.status.startsWith('partially_') && so.fulfillmentType !== 'digital';
+  // Forward-only, mirroring the backend's isAllowedSellerOrderTransition: a delivered order can't go back to shipped.
+  const canShip     = ['pending', 'processing', 'shipped'].includes(so.status) && so.fulfillmentType !== 'digital';
   const canComplete = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
   const canCancel   = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
   const canRefund   = detail.isPaid;
@@ -417,7 +419,7 @@ export function StoreOrderDetail() {
                 {canRefund && (
                   <Button
                     size="sm" variant="outline"
-                    onClick={() => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setShowRefundModal(true); }}
+                    onClick={() => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setRefundTo('original'); setShowRefundModal(true); }}
                     disabled={busy}
                   >
                     <Undo2 size={13} /> Issue Refund
@@ -580,8 +582,16 @@ export function StoreOrderDetail() {
         >
           {refundError && <p className="text-[12px] text-error mb-3">{refundError}</p>}
           <p className="text-[12.5px] text-slate mb-4">
-            Refunds this amount to the customer's original payment method and debits your store balance. This doesn't cancel or change any items on the order.
+            {refundTo === 'store_credit'
+              ? 'Customer gets spendable credit in your store; no card refund is made. This doesn\'t cancel or change any items on the order.'
+              : 'Refunds this amount to the customer\'s original payment method and debits your store balance. This doesn\'t cancel or change any items on the order.'}
           </p>
+          <Field label="Refund to">
+            <Select value={refundTo} onChange={e => setRefundTo(e.target.value as 'original' | 'store_credit')} disabled={busy}>
+              <option value="original">Original payment method</option>
+              <option value="store_credit">Store credit</option>
+            </Select>
+          </Field>
           <Field label="Refund amount" required>
             <Input type="number" placeholder="0.00" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} disabled={busy} />
           </Field>

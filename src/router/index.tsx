@@ -122,7 +122,6 @@ const StockCountSession = lazy(() => import('@/features/seller/store/Dashboard/O
 const InventoryReports = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryReports'));
 const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
 const StoreLoyalty = lazy(() => import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty').then(m => ({ default: m.StoreLoyalty })));
-const StoreSubscriptions = lazy(() => import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions').then(m => ({ default: m.StoreSubscriptions })));
 const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/Operations/integrations/Integrations').then(m => ({ default: m.StoreIntegrations })));
 // Seller-facing surfaces for two features whose backend + frontend API
 // clients already existed (automatic discounts, gift cards — both already
@@ -145,10 +144,7 @@ const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics'
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
-// AdminSubscriptions and AdminPlatformPlans are no longer their own routes —
-// both are now tabs inside AdminBilling below (AdminBilling.tsx imports them
-// directly, embedded, same convention as AdminClients.tsx importing
-// AdminModeration directly rather than lazily as a standalone route).
+// AdminPlatformPlans is no longer its own route — it renders inside AdminBilling.
 const AdminBilling = lazy(() => import('@/features/admin/pages/AdminBilling').then(m => ({ default: m.AdminBilling })));
 const AdminNewsletter = lazy(() => import('@/features/admin/pages/AdminNewsletter').then(m => ({ default: m.AdminNewsletter })));
 const AdminFinance = lazy(() => import('@/features/admin/pages/AdminFinance').then(m => ({ default: m.AdminFinance })));
@@ -218,7 +214,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'notifications', element: <ThemedRoute routeKey="notifications" /> },
           { path: 'returns', element: <ThemedRoute routeKey="returns" /> },
           { path: 'gift-cards', element: <ThemedRoute routeKey="giftCards" /> },
-          { path: 'subscriptions', element: <ThemedRoute routeKey="subscriptions" /> },
+          { path: 'store-credit', element: <ThemedRoute routeKey="storeCredit" /> },
           // Must come before the `:pageSlug` catch-all below — 'category'/
           // 'collections'/'checkout' are reserved custom-page slugs precisely
           // so they can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
@@ -269,7 +265,7 @@ const mainRouter = createBrowserRouter([
           },
           // The apex-domain "Account" section (Dashboard/Orders/Wishlist/
           // Reviews/Payments/Profile/Security/Addresses/Notifications/
-          // Subscriptions/Messages) and the whole Marketplace/Cart/Checkout/
+          // Messages) and the whole Marketplace/Cart/Checkout/
           // Order-Success/ProductDetail/Education flow that used to live here
           // were removed (frontend-only, at the seller's explicit request) —
           // they were the pre-"store-wise" unified buyer experience, from
@@ -285,7 +281,7 @@ const mainRouter = createBrowserRouter([
           // see those files' own comments. The actual page files (Marketplace,
           // CartPage, CheckoutPage, OrderSuccessPage, ProductDetail,
           // EducationMarketplace, account/*, MyOrdersPage, MyReviewsPage,
-          // MySubscriptionsPage, and components/layouts/AccountLayout.tsx)
+          // and components/layouts/AccountLayout.tsx)
           // have since been deleted outright — they're gone from disk, not
           // just unlinked.
         ],
@@ -405,7 +401,6 @@ const mainRouter = createBrowserRouter([
           { path: 'metaobjects/:definitionId',        element: <MetaobjectEntriesPage /> },
           { path: 'gift-cards',                       element: <StoreGiftCards /> },
           { path: 'loyalty',                          element: <StoreLoyalty /> },
-          { path: 'subscriptions',                    element: <StoreSubscriptions /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'mobile-app',                       element: <StoreMobileApp /> },
           { path: 'activity',                         element: <Navigate to="../settings" replace /> },
@@ -485,11 +480,10 @@ const mainRouter = createBrowserRouter([
           { path: 'moderation',   element: <Navigate to="../clients" replace /> },
           { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
           { path: 'billing',      element: <AdminBilling /> },
-          // Subscriptions and Platform Plans merged into one Billing page
-          // (two outer tabs) — old URLs redirect rather than 404ing for
+          // Platform Plans live inside the Billing page
+          // — old URL redirects rather than 404ing for
           // anyone with one bookmarked/linked, same convention as the
           // `users`→`clients` and `moderation`→`clients` redirects above.
-          { path: 'subscriptions',element: <Navigate to="../billing" replace /> },
           { path: 'platform-plans',element: <Navigate to="../billing" replace /> },
           { path: 'newsletter',   element: <AdminNewsletter /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
