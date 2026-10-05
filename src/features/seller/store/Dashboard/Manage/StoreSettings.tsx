@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, Clock, EyeOff, ShieldCheck } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion } from '@/api/services/store';
@@ -546,67 +547,82 @@ export function PaymentMethodsTab() {
       </div>
 
       <CustomerAccountsSection />
+
+      {storeId && (
+        <RemoveBrandingCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
+      )}
     </div>
   );
 }
 
-// ── White Label (custom domains live in `DomainsSection.tsx`) ───────────────
+// ── Remove Solvexo branding (shown at the bottom of Store Profile; custom domains live in `DomainsSection.tsx`) ──
 // (Stripe Connect's "Payment Gateway" card used to live here — moved to the
 // Integrations page, where a seller now manages every payment gateway,
 // Stripe included, in one place. See StripeConnectSection in
 // `features/seller/store/Dashboard/Operations/integrations/Integrations.tsx`.)
 
-function DomainWhiteLabelCard({ storeId, store, refetch }: {
+function RemoveBrandingCard({ storeId, store, refetch }: {
   storeId: string;
   store: { whiteLabelEnabled: boolean } | null;
   refetch: () => void;
 }) {
+  const navigate = useNavigate();
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
   const [savingWhiteLabel, setSavingWhiteLabel] = useState(false);
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {});
   }, [storeId]);
 
   const whiteLabelFeature = entitlements?.whiteLabelAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
+  const locked = !!whiteLabelFeature && !whiteLabelFeature.allowed;
+  const enabled = !!store?.whiteLabelEnabled;
 
   async function toggleWhiteLabel() {
-    setSavingWhiteLabel(true); setMsg('');
+    setSavingWhiteLabel(true); setMsg(null);
     try {
-      await apiSetWhiteLabel(storeId, !store?.whiteLabelEnabled);
+      await apiSetWhiteLabel(storeId, !enabled);
       refetch();
+      setMsg({ ok: true, text: !enabled ? 'Solvexo branding is now hidden.' : 'Solvexo branding is visible again.' });
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Failed to update white-label setting.');
+      setMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update this setting.' });
     } finally {
       setSavingWhiteLabel(false);
     }
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-      <div className="flex items-center gap-2 mb-5">
+    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
+      <div className="flex items-center gap-2 mb-4">
         <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
-          <Globe size={15} className="text-brand-orange" />
+          {locked ? <Lock size={15} className="text-brand-orange" /> : <EyeOff size={15} className="text-brand-orange" />}
         </div>
-        <p className="text-[14px] font-semibold text-charcoal">White Label</p>
+        <p className="text-[14px] font-semibold text-charcoal">Remove Solvexo branding</p>
       </div>
 
-      {msg && <p className="text-[12px] text-slate mb-3">{msg}</p>}
-
-      <Field label="White-Label Branding">
-        {whiteLabelFeature && !whiteLabelFeature.allowed ? (
-          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#f3f2ec] rounded-lg px-3 py-2.5">
-            <Lock size={13} />
-            Requires the {whiteLabelFeature.requiredPlan ?? 'a higher'} plan.
-          </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
+        <div className="min-w-0 flex-1">
+          <p id="remove-branding-label" className="text-[13px] font-medium text-charcoal m-0">Hide the 'Powered by Solvexo' badge on your storefront.</p>
+          {locked && (
+            <p className="text-[12px] text-slate mt-1 mb-0 flex items-center gap-1.5">
+              <Lock size={12} /> Available on the {whiteLabelFeature?.requiredPlan ?? 'Advanced'} plan
+            </p>
+          )}
+        </div>
+        {locked ? (
+          <Button size="sm" onClick={() => navigate(`/store/${storeId}/settings?tab=billing`)} className="min-h-[36px]">Upgrade plan</Button>
         ) : (
-          <label className="flex items-center gap-2.5 text-[12.5px] text-graphite cursor-pointer">
-            <input type="checkbox" checked={!!store?.whiteLabelEnabled} disabled={savingWhiteLabel} onChange={toggleWhiteLabel} />
-            Hide Solvexo branding on this store
-          </label>
+          <div className="flex items-center gap-2">
+            {savingWhiteLabel && <Loader2 size={14} className="animate-spin text-slate" />}
+            <Toggle checked={enabled} onChange={() => { void toggleWhiteLabel(); }} disabled={savingWhiteLabel || !store} ariaLabel="Remove Solvexo branding" />
+          </div>
         )}
-      </Field>
+      </div>
+
+      {msg && (
+        <p role={msg.ok ? 'status' : 'alert'} className={`text-[12px] mt-3 mb-0 ${msg.ok ? 'text-success' : 'text-error'}`}>{msg.text}</p>
+      )}
     </div>
   );
 }
@@ -615,14 +631,13 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: {
  *  for the card above (which stays store-agnostic/props-driven so it could
  *  in principle be reused elsewhere). */
 export function DomainSettingsTab() {
-  const { store, storeId, loading, refetch } = useStoreWorkspace();
+  const { storeId, loading } = useStoreWorkspace();
   if (loading) return <SettingsSkeleton />;
   return (
     <div className="px-4 lg:px-7 py-6">
       {storeId && (
         <div className="flex flex-col gap-5">
           <DomainsSection storeId={storeId} />
-          <DomainWhiteLabelCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
         </div>
       )}
     </div>
