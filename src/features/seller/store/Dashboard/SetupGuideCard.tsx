@@ -105,7 +105,9 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
     return () => { cancelled = true; };
   }, [storeId]);
 
-  const domainDone = store?.customDomainStatus === 'verified';
+  const domainDone = store?.customDomainStatus === 'verified'
+    || !!store?.customDomain
+    || !!store?.customDomains?.some(d => d.status === 'verified');
 
   // The exact "N days left" countdown is deliberately NOT repeated here —
   // `TrialBillingPill` already shows that prominently at the top of this

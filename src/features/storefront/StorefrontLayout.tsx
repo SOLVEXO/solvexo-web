@@ -21,6 +21,22 @@ function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${st
 
 const FULL_CONSENT: CookieConsentCategories = { analytics: true, marketing: true };
 
+/** URL to redirect to when the visitor is not on the store's canonical
+ *  (primary) host; null when no redirect should happen. Never redirects on
+ *  localhost / *.localhost / *.vercel.app, non-http(s), or when already on the
+ *  canonical host. */
+function canonicalRedirectUrl(canonicalHost: string | null | undefined): string | null {
+  if (!canonicalHost || typeof window === 'undefined') return null;
+  const { protocol, hostname, pathname, search, hash } = window.location;
+  if (protocol !== 'http:' && protocol !== 'https:') return null;
+  const current = hostname.toLowerCase();
+  const target = canonicalHost.trim().toLowerCase();
+  if (!target || current === target) return null;
+  if (current === 'localhost' || current.endsWith('.localhost') || current.endsWith('.vercel.app')) return null;
+  if (target === 'localhost' || target.endsWith('.localhost') || /[\s/]/.test(target)) return null;
+  return `${protocol}//${target}${pathname}${search}${hash}`;
+}
+
 function readSavedConsent(storeId: string): CookieConsentCategories | null {
   try {
     const raw = localStorage.getItem(cookieConsentKey(storeId));
@@ -149,6 +165,12 @@ export function StorefrontLayout() {
 
   useFavicon(store?.faviconUrl, store?.logo);
 
+  // Shopify-style: every non-primary domain redirects to the primary one.
+  const redirectUrl = store ? canonicalRedirectUrl(store.canonicalHost) : null;
+  useEffect(() => {
+    if (redirectUrl) window.location.replace(redirectUrl);
+  }, [redirectUrl]);
+
   const cfg = useMemo(() => resolveStorefrontCfg(theme), [theme]);
 
   const contextValue: StorefrontContextValue | null = useMemo(() => {
@@ -161,7 +183,7 @@ export function StorefrontLayout() {
     };
   }, [store, theme, cfg, slug]);
 
-  if (loading) {
+  if (loading || redirectUrl) {
     return (
       <div className="min-h-screen bg-white">
         <div className="h-[64px] flex items-center gap-3 px-4 sm:px-6 lg:px-10 border-b border-bone">

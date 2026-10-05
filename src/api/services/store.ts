@@ -164,6 +164,8 @@ export interface StoreData {
   aiCredits:    number;
   customDomain: string | null;
   customDomainStatus: 'unverified' | 'verified';
+  /** Every connected custom domain (optional — only present when the backend returns it). */
+  customDomains?: { domain: string; status: 'unverified' | 'verified'; isPrimary?: boolean }[];
   whiteLabelEnabled: boolean;
   /** Real storefront access gate — see `apiUpdateStorePrivacy`. Never
    *  includes the password itself (bcrypt hash, `select:false` server-side). */
@@ -247,20 +249,52 @@ export function apiGetStoreById(id: string) {
 
 export type CustomDomainStatus = 'unverified' | 'verified';
 
-/** PATCH /api/store/:storeId/custom-domain */
-export function apiSetCustomDomain(storeId: string, domain: string | null) {
-  return client.patch<never, ApiResponse<{ customDomain: string | null; customDomainStatus: CustomDomainStatus; cnameTarget: string }>>(
-    ENDPOINTS.STORE.CUSTOM_DOMAIN(storeId), { domain },
+export interface StoreDomainEntry {
+  domain: string;
+  status: CustomDomainStatus;
+  sslStatus: 'none' | 'pending' | 'active' | 'failed';
+  isPrimary: boolean;
+  addedAt: string | null;
+  verifiedAt: string | null;
+  lastCheckedAt: string | null;
+  dnsError: string | null;
+}
+
+export interface StoreDomainsData {
+  defaultDomain: string;
+  primaryDomain: string | null;
+  canonicalHost: string;
+  domains: StoreDomainEntry[];
+  dns: { cnameTarget: string; aRecord: string | null };
+  httpsAutomation: boolean;
+  maxDomains: number;
+}
+
+/** GET /api/store/:storeId/domains */
+export function apiListStoreDomains(storeId: string) {
+  return client.get<never, ApiResponse<StoreDomainsData>>(ENDPOINTS.STORE.DOMAINS(storeId));
+}
+
+/** POST /api/store/:storeId/domains — connects a domain (starts unverified). */
+export function apiAddStoreDomain(storeId: string, domain: string) {
+  return client.post<never, ApiResponse<StoreDomainsData>>(ENDPOINTS.STORE.DOMAINS(storeId), { domain });
+}
+
+/** POST /api/store/:storeId/domains/:domain/verify — runs the DNS check now. */
+export function apiVerifyStoreDomain(storeId: string, domain: string) {
+  return client.post<never, ApiResponse<StoreDomainsData & { verified: boolean; reason: string | null }>>(
+    ENDPOINTS.STORE.DOMAIN_VERIFY(storeId, domain), {},
   );
 }
 
-/** POST /api/store/:storeId/custom-domain/verify — checks the domain's real
- *  DNS against our CNAME target; only a 'verified' result can ever serve as
- *  a live storefront (see `getPublicStoreByDomain` on the backend). */
-export function apiVerifyCustomDomain(storeId: string) {
-  return client.post<never, ApiResponse<{ customDomainStatus: CustomDomainStatus; verified: boolean; reason: string | null; cnameTarget: string }>>(
-    ENDPOINTS.STORE.CUSTOM_DOMAIN_VERIFY(storeId), {},
-  );
+/** POST /api/store/:storeId/domains/primary — `null` = the free address. */
+export function apiSetPrimaryStoreDomain(storeId: string, domain: string | null) {
+  return client.post<never, ApiResponse<StoreDomainsData>>(ENDPOINTS.STORE.DOMAIN_PRIMARY(storeId), { domain });
+}
+
+/** DELETE /api/store/:storeId/domains/:domain */
+export function apiRemoveStoreDomain(storeId: string, domain: string) {
+  return client.delete<never, ApiResponse<StoreDomainsData>>(ENDPOINTS.STORE.DOMAIN_ITEM(storeId, domain));
 }
 
 /** GET /api/store/public/resolve-domain?host=... — resolves a VERIFIED
@@ -435,6 +469,10 @@ export interface PublicStoreData {
   showDoNotSellLink: boolean;
   /** Shopify "Customer accounts" setting: true unless the store requires accounts. */
   guestCheckoutEnabled: boolean;
+  /** The store's primary custom domain (null when the free address is primary). */
+  primaryDomain: string | null;
+  /** Host every other domain redirects to (null = no redirect configured). */
+  canonicalHost: string | null;
 }
 
 export interface PublicStoreProductsParams {
