@@ -199,6 +199,11 @@ export function StorefrontProvider({ value, children }: { value: StorefrontConte
   return <StorefrontContext.Provider value={value}>{children}</StorefrontContext.Provider>;
 }
 
+/** Like useStorefront() but returns null outside a StorefrontProvider (theme-editor demo previews). */
+export function useStorefrontOptional(): StorefrontContextValue | null {
+  return useContext(StorefrontContext);
+}
+
 export function useStorefront(): StorefrontContextValue {
   const ctx = useContext(StorefrontContext);
   if (!ctx) throw new Error('useStorefront must be used within a StorefrontProvider (StorefrontLayout)');

@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Gift, Check, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -17,7 +18,8 @@ import { atelierTheme as t } from '../theme.config';
  *  document is created server-side by the webhook once Stripe confirms —
  *  never synchronously returned here — so the confirmation screen says the
  *  code is emailed, not shows one that doesn't exist yet. */
-export function AtelierGiftCardsPage() {
+export function AtelierGiftCardsPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Gift Cards', noindex: true });
   const { store } = useStorefront();
   const [settings, setSettings] = useState<GiftCardPublicSettings | null>(null);

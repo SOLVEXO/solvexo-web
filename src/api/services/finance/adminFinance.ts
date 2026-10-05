@@ -297,18 +297,18 @@ export interface TaxReportRow {
   storeId: string;
   storeName: string;
   sellerId: string;
-  /** Currency the report's amounts are denominated in (older reports predate this field → USD). */
-  currency?: string;
+  /** Admin responses are always USD (converted server-side; amount fields are null when no FX rate is set). */
+  currency?: 'USD';
   period: 'q1' | 'q2' | 'q3' | 'q4' | 'annual';
   year: number;
   fromDate: string;
   toDate: string;
-  totalRevenue: number;
-  totalFees: number;
-  totalRefunds: number;
-  totalPayouts: number;
-  netRevenue: number;
-  estimatedTax: number;
+  totalRevenue: number | null;
+  totalFees: number | null;
+  totalRefunds: number | null;
+  totalPayouts: number | null;
+  netRevenue: number | null;
+  estimatedTax: number | null;
   transactionCount: number;
   pdfUrl: string | null;
   generatedAt: string | null;

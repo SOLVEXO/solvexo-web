@@ -19,6 +19,12 @@ import {
 } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
+import { hasNavPermission } from '@/components/layouts/StoreLayout';
+import { TokenStorage } from '@/api/services/auth';
+import { OrderTimelineCard } from './OrderTimelineCard';
+import { OrderNotesCard } from './OrderNotesCard';
+import { EditOrderModal } from './EditOrderModal';
+import { EditShippingAddressModal } from './EditShippingAddressModal';
 
 type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | 'capture' | 'cancel' | 'refund' | 'record-payment' | null;
 
@@ -27,12 +33,13 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function Card({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: ReactNode }) {
+function Card({ title, icon: Icon, action, children }: { title: string; icon?: React.ElementType; action?: ReactNode; children: ReactNode }) {
   return (
     <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone flex items-center gap-2">
         {Icon && <Icon size={14} className="text-brand-orange shrink-0" />}
-        <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em]">{title}</p>
+        <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em] flex-1">{title}</p>
+        {action}
       </div>
       <div className="px-5 py-4">{children}</div>
     </div>
@@ -85,6 +92,12 @@ export function StoreOrderDetail() {
   // happen often and should never block the always-available manual entry.
   const [liveLabelBusy, setLiveLabelBusy] = useState(false);
   const [liveLabelError, setLiveLabelError] = useState('');
+  const [showEditOrder, setShowEditOrder] = useState(false);
+  const [showEditAddress, setShowEditAddress] = useState(false);
+  const currentUser = TokenStorage.getUser<{ _id?: string; id?: string }>();
+  const currentUserId = currentUser?._id ?? currentUser?.id ?? null;
+  const canEditOrder = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], 'orders.edit');
+  const canComment = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], ['orders.view', 'orders.edit']);
 
   const load = () => {
     setLoading(true);
@@ -257,6 +270,7 @@ export function StoreOrderDetail() {
   const canComplete = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
   const canCancel   = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
   const canRefund   = detail.isPaid;
+  const isEditWindow = (so.status === 'pending' || so.status === 'processing');
 
   return (
     <>
@@ -287,7 +301,13 @@ export function StoreOrderDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
           {/* Left column */}
           <div className="flex flex-col gap-4 min-w-0">
-            <Card title="Items" icon={Package}>
+            <Card
+              title="Items"
+              icon={Package}
+              action={canEditOrder && isEditWindow ? (
+                <Button size="xs" variant="outline" onClick={() => setShowEditOrder(true)} disabled={busy}>Edit</Button>
+              ) : undefined}
+            >
               <div className="flex flex-col">
                 {so.items.map(item => (
                   <div key={item._id} className="flex items-start gap-3 py-3 border-b border-bone last:border-b-0">
@@ -327,6 +347,15 @@ export function StoreOrderDetail() {
                 {so.deliveredAt && <InfoRow label="Delivered At" value={formatDate(so.deliveredAt)} />}
               </Card>
             )}
+
+            <OrderTimelineCard
+              storeId={storeId}
+              orderId={orderId}
+              entries={detail.timeline ?? []}
+              currentUserId={currentUserId}
+              canComment={canComment}
+              onPosted={entry => setDetail(d => d ? { ...d, timeline: [entry, ...(d.timeline ?? [])] } : d)}
+            />
           </div>
 
           {/* Right sidebar */}
@@ -338,7 +367,13 @@ export function StoreOrderDetail() {
             </Card>
 
             {detail.shippingAddress && (
-              <Card title="Shipping Address" icon={MapPin}>
+              <Card
+                title="Shipping Address"
+                icon={MapPin}
+                action={canEditOrder && isEditWindow ? (
+                  <button onClick={() => setShowEditAddress(true)} className="text-[12px] font-semibold text-brand-orange hover:underline cursor-pointer">Edit</button>
+                ) : undefined}
+              >
                 <p className="text-[12.5px] text-charcoal leading-relaxed">
                   {detail.shippingAddress.recipientName}<br />
                   {detail.shippingAddress.addressLine1}
@@ -348,6 +383,14 @@ export function StoreOrderDetail() {
                 </p>
               </Card>
             )}
+
+            <OrderNotesCard
+              storeId={storeId}
+              orderId={orderId}
+              note={detail.note ?? ''}
+              canEdit={canEditOrder}
+              onSaved={note => setDetail(d => d ? { ...d, note } : d)}
+            />
 
             <Card title="Payment" icon={CreditCard}>
               <InfoRow label="Method" value={<span className="capitalize">{detail.paymentType.replace(/_/g, ' ')}</span>} />
@@ -565,6 +608,29 @@ export function StoreOrderDetail() {
             <Input value={paymentNote} onChange={e => setPaymentNote(e.target.value)} disabled={busy} />
           </Field>
         </Modal>
+      )}
+
+      {showEditOrder && (
+        <EditOrderModal
+          storeId={storeId}
+          orderId={orderId}
+          orderNumber={detail.orderNumber}
+          items={so.items}
+          symbol={symbol}
+          isPaid={detail.isPaid}
+          onClose={() => setShowEditOrder(false)}
+          onSaved={() => { setShowEditOrder(false); load(); }}
+        />
+      )}
+
+      {showEditAddress && detail.shippingAddress && (
+        <EditShippingAddressModal
+          storeId={storeId}
+          orderId={orderId}
+          address={detail.shippingAddress}
+          onClose={() => setShowEditAddress(false)}
+          onSaved={() => { setShowEditAddress(false); load(); }}
+        />
       )}
 
       {showRefundModal && (

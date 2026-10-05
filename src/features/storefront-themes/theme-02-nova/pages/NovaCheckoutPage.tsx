@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useCartContext } from '@/contexts/CartContext';
-import { TokenStorage } from '@/api/services/auth';
+import { useCheckoutSession, useGuestContact } from '../../useGuestContact';
+import { GuestContactSection } from '../../GuestContactSection';
+import { OrderPlacedExtras } from '../../OrderPlacedExtras';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetLiveShippingRates, type LiveShippingRate } from '@/api/services/shipping';
 import { apiGetMyAddresses, apiAddAddress, type Address, type AddressPayload } from '@/api/services/address';
@@ -57,7 +59,9 @@ function SectionCard({ step, title, done, children }: { step: number; title: str
 export function NovaCheckoutPage() {
   useStorefrontSeo({ title: 'Checkout', noindex: true });
   const navigate = useNavigate();
-  const loggedIn = TokenStorage.isLoggedIn();
+  // Shopify guest checkout: a store that allows it gets a silent guest session instead of a /login bounce.
+  const { loggedIn, guest, preparing, denied } = useCheckoutSession();
+  const guestContact = useGuestContact(guest);
 
   const { store } = useStorefront();
   const { cart, cartCount, clearCart } = useCartContext();
@@ -132,7 +136,7 @@ export function NovaCheckoutPage() {
   // Shopify-style store credit (outermost discount layer). A change in the
   // applied credit changes the charge, so any cached Stripe client secret is stale.
   const credit = useStoreCredit({
-    storeId: cart?.storeId, checkout, setCheckout, loggedIn,
+    storeId: cart?.storeId, checkout, setCheckout, loggedIn: loggedIn && !guest,
     onTotalChanged: () => { setClientSecret(null); setChargeAmount(null); },
   });
   const creditCoversAll = !!checkout?.storeCreditApplied && checkout.totalAmount <= 0;
@@ -190,17 +194,21 @@ export function NovaCheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveZones.length, selectedAddrId]);
 
-  const readyToCreateCheckout = isDigital || (!!selectedAddrId && !!selectedZoneId);
+  const readyToCreateCheckout = (!guest || guestContact.valid) && (isDigital || (!!selectedAddrId && !!selectedZoneId));
 
   useEffect(() => {
     if (!loggedIn || !readyToCreateCheckout || checkout || creatingCheckout) return;
     setCreatingCheckout(true);
     setCheckoutError('');
-    apiCreateCheckout({
+    // A guest's email must reach the backend BEFORE any payment can start (confirmation email goes there).
+    (guest
+      ? guestContact.commit(selectedAddr?.recipientName).then(ok => { if (!ok) throw new Error('Enter a valid email address to continue.'); })
+      : Promise.resolve()
+    ).then(() => apiCreateCheckout({
       addressId: isDigital ? undefined : (selectedAddrId ?? undefined),
       shippingZoneId: isDigital ? undefined : (selectedZoneId ?? undefined),
       storeId: cart?.storeId,
-    })
+    }))
       .then(async res => {
         setCheckout(res.data.checkout);
         setSummary(res.data.summary);
@@ -433,8 +441,11 @@ export function NovaCheckoutPage() {
     ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: i.totalPrice }))
     : cartItems.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity }));
 
-  if (!loggedIn) {
-    return <Navigate to={`/login?redirect=${encodeURIComponent('/checkout')}`} replace />;
+  if (preparing) {
+    return <div className="flex justify-center" style={{ padding: '96px 0' }}><Loader2 size={20} className="animate-spin" style={{ color: t.colors.inkMuted }} /></div>;
+  }
+  if (!loggedIn || denied) {
+    return <Navigate to={'/login?redirect=' + encodeURIComponent('/checkout')} replace />;
   }
 
   if (placedOrders) {
@@ -453,6 +464,12 @@ export function NovaCheckoutPage() {
             </div>
           ))}
         </div>
+        <OrderPlacedExtras
+          orderId={placedOrders[0]?.orderId}
+          guestEmail={guest ? guestContact.committedEmail : null}
+          fontFamily={t.fonts.body} textColor={t.colors.ink} mutedColor={t.colors.inkMuted} accentColor={t.colors.accent} dangerColor={t.colors.danger}
+          buttonStyle={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, padding: '10px 22px', border: '1.5px solid ' + t.colors.border, borderRadius: t.radius.sm, background: 'transparent', color: t.colors.ink }}
+        />
         <NovaButton onClick={() => navigate('/')}>Continue Shopping <ChevronRight size={14} style={{ marginLeft: '4px' }} /></NovaButton>
       </div>
     );
@@ -464,8 +481,23 @@ export function NovaCheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
         <div className="flex flex-col gap-5">
+          {guest && (
+            <SectionCard step={1} title="Contact" done={guestContact.valid && !guestContact.dirty}>
+              <GuestContactSection
+                email={guestContact.email}
+                onEmailChange={v => { guestContact.setEmail(v); guestContact.setError(''); }}
+                onBlur={() => { if (guestContact.valid) void guestContact.commit(selectedAddr?.recipientName); }}
+                error={guestContact.error}
+                saving={guestContact.saving}
+                inputStyle={inputStyle}
+                textColor={t.colors.ink} mutedColor={t.colors.inkMuted} dangerColor={t.colors.danger} accentColor={t.colors.accent}
+                fontFamily={t.fonts.body}
+              />
+            </SectionCard>
+          )}
+
           {!isDigital && (
-            <SectionCard step={1} title="Delivery Address" done={!!selectedAddrId && !addingAddr}>
+            <SectionCard step={guest ? 2 : 1} title="Delivery Address" done={!!selectedAddrId && !addingAddr}>
               {addrLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : addingAddr ? (
@@ -525,7 +557,7 @@ export function NovaCheckoutPage() {
           )}
 
           {!isDigital && (
-            <SectionCard step={2} title="Shipping Method" done={!!selectedZoneId}>
+            <SectionCard step={guest ? 3 : 2} title="Shipping Method" done={!!selectedZoneId}>
               {zonesLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : effectiveZones.length === 0 ? (
@@ -555,8 +587,10 @@ export function NovaCheckoutPage() {
             </SectionCard>
           )}
 
-          <SectionCard step={isDigital ? 1 : 3} title="Payment Method">
-            {checkoutError ? (
+          <SectionCard step={(isDigital ? 1 : 3) + (guest ? 1 : 0)} title="Payment Method">
+            {guest && guestContact.dirty ? (
+              <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Enter and confirm your email above to continue to payment.</p>
+            ) : checkoutError ? (
               <div className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger, border: `1.5px solid ${t.colors.danger}`, borderRadius: t.radius.sm, padding: '10px 12px' }}>
                 <AlertCircle size={13} className="mt-[1px] shrink-0" /> {checkoutError}
               </div>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, useState, useRef, type ReactNode } from 'react';
 import { TokenStorage } from '@/api/services/auth';
+import { canStartGuestSession, ensureGuestSession, hasRealAccount } from '@/utils/guestSession';
 
 // Guards a guest-only action (add to cart, wishlist, follow, message) behind
 // an inline "sign in to continue" prompt instead of letting it hit the API,
@@ -18,7 +19,9 @@ interface AuthGateContextValue {
   pending:     PendingAction | null;
   // Returns true and runs `run` immediately if already logged in; otherwise
   // queues it and opens the prompt, returning false.
-  requireAuth: (run: () => void, reason: string) => boolean;
+  // `opts.allowGuest` is for CART / CHECKOUT actions only: a guest session (or a silently-started one, when the
+  // store allows guest checkout) is enough. Everything else needs a real account, and a guest session does NOT count.
+  requireAuth: (run: () => void, reason: string, opts?: { allowGuest?: boolean }) => boolean;
   cancel:      () => void;
   resolve:     () => void; // called by the modal right after a successful sign-in
 }
@@ -40,10 +43,21 @@ export function AuthGateProvider({ children }: { children: ReactNode }) {
   const queueRef = useRef<PendingAction[]>([]);
   const [pending, setPending] = useState<PendingAction | null>(null);
 
-  const requireAuth = useCallback((run: () => void, reason: string) => {
-    if (TokenStorage.isLoggedIn()) { run(); return true; }
-    queueRef.current.push({ reason, run });
-    setPending(current => current ?? queueRef.current[0]);
+  const requireAuth = useCallback((run: () => void, reason: string, opts?: { allowGuest?: boolean }) => {
+    const enqueue = () => {
+      queueRef.current.push({ reason, run });
+      setPending(current => current ?? queueRef.current[0]);
+    };
+    if (hasRealAccount()) { run(); return true; }
+    if (opts?.allowGuest) {
+      if (TokenStorage.isLoggedIn()) { run(); return true; } // already a guest session
+      if (canStartGuestSession()) {
+        // Silent guest session; a 403 (store requires accounts) falls back to the login modal.
+        void ensureGuestSession().then(ok => { if (ok) run(); else enqueue(); });
+        return false;
+      }
+    }
+    enqueue();
     return false;
   }, []);
 

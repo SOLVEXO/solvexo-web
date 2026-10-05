@@ -146,6 +146,8 @@ export const ENDPOINTS = {
     REGISTER: '/api/auth/register',
     LOGIN: '/api/auth/login',
     SOCIAL_LOGIN: '/api/auth/social-login',
+    GUEST: '/api/auth/guest',
+    GUEST_CONTACT: '/api/auth/guest/contact',
     VERIFY_OTP: '/api/auth/verifyOtp',
     FORGOT_PASSWORD: '/api/auth/forgot-password',
     RESET_PASSWORD: '/api/auth/reset-password',
@@ -520,9 +522,16 @@ export const ENDPOINTS = {
 
   // ── STRIPE CONNECT (seller's own payment gateway) ────────────────────────
   STRIPE_CONNECT: {
-    STATUS:          '/api/stripe-connect/status',
-    ONBOARDING_LINK: '/api/stripe-connect/onboarding-link',
-    SYNC:            '/api/stripe-connect/sync',
+    STATUS:          (storeId: string) => `/api/stripe-connect/${storeId}/status`,
+    ONBOARDING_LINK: (storeId: string) => `/api/stripe-connect/${storeId}/onboarding-link`,
+    SYNC:            (storeId: string) => `/api/stripe-connect/${storeId}/sync`,
+  },
+
+  PRODUCTS_BULK: {
+    STATUS: (storeId: string) => `/api/products-bulk/${storeId}/status`,
+    TAGS:   (storeId: string) => `/api/products-bulk/${storeId}/tags`,
+    DELETE: (storeId: string) => `/api/products-bulk/${storeId}/delete`,
+    EDIT:   (storeId: string) => `/api/products-bulk/${storeId}/edit`,
   },
 
   PRODUCT: {
@@ -770,6 +779,11 @@ export const ENDPOINTS = {
 
   ORDERS: {
     MARK_PAID:     (storeId: string, id: string) => `/api/orders/mark-paid/${storeId}/${id}`,
+    EDIT:             (storeId: string, id: string) => `/api/orders/edit/${storeId}/${id}`,
+    TIMELINE:         (storeId: string, id: string) => `/api/orders/timeline/${storeId}/${id}`,
+    NOTE:             (storeId: string, id: string) => `/api/orders/note/${storeId}/${id}`,
+    SHIPPING_ADDRESS: (storeId: string, id: string) => `/api/orders/shipping-address/${storeId}/${id}`,
+    STATUS_LINK:   (orderId: string) => `/api/orders/status-link/${orderId}`,
     UPDATE_STATUS: '/api/orders/update-status',
     PURCHASE_SHIPPING_LABEL: '/api/orders/purchase-shipping-label',
     DOWNLOAD_URL:  '/api/orders/download-url',

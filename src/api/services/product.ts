@@ -369,9 +369,22 @@ export function apiDeleteVariant(productId: string, variantId: string) {
   return client.delete<never, ApiResponse<ProductVariant[]>>(ENDPOINTS.PRODUCT.VARIANTS.DELETE(productId, variantId));
 }
 
-export function apiGetStoreInventory(storeId: string, page = 1, limit = 10) {
+export interface StoreInventoryQueryOpts {
+  q?:      string;
+  /** Product status as stored: active | draft | inactive (= Archived) | scheduled. */
+  status?: string;
+  type?:   'physical' | 'digital';
+  sort?:   'newest' | 'oldest' | 'title_asc' | 'title_desc';
+}
+
+export function apiGetStoreInventory(storeId: string, page = 1, limit = 10, opts?: StoreInventoryQueryOpts) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (opts?.q?.trim()) params.set('q', opts.q.trim());
+  if (opts?.status)    params.set('status', opts.status);
+  if (opts?.type)      params.set('type', opts.type);
+  if (opts?.sort)      params.set('sort', opts.sort);
   return client.get<never, ApiResponse<GetInventoryData>>(
-    `${ENDPOINTS.INVENTORY.GET_STORE_INVENTORY(storeId)}?page=${page}&limit=${limit}`,
+    `${ENDPOINTS.INVENTORY.GET_STORE_INVENTORY(storeId)}?${params.toString()}`,
   );
 }
 
@@ -728,10 +741,18 @@ export interface GetSellerOrdersData {
   orders:     SellerOrder[];
 }
 
-export function apiGetSellerOrders(storeId: string, page = 1, limit = 10, userId?: string) {
+export function apiGetSellerOrders(
+  storeId: string, page = 1, limit = 10, userId?: string,
+  filters?: { status?: string; type?: string; q?: string },
+) {
   const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
+  // status / type / search run on the SERVER over the whole order history, not on the loaded page.
+  const filterParams =
+    (filters?.status ? `&status=${encodeURIComponent(filters.status)}` : '') +
+    (filters?.type ? `&type=${encodeURIComponent(filters.type)}` : '') +
+    (filters?.q ? `&q=${encodeURIComponent(filters.q)}` : '');
   return client.get<never, ApiResponse<GetSellerOrdersData>>(
-    `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}${userIdParam}`,
+    `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}${userIdParam}${filterParams}`,
   );
 }
 
@@ -813,6 +834,20 @@ export interface SellerOrderDetail {
   shippingAddress: SellerOrderDetailShippingAddress | null;
   buyer:           SellerOrderDetailBuyer;
   sellerOrder:     SellerOrderDetailSellerOrder;
+  /** Newest first. Absent on the admin detail route. */
+  timeline?:       OrderTimelineEntry[];
+  /** Seller-only internal note. */
+  note?:           string;
+}
+
+export type OrderTimelineType = 'placed' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';
+
+export interface OrderTimelineEntry {
+  type:      OrderTimelineType;
+  message:   string;
+  actorId:   string | null;
+  actorRole: string | null;
+  createdAt: string;
 }
 
 export function apiGetSellerOrderDetail(storeId: string, orderId: string) {

@@ -6,6 +6,7 @@ import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { useAuthGate } from '@/contexts/AuthGateContext';
+import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
 import { SocialLoginRow } from './SocialIcons';
 import { Modal } from './Modal';
 import { Input } from './Input';
@@ -39,7 +40,7 @@ export function AuthGateModal() {
         setSubmitError('');
         setSubmitting(true);
         try {
-          const res = await apiLogin({ email: data.email, password: data.password, role: 'user' });
+          const res = await apiLogin({ email: data.email, password: data.password, role: 'user', storeId: getCurrentStorefrontStoreId() });
           const { token, user } = res.data;
           TokenStorage.save(token.accessToken, token.refreshToken);
           TokenStorage.saveUser(user);

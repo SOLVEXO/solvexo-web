@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect, useCallback } from 'react';
 import { Wallet, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -11,7 +12,8 @@ const LIMIT = 10;
 
 /** Theme 01's Store credit page: balance, expiry note, paginated history
  *  (`apiGetMyStoreCredit`). Credit is spendable at this store's checkout. */
-export function AtelierStoreCreditPage() {
+export function AtelierStoreCreditPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Store credit', noindex: true });
   const { store } = useStorefront();
   const [data, setData] = useState<StoreCreditAccount | null>(null);

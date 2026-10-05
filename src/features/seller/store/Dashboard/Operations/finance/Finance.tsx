@@ -402,14 +402,14 @@ export function StoreFinance() {
   useEffect(loadWalletScoped, [loadWalletScoped]);
   useEffect(loadTransactions, [loadTransactions]);
   useEffect(() => {
-    apiGetStripeConnectStatus().then(res => setConnectStatus(res.data)).catch(() => {});
-  }, []);
+    apiGetStripeConnectStatus(storeId).then(res => setConnectStatus(res.data)).catch(() => {});
+  }, [storeId]);
 
   async function handleConnectStripe() {
     setConnecting(true);
     try {
       const returnUrl = `${window.location.origin}${window.location.pathname}`;
-      const res = await apiCreateStripeConnectOnboardingLink(returnUrl, returnUrl);
+      const res = await apiCreateStripeConnectOnboardingLink(storeId, returnUrl, returnUrl);
       window.location.href = res.data.url;
     } catch {
       setConnecting(false);

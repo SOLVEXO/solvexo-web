@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import type { OrderTimelineEntry } from './product';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,15 @@ export interface OrderLineItem {
   totalPrice: number;
   status:     string;
   returnStatus?: ReturnStatus;
+  // Detail-view fields (present on the raw order document's sellerOrders[].items[]).
+  _id?:        string;
+  variantId?:  string;
+  options?:    { name: string; value: string }[];
+  taxUSD?:     number;
+  couponDiscountUSD?:      number;
+  giftCardDiscountUSD?:    number;
+  storeCreditDiscountUSD?: number;
+  refundedAmount?:         number;
 }
 
 export interface OrderStoreGroup {
@@ -49,6 +59,7 @@ export interface OrderStoreGroup {
   tracking?:       { carrier: string; trackingNumber: string; trackingUrl: string } | null;
   shippedAt?:      string | null;
   deliveredAt?:    string | null;
+  _id?:            string;
 }
 
 export interface OrderSummary {
@@ -94,6 +105,12 @@ export interface OrderDetail {
   currency:        string;
   shippingAddress: Record<string, unknown>;
   sellerOrders:    OrderStoreGroup[];
+  couponCode?:               string | null;
+  couponDiscountTotal?:      number;
+  giftCardDiscountTotal?:    number;
+  storeCreditDiscountTotal?: number;
+  campaignDiscountTotal?:    number;
+  autoDiscountTotal?:        number;
   createdAt:       string;
   paidAt?:         string | null;
 }
@@ -199,6 +216,13 @@ export function apiGetOrderById(orderId: string) {
   return client.get<never, OrderDetailResponse>(ENDPOINTS.ORDERS.GET_BY_ID(orderId));
 }
 
+/** GET /api/orders/status/:token — public "Order status page" (no login).
+ *  The token is the unguessable one from the order confirmation email; the
+ *  response is a buyer-safe order document (same shape as `OrderDetail`). */
+export function apiGetOrderByStatusToken(token: string) {
+  return client.get<never, OrderDetailResponse>(`/api/orders/status/${encodeURIComponent(token)}`);
+}
+
 /** POST /api/orders/cancel/:orderId — buyer cancels a whole order or specific items */
 export function apiCancelOrder(orderId: string, payload: CancelOrderPayload) {
   return client.post<never, CancelOrderResponse>(ENDPOINTS.ORDERS.CANCEL(orderId), payload);
@@ -293,4 +317,62 @@ export function apiStreamPdf(orderId: string, productId: string, fileIndex = 0) 
     params: { orderId, productId, fileIndex },
     responseType: 'blob',
   });
+}
+
+/** GET /api/orders/status-link/:orderId — signed token for the public order-status page (`/order-status/:token`). */
+export function apiGetOrderStatusLink(orderId: string) {
+  return client.get<never, { success: boolean; data: { token: string } }>(ENDPOINTS.ORDERS.STATUS_LINK(orderId));
+}
+
+// ── Order editing / timeline / notes / shipping address (seller) ─────────────
+
+interface OrderApiResponse<T> { success: boolean; message: string; data: T }
+
+export interface EditOrderPayload {
+  changes?:   { itemId: string; quantity: number }[];
+  additions?: { variantId: string; quantity: number }[];
+  dryRun?:    boolean;
+  refundTo?:  'original' | 'store_credit';
+  reason?:    string;
+}
+export interface EditOrderResult {
+  oldTotal:     number;
+  newTotal:     number;
+  delta:        number;
+  currency:     string;
+  refundAmount: number;
+  amountDue:    number;
+  lines:        string[];
+  refundNote?:  string;
+}
+
+/** POST /api/orders/edit/:storeId/:orderId — `dryRun: true` only previews. */
+export function apiEditOrder(storeId: string, orderId: string, payload: EditOrderPayload) {
+  return client.post<never, OrderApiResponse<EditOrderResult>>(ENDPOINTS.ORDERS.EDIT(storeId, orderId), payload);
+}
+
+/** POST /api/orders/timeline/:storeId/:orderId */
+export function apiAddOrderComment(storeId: string, orderId: string, message: string) {
+  return client.post<never, OrderApiResponse<OrderTimelineEntry>>(ENDPOINTS.ORDERS.TIMELINE(storeId, orderId), { message });
+}
+
+/** PATCH /api/orders/note/:storeId/:orderId */
+export function apiUpdateOrderNote(storeId: string, orderId: string, note: string) {
+  return client.patch<never, OrderApiResponse<{ note: string }>>(ENDPOINTS.ORDERS.NOTE(storeId, orderId), { note });
+}
+
+export interface OrderShippingAddressPayload {
+  recipientName: string;
+  phoneNumber:   string;
+  addressLine1:  string;
+  addressLine2?: string;
+  city:          string;
+  state:         string;
+  zipCode:       string;
+  country?:      string;
+}
+
+/** PATCH /api/orders/shipping-address/:storeId/:orderId */
+export function apiUpdateOrderShippingAddress(storeId: string, orderId: string, payload: OrderShippingAddressPayload) {
+  return client.patch<never, OrderApiResponse<OrderShippingAddressPayload>>(ENDPOINTS.ORDERS.SHIPPING_ADDRESS(storeId, orderId), payload);
 }

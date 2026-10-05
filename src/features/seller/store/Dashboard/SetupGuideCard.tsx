@@ -90,7 +90,7 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
     let cancelled = false;
     Promise.all([
       apiGetOnboardingProgress().catch(() => null),
-      apiGetStripeConnectStatus().catch(() => null),
+      apiGetStripeConnectStatus(storeId).catch(() => null),
       apiGetStorePlatformPlan(storeId).catch(() => null),
       apiListStoreShippingZones(storeId, 'shipping').catch(() => null),
     ]).then(([progressRes, connectRes, planRes, shippingRes]) => {

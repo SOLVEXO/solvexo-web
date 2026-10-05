@@ -43,7 +43,8 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'email',     label: 'Email Campaigns', Icon: Mail         },
   { id: 'automations', label: 'Automations',   Icon: Zap          },
   { id: 'cart',      label: 'Abandoned Cart',  Icon: ShoppingCart },
-  { id: 'affiliate', label: 'Affiliate',       Icon: Handshake    },
+  // Hidden from the UI (not built-in on Shopify) — to become an installable App later; code/data kept.
+  // { id: 'affiliate', label: 'Affiliate',       Icon: Handshake    },
   { id: 'pixels',    label: 'Tracking Pixels', Icon: Target       },
 ];
 

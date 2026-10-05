@@ -82,27 +82,11 @@ export function RevenueTab({ params, compareToPreviousPeriod }: { params: BaseAn
         <p className="text-[11px] text-slate bg-cream border border-bone rounded-lg px-3 py-2">{breakdown.data.note}</p>
       )}
 
-      {/* Phase 2 — disclosed rather than blended into platformCommissionRevenue above (see the note text). */}
-      {breakdown.data?.nonUsdCommissionByCurrency && breakdown.data.nonUsdCommissionByCurrency.length > 0 && (
-        <div className="bg-white border border-bone rounded-[10px]">
-          <div className="px-5 pt-4 pb-2">
-            <p className="text-[14px] font-bold text-charcoal">Commission in Other Currencies</p>
-            <p className="text-[12px] text-slate">Sellers settled outside USD — not included in Platform Commission above.</p>
-          </div>
-          <Table
-            columns={[
-              { key: 'currency', header: 'Currency' },
-              { key: 'commission', header: 'Commission', align: 'right' },
-              { key: 'processingFees', header: 'Processing Fees', align: 'right' },
-            ] as TableColumn<{ currency: string; commission: string; processingFees: string }>[]}
-            data={breakdown.data.nonUsdCommissionByCurrency.map(r => ({
-              currency: r.currency,
-              commission: `${r.commission.toFixed(2)} ${r.currency}`,
-              processingFees: `${r.processingFees.toFixed(2)} ${r.currency}`,
-            }))}
-            keyExtractor={r => r.currency}
-          />
-        </div>
+      {/* Commission is converted to USD server-side; only currencies with no FX rate are listed (never a native amount). */}
+      {breakdown.data?.unconvertedCommissionCurrencies && breakdown.data.unconvertedCommissionCurrencies.length > 0 && (
+        <p className="text-[11px] text-red-600">
+          No FX rate set for {breakdown.data.unconvertedCommissionCurrencies.join(', ')} — commission from those sellers is excluded from the USD totals above.
+        </p>
       )}
 
       {compareToPreviousPeriod && b?.previousPeriod && (

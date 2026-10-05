@@ -107,9 +107,8 @@ export interface AdminOverviewData {
   sellerPlatformARR?: number;
   activePlatformSubscribers?: number;
   sellerChurnRatePercent?: number;
-  // Phase 2 — present only when non-zero; see AdminRevenueBreakdownData's
-  // same field for what this discloses.
-  nonUsdCommissionByCurrency?: NonUsdCommissionRow[];
+  // Currency codes whose commission could not be converted to USD (no FX rate) — present only when non-empty.
+  unconvertedCommissionCurrencies?: string[];
   note: string;
   previousPeriod?: AdminOverviewPreviousPeriod;
 }
@@ -128,8 +127,6 @@ export interface AdminRevenueBreakdownPreviousPeriod {
   totalMarketplaceRevenue: number;
 }
 
-export interface NonUsdCommissionRow { currency: string; commission: number; processingFees: number }
-
 export interface AdminRevenueBreakdownData {
   period: AnalyticsPeriod;
   oneTimeOrderRevenue: number;
@@ -137,10 +134,8 @@ export interface AdminRevenueBreakdownData {
   paymentProcessingFees: number;
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;
-  // Phase 2 — present only when non-zero. A seller settled in a currency
-  // other than USD has their commission/fees disclosed here rather than
-  // blended into the USD figures above or silently dropped.
-  nonUsdCommissionByCurrency?: NonUsdCommissionRow[];
+  // Currency codes whose commission could not be converted to USD (no FX rate) — present only when non-empty.
+  unconvertedCommissionCurrencies?: string[];
   note: string;
   previousPeriod?: AdminRevenueBreakdownPreviousPeriod;
 }

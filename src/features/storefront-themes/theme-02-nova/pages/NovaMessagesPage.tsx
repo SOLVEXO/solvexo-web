@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -12,7 +13,8 @@ import { novaTheme as t } from '../theme.config';
 /** Theme 02's own "Message Seller" page — ported functionally 1:1 from
  *  `AtelierMessagesPage`. Reuses the real, shared `ChatWindow` widget as-is
  *  (see that file's own doc comment for why). */
-export function NovaMessagesPage() {
+export function NovaMessagesPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Messages', noindex: true });
   const { store } = useStorefront();
   const { profile } = useGetProfile();

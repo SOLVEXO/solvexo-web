@@ -80,6 +80,8 @@ export interface UpdateStorePayload {
   productTypes?: ProductType[];
   codEnabled?:  boolean;
   paymentCaptureMethod?: 'automatic' | 'manual';
+  /** Shopify "Customer accounts" — 'optional' allows guest checkout. */
+  customerAccounts?: 'optional' | 'required';
   dashboardMetrics?: string[] | null;
   reviewModerationEnabled?: boolean;
   lowStockThreshold?: number;
@@ -145,6 +147,8 @@ export interface StoreData {
    *  it first (see OrdersService.updateSellerOrderStatus). Only takes
    *  effect for a single-store checkout. */
   paymentCaptureMethod: 'automatic' | 'manual';
+  /** Shopify "Customer accounts" setting; absent on older stores = 'optional'. */
+  customerAccounts?: 'optional' | 'required';
   /** Real Shopify-equivalent "customize your dashboard metrics" — which
    *  metric cards the seller's own Store Dashboard shows, and in what
    *  order. `null` (every pre-existing store) means "show the default 4"
@@ -429,6 +433,8 @@ export interface PublicStoreData {
   cookieBannerPosition: 'bottom_bar' | 'bottom_corner';
   cookieBannerColorMode: 'dark' | 'light' | 'brand';
   showDoNotSellLink: boolean;
+  /** Shopify "Customer accounts" setting: true unless the store requires accounts. */
+  guestCheckoutEnabled: boolean;
 }
 
 export interface PublicStoreProductsParams {

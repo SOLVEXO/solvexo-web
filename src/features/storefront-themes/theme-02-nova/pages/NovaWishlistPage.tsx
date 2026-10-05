@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Trash2, ImageOff, Loader2 } from 'lucide-react';
@@ -12,7 +13,8 @@ import { novaTheme as t } from '../theme.config';
  *  `AtelierWishlistPage`, restyled with Nova's rounded/pill vocabulary.
  *  Real, backend-wired (`useWishlistContext`, the same context the product-
  *  card heart icon already writes to). */
-export function NovaWishlistPage() {
+export function NovaWishlistPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'My Wishlist', noindex: true });
   const { wishlistItems, loading, wishlisting, removeFromWishlist } = useWishlistContext();
   const { addToCart, adding } = useCartContext();

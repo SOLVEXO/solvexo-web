@@ -48,10 +48,10 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
   const taxColumns: TableColumn<TaxReportRow>[] = [
     { key: 'storeName', header: 'Store' },
     { key: 'period', header: 'Period', render: (r) => `${r.period.toUpperCase()} ${r.year}` },
-    // Per-store tax report stays in the store's own currency (it's a statement for that store's tax filing).
-    { key: 'totalRevenue', header: 'Revenue', align: 'right', render: (r) => formatMoneyCompact(r.totalRevenue, r.currency ?? 'USD') },
-    { key: 'netRevenue', header: 'Net', align: 'right', render: (r) => formatMoneyCompact(r.netRevenue, r.currency ?? 'USD') },
-    { key: 'estimatedTax', header: 'Est. Tax', align: 'right', render: (r) => formatMoneyCompact(r.estimatedTax, r.currency ?? 'USD') },
+    // The admin API returns tax amounts already converted to USD (null = no FX rate set for that store's currency).
+    { key: 'totalRevenue', header: 'Revenue (USD)', align: 'right', render: (r) => <UsdAmount usd={r.totalRevenue} native={r.totalRevenue ?? 0} currency="USD" /> },
+    { key: 'netRevenue', header: 'Net (USD)', align: 'right', render: (r) => <UsdAmount usd={r.netRevenue} native={r.netRevenue ?? 0} currency="USD" /> },
+    { key: 'estimatedTax', header: 'Est. Tax (USD)', align: 'right', render: (r) => <UsdAmount usd={r.estimatedTax} native={r.estimatedTax ?? 0} currency="USD" /> },
   ];
 
   return (

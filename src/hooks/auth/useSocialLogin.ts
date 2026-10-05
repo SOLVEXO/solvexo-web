@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
 import { apiSocialLogin, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type SocialLoginPayload, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import type { SocialProvider } from '@/components/comman/ui/SocialIcons';
@@ -57,7 +58,7 @@ export function useSocialLogin(role: AppRole = 'seller') {
     setError('');
     setLoading(true);
     try {
-      const res = await apiSocialLogin({ ...payload, role });
+      const res = await apiSocialLogin({ ...payload, role, ...(role === 'user' && !payload.storeId ? { storeId: getCurrentStorefrontStoreId() } : {}) });
       const { token, user } = res.data;
       const serverRole = (user.role ?? role) as AppRole;
       TokenStorage.save(token.accessToken, token.refreshToken);

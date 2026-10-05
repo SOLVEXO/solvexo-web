@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Award, Gift, Check, Loader2, Copy, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -10,7 +11,8 @@ import { novaTheme as t } from '../theme.config';
 
 /** Theme 02's own Loyalty/Rewards page — ported functionally 1:1 from
  *  `AtelierLoyaltyPage`, restyled with Nova's rounded/pill vocabulary. */
-export function NovaLoyaltyPage() {
+export function NovaLoyaltyPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Loyalty & Rewards', noindex: true });
   const { store } = useStorefront();
   const [balance, setBalance] = useState<LoyaltyBalance | null>(null);

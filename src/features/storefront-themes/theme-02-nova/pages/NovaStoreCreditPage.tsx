@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect, useCallback } from 'react';
 import { Wallet, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -11,7 +12,8 @@ const LIMIT = 10;
 
 /** Theme 02's Store credit page: ported 1:1 from `AtelierStoreCreditPage`,
  *  restyled with Nova's rounded/pill vocabulary. */
-export function NovaStoreCreditPage() {
+export function NovaStoreCreditPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Store credit', noindex: true });
   const { store } = useStorefront();
   const [data, setData] = useState<StoreCreditAccount | null>(null);

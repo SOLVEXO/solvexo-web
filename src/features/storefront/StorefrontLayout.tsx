@@ -15,6 +15,7 @@ import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels
 import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
 import { CookieConsentBanner } from './CookieConsentBanner';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
+import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout } from '@/utils/currentStorefront';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -65,6 +66,15 @@ export function StorefrontLayout() {
   // Affiliate referral links land here with ?ref=CODE — remembered for
   // checkout attribution (see utils/affiliateAttribution.ts).
   useEffect(() => { captureAffiliateRef(); }, []);
+  // Publish the active store for code outside this context (AuthGateModal / social login).
+  useEffect(() => {
+    setCurrentStorefrontStoreId(store?.storeId ?? null);
+    return () => setCurrentStorefrontStoreId(null);
+  }, [store?.storeId]);
+  useEffect(() => {
+    setStorefrontGuestCheckout(store?.guestCheckoutEnabled === true);
+    return () => setStorefrontGuestCheckout(false);
+  }, [store?.guestCheckoutEnabled]);
 
   useEffect(() => {
     let cancelled = false;

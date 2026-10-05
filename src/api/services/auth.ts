@@ -242,9 +242,10 @@ export interface LoginPayload {
   /** Must match the storeId the account was actually registered under. */
   storeId?: string;
 }
-interface LoginUser   { id: string; name: string; email: string; role: AppRole; image: string | null }
+interface LoginUser   { id: string; name: string; email: string; role: AppRole; image: string | null; isGuest?: boolean }
 interface AuthTokens  { accessToken: string; refreshToken: string }
 interface LoginData   { user: LoginUser; token: AuthTokens }
+interface GuestSessionData { user: Omit<LoginUser, 'email'> & { email: string | null }; token: AuthTokens }
 
 export interface VerifyOtpPayload { email: string; role: AppRole; otp: string; storeId?: string }
 interface VerifyOtpUser { id: string; name: string; email: string; phone: string; address: string }
@@ -269,6 +270,34 @@ export function apiRegister(payload: RegisterPayload) {
 /** POST /auth/login — returns user + tokens */
 export function apiLogin(payload: LoginPayload) {
   return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.AUTH.LOGIN, payload);
+}
+
+/** True when the stored session is a password-less guest-checkout session. */
+export function isGuestUser(): boolean {
+  try {
+    return TokenStorage.isLoggedIn() && TokenStorage.getUser<{ isGuest?: boolean }>()?.isGuest === true;
+  } catch { return false; }
+}
+
+/** POST /auth/guest — password-less guest session for one store (403 when the store requires accounts). */
+export function apiStartGuestSession(storeId: string) {
+  return client.post<never, ApiResponse<GuestSessionData>>(ENDPOINTS.AUTH.GUEST, { storeId });
+}
+
+export interface GuestContactPayload { email: string; name?: string }
+
+/** PATCH /auth/guest/contact — the email a guest checks out with (guest token only). */
+export function apiSetGuestContact(payload: GuestContactPayload) {
+  return client.patch<never, ApiResponse<unknown>>(ENDPOINTS.AUTH.GUEST_CONTACT, payload);
+}
+
+/** Starts a guest session and saves it exactly like a normal login (host-scoped
+ *  cookies on a storefront; fires `solvexo:auth-login` so the local cart merges). */
+export async function startAndSaveGuestSession(storeId: string): Promise<void> {
+  const res = await apiStartGuestSession(storeId);
+  const { token, user } = res.data;
+  TokenStorage.saveUser({ ...user, isGuest: true });
+  TokenStorage.save(token.accessToken, token.refreshToken);
 }
 
 /** POST /auth/verifyOtp — verifies OTP after register, returns tokens */

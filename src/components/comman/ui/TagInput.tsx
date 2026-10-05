@@ -50,6 +50,9 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag, press Enter',
           if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); }
           if (e.key === 'Backspace' && !input && tags.length) remove(tags.length - 1);
         }}
+        // Text typed but not confirmed with Enter/comma is committed when the field loses focus — so clicking Save
+        // right after typing a tag never silently drops it.
+        onBlur={add}
         placeholder={tags.length === 0 ? placeholder : ''}
         className="flex-1 min-w-[80px] border-0 outline-none text-[12px] text-carbon placeholder:text-slate bg-transparent"
       />

@@ -10,17 +10,17 @@ export interface StripeConnectStatus {
   payoutsEnabled: boolean;
 }
 
-/** GET /api/stripe-connect/status */
-export function apiGetStripeConnectStatus() {
-  return client.get<never, ApiResponse<StripeConnectStatus>>(ENDPOINTS.STRIPE_CONNECT.STATUS);
+/** GET /api/stripe-connect/:storeId/status — Stripe Connect is per store. */
+export function apiGetStripeConnectStatus(storeId: string) {
+  return client.get<never, ApiResponse<StripeConnectStatus>>(ENDPOINTS.STRIPE_CONNECT.STATUS(storeId));
 }
 
-/** POST /api/stripe-connect/onboarding-link */
-export function apiCreateStripeConnectOnboardingLink(refreshUrl: string, returnUrl: string) {
-  return client.post<never, ApiResponse<{ url: string }>>(ENDPOINTS.STRIPE_CONNECT.ONBOARDING_LINK, { refreshUrl, returnUrl });
+/** POST /api/stripe-connect/:storeId/onboarding-link */
+export function apiCreateStripeConnectOnboardingLink(storeId: string, refreshUrl: string, returnUrl: string) {
+  return client.post<never, ApiResponse<{ url: string }>>(ENDPOINTS.STRIPE_CONNECT.ONBOARDING_LINK(storeId), { refreshUrl, returnUrl });
 }
 
-/** POST /api/stripe-connect/sync */
-export function apiSyncStripeConnectStatus() {
-  return client.post<never, ApiResponse<StripeConnectStatus>>(ENDPOINTS.STRIPE_CONNECT.SYNC, {});
+/** POST /api/stripe-connect/:storeId/sync */
+export function apiSyncStripeConnectStatus(storeId: string) {
+  return client.post<never, ApiResponse<StripeConnectStatus>>(ENDPOINTS.STRIPE_CONNECT.SYNC(storeId), {});
 }

@@ -15,7 +15,7 @@ interface ApiResponse<T> {
 export const STAFF_PERMISSIONS = [
   'home.view',
   'orders.view', 'orders.export', 'orders.fulfill', 'orders.capture_payment',
-  'orders.buy_shipping_label', 'orders.return', 'orders.abandoned_checkouts', 'orders.cancel',
+  'orders.buy_shipping_label', 'orders.return', 'orders.abandoned_checkouts', 'orders.cancel', 'orders.edit',
   'orders.refund', 'orders.record_payment', 'orders.disputes_manage',
   'draft_orders.view', 'draft_orders.mark_paid',
   'products.view', 'products.view_cost', 'products.export', 'products.delete', 'products.edit', 'products.edit_price', 'products.edit_cost',
@@ -49,6 +49,7 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'orders.return': 'View & process returns',
   'orders.abandoned_checkouts': 'Manage abandoned checkouts',
   'orders.cancel': 'Cancel orders',
+  'orders.edit': 'Edit orders',
   'orders.refund': 'Issue refunds to the original payment method',
   'orders.record_payment': 'Record manual payments on orders',
   'orders.disputes_manage': 'View & respond to payment disputes',

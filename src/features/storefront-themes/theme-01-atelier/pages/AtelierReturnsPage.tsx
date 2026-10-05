@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { RotateCcw, Package, Loader2, Check } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -12,7 +13,8 @@ const ELIGIBLE_STATUSES = new Set(['delivered', 'completed']);
  *  real this session). One "Request Return" action per delivered/completed
  *  line item, with an inline reason field — no bulk multi-select, matching
  *  this theme's other account surfaces' flat, simple scope. */
-export function AtelierReturnsPage() {
+export function AtelierReturnsPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Returns', noindex: true });
   const [orders, setOrders] = useState<OrderSummary[] | null>(null);
   const [error, setError] = useState('');

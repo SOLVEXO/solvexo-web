@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { RotateCcw, Package, Loader2, Check } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -8,7 +9,8 @@ const ELIGIBLE_STATUSES = new Set(['delivered', 'completed']);
 
 /** Theme 02's own Return/Refund request page — ported functionally 1:1
  *  from `AtelierReturnsPage`, restyled with Nova's rounded/pill vocabulary. */
-export function NovaReturnsPage() {
+export function NovaReturnsPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Returns', noindex: true });
   const [orders, setOrders] = useState<OrderSummary[] | null>(null);
   const [error, setError] = useState('');

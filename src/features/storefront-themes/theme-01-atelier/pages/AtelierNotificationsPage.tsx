@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useEffect } from 'react';
 import { Bell, Check, Trash2, BellOff } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -19,7 +20,8 @@ function timeAgo(iso: string) {
  *  (`useNotification`, the same context + live socket the apex app's
  *  `NotificationBell` already uses — account-wide, not store-scoped, since
  *  the `Notification` schema has no `storeId` field). */
-export function AtelierNotificationsPage() {
+export function AtelierNotificationsPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Notifications', noindex: true });
   const { notifications, notificationsLoading, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotification();
 

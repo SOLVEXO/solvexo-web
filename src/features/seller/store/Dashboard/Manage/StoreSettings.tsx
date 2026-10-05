@@ -5,6 +5,7 @@ import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteL
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
+import { CustomerAccountsSection } from './CustomerAccountsSection';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products:    'Physical Products',
@@ -542,6 +543,8 @@ export function PaymentMethodsTab() {
           )}
         </div>
       </div>
+
+      <CustomerAccountsSection />
     </div>
   );
 }

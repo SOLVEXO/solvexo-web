@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Award, Gift, Check, Loader2, Copy, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -14,7 +15,8 @@ import { atelierTheme as t } from '../theme.config';
  *  loyalty program enabled (or one this buyer has no membership in yet)
  *  gets a clear "not available" state rather than a broken/empty page —
  *  `apiGetMyBalance` 404s in that case, which is the real signal used here. */
-export function AtelierLoyaltyPage() {
+export function AtelierLoyaltyPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Loyalty & Rewards', noindex: true });
   const { store } = useStorefront();
   const [balance, setBalance] = useState<LoyaltyBalance | null>(null);

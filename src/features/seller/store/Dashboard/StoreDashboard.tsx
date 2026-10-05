@@ -49,6 +49,16 @@ interface StoreMetrics {
   primaryWallet: FinanceWallet | null;
 }
 
+// A staff member without the 'analytics.view' permission gets 403 on the analytics endpoints — the dashboard must
+// still open, with those figures at zero, instead of failing as a whole.
+const EMPTY_OVERVIEW: SellerOverviewData = {
+  period: { from: '', to: '' }, grossRevenue: 0, totalRevenue: 0, totalRevenueChangePercent: null, totalOrders: 0,
+  totalOrdersChange: 0, avgOrderValue: 0, avgOrderValueChangePercent: null, repeatBuyerPercent: 0,
+  repeatBuyerTrend: 'flat', totalRefunds: 0, refundRatePercent: 0, cancelledOrders: 0, newCustomersCount: 0,
+  returningCustomersCount: 0, currency: null,
+};
+const EMPTY_TODAY: SellerTodaySummaryData = { revenue: 0, revenueChangePercent: 0, ordersCount: 0, avgOrderValue: 0 };
+
 function useStoreDashboardMetrics(storeId: string) {
   const [metrics, setMetrics] = useState<StoreMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,16 +73,18 @@ function useStoreDashboardMetrics(storeId: string) {
     setLoading(true);
     setError('');
     Promise.all([
-      apiSellerAnalyticsOverview({ storeId, range: '30d' }),
-      apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }),
-      apiGetStoreInventory(storeId, 1, 1),
-      apiSellerAnalyticsToday(storeId),
-      apiGetLowStockSummary(storeId),
-      apiGetSellerOrders(storeId, 1, 1),
-      apiGetSellerReturns({ storeId }),
-      apiGetOpenDisputeCount(storeId),
-      apiGetHighRiskOrderCount(storeId),
-      apiGetAwaitingCaptureCount(storeId),
+      apiSellerAnalyticsOverview({ storeId, range: '30d' }).catch(() => null),
+      apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }).catch(() => null),
+      // The inventory/order/return/dispute/risk/capture cards are each permission-gated on the backend — a staff
+      // member without one of those permissions must still get the dashboard (that card just shows 0).
+      apiGetStoreInventory(storeId, 1, 1).catch(() => null),
+      apiSellerAnalyticsToday(storeId).catch(() => null),
+      apiGetLowStockSummary(storeId).catch(() => null),
+      apiGetSellerOrders(storeId, 1, 1).catch(() => null),
+      apiGetSellerReturns({ storeId }).catch(() => null),
+      apiGetOpenDisputeCount(storeId).catch(() => null),
+      apiGetHighRiskOrderCount(storeId).catch(() => null),
+      apiGetAwaitingCaptureCount(storeId).catch(() => null),
       // Real plan-usage data — same entitlements Billing Center already
       // shows. Only ever surfaced here as a contextual warning when a limit
       // is genuinely close, never as a permanent card (see getUsageWarning).
@@ -86,16 +98,16 @@ function useStoreDashboardMetrics(storeId: string) {
       .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes, forecastRes, financeRes]) => {
         if (cancelled) return;
         setMetrics({
-          overview: overviewRes.data,
-          revenueSeries: revenueRes.data.series,
-          totalProducts: inventoryRes.data.stats.totalProducts,
-          today: todayRes.data,
-          lowStockCount: lowStockRes.data.count,
-          pendingOrdersCount: ordersRes.data.stats.pending,
-          openReturnsCount: returnsRes.data.stats.openRequests,
-          openDisputeCount: disputesRes.data.count,
-          highRiskOrderCount: riskRes.data.count,
-          awaitingCaptureCount: captureRes.data.count,
+          overview: overviewRes?.data ?? EMPTY_OVERVIEW,
+          revenueSeries: revenueRes?.data.series ?? [],
+          totalProducts: inventoryRes?.data.stats.totalProducts ?? 0,
+          today: todayRes?.data ?? EMPTY_TODAY,
+          lowStockCount: lowStockRes?.data.count ?? 0,
+          pendingOrdersCount: ordersRes?.data.stats.pending ?? 0,
+          openReturnsCount: returnsRes?.data.stats.openRequests ?? 0,
+          openDisputeCount: disputesRes?.data.count ?? 0,
+          highRiskOrderCount: riskRes?.data.count ?? 0,
+          awaitingCaptureCount: captureRes?.data.count ?? 0,
           entitlements: (entitlementsRes as any)?.data ?? null,
           salesForecast: (forecastRes as any)?.data ?? null,
           primaryWallet: (financeRes as any)?.wallets?.[0] ?? null,

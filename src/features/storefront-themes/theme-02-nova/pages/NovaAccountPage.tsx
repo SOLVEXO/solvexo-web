@@ -1,6 +1,7 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, Award, MessageCircle, Bell, RotateCcw, Gift, Wallet, ChevronRight } from 'lucide-react';
+import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, MessageCircle, Bell, RotateCcw, Gift, Wallet, MapPin, Star, ChevronRight } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -147,6 +148,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
  *  messages tabs yet — a later phase, matching that page's
  *  own disclosed boundary). */
 export function NovaAccountPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'My Account', noindex: true });
   const { store } = useStorefront();
   const logout = useLogout();
@@ -191,12 +193,16 @@ export function NovaAccountPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" style={{ marginBottom: '36px' }}>
         {[
-          { to: '/loyalty', icon: Award, label: 'Loyalty & Rewards' },
+          // Hidden from the UI (not built-in on Shopify) — to become an installable App later; code/data kept.
+          // { to: '/loyalty', icon: Award, label: 'Loyalty & Rewards' },
+          { to: '/orders', icon: Package, label: 'Orders' },
           { to: '/messages', icon: MessageCircle, label: 'Messages' },
           { to: '/notifications', icon: Bell, label: 'Notifications' },
           { to: '/returns', icon: RotateCcw, label: 'Returns' },
           { to: '/gift-cards', icon: Gift, label: 'Gift Cards' },
           { to: '/store-credit', icon: Wallet, label: 'Store credit' },
+          { to: '/addresses', icon: MapPin, label: 'Addresses' },
+          { to: '/reviews', icon: Star, label: 'Reviews' },
         ].map(link => (
           <Link
             key={link.to} to={link.to}
@@ -262,6 +268,7 @@ export function NovaAccountPage() {
         {orders !== null && orders.length > 0 && (
           <div className="flex flex-col gap-2.5">
             {orders.map(o => <OrderRow key={o.orderId} order={o} />)}
+            <Link to="/orders" className="underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: t.colors.ink, marginTop: '4px' }}>View all orders</Link>
           </div>
         )}
       </section>

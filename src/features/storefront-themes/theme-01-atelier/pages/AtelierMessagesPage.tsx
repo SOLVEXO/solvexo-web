@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -17,7 +18,8 @@ import { atelierTheme as t } from '../theme.config';
  *  rebuilding this considerable surface twice per theme — a deliberate,
  *  disclosed scope choice, the same shared-widget precedent `CurrencySelector`
  *  already set. */
-export function AtelierMessagesPage() {
+export function AtelierMessagesPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Messages', noindex: true });
   const { store } = useStorefront();
   const { profile } = useGetProfile();

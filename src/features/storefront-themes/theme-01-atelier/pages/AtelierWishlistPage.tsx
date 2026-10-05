@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Trash2, ImageOff, Loader2 } from 'lucide-react';
@@ -14,7 +15,8 @@ import { atelierTheme as t } from '../theme.config';
  *  flat grid of items with Remove/Add-to-Cart actions only — no sorting/
  *  filtering, matching the scope of every other storefront-local account
  *  surface in this theme. */
-export function AtelierWishlistPage() {
+export function AtelierWishlistPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'My Wishlist', noindex: true });
   const { wishlistItems, loading, wishlisting, removeFromWishlist } = useWishlistContext();
   const { addToCart, adding } = useCartContext();

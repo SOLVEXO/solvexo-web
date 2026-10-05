@@ -133,6 +133,11 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** Like useCurrencyPreference() but returns null when no provider is mounted (demo previews). */
+export function useCurrencyPreferenceOptional(): CurrencyPreferenceContextValue | null {
+  return useContext(Ctx);
+}
+
 export function useCurrencyPreference(): CurrencyPreferenceContextValue {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useCurrencyPreference must be inside CurrencyPreferenceProvider');

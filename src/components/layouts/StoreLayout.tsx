@@ -199,7 +199,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // OR'd with `giftcards.manage` (issue/adjust balance) — a staff
       // member granted only that, not general view, still needs a nav path.
       { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards',    requiredPermission: ['giftcards.view', 'giftcards.manage'] },
-      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' },
+      // Hidden from the UI (not built-in on Shopify) — to become an installable App later; code/data kept.
+      // { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' },
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
       { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],

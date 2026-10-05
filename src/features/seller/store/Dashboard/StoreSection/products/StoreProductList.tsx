@@ -5,13 +5,15 @@ import {
   AlertCircle, RefreshCw, TrendingUp,
   Eye, Pencil, Trash2, Copy, CheckCircle2, XCircle,
 } from 'lucide-react';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
+import { TokenStorage } from '@/api/services/auth';
 import {
   Table,      type TableColumn, type TableSort,
   Badge,      StatusBadge,
   EmptyState,
   Card,
   SearchInput,
+  FilterDropdown,
   SkeletonBox,
   ActionMenu,
   Modal,
@@ -27,6 +29,9 @@ import {
   type ImportProductsCsvResult,
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
+import { BulkActionsBar } from './BulkActionsBar';
+import { BulkEditModal } from './BulkEditModal';
+import { BULK_EDIT_MAX_PRODUCTS, type BulkTarget } from '@/api/services/productsBulk';
 import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -45,40 +50,52 @@ export default function StoreProductList() {
   const [deleting,      setDeleting]      = useState(false);
   const [deleteError,   setDeleteError]   = useState('');
 
-  const LIMIT = 10;
-  const SEARCH_LIMIT = 1000;
+  const LIMIT = 25;
   const [refreshKey, setRefreshKey] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const isSearching = debouncedSearch.trim().length > 0;
+  const [statusFilter, setStatusFilter] = useState('');
 
+  // Search, status filter, pagination and the Product (title) sort are all
+  // server-side. Other column sorts only reorder the loaded page.
   const [sort, setSort] = useState<TableSort | null>(null);
-  // Sorting a column header only makes sense across the WHOLE catalog, not
-  // just the currently-visible page of 10 — clicking "Price" used to
-  // silently reorder only that one page, which looked like it worked but
-  // never actually surfaced the real cheapest/priciest product store-wide
-  // (found during the Catalog audit). Reuses the exact same "widen the
-  // fetch to the whole catalog" mechanism search already uses below.
-  const isWideFetch = isSearching || sort !== null;
+  const serverSort: 'title_asc' | 'title_desc' | undefined =
+    sort?.key === 'name' ? (sort.direction === 'asc' ? 'title_asc' : 'title_desc') : undefined;
+
+  // Bulk selection: explicit page ids, or "all matching" mode (selectAll).
+  const [selected,  setSelected]  = useState<Set<string | number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+  const clearSelection = () => { setSelected(new Set()); setSelectAll(false); };
+  const clearSelectionRef = useRef(clearSelection);
+  clearSelectionRef.current = clearSelection;
+  const [editIds, setEditIds] = useState<string[] | null>(null);
+  const [editLimited, setEditLimited] = useState(false);
+
+  const user = TokenStorage.getUser();
+  const canEdit      = hasNavPermission(user, 'products.edit');
+  const canEditPrice = hasNavPermission(user, 'products.edit_price');
+  const canDelete    = hasNavPermission(user, 'products.delete');
 
   const handleSortChange = (key: string) => {
+    clearSelection();
     setSort(prev => (prev && prev.key === key)
       ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
       : { key, direction: 'asc' });
   };
 
   useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    if (search === debouncedSearch) return;
+    const id = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+      clearSelectionRef.current();
+    }, 300);
     return () => clearTimeout(id);
-  }, [search]);
+  }, [search, debouncedSearch]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // When searching OR sorting, fetch a much larger page so both cover the
-    // whole catalog rather than just the currently-visible page (no
-    // server-side search/sort endpoint exists).
-    const [fetchPage, fetchLimit] = isWideFetch ? [1, SEARCH_LIMIT] : [page, LIMIT];
-    apiGetStoreInventory(storeId, fetchPage, fetchLimit)
+    apiGetStoreInventory(storeId, page, LIMIT, { q: debouncedSearch, status: statusFilter || undefined, sort: serverSort })
       .then(res => {
         if (cancelled) return;
         setProducts(res.data.products ?? []);
@@ -90,7 +107,7 @@ export default function StoreProductList() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, isWideFetch]);
+  }, [storeId, page, refreshKey, debouncedSearch, statusFilter, serverSort]);
 
   const goAdd    = () => navigate(`/store/${storeId}/products/add`);
   const goEdit   = (p: InventoryProduct) => navigate(`/store/${storeId}/products/edit/${p.productId}`);
@@ -99,9 +116,30 @@ export default function StoreProductList() {
   const handlePageChange = (p: number) => {
     setLoading(true);
     setError('');
-    setSearch('');
+    clearSelection();
     setPage(p);
   };
+
+  const handleStatusFilter = (v: string) => {
+    clearSelection();
+    setStatusFilter(v);
+    setPage(1);
+  };
+
+  const bulkTarget: BulkTarget = selectAll
+    ? { selectAll: true, filter: { q: debouncedSearch.trim() || undefined, status: statusFilter || undefined } }
+    : { productIds: [...selected].map(String) };
+  const bulkCount = selectAll ? totalProducts : selected.size;
+  const pageAllSelected = products.length > 0 && products.every(p => selected.has(p.productId));
+
+  const handleOpenEditor = async () => {
+    if (!selectAll) { setEditLimited(false); setEditIds([...selected].map(String)); return; }
+    const res = await apiGetStoreInventory(storeId, 1, BULK_EDIT_MAX_PRODUCTS, { q: debouncedSearch, status: statusFilter || undefined, sort: serverSort });
+    setEditLimited(res.data.pagination.totalProducts > BULK_EDIT_MAX_PRODUCTS);
+    setEditIds(res.data.products.map(p => p.productId));
+  };
+
+  const handleBulkDone = () => { clearSelection(); setRefreshKey(k => k + 1); };
 
   const handleRetry = () => {
     setLoading(true);
@@ -187,15 +225,8 @@ export default function StoreProductList() {
     }
   };
 
-  const filtered = isSearching
-    ? products.filter(p =>
-        p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
-    : products;
-
-  const sorted = sort
-    ? [...filtered].sort((a, b) => {
+  const sorted = sort && sort.key !== 'name'
+    ? [...products].sort((a, b) => {
         const av = a[sort.key as keyof InventoryProduct];
         const bv = b[sort.key as keyof InventoryProduct];
         const cmp = typeof av === 'number' && typeof bv === 'number'
@@ -203,7 +234,7 @@ export default function StoreProductList() {
           : String(av ?? '').localeCompare(String(bv ?? ''));
         return sort.direction === 'asc' ? cmp : -cmp;
       })
-    : filtered;
+    : products;
 
   // ── Table columns ──────────────────────────────────────────────────────────
   const columns: TableColumn<InventoryProduct>[] = [
@@ -338,10 +369,20 @@ export default function StoreProductList() {
             <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-3">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Products</p>
               <div className="flex items-center gap-2 ml-auto">
+                <FilterDropdown
+                  value={statusFilter}
+                  onChange={handleStatusFilter}
+                  placeholder="All statuses"
+                  options={[
+                    { value: 'active',   label: 'Active' },
+                    { value: 'draft',    label: 'Draft' },
+                    { value: 'inactive', label: 'Archived' },
+                  ]}
+                />
                 <SearchInput
                   value={search}
                   onChange={setSearch}
-                  placeholder="Search by name or SKU…"
+                  placeholder="Search title, tag, SKU or barcode…"
                   className="w-[220px]"
                 />
                 <button
@@ -374,18 +415,45 @@ export default function StoreProductList() {
             ) : sorted.length === 0 ? (
               <EmptyState
                 icon={<ShoppingBag size={30} className="text-brand-orange opacity-55" />}
-                title={search ? 'No products match your search' : 'No products yet'}
-                description={search ? 'Try a different name or SKU.' : 'Add physical items, digital downloads, or services to start selling.'}
-                action={search ? undefined : { label: 'Add Your First Product', onClick: goAdd, icon: <Plus size={15} /> }}
+                title={search || statusFilter ? 'No products match your search' : 'No products yet'}
+                description={search || statusFilter ? 'Try a different search or filter.' : 'Add physical items, digital downloads, or services to start selling.'}
+                action={search || statusFilter ? undefined : { label: 'Add Your First Product', onClick: goAdd, icon: <Plus size={15} /> }}
               />
             ) : (
+              <>
+              {selected.size > 0 && (
+                <BulkActionsBar
+                  storeId={storeId}
+                  count={bulkCount}
+                  target={bulkTarget}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  onEditProducts={handleOpenEditor}
+                  onClear={clearSelection}
+                  onDone={handleBulkDone}
+                />
+              )}
+              {pageAllSelected && totalProducts > products.length && (
+                <div className="px-5 py-2 text-[12px] text-charcoal bg-cream border-b border-bone text-center">
+                  {selectAll ? (
+                    <>All {totalProducts.toLocaleString()} products are selected.{' '}
+                      <button type="button" className="text-brand-orange font-semibold underline bg-transparent border-0 cursor-pointer p-0" onClick={clearSelection}>Clear selection</button></>
+                  ) : (
+                    <>All {products.length} products on this page are selected.{' '}
+                      <button type="button" className="text-brand-orange font-semibold underline bg-transparent border-0 cursor-pointer p-0" onClick={() => setSelectAll(true)}>Select all {totalProducts.toLocaleString()} products</button></>
+                  )}
+                </div>
+              )}
               <Table
                 columns={columns}
                 data={sorted}
                 keyExtractor={p => p.productId}
                 sort={sort ?? undefined}
                 onSortChange={handleSortChange}
-                pagination={isWideFetch ? undefined : {
+                selectable={canEdit || canDelete}
+                selectedKeys={selected}
+                onSelectionChange={keys => { setSelectAll(false); setSelected(keys); }}
+                pagination={{
                   page,
                   total:    totalProducts,
                   perPage:  LIMIT,
@@ -393,11 +461,24 @@ export default function StoreProductList() {
                   label:    'products',
                 }}
               />
+              </>
             )}
           </Card>
         )}
 
       </div>
+
+      {editIds && (
+        <BulkEditModal
+          storeId={storeId}
+          productIds={editIds}
+          currencyLabel={currencySymbol(store?.baseCurrency)}
+          canEditPrice={canEditPrice}
+          limited={editLimited}
+          onClose={() => setEditIds(null)}
+          onSaved={handleBulkDone}
+        />
+      )}
 
       {deleteTarget && (
         <Modal title="Delete this product?" onClose={() => setDeleteTarget(null)} footer={

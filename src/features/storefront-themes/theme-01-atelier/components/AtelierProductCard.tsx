@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { ImageOff, Heart } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { useStorefrontOptional } from '@/features/storefront/StorefrontContext';
+import { useCurrencyPreferenceOptional } from '@/contexts/CurrencyPreferenceContext';
 import type { PublicStoreProduct } from '@/api/services/store';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
@@ -25,7 +27,16 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const inWishlist = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const symbol = currencySymbol(currency);
+  // Prices are stored in the STORE's own currency; `currency` is the buyer's display currency — convert, never
+  // print a native amount with the buyer-currency symbol.
+  const sf = useStorefrontOptional();
+  const cp = useCurrencyPreferenceOptional();
+  const nativeCurrency = sf?.store.baseCurrency ?? currency;
+  const conv = (n: number) => (cp ? cp.convert(n, nativeCurrency) : n);
   const price = product.defaultVariantPrice;
+  // Until the exchange rates have loaded, a converted price would be a guess — show a dash instead of a wrong number.
+  const ratesReady = !cp || cp.ratesLoaded || nativeCurrency === cp.currency;
+  const displayPrice = price != null && ratesReady ? conv(price) : null;
   const onSale = product.compareAtPrice != null && product.defaultVariantPrice != null && product.compareAtPrice > product.defaultVariantPrice;
 
   const soldOut = product.inStock === false;
@@ -95,11 +106,11 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
       )}
       <div className="flex items-center gap-2 mt-1">
         <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: onSale ? t.colors.accent : t.colors.inkMuted }}>
-          {price != null ? `${symbol}${fmt2(price)}` : '—'}
+          {displayPrice != null ? `${symbol}${fmt2(displayPrice)}` : '—'}
         </span>
-        {onSale && product.compareAtPrice != null && (
+        {onSale && ratesReady && product.compareAtPrice != null && (
           <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
-            {symbol}{fmt2(product.compareAtPrice)}
+            {symbol}{fmt2(conv(product.compareAtPrice))}
           </span>
         )}
       </div>

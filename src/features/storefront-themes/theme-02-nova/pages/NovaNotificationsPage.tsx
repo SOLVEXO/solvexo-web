@@ -1,3 +1,4 @@
+import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useEffect } from 'react';
 import { Bell, Check, Trash2, BellOff } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -17,7 +18,8 @@ function timeAgo(iso: string) {
 
 /** Theme 02's own Notifications page — ported functionally 1:1 from
  *  `AtelierNotificationsPage`, restyled with Nova's rounded/pill vocabulary. */
-export function NovaNotificationsPage() {
+export function NovaNotificationsPage() {
+  useRequireRealAccount();
   useStorefrontSeo({ title: 'Notifications', noindex: true });
   const { notifications, notificationsLoading, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotification();
 

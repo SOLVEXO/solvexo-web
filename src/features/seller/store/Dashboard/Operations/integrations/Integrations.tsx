@@ -413,7 +413,7 @@ function BankTransferIntegrationCard({ integration, storeId, onChanged }: {
 // `StoreIntegrationsService.list`), so status/mode/currency are already
 // correct in the shared card header above this; this section only owns the
 // actual connect/continue-setup action and the post-onboarding-return sync. ──
-function StripeConnectSection({ integration, onChanged }: { integration: StoreIntegrationView; onChanged: () => void }) {
+function StripeConnectSection({ integration, storeId, onChanged }: { integration: StoreIntegrationView; storeId: string; onChanged: () => void }) {
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
@@ -426,7 +426,7 @@ function StripeConnectSection({ integration, onChanged }: { integration: StoreIn
     const url = new URL(window.location.href);
     if (url.searchParams.get('connect') !== 'done') return;
     setSyncing(true);
-    apiSyncStripeConnectStatus()
+    apiSyncStripeConnectStatus(storeId)
       .then(() => onChanged())
       .catch(() => {})
       .finally(() => {
@@ -446,7 +446,7 @@ function StripeConnectSection({ integration, onChanged }: { integration: StoreIn
       const refreshUrl = url.toString();
       url.searchParams.set('connect', 'done');
       const returnUrl = url.toString();
-      const res = await apiCreateStripeConnectOnboardingLink(refreshUrl, returnUrl);
+      const res = await apiCreateStripeConnectOnboardingLink(storeId, refreshUrl, returnUrl);
       window.location.href = res.data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start Stripe onboarding.');
@@ -583,7 +583,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
       </div>
 
       {isStripe ? (
-        <StripeConnectSection integration={integration} onChanged={onChanged} />
+        <StripeConnectSection integration={integration} storeId={storeId} onChanged={onChanged} />
       ) : integration.status === 'not_connected' || integration.status === 'disabled' ? (
         <>
           <p className="text-[12.5px] text-slate mb-3">Accept real customer payments through {displayName} on your storefront checkout.</p>

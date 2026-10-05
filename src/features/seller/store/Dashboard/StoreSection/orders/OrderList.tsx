@@ -75,13 +75,6 @@ export function StoreOrderList() {
   const [selectedCarrierId, setSelectedCarrierId] = useState('');
 
   const LIMIT = 10;
-  // No server-side order search endpoint exists — when searching, fetch a
-  // much larger page instead of the normal small one so the search covers
-  // (up to) the whole order list rather than silently only ever matching
-  // whatever 10 rows happened to already be on screen (same pattern as
-  // StoreProductList's SEARCH_LIMIT).
-  const SEARCH_LIMIT = 1000;
-
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(id);
@@ -90,10 +83,12 @@ export function StoreOrderList() {
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
-    const isSearching = debouncedSearch.trim().length > 0;
-    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
-
-    apiGetSellerOrders(storeId, fetchPage, fetchLimit)
+    // Search, status and type are applied by the SERVER over every order (paginated), not on the loaded page.
+    apiGetSellerOrders(storeId, page, LIMIT, undefined, {
+      status: statusF || undefined,
+      type: typeF || undefined,
+      q: debouncedSearch.trim() || undefined,
+    })
       .then(res => {
         if (cancelled) return;
         setOrders(res.data.orders ?? []);
@@ -106,14 +101,16 @@ export function StoreOrderList() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, debouncedSearch]);
+  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF]);
 
   const handlePageChange = (p: number) => {
     setLoading(true);
     setError('');
-    setSearch('');
     setPage(p);
   };
+
+  // A new search / filter always starts from page 1.
+  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -180,17 +177,7 @@ export function StoreOrderList() {
       .finally(() => setSubmittingTracking(false));
   };
 
-  const filtered = orders.filter(o => {
-    const q = search.toLowerCase();
-    if (q &&
-      !o.orderNumber.toLowerCase().includes(q) &&
-      !o.customer.name.toLowerCase().includes(q) &&
-      !o.product.toLowerCase().includes(q)
-    ) return false;
-    if (statusF && o.status !== statusF) return false;
-    if (typeF   && o.type   !== typeF)   return false;
-    return true;
-  });
+  const filtered = orders; // already filtered + searched server-side
 
   // ── Columns ──────────────────────────────────────────────────────────────────
   const columns: TableColumn<SellerOrder>[] = [
