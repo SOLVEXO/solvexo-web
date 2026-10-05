@@ -667,6 +667,15 @@ export const ENDPOINTS = {
     DELETE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
   },
 
+  // ── CUSTOMER SOCIAL LOGIN (a store's own Google/Facebook app for its buyers) ─
+  CUSTOMER_SOCIAL_LOGIN: {
+    SETUP:      (storeId: string) => `/api/store/${storeId}/customer-login`,
+    PROVIDER:   (storeId: string, provider: string) => `/api/store/${storeId}/customer-login/${provider}`,
+    PROVIDERS:  '/api/auth/social/providers',
+    START:      (provider: string) => `/api/auth/social/start/${provider}`,
+    EXCHANGE:   '/api/auth/social/exchange',
+  },
+
   UPLOAD: {
     PUBLIC_FILE: '/api/upload/file',
     PRIVATE_FILE: '/api/upload/private-file',

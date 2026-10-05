@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore } from '@/api/services/store';
@@ -70,6 +71,16 @@ export function CustomerAccountsSection() {
             </label>
           );
         })}
+      </div>
+
+      <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-bone">
+        <div>
+          <p className="text-[13px] font-medium text-charcoal">Authentication</p>
+          <p className="text-[11px] text-slate">Let customers sign in with Google or Facebook.</p>
+        </div>
+        <Link to={`/store/${storeId}/settings/customer-accounts/authentication`} className="px-3.5 py-1.5 rounded-lg border border-bone bg-white text-[12.5px] font-semibold text-charcoal no-underline hover:bg-cream">
+          Manage
+        </Link>
       </div>
 
       {!canEdit && <p className="text-[11px] text-slate mt-3">You need the "Manage general settings" permission to change this.</p>}

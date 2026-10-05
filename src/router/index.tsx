@@ -83,6 +83,8 @@ const AtelierEditCodePage = lazy(() => import('@/features/seller/store/Dashboard
 const AtelierHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage').then(m => ({ default: m.AtelierHeaderFooterPage })));
 const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview').then(m => ({ default: m.ThemeDemoPreview })));
 const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeSharePreviewPage').then(m => ({ default: m.ThemeSharePreviewPage })));
+const CustomerAuthenticationPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerAuthenticationPage').then(m => ({ default: m.CustomerAuthenticationPage })));
+const CustomerSocialProviderPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerSocialProviderPage').then(m => ({ default: m.CustomerSocialProviderPage })));
 const SellerSettings = lazy(() => import('@/features/seller/dashboard/settings/SellerSettings').then(m => ({ default: m.SellerSettings })));
 const SellerShipping = lazy(() => import('@/features/seller/dashboard/SellerShipping').then(m => ({ default: m.SellerShipping })));
 const SellerMessages = lazy(() => import('@/features/seller/dashboard/SellerMessages').then(m => ({ default: m.SellerMessages })));
@@ -351,7 +353,9 @@ const mainRouter = createBrowserRouter([
           // Reports below. The raw `StoreSettings` component itself is now
           // only ever rendered embedded, as this hub's "General" tab.
           { path: 'settings',                         element: <SettingsHub /> },
-          { path: 'staff',                            element: <StoreStaff /> },
+          { path: 'settings/customer-accounts/authentication',            element: <CustomerAuthenticationPage /> },
+          { path: 'settings/customer-accounts/authentication/:provider', element: <CustomerSocialProviderPage /> },
+          { path: 'staff',                           element: <StoreStaff /> },
           { path: 'account',                          element: <SellerSettings /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },

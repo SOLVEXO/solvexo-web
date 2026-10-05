@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useLogin } from '@/hooks/auth/useLogin';
+import { useStorefrontSocialLogin } from '@/hooks/auth/useStorefrontSocialLogin';
+import { StorefrontSocialButtons } from '@/components/comman/ui/StorefrontSocialButtons';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
@@ -17,6 +19,7 @@ export function AtelierLoginPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
   const login = useLogin();
+  const social = useStorefrontSocialLogin(store.storeId, redirectTo);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,10 +39,10 @@ export function AtelierLoginPage() {
         </p>
       </div>
 
-      {login.error && (
-        <div className="flex items-center gap-2" style={{ marginBottom: '16px', border: `1px solid ${t.colors.danger}`, padding: '10px 14px' }}>
+      {(login.error || social.error) && (
+        <div role="alert" className="flex items-center gap-2" style={{ marginBottom: '16px', border: `1px solid ${t.colors.danger}`, padding: '10px 14px' }}>
           <AlertCircle size={14} style={{ color: t.colors.danger, flexShrink: 0 }} />
-          <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.danger }}>{login.error}</span>
+          <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.danger }}>{login.error || social.error}</span>
         </div>
       )}
 
@@ -76,6 +79,15 @@ export function AtelierLoginPage() {
           Sign In
         </AtelierButton>
       </form>
+
+      <div style={{ marginTop: '18px' }}>
+        <StorefrontSocialButtons
+          providers={social.providers} onStart={social.start} loading={social.loading} disabled={login.loading}
+          dividerText="or"
+          lineColor={t.colors.border} textColor={t.colors.inkMuted} fontFamily={t.fonts.body}
+          buttonStyle={{ border: `1px solid ${t.colors.border}`, background: 'transparent', color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13.5px', fontWeight: 500, padding: '12px 16px' }}
+        />
+      </div>
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
         New here?{' '}

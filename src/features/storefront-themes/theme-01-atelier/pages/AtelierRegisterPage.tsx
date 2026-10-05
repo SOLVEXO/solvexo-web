@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useRegister } from '@/hooks/auth/useRegister';
+import { useStorefrontSocialLogin } from '@/hooks/auth/useStorefrontSocialLogin';
+import { StorefrontSocialButtons } from '@/components/comman/ui/StorefrontSocialButtons';
 import { useDetectedCountry } from '@/hooks/auth/useDetectedCountry';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -19,6 +21,7 @@ export function AtelierRegisterPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
   const register = useRegister();
+  const social = useStorefrontSocialLogin(store.storeId, redirectTo);
   const detectedCountry = useDetectedCountry();
 
   const [name, setName] = useState('');
@@ -96,6 +99,15 @@ export function AtelierRegisterPage() {
           Create Account
         </AtelierButton>
       </form>
+
+      <div style={{ marginTop: '18px' }}>
+        <StorefrontSocialButtons
+          providers={social.providers} onStart={social.start} loading={social.loading} disabled={register.loading}
+          dividerText="or sign up with"
+          lineColor={t.colors.border} textColor={t.colors.inkMuted} fontFamily={t.fonts.body}
+          buttonStyle={{ border: `1px solid ${t.colors.border}`, background: 'transparent', color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13.5px', fontWeight: 500, padding: '12px 16px' }}
+        />
+      </div>
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
         Already have an account?{' '}

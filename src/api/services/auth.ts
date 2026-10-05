@@ -416,3 +416,9 @@ export function apiSocialLogin(payload: SocialLoginPayload) {
   return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.AUTH.SOCIAL_LOGIN, payload);
 }
 
+/** POST /auth/social/exchange — swaps the one-time `social_code` a store's own Google/Facebook sign-in
+ *  redirects back with for the real tokens (so tokens never travel in a URL). */
+export function apiExchangeSocialCode(code: string) {
+  return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.CUSTOMER_SOCIAL_LOGIN.EXCHANGE, { code });
+}
+
