@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
-import { Loader2, FileJson, FileCode, Folder, Save, CheckCircle2, UploadCloud, AlertCircle, AlertTriangle, Image as ImageIcon, ExternalLink, Monitor, Tablet, Smartphone, History, RotateCcw } from 'lucide-react';
+import { Loader2, FileJson, FileCode, Folder, Save, CheckCircle2, UploadCloud, AlertCircle, AlertTriangle, Image as ImageIcon, ExternalLink, Monitor, Tablet, Smartphone, History, RotateCcw, Code2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -19,6 +19,7 @@ import {
 import type { Section } from '@/api/services/storefrontTypes';
 import { apiBrowseMediaLibrary, type MediaAsset } from '@/api/services/mediaLibrary';
 import { apiGetStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
+import { ThemeSourcePackageDialog } from './ThemeSourcePackageDialog';
 import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { SECTION_META } from '../builder/sectionRegistry';
 import { validateSectionsJson } from '../builder/validateSectionsJson';
@@ -168,6 +169,7 @@ export function AtelierEditCodePage() {
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+  const [sourcePackageOpen, setSourcePackageOpen] = useState(false);
 
   // Live preview for the currently-open templates/*.json file — reuses the
   // exact same `AtelierLivePreview` the visual Customizer uses, per the
@@ -509,6 +511,7 @@ export function AtelierEditCodePage() {
         title={`Edit Code — ${manifest.name}`}
         subtitle="Developer workspace — each templates/*.json is the same real draft document the Customize page edits, just as raw data."
       >
+        <button type="button" onClick={() => setSourcePackageOpen(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-bone bg-white text-[12px] font-semibold text-charcoal cursor-pointer"><Code2 size={14} /> Theme source ZIP</button>
         <PreviewButton storeId={storeId} installedThemeId={installedThemeId} />
         {selected?.kind === 'json' && (
           <div className="flex items-center gap-2">
@@ -659,6 +662,7 @@ export function AtelierEditCodePage() {
         onClose={() => setVersionsOpen(false)}
         onRestore={restoreVersion}
       />
+      {sourcePackageOpen && installedThemeId && <ThemeSourcePackageDialog storeId={storeId} installedThemeId={installedThemeId} onClose={() => setSourcePackageOpen(false)} />}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui/ActionMe
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { apiListCollections, apiDeleteCollection, type CollectionData } from '@/api/services/collections';
 import { CollectionFormModal } from './CollectionFormModal';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 function StatusBadge({ status }: { status: 'active' | 'draft' }) {
   return (
@@ -53,7 +54,20 @@ export default function StoreCollections() {
       <StorePageHeader
         title="Collections"
         subtitle="Named, curated product groupings — New Arrivals, Sale, Best Sellers — usable in your homepage sections and navigation."
-        actions={<Button icon={<Plus size={13} />} size="sm" onClick={() => { setEditing(null); setShowForm(true); }}>New Collection</Button>}
+        actions={(
+          <div className="flex items-center gap-2">
+            <BulkImportButton
+              entityLabel="collections"
+              basePath={`/api/collections/${storeId}`}
+              onImported={load}
+              notes={[
+                'Creates manual collections only. Automatic (rule-based) collections, images and sort order are set in the editor.',
+                'Each Product SKU must be a variant SKU of this store; an unknown SKU fails that row.',
+              ]}
+            />
+            <Button icon={<Plus size={13} />} size="sm" onClick={() => { setEditing(null); setShowForm(true); }}>New Collection</Button>
+          </div>
+        )}
       />
 
       <div className="px-4 lg:px-7 pt-5 pb-8">

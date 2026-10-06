@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { CustomerStoreCreditCard } from './CustomerStoreCreditCard';
 import {
   apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta,
@@ -361,9 +362,19 @@ export default function StoreCustomerList() {
         title="Customers"
         subtitle="Manage buyer relationships and followers for this store."
         actions={
-          <Button size="sm" icon={<Plus size={14} />} onClick={() => { setCreateForm({ name: '', email: '', phone: '' }); setCreateError(''); setCreateOpen(true); }}>
-            Create Customer
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {hasNavPermission(TokenStorage.getUser(), 'customers.edit') && (
+              <BulkImportButton
+                entityLabel="customers"
+                basePath={`/api/store/${storeId}/customers`}
+                onImported={refetch}
+                notes={['Email is the unique key — customers that already exist in this store are skipped.', 'No password or email is sent; customers can sign in later by resetting their password.']}
+              />
+            )}
+            <Button size="sm" icon={<Plus size={14} />} onClick={() => { setCreateForm({ name: '', email: '', phone: '' }); setCreateError(''); setCreateOpen(true); }}>
+              Create Customer
+            </Button>
+          </div>
         }
       />
 

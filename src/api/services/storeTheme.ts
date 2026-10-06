@@ -204,6 +204,39 @@ export function apiGetStoreTheme(storeId: string, installedThemeId?: string) {
   return client.get<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.GET(storeId), installedThemeId));
 }
 
+export interface ThemePackageRevision {
+  version: number;
+  changeType: 'upload' | 'file_edit' | 'rollback';
+  restoredFromVersion: number | null;
+  createdAt?: string;
+  files: Array<{ path: string; size: number; sha256: string; encoding?: 'utf8' | 'base64'; content?: string }>;
+}
+
+const themePackagePath = (storeId: string, installedThemeId: string) =>
+  `/api/store-theme/${storeId}/installed/${installedThemeId}/package`;
+
+export function apiListThemePackageRevisions(storeId: string, installedThemeId: string) {
+  return client.get<never, ApiResponse<ThemePackageRevision[]>>(themePackagePath(storeId, installedThemeId));
+}
+
+export function apiUploadThemePackage(storeId: string, installedThemeId: string, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body);
+}
+
+export function apiGetThemePackageRevision(storeId: string, installedThemeId: string, version: number) {
+  return client.get<never, ApiResponse<ThemePackageRevision>>( `${themePackagePath(storeId, installedThemeId)}/${version}`);
+}
+
+export function apiEditThemePackageFile(storeId: string, installedThemeId: string, path: string, content: string) {
+  return client.patch<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { path, content });
+}
+
+export function apiRollbackThemePackage(storeId: string, installedThemeId: string, version: number) {
+  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/rollback`);
+}
+
 export function apiGetStoreThemeDraft(storeId: string, installedThemeId?: string) {
   return client.get<never, ApiResponse<StoreThemeDraftData>>(withInstance(ENDPOINTS.STORE_THEME.DRAFT(storeId), installedThemeId));
 }

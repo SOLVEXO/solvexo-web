@@ -7,6 +7,7 @@ import {
   apiRetryStripeCardPaymentSupport,
   type FxConfig, type EnabledCurrency,
 } from '@/api/services/config/adminConfig';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { apiGetCurrentRates, apiGetFxHistory, apiGetFxStaleness, apiOverrideFxRate, type CurrentRatesMap, type ExchangeRateHistoryRow } from '@/api/services/exchangeRate';
 
 function formatDate(iso: string) {
@@ -320,7 +321,18 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
                 {loading ? 'Loading…' : `${currencies.length} of 152 real ISO-4217 currencies enabled for checkout/settlement.`}
               </p>
             </div>
-            <Button variant="primary" size="sm" loading={enablingAll} onClick={enableAllCurrencies}>Enable All Currencies</Button>
+            <div className="flex items-center gap-2">
+              <BulkImportButton
+                entityLabel="currencies"
+                basePath="/api/admin/platform-config/currencies"
+                onImported={load}
+                notes={[
+                  'Already-enabled currencies are skipped; their bands are not changed.',
+                  'Import only enables currencies — it does not set exchange rates.',
+                ]}
+              />
+              <Button variant="primary" size="sm" loading={enablingAll} onClick={enableAllCurrencies}>Enable All Currencies</Button>
+            </div>
           </div>
           {enableAllMessage && <p className="text-[12px] text-slate mt-2">{enableAllMessage}</p>}
           {currencies.length > 0 && (

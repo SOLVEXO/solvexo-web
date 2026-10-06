@@ -54,10 +54,6 @@ export interface SubscriberListParams {
   limit?:  number;
 }
 
-export interface SubscriberImportResult {
-  added: number; alreadySubscribed: number; skippedUnsubscribed: number; invalid: number;
-}
-
 export function apiListStoreSubscribers(storeId: string, params: SubscriberListParams = {}) {
   return client.get<never, ApiResponse<SubscriberListResponse>>(ENDPOINTS.NEWSLETTER.STORE_SUBSCRIBERS(storeId), { params });
 }
@@ -69,13 +65,6 @@ export function apiExportStoreSubscribers(storeId: string, params: Pick<Subscrib
 
 export function apiAddStoreSubscriber(storeId: string, email: string) {
   return client.post<never, ApiResponse<null>>(ENDPOINTS.NEWSLETTER.STORE_SUBSCRIBERS(storeId), { email });
-}
-
-/** `csv` is the raw file text (an `email` column, or one email per line).
- *  Keep each call under ~1,000 lines — the API's JSON body limit is ~100 KB,
- *  so split bigger files into chunks and sum the results. */
-export function apiImportStoreSubscribers(storeId: string, csv: string, consentConfirmed: boolean) {
-  return client.post<never, ApiResponse<SubscriberImportResult>>(ENDPOINTS.NEWSLETTER.STORE_SUBSCRIBERS_IMPORT(storeId), { csv, consentConfirmed });
 }
 
 /** Unsubscribe (`false`). Re-subscribing someone who opted out is rejected by the API. */

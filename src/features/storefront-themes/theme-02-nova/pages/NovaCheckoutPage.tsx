@@ -641,6 +641,12 @@ export function NovaCheckoutPage() {
               <div className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger, border: `1.5px solid ${t.colors.danger}`, borderRadius: t.radius.sm, padding: '10px 12px' }}>
                 <AlertCircle size={13} className="mt-[1px] shrink-0" /> {checkoutError}
               </div>
+            ) : !checkout && !creatingCheckout && !readyToCreateCheckout ? (
+              <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
+                {!isDigital && !shippingChosen
+                  ? 'Choose a shipping method to continue to payment.'
+                  : 'Save your delivery address to continue to payment.'}
+              </p>
             ) : creatingCheckout || !checkout ? (
               <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
             ) : creditCoversAll ? (

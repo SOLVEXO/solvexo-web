@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { MailCheck, MailX, UserPlus, Download, Upload, Trash2, Mail } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MailCheck, MailX, UserPlus, Download, Trash2, Mail } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
-  apiListStoreSubscribers, apiExportStoreSubscribers, apiAddStoreSubscriber, apiImportStoreSubscribers,
+  apiListStoreSubscribers, apiExportStoreSubscribers, apiAddStoreSubscriber,
   apiSetStoreSubscriberStatus, apiDeleteStoreSubscriber,
-  type Subscriber, type SubscriberListResponse, type SubscriberStatusFilter, type SubscriberImportResult,
+  type Subscriber, type SubscriberListResponse, type SubscriberStatusFilter,
 } from '@/api/services/newsletter';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
@@ -13,31 +13,14 @@ import { SearchInput } from '@/components/comman/ui/SearchInput';
 import { FilterDropdown } from '@/components/comman/ui/FilterDropdown';
 import { TabBar } from '@/components/comman/ui/TabBar';
 import { Button } from '@/components/comman/ui/Button';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { Modal } from '@/components/comman/ui/Modal';
 import { SUBSCRIBER_SOURCE_LABEL, fmtSubscriberDate, downloadBlob, errMsg } from '@/utils/subscribers';
 
 const PER_PAGE = 25;
-// The API's JSON body limit is ~100 KB — bigger files go up in chunks.
-const IMPORT_CHUNK_LINES = 1000;
 
 const STORE_SOURCE_OPTIONS = ['store_footer', 'store_section', 'checkout', 'seller', 'import']
   .map(value => ({ value, label: SUBSCRIBER_SOURCE_LABEL[value] }));
-
-/** Splits CSV text into ≤IMPORT_CHUNK_LINES-line chunks, repeating a header
- *  row (one that has an "email" cell) on every chunk so each is parsed alike. */
-function chunkCsv(text: string): string[] {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length === 0) return [];
-  const hasHeader = lines[0].split(/[,;\t]/).some(c => /^"?e-?mail( address)?"?$/i.test(c.trim()));
-  const header = hasHeader ? lines[0] : null;
-  const body = hasHeader ? lines.slice(1) : lines;
-  const chunks: string[] = [];
-  for (let i = 0; i < body.length; i += IMPORT_CHUNK_LINES) {
-    const part = body.slice(i, i + IMPORT_CHUNK_LINES);
-    chunks.push((header ? [header, ...part] : part).join('\n'));
-  }
-  return chunks;
-}
 
 /** A store's own email subscribers — the people who agreed to receive its
  *  marketing email (storefront signup, checkout checkbox, added/imported by
@@ -67,15 +50,6 @@ export default function StoreSubscribers() {
   const [addEmail, setAddEmail] = useState('');
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState('');
-
-  const [importOpen, setImportOpen] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importFileName, setImportFileName] = useState('');
-  const [importConsent, setImportConsent] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState('');
-  const [importResult, setImportResult] = useState<SubscriberImportResult | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Only re-runs when the search text changes, so resetting to page 1
@@ -152,46 +126,6 @@ export default function StoreSubscribers() {
     } finally { setAddSaving(false); }
   };
 
-  const openImport = () => {
-    setImportText(''); setImportFileName(''); setImportConsent(false);
-    setImportError(''); setImportResult(null); setImportOpen(true);
-  };
-
-  const handleFile = (file: File | undefined) => {
-    if (!file) return;
-    setImportFileName(file.name);
-    setImportResult(null);
-    const reader = new FileReader();
-    reader.onload = () => setImportText(String(reader.result ?? ''));
-    reader.onerror = () => setImportError('Could not read that file.');
-    reader.readAsText(file);
-  };
-
-  const handleImport = async () => {
-    const chunks = chunkCsv(importText);
-    if (chunks.length === 0) { setImportError('No emails found in this file.'); return; }
-    setImporting(true);
-    setImportError('');
-    const total: SubscriberImportResult = { added: 0, alreadySubscribed: 0, skippedUnsubscribed: 0, invalid: 0 };
-    try {
-      for (const chunk of chunks) {
-        const res = await apiImportStoreSubscribers(storeId, chunk, importConsent);
-        if (!res.success || !res.data) throw new Error(res.message || 'Import failed');
-        total.added += res.data.added;
-        total.alreadySubscribed += res.data.alreadySubscribed;
-        total.skippedUnsubscribed += res.data.skippedUnsubscribed;
-        total.invalid += res.data.invalid;
-      }
-      setImportResult(total);
-      reload();
-    } catch (err) {
-      // Earlier chunks may already be in — show what landed so far.
-      if (total.added || total.alreadySubscribed) setImportResult(total);
-      setImportError(errMsg(err, 'Import failed.'));
-      reload();
-    } finally { setImporting(false); }
-  };
-
   const summary = data?.summary;
   const firstLoad = loading && !data;
 
@@ -255,7 +189,13 @@ export default function StoreSubscribers() {
         subtitle="People who agreed to receive marketing emails from this store. Campaigns and automations only go to this list."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" icon={<Upload size={14} />} onClick={openImport}>Import</Button>
+            <BulkImportButton
+              entityLabel="subscribers"
+              basePath={`/api/newsletter/stores/${storeId}/subscribers`}
+              onImported={reload}
+              consent={{ label: 'I confirm these customers agreed to receive marketing emails from my store.' }}
+              notes={['Already subscribed addresses are skipped.', 'People who unsubscribed before are skipped — only they can opt back in.']}
+            />
             <Button size="sm" icon={<UserPlus size={14} />} onClick={() => { setAddEmail(''); setAddError(''); setAddOpen(true); }}>
               Add subscriber
             </Button>
@@ -345,50 +285,6 @@ export default function StoreSubscribers() {
             />
             <p className="text-[11px] text-slate">Only add people who have agreed to receive marketing emails from you.</p>
             {addError && <p className="text-[12px] text-error">{addError}</p>}
-          </div>
-        </Modal>
-      )}
-
-      {importOpen && (
-        <Modal
-          title="Import subscribers"
-          onClose={() => { if (!importing) setImportOpen(false); }}
-          footer={
-            <div className="flex justify-end gap-2">
-              <Button size="sm" variant="outline" disabled={importing} onClick={() => setImportOpen(false)}>
-                {importResult ? 'Done' : 'Cancel'}
-              </Button>
-              {!importResult && (
-                <Button size="sm" loading={importing} disabled={!importText || !importConsent} onClick={handleImport}>
-                  Import
-                </Button>
-              )}
-            </div>
-          }
-        >
-          <div className="flex flex-col gap-3">
-            <p className="text-[12.5px] text-charcoal">
-              Upload a CSV with an <span className="font-semibold">email</span> column, or a plain list with one email per line.
-              People who unsubscribed before are skipped — only they can opt back in.
-            </p>
-            <input ref={fileRef} type="file" accept=".csv,.txt,text/csv,text/plain" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
-            <Button size="sm" variant="outline" icon={<Upload size={14} />} onClick={() => fileRef.current?.click()} disabled={importing}>
-              {importFileName || 'Choose file'}
-            </Button>
-            {importText && !importResult && (
-              <p className="text-[11px] text-slate">{importText.split(/\r?\n/).filter(l => l.trim()).length.toLocaleString()} line(s) ready to import.</p>
-            )}
-            <label className="flex items-start gap-2 text-[12.5px] text-charcoal cursor-pointer">
-              <input type="checkbox" className="mt-[3px]" checked={importConsent} onChange={e => setImportConsent(e.target.checked)} disabled={importing || !!importResult} />
-              I confirm these customers agreed to receive marketing emails from my store.
-            </label>
-            {importResult && (
-              <div className="rounded-lg bg-success-bg text-success px-3 py-2.5 text-[12.5px]">
-                Added {importResult.added.toLocaleString()} · Already subscribed {importResult.alreadySubscribed.toLocaleString()}
-                {' '}· Skipped (unsubscribed) {importResult.skippedUnsubscribed.toLocaleString()} · Invalid {importResult.invalid.toLocaleString()}
-              </div>
-            )}
-            {importError && <p className="text-[12px] text-error">{importError}</p>}
           </div>
         </Modal>
       )}

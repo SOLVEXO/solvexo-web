@@ -15,6 +15,7 @@ import { Table, type TableColumn } from '@/components/comman/ui/Table';
 import { StarRating } from '@/components/comman/ui/StarRating';
 import { ActionMenu } from '@/components/comman/ui/ActionMenu';
 import { FilterDropdown } from '@/components/comman/ui/FilterDropdown';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 // ── Form modal ────────────────────────────────────────────────────────────────
 // A seller-submitted testimonial (submittedBy: 'seller') is the seller's own
@@ -313,7 +314,15 @@ export function AdminTestimonials({ tabs }: { tabs?: ReactNode } = {}) {
             Seller reviews of Solvexo shown on the homepage — {stats.active} published · {stats.inactive} hidden
           </p>
         </div>
-        <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">Add Testimonial</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <BulkImportButton
+            entityLabel="testimonials"
+            basePath="/api/testimonials"
+            onImported={refetch}
+            notes={['A testimonial with the same seller name and text is skipped, never duplicated.']}
+          />
+          <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">Add Testimonial</Button>
+        </div>
       </div>
       {tabs}
 

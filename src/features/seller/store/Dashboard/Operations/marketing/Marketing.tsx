@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import {
@@ -605,7 +606,18 @@ export function StoreMarketing() {
         {/* Coupons Tab */}
         {tab === 'coupons' && (
           <div className="flex flex-col gap-5">
-            <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
+              <BulkImportButton
+                entityLabel="coupons"
+                basePath={`/api/marketing/${storeId}/coupons`}
+                onImported={() => { apiGetCoupons(storeId).then(res => setCoupons(res.data.coupons ?? [])).catch(() => {}); }}
+                notes={[
+                  'A code that already exists in this store is skipped, not duplicated. Codes are saved in UPPER-CASE.',
+                  'Discount Type is percentage or fixed (percentage max 100). Dates use YYYY-MM-DD.',
+                ]}
+              />
+            </div>
 
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

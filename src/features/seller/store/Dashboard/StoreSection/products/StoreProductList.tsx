@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus, Download, Upload,
+  ShoppingBag, Plus, Download,
   AlertCircle, RefreshCw, TrendingUp,
-  Eye, Pencil, Trash2, Copy, CheckCircle2, XCircle,
+  Eye, Pencil, Trash2, Copy,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
@@ -24,11 +24,10 @@ import {
   apiDeleteProduct,
   apiDuplicateProduct,
   apiExportProductsCsv,
-  apiImportProductsCsv,
   type InventoryProduct,
-  type ImportProductsCsvResult,
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { BulkActionsBar } from './BulkActionsBar';
 import { BulkEditModal } from './BulkEditModal';
 import { BULK_EDIT_MAX_PRODUCTS, type BulkTarget } from '@/api/services/productsBulk';
@@ -74,6 +73,8 @@ export default function StoreProductList() {
   const canEdit      = hasNavPermission(user, 'products.edit');
   const canEditPrice = hasNavPermission(user, 'products.edit_price');
   const canDelete    = hasNavPermission(user, 'products.delete');
+  // Product creation is a seller-only route on the backend, so is import.
+  const canImport    = user?.role !== 'staff';
 
   const handleSortChange = (key: string) => {
     clearSelection();
@@ -164,33 +165,6 @@ export default function StoreProductList() {
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to export products.'))
       .finally(() => setExporting(false));
-  };
-
-  // Real bulk CSV Import — was missing entirely (only Export existed, see
-  // the Catalog audit). Every row is a real, individually-validated product
-  // creation through the same `addPhysicalProduct` path a manual Add
-  // Product does — the backend returns a genuine partial-success summary
-  // (created count + a per-row error list) rather than an all-or-nothing
-  // result, shown to the seller in a results modal below.
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<ImportProductsCsvResult | null>(null);
-  const handleImportClick = () => fileInputRef.current?.click();
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setImporting(true);
-    setError('');
-    try {
-      const res = await apiImportProductsCsv(storeId, file);
-      setImportResult(res.data);
-      if (res.data.createdCount > 0) setRefreshKey(k => k + 1);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to import products.');
-    } finally {
-      setImporting(false);
-    }
   };
 
   // Real "Duplicate" — was missing entirely (see the Catalog audit). Lands
@@ -310,21 +284,31 @@ export default function StoreProductList() {
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
         actions={
           <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <button
-              onClick={handleImportClick}
-              disabled={importing}
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-            >
-              <Upload size={14} />
-              <span className="hidden sm:inline">{importing ? 'Importing…' : 'Import'}</span>
-            </button>
+            {canImport && (
+              <>
+                <BulkImportButton
+                  entityLabel="products"
+                  basePath={`/api/products/store-products/${storeId}`}
+                  onImported={() => setRefreshKey(k => k + 1)}
+                  notes={[
+                    'SKU is the key: a row whose SKU already exists updates that product (blank cells are left unchanged; stock is never changed here).',
+                    'Category must match one of your store categories. Status is active or draft.',
+                    'To change stock use Inventory > Import. To add variants use Import variants.',
+                  ]}
+                />
+                <BulkImportButton
+                  label="Import variants"
+                  entityLabel="variants"
+                  basePath={`/api/products/store-products/${storeId}/variants`}
+                  onImported={() => setRefreshKey(k => k + 1)}
+                  notes={[
+                    'Find the product by Product SKU (any existing variant SKU of it); Product Name is only a fallback and must be unique.',
+                    'A new variant must use the same option names as the product already uses.',
+                    'A variant SKU that already exists only gets its price / compare-at price updated.',
+                  ]}
+                />
+              </>
+            )}
             <button
               onClick={handleExportCsv}
               disabled={exporting}
@@ -496,32 +480,6 @@ export default function StoreProductList() {
         </Modal>
       )}
 
-      {importResult && (
-        <Modal title="Import results" onClose={() => setImportResult(null)} footer={
-          <Button variant="primary" onClick={() => setImportResult(null)}>Done</Button>
-        }>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-[13px]">
-              <CheckCircle2 size={15} className="text-success shrink-0" />
-              <span className="text-charcoal">
-                <span className="font-semibold">{importResult.createdCount}</span> of {importResult.totalRows} product{importResult.totalRows !== 1 ? 's' : ''} imported successfully.
-              </span>
-            </div>
-            {importResult.failed.length > 0 && (
-              <div className="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto border border-bone rounded-[8px] p-3">
-                {importResult.failed.map((f, i) => (
-                  <div key={i} className="flex items-start gap-2 text-[12px]">
-                    <XCircle size={13} className="text-error shrink-0 mt-[1px]" />
-                    <span className="text-slate">
-                      Row {f.row} <span className="font-medium text-charcoal">"{f.name}"</span> — {f.error}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
     </>
   );
 }

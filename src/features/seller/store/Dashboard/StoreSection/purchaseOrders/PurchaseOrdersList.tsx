@@ -4,6 +4,7 @@ import { Truck, Plus, Search } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, EmptyState, Badge, MetricCard } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { currencySymbol } from '@/utils/currency';
 import { apiListPurchaseOrders, type PurchaseOrder, type PurchaseOrderStatus } from '@/api/services/purchaseOrders';
 
@@ -48,6 +49,12 @@ export default function PurchaseOrdersList({ embedded = false }: { embedded?: bo
   const actionsBar = (
     <div className="flex gap-2">
       {!embedded && <Button variant="outline" size="sm" onClick={() => navigate(`/store/${storeId}/reorder-suggestions`)}>Reorder Suggestions</Button>}
+      <BulkImportButton
+        entityLabel="suppliers"
+        label="Import suppliers"
+        basePath={`/api/purchase-orders/${storeId}/suppliers`}
+        notes={['Supplier name is the unique key (case-insensitive); a name or email that already exists is skipped.']}
+      />
       <Button icon={<Plus size={13} />} size="sm" onClick={() => navigate(`/store/${storeId}/purchase-orders/new`)}>New Purchase Order</Button>
     </div>
   );

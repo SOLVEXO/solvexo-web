@@ -344,30 +344,6 @@ export function apiExportProductsCsv(storeId: string) {
   });
 }
 
-export interface ImportProductsCsvResult {
-  createdCount: number;
-  totalRows: number;
-  created: { row: number; name: string }[];
-  failed: { row: number; name: string; error: string }[];
-}
-
-/** POST /api/products/store-products/:storeId/import — bulk-create simple,
- *  single-variant physical products from a seller-uploaded CSV (same column
- *  shape `apiExportProductsCsv` produces, so export→edit→re-upload works as
- *  a starting template). Every row is attempted independently — the result
- *  is a real partial-success summary, never an all-or-nothing outcome. */
-export function apiImportProductsCsv(storeId: string, file: File) {
-  const formData = new FormData();
-  formData.append('file', file);
-  return client.post<never, ApiResponse<ImportProductsCsvResult>>(
-    ENDPOINTS.PRODUCT.IMPORT_CSV(storeId),
-    formData,
-    // Rows are created one-by-one server-side (up to 500), so this legitimately
-    // outlasts the client's default 15s timeout.
-    { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300_000 },
-  );
-}
-
 // ── Variant CRUD (physical products only, seller-owned) ────────────────────────
 // Add/edit/remove a variant after the product already exists — used by the
 // "Manage Variants" section on the Edit Product page. Creation of the first
@@ -472,27 +448,6 @@ export function apiExportInventoryCsv(storeId: string) {
   return client.get<never, Blob>(ENDPOINTS.INVENTORY.EXPORT_CSV(storeId), {
     responseType: 'blob',
   });
-}
-
-export interface ImportStockCsvResult {
-  updatedCount: number;
-  totalRows: number;
-  updated: { row: number; sku: string }[];
-  failed: { row: number; sku: string; error: string }[];
-}
-
-/** POST /api/inventory/:storeId/import-stock-csv — bulk stock
- *  RECONCILIATION by SKU (`SKU, Quantity` columns, an absolute count) —
- *  deliberately separate from `apiImportProductsCsv`, which only ever
- *  creates new products. */
-export function apiImportStockCsv(storeId: string, file: File) {
-  const formData = new FormData();
-  formData.append('file', file);
-  return client.post<never, ApiResponse<ImportStockCsvResult>>(
-    ENDPOINTS.INVENTORY.IMPORT_STOCK_CSV(storeId),
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
-  );
 }
 
 // ── Real, variant-level Inventory management ────────────────────────────────

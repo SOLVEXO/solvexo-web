@@ -4,6 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminFaqs } from '@/hooks/admin/useAdminFaqs';
 import { apiCreateFaq, apiUpdateFaq, apiToggleFaq, apiDeleteFaq, type Faq } from '@/api/services/faq';
 import { Button } from '@/components/comman/ui/Button';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Input, Textarea } from '@/components/comman/ui/Input';
 import { Toggle } from '@/components/comman/ui/Toggle';
@@ -145,7 +146,15 @@ export function AdminFaqs({ tabs }: { tabs?: ReactNode } = {}) {
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">FAQs</h1>
           <p className="text-[12px] text-slate mt-[2px]">{stats.active} active · {stats.inactive} inactive</p>
         </div>
-        <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">Add FAQ</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <BulkImportButton
+            entityLabel="FAQs"
+            basePath="/api/faqs"
+            onImported={refetch}
+            notes={['A question that already exists (case-insensitive) is skipped, not duplicated.', 'Category is optional (blank = general); Order is a whole number, lower shows first.']}
+          />
+          <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>Add FAQ</Button>
+        </div>
       </div>
       {tabs}
 

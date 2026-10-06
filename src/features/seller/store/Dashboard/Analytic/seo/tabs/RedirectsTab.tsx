@@ -8,6 +8,7 @@ import { Field } from '@/components/comman/ui/Field';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { RedirectsTable, type RedirectRowData } from '@/components/comman/seo';
 import { useSeoRedirects, useSeoRedirectMutations } from '@/hooks/seller/seo/useSeoRedirects';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 interface RedirectsTabProps {
   storeId: string;
@@ -48,7 +49,15 @@ export function RedirectsTab({ storeId }: RedirectsTabProps) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-[15px] font-bold text-carbon">Redirect Manager</p>
-        <Button variant="primary" size="sm" icon={<Plus size={13} />} onClick={openNew}>New Redirect</Button>
+        <div className="flex items-center gap-2">
+          <BulkImportButton
+            entityLabel="redirects"
+            basePath={`/api/store/${storeId}/seo/redirects`}
+            onImported={refetch}
+            notes={['One redirect per source path — a source that already exists is skipped.', 'Status Code 301 or 302 (blank = 301); Destination is a path starting with / or a Solvexo https URL.']}
+          />
+          <Button variant="primary" size="sm" icon={<Plus size={13} />} onClick={openNew}>New Redirect</Button>
+        </div>
       </div>
 
       <Card padding="none">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import {
   ShoppingBag, Download,
   AlertCircle, RefreshCw,
@@ -36,7 +37,6 @@ import {
   apiCancelTransfer,
   apiListTransfers,
   apiUpdateVariant,
-  apiImportStockCsv,
   type LowStockSummaryData,
   type StockLine,
   type StockAdjustment,
@@ -45,7 +45,6 @@ import {
   type VariantLocationBreakdown,
   type StockTransfer,
   type StockLineStatusFilter,
-  type ImportStockCsvResult,
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
 import { apiStartStockCount } from '@/api/services/stockCounts';
@@ -202,29 +201,6 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to export inventory.'))
       .finally(() => setExporting(false));
-  };
-
-  // ── Bulk stock reconciliation via CSV — real per-row result (updated
-  // count + a per-row error list), never all-or-nothing, same UX pattern
-  // the product CSV importer already established.
-  const csvInputRef = useRef<HTMLInputElement>(null);
-  const [importingCsv, setImportingCsv] = useState(false);
-  const [csvImportResult, setCsvImportResult] = useState<ImportStockCsvResult | null>(null);
-  const handleImportCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setImportingCsv(true);
-    setError('');
-    try {
-      const res = await apiImportStockCsv(storeId, file);
-      setCsvImportResult(res.data);
-      if (res.data.updatedCount > 0) setRefreshKey(k => k + 1);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to import stock CSV.');
-    } finally {
-      setImportingCsv(false);
-    }
   };
 
   // ── Real, reason-coded stock adjustment — was missing entirely (the only
@@ -772,16 +748,16 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
         <Download size={14} className="sm:hidden" />
         <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
       </button>
-      <input ref={csvInputRef} type="file" accept=".csv" onChange={handleImportCsvFile} className="hidden" />
-      <button
-        title="Import a stock-reconciliation CSV (SKU, Quantity)"
-        onClick={() => csvInputRef.current?.click()}
-        disabled={importingCsv}
-        className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
-      >
-        <Download size={14} className="sm:hidden rotate-180" />
-        <span className="hidden sm:inline">{importingCsv ? 'Importing…' : 'Import CSV'}</span>
-      </button>
+      <BulkImportButton
+        entityLabel="stock counts"
+        title="Import stock"
+        basePath={`/api/inventory/${storeId}/stock`}
+        onImported={() => setRefreshKey(k => k + 1)}
+        notes={[
+          'Quantity is the counted on-hand number (absolute), not a +/- change. Rows that already match are skipped.',
+          'Each change is recorded in stock history as a correction. Unlimited-stock SKUs cannot be imported.',
+        ]}
+      />
     </div>
   );
 
@@ -1338,29 +1314,6 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
         </Modal>
       )}
 
-      {/* ── CSV import result ────────────────────────────────────────────── */}
-      {csvImportResult && (
-        <Modal title="Stock CSV Import" onClose={() => setCsvImportResult(null)} footer={
-          <Button variant="ghost" onClick={() => setCsvImportResult(null)}>Close</Button>
-        }>
-          <div className="flex flex-col gap-3">
-            <p className="text-[13px] text-charcoal">
-              <span className="font-semibold">{csvImportResult.updatedCount}</span> of {csvImportResult.totalRows} SKU{csvImportResult.totalRows !== 1 ? 's' : ''} reconciled successfully.
-            </p>
-            {csvImportResult.failed.length > 0 && (
-              <div className="flex flex-col divide-y divide-[#f3f2ec] max-h-[260px] overflow-y-auto border border-bone rounded-lg">
-                {csvImportResult.failed.map((f, i) => (
-                  <div key={i} className="px-3 py-2 text-[11.5px]">
-                    <span className="font-semibold text-charcoal">Row {f.row} ({f.sku})</span>
-                    <span className="text-error"> — {f.error}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
-
       {/* ── Manage Locations modal ──────────────────────────────────────── */}
       {locationsModalOpen && (
         <Modal title="Manage Locations" onClose={() => setLocationsModalOpen(false)} footer={
@@ -1371,6 +1324,14 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
               Add a physical branch/warehouse to start tracking stock per-location. A single location
               behaves exactly like before — location tracking only turns on once you add a second one.
             </p>
+            <div>
+              <BulkImportButton
+                entityLabel="locations"
+                basePath={`/api/pos/locations/${storeId}`}
+                onImported={() => { apiListLocations(storeId).then(res => setAllLocations(res.data ?? [])).catch(() => undefined); setLocationsRefreshKey(k => k + 1); }}
+                notes={['Your plan\'s location limit applies; rows over the limit fail. Bins are managed per location in this window.']}
+              />
+            </div>
 
             {locationsLoading ? (
               <div className="flex flex-col gap-2">

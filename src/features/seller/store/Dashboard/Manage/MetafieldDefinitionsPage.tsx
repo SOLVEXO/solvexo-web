@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Pencil, Layers } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import {
   Button, Table, type TableColumn, Modal, Input, Select, Field, Badge, EmptyState,
 } from '@/components/comman/ui';
@@ -148,6 +149,18 @@ export function MetafieldDefinitionsPage({ embedded = false }: { embedded?: bool
     },
   ];
 
+  const importButton = (
+    <BulkImportButton
+      entityLabel="custom fields"
+      basePath={`/api/metafields/${storeId}/definitions`}
+      onImported={load}
+      notes={[
+        'A field whose Owner Resource + Key already exists is skipped, not duplicated.',
+        'Key must start with a lowercase letter and use only lowercase letters, numbers, - or _.',
+      ]}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-5">
       {!embedded && (
@@ -155,18 +168,24 @@ export function MetafieldDefinitionsPage({ embedded = false }: { embedded?: bool
           title="Custom Fields"
           subtitle="Add your own fields to products, categories, collections, or pages — no developer needed."
           actions={(
-            <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
-              New Field
-            </Button>
+            <div className="flex items-center gap-2">
+              {importButton}
+              <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
+                New Field
+              </Button>
+            </div>
           )}
         />
       )}
 
-      {embedded && definitions !== null && definitions.length > 0 && (
-        <div className="flex justify-end">
-          <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
-            New Field
-          </Button>
+      {embedded && definitions !== null && (
+        <div className="flex justify-end items-center gap-2">
+          {importButton}
+          {definitions.length > 0 && (
+            <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
+              New Field
+            </Button>
+          )}
         </div>
       )}
 

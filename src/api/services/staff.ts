@@ -83,7 +83,7 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'files.manage': 'Manage files',
   'onlinestore.themes.manage': 'Manage themes',
   'onlinestore.content.manage': 'Manage pages, blog & policies',
-  'settings.billing.view': 'View plan & billing',
+  'settings.billing.view': 'View billing and receive billing emails',
   'settings.billing.manage': 'Manage plan & billing',
   'settings.general.manage': 'Manage general store settings',
   'settings.taxes.manage': 'Manage tax settings',

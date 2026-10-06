@@ -3,6 +3,7 @@ import { FolderTree, Tag, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { apiAddCategory, apiUpdateCategory, apiDeleteCategory, type CategoryNode } from '@/api/services/categories';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox, ImageUpload, Toggle } from '@/components/comman/ui';
@@ -227,9 +228,22 @@ export default function StoreCategories() {
         title="Categories"
         subtitle="Your store's own categories — organize your products however makes sense to you."
         actions={
-          <Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(null)} disabled={!store}>
-            Add Category
-          </Button>
+          <div className="flex items-center gap-2">
+            {store && (
+              <BulkImportButton
+                entityLabel="categories"
+                basePath={`/api/categories/store/${store._id}`}
+                onImported={refetch}
+                notes={[
+                  'A category that already exists under the same parent (same name) is skipped, not duplicated.',
+                  'Parent must be a main category — list it earlier in the file or create it first. Only one level of nesting is allowed.',
+                ]}
+              />
+            )}
+            <Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(null)} disabled={!store}>
+              Add Category
+            </Button>
+          </div>
         }
       />
 

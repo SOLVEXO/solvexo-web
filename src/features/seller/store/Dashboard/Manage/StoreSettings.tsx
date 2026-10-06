@@ -8,6 +8,7 @@ import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { CustomerAccountsSection } from './CustomerAccountsSection';
 import { DomainsSection } from './DomainsSection';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products:    'Physical Products',
@@ -304,6 +305,14 @@ export function StoreProfileTab() {
             >
               + Add tax region
             </button>
+            <div className="mt-3">
+              <BulkImportButton
+                entityLabel="tax regions"
+                basePath={`/api/store/${storeId}/tax-regions`}
+                onImported={refetch}
+                notes={['Saved immediately (no need to press Save). An existing country + state gets its rate updated.']}
+              />
+            </div>
           </div>
 
           {/* Review moderation */}

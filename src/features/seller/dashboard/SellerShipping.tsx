@@ -14,6 +14,7 @@ import type { ShippingZone, ShippingCarrier, ShippingZoneType, ShippingRateType 
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
@@ -382,9 +383,22 @@ function ZoneList({ storeId, zoneType, profileRef }: { storeId: string; zoneType
               : 'Your own rates (flat, by weight or by order price) — shown to your buyers at checkout.'}
           </p>
         </div>
-        <Button icon={<Plus size={13} />} size="sm" onClick={() => { setFormPrefill(null); setFormZone(null); }}>
-          {isPickup ? 'Add Location' : isLocal ? 'Add Area' : 'Add Zone'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {!isLocal && !isPickup && profileRef === 'general' && (
+            <BulkImportButton
+              entityLabel="shipping zones"
+              basePath={`/api/shipping-zones/store/${storeId}`}
+              onImported={refetch}
+              notes={[
+                'Imports flat-rate zones into the General profile. Weight/price tiers, pickup, local delivery and custom profiles are set up in the editor.',
+                'A zone with the same country + province + city already in General is skipped. Country = the English name from the dropdown.',
+              ]}
+            />
+          )}
+          <Button icon={<Plus size={13} />} size="sm" onClick={() => { setFormPrefill(null); setFormZone(null); }}>
+            {isPickup ? 'Add Location' : isLocal ? 'Add Area' : 'Add Zone'}
+          </Button>
+        </div>
       </div>
 
       {loading ? (

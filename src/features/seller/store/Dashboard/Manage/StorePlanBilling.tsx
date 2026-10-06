@@ -3,7 +3,8 @@ import {
   Check, Zap, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
   XCircle, RotateCcw, Loader2, type LucideIcon,
 } from 'lucide-react';
-import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { StorePageHeader, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
+import { TokenStorage } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
@@ -23,6 +24,8 @@ import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd }
 
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
+
+const INVOICES_PER_PAGE = 10;
 
 const INVOICE_STATUS_STYLE: Record<string, string> = {
   paid: 'bg-[#e3f4ea] text-[#1e7a3c]',
@@ -164,6 +167,14 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
   const [addons, setAddons] = useState<AddonPurchase[]>([]);
   const [invoices, setInvoices] = useState<PlatformPlanInvoice[]>([]);
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePages, setInvoicePages] = useState(1);
+  const [invoiceTotal, setInvoiceTotal] = useState(0);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
+  const [invoicesError, setInvoicesError] = useState('');
+  const [invoiceNonce, setInvoiceNonce] = useState(0);
+  // Staff with only 'View billing and receive billing emails' get a read-only page (backend enforces too).
+  const canManage = hasNavPermission(TokenStorage.getUser() as Parameters<typeof hasNavPermission>[0], 'settings.billing.manage');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [changingId, setChangingId] = useState<string | null>(null);
@@ -194,14 +205,32 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const load = useCallback(() => {
     if (!storeId) return;
     setLoading(true); setError('');
-    Promise.all([apiBrowsePlatformPlans(), apiGetStorePlatformPlan(storeId), apiGetStoreEntitlements(storeId), apiListStoreAddons(storeId), apiGetStoreInvoices(storeId)])
-      .then(([plansRes, curRes, entRes, addonRes, invRes]) => {
-        setPlans(plansRes.data); setCurrent(curRes.data); setEntitlements(entRes.data); setAddons(addonRes.data); setInvoices(invRes.data.invoices);
+    Promise.all([apiBrowsePlatformPlans(), apiGetStorePlatformPlan(storeId), apiGetStoreEntitlements(storeId), apiListStoreAddons(storeId)])
+      .then(([plansRes, curRes, entRes, addonRes]) => {
+        setPlans(plansRes.data); setCurrent(curRes.data); setEntitlements(entRes.data); setAddons(addonRes.data);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load plan & billing.'))
       .finally(() => setLoading(false));
+    setInvoicePage(1); setInvoiceNonce(n => n + 1);
   }, [storeId]);
   useEffect(load, [load]);
+
+  // Billing history is paged server-side; refetched on page change, retry, or after any plan/add-on change (load()).
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    setInvoicesLoading(true); setInvoicesError('');
+    apiGetStoreInvoices(storeId, { page: invoicePage, limit: INVOICES_PER_PAGE })
+      .then(res => {
+        if (cancelled) return;
+        setInvoices(res.data.invoices); setInvoiceTotal(res.data.total); setInvoicePages(Math.max(1, res.data.pages));
+        // A page past the end (e.g. after a refund/void shrinks the list) falls back to the last real page.
+        if (res.data.invoices.length === 0 && res.data.total > 0 && invoicePage > 1) setInvoicePage(Math.max(1, res.data.pages));
+      })
+      .catch(err => { if (!cancelled) setInvoicesError(err instanceof Error ? err.message : 'Failed to load billing history.'); })
+      .finally(() => { if (!cancelled) setInvoicesLoading(false); });
+    return () => { cancelled = true; };
+  }, [storeId, invoicePage, invoiceNonce]);
 
   // A fresh key per confirm-modal open (not per component mount — this page
   // stays mounted across many unrelated plan-change attempts over time, so a
@@ -453,6 +482,10 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
           </div>
         )}
 
+        {!canManage && (
+          <p className="text-[12px] text-slate">You can view billing and receive billing emails. Changing the plan or payment method needs the "Manage plan & billing" permission.</p>
+        )}
+
         {banner && (() => {
           const s = BANNER_STYLE[banner.tone];
           return (
@@ -461,9 +494,11 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                 <banner.Icon size={15} className={`shrink-0 ${s.icon}`} />
                 {banner.text}
               </span>
-              <Button size="sm" variant="outline" loading={reactivateBusy || portalBusy || scheduledBusy} onClick={banner.onAction}>
-                {banner.actionLabel}
-              </Button>
+              {canManage && (
+                <Button size="sm" variant="outline" loading={reactivateBusy || portalBusy || scheduledBusy} onClick={banner.onAction}>
+                  {banner.actionLabel}
+                </Button>
+              )}
             </div>
           );
         })()}
@@ -484,12 +519,12 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                 }`}>
                   {isCancelPending ? 'Canceling' : isTrialEnded ? 'Trial ended' : current.status === 'trialing' ? 'Trial' : current.status}
                 </span>
-                {current.stripeCustomerId && (
+                {canManage && current.stripeCustomerId && (
                   <Button size="sm" variant="outline" icon={<CreditCard size={13} />} loading={portalBusy} onClick={openBillingPortal}>
                     Payment method
                   </Button>
                 )}
-                {current.amountUSD > 0 && (
+                {canManage && current.amountUSD > 0 && (
                   isCancelPending ? (
                     <Button size="sm" variant="outline" icon={<RotateCcw size={13} />} loading={reactivateBusy} onClick={submitReactivate}>
                       Reactivate
@@ -562,7 +597,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite"><Check size={12} className="text-brand-orange mt-[2px] shrink-0" />{f}</li>
                   ))}
                 </ul>
-                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent || isScheduled} loading={changingId === plan._id} onClick={() => {
+                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={!canManage || isCurrent || isScheduled} loading={changingId === plan._id} onClick={() => {
                   setActionError('');
                   // Enterprise has no self-serve checkout — it's agreed with sales and assigned by an admin.
                   if (plan.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`; return; }
@@ -585,7 +620,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Add-ons</p>
-            <Button size="sm" icon={<Zap size={13} />} onClick={openAddonPicker}>Buy add-on</Button>
+            {canManage && <Button size="sm" icon={<Zap size={13} />} onClick={openAddonPicker}>Buy add-on</Button>}
           </div>
           {addons.length === 0 ? (
             <p className="px-5 py-6 text-center text-[13px] text-slate">No add-on purchases yet.</p>
@@ -601,7 +636,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     </p>
                   </div>
                   {/* Only a still-active monthly add-on has anything left to cancel — a one-time purchase was already delivered. */}
-                  {a.recurring && a.status === 'active' && (
+                  {canManage && a.recurring && a.status === 'active' && (
                     <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer shrink-0">Cancel</button>
                   )}
                 </div>
@@ -614,33 +649,53 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
           <div className="px-5 py-[14px] border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Billing History</p>
           </div>
-          {invoices.length === 0 ? (
+          {invoicesLoading ? (
+            <div className="px-5 py-4 flex flex-col gap-3" aria-busy="true">
+              {Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={36} rounded="6px" />)}
+            </div>
+          ) : invoicesError ? (
+            <div role="alert" className="px-5 py-5 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[13px] text-error">{invoicesError}</p>
+              <Button size="sm" variant="outline" onClick={() => setInvoiceNonce(n => n + 1)}>Retry</Button>
+            </div>
+          ) : invoices.length === 0 ? (
             <p className="px-5 py-6 text-center text-[13px] text-slate">No invoices yet.</p>
           ) : (
-            <div className="flex flex-col">
-              {invoices.map(inv => (
-                <div key={inv._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
-                    <p className="text-[11px] text-slate">
-                      {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
-                      {inv.refundedAmountUSD > 0 && <span className="text-error"> · ${inv.refundedAmountUSD.toFixed(2)} refunded</span>}
-                    </p>
+            <>
+              <div className="flex flex-col">
+                {invoices.map(inv => (
+                  <div key={inv._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
+                      <p className="text-[11px] text-slate">
+                        {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
+                        {inv.refundedAmountUSD > 0 && <span className="text-error"> · ${inv.refundedAmountUSD.toFixed(2)} refunded</span>}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
+                        {inv.status.replace('_', ' ')}
+                      </span>
+                      {(inv.hostedInvoiceUrl || inv.invoicePdfUrl) && (
+                        <a href={inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#'} target="_blank" rel="noreferrer"
+                          className="text-[11px] font-semibold text-brand-orange hover:underline">
+                          Download
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
-                      {inv.status.replace('_', ' ')}
-                    </span>
-                    {(inv.hostedInvoiceUrl || inv.invoicePdfUrl) && (
-                      <a href={inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#'} target="_blank" rel="noreferrer"
-                        className="text-[11px] font-semibold text-brand-orange hover:underline">
-                        Download
-                      </a>
-                    )}
+                ))}
+              </div>
+                {invoicePages > 1 && (
+                <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-bone">
+                  <span className="text-[11.5px] text-slate" aria-live="polite">Page {invoicePage} of {invoicePages} · {invoiceTotal} invoices</span>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" disabled={invoicePage <= 1} onClick={() => setInvoicePage(p => Math.max(1, p - 1))}>Previous</Button>
+                    <Button size="sm" variant="outline" disabled={invoicePage >= invoicePages} onClick={() => setInvoicePage(p => Math.min(invoicePages, p + 1))}>Next</Button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
 

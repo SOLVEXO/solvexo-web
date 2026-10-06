@@ -6,7 +6,8 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Input } from '@/components/comman/ui/Input';
 import { Field } from '@/components/comman/ui/Field';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { CanonicalRulesTable, type CanonicalRuleRowData } from '@/components/comman/seo';
+import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
+import { CanonicalRulesTable,type CanonicalRuleRowData } from '@/components/comman/seo';
 import { useSeoCanonicalRules, useSeoCanonicalRuleMutations } from '@/hooks/admin/seo/useSeoCanonical';
 
 export function CanonicalTab() {
@@ -41,7 +42,15 @@ export function CanonicalTab() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-[15px] font-bold text-carbon">Platform Canonical Rules</p>
-        <Button variant="primary" size="sm" icon={<Plus size={13} />} onClick={openNew}>New Rule</Button>
+        <div className="flex items-center gap-2">
+          <BulkImportButton
+            entityLabel="canonical rules"
+            basePath="/api/admin/seo/canonical-rules"
+            onImported={refetch}
+            notes={['A path pattern that already has a rule is skipped, never overwritten.', 'Existing rules are not edited by import — change them in the table.']}
+          />
+          <Button variant="primary" size="sm" icon={<Plus size={13} />} onClick={openNew}>New Rule</Button>
+        </div>
       </div>
 
       <Card padding="none">
