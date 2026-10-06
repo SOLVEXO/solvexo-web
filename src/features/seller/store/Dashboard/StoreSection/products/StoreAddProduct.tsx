@@ -20,6 +20,11 @@ type ProductType   = 'physical' | 'digital' | 'educational';
 type ProductStatus = 'draft' | 'active' | 'scheduled';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
 
+import { PackageDimensionsFields } from './PackageDimensionsFields';
+import { CustomsInformationFields } from './CustomsInformationFields';
+import { customsPayload } from './customsInfo';
+import { ShippingProfileField } from './ShippingProfileField';
+import { dimensionPayload } from './packageDimensions';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
 
@@ -76,9 +81,10 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const initPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', sku: '', barcode: '', shippingWeight: '', categoryId: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
+  shippingProfileId: '',
   // Non-empty optionTypes switches the Pricing/Inventory cards over to the
   // real variant matrix (VariantMatrixEditor) — see the "Variants" card
   // below. Empty (the common case: most products don't need variants) keeps
@@ -180,6 +186,10 @@ export default function StoreAddProduct() {
               stock: r.unlimitedStock ? 0 : Number(r.stock),
               unlimitedStock: r.unlimitedStock,
               shippingWeight: phys.shippingWeight,
+              length: dimensionPayload(phys.length),
+              width: dimensionPayload(phys.width),
+              height: dimensionPayload(phys.height),
+              ...customsPayload(phys),
               sku: r.sku.trim() || undefined,
               barcode: r.barcode.trim() || undefined,
             }))
@@ -189,6 +199,10 @@ export default function StoreAddProduct() {
               options: [],
               stock: Number(phys.stock),
               shippingWeight: phys.shippingWeight,
+              length: dimensionPayload(phys.length),
+              width: dimensionPayload(phys.width),
+              height: dimensionPayload(phys.height),
+              ...customsPayload(phys),
               sku: phys.sku.trim() || undefined,
               barcode: phys.barcode.trim() || undefined,
             }];
@@ -198,6 +212,7 @@ export default function StoreAddProduct() {
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
+          shippingProfileId: phys.shippingProfileId || null,
           variants,
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
@@ -412,6 +427,10 @@ export default function StoreAddProduct() {
             </Card>
           )}
 
+          {pType === 'physical' && (
+            <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />
+          )}
+
           {/* Tags */}
           <Card title="Tags & SEO">
             <p className="text-[12px] text-slate mb-3">Help buyers discover your product through search and filters.</p>
@@ -474,6 +493,8 @@ export default function StoreAddProduct() {
                 <F label="Shipping Weight">
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>
+                <PackageDimensionsFields length={phys.length} width={phys.width} height={phys.height} onChange={(k, v) => sp(k, v)} />
+                <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} onChange={(k, v) => sp(k, v)} />
               </div>
             </Card>
           )}
@@ -603,9 +624,13 @@ export default function StoreAddProduct() {
                       currencySymbol={currencySymbol}
                     />
                     {hasVariants && (
-                      <F label="Shipping Weight">
-                        <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
-                      </F>
+                      <>
+                        <F label="Shipping Weight">
+                          <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
+                        </F>
+                        <PackageDimensionsFields length={phys.length} width={phys.width} height={phys.height} onChange={(k, v) => sp(k, v)} />
+                        <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} onChange={(k, v) => sp(k, v)} />
+                      </>
                     )}
                   </>
                 )}

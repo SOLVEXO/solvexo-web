@@ -54,7 +54,7 @@ export function AtelierLoginPage() {
         <div>
           <div className="flex items-center justify-between">
             <label htmlFor="atelier-login-password" style={atelierLabel}>Password</label>
-            <a href="forgot-password" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none' }}>
+            <a href="/forgot-password" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none' }}>
               Forgot password?
             </a>
           </div>
@@ -91,7 +91,7 @@ export function AtelierLoginPage() {
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
         New here?{' '}
-        <a href={`register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 600, textDecoration: 'none' }}>
+        <a href={`/register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 600, textDecoration: 'none' }}>
           Create an account
         </a>
       </p>

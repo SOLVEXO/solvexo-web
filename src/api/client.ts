@@ -4,7 +4,7 @@ import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axio
 // `utils/authCookie.ts`. Imported directly (not via `services/auth.ts`'s
 // `TokenStorage`) to avoid a circular import, since `auth.ts` itself imports
 // this `client` module.
-import { getAuthCookie, deleteAuthCookie } from '@/utils/authCookie';
+import { getAuthCookie, clearAuthCookie } from '@/utils/authCookie';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
 // Endpoints where a 401 means "this specific attempt was rejected" (wrong
@@ -104,9 +104,9 @@ client.interceptors.response.use(
     // request, and must show inline on the form.
     const isAuthAttempt = AUTH_ATTEMPT_PATHS.some(p => err.config?.url?.includes(p));
     if (err.response?.status === 401 && !isAuthAttempt) {
-      deleteAuthCookie('accessToken');
-      deleteAuthCookie('refreshToken');
-      deleteAuthCookie('user');
+      clearAuthCookie('accessToken');
+      clearAuthCookie('refreshToken');
+      clearAuthCookie('user');
       sessionStorage.removeItem('authCtx');
     }
 

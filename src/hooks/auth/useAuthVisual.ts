@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiDetectCountry, type AuthPageContext } from '@/api/services/auth';
+import { apiDetectCountry, type AuthPageContext, type AuthVisualTopic } from '@/api/services/auth';
 
 export interface AuthVisual {
   imageUrl: string | null;
@@ -19,19 +19,21 @@ const EMPTY_VISUAL: AuthVisual = { imageUrl: null, attribution: null };
  * slow/failed lookup never shows a broken image, just the panel's existing
  * gradient as before this feature existed.
  */
-export function useAuthVisual(context: AuthPageContext): AuthVisual {
+export function useAuthVisual(context: AuthPageContext, topic?: AuthVisualTopic): AuthVisual {
   const [visual, setVisual] = useState<AuthVisual>(EMPTY_VISUAL);
 
+  // Re-fetches whenever the screen/onboarding step (or seller topic) changes;
+  // the previous photo stays until the new one arrives (no flash of empty).
   useEffect(() => {
     let cancelled = false;
-    apiDetectCountry(context)
+    apiDetectCountry(context, topic)
       .then((res) => {
         if (cancelled) return;
         setVisual({ imageUrl: res.data.imageUrl, attribution: res.data.attribution });
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [context]);
+  }, [context, topic]);
 
   return visual;
 }

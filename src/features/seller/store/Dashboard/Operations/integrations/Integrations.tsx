@@ -12,6 +12,7 @@ import {
   type StoreIntegrationsList, type StoreIntegrationView, type PaymentProviderKey, type ShippingOriginAddress,
 } from '@/api/services/integrations';
 import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
+import { ShippingSettingsSection } from './ShippingSettingsSection';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
 
 const STATUS_STYLE: Record<StoreIntegrationView['status'], { label: string; bg: string; color: string }> = {
@@ -1004,6 +1005,7 @@ function ShippingIntegrationCard({ integration, storeId, onChanged }: { integrat
           {liveRatesLocked
             ? liveRatesLockNote
             : <p className="text-[12px] text-slate">Buyers now see real live carrier rates at checkout alongside your flat zones.</p>}
+          <ShippingSettingsSection key={JSON.stringify([integration.config.packages, integration.config.handlingFeeType, integration.config.handlingFeeValue])} storeId={storeId} config={integration.config} onSaved={onChanged} />
           <div>
             <Button size="sm" variant="outline" onClick={() => setPendingDisconnect(true)}>Disconnect</Button>
           </div>

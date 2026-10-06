@@ -39,6 +39,8 @@ export interface MetafieldDefinition {
   description: string | null;
   type: MetafieldType;
   required: boolean;
+  /** Shopify "Storefronts" access — values are exposed publicly only when true. */
+  storefrontAccess?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,12 +62,12 @@ export function apiListMetafieldDefinitions(storeId: string, ownerResource?: Met
 }
 
 export function apiCreateMetafieldDefinition(storeId: string, payload: {
-  ownerResource: MetafieldOwnerResource; key: string; name: string; description?: string; type: MetafieldType; required?: boolean;
+  ownerResource: MetafieldOwnerResource; key: string; name: string; description?: string; type: MetafieldType; required?: boolean; storefrontAccess?: boolean;
 }) {
   return client.post<never, ApiResponse<MetafieldDefinition>>(ENDPOINTS.METAFIELDS.DEFINITIONS(storeId), payload);
 }
 
-export function apiUpdateMetafieldDefinition(storeId: string, definitionId: string, payload: { name?: string; description?: string; required?: boolean }) {
+export function apiUpdateMetafieldDefinition(storeId: string, definitionId: string, payload: { name?: string; description?: string; required?: boolean; storefrontAccess?: boolean }) {
   return client.patch<never, ApiResponse<MetafieldDefinition>>(ENDPOINTS.METAFIELDS.DEFINITION(storeId, definitionId), payload);
 }
 

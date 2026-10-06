@@ -58,7 +58,7 @@ export function NovaForgotPasswordPage() {
       </form>
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
-        <a href="../login" style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>Back to sign in</a>
+        <a href="/login" style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>Back to sign in</a>
       </p>
     </div>
   );

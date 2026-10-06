@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useSearchParams, Navigate } from 'react-route
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
-import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { TokenStorage, getRoleRedirect, type AppRole, type AuthVisualTopic } from '@/api/services/auth';
 import { takePendingPlan } from '@/utils/pendingPlan';
 import { Button } from '@/components/comman/ui/Button';
 import {
@@ -120,6 +120,14 @@ const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; 
   { id: 'services_bookings', Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
   { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
 ];
+
+/** Seller kind for the live background photo. "Educator" shares the `creator`
+ *  id in SELLER_TYPES, so it is told apart by its list index in `sellerKey`. */
+function visualTopicFor(form: { sellerType: string; sellerKey: string }): AuthVisualTopic | undefined {
+  if (form.sellerKey === 'creator-1') return 'educator';
+  const t = form.sellerType;
+  return t === 'creator' || t === 'retailer' || t === 'brand_business' || t === 'freelancer' || t === 'mix' ? t : undefined;
+}
 
 interface StoreForm {
   storeName:    string;
@@ -757,7 +765,8 @@ export function OnboardingPage() {
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
-      pageContext="onboarding"
+      pageContext={step === 1 ? 'onboarding_store' : step === 3 ? 'onboarding_seller_type' : 'onboarding_products'}
+      visualTopic={step === 4 ? visualTopicFor(form) : undefined}
       heading="Your store, your way."
       subtext="A few quick steps and your store goes live — no waiting on review."
       highlights={ONBOARDING_HIGHLIGHTS}

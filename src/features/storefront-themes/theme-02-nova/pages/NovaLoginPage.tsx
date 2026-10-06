@@ -55,7 +55,7 @@ export function NovaLoginPage() {
         <div>
           <div className="flex items-center justify-between">
             <label htmlFor="nova-login-password" style={novaLabel}>Password</label>
-            <a href="forgot-password" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none', fontWeight: 600 }}>
+            <a href="/forgot-password" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none', fontWeight: 600 }}>
               Forgot password?
             </a>
           </div>
@@ -92,7 +92,7 @@ export function NovaLoginPage() {
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
         New here?{' '}
-        <a href={`register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
+        <a href={`/register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
           Create an account
         </a>
       </p>

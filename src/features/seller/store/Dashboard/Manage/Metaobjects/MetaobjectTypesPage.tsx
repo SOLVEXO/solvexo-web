@@ -39,6 +39,7 @@ function TypeFormModal({ storeId, editing, onClose, onSaved }: { storeId: string
   const [typeTouched, setTypeTouched] = useState(!!editing);
   const [name, setName] = useState(editing?.name ?? '');
   const [description, setDescription] = useState(editing?.description ?? '');
+  const [storefrontAccess, setStorefrontAccess] = useState(editing?.storefrontAccess !== false);
   const [fields, setFields] = useState<MetaobjectFieldDefinition[]>(editing?.fieldDefinitions?.length ? editing.fieldDefinitions.map(f => ({ ...f })) : [{ ...EMPTY_FIELD }]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -66,11 +67,11 @@ function TypeFormModal({ storeId, editing, onClose, onSaved }: { storeId: string
     try {
       if (editing) {
         await apiUpdateMetaobjectDefinition(storeId, editing._id, {
-          name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields,
+          name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields, storefrontAccess,
         });
       } else {
         await apiCreateMetaobjectDefinition(storeId, {
-          type: type.trim(), name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields,
+          type: type.trim(), name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields, storefrontAccess,
         });
       }
       onSaved();
@@ -101,6 +102,13 @@ function TypeFormModal({ storeId, editing, onClose, onSaved }: { storeId: string
         <Field label="Description (optional)">
           <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="A person on your team" />
         </Field>
+        <label className="flex items-start gap-2 text-[13px] text-charcoal cursor-pointer">
+          <input type="checkbox" className="mt-0.5" checked={storefrontAccess} onChange={e => setStorefrontAccess(e.target.checked)} />
+          <span>
+            Storefronts
+            <span className="block text-[12px] text-gray-500">Let your online store display entries of this type. When off, entries are not available to the storefront.</span>
+          </span>
+        </label>
 
         <div className="flex flex-col gap-2 mt-1">
           <p className="text-[12px] font-semibold text-charcoal">Fields</p>

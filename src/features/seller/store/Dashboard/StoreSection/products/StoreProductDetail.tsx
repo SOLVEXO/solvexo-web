@@ -302,6 +302,9 @@ export default function StoreProductDetail() {
                   <InfoRow key={o.name} label={o.name} value={o.value} />
                 ))}
                 <InfoRow label="Shipping Weight" value={v.shippingWeight || '—'} />
+                {(v.length != null || v.width != null || v.height != null) && (
+                  <InfoRow label="Package Dimensions" value={[v.length, v.width, v.height].map(d => d ?? '—').join(' × ') + ' cm'} />
+                )}
               </Card>
             )}
 

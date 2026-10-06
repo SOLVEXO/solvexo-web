@@ -140,6 +140,34 @@ export function apiConnectShipping(storeId: string, apiToken: string, originAddr
   );
 }
 
+export interface ShippingPackage {
+  id: string;
+  name: string;
+  length: number;
+  width: number;
+  height: number;
+  unit: 'cm' | 'in';
+  /** Weight of the empty package in kg. */
+  emptyWeight: number;
+  isDefault: boolean;
+}
+
+export interface ShippingSettingsPayload {
+  handlingFeeType: 'flat' | 'percent' | null;
+  handlingFeeValue: number;
+  /** `id` omitted for a new package. */
+  packages: (Omit<ShippingPackage, 'id'> & { id?: string })[];
+}
+
+/** PUT /api/store/:storeId/integrations/shipping/settings — live-rate handling fee + saved packages
+ *  (requires Shippo to be connected). */
+export function apiUpdateShippingSettings(storeId: string, payload: ShippingSettingsPayload) {
+  return client.put<never, ApiResponse<ShippingSettingsPayload & { packages: ShippingPackage[] }>>(
+    ENDPOINTS.STORE_INTEGRATIONS.SHIPPING_SETTINGS(storeId),
+    payload,
+  );
+}
+
 /** POST /api/store/:storeId/integrations/:id/test — re-verifies stored
  *  credentials still work (not a live sandbox transaction for payment
  *  gateways — see the backend's own doc comment on why). */

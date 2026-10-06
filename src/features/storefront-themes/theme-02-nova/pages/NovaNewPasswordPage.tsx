@@ -26,7 +26,7 @@ export function NovaNewPasswordPage() {
   const otp = ctx?.otp ?? '';
 
   useEffect(() => {
-    if (!otp) navigate('forgot-password', { replace: true });
+    if (!otp) navigate('/forgot-password', { replace: true });
   }, [otp, navigate]);
 
   const [password, setPassword] = useState('');
@@ -54,7 +54,7 @@ export function NovaNewPasswordPage() {
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>
           You can now sign back in to {store.name} with your new password.
         </p>
-        <NovaButton onClick={() => navigate('../login')}>Sign In</NovaButton>
+        <NovaButton onClick={() => navigate('/login')}>Sign In</NovaButton>
       </div>
     );
   }
@@ -80,7 +80,7 @@ export function NovaNewPasswordPage() {
             // password) — if it's wrong/expired, the only way back is to
             // re-enter it, not retry this same form with the same bad code.
             <button
-              type="button" onClick={() => navigate('../verify-otp')}
+              type="button" onClick={() => navigate('/verify-otp')}
               className="self-start cursor-pointer bg-transparent border-0"
               style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.danger, textDecoration: 'underline' }}
             >

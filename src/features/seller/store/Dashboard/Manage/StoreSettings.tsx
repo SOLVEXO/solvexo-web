@@ -114,6 +114,8 @@ export function StoreProfileTab() {
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [taxRate, setTaxRate] = useState(0);
   const [taxRegions, setTaxRegions] = useState<TaxRegion[]>([]);
+  const [taxShipping, setTaxShipping] = useState(false);
+  const [showDutiesNotice, setShowDutiesNotice] = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -131,6 +133,8 @@ export function StoreProfileTab() {
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTaxRate(store.taxRate ?? 0);
     setTaxRegions(store.taxRegions ?? []);
+    setTaxShipping(!!store.taxShipping);
+    setShowDutiesNotice(store.showDutiesNotice !== false);
   }, [store]);
 
   const handleSave = async () => {
@@ -138,7 +142,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -161,6 +165,8 @@ export function StoreProfileTab() {
       reviewModerationEnabled !== !!store.reviewModerationEnabled ||
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
+      taxShipping !== !!store.taxShipping ||
+      showDutiesNotice !== (store.showDutiesNotice !== false) ||
       JSON.stringify(taxRegions) !== JSON.stringify(store.taxRegions ?? []));
 
   if (loading) return <SettingsSkeleton />;
@@ -236,6 +242,22 @@ export function StoreProfileTab() {
           <Field label="Tax Rate (%)">
             <input type="number" min={0} max={100} step={0.01} value={taxRate} onChange={e => setTaxRate(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} className={inputCls} />
             <p className="text-[11px] text-slate mt-1">The default rate, used only when no tax region below matches the buyer's address (and no TaxJar connection is active — see Integrations).</p>
+          </Field>
+
+          <Field label="Charge tax on shipping rates">
+            <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+              <input type="checkbox" checked={taxShipping} onChange={e => setTaxShipping(e.target.checked)} />
+              Include the shipping fee in the taxable amount
+            </label>
+            <p className="text-[11px] text-slate mt-1">The same rate that applies to the items is charged on shipping. Off = shipping is never taxed.</p>
+          </Field>
+
+          <Field label="International duties notice">
+            <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+              <input type="checkbox" checked={showDutiesNotice} onChange={e => setShowDutiesNotice(e.target.checked)} />
+              Tell buyers that duties and import taxes may be charged on delivery
+            </label>
+            <p className="text-[11px] text-slate mt-1">Shown at checkout under the shipping method when the buyer's country differs from your store country. Solvexo does not calculate duties — the carrier collects them on delivery.</p>
           </Field>
 
           {/* Tax Regions — Shopify-"Tax regions"-style manual per-destination

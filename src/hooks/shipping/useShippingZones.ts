@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiGetShippingZones, type ShippingZone } from '@/api/services/shipping';
+import { apiGetShippingZones, type ShippingZone, type ShippingGroup } from '@/api/services/shipping';
 
 // `storeId` (optional) scopes checkout's zone picker to that store's own
 // zones, falling back server-side to the platform-wide default set — see
@@ -9,6 +9,7 @@ import { apiGetShippingZones, type ShippingZone } from '@/api/services/shipping'
 // pre-converted so it matches what will actually be charged.
 export function useShippingZones(storeId?: string, currency?: string) {
   const [zones,   setZones]   = useState<ShippingZone[]>([]);
+  const [groups,  setGroups]  = useState<ShippingGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -20,7 +21,7 @@ export function useShippingZones(storeId?: string, currency?: string) {
     setLoading(true);
     setError('');
     apiGetShippingZones(storeId, currency)
-      .then(res => { if (!cancelled) setZones(res.data ?? []); })
+      .then(res => { if (!cancelled) { setZones(res.data ?? []); setGroups(res.groups ?? []); } })
       .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load shipping zones.');
       })
@@ -28,5 +29,5 @@ export function useShippingZones(storeId?: string, currency?: string) {
     return () => { cancelled = true; };
   }, [storeId, currency, reloadKey]);
 
-  return { zones, loading, error, refetch };
+  return { zones, groups, loading, error, refetch };
 }

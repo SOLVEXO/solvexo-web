@@ -85,6 +85,11 @@ export function NovaOrdersPage() {
                       Order #{o.orderNumber}
                     </Link>
                     <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: t.colors.inkMuted, marginTop: '2px' }}>{formatOrderDate(o.createdAt)}</p>
+                    {o.fulfillmentMethod === 'pickup' && (o.pickupLocation?.name || o.pickupLocation?.address) && (
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: t.colors.inkMuted, marginTop: '2px' }}>
+                        Pickup: {[o.pickupLocation?.name, o.pickupLocation?.address].filter(Boolean).join(' - ')}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <OrderBadge badge={derivePaymentBadge(o)} fontFamily={t.fonts.body} radius="9999px" />

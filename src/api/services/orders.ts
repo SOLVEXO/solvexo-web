@@ -12,16 +12,26 @@ interface OrderActionResponse {
 export interface UpdateStatusPayload {
   orderId: string;
   storeId: string;
-  status:  'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  status:  'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   tracking?: {
     carrier:        string;
     trackingNumber: string;
     trackingUrl:    string;
   };
+  /** Default true. Set false to skip the buyer notification/email. */
+  notifyCustomer?: boolean;
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
 export type ReturnStatus = 'none' | 'requested' | 'partial_requested' | 'approved' | 'rejected';
+
+export interface BuyerReturnLabel {
+  labelUrl:       string | null;
+  trackingNumber: string | null;
+  trackingUrl:    string | null;
+  carrier:        string | null;
+  purchasedAt:    string | null;
+}
 
 export interface OrderLineItem {
   itemId:     string;
@@ -36,6 +46,11 @@ export interface OrderLineItem {
   totalPrice: number;
   status:     string;
   returnStatus?: ReturnStatus;
+  /** Set when the return was resolved by an exchange: the replacement order (buyer-visible). */
+  exchangeOrderId?: string | null;
+  exchangeOrderNumber?: string | null;
+  /** Prepaid return label issued by the seller after approving the return (buyer-safe: link + tracking only). */
+  returnLabel?: BuyerReturnLabel | null;
   // Detail-view fields (present on the raw order document's sellerOrders[].items[]).
   _id?:        string;
   variantId?:  string;
@@ -56,7 +71,11 @@ export interface OrderStoreGroup {
   taxAmount?:      number;
   itemCount:       number;
   items:           OrderLineItem[];
-  tracking?:       { carrier: string; trackingNumber: string; trackingUrl: string } | null;
+  /** `label*` fields exist only on orders whose label was bought through Shippo (merchant-only). */
+  tracking?:       { carrier: string; trackingNumber: string; trackingUrl: string; labelUrl?: string | null; labelCost?: number | null; labelCurrency?: string | null } | null;
+  /** Per-shipment tracking (buyer-safe). Empty/absent → fall back to `tracking`. */
+  shipments?:      { _id: string; items: { itemId: string; quantity: number }[]; tracking?: { carrier: string | null; trackingNumber: string | null; trackingUrl: string | null } | null; shippedAt?: string | null; deliveredAt?: string | null }[];
+  pickupReadyAt?:  string | null;
   shippedAt?:      string | null;
   deliveredAt?:    string | null;
   _id?:            string;
@@ -74,7 +93,11 @@ export interface OrderSummary {
   taxAmount:        number;
   totalAmount:      number;
   currency:         string;
-  shippingAddress:  Record<string, unknown>;
+  shippingAddress:  Record<string, unknown> | null;
+  fulfillmentMethod?: 'ship' | 'pickup';
+  pickupLocation?:  { name: string | null; address: string | null; instructions: string | null } | null;
+  /** Present when this order is the replacement order of an exchange. */
+  exchangeOf?:      { orderId: string; orderNumber: string; itemIds: string[] } | null;
   stores:           OrderStoreGroup[];
   createdAt:        string;
   paidAt?:          string | null;
@@ -103,8 +126,11 @@ export interface OrderDetail {
   taxAmount:       number;
   totalAmount:     number;
   currency:        string;
-  shippingAddress: Record<string, unknown>;
+  shippingAddress: Record<string, unknown> | null;
+  fulfillmentMethod?: 'ship' | 'pickup';
+  pickupLocation?: { name: string | null; address: string | null; instructions: string | null } | null;
   sellerOrders:    OrderStoreGroup[];
+  exchangeOf?:     { orderId: string; orderNumber: string; itemIds: string[] } | null;
   couponCode?:               string | null;
   couponDiscountTotal?:      number;
   giftCardDiscountTotal?:    number;
@@ -144,6 +170,8 @@ export interface SellerReturnItem {
   returnStatus:       ReturnStatus;
   returnRejectReason: string | null;
   returnRequestedAt:  string;
+  exchangeOrderId?:     string | null;
+  exchangeOrderNumber?: string | null;
 }
 
 export interface SellerReturnsParams { storeId?: string; status?: string; page?: number }
@@ -189,6 +217,26 @@ export function apiUpdateOrderStatus(payload: UpdateStatusPayload) {
   return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.UPDATE_STATUS, payload);
 }
 
+export interface FulfilOrderPayload {
+  items:           { itemId: string; quantity: number }[];
+  carrier?:        string;
+  trackingNumber?: string;
+  trackingUrl?:    string;
+  notifyCustomer?: boolean;
+}
+
+/** POST /api/orders/fulfil/:storeId/:orderId — Shopify "Fulfil items": one shipment for a subset/quantity of the unfulfilled lines. */
+export function apiFulfilOrderItems(storeId: string, orderId: string, payload: FulfilOrderPayload) {
+  return client.post<never, OrderApiResponse<{ shipmentId: string; status: string; fullyShipped: boolean }>>(
+    ENDPOINTS.ORDERS.FULFIL(storeId, orderId), payload,
+  );
+}
+
+/** PUT /api/orders/shipment-delivered/:storeId/:orderId/:shipmentId */
+export function apiMarkShipmentDelivered(storeId: string, orderId: string, shipmentId: string) {
+  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.SHIPMENT_DELIVERED(storeId, orderId, shipmentId));
+}
+
 /** PUT /api/orders/purchase-shipping-label — real one-click "mark as
  *  shipped": buys the cheapest live carrier label for this order via the
  *  store's connected Shippo account and marks it shipped with the real
@@ -196,8 +244,61 @@ export function apiUpdateOrderStatus(payload: UpdateStatusPayload) {
  *  live label genuinely isn't available (see OrdersService.purchaseShippingLabel) —
  *  callers should fall back to the existing manual `apiUpdateOrderStatus`
  *  tracking-number form in that case, not treat it as a hard failure. */
-export function apiPurchaseShippingLabel(orderId: string, storeId: string) {
-  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.PURCHASE_SHIPPING_LABEL, { orderId, storeId });
+export function apiPurchaseShippingLabel(
+  orderId: string,
+  storeId: string,
+  opts: {
+    rateId?: string;
+    packageId?: string;
+    /** Partial shipment: label (and fulfil) only these lines/quantities. Omit to label the whole order. */
+    items?: { itemId: string; quantity: number }[];
+    notifyCustomer?: boolean;
+  } = {},
+) {
+  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.PURCHASE_SHIPPING_LABEL, { orderId, storeId, ...opts });
+}
+
+export interface LabelRate {
+  rateId: string;
+  carrier: string;
+  service: string;
+  amount: number;
+  currency: string;
+  estimatedDays: number | null;
+}
+
+/** GET /api/orders/label-rates/:storeId/:orderId — real carrier rates for this order (cheapest first). */
+export function apiGetLabelRates(storeId: string, orderId: string, packageId?: string, items?: { itemId: string; quantity: number }[]) {
+  const params: Record<string, string> = {};
+  if (packageId) params.packageId = packageId;
+  // Partial shipment: weigh only these lines — "itemId:qty,itemId:qty".
+  if (items && items.length > 0) params.items = items.map(i => `${i.itemId}:${i.quantity}`).join(',');
+  return client.get<never, { success: boolean; data: { rates: LabelRate[] } }>(
+    ENDPOINTS.ORDERS.LABEL_RATES(storeId, orderId),
+    { params: Object.keys(params).length > 0 ? params : undefined },
+  );
+}
+
+/** GET /api/orders/return-label-rates/:storeId/:orderId — carrier rates for a return label (buyer -> store). */
+export function apiGetReturnLabelRates(storeId: string, orderId: string, itemIds: string[], packageId?: string) {
+  return client.get<never, { success: boolean; data: { rates: LabelRate[] } }>(
+    ENDPOINTS.ORDERS.RETURN_LABEL_RATES(storeId, orderId),
+    { params: { itemIds: itemIds.join(','), ...(packageId ? { packageId } : {}) } },
+  );
+}
+
+/** PUT /api/orders/purchase-return-label — buys the return label for approved returned lines and emails the buyer. */
+export function apiPurchaseReturnLabel(
+  storeId: string,
+  orderId: string,
+  payload: { itemIds: string[]; rateId?: string; packageId?: string; notifyCustomer?: boolean },
+) {
+  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.PURCHASE_RETURN_LABEL, { storeId, orderId, ...payload });
+}
+
+/** PUT /api/orders/tracking/:storeId/:orderId — edit the single tracking of an old shipped order (no per-shipment tracking). */
+export function apiUpdateOrderTracking(storeId: string, orderId: string, payload: { carrier?: string; trackingNumber?: string; trackingUrl?: string }) {
+  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.TRACKING(storeId, orderId), payload);
 }
 
 export function apiGetDownloadUrl(orderId: string, productId: string) {
@@ -349,6 +450,40 @@ export interface EditOrderResult {
 /** POST /api/orders/edit/:storeId/:orderId — `dryRun: true` only previews. */
 export function apiEditOrder(storeId: string, orderId: string, payload: EditOrderPayload) {
   return client.post<never, OrderApiResponse<EditOrderResult>>(ENDPOINTS.ORDERS.EDIT(storeId, orderId), payload);
+}
+
+// ── Exchanges (seller) ───────────────────────────────────────────────────────
+
+export interface CreateExchangePayload {
+  returnItemIds: string[];
+  replacements:  { variantId: string; quantity: number }[];
+  refundTo?:     'original' | 'store_credit';
+  restock?:      'restock' | 'damaged' | 'none';
+  dryRun?:       boolean;
+  note?:         string;
+}
+export interface ExchangeResult {
+  currency:            string;
+  returnedValue:       number;
+  credit:              number;
+  creditShortfall:     number;
+  replacementSubtotal: number;
+  replacementTax:      number;
+  replacementValue:    number;
+  /** > 0 the customer owes it, < 0 the store refunds it. */
+  difference:          number;
+  amountDue:           number;
+  refundDue:           number;
+  outcome:             'charge' | 'refund' | 'even';
+  lines:               { variantId: string; name: string; quantity: number; unitPrice: number; total: number }[];
+  exchangeOrderId?:     string;
+  exchangeOrderNumber?: string;
+  refundNote?:          string;
+}
+
+/** POST /api/orders/exchange/:storeId/:orderId — `dryRun: true` only previews the money. */
+export function apiCreateExchange(storeId: string, orderId: string, payload: CreateExchangePayload) {
+  return client.post<never, OrderApiResponse<ExchangeResult>>(ENDPOINTS.ORDERS.EXCHANGE(storeId, orderId), payload);
 }
 
 /** POST /api/orders/timeline/:storeId/:orderId */

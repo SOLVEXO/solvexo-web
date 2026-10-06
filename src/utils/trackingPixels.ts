@@ -53,6 +53,31 @@ export interface CookieConsentCategories {
   marketing: boolean;
 }
 
+// Strict per-provider id formats (mirrors the backend DTO). Ids end up inside
+// script source / URLs, so anything outside these alphabets is dropped.
+export const PIXEL_ID_PATTERNS = {
+  facebookPixelId: /^\d{5,20}$/,
+  googleAnalyticsId: /^(?:G|GT)-[A-Za-z0-9]{4,20}$/,
+  googleAdsId: /^AW-\d{5,15}$/,
+  googleAdsConversionLabel: /^[A-Za-z0-9_-]{4,64}$/,
+  tiktokPixelId: /^[A-Za-z0-9]{10,30}$/,
+} as const;
+
+function validPixelId(kind: keyof typeof PIXEL_ID_PATTERNS, value: string | null | undefined): string | null {
+  return typeof value === 'string' && PIXEL_ID_PATTERNS[kind].test(value.trim()) ? value.trim() : null;
+}
+
+/** Returns a copy of the settings with every malformed id nulled out. */
+export function sanitizePixelIds(settings: TrackingPixelIds): TrackingPixelIds {
+  return {
+    facebookPixelId: validPixelId('facebookPixelId', settings.facebookPixelId),
+    googleAnalyticsId: validPixelId('googleAnalyticsId', settings.googleAnalyticsId),
+    googleAdsId: validPixelId('googleAdsId', settings.googleAdsId),
+    googleAdsConversionLabel: validPixelId('googleAdsConversionLabel', settings.googleAdsConversionLabel),
+    tiktokPixelId: validPixelId('tiktokPixelId', settings.tiktokPixelId),
+  };
+}
+
 let loadedForSession = false;
 let activeSettings: TrackingPixelIds | null = null;
 let activeConsent: CookieConsentCategories = { analytics: true, marketing: true };
@@ -65,8 +90,9 @@ let activeConsent: CookieConsentCategories = { analytics: true, marketing: true 
  *  guarded so a second call (e.g. a client-side route change re-mounting
  *  the layout) never double-injects. Does not itself fire PageView; call
  *  `trackPixelEvent('PageView')` right after this returns. */
-export function loadPixelScripts(settings: TrackingPixelIds, consent: CookieConsentCategories = { analytics: true, marketing: true }): void {
+export function loadPixelScripts(rawSettings: TrackingPixelIds, consent: CookieConsentCategories = { analytics: true, marketing: true }): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const settings = sanitizePixelIds(rawSettings);
   activeSettings = settings;
   activeConsent = consent;
   if (loadedForSession) return;
@@ -145,7 +171,7 @@ function injectTikTokPixel(pixelId: string): void {
         var o = d.createElement("script"); o.type = "text/javascript"; o.async = true; o.src = i + "?sdkid=" + e + "&lib=" + t;
         var a = d.getElementsByTagName("script")[0]; a.parentNode.insertBefore(o, a);
       };
-      ttq.load('${pixelId}');
+      ttq.load(${JSON.stringify(pixelId)});
     }(window, document, 'ttq');
   `;
   document.head.appendChild(script);

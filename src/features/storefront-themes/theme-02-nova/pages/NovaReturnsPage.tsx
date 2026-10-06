@@ -4,6 +4,7 @@ import { RotateCcw, Package, Loader2, Check } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { apiGetMyOrders, apiRequestReturn, type OrderSummary } from '@/api/services/orders';
 import { novaTheme as t } from '../theme.config';
+import { ExchangeItemLink } from '../../ExchangeNotice';
 
 const ELIGIBLE_STATUSES = new Set(['delivered', 'completed']);
 
@@ -76,7 +77,10 @@ export function NovaReturnsPage() {
               {order.stores.flatMap(s => s.items).map(item => {
                 const itemKey = `${order.orderId}:${item.itemId}`;
                 const isOpen = openItemKey === itemKey;
-                const isDone = submittedKeys.has(itemKey);
+                const returnStatus = item.returnStatus ?? 'none';
+                const isDone = submittedKeys.has(itemKey) || returnStatus !== 'none';
+                const doneText = item.exchangeOrderId ? 'Exchange approved' : returnStatus === 'approved' ? 'Return approved' : returnStatus === 'rejected' ? 'Return declined' : 'Requested';
+                const returnLabel = item.returnLabel?.labelUrl && /^https?:\/\//i.test(item.returnLabel.labelUrl) ? item.returnLabel : null;
                 return (
                   <div key={itemKey} style={{ padding: '14px 18px', borderBottom: `1.5px solid ${t.colors.border}` }}>
                     <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -86,7 +90,7 @@ export function NovaReturnsPage() {
                       </div>
                       {isDone ? (
                         <span className="flex items-center gap-1" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.success }}>
-                          <Check size={13} /> Requested
+                          <Check size={13} /> {doneText}
                         </span>
                       ) : (
                         <button
@@ -99,6 +103,26 @@ export function NovaReturnsPage() {
                         </button>
                       )}
                     </div>
+                    {item.exchangeOrderId && (
+                      <div style={{ marginTop: '10px' }}><ExchangeItemLink orderId={item.exchangeOrderId} orderNumber={item.exchangeOrderNumber} color={t.colors.accent} fontFamily={t.fonts.body} /></div>
+                    )}
+                    {returnLabel && (
+                      <div style={{ marginTop: '10px', padding: '10px 12px', background: t.colors.bgAlt, borderRadius: t.radius.sm }}>
+                        <a
+                          href={returnLabel.labelUrl ?? undefined}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accent, textDecoration: 'underline' }}
+                        >
+                          Download return label
+                        </a>
+                        {(returnLabel.carrier || returnLabel.trackingNumber) && (
+                          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginTop: '4px' }}>
+                            {[returnLabel.carrier, returnLabel.trackingNumber].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {isOpen && (
                       <div className="flex flex-col gap-2" style={{ marginTop: '12px' }}>
                         <textarea

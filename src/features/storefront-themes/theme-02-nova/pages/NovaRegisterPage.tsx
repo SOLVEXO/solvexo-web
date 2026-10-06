@@ -111,7 +111,7 @@ export function NovaRegisterPage() {
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
         Already have an account?{' '}
-        <a href={`login${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
+        <a href={`/login${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
           Sign in
         </a>
       </p>

@@ -134,7 +134,7 @@ export function AtelierProductPage() {
   const { store } = useStorefront();
   const { detail, loading, error } = useProductById(slug ?? '');
   const { addToCart, updateQty, adding } = useCartContext();
-  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const { currency: displayCurrency, convert, ratesLoaded } = useCurrencyPreference();
   const symbol = currencySymbol(displayCurrency);
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -209,6 +209,9 @@ export function AtelierProductPage() {
     ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100) : null;
   const displayPrice = activeVariant ? convert(activeVariant.price, activeVariant.currency) : null;
   const displayCompareAt = activeVariant?.compareAtPrice != null ? convert(activeVariant.compareAtPrice, activeVariant.currency) : null;
+  // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
+  const ratesOk = ratesLoaded || !activeVariant?.currency || activeVariant.currency === displayCurrency;
+  const money = (n: number) => (ratesOk ? `${symbol}${fmt2(n)}` : '—');
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
   // "Notify me when available" — only for a physical variant that's sold out.
@@ -263,12 +266,12 @@ export function AtelierProductPage() {
           {isBlockOn('product_price') && (
             <div className="flex items-baseline gap-3 mt-4 mb-6">
               <span style={{ fontFamily: t.fonts.body, fontSize: '22px', color: t.colors.ink, fontWeight: 500 }}>
-                {symbol}{displayPrice != null ? fmt2(displayPrice) : ''}
+                {displayPrice != null ? money(displayPrice) : ''}
               </span>
               {displayCompareAt != null && (
                 <>
                   <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
-                    {symbol}{fmt2(displayCompareAt)}
+                    {money(displayCompareAt)}
                   </span>
                   {pctOff != null && (
                     <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 600, color: t.colors.accent }}>−{pctOff}%</span>

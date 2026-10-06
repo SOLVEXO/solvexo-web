@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertCircle, Package, Truck } from 'lucide-react';
+import { AlertCircle, Package } from 'lucide-react';
 import { apiGetOrderByStatusToken, type OrderDetail } from '@/api/services/orders';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import {
   derivePaymentBadge, deriveFulfillmentBadge, formatOrderDate, buildOrderTimeline, paymentMethodLabel,
-  safeTrackingUrl, formatShippingAddress, BADGE_TONE_COLOR,
+  isPickupOrder, formatShippingAddress, BADGE_TONE_COLOR,
 } from './orderUi';
 import { OrderBadge } from './OrderUiParts';
+import { OrderShipments, OrderPickupLocation, type FulfilmentLook } from './OrderFulfilmentParts';
 
 /** Minimal look-and-feel a theme passes in so one component serves both themes. */
 export interface OrderStatusLook {
@@ -94,6 +95,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
       { label: 'Promotion', amount: (order.campaignDiscountTotal ?? 0) + (order.autoDiscountTotal ?? 0) },
     ].filter(d => d.amount > 0);
     const method = paymentMethodLabel(order.paymentType);
+    const look: FulfilmentLook = { card, h2, body, muted, accent: t.colors.accent, strong: t.headingWeight };
     const row = (label: string, value: string, strong = false) => (
       <div key={label} className="flex items-center justify-between" style={{ padding: '5px 0', fontFamily: t.fonts.body, fontSize: strong ? '14px' : '13px', fontWeight: strong ? t.headingWeight : 400, color: t.colors.ink }}>
         <span style={strong ? undefined : { color: t.colors.inkMuted }}>{label}</span><span>{value}</span>
@@ -129,21 +131,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
           </ol>
         </section>
 
-        {subs.filter(s => s.tracking && (s.tracking.carrier || s.tracking.trackingNumber)).map((s, i) => {
-          const url = safeTrackingUrl(s.tracking?.trackingUrl);
-          return (
-            <section key={s._id ?? `${s.storeId}-${i}`} style={card} aria-label="Tracking">
-              <p style={{ ...h2, display: 'flex', alignItems: 'center', gap: '8px' }}><Truck size={15} style={{ color: t.colors.accent }} /> Tracking</p>
-              {s.tracking?.carrier && <p style={body}>Carrier: {s.tracking.carrier}</p>}
-              {s.tracking?.trackingNumber && <p style={{ ...body, marginTop: '4px' }}>Tracking number: <span style={{ fontFamily: 'monospace' }}>{s.tracking.trackingNumber}</span></p>}
-              {url && (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block underline" style={{ ...body, fontWeight: t.headingWeight, marginTop: '10px' }}>
-                  Track package
-                </a>
-              )}
-            </section>
-          );
-        })}
+        <OrderShipments order={order} look={look} />
 
         <section style={card}>
           <p style={h2}>Items</p>
@@ -180,15 +168,19 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
         </section>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <section style={{ ...card, marginBottom: 0 }}>
-            <p style={h2}>Shipping address</p>
-            {addr.name || addr.lines.length > 0 ? (
-              <>
-                {addr.name && <p style={{ ...body, fontWeight: t.headingWeight }}>{addr.name}</p>}
-                {addr.lines.map(l => <p key={l} style={{ ...muted, marginTop: '2px' }}>{l}</p>)}
-              </>
-            ) : <p style={muted}>No shipping address.</p>}
-          </section>
+          {isPickupOrder(order) ? (
+            <OrderPickupLocation order={order} look={look} />
+          ) : (
+            <section style={{ ...card, marginBottom: 0 }}>
+              <p style={h2}>Shipping address</p>
+              {addr.name || addr.lines.length > 0 ? (
+                <>
+                  {addr.name && <p style={{ ...body, fontWeight: t.headingWeight }}>{addr.name}</p>}
+                  {addr.lines.map(l => <p key={l} style={{ ...muted, marginTop: '2px' }}>{l}</p>)}
+                </>
+              ) : <p style={muted}>No shipping address.</p>}
+            </section>
+          )}
           <section style={{ ...card, marginBottom: 0 }}>
             <p style={h2}>Payment</p>
             <p style={body}>{method || '-'}</p>

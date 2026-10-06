@@ -140,7 +140,7 @@ export function AtelierVerifyOtpPage() {
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginBottom: '24px' }}>
           This can happen if the link was opened on its own. Please {isForgot ? 'restart the password reset' : 'register or sign in'} again.
         </p>
-        <AtelierButton onClick={() => navigate(isForgot ? '../forgot-password' : '../register')}>
+        <AtelierButton onClick={() => navigate(isForgot ? '/forgot-password' : '/register')}>
           {isForgot ? 'Reset Password' : 'Create Account'}
         </AtelierButton>
       </div>
@@ -163,7 +163,7 @@ export function AtelierVerifyOtpPage() {
       // it here; if it's actually wrong/expired, that surfaces on the next
       // step with a real way back to re-enter it.
       AuthContext.set({ email: userEmail, role: ctx?.role ?? 'user', flow: 'forgot', storeId: ctx?.storeId, otp: code });
-      navigate('../new-password');
+      navigate('/new-password');
       return;
     }
 

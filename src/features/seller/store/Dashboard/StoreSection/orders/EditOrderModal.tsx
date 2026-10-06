@@ -45,7 +45,7 @@ function QtyStepper({ value, onChange, disabled }: { value: number; onChange: (n
   );
 }
 
-function AddProductSearch({ storeId, symbol, onAdd }: {
+export function AddProductSearch({ storeId, symbol, onAdd }: {
   storeId: string; symbol: string; onAdd: (v: ProductVariant, productName: string) => void;
 }) {
   const [q, setQ] = useState('');

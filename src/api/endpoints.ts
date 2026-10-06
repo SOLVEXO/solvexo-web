@@ -342,6 +342,16 @@ export const ENDPOINTS = {
     DELETE: (storeId: string, zoneId: string) => `/api/shipping-zones/store/${storeId}/${zoneId}`,
   },
 
+  // ── STORE SHIPPING PROFILES (Shopify shipping profiles: rates per product group + ship-from locations) ──
+  STORE_SHIPPING_PROFILES: {
+    LIST:     (storeId: string) => `/api/store/${storeId}/shipping-profiles`,
+    CREATE:   (storeId: string) => `/api/store/${storeId}/shipping-profiles`,
+    UPDATE:   (storeId: string, profileId: string) => `/api/store/${storeId}/shipping-profiles/${profileId}`,
+    DELETE:   (storeId: string, profileId: string) => `/api/store/${storeId}/shipping-profiles/${profileId}`,
+    PRODUCTS: (storeId: string) => `/api/store/${storeId}/shipping-profiles/products`,
+    ASSIGN:   (storeId: string, profileId: string) => `/api/store/${storeId}/shipping-profiles/${profileId}/products`,
+  },
+
   // ── STORE SHIPPING CARRIERS (a seller's own named carrier list) ───────────
   STORE_SHIPPING_CARRIERS: {
     LIST:   (storeId: string) => `/api/shipping-carriers/${storeId}`,
@@ -665,6 +675,7 @@ export const ENDPOINTS = {
     TEST:    (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}/test`,
     UPDATE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
     DELETE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
+    SHIPPING_SETTINGS: (storeId: string) => `/api/store/${storeId}/integrations/shipping/settings`,
   },
 
   // ── CUSTOMER SOCIAL LOGIN (a store's own Google/Facebook app for its buyers) ─
@@ -791,12 +802,19 @@ export const ENDPOINTS = {
   ORDERS: {
     MARK_PAID:     (storeId: string, id: string) => `/api/orders/mark-paid/${storeId}/${id}`,
     EDIT:             (storeId: string, id: string) => `/api/orders/edit/${storeId}/${id}`,
+    EXCHANGE:         (storeId: string, id: string) => `/api/orders/exchange/${storeId}/${id}`,
     TIMELINE:         (storeId: string, id: string) => `/api/orders/timeline/${storeId}/${id}`,
     NOTE:             (storeId: string, id: string) => `/api/orders/note/${storeId}/${id}`,
     SHIPPING_ADDRESS: (storeId: string, id: string) => `/api/orders/shipping-address/${storeId}/${id}`,
     STATUS_LINK:   (orderId: string) => `/api/orders/status-link/${orderId}`,
     UPDATE_STATUS: '/api/orders/update-status',
+    FULFIL:             (storeId: string, id: string) => `/api/orders/fulfil/${storeId}/${id}`,
+    SHIPMENT_DELIVERED: (storeId: string, id: string, shipmentId: string) => `/api/orders/shipment-delivered/${storeId}/${id}/${shipmentId}`,
     PURCHASE_SHIPPING_LABEL: '/api/orders/purchase-shipping-label',
+    LABEL_RATES:   (storeId: string, orderId: string) => `/api/orders/label-rates/${storeId}/${orderId}`,
+    RETURN_LABEL_RATES: (storeId: string, orderId: string) => `/api/orders/return-label-rates/${storeId}/${orderId}`,
+    PURCHASE_RETURN_LABEL: '/api/orders/purchase-return-label',
+    TRACKING:      (storeId: string, orderId: string) => `/api/orders/tracking/${storeId}/${orderId}`,
     DOWNLOAD_URL:  '/api/orders/download-url',
     SELLER_CANCEL:   (storeId: string, orderId: string) => `/api/orders/seller-cancel/${storeId}/${orderId}`,
     SELLER_REFUND:   (storeId: string, orderId: string) => `/api/orders/seller-refund/${storeId}/${orderId}`,

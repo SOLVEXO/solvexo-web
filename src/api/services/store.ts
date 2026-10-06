@@ -90,6 +90,10 @@ export interface UpdateStorePayload {
    *  before `taxRate` at checkout. `state: null` matches every state within
    *  that country. `country` is an ISO-3166 alpha-2 code (e.g. 'US', 'PK'). */
   taxRegions?: TaxRegion[];
+  /** Shopify "Charge tax on shipping rates". */
+  taxShipping?: boolean;
+  /** Show the "duties and import taxes may be charged on delivery" notice at international checkouts (default true). */
+  showDutiesNotice?: boolean;
   /** "Markets" — which of the platform's supported currencies buyers may
    *  check out in on this store. Must include the store's own baseCurrency.
    *  `null` explicitly means "no restriction — every platform currency is
@@ -127,6 +131,9 @@ export interface StoreData {
   taxRate: number;
   /** Manual per-country/state tax rates — see `UpdateStorePayload.taxRegions`. */
   taxRegions: TaxRegion[];
+  /** Shipping fee is part of the taxable base. */
+  taxShipping?: boolean;
+  showDutiesNotice?: boolean;
   sellerType:   SellerType;
   productTypes: ProductType[];
   baseCurrency: SupportedCurrency;

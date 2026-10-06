@@ -18,6 +18,8 @@ export interface MetaobjectDefinition {
   name: string;
   description: string | null;
   fieldDefinitions: MetaobjectFieldDefinition[];
+  /** Shopify "Storefronts" access — on by default; missing = on. */
+  storefrontAccess?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,13 +64,13 @@ export function apiGetMetaobjectDefinition(storeId: string, definitionId: string
 }
 
 export function apiCreateMetaobjectDefinition(storeId: string, payload: {
-  type: string; name: string; description?: string; fieldDefinitions: MetaobjectFieldDefinition[];
+  type: string; name: string; description?: string; fieldDefinitions: MetaobjectFieldDefinition[]; storefrontAccess?: boolean;
 }) {
   return client.post<never, ApiResponse<MetaobjectDefinition>>(ENDPOINTS.METAOBJECTS.DEFINITIONS(storeId), payload);
 }
 
 export function apiUpdateMetaobjectDefinition(storeId: string, definitionId: string, payload: {
-  name?: string; description?: string; fieldDefinitions?: MetaobjectFieldDefinition[];
+  name?: string; description?: string; fieldDefinitions?: MetaobjectFieldDefinition[]; storefrontAccess?: boolean;
 }) {
   return client.patch<never, ApiResponse<MetaobjectDefinition>>(ENDPOINTS.METAOBJECTS.DEFINITION(storeId, definitionId), payload);
 }

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
-  DollarSign, Clock, TrendingUp, CheckCheck, Truck,
+  DollarSign, Clock, TrendingUp, CheckCheck, Truck, Printer,
 } from 'lucide-react';
 import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
@@ -29,6 +29,10 @@ import {
   type SellerOrderStats,
 } from '@/api/services/product';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { hasNavPermission } from '@/components/layouts/StoreLayout';
+import { TokenStorage } from '@/api/services/auth';
+import { apiGetSellerOrderDetail } from '@/api/services/product';
+import { openPackingSlips, toPackingSlipOrder, type PackingSlipOrder } from '@/utils/packingSlip';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
 function CustomerCell({ name, email }: { name: string; email: string }) {
@@ -74,6 +78,15 @@ export function StoreOrderList() {
   const { carriers } = useShippingCarriers(storeId);
   const [selectedCarrierId, setSelectedCarrierId] = useState('');
 
+  // Bulk selection (current page only) - cleared whenever the list reloads.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState<null | 'print' | 'processing'>(null);
+  const [bulkProgress, setBulkProgress] = useState('');
+  const [bulkResult, setBulkResult] = useState<{ tone: 'success' | 'error'; message: string; failures: string[] } | null>(null);
+  const staffUser = TokenStorage.getUser<{ role?: string; permissions?: string[] }>() as Parameters<typeof hasNavPermission>[0];
+  const canPrint = hasNavPermission(staffUser, 'orders.view');
+  const canFulfill = hasNavPermission(staffUser, 'orders.fulfill');
+
   const LIMIT = 10;
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 300);
@@ -92,6 +105,7 @@ export function StoreOrderList() {
       .then(res => {
         if (cancelled) return;
         setOrders(res.data.orders ?? []);
+        setSelected(new Set());
         setStats(res.data.stats);
         setTotalOrders(res.data.pagination.totalOrders);
       })
@@ -104,6 +118,8 @@ export function StoreOrderList() {
   }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF]);
 
   const handlePageChange = (p: number) => {
+    setSelected(new Set());
+    setBulkResult(null);
     setLoading(true);
     setError('');
     setPage(p);
@@ -179,8 +195,99 @@ export function StoreOrderList() {
 
   const filtered = orders; // already filtered + searched server-side
 
+  const selectedOrders = useMemo(() => orders.filter(o => selected.has(o.orderId)), [orders, selected]);
+  const allSelected = orders.length > 0 && selectedOrders.length === orders.length;
+  const pendingSelected = selectedOrders.filter(o => o.status === 'pending');
+
+  const toggleOne = (id: string) =>
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(orders.map(o => o.orderId)));
+
+  const handleBulkPrint = async () => {
+    if (bulkBusy || selectedOrders.length === 0) return;
+    setBulkBusy('print');
+    setBulkResult(null);
+    const targets = [...selectedOrders];
+    const slips: PackingSlipOrder[] = [];
+    const failures: string[] = [];
+    for (let i = 0; i < targets.length; i += 5) {
+      const batch = targets.slice(i, i + 5);
+      setBulkProgress(`Loading ${Math.min(i + batch.length, targets.length)} of ${targets.length}...`);
+      const results = await Promise.allSettled(batch.map(o => apiGetSellerOrderDetail(storeId, o.orderId)));
+      results.forEach((r, idx) => {
+        const o = batch[idx];
+        if (r.status === 'fulfilled') slips.push(toPackingSlipOrder(r.value.data, o.orderNumber));
+        else failures.push(`${o.orderNumber}: ${r.reason instanceof Error ? r.reason.message : 'failed to load'}`);
+      });
+    }
+    let blocked = false;
+    if (slips.length > 0) blocked = !openPackingSlips(slips, store?.name ?? '', currencySymbol(store?.baseCurrency));
+    setBulkBusy(null);
+    setBulkProgress('');
+    if (blocked) {
+      setBulkResult({ tone: 'error', message: 'Your browser blocked the print window. Allow pop-ups for this site and try again.', failures });
+    } else if (failures.length > 0) {
+      setBulkResult({
+        tone: 'error',
+        message: slips.length > 0
+          ? `Opened ${slips.length} packing slip${slips.length !== 1 ? 's' : ''}; ${failures.length} failed.`
+          : `Could not load any of the ${failures.length} selected orders.`,
+        failures,
+      });
+    } else {
+      setBulkResult({ tone: 'success', message: `Opened ${slips.length} packing slip${slips.length !== 1 ? 's' : ''}.`, failures: [] });
+    }
+  };
+
+  const handleBulkProcessing = async () => {
+    if (bulkBusy || pendingSelected.length === 0) return;
+    setBulkBusy('processing');
+    setBulkResult(null);
+    const targets = [...pendingSelected];
+    const skipped = selectedOrders.length - targets.length;
+    const failures: string[] = [];
+    let ok = 0;
+    for (let i = 0; i < targets.length; i++) {
+      setBulkProgress(`Updating ${i + 1} of ${targets.length}...`);
+      try {
+        await apiUpdateOrderStatus({ orderId: targets[i].orderId, storeId, status: 'processing' });
+        ok++;
+      } catch (err: unknown) {
+        failures.push(`${targets[i].orderNumber}: ${err instanceof Error ? err.message : 'failed'}`);
+      }
+    }
+    setBulkBusy(null);
+    setBulkProgress('');
+    setBulkResult({
+      tone: failures.length > 0 ? 'error' : 'success',
+      message: `${ok} order${ok !== 1 ? 's' : ''} marked as processing${failures.length ? `, ${failures.length} failed` : ''}${skipped ? `, ${skipped} skipped (not pending)` : ''}.`,
+      failures,
+    });
+    if (ok > 0) setRefreshKey(k => k + 1);
+  };
+
   // ── Columns ──────────────────────────────────────────────────────────────────
   const columns: TableColumn<SellerOrder>[] = [
+    {
+      key: 'select', header: '', width: '40px',
+      render: o => (
+        <span role="presentation" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} className="flex items-center">
+          <input
+            type="checkbox"
+            checked={selected.has(o.orderId)}
+            onChange={() => toggleOne(o.orderId)}
+            disabled={bulkBusy !== null}
+            aria-label={`Select order ${o.orderNumber}`}
+            className="cursor-pointer"
+          />
+        </span>
+      ),
+    },
     {
       key: 'no', header: '#', width: '48px',
       render: (_, i) => (
@@ -381,13 +488,13 @@ export function StoreOrderList() {
           <Card padding="none">
             <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col gap-2.5">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
-              <SearchInput
-                value={search}
-                onChange={setSearch}
-                placeholder="Search orders…"
-                className="w-full sm:w-[200px] sm:ml-auto"
-              />
               <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search orders…"
+                  className="w-[180px] sm:w-[200px] shrink-0"
+                />
                 <select
                   value={statusF || 'All Status'}
                   onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
@@ -406,20 +513,59 @@ export function StoreOrderList() {
                     <option key={o} value={o}>{o === 'All Types' ? 'All Types' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
                   ))}
                 </select>
-                <button
-                  onClick={() => { setSearch(''); setStatusF(''); setTypeF(''); }}
-                  className="text-[12px] text-slate border border-bone rounded-[6px] px-3 py-2 sm:py-[7px] bg-white cursor-pointer hover:bg-bone shrink-0"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={handleRetry}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-2 sm:py-[7px] hover:bg-bone shrink-0"
-                >
-                  <RefreshCw size={11} /> Refresh
-                </button>
               </div>
             </div>
+
+            {(canPrint || canFulfill) && orders.length > 0 && (
+              <div className="px-4 sm:px-5 pb-3 flex flex-wrap items-center gap-3 border-b border-bone">
+                <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} disabled={bulkBusy !== null} />
+                  {selectedOrders.length > 0 ? `${selectedOrders.length} selected` : 'Select all on this page'}
+                </label>
+                {selectedOrders.length > 0 && (
+                  <>
+                    {canPrint && (
+                      <Button variant="outline" size="sm" onClick={handleBulkPrint} loading={bulkBusy === 'print'} disabled={bulkBusy !== null}>
+                        <Printer size={13} /> Print packing slips
+                      </Button>
+                    )}
+                    {canFulfill && (
+                      <Button
+                        variant="outline" size="sm" onClick={handleBulkProcessing}
+                        loading={bulkBusy === 'processing'}
+                        disabled={bulkBusy !== null || pendingSelected.length === 0}
+                      >
+                        <RefreshCw size={13} /> Mark as processing{pendingSelected.length > 0 ? ` (${pendingSelected.length})` : ''}
+                      </Button>
+                    )}
+                    <button
+                      onClick={() => setSelected(new Set())}
+                      disabled={bulkBusy !== null}
+                      className="text-[12px] text-slate cursor-pointer hover:underline disabled:opacity-50"
+                    >
+                      Clear
+                    </button>
+                  </>
+                )}
+                {bulkProgress && <span className="text-[12px] text-slate" role="status">{bulkProgress}</span>}
+              </div>
+            )}
+            {bulkResult && (
+              <div
+                role="status"
+                className={`mx-4 sm:mx-5 mt-3 rounded-[10px] px-4 py-3 text-[12.5px] border ${bulkResult.tone === 'success' ? 'bg-white border-bone text-charcoal' : 'bg-error-bg border-error-border text-error'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex-1">{bulkResult.message}</span>
+                  <button onClick={() => setBulkResult(null)} className="text-[12px] font-semibold cursor-pointer">Dismiss</button>
+                </div>
+                {bulkResult.failures.length > 0 && (
+                  <ul className="mt-2 list-disc pl-5">
+                    {bulkResult.failures.map(f => <li key={f}>{f}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <Table
               columns={columns}

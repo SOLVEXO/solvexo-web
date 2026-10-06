@@ -63,6 +63,8 @@ export interface CheckoutSummary {
   totalAmount: number;
   campaignDiscountUSD?: number;
   autoDiscountUSD?: number;
+  /** International physical cart: show "duties and import taxes may be charged on delivery". */
+  internationalDutiesNotice?: boolean;
   /** Only meaningful for a mixed physical+digital cart — see `allowedPaymentMethods`'s 'split' option. */
   digitalSubtotal?:  number;
   physicalSubtotal?: number;
@@ -130,9 +132,13 @@ export interface ApplyStoreCreditData {
 }
 interface StoreCreditResponse { success: boolean; message: string; data: ApplyStoreCreditData }
 
+export interface ShippingSelectionPayload { profileId: string | null; shippingZoneId: string }
+
 export interface CreateCheckoutPayload {
   addressId?:      string;
   shippingZoneId?: string;
+  /** One picked rate per shipping-profile delivery group (only sent when the cart has several groups). */
+  selections?:     ShippingSelectionPayload[];
   // Cart is now store-scoped — required so the backend knows which of the
   // buyer's (possibly several, one-per-store) carts to check out from.
   storeId?:        string;
@@ -167,6 +173,8 @@ export interface AddShippingPayload {
    *  integration) must be set, never both. */
   shippingZoneId?: string;
   liveRateId?:     string;
+  /** One picked rate per delivery group; use instead of `shippingZoneId` when the cart has several groups. */
+  selections?:     ShippingSelectionPayload[];
 }
 
 export interface AddShippingData {
@@ -174,10 +182,15 @@ export interface AddShippingData {
   shippingZoneId: string | null;
   liveShippingRateId?: string | null;
   shippingFee:   number;
+  /** Tax after shipping was added (includes tax on shipping when the store taxes shipping). */
+  taxAmount?:    number;
+  fulfillmentMethod?: 'ship' | 'pickup';
+  pickupLocation?: { name: string | null; address: string | null; instructions: string | null } | null;
   subtotal:      number;
   totalAmount:   number;
   digitalSubtotal?:  number;
   physicalSubtotal?: number;
+  internationalDutiesNotice?: boolean;
 }
 
 interface AddShippingResponse {

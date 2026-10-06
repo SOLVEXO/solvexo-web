@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Package, MapPin, User, CreditCard, Truck, AlertCircle,
-  CheckCheck, RefreshCw, XCircle, Undo2,
+  CheckCheck, RefreshCw, XCircle, Undo2, Store as StoreIcon, Printer, Pencil, RotateCcw,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -10,8 +10,8 @@ import {
   type SellerOrderDetail,
 } from '@/api/services/product';
 import {
-  apiMarkOrderPaid, apiUpdateOrderStatus, apiPurchaseShippingLabel, apiCancelOrderAsSeller, apiRefundOrderAsSeller,
-  apiRecordOrderPayment, apiListOrderPayments, type OrderPaymentRecordRow,
+  apiMarkOrderPaid, apiUpdateOrderStatus, apiCancelOrderAsSeller, apiRefundOrderAsSeller,
+  apiRecordOrderPayment, apiListOrderPayments, apiMarkShipmentDelivered, type OrderPaymentRecordRow,
 } from '@/api/services/orders';
 import { apiCaptureOrderPayment } from '@/api/services/payment';
 import {
@@ -24,9 +24,19 @@ import { TokenStorage } from '@/api/services/auth';
 import { OrderTimelineCard } from './OrderTimelineCard';
 import { OrderNotesCard } from './OrderNotesCard';
 import { EditOrderModal } from './EditOrderModal';
+import { ExchangeModal } from './ExchangeModal';
 import { EditShippingAddressModal } from './EditShippingAddressModal';
+import { BuyShippingLabelModal } from './BuyShippingLabelModal';
+import { EditTrackingModal } from './EditTrackingModal';
+import { ReturnLabelModal } from './ReturnLabelModal';
+import { openPackingSlips, toPackingSlipOrder } from '@/utils/packingSlip';
+import { FulfilItemsModal } from './FulfilItemsModal';
+import { shippedQuantities, isShippableLine } from './fulfilment';
 
-type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | 'capture' | 'cancel' | 'refund' | 'record-payment' | null;
+type OrderAction = 'paid' | 'processing' | 'ready' | 'delivered' | 'completed' | 'capture' | 'cancel' | 'refund' | 'record-payment' | 'shipment' | null;
+
+/** Statuses from which more units may still be fulfilled (mirrors the backend's FULFILLABLE_STATUSES). */
+const FULFILLABLE = ['pending', 'processing', 'partially_shipped', 'partially_cancelled', 'partially_refunded'];
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -67,9 +77,8 @@ export function StoreOrderDetail() {
   const [busyAction, setBusyAction] = useState<OrderAction>(null);
   const busy = busyAction !== null;
 
-  const [showShipModal, setShowShipModal] = useState(false);
-  const [trackingForm, setTrackingForm] = useState({ carrier: '', trackingNumber: '', trackingUrl: '' });
-  const [trackingErrors, setTrackingErrors] = useState<{ carrier?: string; trackingNumber?: string }>({});
+  const [showFulfil, setShowFulfil] = useState(false);
+  const [deliveringShipmentId, setDeliveringShipmentId] = useState<string | null>(null);
   const [confirmComplete, setConfirmComplete] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -86,17 +95,23 @@ export function StoreOrderDetail() {
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
   const [paymentError, setPaymentError] = useState('');
-  // Real one-click "buy a live carrier label" (Shippo) — a separate error
-  // slot from the manual form below it, since failing here (store hasn't
-  // connected Shippo, no live rate for this address, etc.) is expected to
-  // happen often and should never block the always-available manual entry.
-  const [liveLabelBusy, setLiveLabelBusy] = useState(false);
-  const [liveLabelError, setLiveLabelError] = useState('');
+  // Shopify-style "Buy shipping label" (Shippo): its own modal (package + rate picker) so a
+  // failure there never blocks the always-available "Fulfil items" tracking entry.
+  const [showLabelModal, setShowLabelModal] = useState(false);
   const [showEditOrder, setShowEditOrder] = useState(false);
+  const [showExchange, setShowExchange] = useState(false);
+  const [showEditTracking, setShowEditTracking] = useState(false);
+  // Return labels: approved returned lines the seller ticked, then the rate dialog.
+  const [returnPick, setReturnPick] = useState<string[]>([]);
+  const [showReturnLabel, setShowReturnLabel] = useState(false);
+  const [slipError, setSlipError] = useState('');
   const [showEditAddress, setShowEditAddress] = useState(false);
   const currentUser = TokenStorage.getUser<{ _id?: string; id?: string }>();
   const currentUserId = currentUser?._id ?? currentUser?.id ?? null;
   const canEditOrder = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], 'orders.edit');
+  const canFulfilPerm = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], 'orders.fulfill');
+  const canBuyLabelPerm = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], 'orders.buy_shipping_label');
+  const canReturnPerm = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], 'orders.return');
   const canComment = hasNavPermission(currentUser as Parameters<typeof hasNavPermission>[0], ['orders.view', 'orders.edit']);
 
   const load = () => {
@@ -113,7 +128,7 @@ export function StoreOrderDetail() {
 
   useEffect(() => { if (storeId && orderId) load(); }, [storeId, orderId]);
 
-  const changeStatus = (status: 'processing' | 'completed' | 'cancelled', action: OrderAction) => {
+  const changeStatus = (status: 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled', action: OrderAction) => {
     if (busy) return;
     setBusyAction(action);
     apiUpdateOrderStatus({ orderId, storeId, status })
@@ -172,22 +187,14 @@ export function StoreOrderDetail() {
     changeStatus('completed', 'completed');
   };
 
-  const handleSubmitTracking = () => {
-    const carrier = trackingForm.carrier.trim();
-    const trackingNumber = trackingForm.trackingNumber.trim();
-    const errors: { carrier?: string; trackingNumber?: string } = {};
-    if (!carrier) errors.carrier = 'Carrier is required.';
-    if (!trackingNumber) errors.trackingNumber = 'Tracking number is required.';
-    if (Object.keys(errors).length) { setTrackingErrors(errors); return; }
-
-    setBusyAction('shipping');
-    apiUpdateOrderStatus({
-      orderId, storeId, status: 'shipped',
-      tracking: { carrier, trackingNumber, trackingUrl: trackingForm.trackingUrl.trim() },
-    })
-      .then(() => { setShowShipModal(false); load(); })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark order as shipped.'))
-      .finally(() => setBusyAction(null));
+  const handleShipmentDelivered = (shipmentId: string) => {
+    if (busy) return;
+    setBusyAction('shipment');
+    setDeliveringShipmentId(shipmentId);
+    apiMarkShipmentDelivered(storeId, orderId, shipmentId)
+      .then(load)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark the shipment as delivered.'))
+      .finally(() => { setBusyAction(null); setDeliveringShipmentId(null); });
   };
 
   const handleCancelOrder = () => {
@@ -227,13 +234,13 @@ export function StoreOrderDetail() {
       .finally(() => setBusyAction(null));
   };
 
-  const handlePurchaseLiveLabel = () => {
-    setLiveLabelBusy(true);
-    setLiveLabelError('');
-    apiPurchaseShippingLabel(orderId, storeId)
-      .then(() => { setShowShipModal(false); load(); })
-      .catch((err: unknown) => setLiveLabelError(err instanceof Error ? err.message : 'Failed to buy a live shipping label.'))
-      .finally(() => setLiveLabelBusy(false));
+  const handleLabelPurchased = () => { setShowLabelModal(false); load(); };
+
+  const handlePrintSlip = () => {
+    if (!detail) return;
+    setSlipError('');
+    const ok = openPackingSlips([toPackingSlipOrder(detail, detail.orderNumber)], store?.name ?? 'Store');
+    if (!ok) setSlipError('Your browser blocked the print window — allow pop-ups for this site and try again.');
   };
 
   if (loading) {
@@ -264,13 +271,34 @@ export function StoreOrderDetail() {
 
   if (!detail) return null;
   const so = detail.sellerOrder;
+  const isPickup    = detail.fulfillmentMethod === 'pickup';
+  const shipments   = so.shipments ?? [];
   const canProcess  = so.status === 'pending';
-  // Forward-only, mirroring the backend's isAllowedSellerOrderTransition: a delivered order can't go back to shipped.
-  const canShip     = ['pending', 'processing', 'shipped'].includes(so.status) && so.fulfillmentType !== 'digital';
+  // Fulfilment progress (physical, non-cancelled lines): only meaningful while the sub-order can still ship.
+  const shippedQty  = shippedQuantities(shipments);
+  const shippableLines = so.items.filter(isShippableLine);
+  const fulfilledUnits = shippableLines.reduce((n, i) => n + (FULFILLABLE.includes(so.status) ? Math.min(i.quantity, shippedQty[i._id] ?? 0) : i.quantity), 0);
+  const unfulfilledUnits = shippableLines.reduce((n, i) => n + (FULFILLABLE.includes(so.status) ? Math.max(0, i.quantity - (shippedQty[i._id] ?? 0)) : 0), 0);
+  // Forward-only, mirroring the backend: nothing ships once the order is shipped/delivered/completed/cancelled.
+  const canShip     = !isPickup && FULFILLABLE.includes(so.status) && so.fulfillmentType !== 'digital' && unfulfilledUnits > 0;
+  const canBuyLabel = canShip && shipments.length === 0;
+  const canReadyForPickup = isPickup && ['pending', 'processing'].includes(so.status);
+  const canMarkPickedUp   = isPickup && so.status === 'shipped';
+  // Old shipped orders (no shipments[]) keep a single editable tracking record.
+  const canEditLegacyTracking = !isPickup && shipments.length === 0 && ['shipped', 'delivered', 'completed'].includes(so.status) && so.fulfillmentType !== 'digital' && canFulfilPerm;
+  // Return labels: approved physical lines that have no label yet.
+  const returnLabelCandidates = !isPickup ? so.items.filter(i => i.type === 'physical' && i.returnStatus === 'approved' && !i.returnLabel) : [];
+  const labelledReturns = so.items.filter(i => i.returnLabel);
+  const canBuyReturnLabel = canBuyLabelPerm && returnLabelCandidates.length > 0;
+  // Exchanges: pending physical returns that can still be resolved as an exchange, and lines already exchanged.
+  const exchangeCandidates = so.items.filter(i => i.type === 'physical' && i.returnStatus === 'requested' && !i.exchangeOrderId);
+  const exchangedLines = so.items.filter(i => i.exchangeOrderId);
+  const canCreateExchange = canReturnPerm && exchangeCandidates.length > 0 && !detail.exchangeOf;
+  const canMarkDelivered  = !isPickup && so.status === 'shipped' && shipments.length === 0;
   const canComplete = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
   const canCancel   = so.status !== 'completed' && so.status !== 'cancelled' && so.status !== 'refunded';
   const canRefund   = detail.isPaid;
-  const isEditWindow = (so.status === 'pending' || so.status === 'processing');
+  const isEditWindow = (so.status === 'pending' || so.status === 'processing') && shipments.length === 0;
 
   return (
     <>
@@ -285,7 +313,11 @@ export function StoreOrderDetail() {
             >
               <ArrowLeft size={13} /> Back to Orders
             </button>
-            <StatusBadge status={so.status} />
+            {isPickup && so.status === 'shipped' ? (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-cream border border-bone text-charcoal">Ready for pickup</span>
+            ) : (
+              <StatusBadge status={so.status} />
+            )}
           </div>
         }
       />
@@ -304,9 +336,19 @@ export function StoreOrderDetail() {
             <Card
               title="Items"
               icon={Package}
-              action={canEditOrder && isEditWindow ? (
-                <Button size="xs" variant="outline" onClick={() => setShowEditOrder(true)} disabled={busy}>Edit</Button>
-              ) : undefined}
+              action={
+                <div className="flex items-center gap-2">
+                  {!isPickup && shippableLines.length > 0 && (
+                    <>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cream border border-bone text-charcoal">Unfulfilled {unfulfilledUnits}</span>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cream border border-bone text-charcoal">Fulfilled {fulfilledUnits}</span>
+                    </>
+                  )}
+                  {canEditOrder && isEditWindow && (
+                    <Button size="xs" variant="outline" onClick={() => setShowEditOrder(true)} disabled={busy}>Edit</Button>
+                  )}
+                </div>
+              }
             >
               <div className="flex flex-col">
                 {so.items.map(item => (
@@ -319,6 +361,7 @@ export function StoreOrderDetail() {
                       <p className="text-[11px] text-slate mt-0.5">
                         {item.options.length > 0 ? item.options.map(o => `${o.name}: ${o.value}`).join(' · ') + ' · ' : ''}
                         {item.sku ? `SKU: ${item.sku} · ` : ''}Qty: {item.quantity}
+                        {!isPickup && (shippedQty[item._id] ?? 0) > 0 ? ` · ${Math.min(item.quantity, shippedQty[item._id])} shipped` : ''}
                       </p>
                       {item.cancelReason && <p className="text-[11px] text-error mt-0.5">Cancelled — {item.cancelReason}</p>}
                       {item.returnStatus !== 'none' && <p className="text-[11px] text-warning mt-0.5">Return: {item.returnStatus.replace(/_/g, ' ')}</p>}
@@ -336,15 +379,141 @@ export function StoreOrderDetail() {
               </div>
             </Card>
 
-            {so.tracking && (so.tracking.carrier || so.tracking.trackingNumber) && (
-              <Card title="Tracking" icon={Truck}>
+            {!isPickup && shipments.length > 0 && (
+              <Card title={`Shipments (${shipments.length})`} icon={Truck}>
+                <div className="flex flex-col gap-3">
+                  {shipments.map((sh, idx) => (
+                    <div key={sh._id} className="border border-bone rounded-[10px] px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 mb-1.5">
+                        <p className="text-[12.5px] font-bold text-charcoal">Shipment #{idx + 1}</p>
+                        {sh.deliveredAt ? (
+                          <span className="text-[11px] font-semibold text-success">Delivered {formatDate(sh.deliveredAt)}</span>
+                        ) : (
+                          <Button
+                            size="xs" variant="outline"
+                            onClick={() => handleShipmentDelivered(sh._id)}
+                            loading={busyAction === 'shipment' && deliveringShipmentId === sh._id}
+                            disabled={busy && deliveringShipmentId !== sh._id}
+                          >
+                            <CheckCheck size={12} /> Mark delivered
+                          </Button>
+                        )}
+                      </div>
+                      <ul className="text-[12px] text-charcoal mb-2">
+                        {sh.items.map(l => (
+                          <li key={l.itemId}>{l.quantity} × {so.items.find(i => i._id === l.itemId)?.name ?? 'Item'}</li>
+                        ))}
+                      </ul>
+                      {sh.tracking && (sh.tracking.carrier || sh.tracking.trackingNumber) ? (
+                        <>
+                          <InfoRow label="Carrier" value={sh.tracking.carrier} />
+                          <InfoRow label="Tracking Number" value={sh.tracking.trackingNumber} />
+                          {sh.tracking.trackingUrl && (
+                            <InfoRow label="Tracking Link" value={<a href={sh.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Open link</a>} />
+                          )}
+                          {sh.tracking.labelUrl && (
+                            <InfoRow label="Shipping Label" value={<a href={sh.tracking.labelUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Print label</a>} />
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-[11.5px] text-slate">No tracking information.</p>
+                      )}
+                      <InfoRow label="Shipped At" value={formatDate(sh.shippedAt)} />
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {!isPickup && shipments.length === 0 && so.tracking && (so.tracking.carrier || so.tracking.trackingNumber) && (
+              <Card
+                title="Tracking"
+                icon={Truck}
+                action={canEditLegacyTracking ? (
+                  <Button size="xs" variant="outline" onClick={() => setShowEditTracking(true)} disabled={busy}><Pencil size={12} /> Edit tracking</Button>
+                ) : undefined}
+              >
                 <InfoRow label="Carrier" value={so.tracking.carrier} />
                 <InfoRow label="Tracking Number" value={so.tracking.trackingNumber} />
+                {so.tracking.labelUrl && (
+                  <InfoRow label="Shipping Label" value={<a href={so.tracking.labelUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Print label</a>} />
+                )}
+                {so.tracking.labelCost != null && (
+                  <InfoRow label="Label Cost" value={`${currencySymbol(so.tracking.labelCurrency ?? undefined)}${so.tracking.labelCost.toFixed(2)}`} />
+                )}
                 {so.tracking.trackingUrl && (
                   <InfoRow label="Tracking Link" value={<a href={so.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Open link</a>} />
                 )}
                 <InfoRow label="Shipped At" value={formatDate(so.shippedAt)} />
                 {so.deliveredAt && <InfoRow label="Delivered At" value={formatDate(so.deliveredAt)} />}
+              </Card>
+            )}
+
+            {(returnLabelCandidates.length > 0 || labelledReturns.length > 0 || exchangeCandidates.length > 0 || exchangedLines.length > 0 || detail.exchangeOf) && (
+              <Card title="Returns" icon={RotateCcw}>
+                {detail.exchangeOf && (
+                  <div className="mb-3">
+                    <p className="text-[12px] text-slate">Exchange order for</p>
+                    <button type="button" onClick={() => navigate(`/store/${storeId}/orders/detail/${detail.exchangeOf?.orderId}`)} className="text-[12.5px] text-brand-orange underline cursor-pointer">
+                      Order {detail.exchangeOf.orderNumber}
+                    </button>
+                  </div>
+                )}
+                {exchangeCandidates.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[12px] text-slate mb-2">Return requested — resolve it as a refund on the Returns page, or exchange it for other items.</p>
+                    <p className="text-[12.5px] text-charcoal mb-2">{exchangeCandidates.map(i => `${i.name} × ${i.quantity}`).join(', ')}</p>
+                    {canCreateExchange && (
+                      <Button size="xs" variant="outline" disabled={busy} onClick={() => setShowExchange(true)}>
+                        <RefreshCw size={12} /> Create exchange
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {exchangedLines.map(i => (
+                  <div key={`ex-${i._id}`} className="mb-2 text-[12.5px] text-charcoal">
+                    {i.name} × {i.quantity} — exchanged for{' '}
+                    <button type="button" onClick={() => navigate(`/store/${storeId}/orders/detail/${i.exchangeOrderId}`)} className="text-brand-orange underline cursor-pointer">
+                      order {i.exchangeOrderNumber ?? ''}
+                    </button>
+                  </div>
+                ))}
+                {returnLabelCandidates.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[12px] text-slate mb-2">Approved returns — buy a prepaid return label (customer address to your store) and the customer is emailed it.</p>
+                    <div className="flex flex-col gap-1.5 mb-2.5">
+                      {returnLabelCandidates.map(i => (
+                        <label key={i._id} className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={returnPick.includes(i._id)}
+                            onChange={e => setReturnPick(p => e.target.checked ? [...p, i._id] : p.filter(x => x !== i._id))}
+                            disabled={busy}
+                          />
+                          <span className="truncate">{i.name} × {i.quantity}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {canBuyReturnLabel && (
+                      <Button size="xs" variant="outline" disabled={busy || returnPick.length === 0} onClick={() => setShowReturnLabel(true)}>
+                        <RotateCcw size={12} /> Buy return label
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {labelledReturns.map(i => (
+                  <div key={i._id} className="border-t border-bone pt-2 mt-2 first:border-t-0 first:pt-0 first:mt-0">
+                    <p className="text-[12.5px] font-semibold text-charcoal">{i.name}</p>
+                    <InfoRow label="Carrier" value={i.returnLabel?.carrier} />
+                    <InfoRow label="Tracking Number" value={i.returnLabel?.trackingNumber} />
+                    {i.returnLabel?.labelUrl && (
+                      <InfoRow label="Return Label" value={<a href={i.returnLabel.labelUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Print label</a>} />
+                    )}
+                    {i.returnLabel?.cost != null && (
+                      <InfoRow label="Label Cost" value={`${currencySymbol(i.returnLabel.currency ?? undefined)}${i.returnLabel.cost.toFixed(2)}`} />
+                    )}
+                  </div>
+                ))}
               </Card>
             )}
 
@@ -366,7 +535,22 @@ export function StoreOrderDetail() {
               {detail.buyer.phone && <InfoRow label="Phone" value={detail.buyer.phone} />}
             </Card>
 
-            {detail.shippingAddress && (
+            {isPickup && (
+              <Card title="Pickup location" icon={StoreIcon}>
+                {detail.pickupLocation ? (
+                  <p className="text-[12.5px] text-charcoal leading-relaxed">
+                    {detail.pickupLocation.name && <strong>{detail.pickupLocation.name}<br /></strong>}
+                    {detail.pickupLocation.address && <>{detail.pickupLocation.address}<br /></>}
+                    {detail.pickupLocation.instructions && <span className="text-slate">{detail.pickupLocation.instructions}</span>}
+                  </p>
+                ) : (
+                  <p className="text-[12px] text-slate">No pickup location recorded.</p>
+                )}
+                {so.pickupReadyAt && <p className="text-[11px] text-slate mt-2">Ready since {formatDate(so.pickupReadyAt)}</p>}
+              </Card>
+            )}
+
+            {!isPickup && detail.shippingAddress && (
               <Card
                 title="Shipping Address"
                 icon={MapPin}
@@ -425,6 +609,10 @@ export function StoreOrderDetail() {
 
             <Card title="Actions">
               <div className="flex flex-col gap-2">
+                <Button size="sm" variant="outline" onClick={handlePrintSlip} disabled={busy}>
+                  <Printer size={13} /> Print packing slip
+                </Button>
+                {slipError && <p role="alert" className="text-[11.5px] text-error">{slipError}</p>}
                 {detail.paymentStatus === 'authorized' && (
                   <Button size="sm" onClick={openCaptureModal} disabled={busy}>
                     <CreditCard size={13} /> Capture Payment
@@ -450,8 +638,23 @@ export function StoreOrderDetail() {
                   </Button>
                 )}
                 {canShip && (
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => { setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' }); setTrackingErrors({}); setShowShipModal(true); }}>
-                    <Truck size={13} /> Mark Shipped
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => setShowFulfil(true)}>
+                    <Truck size={13} /> Fulfil items
+                  </Button>
+                )}
+                {canBuyLabel && (
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => setShowLabelModal(true)}>
+                    <Package size={13} /> Buy shipping label
+                  </Button>
+                )}
+                {canReadyForPickup && (
+                  <Button size="sm" variant="outline" onClick={() => changeStatus('shipped', 'ready')} loading={busyAction === 'ready'} disabled={busy && busyAction !== 'ready'}>
+                    <StoreIcon size={13} /> Mark ready for pickup
+                  </Button>
+                )}
+                {(canMarkPickedUp || canMarkDelivered) && (
+                  <Button size="sm" variant="outline" onClick={() => changeStatus('delivered', 'delivered')} loading={busyAction === 'delivered'} disabled={busy && busyAction !== 'delivered'}>
+                    <CheckCheck size={13} /> {isPickup ? 'Mark as picked up' : 'Mark delivered'}
                   </Button>
                 )}
                 {canComplete && (
@@ -478,7 +681,7 @@ export function StoreOrderDetail() {
                     <XCircle size={13} /> Cancel Order
                   </Button>
                 )}
-                {!canProcess && !canShip && !canComplete && !canCancel && !canRefund && detail.isPaid && (
+                {!canProcess && !canShip && !canReadyForPickup && !canMarkPickedUp && !canMarkDelivered && !canComplete && !canCancel && !canRefund && detail.isPaid && (
                   <p className="text-[12px] text-slate">No further actions available for this order.</p>
                 )}
               </div>
@@ -487,37 +690,48 @@ export function StoreOrderDetail() {
         </div>
       </div>
 
-      {showShipModal && (
-        <Modal
-          title={`Mark ${detail.orderNumber} as Shipped`}
-          onClose={() => { if (!busy) setShowShipModal(false); }}
-          footer={
-            <>
-              <Button variant="outline" size="sm" onClick={() => setShowShipModal(false)} disabled={busy}>Cancel</Button>
-              <Button size="sm" onClick={handleSubmitTracking} loading={busyAction === 'shipping'}>Mark Shipped</Button>
-            </>
-          }
-        >
-          <div className="mb-4 pb-4 border-b border-bone">
-            <p className="text-[12.5px] text-slate mb-2.5">
-              Have a live carrier connected (Integrations → Shippo)? Buy a real label instantly instead of typing tracking details by hand.
-            </p>
-            <Button size="sm" variant="outline" onClick={handlePurchaseLiveLabel} loading={liveLabelBusy} disabled={busy}>
-              Buy Live Shipping Label
-            </Button>
-            {liveLabelError && <p className="text-[11.5px] text-error mt-2">{liveLabelError}</p>}
-          </div>
-          <p className="text-[12.5px] text-slate mb-4">Or add the shipment's tracking details manually so the customer can follow their delivery.</p>
-          <Field label="Carrier" required error={trackingErrors.carrier}>
-            <Input placeholder="e.g. DHL, FedEx, Local Courier" value={trackingForm.carrier} onChange={e => setTrackingForm(f => ({ ...f, carrier: e.target.value }))} disabled={busy} />
-          </Field>
-          <Field label="Tracking Number" required error={trackingErrors.trackingNumber}>
-            <Input placeholder="e.g. 1Z999AA10123456784" value={trackingForm.trackingNumber} onChange={e => setTrackingForm(f => ({ ...f, trackingNumber: e.target.value }))} disabled={busy} />
-          </Field>
-          <Field label="Tracking Link" hint="Optional — lets the customer open the carrier's tracking page directly.">
-            <Input type="url" placeholder="https://…" value={trackingForm.trackingUrl} onChange={e => setTrackingForm(f => ({ ...f, trackingUrl: e.target.value }))} disabled={busy} />
-          </Field>
-        </Modal>
+      {showLabelModal && (
+        <BuyShippingLabelModal
+          storeId={storeId}
+          orderId={orderId}
+          orderNumber={detail.orderNumber}
+          onClose={() => setShowLabelModal(false)}
+          onPurchased={handleLabelPurchased}
+        />
+      )}
+
+      {showEditTracking && (
+        <EditTrackingModal
+          storeId={storeId}
+          orderId={orderId}
+          initial={so.tracking}
+          onClose={() => setShowEditTracking(false)}
+          onSaved={() => { setShowEditTracking(false); load(); }}
+        />
+      )}
+
+      {showReturnLabel && (
+        <ReturnLabelModal
+          storeId={storeId}
+          orderId={orderId}
+          orderNumber={detail.orderNumber}
+          itemIds={returnPick}
+          itemNames={so.items.filter(i => returnPick.includes(i._id)).map(i => i.name)}
+          onClose={() => setShowReturnLabel(false)}
+          onPurchased={() => { setShowReturnLabel(false); setReturnPick([]); load(); }}
+        />
+      )}
+
+      {showFulfil && (
+        <FulfilItemsModal
+          storeId={storeId}
+          orderId={orderId}
+          orderNumber={detail.orderNumber}
+          items={so.items}
+          shipments={shipments}
+          onClose={() => setShowFulfil(false)}
+          onFulfilled={() => { setShowFulfil(false); load(); }}
+        />
       )}
 
       {showCaptureModal && detail && (
@@ -620,6 +834,19 @@ export function StoreOrderDetail() {
           isPaid={detail.isPaid}
           onClose={() => setShowEditOrder(false)}
           onSaved={() => { setShowEditOrder(false); load(); }}
+        />
+      )}
+
+      {showExchange && (
+        <ExchangeModal
+          storeId={storeId}
+          orderId={orderId}
+          orderNumber={detail.orderNumber}
+          lines={exchangeCandidates}
+          symbol={symbol}
+          isPaid={detail.isPaid}
+          onClose={() => setShowExchange(false)}
+          onDone={() => { setShowExchange(false); load(); }}
         />
       )}
 

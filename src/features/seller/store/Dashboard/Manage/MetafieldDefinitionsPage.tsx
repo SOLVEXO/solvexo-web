@@ -25,6 +25,7 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<MetafieldType>(editing?.type ?? 'single_line_text_field');
   const [required, setRequired] = useState(editing?.required ?? false);
+  const [storefrontAccess, setStorefrontAccess] = useState(editing?.storefrontAccess ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,9 +35,9 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
     setError('');
     try {
       if (editing) {
-        await apiUpdateMetafieldDefinition(storeId, editing._id, { name: name.trim(), required });
+        await apiUpdateMetafieldDefinition(storeId, editing._id, { name: name.trim(), required, storefrontAccess });
       } else {
-        await apiCreateMetafieldDefinition(storeId, { ownerResource, key: key.trim(), name: name.trim(), type, required });
+        await apiCreateMetafieldDefinition(storeId, { ownerResource, key: key.trim(), name: name.trim(), type, required, storefrontAccess });
       }
       onSaved();
     } catch (err) {
@@ -68,6 +69,13 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
         <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
           <input type="checkbox" checked={required} onChange={e => setRequired(e.target.checked)} />
           Required
+        </label>
+        <label className="flex items-start gap-2 text-[13px] text-charcoal cursor-pointer">
+          <input type="checkbox" className="mt-0.5" checked={storefrontAccess} onChange={e => setStorefrontAccess(e.target.checked)} />
+          <span>
+            Storefronts
+            <span className="block text-[12px] text-gray-500">Let your online store display this field's values. When off, the values stay private.</span>
+          </span>
         </label>
         {error && <p className="text-[12px] text-error">{error}</p>}
         <div className="flex justify-end gap-2 mt-2">

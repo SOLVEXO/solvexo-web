@@ -66,6 +66,14 @@ export interface ProductVariant {
   stock:          number;
   unlimitedStock: boolean;
   shippingWeight: string | null;
+  /** Package dimensions in cm (optional). */
+  length?:        number | null;
+  width?:         number | null;
+  height?:        number | null;
+  /** Customs information (optional) — ISO-2 origin country + HS code. */
+  countryOfOrigin?:    string | null;
+  hsCode?:             string | null;
+  customsDescription?: string | null;
   images:         string[];
   isDefault:      boolean;
   status:         string;
@@ -82,6 +90,12 @@ export interface VariantInput {
   stock?:         number;
   unlimitedStock?: boolean;
   shippingWeight?: string;
+  length?:        number | null;
+  width?:         number | null;
+  height?:        number | null;
+  countryOfOrigin?:    string | null;
+  hsCode?:             string | null;
+  customsDescription?: string | null;
   images?:        string[];
   sku?:           string;
   barcode?:       string;
@@ -109,6 +123,8 @@ export interface StoreProduct {
   normalizedCustomLevel: string | null;
   images:            string[];
   tags:              string[];
+  /** Shopify shipping profile (physical products); null/absent = General. */
+  shippingProfileId?: string | null;
   digital:           DigitalMeta | null;
   status:            'draft' | 'active' | 'archived' | 'scheduled';
   scheduledAt:       string | null;
@@ -138,6 +154,8 @@ export interface CreatePhysicalPayload {
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
   scheduledAt?:      string | null;
+  /** Shipping profile id; null/omitted = General profile. */
+  shippingProfileId?: string | null;
   // At least one variant is required — every variant must share the same
   // set of attribute names (e.g. all "Color"+"Size", not a mix).
   variants:          VariantInput[];
@@ -178,6 +196,8 @@ export interface EditPhysicalPayload {
   status:            'draft' | 'active' | 'scheduled';
   scheduledAt?:      string | null;
   templateKey?:      string;
+  /** Shipping profile id; null = General profile. */
+  shippingProfileId?: string | null;
 }
 
 export interface EditDigitalPayload {
@@ -584,6 +604,13 @@ export interface StoreLocation {
   addressLine1: string | null;
   city:         string | null;
   phone:        string | null;
+  /** Ship-from address parts (shipping profile origin). */
+  addressLine2?: string | null;
+  state?:        string | null;
+  zipCode?:      string | null;
+  country?:      string | null;
+  latitude?:     number | null;
+  longitude?:    number | null;
   type:         'store' | 'warehouse';
   isDefault:    boolean;
   status:       'active' | 'archived';
@@ -605,7 +632,7 @@ export function apiCreateLocation(storeId: string, payload: { name: string; addr
   return client.post<never, ApiResponse<StoreLocation>>(ENDPOINTS.POS_LOCATIONS.CREATE(storeId), payload);
 }
 
-export function apiUpdateLocation(storeId: string, locationId: string, payload: Partial<{ name: string; addressLine1: string; city: string; phone: string; type: 'store' | 'warehouse'; status: 'active' | 'archived' }>) {
+export function apiUpdateLocation(storeId: string, locationId: string, payload: Partial<{ name: string; addressLine1: string; addressLine2: string; city: string; state: string; zipCode: string; country: string; latitude: number | null; longitude: number | null; phone: string; type: 'store' | 'warehouse'; status: 'active' | 'archived' }>) {
   return client.patch<never, ApiResponse<StoreLocation>>(ENDPOINTS.POS_LOCATIONS.UPDATE(storeId, locationId), payload);
 }
 
@@ -784,13 +811,42 @@ export interface SellerOrderDetailItem {
   refundedAmount: number;
   returnStatus: string;
   returnReason: string | null;
+  /** Set when this return was resolved by an EXCHANGE: the replacement order. */
+  exchangeOrderId?: string | null;
+  exchangeOrderNumber?: string | null;
+  /** Shippo return label bought for an approved return (merchant view: includes cost). */
+  returnLabel?: {
+    labelUrl:       string | null;
+    trackingNumber: string | null;
+    trackingUrl:    string | null;
+    carrier:        string | null;
+    cost:           number | null;
+    currency:       string | null;
+    purchasedAt:    string | null;
+  } | null;
 }
 
 export interface SellerOrderDetailTracking {
   carrier:        string | null;
   trackingNumber: string | null;
   trackingUrl:    string | null;
+  /** Merchant-only label details — present only when bought via Shippo. */
+  labelUrl?:      string | null;
+  labelCost?:     number | null;
+  labelCurrency?: string | null;
 }
+
+/** One Shopify-style fulfilment: some units of some lines leaving together under one tracking record. */
+export interface OrderShipment {
+  _id:         string;
+  items:       { itemId: string; quantity: number }[];
+  tracking:    SellerOrderDetailTracking | null;
+  shippedAt:   string | null;
+  deliveredAt: string | null;
+  createdAt?:  string | null;
+}
+
+export interface PickupLocationInfo { name: string | null; address: string | null; instructions: string | null }
 
 export interface SellerOrderDetailSellerOrder {
   _id:             string;
@@ -799,6 +855,10 @@ export interface SellerOrderDetailSellerOrder {
   subtotal:        number;
   status:          string;
   tracking:        SellerOrderDetailTracking | null;
+  /** Empty/absent on orders that never used the shipment flow — fall back to `tracking`. */
+  shipments?:      OrderShipment[];
+  /** Local pickup: when the order was marked ready for pickup. */
+  pickupReadyAt?:  string | null;
   shippedAt:       string | null;
   deliveredAt:     string | null;
   cancelledAt:     string | null;
@@ -832,7 +892,12 @@ export interface SellerOrderDetail {
   isPaid:          boolean;
   paidAt:          string | null;
   shippingAddress: SellerOrderDetailShippingAddress | null;
+  /** 'pickup' orders have no shippingAddress; the pickup point is in `pickupLocation`. */
+  fulfillmentMethod?: 'ship' | 'pickup';
+  pickupLocation?: PickupLocationInfo | null;
   buyer:           SellerOrderDetailBuyer;
+  /** Present on an exchange order: the original order and the return lines it replaces. */
+  exchangeOf?:     { orderId: string; orderNumber: string; itemIds: string[] } | null;
   sellerOrder:     SellerOrderDetailSellerOrder;
   /** Newest first. Absent on the admin detail route. */
   timeline?:       OrderTimelineEntry[];
@@ -840,7 +905,7 @@ export interface SellerOrderDetail {
   note?:           string;
 }
 
-export type OrderTimelineType = 'placed' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';
+export type OrderTimelineType = 'placed' | 'exchange' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';
 
 export interface OrderTimelineEntry {
   type:      OrderTimelineType;

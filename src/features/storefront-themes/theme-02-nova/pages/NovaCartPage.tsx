@@ -53,8 +53,10 @@ export function NovaCartPage() {
   const items = cart?.items ?? [];
   const isEmpty = !loading && !items.length;
 
-  const { currency: displayCurrency, convert } = useCurrencyPreference();
-  const symbol = currencySymbol(displayCurrency);
+  const { currency: displayCurrency, convert, ratesLoaded } = useCurrencyPreference();
+  // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
+  const ratesOk = ratesLoaded || items.every(i => !i.currency || i.currency === displayCurrency);
+  const money = (n: number) => (ratesOk ? `${currencySymbol(displayCurrency)}${fmt2(n)}` : '—');
   const displayTotal = items.reduce((s, i) => {
     const unit = i.unitPrice ?? i.price ?? 0;
     const lineTotal = i.itemTotal ?? unit * i.quantity;
@@ -145,7 +147,7 @@ export function NovaCartPage() {
                         </span>
                       )}
                     </div>
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginBottom: '10px' }}>{symbol}{fmt2(price)} each</p>
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginBottom: '10px' }}>{money(price)} each</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: '9999px' }}>
                         <button
@@ -180,7 +182,7 @@ export function NovaCartPage() {
                       </button>
                     </div>
                   </div>
-                  <p className="shrink-0" style={{ fontFamily: t.fonts.body, fontSize: '14px', fontWeight: 600, color: t.colors.ink }}>{symbol}{fmt2(lineTotal)}</p>
+                  <p className="shrink-0" style={{ fontFamily: t.fonts.body, fontSize: '14px', fontWeight: 600, color: t.colors.ink }}>{money(lineTotal)}</p>
                 </div>
               );
             })}
@@ -211,7 +213,7 @@ export function NovaCartPage() {
                   return (
                     <div key={item.productVariantId} className="flex justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
                       <span className="truncate" style={{ color: t.colors.inkMuted }}>{item.name} ×{item.quantity}</span>
-                      <span className="shrink-0" style={{ color: t.colors.ink }}>{symbol}{fmt2(ttl)}</span>
+                      <span className="shrink-0" style={{ color: t.colors.ink }}>{money(ttl)}</span>
                     </div>
                   );
                 })}
@@ -222,7 +224,7 @@ export function NovaCartPage() {
 
             <div className="flex justify-between items-baseline">
               <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.ink }}>Total</span>
-              <span style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>{symbol}{fmt2(displayTotal)}</span>
+              <span style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>{money(displayTotal)}</span>
             </div>
 
             <NovaButton style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/checkout')}>

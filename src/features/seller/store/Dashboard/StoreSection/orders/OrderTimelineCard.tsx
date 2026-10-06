@@ -10,7 +10,7 @@ import { timeAgo } from '@/utils/timeAgo';
 const MAX_COMMENT = 2000;
 
 const ICONS: Record<OrderTimelineType, ElementType> = {
-  placed: ShoppingBag, edit: Pencil, status: RefreshCw, payment: CreditCard, cancel: XCircle,
+  placed: ShoppingBag, exchange: RefreshCw, edit: Pencil, status: RefreshCw, payment: CreditCard, cancel: XCircle,
   refund: Undo2, comment: MessageSquare, note: StickyNote, address: MapPin,
 };
 

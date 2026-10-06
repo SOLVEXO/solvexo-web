@@ -5,7 +5,7 @@ import { SolvexoLogo, SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { BrandSplash } from '@/components/comman/motion/BrandSplash';
 import { useAuthVisual } from '@/hooks/auth/useAuthVisual';
-import type { AuthPageContext } from '@/api/services/auth';
+import type { AuthPageContext, AuthVisualTopic } from '@/api/services/auth';
 import { motion, useReducedMotion } from 'motion/react';
 
 interface AuthHighlight {
@@ -30,6 +30,8 @@ interface AuthSplitLayoutProps {
    *  image everywhere. Defaults to `'register'` for any caller that hasn't
    *  been updated to pass this explicitly yet. */
   pageContext?:    AuthPageContext;
+  /** Seller kind chosen earlier in onboarding (used by `onboarding_products`). */
+  visualTopic?:    AuthVisualTopic;
   children:        ReactNode;
 }
 
@@ -57,6 +59,7 @@ export function AuthSplitLayout({
   maxWidth = 'max-w-[420px]',
   bare = false,
   pageContext = 'register',
+  visualTopic,
   children,
 }: AuthSplitLayoutProps) {
   const reduceMotion = useReducedMotion();
@@ -65,7 +68,7 @@ export function AuthSplitLayout({
   // region's 3 photos) — starts `null` (renders nothing extra until
   // resolved), so a slow/failed lookup never shows a broken image, just the
   // panel's existing gradient as before this feature existed.
-  const { imageUrl: visualImageUrl, attribution } = useAuthVisual(pageContext);
+  const { imageUrl: visualImageUrl } = useAuthVisual(pageContext, visualTopic);
   return (
     <div className="fixed inset-x-0 top-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row">
       <BrandSplash />
@@ -188,15 +191,6 @@ export function AuthSplitLayout({
 
             <p className="text-[11px] text-white/40 shrink-0">
               © {new Date().getFullYear()} Solvexo. All rights reserved.
-              {attribution && (
-                <>
-                  {' · Photo: '}
-                  <a href={attribution.profileUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/70">
-                    {attribution.name}
-                  </a>
-                  {' / Unsplash'}
-                </>
-              )}
             </p>
           </div>
         </div>

@@ -24,6 +24,11 @@ import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type Variant
 type ProductStatus = 'draft' | 'active' | 'scheduled';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
 
+import { PackageDimensionsFields } from './PackageDimensionsFields';
+import { CustomsInformationFields } from './CustomsInformationFields';
+import { customsPayload, customsText } from './customsInfo';
+import { ShippingProfileField } from './ShippingProfileField';
+import { dimensionPayload, dimensionText } from './packageDimensions';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
 
@@ -79,9 +84,10 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const blankPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', sku: '', barcode: '', shippingWeight: '', categoryId: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
+  shippingProfileId: '',
   // Non-empty optionTypes switches Pricing/Inventory over to the real
   // variant matrix — same convention as StoreAddProduct.tsx. Reconstructed
   // from the product's REAL variant list on load (see `loadPhysicalVariants`
@@ -114,10 +120,13 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     stock: String(v.stock), sku: v.sku ?? '', barcode: v.barcode ?? '', shippingWeight: v.shippingWeight ?? '',
+    length: dimensionText(v.length), width: dimensionText(v.width), height: dimensionText(v.height),
+    ...customsText(v),
     categoryId: p.categoryId ?? '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
+    shippingProfileId: p.shippingProfileId ?? '',
     optionTypes: [], variantRows: [],
   };
 }
@@ -287,6 +296,7 @@ export default function StoreEditProduct() {
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           templateKey,
+          shippingProfileId: phys.shippingProfileId || null,
         });
 
         // Reconcile the desired variant set (either the real matrix, or a
@@ -305,6 +315,10 @@ export default function StoreEditProduct() {
                 stock: r.unlimitedStock ? 0 : Number(r.stock),
                 unlimitedStock: r.unlimitedStock,
                 shippingWeight: phys.shippingWeight,
+                length: dimensionPayload(phys.length),
+                width: dimensionPayload(phys.width),
+                height: dimensionPayload(phys.height),
+                ...customsPayload(phys),
                 sku: r.sku.trim() || undefined,
                 barcode: r.barcode.trim() || undefined,
               },
@@ -317,6 +331,10 @@ export default function StoreEditProduct() {
                 options: [],
                 stock: Number(phys.stock),
                 shippingWeight: phys.shippingWeight,
+                length: dimensionPayload(phys.length),
+                width: dimensionPayload(phys.width),
+                height: dimensionPayload(phys.height),
+                ...customsPayload(phys),
                 sku: phys.sku.trim() || undefined,
                 barcode: phys.barcode.trim() || undefined,
               },
@@ -585,6 +603,10 @@ export default function StoreEditProduct() {
             </Card>
           )}
 
+          {pType === 'physical' && (
+            <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />
+          )}
+
           {/* Tags */}
           <Card title="Tags & SEO">
             <p className="text-[12px] text-slate mb-3">Help buyers discover your product through search and filters.</p>
@@ -647,6 +669,8 @@ export default function StoreEditProduct() {
                 <F label="Shipping Weight">
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>
+                <PackageDimensionsFields length={phys.length} width={phys.width} height={phys.height} onChange={(k, v) => sp(k, v)} />
+                <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} onChange={(k, v) => sp(k, v)} />
               </div>
             </Card>
           )}
@@ -773,9 +797,13 @@ export default function StoreEditProduct() {
                       currencySymbol={currencySymbol}
                     />
                     {hasVariants && (
-                      <F label="Shipping Weight">
-                        <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
-                      </F>
+                      <>
+                        <F label="Shipping Weight">
+                          <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
+                        </F>
+                        <PackageDimensionsFields length={phys.length} width={phys.width} height={phys.height} onChange={(k, v) => sp(k, v)} />
+                        <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} onChange={(k, v) => sp(k, v)} />
+                      </>
                     )}
                   </>
                 )}

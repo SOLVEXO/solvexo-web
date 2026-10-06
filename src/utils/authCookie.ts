@@ -20,6 +20,8 @@
  * below.
  */
 
+import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
+
 const MAX_AGE_SECONDS = 400 * 24 * 60 * 60; // ~400 days — the browser-enforced cap, matches "persists until logout" like localStorage did
 
 function isIpAddress(host: string): boolean {
@@ -43,15 +45,18 @@ function cookieDomain(): string | null {
 // buyer session deliberately still does.
 export type AuthCookieScope = 'shared' | 'host';
 
-export function setAuthCookie(name: string, value: string, scope: AuthCookieScope = 'shared'): void {
-  const domain = scope === 'host' ? null : cookieDomain();
+// A domain-wide ('shared') cookie is no longer ever WRITTEN: an apex
+// seller/admin session on `.solvexo.store` would be readable on every store
+// subdomain (a seller looked logged in as a buyer on their own storefront).
+// Every session cookie is now host-only. `scope: 'shared'` survives only as a
+// DELETE target, to clean up legacy domain-wide cookies set by older builds.
+export function setAuthCookie(name: string, value: string): void {
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
     `path=/`,
     `max-age=${MAX_AGE_SECONDS}`,
     `SameSite=Lax`,
   ];
-  if (domain) parts.push(`domain=${domain}`);
   if (window.location.protocol === 'https:') parts.push('Secure');
   document.cookie = parts.join('; ');
 }
@@ -61,7 +66,16 @@ export function getAuthCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function deleteAuthCookie(name: string, scope: AuthCookieScope = 'shared'): void {
+/** Deletes the cookie on this host AND (apex only) any legacy domain-wide copy. */
+export function clearAuthCookie(name: string): void {
+  deleteAuthCookie(name, 'host');
+  deleteAuthCookie(name, 'shared');
+}
+
+export function deleteAuthCookie(name: string, scope: AuthCookieScope = 'host'): void {
+  // A storefront (subdomain/custom domain) must never delete the domain-wide
+  // cookie: that would log the seller out of the apex app.
+  if (scope === 'shared' && (getStoreSlugFromHost() || isCustomDomainCandidate())) return;
   const domain = scope === 'host' ? null : cookieDomain();
   const parts = [`${name}=`, `path=/`, `max-age=0`];
   if (domain) parts.push(`domain=${domain}`);

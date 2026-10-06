@@ -10,9 +10,11 @@ import { useCheckoutSession, useGuestContact } from '../../useGuestContact';
 import { GuestContactSection } from '../../GuestContactSection';
 import { OrderPlacedExtras } from '../../OrderPlacedExtras';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
+import { useShippingGroupPicks } from '../../useShippingGroupPicks';
 import { apiGetLiveShippingRates, type LiveShippingRate } from '@/api/services/shipping';
 import { apiGetMyAddresses, apiAddAddress, type Address, type AddressPayload } from '@/api/services/address';
 import { COUNTRY_OPTIONS, isSameCountry } from '@/utils/countries';
+import { zoneMatchesAddress, zoneLabel, zoneArrivalRange } from '@/utils/shippingZoneDisplay';
 import {
   apiCreateCheckout, apiAddShippingToCheckout, apiApplyCoupon, apiRemoveCoupon, apiApplyGiftCard, apiRemoveGiftCard,
   type Checkout, type CheckoutSummary,
@@ -80,7 +82,7 @@ export function NovaCheckoutPage() {
   // Before a real Checkout exists, the zone picker displays in the store's
   // own currency — once one exists, its resolved `.currency` takes over, so
   // the picker's numbers always match what's actually charged.
-  const { zones: flatZones, loading: zonesLoading } = useShippingZones(cart?.storeId, checkout?.currency ?? store.baseCurrency ?? 'USD');
+  const { zones: flatZones, groups: shipGroups, loading: zonesLoading } = useShippingZones(cart?.storeId, checkout?.currency ?? store.baseCurrency ?? 'USD');
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
 
   // Real live carrier rates (Shippo) — see AtelierCheckoutPage's identical
@@ -173,28 +175,37 @@ export function NovaCheckoutPage() {
   // OTHER country's zones too. Country is now the required first filter;
   // city/province only refine WITHIN the buyer's real country.
   const countryZones = selectedAddr
-    ? flatZoneEntries.filter(z => isSameCountry(z.country, selectedAddr.country))
+    ? flatZoneEntries.filter(z => zoneMatchesAddress(z, selectedAddr, isSameCountry))
     : flatZoneEntries;
   const matchingFlatZones = selectedAddr
     ? (() => {
         // `z.city`/`z.province` are nullable on a country-only zone — a bare
         // `.toLowerCase()` crashed the page for that case (same fix as
         // AtelierCheckoutPage.tsx, caught via a live browser reproduction).
-        const refined = countryZones.filter(z =>
+        // Pickup / local-delivery options are always kept; city/province refinement only narrows normal zones.
+        const specialZones = countryZones.filter(z => z.zoneType === 'pickup' || z.zoneType === 'local_delivery');
+        const normalZones = countryZones.filter(z => z.zoneType !== 'pickup' && z.zoneType !== 'local_delivery');
+        const refined = normalZones.filter(z =>
           (z.city && z.city.toLowerCase() === selectedAddr.city.toLowerCase()) ||
           (z.province && z.province.toLowerCase() === selectedAddr.state.toLowerCase()),
         );
-        return refined.length > 0 ? refined : countryZones;
+        return [...(refined.length > 0 ? refined : normalZones), ...specialZones];
       })()
     : flatZoneEntries;
   const effectiveZones = [...liveZoneEntries, ...matchingFlatZones];
+  // Shopify delivery groups (one rate per shipping profile); a single group keeps the original single pick.
+  const gp = useShippingGroupPicks(shipGroups, effectiveZones, !isDigital);
   const noMatchingZone = !!selectedAddr && flatZoneEntries.length > 0 && liveZoneEntries.length === 0 && matchingFlatZones.length === 0;
+  // Local pickup (Shopify): no delivery address is collected or needed.
+  const pickupSelected = !isDigital && (gp.multiGroup ? gp.pickupAll : effectiveZones.find(z => z._id === selectedZoneId)?.zoneType === 'pickup');
+  const shippingChosen = gp.multiGroup ? gp.allPicked : !!selectedZoneId;
   useEffect(() => {
-    if (!selectedZoneId && effectiveZones.length > 0) setSelectedZoneId(effectiveZones[0]._id);
+    // Also re-pick when the current option stopped matching (e.g. a postcode-limited local delivery after an address change).
+    if (!gp.multiGroup && effectiveZones.length > 0 && !effectiveZones.some(z => z._id === selectedZoneId)) setSelectedZoneId(effectiveZones[0]._id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveZones.length, selectedAddrId]);
 
-  const readyToCreateCheckout = (!guest || guestContact.valid) && (isDigital || (!!selectedAddrId && !!selectedZoneId));
+  const readyToCreateCheckout = (!guest || guestContact.valid) && (isDigital || (shippingChosen && (pickupSelected || !!selectedAddrId)));
 
   useEffect(() => {
     if (!loggedIn || !readyToCreateCheckout || checkout || creatingCheckout) return;
@@ -205,8 +216,10 @@ export function NovaCheckoutPage() {
       ? guestContact.commit(selectedAddr?.recipientName).then(ok => { if (!ok) throw new Error('Enter a valid email address to continue.'); })
       : Promise.resolve()
     ).then(() => apiCreateCheckout({
-      addressId: isDigital ? undefined : (selectedAddrId ?? undefined),
-      shippingZoneId: isDigital ? undefined : (selectedZoneId ?? undefined),
+      addressId: isDigital || pickupSelected ? undefined : (selectedAddrId ?? undefined),
+      ...(gp.multiGroup && !isDigital
+        ? { selections: gp.selections }
+        : { shippingZoneId: isDigital ? undefined : (selectedZoneId ?? undefined) }),
       storeId: cart?.storeId,
     }))
       .then(async res => {
@@ -220,14 +233,16 @@ export function NovaCheckoutPage() {
         // side) is only ever registered by this separate call. See
         // AtelierCheckoutPage's identical fix for the full doc comment on
         // why this was previously never actually being called anywhere.
-        if (!isDigital && selectedZoneId) {
+        if (!isDigital && shippingChosen) {
           const chosen = zones.find(z => z._id === selectedZoneId);
           try {
             const shipRes = await apiAddShippingToCheckout({
               checkoutId: res.data.checkout._id,
-              ...(chosen?.isLiveRate ? { liveRateId: selectedZoneId } : { shippingZoneId: selectedZoneId }),
+              ...(gp.multiGroup
+                ? { selections: gp.selections }
+                : chosen?.isLiveRate ? { liveRateId: selectedZoneId ?? undefined } : { shippingZoneId: selectedZoneId ?? undefined }),
             });
-            setSummary(s => s ? { ...s, shippingFee: shipRes.data.shippingFee, totalAmount: shipRes.data.totalAmount } : s);
+            setSummary(s => s ? { ...s, shippingFee: shipRes.data.shippingFee, totalAmount: shipRes.data.totalAmount, taxAmount: shipRes.data.taxAmount ?? s.taxAmount, internationalDutiesNotice: shipRes.data.internationalDutiesNotice } : s);
           } catch (err) {
             setCheckoutError(err instanceof Error ? err.message : 'Failed to apply shipping to this checkout.');
           }
@@ -236,12 +251,12 @@ export function NovaCheckoutPage() {
       .catch(err => setCheckoutError(err instanceof Error ? err.message : 'Failed to initialize checkout.'))
       .finally(() => setCreatingCheckout(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readyToCreateCheckout, selectedAddrId, selectedZoneId]);
+  }, [readyToCreateCheckout, selectedAddrId, selectedZoneId, gp.picksKey]);
 
   useEffect(() => {
     if (checkout) { setCheckout(null); setSummary(null); setSelectedMethod(null); setClientSecret(null); setExtraMethods([]); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAddrId, selectedZoneId]);
+  }, [selectedAddrId, selectedZoneId, gp.picksKey]);
 
   useEffect(() => {
     if (!checkout) return;
@@ -497,8 +512,10 @@ export function NovaCheckoutPage() {
           )}
 
           {!isDigital && (
-            <SectionCard step={guest ? 2 : 1} title="Delivery Address" done={!!selectedAddrId && !addingAddr}>
-              {addrLoading ? (
+            <SectionCard step={guest ? 2 : 1} title="Delivery Address" done={pickupSelected || (!!selectedAddrId && !addingAddr)}>
+              {pickupSelected ? (
+                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No delivery address needed — you'll collect this order at the pickup location chosen below.</p>
+              ) : addrLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : addingAddr ? (
                 <div className="flex flex-col gap-2.5">
@@ -557,7 +574,7 @@ export function NovaCheckoutPage() {
           )}
 
           {!isDigital && (
-            <SectionCard step={guest ? 3 : 2} title="Shipping Method" done={!!selectedZoneId}>
+            <SectionCard step={guest ? 3 : 2} title="Shipping Method" done={shippingChosen}>
               {zonesLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : effectiveZones.length === 0 ? (
@@ -567,22 +584,52 @@ export function NovaCheckoutPage() {
                     : 'No shipping methods are available yet.'}
                 </p>
               ) : (
-                <div className="flex flex-col gap-2.5">
-                  {effectiveZones.map(z => (
+                (() => {
+                  const renderRows = (list: typeof effectiveZones, current: string | null | undefined, onPick: (id: string) => void) => list.map(z => (
+                    <div key={z._id} className="flex flex-col gap-1.5">
                     <label
-                      key={z._id}
                       className="flex items-center justify-between gap-2.5 cursor-pointer"
-                      style={{ padding: '12px 14px', borderRadius: t.radius.sm, border: `1.5px solid ${selectedZoneId === z._id ? t.colors.accent : t.colors.border}` }}
+                      style={{ padding: '12px 14px', borderRadius: t.radius.sm, border: `1.5px solid ${current === z._id ? t.colors.accent : t.colors.border}` }}
                     >
                       <span className="flex items-center gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.ink }}>
-                        <input type="radio" checked={selectedZoneId === z._id} onChange={() => setSelectedZoneId(z._id)} />
-                        <Truck size={14} style={{ color: t.colors.inkMuted }} /> {z.city}, {z.province}
+                        <input type="radio" checked={current === z._id} onChange={() => onPick(z._id)} />
+                        <Truck size={14} style={{ color: t.colors.inkMuted }} /> {zoneLabel(z)}
                         {z.estimatedDeliveryTime && <span style={{ color: t.colors.inkMuted }}>· {z.estimatedDeliveryTime}</span>}
+                        {zoneArrivalRange(z) && <span style={{ color: t.colors.inkMuted }}>· {zoneArrivalRange(z)}</span>}
                       </span>
-                      <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 700, color: t.colors.ink }}>{symbol}{fmt2(z.shippingPrice)}</span>
+                      <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 700, color: t.colors.ink }}>{z.shippingPrice === 0 ? 'Free' : `${symbol}${fmt2(z.shippingPrice)}`}</span>
                     </label>
-                  ))}
-                </div>
+                    {z.zoneType === 'pickup' && (z.pickupAddress || z.pickupInstructions) && (
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, margin: '-4px 0 0 4px' }}>
+                        {z.pickupAddress}{z.pickupInstructions ? ` · ${z.pickupInstructions}` : ''}
+                      </p>
+                    )}
+                    </div>
+
+                  ));
+                  if (!gp.multiGroup) return <div className="flex flex-col gap-2.5">{renderRows(effectiveZones, selectedZoneId, setSelectedZoneId)}</div>;
+                  // Shopify delivery groups: one rate per shipping profile of the cart.
+                  return (
+                    <div className="flex flex-col gap-5">
+                      {shipGroups.map(g => {
+                        const options = effectiveZones.filter(z => (z as { groupKey?: string }).groupKey === g.groupKey);
+                        return (
+                          <div key={g.groupKey} className="flex flex-col gap-2.5">
+                            <p style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.ink, margin: 0 }}>Shipping: {g.name}</p>
+                            {options.length === 0
+                              ? <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted, margin: 0 }}>No shipping method is available for these items to your address.</p>
+                              : renderRows(options, gp.picks[g.groupKey], id => gp.setPick(g.groupKey, id))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
+              )}
+              {summary?.internationalDutiesNotice && (
+                <p role="note" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, margin: '12px 0 0' }}>
+                  Duties and import taxes are not included in your total. You may be charged by the carrier on delivery.
+                </p>
               )}
             </SectionCard>
           )}

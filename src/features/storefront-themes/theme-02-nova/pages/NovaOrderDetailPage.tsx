@@ -1,15 +1,17 @@
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertCircle, Package, Loader2, Truck, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Package, Loader2, ArrowLeft } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { apiGetOrderById, type OrderDetail } from '@/api/services/orders';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import {
   derivePaymentBadge, deriveFulfillmentBadge, formatOrderDate, buildOrderTimeline, paymentMethodLabel,
-  canRequestReturn, isDigitalItem, safeTrackingUrl, formatShippingAddress, BADGE_TONE_COLOR,
+  canRequestReturn, isDigitalItem, isPickupOrder, formatShippingAddress, BADGE_TONE_COLOR,
 } from '../../orderUi';
 import { OrderBadge, OrderDownloadLink } from '../../OrderUiParts';
+import { ExchangeItemLink, ExchangeOrderBanner } from '../../ExchangeNotice';
+import { OrderShipments, OrderPickupLocation, type FulfilmentLook } from '../../OrderFulfilmentParts';
 import { useBuyAgain } from '../../useBuyAgain';
 import { novaTheme as t } from '../theme.config';
 
@@ -89,6 +91,7 @@ export function NovaOrderDetailPage() {
       { label: 'Promotion', amount: (order.campaignDiscountTotal ?? 0) + (order.autoDiscountTotal ?? 0) },
     ].filter(d => d.amount > 0);
     const method = paymentMethodLabel(order.paymentType);
+    const look: FulfilmentLook = { card, h2, body, muted, accent: t.colors.accent, strong: 700 };
     const row = (label: string, value: string, strong = false) => (
       <div key={label} className="flex items-center justify-between" style={{ padding: '5px 0', fontFamily: t.fonts.body, fontSize: strong ? '14px' : '13px', fontWeight: strong ? 700 : 400, color: t.colors.ink }}>
         <span style={strong ? undefined : { color: t.colors.inkMuted }}>{label}</span><span>{value}</span>
@@ -108,6 +111,8 @@ export function NovaOrderDetailPage() {
           </div>
         </div>
 
+        <ExchangeOrderBanner exchangeOf={order.exchangeOf} look={{ fontFamily: t.fonts.body, color: t.colors.ink, accent: t.colors.accent, border: t.colors.border, bg: t.colors.bgAlt }} />
+
         <section style={card} aria-label="Order status">
           <ol className="flex items-start justify-between gap-2" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {timeline.map(step => {
@@ -124,21 +129,7 @@ export function NovaOrderDetailPage() {
           </ol>
         </section>
 
-        {subs.filter(s => s.tracking && (s.tracking.carrier || s.tracking.trackingNumber)).map((s, i) => {
-          const url = safeTrackingUrl(s.tracking?.trackingUrl);
-          return (
-            <section key={s._id ?? `${s.storeId}-${i}`} style={card} aria-label="Tracking">
-              <p style={{ ...h2, display: 'flex', alignItems: 'center', gap: '8px' }}><Truck size={15} style={{ color: t.colors.accent }} /> Tracking</p>
-              {s.tracking?.carrier && <p style={body}>Carrier: {s.tracking.carrier}</p>}
-              {s.tracking?.trackingNumber && <p style={{ ...body, marginTop: '4px' }}>Tracking number: <span style={{ fontFamily: 'monospace' }}>{s.tracking.trackingNumber}</span></p>}
-              {url && (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block underline" style={{ ...body, fontWeight: 700, marginTop: '10px' }}>
-                  Track package
-                </a>
-              )}
-            </section>
-          );
-        })}
+        <OrderShipments order={order} look={look} />
 
         <section style={card}>
           <p style={h2}>Items</p>
@@ -153,10 +144,13 @@ export function NovaOrderDetailPage() {
                   <p style={{ ...muted, marginTop: '2px' }}>{item.options.map(o => `${o.name}: ${o.value}`).join(' / ')}</p>
                 )}
                 <p style={{ ...muted, marginTop: '2px' }}>{money(item.price)} x {item.quantity}</p>
-                {(item.refundedAmount ?? 0) > 0 && (
+                {(item.refundedAmount ?? 0) > 0 && !item.exchangeOrderId && (
                   <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Refunded {money(item.refundedAmount ?? 0)}</p>
                 )}
                 {item.status === 'cancelled' && <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Cancelled</p>}
+                {item.exchangeOrderId && (
+                  <div style={{ marginTop: '4px' }}><ExchangeItemLink orderId={item.exchangeOrderId} orderNumber={item.exchangeOrderNumber} color={t.colors.accent} fontFamily={t.fonts.body} /></div>
+                )}
                 {isDigitalItem(item) && (
                   <div style={{ marginTop: '6px' }}>
                     <OrderDownloadLink orderId={order._id} productId={item.productId} color={t.colors.accent} fontFamily={t.fonts.body} />
@@ -180,15 +174,19 @@ export function NovaOrderDetailPage() {
         </section>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <section style={{ ...card, marginBottom: 0 }}>
-            <p style={h2}>Shipping address</p>
-            {addr.name || addr.lines.length > 0 ? (
-              <>
-                {addr.name && <p style={{ ...body, fontWeight: 700 }}>{addr.name}</p>}
-                {addr.lines.map(l => <p key={l} style={{ ...muted, marginTop: '2px' }}>{l}</p>)}
-              </>
-            ) : <p style={muted}>No shipping address.</p>}
-          </section>
+          {isPickupOrder(order) ? (
+            <OrderPickupLocation order={order} look={look} />
+          ) : (
+            <section style={{ ...card, marginBottom: 0 }}>
+              <p style={h2}>Shipping address</p>
+              {addr.name || addr.lines.length > 0 ? (
+                <>
+                  {addr.name && <p style={{ ...body, fontWeight: 700 }}>{addr.name}</p>}
+                  {addr.lines.map(l => <p key={l} style={{ ...muted, marginTop: '2px' }}>{l}</p>)}
+                </>
+              ) : <p style={muted}>No shipping address.</p>}
+            </section>
+          )}
           <section style={{ ...card, marginBottom: 0 }}>
             <p style={h2}>Payment</p>
             <p style={body}>{method || '-'}</p>
