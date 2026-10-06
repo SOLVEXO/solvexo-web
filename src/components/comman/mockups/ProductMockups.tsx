@@ -4,6 +4,7 @@ import {
   Search, ShoppingCart, CreditCard, Wallet, Banknote, Check,
   TrendingUp, TrendingDown, Users, Package, DollarSign, Sparkles,
   ArrowRight, Bell, PackageCheck, Gift, Ticket, Store, MonitorSmartphone, BarChart3,
+  Truck, Globe, Percent, UserCircle, Coins,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
@@ -493,6 +494,239 @@ export function LoyaltyPreview({ className }: { className?: string }) {
   );
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// PaymentsPreview — available/pending balance + a real Stripe Connect status,
+// matching how payouts actually work (direct-to-seller via Connect, with a
+// shared-balance fallback when a seller hasn't connected their own account).
+// ────────────────────────────────────────────────────────────────────────────
+export function PaymentsPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — finance" />
+      <div className="p-4 sm:p-5">
+        <div className="rounded-xl bg-gradient-to-r from-brand-orange to-brand-deep-orange p-3.5 mb-3.5 flex items-center justify-between">
+          <div>
+            <p className="text-[9.5px] text-white/70 uppercase tracking-[0.06em]">Available balance</p>
+            <p className="text-[18px] font-bold text-white leading-tight">$2,840.00</p>
+          </div>
+          <span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">
+            <Wallet size={16} className="text-white" />
+          </span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg bg-cream p-2.5 mb-2.5">
+          <span className="flex items-center gap-2 text-[10.5px] text-charcoal">
+            <Banknote size={13} className="text-slate" /> Pending balance
+          </span>
+          <span className="text-[10.5px] font-bold text-carbon">$610.00</span>
+        </div>
+        <div className="rounded-lg bg-success-bg p-2.5 flex items-center gap-2.5">
+          <span className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0">
+            <Check size={13} className="text-success" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold text-carbon">Payouts connected via Stripe</p>
+            <p className="text-[9px] text-slate">Settles directly to your own account</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CheckoutPreview — a real order summary: coupon and gift-card redemption
+// shown together, plus both real payment paths (card and cash on delivery).
+// ────────────────────────────────────────────────────────────────────────────
+export function CheckoutPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — checkout" />
+      <div className="p-4 sm:p-5">
+        <p className="text-[12.5px] font-bold text-carbon mb-3">Order summary</p>
+        <div className="flex flex-col gap-[6px] text-[10.5px] mb-3">
+          <div className="flex items-center justify-between"><span className="text-slate">Subtotal</span><span className="text-charcoal">$96.00</span></div>
+          <div className="flex items-center justify-between"><span className="text-slate">Coupon SAVE10</span><span className="text-success">-$9.60</span></div>
+          <div className="flex items-center justify-between"><span className="text-slate">Gift card</span><span className="text-success">-$20.00</span></div>
+          <div className="flex items-center justify-between"><span className="text-slate">Shipping</span><span className="text-charcoal">$5.00</span></div>
+        </div>
+        <div className="flex items-center justify-between pt-2.5 border-t border-bone mb-3.5">
+          <span className="text-[11px] font-bold text-carbon">Total</span>
+          <span className="text-[15px] font-bold text-brand-orange">$71.40</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-carbon text-white text-[10px] font-semibold py-2">
+            <CreditCard size={12} /> Pay by card
+          </span>
+          <span className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-bone text-charcoal text-[10px] font-semibold py-2">
+            <Banknote size={12} /> Cash on delivery
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// DiscountsPreview — a real mix of what actually exists: a no-code automatic
+// discount, a store coupon code, and an opted-in platform campaign.
+// ────────────────────────────────────────────────────────────────────────────
+const ACTIVE_DISCOUNTS = [
+  { label: '15% off — Footwear category', type: 'Automatic' },
+  { label: 'SAVE10 — 10% off storefront', type: 'Coupon' },
+  { label: 'Flash Sale — ends in 2d', type: 'Campaign' },
+];
+
+export function DiscountsPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — discounts" />
+      <div className="p-4 sm:p-5">
+        <p className="text-[12.5px] font-bold text-carbon mb-3">Active promotions</p>
+        <div className="flex flex-col gap-2">
+          {ACTIVE_DISCOUNTS.map(d => (
+            <div key={d.label} className="flex items-center gap-2.5 rounded-lg bg-cream p-2.5">
+              <span className="w-7 h-7 rounded-md bg-white flex items-center justify-center shrink-0">
+                <Percent size={13} className="text-brand-orange" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10.5px] font-medium text-charcoal truncate">{d.label}</span>
+              </span>
+              <span className="text-[8.5px] font-bold text-slate uppercase tracking-[0.04em] shrink-0">{d.type}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// ShippingPreview — zone-based rates resolved per region, each tied to a
+// real carrier, matching the actual zones+carriers model.
+// ────────────────────────────────────────────────────────────────────────────
+const SHIPPING_ZONES = [
+  { name: 'Within city', carrier: 'Local Courier', rate: '$2.50' },
+  { name: 'Nationwide', carrier: 'TCS Express', rate: '$5.00' },
+  { name: 'International', carrier: 'DHL', rate: '$18.00' },
+];
+
+export function ShippingPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — shipping" />
+      <div className="p-4 sm:p-5">
+        <p className="text-[12.5px] font-bold text-carbon mb-3">Shipping zones</p>
+        <div className="flex flex-col gap-2">
+          {SHIPPING_ZONES.map(z => (
+            <div key={z.name} className="flex items-center gap-2.5 rounded-lg bg-cream p-2.5">
+              <span className="w-7 h-7 rounded-md bg-white flex items-center justify-center shrink-0">
+                <Truck size={13} className="text-brand-orange" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10.5px] font-medium text-charcoal truncate">{z.name}</span>
+                <span className="block text-[9px] text-slate truncate">{z.carrier}</span>
+              </span>
+              <span className="text-[10px] font-bold text-carbon shrink-0">{z.rate}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// DomainsPreview — a real DNS-verification status, matching how custom
+// domains actually connect (a CNAME record checked against live DNS).
+// ────────────────────────────────────────────────────────────────────────────
+export function DomainsPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — domains" />
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center gap-2.5 rounded-lg bg-cream p-3 mb-3">
+          <span className="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0">
+            <Globe size={15} className="text-brand-orange" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold text-carbon truncate">auroragoods.com</p>
+            <p className="text-[9px] text-slate">Connected domain</p>
+          </div>
+          <span className="text-[8.5px] font-bold text-success bg-success-bg rounded-full px-2 py-[3px] shrink-0">Verified</span>
+        </div>
+        <p className="text-[9.5px] font-bold text-slate uppercase tracking-[0.06em] mb-1.5">DNS record</p>
+        <div className="rounded-lg border border-bone p-2.5 text-[9.5px] font-mono text-charcoal flex items-center justify-between">
+          <span>CNAME</span><span className="text-slate truncate ml-2">stores.solvexo.store</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CustomerAccountsPreview — the real buyer account workspace: order history,
+// wishlist and saved addresses, not a login-form mockup.
+// ────────────────────────────────────────────────────────────────────────────
+export function CustomerAccountsPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — my account" />
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center gap-2.5 mb-3.5">
+          <span className="w-9 h-9 rounded-full bg-brand-pale-orange flex items-center justify-center shrink-0">
+            <UserCircle size={18} className="text-brand-orange" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-carbon truncate">Sarah M.</p>
+            <p className="text-[9px] text-slate">sarah@email.com</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[{ label: 'Orders', value: '12' }, { label: 'Wishlist', value: '7' }, { label: 'Addresses', value: '2' }].map(s => (
+            <div key={s.label} className="rounded-lg bg-cream px-2.5 py-2.5 text-center">
+              <p className="text-[13px] font-bold text-carbon">{s.value}</p>
+              <p className="text-[8.5px] text-slate">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// MarketsPreview — the real, honest scope: PKR and USD, seller-controlled.
+// ────────────────────────────────────────────────────────────────────────────
+const CURRENCY_ROWS = [
+  { code: 'PKR', label: 'Pakistani Rupee' },
+  { code: 'USD', label: 'US Dollar' },
+];
+
+export function MarketsPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — markets" />
+      <div className="p-4 sm:p-5">
+        <p className="text-[12.5px] font-bold text-carbon mb-3">Accepted currencies</p>
+        <div className="flex flex-col gap-2">
+          {CURRENCY_ROWS.map(c => (
+            <div key={c.code} className="flex items-center gap-2.5 rounded-lg bg-cream p-2.5">
+              <span className="w-7 h-7 rounded-md bg-white flex items-center justify-center shrink-0">
+                <Coins size={13} className="text-brand-orange" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10.5px] font-medium text-charcoal">{c.label}</span>
+                <span className="block text-[9px] text-slate">{c.code}</span>
+              </span>
+              <span className="text-[8.5px] font-bold text-success bg-success-bg rounded-full px-2 py-[3px] shrink-0">Enabled</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Single source of truth for "which icon represents this platform-product
 // slug" — previously duplicated identically in Homepage.tsx,
 // PublicMegaNavbar.tsx, SolutionPage.tsx and ProductsOverviewPage.tsx. ──
@@ -504,6 +738,13 @@ export const PRODUCT_ICONS: Record<string, LucideIcon> = {
   inventory: PackageCheck,
   'orders-customers': Users,
   loyalty: Gift,
+  payments: Wallet,
+  checkout: ShoppingCart,
+  discounts: Percent,
+  shipping: Truck,
+  domains: Globe,
+  'customer-accounts': UserCircle,
+  markets: Coins,
 };
 
 // ── Single source of truth for "which mockup represents this platform-
@@ -517,6 +758,13 @@ export function mockupForProductSlug(slug: string) {
     case 'analytics':      return <AnalyticsPreview />;
     case 'inventory':      return <InventoryPreview />;
     case 'loyalty':        return <LoyaltyPreview />;
+    case 'payments':       return <PaymentsPreview />;
+    case 'checkout':       return <CheckoutPreview />;
+    case 'discounts':      return <DiscountsPreview />;
+    case 'shipping':       return <ShippingPreview />;
+    case 'domains':        return <DomainsPreview />;
+    case 'customer-accounts': return <CustomerAccountsPreview />;
+    case 'markets':        return <MarketsPreview />;
     default:               return <OrdersTimelinePreview />; // orders-customers
   }
 }

@@ -8,7 +8,7 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { mockupForProductSlug, PRODUCT_ICONS } from '@/components/comman/mockups/ProductMockups';
-import { PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
+import { ALL_PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
 
 export function ProductsOverviewPage() {
   usePageTitle('Products');
@@ -32,7 +32,7 @@ export function ProductsOverviewPage() {
          a real hierarchy choice (it's the platform's anchor product), not
          a uniformly repeated tile. */}
       <RevealStagger className="px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" step={0.08} y={20}>
-        {PLATFORM_PRODUCTS.map((p, i) => {
+        {ALL_PLATFORM_PRODUCTS.map((p, i) => {
           const Icon = PRODUCT_ICONS[p.slug] ?? Store;
           const spotlight = i === 0;
           return (

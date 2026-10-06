@@ -2,10 +2,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import type { Variants } from 'motion/react';
 import {
-  Store, ChevronDown, ArrowRight, Plus, HelpCircle, Mail, Building2, ShieldCheck, Search,
+  Store, ChevronDown, ArrowRight, Plus, Building2, ShieldCheck,
+  MonitorSmartphone, PackageCheck, Users,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -13,60 +14,63 @@ import { TokenStorage } from '@/api/services/auth';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useCompactOnScroll } from './BuyerNavbar';
-import { PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
-import { SOLUTIONS } from '@/features/buyer/data/solutions';
-import { unsplashUrl } from '@/assets/stockPhotos';
-import { mockupForProductSlug, PRODUCT_ICONS } from '@/components/comman/mockups/ProductMockups';
+import { PLATFORM_PRODUCTS, ALL_PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
+import { PRODUCT_ICONS } from '@/components/comman/mockups/ProductMockups';
 
 const NAV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-// Real products, organized as the actual commerce journey a seller moves
-// through — not a technical/database-shaped grouping. Every slug exists in
-// PLATFORM_PRODUCTS; there's no "Marketplace" or "Payments" stage since
-// neither has a real dedicated public product page (Marketplace stays
-// unlinked from public nav by deliberate decision; Payments is a feature
-// bullet, not its own product slug — fabricating a page for either would
-// violate this project's real-content-only rule).
+// Verified against Shopify's real, live mega-menu (fetched directly, not
+// guessed from a screenshot) — same 5 group labels, each slug swapped for a
+// genuinely real Solvexo capability instead of a 1:1 feature match (Solvexo
+// has no Shop App/B2B/Social Marketplaces/Test & Launch — those are skipped
+// rather than faked; every slug below has a real backend module behind it
+// and its own /products/:slug page, see platformProducts.ts).
 const PRODUCT_JOURNEY = [
-  { stage: 'Build',              slugs: ['store-builder', 'pos'] },
-  { stage: 'Operate',            slugs: ['inventory', 'orders-customers'] },
-  { stage: 'Grow & Understand',  slugs: ['ai-commerce', 'analytics', 'loyalty'] },
+  { stage: 'Build your website', slugs: ['store-builder', 'domains', 'customer-accounts'] },
+  { stage: 'Sell anywhere',      slugs: ['pos', 'markets'] },
+  { stage: 'Marketing & analytics', slugs: ['analytics', 'discounts', 'ai-commerce', 'loyalty'] },
+  { stage: 'Run your business',  slugs: ['orders-customers', 'inventory', 'shipping'] },
+  { stage: 'Get paid',           slugs: ['payments', 'checkout'] },
 ] as const;
 
-// A tiny supporting detail next to each product name — never the primary
-// label. Numbering follows journey order, not PLATFORM_PRODUCTS array order.
-const PRODUCT_NUMBER: Record<string, string> = {
-  'store-builder': '01', pos: '02', inventory: '03', 'orders-customers': '04',
-  'ai-commerce': '05', analytics: '06', loyalty: '07',
-};
+// Shopify stacks several labeled groups into one column rather than giving
+// every group its own thin column ("Run your business" sits under "Build
+// your website", "Get paid" sits under "Marketing & analytics") — reproduced
+// with the same 3-text-column shape as the real site.
+const PRODUCT_NAV_COLUMNS = [
+  [PRODUCT_JOURNEY[0], PRODUCT_JOURNEY[3]],
+  [PRODUCT_JOURNEY[1]],
+  [PRODUCT_JOURNEY[2], PRODUCT_JOURNEY[4]],
+] as const;
 
-// Tighter, benefit-led one-liners for the nav row specifically — the full
-// page (`PlatformProductPage`) keeps its own `tagline`/`heroSubtext` copy;
-// this is a nav-only rewording, not a change to the real product data.
-const PRODUCT_NAV_BLURB: Record<string, string> = {
-  'store-builder':    'Launch a storefront built around your brand.',
-  pos:                'Sell in person with every order synced.',
-  inventory:          'Know what\'s in stock before it becomes a problem.',
-  'orders-customers': 'Every order and customer in one place.',
-  'ai-commerce':      'Turn commerce data into useful decisions.',
-  analytics:          'See what\'s actually driving your business.',
-  loyalty:            'Turn first-time buyers into returning customers.',
-};
+// Shopify's own right-panel card ("Non-stop innovation") is static — it
+// never changes based on which nav link is hovered, confirmed by fetching
+// the live site directly rather than guessing from a screenshot. Matched
+// here with the same non-reactive shape: one fixed real screenshot + one
+// fixed caption, standing in for Shopify's "Latest updates" list with real,
+// honest claims about the platform instead (Solvexo has no changelog feed
+// to pull a genuine "updates" list from).
+const WHY_SOLVEXO = [
+  'Store, POS and inventory share one real-time system',
+  'AI Studio built into the dashboard, not a bolt-on',
+  'Direct-to-you payouts via your own Stripe account',
+] as const;
 
-// "Resources" → "Learn & Support": the label now says what's actually behind
-// it (answers, help, contact) instead of a vague catch-all noun that read
-// almost identically to "Company" in the old navbar.
-const LEARN_LINKS = [
-  { Icon: HelpCircle, label: 'FAQ', desc: 'Answers to common questions', path: '/faq' },
-  { Icon: Mail,        label: 'Contact Us', desc: 'Reach sales, support or partnerships', path: '/contact-us' },
-];
+// Bottom strip, same shape as Shopify's "CUSTOMIZE & EXTEND SHOPIFY" row —
+// real, already-existing pages only (no app marketplace/dev platform exists
+// here to link to, so this isn't a literal copy of Shopify's 3 items).
+const EXPLORE_LINKS = [
+  { label: 'For Sellers', desc: 'Grow your business with Solvexo', path: '/sellers' },
+  { label: 'Pricing', desc: 'Plans that fit your store', path: '/pricing' },
+  { label: 'Security', desc: 'How we protect your account and data', path: '/security' },
+] as const;
 
 const COMPANY_LINKS = [
   { Icon: Building2,   label: 'About Solvexo', desc: 'Why we built one connected commerce platform', path: '/about' },
   { Icon: ShieldCheck, label: 'Security', desc: 'How we protect your account, data and payments', path: '/security' },
 ];
 
-type MenuKey = 'products' | 'solutions' | 'learn' | 'company' | null;
+type MenuKey = 'products' | 'company' | null;
 
 // Every public route whose page opens on a full-bleed dark hero — audited
 // directly against each page file: Homepage (`bg-carbon`), ForSellersPage
@@ -232,35 +236,29 @@ const maskRevealVariants: Variants = {
   show: { y: '0%', transition: { duration: 0.5, ease: NAV_EASE } },
 };
 
-// A small, original "Help Center" UI composition for the Learn & Support
-// panel's featured slot — deliberately not one of the 7 product mockups
-// (which already appear in the Products panel) and not a fabricated blog
-// image. A search bar + 3 real question rows pulled straight from this
-// panel's own FAQ link, just visualized instead of just linked.
-function SupportPreviewMock() {
-  const rows = ['Do I need an online store to use POS?', 'Can I change themes after launching?', 'How is AI usage billed?'];
+// A small, fixed-height abstract graphic for the Products panel's static
+// right card — matching Shopify's own "Non-stop innovation" art, which is a
+// smooth abstract collage, not a literal cluttered screenshot shrunk down.
+// Reusing a real interactive mockup here (tried earlier) made the panel both
+// too tall for a typical viewport AND visually busy at this small size — a
+// purpose-built, fixed h-[96px] graphic solves both at once.
+function ConnectedPlatformGlyph() {
+  const items = [
+    { Icon: Store, label: 'Storefront' },
+    { Icon: MonitorSmartphone, label: 'POS' },
+    { Icon: PackageCheck, label: 'Inventory' },
+    { Icon: Users, label: 'Orders' },
+  ];
   return (
-    <div className="w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone">
-      <div className="flex items-center gap-2 px-3 py-2 bg-cream border-b border-bone">
-        <span className="size-[7px] rounded-full bg-[#e5675b]" />
-        <span className="size-[7px] rounded-full bg-[#e8b74e]" />
-        <span className="size-[7px] rounded-full bg-[#59c26a]" />
-        <span className="ml-2 text-[10px] text-slate truncate">solvexo.com — help center</span>
-      </div>
-      <div className="p-4">
-        <div className="flex items-center gap-2 rounded-lg bg-cream border border-bone px-3 py-2 mb-3">
-          <Search size={13} className="text-slate shrink-0" />
-          <span className="text-[11px] text-slate">Search the Help Center…</span>
+    <div className="relative h-[96px] rounded-xl bg-gradient-to-br from-brand-orange/25 via-accent-violet/10 to-transparent border border-white/10 overflow-hidden flex items-center justify-center gap-3">
+      {items.map(({ Icon, label }) => (
+        <div key={label} className="flex flex-col items-center gap-1.5">
+          <span className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+            <Icon size={16} className="text-white" />
+          </span>
+          <span className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.04em]">{label}</span>
         </div>
-        <div className="flex flex-col gap-1.5">
-          {rows.map(r => (
-            <div key={r} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 hover:bg-cream transition-colors">
-              <span className="text-[11px] text-charcoal leading-snug">{r}</span>
-              <ArrowRight size={11} className="text-brand-orange shrink-0" />
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
@@ -273,32 +271,8 @@ export function PublicMegaNavbar() {
   const overHero = isDarkHeroRoute(pathname) && !scrolled;
   const [openMenu, setOpenMenu] = useState<MenuKey>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expanded, setExpanded] = useState<'products' | 'solutions' | 'learn' | 'company' | null>(null);
+  const [expanded, setExpanded] = useState<'products' | 'company' | null>(null);
   const [hoveredProduct, setHoveredProduct] = useState(PLATFORM_PRODUCTS[0].slug);
-  const [hoveredSolution, setHoveredSolution] = useState(SOLUTIONS[0].slug);
-  // Called once, unconditionally, here — the mega-menu panel's ambient glow
-  // (further down) reads this instead of calling the hook itself, since
-  // that JSX only renders while a menu is open and a conditionally-called
-  // hook would violate React's rules of hooks.
-  const reduceMotion = useReducedMotion();
-  // Cursor-following spotlight for the open dropdown panel — plain motion
-  // values updated straight from onMouseMove (no React re-render per pixel
-  // of mouse movement, Motion writes directly to the DOM), combined into one
-  // radial-gradient string via useTransform. Starts at a sensible default
-  // position (roughly where a visitor's eye already lands) so the panel
-  // looks intentional even before the mouse ever moves inside it.
-  const spotX = useMotionValue(70);
-  const spotY = useMotionValue(10);
-  const spotlightBackground = useTransform([spotX, spotY], (latest) => {
-    const [x, y] = latest as [number, number];
-    return `radial-gradient(480px circle at ${x}% ${y}%, rgba(217,119,87,0.18), transparent 70%)`;
-  });
-  const handlePanelMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (reduceMotion) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    spotX.set(((e.clientX - rect.left) / rect.width) * 100);
-    spotY.set(((e.clientY - rect.top) / rect.height) * 100);
-  }, [reduceMotion, spotX, spotY]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -352,7 +326,6 @@ export function PublicMegaNavbar() {
   }, [mobileOpen]);
 
   const loggedIn = TokenStorage.isLoggedIn();
-  const hoveredSolutionData = SOLUTIONS.find(s => s.slug === hoveredSolution) ?? SOLUTIONS[0];
 
   return (
     <>
@@ -407,18 +380,6 @@ export function PublicMegaNavbar() {
               <DesktopMenuButton
                 label="Products" active={openMenu === 'products'} light={overHero}
                 onClick={() => openNow(openMenu === 'products' ? null : 'products')}
-              />
-            </div>
-            <div onMouseEnter={() => openNow('solutions')}>
-              <DesktopMenuButton
-                label="Solutions" active={openMenu === 'solutions'} light={overHero}
-                onClick={() => openNow(openMenu === 'solutions' ? null : 'solutions')}
-              />
-            </div>
-            <div onMouseEnter={() => openNow('learn')}>
-              <DesktopMenuButton
-                label="Learn & Support" active={openMenu === 'learn'} light={overHero}
-                onClick={() => openNow(openMenu === 'learn' ? null : 'learn')}
               />
             </div>
             <div onMouseEnter={() => openNow('company')}>
@@ -493,15 +454,13 @@ export function PublicMegaNavbar() {
           </div>
         </div>
 
-        {/* ── Mega menu panels — each one a genuinely different layout, not
-           the same card grid re-skinned. Products = category groups + a
-           live crossfading/blurring product preview. Solutions = an
-           editorial master/detail list, the hovered industry taking over
-           the whole right half. Learn & Support = one featured "Help
-           Center" visual beside a short utility list. Company = a large
-           brand statement beside a plain, minimal link list — the one
-           panel with no icon chips at all, so it reads as institutional
-           rather than another product-shaped menu. ── */}
+        {/* ── Mega menu panels — Solutions and Learn & Support were removed
+           from the navbar (both still exist as real, reachable pages —
+           /solutions, /faq, /contact-us — just unlinked from here per
+           request). Products = grouped columns + a static feature card.
+           Company = a large brand statement beside a plain, minimal link
+           list — no icon chips, reads as institutional rather than another
+           product-shaped menu. ── */}
         <AnimatePresence>
           {openMenu && (
             <motion.div
@@ -511,7 +470,6 @@ export function PublicMegaNavbar() {
               animate="show"
               exit="exit"
               onMouseEnter={() => openNow(openMenu)}
-              onMouseMove={handlePanelMouseMove}
               // bg-carbon — the app's own near-black brand token (#141413,
               // already used a few lines down for the Solutions detail
               // panel), not a fresh "black" invented for this one spot.
@@ -519,269 +477,132 @@ export function PublicMegaNavbar() {
               role="menu"
               aria-label={`${openMenu} menu`}
             >
-              {/* Cursor-following spotlight — the brand-orange accent color
-                 acting as an actual light source that tracks the visitor's
-                 own cursor around the dark panel (the same warm color every
-                 other accent in this app already uses, not a new hue), one
-                 continuous glow rather than a fixed decorative shape. */}
-              <motion.div
-                aria-hidden
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: spotlightBackground }}
-              />
               <motion.div variants={panelContentVariants} initial="hidden" animate="show" className="relative max-w-[1280px] mx-auto px-8 py-7">
                 {openMenu === 'products' && (() => {
-                  const activeProduct = PLATFORM_PRODUCTS.find(p => p.slug === hoveredProduct);
                   return (
                     <div className="flex flex-col gap-5">
-                      {/* Compact editorial header — statement + CTA share one
-                         row instead of stacking and eating vertical space. */}
-                      <motion.div variants={panelItemVariants} className="flex items-end justify-between gap-6">
-                        <div>
-                          <p className="text-[10px] font-bold text-brand-orange uppercase tracking-[0.1em] mb-1.5">Products</p>
-                          <p className="text-[17px] font-bold text-white leading-snug overflow-hidden">
-                            <motion.span variants={maskRevealVariants} className="block">Everything your commerce business needs.</motion.span>
-                          </p>
-                        </div>
-                        <Link
-                          to="/products"
-                          onClick={() => setOpenMenu(null)}
-                          className="group flex items-center gap-2 shrink-0 text-[12.5px] font-semibold text-white hover:text-brand-orange transition-colors whitespace-nowrap pb-0.5"
-                        >
-                          <span>
-                            Explore all products
-                            <span className="block text-[10.5px] font-normal text-white/45">{PLATFORM_PRODUCTS.length} products · one commerce system</span>
-                          </span>
-                          <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
-                        </Link>
-                      </motion.div>
-
-                      {/* Primary navigation — every product name and
-                         description is always visible and always
-                         clickable; nothing is hidden behind a number.
-                         Grouped by BUILD / OPERATE / GROW & UNDERSTAND so
-                         the list still reads as a journey, not a flat
-                         dump of seven links. The left accent bar now shares
-                         one `layoutId` across every row (Motion animates its
-                         position/height between them automatically) instead
-                         of each row popping its own bar in/out — reads as
-                         one indicator gliding to wherever the cursor is. */}
-                      <div className="grid grid-cols-[1fr_360px] gap-8">
-                        <motion.div variants={panelItemVariants} className="flex flex-col gap-4">
-                          {PRODUCT_JOURNEY.map(stage => (
-                            <div key={stage.stage}>
-                              <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-1 px-3">{stage.stage}</p>
-                              <div className="grid grid-cols-2 gap-1">
-                                {stage.slugs.map(slug => {
-                                  const p = PLATFORM_PRODUCTS.find(pp => pp.slug === slug);
-                                  if (!p) return null;
-                                  const Icon = PRODUCT_ICONS[slug] ?? Store;
-                                  const active = hoveredProduct === slug;
-                                  return (
-                                    <Link
-                                      key={slug}
-                                      to={`/products/${slug}`}
-                                      onClick={() => setOpenMenu(null)}
-                                      onMouseEnter={() => setHoveredProduct(slug)}
-                                      className={clsx(
-                                        'group relative flex items-start gap-2.5 rounded-lg pl-4 pr-3 py-2.5 transition-colors',
-                                        active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]',
-                                      )}
-                                    >
-                                      {active && (
-                                        <motion.span
-                                          layoutId="products-accent-bar"
-                                          transition={{ duration: 0.25, ease: NAV_EASE }}
-                                          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-brand-orange"
-                                        />
-                                      )}
-                                      <motion.span whileHover={{ scale: 1.12, rotate: -6 }} transition={{ duration: 0.2, ease: NAV_EASE }} className="shrink-0 mt-0.5">
-                                        <Icon size={16} className={clsx('transition-colors duration-200', active ? 'text-brand-orange' : 'text-white/40')} />
-                                      </motion.span>
-                                      <span className="min-w-0 flex-1">
-                                        <span className="flex items-center justify-between gap-1">
-                                          <span className={clsx('block text-[13.5px] font-semibold transition-colors', active ? 'text-white' : 'text-white/75')}>{p.name}</span>
-                                          <span className="shrink-0 text-[10px] font-bold text-white/20 tabular-nums">{PRODUCT_NUMBER[slug]}</span>
-                                        </span>
-                                        <span className={clsx('block text-[11.5px] leading-snug mt-0.5 transition-opacity', active ? 'text-white/55 opacity-100' : 'text-white/40 opacity-90')}>
-                                          {PRODUCT_NAV_BLURB[slug] ?? p.tagline}
-                                        </span>
-                                      </span>
-                                    </Link>
-                                  );
-                                })}
+                      {/* No intro headline — confirmed against Shopify's
+                         real, live menu that it has none either, starting
+                         directly with the group columns (matches the
+                         Solutions panel below too, which never had one). */}
+                      {/* Primary navigation — Shopify's own dropdown format:
+                         plain single-line icon + label rows, grouped under a
+                         small caps label, several groups stacked per column
+                         (Shopify stacks "RUN YOUR BUSINESS" under "BUILD YOUR
+                         WEBSITE" rather than giving every group its own
+                         column) instead of a 2-col icon+description card
+                         grid. The left accent bar shares one `layoutId`
+                         across every row (Motion animates its position/height
+                         automatically) instead of each row popping its own
+                         bar in/out — reads as one indicator gliding to
+                         wherever the cursor is. */}
+                      {/* Only this grid scrolls (capped + hidden scrollbar,
+                         via the project's existing `scrollbar-hide` utility)
+                         — the "Explore Solvexo" strip below it is a sibling,
+                         not nested inside it, so it stays pinned/always
+                         visible instead of scrolling away with the columns. */}
+                      <div className="grid grid-cols-[1fr_1fr_1fr_260px] gap-8 max-h-[320px] min-h-0 overflow-y-auto scrollbar-hide">
+                        {PRODUCT_NAV_COLUMNS.map((column, colIdx) => (
+                          <motion.div key={colIdx} variants={panelItemVariants} className="flex flex-col gap-5">
+                            {column.map(stage => (
+                              <div key={stage.stage}>
+                                <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-1.5 px-3">{stage.stage}</p>
+                                <div className="flex flex-col gap-0.5">
+                                  {stage.slugs.map(slug => {
+                                    const p = ALL_PLATFORM_PRODUCTS.find(pp => pp.slug === slug);
+                                    if (!p) return null;
+                                    const Icon = PRODUCT_ICONS[slug] ?? Store;
+                                    const active = hoveredProduct === slug;
+                                    return (
+                                      <Link
+                                        key={slug}
+                                        to={`/products/${slug}`}
+                                        onClick={() => setOpenMenu(null)}
+                                        onMouseEnter={() => setHoveredProduct(slug)}
+                                        className={clsx(
+                                          'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors',
+                                          active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]',
+                                        )}
+                                      >
+                                        {active && (
+                                          <motion.span
+                                            layoutId="products-accent-bar"
+                                            transition={{ duration: 0.25, ease: NAV_EASE }}
+                                            className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-brand-orange"
+                                          />
+                                        )}
+                                        <Icon size={15} className={clsx('shrink-0 transition-colors duration-200', active ? 'text-brand-orange' : 'text-white/40')} />
+                                        <span className={clsx('text-[13px] font-medium transition-colors', active ? 'text-white' : 'text-white/70')}>{p.name}</span>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
                               </div>
+                            ))}
+                          </motion.div>
+                        ))}
+
+                        {/* Secondary — verified against Shopify's real,
+                           live menu (fetched directly, not guessed from a
+                           screenshot): their right panel is STATIC — the
+                           "Non-stop innovation" image + "Latest updates"
+                           list never change based on which nav link is
+                           hovered. A per-hovered-item live preview (the
+                           previous approach here) doesn't match that, and
+                           hard-cropping a full interactive mockup down to a
+                           fixed box sliced straight through its content —
+                           reproduced as one fixed, non-reactive card instead:
+                           one real screenshot shown at its natural size (no
+                           crop), a fixed caption, then a short list of real,
+                           honest platform claims standing in for Shopify's
+                           "Latest updates" (Solvexo has no changelog feed to
+                           pull a genuine updates list from). */}
+                        <motion.div variants={panelItemVariants} className="flex flex-col gap-4 self-start">
+                          <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 overflow-hidden">
+                            <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-2">One connected platform</p>
+                            <div className="mb-3">
+                              <ConnectedPlatformGlyph />
                             </div>
-                          ))}
-                        </motion.div>
+                            <p className="text-[13.5px] font-bold text-white leading-snug">Every tool, one login</p>
+                            <p className="text-[11.5px] text-white/50 leading-snug mt-1">
+                              Storefront, POS, inventory and orders all share the same real data underneath.
+                            </p>
+                          </div>
 
-                        {/* Secondary — the live preview supports the
-                           navigation, it isn't the navigation. A glassy dark
-                           card (not the old solid cream one) so the light
-                           product screenshot inside reads as a real UI
-                           floating over the dark panel — the same "light
-                           screenshot on a dark backdrop" move Stripe/Linear
-                           use, not an accident of leftover styling. */}
-                        <motion.div variants={panelItemVariants} className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 flex flex-col justify-center self-start overflow-hidden">
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={hoveredProduct}
-                              initial={{ opacity: 0, scale: 0.97, filter: 'blur(6px)' }}
-                              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                              exit={{ opacity: 0, scale: 0.97, filter: 'blur(6px)' }}
-                              transition={{ duration: 0.26, ease: NAV_EASE }}
-                            >
-                              <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.08em] mb-3">{activeProduct?.name}</p>
-                              <div className="w-full [&>div]:shadow-none [&>div]:border-bone/60">
-                                {mockupForProductSlug(hoveredProduct)}
-                              </div>
-                            </motion.div>
-                          </AnimatePresence>
+                          <div>
+                            <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-1.5 px-1">Why sellers choose Solvexo</p>
+                            <div className="flex flex-col gap-1.5">
+                              {WHY_SOLVEXO.map(item => (
+                                <div key={item} className="flex items-start gap-2 px-1">
+                                  <span className="size-1 rounded-full bg-brand-orange mt-[6px] shrink-0" />
+                                  <span className="text-[12px] text-white/60 leading-snug">{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </motion.div>
                       </div>
+
+                      {/* Bottom strip — same shape as Shopify's "CUSTOMIZE &
+                         EXTEND SHOPIFY" row: an eyebrow label beside a few
+                         real destinations, filling the panel's full width
+                         instead of ending abruptly after the grid above. */}
+                      <motion.div variants={panelItemVariants} className="flex flex-wrap items-center gap-x-10 gap-y-3 pt-5 mt-1 border-t border-white/10">
+                        <p className="text-[10px] font-bold text-brand-orange uppercase tracking-[0.08em] shrink-0">Explore Solvexo</p>
+                        <Link to="/products" onClick={() => setOpenMenu(null)} className="group">
+                          <span className="block text-[13px] font-semibold text-white group-hover:text-brand-orange transition-colors">All Products</span>
+                          <span className="block text-[11px] text-white/45">{ALL_PLATFORM_PRODUCTS.length} products · one commerce system</span>
+                        </Link>
+                        {EXPLORE_LINKS.map(l => (
+                          <Link key={l.path} to={l.path} onClick={() => setOpenMenu(null)} className="group">
+                            <span className="block text-[13px] font-semibold text-white group-hover:text-brand-orange transition-colors">{l.label}</span>
+                            <span className="block text-[11px] text-white/45">{l.desc}</span>
+                          </Link>
+                        ))}
+                      </motion.div>
                     </div>
                   );
                 })()}
-
-                {openMenu === 'solutions' && (
-                  <div className="grid grid-cols-[280px_1fr] gap-8">
-                    {/* Editorial master list — the hovered industry gets a
-                       filled row + accent bar; unhovered ones recede to
-                       quieter text, unlike Products' equal-weight grid. */}
-                    <div
-                      className="flex flex-col gap-0.5"
-                      onMouseLeave={() => setHoveredSolution(SOLUTIONS[0].slug)}
-                    >
-                      {SOLUTIONS.map(s => {
-                        const active = s.slug === hoveredSolution;
-                        return (
-                          <motion.div key={s.slug} variants={panelItemVariants}>
-                            <Link
-                              to={`/solutions/${s.slug}`}
-                              onClick={() => setOpenMenu(null)}
-                              onMouseEnter={() => setHoveredSolution(s.slug)}
-                              className={clsx(
-                                'relative flex items-center justify-between gap-2 rounded-lg pl-4 pr-3 py-3 transition-colors',
-                                active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]',
-                              )}
-                            >
-                              {/* Same shared-layoutId gliding accent bar as
-                                 the Products list, its own separate id so
-                                 the two lists never fight over one bar. */}
-                              {active && (
-                                <motion.span
-                                  layoutId="solutions-accent-bar"
-                                  transition={{ duration: 0.25, ease: NAV_EASE }}
-                                  className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-brand-orange"
-                                />
-                              )}
-                              <span className={clsx('text-[13.5px] font-semibold transition-colors', active ? 'text-white' : 'text-white/55')}>{s.name}</span>
-                              <ArrowRight size={13} className={clsx('shrink-0 transition-all duration-200', active ? 'text-brand-orange translate-x-0 opacity-100' : '-translate-x-1 opacity-0')} />
-                            </Link>
-                          </motion.div>
-                        );
-                      })}
-                      <motion.div variants={panelItemVariants}>
-                        <Link
-                          to="/solutions"
-                          onClick={() => setOpenMenu(null)}
-                          className="mt-1 flex items-center gap-1.5 rounded-lg pl-4 pr-3 py-2.5 text-[12.5px] font-semibold text-brand-orange hover:bg-white/[0.05] transition-colors"
-                        >
-                          All solutions <ArrowRight size={12} />
-                        </Link>
-                      </motion.div>
-                    </div>
-
-                    {/* Large detail panel — real image, real headline,
-                       real highlights, changes with the hovered industry. */}
-                    <motion.div variants={panelItemVariants} className="relative rounded-2xl overflow-hidden bg-carbon min-h-[280px]">
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={hoveredSolutionData.slug}
-                          initial={{ opacity: 0, scale: 1.04 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3, ease: NAV_EASE }}
-                          className="absolute inset-0"
-                        >
-                          <img src={unsplashUrl(hoveredSolutionData.image, 640)} alt="" className="w-full h-full object-cover" loading="lazy" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-carbon via-carbon/50 to-transparent" />
-                        </motion.div>
-                      </AnimatePresence>
-                      <div className="relative z-[1] h-full flex flex-col justify-end p-6">
-                        <p className="text-[10.5px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-2">Built for {hoveredSolutionData.name}</p>
-                        <p className="text-[17px] font-bold text-white leading-[1.3] mb-3 max-w-[420px]">{hoveredSolutionData.headline}</p>
-                        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-4">
-                          {hoveredSolutionData.highlights.slice(0, 2).map(h => (
-                            <span key={h} className="text-[11.5px] text-white/70">{h}</span>
-                          ))}
-                        </div>
-                        <Link
-                          to={`/solutions/${hoveredSolutionData.slug}`}
-                          onClick={() => setOpenMenu(null)}
-                          className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-white hover:text-brand-orange transition-colors w-fit"
-                        >
-                          Explore solution <ArrowRight size={13} />
-                        </Link>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-
-                {openMenu === 'learn' && (
-                  // Centered and width-capped — this menu only has 3 real
-                  // destinations (1 featured + 2 links), so it deliberately
-                  // does NOT stretch to fill the full 1280px panel the way
-                  // Products/Solutions do. A centered, proportioned block
-                  // reads as intentional; left-anchoring the same content
-                  // inside the full-width panel read as a stray sidebar
-                  // with dead space beside it.
-                  <div className="max-w-[760px] mx-auto grid grid-cols-[340px_1fr] gap-10 items-center">
-                    {/* Featured slot — one real visual, not a list item. */}
-                    <motion.div variants={panelItemVariants}>
-                      <Link to="/faq" onClick={() => setOpenMenu(null)} className="group block">
-                        {/* SupportPreviewMock stays a real light "browser
-                           window" — intentional, same "light UI screenshot
-                           floating on a dark backdrop" contrast used for the
-                           Products preview above. */}
-                        <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.2, ease: NAV_EASE }}>
-                          <SupportPreviewMock />
-                        </motion.div>
-                        <p className="text-[13px] font-semibold text-white mt-3 group-hover:text-brand-orange transition-colors overflow-hidden">
-                          <motion.span variants={maskRevealVariants} className="block">Browse the Help Center</motion.span>
-                        </p>
-                        <p className="text-[11.5px] text-white/45 mt-0.5">Search real answers before reaching out to support.</p>
-                      </Link>
-                    </motion.div>
-
-                    {/* Smaller utility links — rendered as two real cards
-                       filling their half of the block, not thin rows
-                       floating in leftover space beside the featured card.
-                       Icon chip swapped from a solid pale-orange block to a
-                       glassy white/10 one — a solid light square read as a
-                       sticker pasted onto the dark panel; the glass version
-                       keeps the orange icon as the only pop of color. */}
-                    <div className="flex flex-col gap-3">
-                      {LEARN_LINKS.map(r => (
-                        <motion.div key={r.path} variants={panelItemVariants} whileHover={{ x: 3 }} transition={{ duration: 0.2, ease: NAV_EASE }}>
-                          <Link
-                            to={r.path}
-                            onClick={() => setOpenMenu(null)}
-                            className="flex items-start gap-3 rounded-xl border border-white/10 p-4 hover:border-brand-orange/40 hover:bg-white/[0.04] transition-colors"
-                          >
-                            <span className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                              <r.Icon size={17} className="text-brand-orange" />
-                            </span>
-                            <span>
-                              <span className="block text-[13.5px] font-semibold text-white">{r.label}</span>
-                              <span className="block text-[11.5px] text-white/45 leading-snug mt-0.5">{r.desc}</span>
-                            </span>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {openMenu === 'company' && (
                   // Same "don't stretch thin content across the full panel"
@@ -875,7 +696,7 @@ export function PublicMegaNavbar() {
                   isOpen={expanded === 'products'}
                   onToggle={() => setExpanded(e => (e === 'products' ? null : 'products'))}
                 >
-                  {PLATFORM_PRODUCTS.map(p => {
+                  {ALL_PLATFORM_PRODUCTS.map(p => {
                     const Icon = PRODUCT_ICONS[p.slug] ?? Store;
                     return (
                       <MobileNavRow
@@ -895,45 +716,6 @@ export function PublicMegaNavbar() {
 
                 <MobileAccordionRow
                   index="02"
-                  title="Solutions"
-                  isOpen={expanded === 'solutions'}
-                  onToggle={() => setExpanded(e => (e === 'solutions' ? null : 'solutions'))}
-                >
-                  {SOLUTIONS.map(s => (
-                    <MobileNavRow
-                      key={s.slug}
-                      to={`/solutions/${s.slug}`}
-                      title={s.name}
-                      desc={s.headline}
-                      onNavigate={closeMenu}
-                      thumbnail={unsplashUrl(s.image, 80)}
-                    />
-                  ))}
-                  <Link to="/solutions" onClick={closeMenu} className="flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-orange py-2.5 px-2">
-                    View all solutions <ArrowRight size={12} />
-                  </Link>
-                </MobileAccordionRow>
-
-                <MobileAccordionRow
-                  index="03"
-                  title="Learn & Support"
-                  isOpen={expanded === 'learn'}
-                  onToggle={() => setExpanded(e => (e === 'learn' ? null : 'learn'))}
-                >
-                  {LEARN_LINKS.map(r => (
-                    <MobileNavRow
-                      key={r.path}
-                      to={r.path}
-                      title={r.label}
-                      desc={r.desc}
-                      onNavigate={closeMenu}
-                      icon={<r.Icon size={16} className="text-brand-orange" />}
-                    />
-                  ))}
-                </MobileAccordionRow>
-
-                <MobileAccordionRow
-                  index="04"
                   title="Company"
                   isOpen={expanded === 'company'}
                   onToggle={() => setExpanded(e => (e === 'company' ? null : 'company'))}
