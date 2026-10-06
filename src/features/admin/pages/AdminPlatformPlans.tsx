@@ -349,6 +349,11 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} />
                   <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} />
+                {Number(monthlyPrice) > 0 && Number(yearlyPrice) > 0 && (
+                  <p className="sm:col-span-2 text-[11px] text-slate -mt-1">
+                    Yearly = {(Number(yearlyPrice) / 12).toFixed(2)}/mo, a {Math.round((1 - Number(yearlyPrice) / (Number(monthlyPrice) * 12)) * 100)}% discount. Shopify gives 25% on every plan; keep it the same across plans.
+                  </p>
+                )}
                 </div>
               )}
               <p className="text-[11px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2 leading-[1.5]">

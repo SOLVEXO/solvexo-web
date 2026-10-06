@@ -4,6 +4,7 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import type { PlatformPlan } from '@/api/services/platformPlans';
+import { yearlyMonthlyEquivalent, yearlyTotal as yearlyTotalOf } from '@/utils/planPricing';
 
 interface PlanCardProps {
   plan: PlatformPlan;
@@ -24,9 +25,9 @@ interface PlanCardProps {
 export function PlanCard({ plan, billing, ctaLabel, onCta, selected, className }: PlanCardProps) {
   const isFeatured = !!plan.badge;
   const monthlyEquivalent = billing === 'annual'
-    ? Math.round((plan.yearlyPriceUSD ?? (plan.monthlyPriceUSD ?? 0) * 12) / 12)
+    ? yearlyMonthlyEquivalent(plan)
     : (plan.monthlyPriceUSD ?? 0);
-  const yearlyTotal = plan.yearlyPriceUSD ?? (plan.monthlyPriceUSD ?? 0) * 12;
+  const yearlyTotal = yearlyTotalOf(plan);
 
   return (
     <PremiumCard
@@ -59,7 +60,7 @@ export function PlanCard({ plan, billing, ctaLabel, onCta, selected, className }
         ) : (
           <div className="flex items-baseline gap-1">
             <span className={clsx('text-[28px] min-[1100px]:text-[36px] font-bold', isFeatured ? 'text-brand-orange' : 'text-carbon')}>
-              <AnimatedCounter value={monthlyEquivalent} format={n => `$${Math.round(n)}`} duration={0.8} />
+              <AnimatedCounter value={monthlyEquivalent} format={n => `$${Number.isInteger(monthlyEquivalent) ? Math.round(n) : n.toFixed(2)}`} duration={0.8} />
             </span>
             <span className={clsx('text-[13px]', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>/month</span>
           </div>

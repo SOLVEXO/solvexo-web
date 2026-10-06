@@ -78,8 +78,10 @@ export function apiGetThemeCatalogBySlug(slug: string) {
  *  identity-banner and home-page sections into the store's DRAFT only.
  *  Nothing on the live storefront changes until the seller reviews it in
  *  Store Builder and publishes (same as any other draft edit). */
-export function apiApplyThemeDefinition(storeId: string, themeDefinitionId: string) {
-  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.APPLY(storeId, themeDefinitionId));
+export function apiApplyThemeDefinition(storeId: string, themeDefinitionId: string, installedThemeId?: string) {
+  const base = ENDPOINTS.STORE_THEME.APPLY(storeId, themeDefinitionId);
+  const path = installedThemeId ? `${base}?instance=${encodeURIComponent(installedThemeId)}` : base;
+  return client.post<never, ApiResponse<StoreThemeData>>(path);
 }
 
 // ── Admin management ───────────────────────────────────────────────────────

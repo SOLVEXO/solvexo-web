@@ -14,7 +14,7 @@ interface Props {
   storeId: string;
   orderId: string;
   orderNumber: string;
-  /** Physical lines with a pending return request and no exchange yet. */
+  /** Physical lines with an open return (requested / approved / received) and no exchange yet. */
   lines: SellerOrderDetailItem[];
   symbol: string;
   isPaid: boolean;
@@ -47,6 +47,8 @@ export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, is
   }), [picked, repl, refundTo, restock]);
 
   const ready = picked.length > 0 && repl.length > 0;
+  // Lines already marked received had their stock handled at receipt — only not-yet-received lines need a choice here.
+  const needsRestockChoice = picked.length === 0 || lines.some(l => picked.includes(l._id) && l.returnStatus !== 'received');
 
   useEffect(() => {
     const id = ++reqId.current;
@@ -150,13 +152,17 @@ export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, is
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Returned items go">
-            <Select value={restock} onChange={e => setRestock(e.target.value as 'none' | 'restock' | 'damaged')} disabled={saving}>
-              <option value="none">Leave stock unchanged</option>
-              <option value="restock">Back to sellable stock</option>
-              <option value="damaged">To damaged stock</option>
-            </Select>
-          </Field>
+          {needsRestockChoice ? (
+            <Field label="Returned items go">
+              <Select value={restock} onChange={e => setRestock(e.target.value as 'none' | 'restock' | 'damaged')} disabled={saving}>
+                <option value="none">Leave stock unchanged</option>
+                <option value="restock">Back to sellable stock</option>
+                <option value="damaged">To damaged stock</option>
+              </Select>
+            </Field>
+          ) : (
+            <p className="text-[12px] text-slate self-end pb-2">The returned items were already received, so their stock was handled then.</p>
+          )}
           <Field label="If the customer is owed money, refund to">
             <Select value={refundTo} onChange={e => setRefundTo(e.target.value as 'original' | 'store_credit')} disabled={saving}>
               <option value="original">Original payment method</option>

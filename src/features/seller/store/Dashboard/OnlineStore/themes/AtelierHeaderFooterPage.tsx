@@ -17,6 +17,7 @@ import { SortableList } from '../builder/Sortable';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { VersionHistoryModal, type VersionRow } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
+import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { apiListStorePages } from '@/api/services/storePages';
@@ -280,6 +281,7 @@ export function AtelierHeaderFooterPage() {
   };
 
   const editor = useEditorState<HeaderFooterDraft>();
+  useThemeEditorUnsavedChanges(editor.dirty);
   useUndoRedoShortcuts(editor.undo, editor.redo, true);
 
   const load = useCallback(() => {

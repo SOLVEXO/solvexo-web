@@ -71,20 +71,9 @@ export function PagesPage() {
       .catch(() => {});
   }, [storeId]);
   const supportedSectionTypes = getThemePreviewComponents(themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
-  // A CUSTOM page (About Us, Shipping Policy, ...) is rendered on the live
-  // storefront by AtelierCustomPage/NovaCustomPage, which — by design, same
-  // as Shopify's own "Pages" resource — only ever shows a page's `rich_text`
-  // sections; every other section type on a custom page is invisible to
-  // buyers. The Home page, in contrast, renders through the full
-  // AtelierSectionRenderer/NovaSectionRenderer and genuinely supports every
-  // theme section. Previously this "Add a Section" picker offered the same
-  // full theme-supported catalogue for BOTH page types, so a seller editing
-  // a custom page could add a Hero/Testimonials/etc. section, save it,
-  // publish it — and have it silently render as nothing on their live
-  // store. Restrict the picker to what the selected page type can actually
-  // display, so what a seller adds here always matches what buyers see.
-  const effectiveSupportedSectionTypes: SectionType[] | undefined =
-    selectedPage?.type === 'custom' ? (['rich_text'] as SectionType[]) : supportedSectionTypes;
+  // Home and custom pages both render through the active theme's section
+  // registry; expose only those section types to avoid saving invisible data.
+  const effectiveSupportedSectionTypes: SectionType[] | undefined = supportedSectionTypes;
 
   const loadPages = useCallback(() => {
     setPagesLoading(true);

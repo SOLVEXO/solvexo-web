@@ -79,6 +79,8 @@ export interface StorePlatformSubscription {
   // the free plan (true) or locks the store pending a new plan choice
   // (false, every store onboarded under the current trial-based model).
   legacyFreeEligible: boolean;
+  /** A pending end-of-cycle downgrade (Shopify: a cheaper plan starts at the next renewal, no refund). */
+  scheduledPlanChange?: { planId: string; planName: string; interval: 'monthly' | 'yearly'; amountUSD: number; scheduledAt: string } | null;
   plan?: PlatformPlan | null;
 }
 
@@ -89,6 +91,8 @@ export interface PlanChangePreview {
   remainingDaysInCurrentPeriod: number;
   unusedCreditFromCurrentPlanUSD: number; existingCreditBalanceUSD: number; totalCreditAppliedUSD: number;
   amountDueTodayUSD: number; creditAppliedToBalanceUSD: number; effectiveImmediately: boolean;
+  /** Set when effectiveImmediately is false: when the new plan starts (end of the current cycle). */
+  effectiveAt?: string | null;
   /** Only populated for a downgrade — usage that already exceeds the target plan's limit. Nothing is ever deleted; this is purely a heads-up before confirming. */
   usageWarnings: { label: string; used: number; newLimit: number }[];
 }
@@ -263,6 +267,11 @@ export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string
 /** Exact proration math for a would-be plan change — no charge, no write. Call this before showing a confirm dialog. */
 export function apiPreviewPlatformPlanChange(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly') {
   return client.post<never, ApiResponse<PlanChangePreview>>(`${BASE}/${storeId}/preview-change-plan`, { newPlatformPlanId, newBillingInterval });
+}
+
+/** Drops a pending end-of-cycle downgrade — the current plan keeps renewing. */
+export function apiCancelScheduledPlanChange(storeId: string) {
+  return client.delete<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/scheduled-change`);
 }
 
 /** Schedules a downgrade to the free plan at the end of the current paid period — access continues until then. */

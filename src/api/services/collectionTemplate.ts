@@ -23,6 +23,7 @@ export interface CollectionTemplateDraft {
 export interface CollectionTemplateData {
   _id:             string;
   storeId:         string;
+  installedThemeId?: string | null;
   resourceType:    ResourceTemplateType;
   templateKey:     string;
   name:            string;
@@ -42,50 +43,51 @@ export interface PublicCollectionTemplate {
   sections: Section[];
 }
 
-function withParams(path: string, resourceType?: ResourceTemplateType, templateKey?: string) {
+function withParams(path: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
   const params = new URLSearchParams();
   if (resourceType) params.set('resourceType', resourceType);
   if (templateKey) params.set('templateKey', templateKey);
+  if (installedThemeId) params.set('instance', installedThemeId);
   const qs = params.toString();
   return qs ? `${path}?${qs}` : path;
 }
 
 // ── Template management (alternate templates) ───────────────────────────
 
-export function apiListResourceTemplates(storeId: string, resourceType: ResourceTemplateType) {
-  return client.get<never, ApiResponse<CollectionTemplateData[]>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.LIST_TEMPLATES(storeId), resourceType));
+export function apiListResourceTemplates(storeId: string, resourceType: ResourceTemplateType, installedThemeId?: string) {
+  return client.get<never, ApiResponse<CollectionTemplateData[]>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.LIST_TEMPLATES(storeId), resourceType, undefined, installedThemeId));
 }
 
-export function apiCreateResourceTemplate(storeId: string, resourceType: ResourceTemplateType, payload: { name: string; templateKey: string; cloneFromTemplateKey?: string }) {
-  return client.post<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.LIST_TEMPLATES(storeId), resourceType), payload);
+export function apiCreateResourceTemplate(storeId: string, resourceType: ResourceTemplateType, payload: { name: string; templateKey: string; cloneFromTemplateKey?: string }, installedThemeId?: string) {
+  return client.post<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.LIST_TEMPLATES(storeId), resourceType, undefined, installedThemeId), payload);
 }
 
-export function apiDeleteResourceTemplate(storeId: string, resourceType: ResourceTemplateType, templateKey: string) {
-  return client.delete<never, ApiResponse<null>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DELETE_TEMPLATE(storeId, templateKey), resourceType));
+export function apiDeleteResourceTemplate(storeId: string, resourceType: ResourceTemplateType, templateKey: string, installedThemeId?: string) {
+  return client.delete<never, ApiResponse<null>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DELETE_TEMPLATE(storeId, templateKey), resourceType, undefined, installedThemeId));
 }
 
 // ── Seller ───────────────────────────────────────────────────────────────────
 
-export function apiGetCollectionTemplate(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.get<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.GET(storeId), resourceType, templateKey));
+export function apiGetCollectionTemplate(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.GET(storeId), resourceType, templateKey, installedThemeId));
 }
 
 /** The builder's working copy — `draft.sections` plus `lastPublishedAt`, mirroring `apiGetStorePageDraft`'s shape/purpose. */
-export function apiGetCollectionTemplateDraft(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.get<never, ApiResponse<{ sections: Section[]; lastPublishedAt: string | null }>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DRAFT(storeId), resourceType, templateKey));
+export function apiGetCollectionTemplateDraft(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<{ sections: Section[]; lastPublishedAt: string | null }>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DRAFT(storeId), resourceType, templateKey, installedThemeId));
 }
 
-export function apiUpdateCollectionTemplateSections(storeId: string, sections: Section[], resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.UPDATE_SECTIONS(storeId), resourceType, templateKey), { sections });
+export function apiUpdateCollectionTemplateSections(storeId: string, sections: Section[], resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.UPDATE_SECTIONS(storeId), resourceType, templateKey, installedThemeId), { sections });
 }
 
-export function apiPublishCollectionTemplate(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.PUBLISH(storeId), resourceType, templateKey));
+export function apiPublishCollectionTemplate(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.PUBLISH(storeId), resourceType, templateKey, installedThemeId));
 }
 
 /** "Discard unsaved changes" — copies the live `sections` back over `draft.sections`. Mirrors `apiRevertStorePageDraft`. */
-export function apiRevertCollectionTemplateDraft(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.REVERT_DRAFT(storeId), resourceType, templateKey));
+export function apiRevertCollectionTemplateDraft(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.REVERT_DRAFT(storeId), resourceType, templateKey, installedThemeId));
 }
 
 export interface CollectionTemplateVersionData {
@@ -94,12 +96,12 @@ export interface CollectionTemplateVersionData {
   publishedAt: string;
 }
 
-export function apiListCollectionTemplateVersions(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.get<never, ApiResponse<CollectionTemplateVersionData[]>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.VERSIONS(storeId), resourceType, templateKey));
+export function apiListCollectionTemplateVersions(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<CollectionTemplateVersionData[]>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.VERSIONS(storeId), resourceType, templateKey, installedThemeId));
 }
 
-export function apiRestoreCollectionTemplateVersion(storeId: string, versionId: string, resourceType?: ResourceTemplateType, templateKey?: string) {
-  return client.post<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.RESTORE_VERSION(storeId, versionId), resourceType, templateKey));
+export function apiRestoreCollectionTemplateVersion(storeId: string, versionId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.RESTORE_VERSION(storeId, versionId), resourceType, templateKey, installedThemeId));
 }
 
 // ── Public ───────────────────────────────────────────────────────────────────

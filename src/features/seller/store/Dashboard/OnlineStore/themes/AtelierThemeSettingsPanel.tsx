@@ -9,6 +9,7 @@ import {
   type StorefrontColors, type StoreThemeData,
 } from '@/api/services/storeTheme';
 import { useEditorState } from '../builder/editor/useEditorState';
+import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
@@ -246,7 +247,7 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
  *  text, so this is a zero-visible-change refactor for Atelier today — but a
  *  second theme's manifest now renders its own field set here with no new
  *  code in this component, which is the actual point. */
-export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftChange }: {
+export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, onDirtyChange }: {
   storeId: string;
   /** The specific installed theme row this panel edits — resolved by the
    *  parent from the URL's `:themeId` (see `useResolvedThemeInstance`).
@@ -257,6 +258,7 @@ export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftCh
    *  copy into the shared `AtelierLivePreview`, exactly like every other
    *  scope's instant-preview behavior. */
   onDraftChange: (draft: StoreThemeData | null) => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const toast = useToast();
   const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
@@ -270,6 +272,11 @@ export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftCh
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
 
   const editor = useEditorState<ThemeDraft>();
+  useThemeEditorUnsavedChanges(editor.dirty);
+  useEffect(() => {
+    onDirtyChange(editor.dirty);
+    return () => onDirtyChange(false);
+  }, [editor.dirty, onDirtyChange]);
   useUndoRedoShortcuts(editor.undo, editor.redo, true);
 
   useEffect(() => {

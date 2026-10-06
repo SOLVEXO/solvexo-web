@@ -283,7 +283,7 @@ export function StoreOrderList() {
             onChange={() => toggleOne(o.orderId)}
             disabled={bulkBusy !== null}
             aria-label={`Select order ${o.orderNumber}`}
-            className="cursor-pointer"
+            className="accent-brand-orange cursor-pointer"
           />
         </span>
       ),
@@ -487,7 +487,43 @@ export function StoreOrderList() {
         {!error && (
           <Card padding="none">
             <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col gap-2.5">
-              <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
+                {(canPrint || canFulfill) && orders.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {bulkProgress && <span className="text-[12px] text-slate" role="status">{bulkProgress}</span>}
+                    {selectedOrders.length > 0 && (
+                      <>
+                        {canPrint && (
+                          <Button variant="outline" size="sm" onClick={handleBulkPrint} loading={bulkBusy === 'print'} disabled={bulkBusy !== null}>
+                            <Printer size={13} /> Print packing slips
+                          </Button>
+                        )}
+                        {canFulfill && (
+                          <Button
+                            variant="outline" size="sm" onClick={handleBulkProcessing}
+                            loading={bulkBusy === 'processing'}
+                            disabled={bulkBusy !== null || pendingSelected.length === 0}
+                          >
+                            <RefreshCw size={13} /> Mark as processing{pendingSelected.length > 0 ? ` (${pendingSelected.length})` : ''}
+                          </Button>
+                        )}
+                        <button
+                          onClick={() => setSelected(new Set())}
+                          disabled={bulkBusy !== null}
+                          className="text-[12px] text-slate cursor-pointer hover:underline disabled:opacity-50"
+                        >
+                          Clear
+                        </button>
+                      </>
+                    )}
+                    <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                      <input type="checkbox" className="accent-brand-orange cursor-pointer" checked={allSelected} onChange={toggleAll} disabled={bulkBusy !== null} />
+                      {selectedOrders.length > 0 ? `${selectedOrders.length} selected` : 'Select all'}
+                    </label>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
                 <SearchInput
                   value={search}
@@ -516,40 +552,6 @@ export function StoreOrderList() {
               </div>
             </div>
 
-            {(canPrint || canFulfill) && orders.length > 0 && (
-              <div className="px-4 sm:px-5 pb-3 flex flex-wrap items-center gap-3 border-b border-bone">
-                <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
-                  <input type="checkbox" checked={allSelected} onChange={toggleAll} disabled={bulkBusy !== null} />
-                  {selectedOrders.length > 0 ? `${selectedOrders.length} selected` : 'Select all on this page'}
-                </label>
-                {selectedOrders.length > 0 && (
-                  <>
-                    {canPrint && (
-                      <Button variant="outline" size="sm" onClick={handleBulkPrint} loading={bulkBusy === 'print'} disabled={bulkBusy !== null}>
-                        <Printer size={13} /> Print packing slips
-                      </Button>
-                    )}
-                    {canFulfill && (
-                      <Button
-                        variant="outline" size="sm" onClick={handleBulkProcessing}
-                        loading={bulkBusy === 'processing'}
-                        disabled={bulkBusy !== null || pendingSelected.length === 0}
-                      >
-                        <RefreshCw size={13} /> Mark as processing{pendingSelected.length > 0 ? ` (${pendingSelected.length})` : ''}
-                      </Button>
-                    )}
-                    <button
-                      onClick={() => setSelected(new Set())}
-                      disabled={bulkBusy !== null}
-                      className="text-[12px] text-slate cursor-pointer hover:underline disabled:opacity-50"
-                    >
-                      Clear
-                    </button>
-                  </>
-                )}
-                {bulkProgress && <span className="text-[12px] text-slate" role="status">{bulkProgress}</span>}
-              </div>
-            )}
             {bulkResult && (
               <div
                 role="status"

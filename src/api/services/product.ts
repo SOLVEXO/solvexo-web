@@ -809,8 +809,16 @@ export interface SellerOrderDetailItem {
   cancelledAt:  string | null;
   cancelReason: string | null;
   refundedAmount: number;
+  /** none | requested | approved | received | refunded | exchanged | rejected | closed (older approved+refunded lines read as refunded). */
   returnStatus: string;
   returnReason: string | null;
+  returnRejectReason?: string | null;
+  returnApprovedAt?: string | null;
+  returnReceivedAt?: string | null;
+  returnResolvedAt?: string | null;
+  returnResolution?: 'refund' | 'exchange' | 'closed' | null;
+  returnRefundTo?: 'original' | 'store_credit' | null;
+  returnRestock?: 'restock' | 'damaged' | 'none' | null;
   /** Set when this return was resolved by an EXCHANGE: the replacement order. */
   exchangeOrderId?: string | null;
   exchangeOrderNumber?: string | null;

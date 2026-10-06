@@ -5,6 +5,8 @@ import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { apiGetMyOrders, apiRequestReturn, type OrderSummary } from '@/api/services/orders';
 import { atelierTheme as t } from '../theme.config';
 import { ExchangeItemLink } from '../../ExchangeNotice';
+import { ReturnProgress } from '../../ReturnProgress';
+import { buyerReturnText, returnNextStepHint } from '../../returnText';
 
 const ELIGIBLE_STATUSES = new Set(['delivered', 'completed']);
 
@@ -83,7 +85,8 @@ export function AtelierReturnsPage() {
                 const isOpen = openItemKey === itemKey;
                 const returnStatus = item.returnStatus ?? 'none';
                 const isDone = submittedKeys.has(itemKey) || returnStatus !== 'none';
-                const doneText = item.exchangeOrderId ? 'Exchange approved' : returnStatus === 'approved' ? 'Return approved' : returnStatus === 'rejected' ? 'Return declined' : 'Requested';
+                const doneText = buyerReturnText(returnStatus === 'none' ? 'requested' : returnStatus);
+                const nextHint = returnNextStepHint(returnStatus);
                 const returnLabel = item.returnLabel?.labelUrl && /^https?:\/\//i.test(item.returnLabel.labelUrl) ? item.returnLabel : null;
                 return (
                   <div key={itemKey} style={{ padding: '14px 18px', borderBottom: `1px solid ${t.colors.border}` }}>
@@ -110,7 +113,9 @@ export function AtelierReturnsPage() {
                     {item.exchangeOrderId && (
                       <div style={{ marginTop: '10px' }}><ExchangeItemLink orderId={item.exchangeOrderId} orderNumber={item.exchangeOrderNumber} color={t.colors.accent} fontFamily={t.fonts.body} /></div>
                     )}
-                    {returnLabel && (
+                    <ReturnProgress status={returnStatus === 'none' && isDone ? 'requested' : returnStatus} rejectReason={item.returnRejectReason} look={{ fontFamily: t.fonts.body, color: t.colors.ink, accent: t.colors.accent, border: t.colors.border, muted: t.colors.inkMuted }} />
+                    {nextHint && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginTop: '6px' }}>{nextHint}</p>}
+                    {returnLabel && returnStatus === 'approved' && (
                       <div style={{ marginTop: '10px', padding: '10px 12px', background: t.colors.bgAlt }}>
                         <a
                           href={returnLabel.labelUrl ?? undefined}

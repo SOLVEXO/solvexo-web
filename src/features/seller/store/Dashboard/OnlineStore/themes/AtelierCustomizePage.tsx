@@ -43,6 +43,7 @@ import { getThemeManifest, type ThemeTemplateScopeDef } from '@/features/storefr
 // theme's manifest has already registered itself before `getThemeManifest`
 // below is called.
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
 
 const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = { desktop: '100%', tablet: '768px', mobile: '390px' };
 
@@ -80,7 +81,7 @@ const ADMIN_ACCENT = '#D97757';
 // empty list. `undefined` for every other scope (Home, Collection, theme) —
 // `PageSectionsEditor` simply shows no banner then, unchanged from before.
 const SCOPE_HELPER_TEXT: Record<string, string> = {
-  pages: 'Pick which of your pages to edit above. A page only supports Rich Text sections — matches exactly what renders on your live storefront.',
+  pages: 'Pick a page to edit. Its sections render through the active theme.',
   product: 'This product\'s page always shows its media, title, price, variant picker, quantity and buy buttons — the locked "Main Product" card below. Hide or reorder its individual items there, or add more sections to customize what surrounds it.',
   search: 'The Search page always shows its live results grid — the locked "Search Results" card below. Add sections to customize what surrounds it.',
   cart: 'The Cart page always shows its line items and summary/checkout button — the two locked cards below. Add sections to customize what surrounds them.',
@@ -142,6 +143,7 @@ export function AtelierCustomizePage() {
   const [loading, setLoading] = useState(true);
   const [creatingTemplate, setCreatingTemplate] = useState(false);
   const [draftTheme, setDraftTheme] = useState<StoreThemeData | null>(null);
+  const [themeSettingsDirty, setThemeSettingsDirty] = useState(false);
 
   // Phase 5 — Blogs/Articles never change WHICH document the Blog-Index/
   // Blog-Article template edits (still the one shared `activeTemplate` per
@@ -171,6 +173,7 @@ export function AtelierCustomizePage() {
   const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   const editor = useEditorState<Section[]>();
+  useThemeEditorUnsavedChanges(scope === 'theme' ? themeSettingsDirty : editor.dirty);
   useUndoRedoShortcuts(editor.undo, editor.redo, true);
 
   // `draftTheme` (fetched below) carries the store's real `themeDefinitionId`
@@ -245,7 +248,7 @@ export function AtelierCustomizePage() {
 
   const loadPages = useCallback(() => {
     setLoading(true);
-    apiListStorePages(storeId)
+    apiListStorePages(storeId, installedThemeId)
       .then(res => {
         setPages(res.data);
         // Default to the first real custom page the first time this scope
@@ -253,7 +256,7 @@ export function AtelierCustomizePage() {
         setSelectedPageId(prev => prev ?? res.data.find(p => p.type === 'custom')?._id ?? null);
       })
       .finally(() => setLoading(false));
-  }, [storeId]);
+  }, [storeId, installedThemeId]);
 
   // Phase 5 — loaded once, lazily, the first time either Blog-Index or
   // Blog-Article's scope is visited (both reuse the same real blogs/posts
@@ -294,15 +297,16 @@ export function AtelierCustomizePage() {
 
   const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean) => {
     setLoading(true);
-    const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType) : Promise.resolve({ data: [] as CollectionTemplateData[] });
-    Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key)])
+    const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType, installedThemeId) : Promise.resolve({ data: [] as CollectionTemplateData[] });
+    Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key, installedThemeId)])
       .then(([listRes, docRes]) => { setTemplateList(listRes.data); setActiveTemplate(docRes.data); })
       .finally(() => setLoading(false));
-  }, [storeId]);
+  }, [storeId, installedThemeId]);
 
   useEffect(() => {
     if (scope === 'theme') { setLoading(false); return; }
     if (isStorePage) { loadPages(); return; }
+    if (!installedThemeId) return;
     if (!config) return; // scope not (yet) resolvable against the manifest — nothing to load
     if (config.previewPicker) loadBlogsAndPosts();
     if (config.resourceType === 'product') loadProducts();
@@ -310,7 +314,7 @@ export function AtelierCustomizePage() {
     setTemplateKey(config.templateKey);
     loadResourceTemplates(config.resourceType, config.templateKey, config.allowAltTemplates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope]);
+  }, [scope, installedThemeId]);
 
   // Fetches the REAL selected article's title/excerpt for the live preview
   // (see `previewContext` below) — only while on the Blog-Article scope
@@ -357,9 +361,9 @@ export function AtelierCustomizePage() {
   // only — the other scopes' `templateKey` never changes from its fixed value).
   useEffect(() => {
     if (!config || !config.allowAltTemplates) return;
-    apiGetCollectionTemplate(storeId, config.resourceType, templateKey).then(res => setActiveTemplate(res.data));
+    apiGetCollectionTemplate(storeId, config.resourceType, templateKey, installedThemeId).then(res => setActiveTemplate(res.data));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, templateKey]);
+  }, [storeId, templateKey, installedThemeId]);
 
   const loadEditor = editor.load;
   useEffect(() => {
@@ -380,11 +384,11 @@ export function AtelierCustomizePage() {
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy);
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.markSaved(res.data.draft.sections);
       } else {
-        const res = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey);
+        const res = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId);
         setActiveTemplate(res.data);
         editor.markSaved(res.data.draft.sections);
       }
@@ -409,11 +413,11 @@ export function AtelierCustomizePage() {
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, next);
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, next, installedThemeId);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.markSaved(res.data.draft.sections);
       } else {
-        const res = await apiUpdateCollectionTemplateSections(storeId, next, config!.resourceType, templateKey);
+        const res = await apiUpdateCollectionTemplateSections(storeId, next, config!.resourceType, templateKey, installedThemeId);
         setActiveTemplate(res.data);
         editor.markSaved(res.data.draft.sections);
       }
@@ -432,18 +436,18 @@ export function AtelierCustomizePage() {
       if (editor.dirty && editor.workingCopy) {
         if (isStorePage) {
           if (!currentStorePage) return;
-          await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy);
+          await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId);
         } else {
-          await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey);
+          await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId);
         }
       }
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiPublishStorePage(storeId, currentStorePage._id);
+        const res = await apiPublishStorePage(storeId, currentStorePage._id, installedThemeId);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.markPublished(res.data.sections);
       } else {
-        const res = await apiPublishCollectionTemplate(storeId, config!.resourceType, templateKey);
+        const res = await apiPublishCollectionTemplate(storeId, config!.resourceType, templateKey, installedThemeId);
         setActiveTemplate(res.data);
         editor.markPublished(res.data.sections);
       }
@@ -459,11 +463,11 @@ export function AtelierCustomizePage() {
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiRevertStorePageDraft(storeId, currentStorePage._id);
+        const res = await apiRevertStorePageDraft(storeId, currentStorePage._id, installedThemeId);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.discardDraft(res.data.draft.sections);
       } else {
-        const res = await apiRevertCollectionTemplateDraft(storeId, config!.resourceType, templateKey);
+        const res = await apiRevertCollectionTemplateDraft(storeId, config!.resourceType, templateKey, installedThemeId);
         setActiveTemplate(res.data);
         editor.discardDraft(res.data.draft.sections);
       }
@@ -475,12 +479,27 @@ export function AtelierCustomizePage() {
     }
   };
 
+  const changeScope = (nextScope: string) => {
+    const hasLocalChanges = scope === 'theme' ? themeSettingsDirty : editor.dirty;
+    if (hasLocalChanges) {
+      const confirmed = window.confirm('Discard unsaved changes in this editor? Choose Cancel to stay here and save your draft first.');
+      if (!confirmed) return;
+      if (scope === 'theme') {
+        setThemeSettingsDirty(false);
+      } else {
+        const savedDraft = isStorePage ? currentStorePage?.draft?.sections : activeTemplate?.draft?.sections;
+        if (savedDraft) editor.discardDraft(savedDraft);
+      }
+    }
+    setScope(nextScope);
+  };
+
   const openVersions = () => {
     setVersionsOpen(true);
     setVersionsLoading(true);
     const req = isStorePage
-      ? (currentStorePage ? apiListStorePageVersions(storeId, currentStorePage._id) : Promise.resolve({ data: [] as VersionRow[] }))
-      : apiListCollectionTemplateVersions(storeId, config!.resourceType, templateKey);
+      ? (currentStorePage ? apiListStorePageVersions(storeId, currentStorePage._id, installedThemeId) : Promise.resolve({ data: [] as VersionRow[] }))
+      : apiListCollectionTemplateVersions(storeId, config!.resourceType, templateKey, installedThemeId);
     req.then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
   };
 
@@ -489,11 +508,11 @@ export function AtelierCustomizePage() {
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiRestoreStorePageVersion(storeId, currentStorePage._id, versionId);
+        const res = await apiRestoreStorePageVersion(storeId, currentStorePage._id, versionId, installedThemeId);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.discardDraft(res.data.draft.sections);
       } else {
-        const res = await apiRestoreCollectionTemplateVersion(storeId, versionId, config!.resourceType, templateKey);
+        const res = await apiRestoreCollectionTemplateVersion(storeId, versionId, config!.resourceType, templateKey, installedThemeId);
         setActiveTemplate(res.data);
         editor.discardDraft(res.data.draft.sections);
       }
@@ -513,8 +532,8 @@ export function AtelierCustomizePage() {
     const key = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `template-${Date.now()}`;
     setCreatingTemplate(true);
     try {
-      await apiCreateResourceTemplate(storeId, config.resourceType, { name: name.trim(), templateKey: key, cloneFromTemplateKey: templateKey });
-      const listRes = await apiListResourceTemplates(storeId, config.resourceType);
+      await apiCreateResourceTemplate(storeId, config.resourceType, { name: name.trim(), templateKey: key, cloneFromTemplateKey: templateKey }, installedThemeId);
+      const listRes = await apiListResourceTemplates(storeId, config.resourceType, installedThemeId);
       setTemplateList(listRes.data);
       setTemplateKey(key);
       flash(true, `"${name.trim()}" template created.`);
@@ -569,12 +588,7 @@ export function AtelierCustomizePage() {
   // for the bug this closes (Nova could "add" Video/Drop Countdown and have
   // them silently render as nothing).
   const supportedSectionTypes = getThemePreviewComponents(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
-  // A custom Page only ever renders its `rich_text` sections on the real
-  // storefront (`AtelierCustomPage`/`NovaCustomPage`) — same restriction
-  // `PagesPage.tsx`'s own picker already enforces; Customize's "Add a
-  // Section" picker for a Page must match, or a seller could add a section
-  // here that silently renders as nothing on the live page.
-  const effectiveSupportedSectionTypes: SectionType[] | undefined = isCustomPageScope ? (['rich_text'] as SectionType[]) : supportedSectionTypes;
+  const effectiveSupportedSectionTypes: SectionType[] | undefined = supportedSectionTypes;
 
   // Phase 5 — real data for whichever Blog/Article is currently picked,
   // fed into the live preview's `blog_post_list`/`article_content` core
@@ -608,7 +622,7 @@ export function AtelierCustomizePage() {
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <PreviewButton storeId={storeId} installedThemeId={installedThemeId} />
             <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
-              <ScopePicker scopeDefs={scopeDefs} scope={scope} onChange={setScope} currentLabel={scopeLabel(scope)} />
+              <ScopePicker scopeDefs={scopeDefs} scope={scope} onChange={changeScope} currentLabel={scopeLabel(scope)} />
 
               {isCustomPageScope && (
                 <ResourcePicker
@@ -721,7 +735,7 @@ export function AtelierCustomizePage() {
 
       {scope === 'theme' ? (
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5 px-4 lg:px-7 py-5 items-start">
-          <AtelierThemeSettingsPanel storeId={storeId} installedThemeId={installedThemeId} onDraftChange={setThemeScopePreview} />
+          <AtelierThemeSettingsPanel storeId={storeId} installedThemeId={installedThemeId} onDraftChange={setThemeScopePreview} onDirtyChange={setThemeSettingsDirty} />
           <div className="border border-bone rounded-2xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
               <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>

@@ -1,141 +1,43 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { Modal, Textarea, Button, Table, type TableColumn } from '@/components/comman/ui';
-import {
-  apiGetSellerReturns, apiReturnAction,
-  type SellerReturnItem, type ReturnStatus,
-} from '@/api/services/orders';
+import { Table, Pagination, type TableColumn } from '@/components/comman/ui';
+import { apiGetSellerReturns, type SellerReturnItem } from '@/api/services/orders';
 import { currencySymbol } from '@/utils/currency';
-
-const statusStyle: Record<string, { bg: string; color: string }> = {
-  requested:          { bg: '#FFF4DC', color: '#B36200' },
-  partial_requested:  { bg: '#FFF4DC', color: '#B36200' },
-  approved:           { bg: '#E3F4EA', color: '#1E7A3C' },
-  rejected:           { bg: '#FDECEA', color: '#C0392B' },
-};
+import { ReturnWorkflowModal } from './ReturnWorkflowModal';
+import {
+  PRIMARY_RETURN_LABEL, RETURN_STATUS_STYLE, primaryReturnMode, returnStatusLabel, type ReturnWorkflowMode,
+} from './returnStatus';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '',          label: 'All Status' },
   { value: 'requested', label: 'Requested'  },
-  { value: 'approved',  label: 'Approved'   },
-  { value: 'rejected',  label: 'Rejected'   },
+  { value: 'approved',  label: 'Approved (awaiting items)' },
+  { value: 'received',  label: 'Received'   },
+  { value: 'refunded',  label: 'Refunded'   },
+  { value: 'exchanged', label: 'Exchanged'  },
+  { value: 'rejected',  label: 'Declined'   },
+  { value: 'closed',    label: 'Closed'     },
 ];
 
-// ── Approve/Reject modal ─────────────────────────────────────────────────────
-function ReturnActionModal({
-  item, onClose, onDone, currency,
-}: {
-  item: SellerReturnItem;
-  onClose: () => void;
-  onDone: () => void;
-  currency?: string | null;
-}) {
-  const [action, setAction] = useState<'approve' | 'reject' | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  // Defaults to 'restock' — the common case for a return, but this is a
-  // real per-return decision (a genuinely damaged item shouldn't quietly
-  // go back into sellable stock) so it's always shown, never assumed.
-  const [restockChoice, setRestockChoice] = useState<'restock' | 'damaged' | 'skip'>('restock');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const submit = async (chosen: 'approve' | 'reject') => {
-    if (chosen === 'reject' && !rejectReason.trim()) { setAction('reject'); setError('Please provide a rejection reason.'); return; }
-    setError('');
-    setSaving(true);
-    try {
-      await apiReturnAction(item.orderId, {
-        storeId: item.storeId,
-        itemIds: [item.itemId],
-        action: chosen,
-        rejectReason: chosen === 'reject' ? rejectReason.trim() : undefined,
-        restockDecisions: chosen === 'approve' && restockChoice !== 'skip' ? { [item.itemId]: restockChoice } : undefined,
-      });
-      onDone();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process return.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Modal
-      title={`Review Return — ${item.orderNumber}`}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          {action === 'reject' ? (
-            <Button variant="danger" onClick={() => submit('reject')} loading={saving}>Confirm Reject</Button>
-          ) : (
-            <>
-              <Button variant="danger" onClick={() => setAction('reject')} disabled={saving}>Reject</Button>
-              <Button onClick={() => submit('approve')} loading={saving}>Approve</Button>
-            </>
-          )}
-        </>
-      }
-    >
-      <div className="flex flex-col gap-3">
-        <div>
-          <p className="text-[13px] font-semibold text-charcoal">{item.productName}</p>
-          <p className="text-[12px] text-slate mt-[2px]">Customer: {item.customer.name}</p>
-          <p className="text-[12px] text-slate">Amount: {currencySymbol(currency)}{item.amount.toLocaleString()}</p>
-        </div>
-        <div className="bg-cream rounded-[9px] px-3 py-[10px]">
-          <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-1">Customer's Reason</p>
-          <p className="text-[13px] text-charcoal">{item.returnReason}</p>
-        </div>
-        {action === 'reject' ? (
-          <Textarea
-            label="Rejection reason"
-            rows={3}
-            placeholder="Explain why this return is being rejected…"
-            value={rejectReason}
-            onChange={e => setRejectReason(e.target.value)}
-          />
-        ) : (
-          <div>
-            <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-1.5">If approved, this item's stock should</p>
-            <div className="flex gap-1.5">
-              {([
-                { value: 'restock', label: 'Restock' },
-                { value: 'damaged', label: 'Mark Damaged' },
-                { value: 'skip', label: "Don't change stock" },
-              ] as const).map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setRestockChoice(opt.value)}
-                  className={`flex-1 rounded-[8px] py-2 text-[11.5px] font-medium cursor-pointer border transition-colors ${restockChoice === opt.value ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange' : 'bg-white border-bone text-slate hover:bg-cream'}`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {error && <p className="text-[12px] text-error">{error}</p>}
-      </div>
-    </Modal>
-  );
-}
+const rowBtn = 'px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreReturnList() {
   const { storeId, store } = useStoreWorkspace();
+  const navigate = useNavigate();
 
   const [returns, setReturns] = useState<SellerReturnItem[]>([]);
   const [stats, setStats]     = useState<{ openRequests: number; returnRate: string; totalRefunded: number } | null>(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [search, setSearch]   = useState('');
   const [status, setStatus]   = useState('');
-  const [reviewing, setReviewing] = useState<SellerReturnItem | null>(null);
+  const [page, setPage]       = useState(1);
+  const [acting, setActing]   = useState<{ mode: ReturnWorkflowMode; item: SellerReturnItem } | null>(null);
 
   const refetch = useCallback(() => setRefreshKey(k => k + 1), []);
 
@@ -143,16 +45,18 @@ export function StoreReturnList() {
     if (!storeId) return;
     let cancelled = false;
     setLoading(true);
-    apiGetSellerReturns({ storeId, status: status || undefined })
+    setError('');
+    apiGetSellerReturns({ storeId, status: status || undefined, page })
       .then(res => {
         if (cancelled) return;
         setReturns(res.data.returns ?? []);
         setStats(res.data.stats);
+        setPagination({ page: res.data.pagination.page, limit: res.data.pagination.limit, total: res.data.pagination.total });
       })
       .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load returns.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, status, refreshKey]);
+  }, [storeId, status, page, refreshKey]);
 
   const filtered = returns.filter(r => {
     const q = search.toLowerCase();
@@ -169,10 +73,10 @@ export function StoreReturnList() {
     {
       key: 'returnStatus', header: 'Status',
       render: r => {
-        const st = statusStyle[r.returnStatus] ?? { bg: '#F0EEE6', color: '#5A5852' };
+        const st = RETURN_STATUS_STYLE[r.returnStatus] ?? { bg: '#F0EEE6', color: '#5A5852', label: r.returnStatus };
         return (
-          <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold whitespace-nowrap capitalize" style={{ background: st.bg, color: st.color }}>
-            {r.returnStatus.replace('_', ' ')}
+          <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold whitespace-nowrap" style={{ background: st.bg, color: st.color }}>
+            {returnStatusLabel(r.returnStatus)}
           </span>
         );
       },
@@ -180,15 +84,19 @@ export function StoreReturnList() {
     { key: 'returnRequestedAt', header: 'Requested', render: r => <span className="text-xs text-slate whitespace-nowrap">{new Date(r.returnRequestedAt).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })}</span> },
     {
       key: 'actions', header: 'Actions',
-      render: r => (
-        <button
-          onClick={() => setReviewing(r)}
-          disabled={r.returnStatus !== 'requested' && r.returnStatus !== ('partial_requested' as ReturnStatus)}
-          className="px-[14px] py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-        >
-          Review
-        </button>
-      ),
+      render: r => {
+        const mode = primaryReturnMode(r.returnStatus);
+        const canClose = r.returnStatus === 'approved' || r.returnStatus === 'received';
+        return (
+          <div className="flex items-center gap-1.5">
+            {mode && <button onClick={() => setActing({ mode, item: r })} className={rowBtn}>{PRIMARY_RETURN_LABEL[mode]}</button>}
+            {canClose && <button onClick={() => setActing({ mode: 'close', item: r })} className={rowBtn}>Close</button>}
+            <button onClick={() => navigate(`/store/${storeId}/orders/detail/${r.orderId}`)} className={rowBtn}>
+              {mode ? 'Exchange / label' : 'Order'}
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -196,7 +104,7 @@ export function StoreReturnList() {
     <>
       <StorePageHeader
         title="Returns & Refunds"
-        subtitle="Process return requests, issue refunds, and send replacements."
+        subtitle="Approve returns, mark items as received, then refund or exchange them."
       />
 
       <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
@@ -204,7 +112,7 @@ export function StoreReturnList() {
         {/* ── Metrics row ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Open Requests',  value: stats?.openRequests ?? 0 },
+            { label: 'Open Returns',  value: stats?.openRequests ?? 0 },
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },
             { label: 'Total Refunded (30d)', value: stats ? `${currencySymbol(store?.baseCurrency)}${stats.totalRefunded.toLocaleString()}` : '—' },
           ].map(m => (
@@ -215,17 +123,17 @@ export function StoreReturnList() {
           ))}
         </div>
 
-        {/* ── Return Policy Summary ── */}
+        {/* ── How returns work ── */}
         <div className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px]">
-          <p className="text-[14px] font-semibold text-carbon mb-1.5">Return Policy Summary</p>
+          <p className="text-[14px] font-semibold text-carbon mb-1.5">How returns work</p>
           <p className="text-[13px] text-slate leading-[1.6]">
-            Physical: 30-day returns in original condition. Digital: Non-refundable unless defective. Damaged items: replacement or full refund.
+            1. Approve the request (no money moves). 2. When the items arrive, mark them as received and choose whether to restock. 3. Refund them to the original payment method or store credit, or exchange them for other items.
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div role="alert" className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button onClick={refetch} className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer">
@@ -241,10 +149,11 @@ export function StoreReturnList() {
             {/* Filters */}
             <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
               <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-colors duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
                 <input
+                  aria-label="Search returns on this page"
                   placeholder="Search order or customer..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -253,8 +162,9 @@ export function StoreReturnList() {
               </div>
 
               <select
+                aria-label="Filter by return status"
                 value={status}
-                onChange={e => setStatus(e.target.value)}
+                onChange={e => { setStatus(e.target.value); setPage(1); }}
                 className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
               >
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -271,20 +181,30 @@ export function StoreReturnList() {
               data={filtered}
               keyExtractor={r => r.itemId}
               loading={loading}
-              emptyState={{ title: 'No return requests match your filters.' }}
+              emptyState={{ title: 'No returns match your filters.' }}
             />
 
-            <div className="px-5 py-3 border-t border-bone">
+            <div className="px-5 py-3 border-t border-bone flex items-center justify-between gap-3 flex-wrap">
               <span className="text-xs text-slate">
-                Showing {filtered.length} of {returns.length} return requests
+                Showing {filtered.length} of {pagination.total} returns
               </span>
+              <Pagination page={pagination.page} total={pagination.total} perPage={pagination.limit} onChange={setPage} />
             </div>
           </div>
         )}
       </div>
 
-      {reviewing && (
-        <ReturnActionModal item={reviewing} onClose={() => setReviewing(null)} onDone={refetch} currency={store?.baseCurrency} />
+      {acting && (
+        <ReturnWorkflowModal
+          mode={acting.mode}
+          storeId={acting.item.storeId}
+          orderId={acting.item.orderId}
+          orderNumber={acting.item.orderNumber}
+          customerName={acting.item.customer.name}
+          lines={[{ itemId: acting.item.itemId, name: acting.item.productName, quantity: acting.item.quantity, reason: acting.item.returnReason }]}
+          onClose={() => setActing(null)}
+          onDone={refetch}
+        />
       )}
     </>
   );

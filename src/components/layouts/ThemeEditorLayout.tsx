@@ -1,5 +1,7 @@
-import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Navigate, Outlet, useBlocker, useLocation, useParams } from 'react-router-dom';
 import { StoreWorkspaceProvider, resolveStoreAccessRedirect } from './StoreLayout';
+import { ThemeEditorUnsavedProvider } from './ThemeEditorUnsavedContext';
 
 /**
  * Dedicated, distraction-free fullscreen shell for the theme editor
@@ -28,12 +30,35 @@ import { StoreWorkspaceProvider, resolveStoreAccessRedirect } from './StoreLayou
 export function ThemeEditorLayout() {
   const { pathname: currentPath } = useLocation();
   const { storeId: routeStoreId } = useParams<{ storeId: string }>();
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const reportUnsavedChanges = useCallback((dirty: boolean) => setHasUnsavedChanges(dirty), []);
+  const blocker = useBlocker(hasUnsavedChanges);
+  const blockerRef = useRef(blocker);
+  blockerRef.current = blocker;
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    const shouldLeave = window.confirm('You have unsaved theme changes. Leave this editor and discard those changes?');
+    if (shouldLeave) blockerRef.current.proceed?.();
+    else blockerRef.current.reset?.();
+  }, [blocker.state]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const accessRedirect = resolveStoreAccessRedirect(routeStoreId, currentPath);
   if (accessRedirect) return <Navigate to={accessRedirect} replace />;
 
   return (
     <StoreWorkspaceProvider>
+      <ThemeEditorUnsavedProvider value={reportUnsavedChanges}>
       {/* `overflow-y-auto` (not `-hidden`) — matches the scroll behavior
          `StoreLayout`'s own content area previously provided. Each editor
          page's left-hand section list relies on PAGE scroll (it has no
@@ -42,6 +67,7 @@ export function ThemeEditorLayout() {
       <div data-lenis-prevent className="h-screen w-screen overflow-y-auto bg-[#FAF9F5]">
         <Outlet />
       </div>
+      </ThemeEditorUnsavedProvider>
     </StoreWorkspaceProvider>
   );
 }

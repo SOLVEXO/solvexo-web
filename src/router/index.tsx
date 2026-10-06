@@ -352,7 +352,7 @@ const mainRouter = createBrowserRouter([
           // InventoryHub already did for Inventory/Purchase Orders/Reorder/
           // Reports below. The raw `StoreSettings` component itself is now
           // only ever rendered embedded, as this hub's "General" tab.
-          { path: 'settings',                         element: <SettingsHub /> },
+          { path: 'settings/:tab?',                   element: <SettingsHub /> },
           { path: 'settings/customer-accounts/authentication',            element: <CustomerAuthenticationPage /> },
           { path: 'settings/customer-accounts/authentication/:provider', element: <CustomerSocialProviderPage /> },
           { path: 'staff',                           element: <StoreStaff /> },

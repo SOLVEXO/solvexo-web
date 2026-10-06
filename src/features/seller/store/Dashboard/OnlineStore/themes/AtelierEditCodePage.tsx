@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
 import { Loader2, FileJson, FileCode, Folder, Save, CheckCircle2, UploadCloud, AlertCircle, AlertTriangle, Image as ImageIcon, ExternalLink, Monitor, Tablet, Smartphone, History, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
@@ -154,6 +155,7 @@ export function AtelierEditCodePage() {
   const [jsonText, setJsonText] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [dirty, setDirty] = useState(false);
+  useThemeEditorUnsavedChanges(dirty);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   // Phase 10 — a persistent (not just a toast) record of the last
@@ -224,10 +226,10 @@ export function AtelierEditCodePage() {
   }, [jsonText, jsonError]);
 
   useEffect(() => {
-    apiListStorePages(storeId)
+    apiListStorePages(storeId, installedThemeId)
       .then(res => setHomePage(res.data.find(p => p.type === 'home') ?? null))
       .finally(() => setLoading(false));
-  }, [storeId]);
+  }, [storeId, installedThemeId]);
 
   useEffect(() => {
     if (themeInstance.status !== 'ready') return;
@@ -254,6 +256,7 @@ export function AtelierEditCodePage() {
   // scoped here to each resource's `default` template).
   useEffect(() => {
     if (!selectedTemplate) return;
+    if (selectedTemplate.resourceType !== 'home' && !installedThemeId) return;
     setPreviewSections([]);
     // Real, previously-latent bug found while adding this phase's own
     // validation states: these resets used to sit AFTER the `home` branch's
@@ -269,11 +272,11 @@ export function AtelierEditCodePage() {
       if (homePage) setJsonText(JSON.stringify(homePage.draft?.sections ?? homePage.sections, null, 2));
       return;
     }
-    apiGetCollectionTemplate(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey)
+    apiGetCollectionTemplate(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId)
       .then(res => setJsonText(JSON.stringify(res.data.draft?.sections ?? res.data.sections, null, 2)))
       .catch(() => setJsonText('[]'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, storeId, homePage?._id]);
+  }, [selectedId, storeId, homePage?._id, installedThemeId]);
 
   const sectionFiles: FileNode[] = useMemo(
     () => Object.entries(devFiles?.sectionSources ?? {}).map(([path, content]) => ({ id: sectionFileLabel(path), label: path.split('/').pop() ?? path, kind: 'code' as const, content })),
@@ -376,11 +379,11 @@ export function AtelierEditCodePage() {
     try {
       if (selectedTemplate.resourceType === 'home') {
         if (!homePage) return;
-        const res = await apiUpdateStorePageSections(storeId, homePage._id, sections);
+        const res = await apiUpdateStorePageSections(storeId, homePage._id, sections, installedThemeId);
         setHomePage(res.data);
         setJsonText(JSON.stringify(res.data.draft.sections, null, 2));
       } else {
-        const res = await apiUpdateCollectionTemplateSections(storeId, sections, selectedTemplate.resourceType, selectedTemplate.templateKey);
+        const res = await apiUpdateCollectionTemplateSections(storeId, sections, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId);
         setJsonText(JSON.stringify(res.data.draft.sections, null, 2));
       }
       setDirty(false);
@@ -402,10 +405,10 @@ export function AtelierEditCodePage() {
     try {
       if (selectedTemplate.resourceType === 'home') {
         if (!homePage) return;
-        const res = await apiPublishStorePage(storeId, homePage._id);
+        const res = await apiPublishStorePage(storeId, homePage._id, installedThemeId);
         setHomePage(res.data);
       } else {
-        await apiPublishCollectionTemplate(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey);
+        await apiPublishCollectionTemplate(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId);
       }
       flash(true, 'Published — your storefront is now live with this draft.');
     } catch (err) {
@@ -430,11 +433,11 @@ export function AtelierEditCodePage() {
     try {
       if (selectedTemplate.resourceType === 'home') {
         if (!homePage) return;
-        const res = await apiRevertStorePageDraft(storeId, homePage._id);
+        const res = await apiRevertStorePageDraft(storeId, homePage._id, installedThemeId);
         setHomePage(res.data);
         setJsonText(JSON.stringify(res.data.draft.sections, null, 2));
       } else {
-        const res = await apiRevertCollectionTemplateDraft(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey);
+        const res = await apiRevertCollectionTemplateDraft(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId);
         setJsonText(JSON.stringify(res.data.draft.sections, null, 2));
       }
       setDirty(false);
@@ -452,8 +455,8 @@ export function AtelierEditCodePage() {
     setVersionsOpen(true);
     setVersionsLoading(true);
     const req = selectedTemplate.resourceType === 'home'
-      ? (homePage ? apiListStorePageVersions(storeId, homePage._id) : Promise.resolve({ data: [] as VersionRow[] }))
-      : apiListCollectionTemplateVersions(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey);
+      ? (homePage ? apiListStorePageVersions(storeId, homePage._id, installedThemeId) : Promise.resolve({ data: [] as VersionRow[] }))
+      : apiListCollectionTemplateVersions(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId);
     req.then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
   };
 
@@ -464,11 +467,11 @@ export function AtelierEditCodePage() {
     try {
       if (selectedTemplate.resourceType === 'home') {
         if (!homePage) return;
-        const res = await apiRestoreStorePageVersion(storeId, homePage._id, versionId);
+        const res = await apiRestoreStorePageVersion(storeId, homePage._id, versionId, installedThemeId);
         setHomePage(res.data);
         setJsonText(JSON.stringify(res.data.draft.sections, null, 2));
       } else {
-        const res = await apiRestoreCollectionTemplateVersion(storeId, versionId, selectedTemplate.resourceType, selectedTemplate.templateKey);
+        const res = await apiRestoreCollectionTemplateVersion(storeId, versionId, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId);
         setJsonText(JSON.stringify(res.data.draft.sections, null, 2));
       }
       setDirty(false);

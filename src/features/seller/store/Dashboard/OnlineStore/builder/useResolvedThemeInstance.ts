@@ -36,7 +36,12 @@ export function useResolvedThemeInstance(storeId: string): ResolvedThemeInstance
   }, [storeId]);
 
   if (rows === null) return { status: 'loading', installedThemeId: undefined, themeDefinitionId: themeId };
-  const match = rows.find(r => r.themeDefinitionId === themeId);
+  // New editor URLs use the installed row id so duplicate copies of one
+  // theme package remain independently editable. Accept old definition-id
+  // URLs during migration, preferring the active copy in that case.
+  const match = rows.find(r => r._id === themeId)
+    ?? rows.find(r => r.themeDefinitionId === themeId && r.status === 'active')
+    ?? rows.find(r => r.themeDefinitionId === themeId);
   if (!match || !match.themeDefinitionId) return { status: 'not-found', installedThemeId: undefined, themeDefinitionId: themeId };
   return { status: 'ready', installedThemeId: match._id, themeDefinitionId: match.themeDefinitionId };
 }

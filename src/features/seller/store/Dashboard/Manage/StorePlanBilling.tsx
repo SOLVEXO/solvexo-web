@@ -12,12 +12,14 @@ import { Textarea } from '@/components/comman/ui/Input';
 import { SkeletonBox } from '@/components/comman/ui';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan,
-  apiPreviewPlatformPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
+  apiPreviewPlatformPlanChange, apiCancelScheduledPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
   apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices, apiGetAddonCatalog, apiGetTransactionFees,
   type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary, type AddonPurchase, type AddonType,
   type AddonCatalogItem,
   type PlatformPlanInvoice, type PlanChangePreview, type TransactionFeesOverview,
 } from '@/api/services/platformPlans';
+
+import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd } from '@/utils/planPricing';
 
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
@@ -187,6 +189,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const [cancelBusy, setCancelBusy] = useState(false);
   const [reactivateBusy, setReactivateBusy] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
+  const [scheduledBusy, setScheduledBusy] = useState(false);
 
   const load = useCallback(() => {
     if (!storeId) return;
@@ -250,6 +253,19 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
       setActionError(err instanceof Error ? err.message : 'Failed to cancel subscription.');
     } finally {
       setCancelBusy(false);
+    }
+  }
+
+  async function submitCancelScheduledChange() {
+    setScheduledBusy(true);
+    setActionError('');
+    try {
+      await apiCancelScheduledPlanChange(storeId);
+      load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to cancel the scheduled plan change.');
+    } finally {
+      setScheduledBusy(false);
     }
   }
 
@@ -337,6 +353,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const isLocked = current?.status === 'locked';
   const isPastDue = current?.status === 'past_due';
   const isCancelPending = !!current?.cancelAtPeriodEnd;
+  const scheduledChange = current?.scheduledPlanChange ?? null;
 
   const banner = useMemo(() => {
     // Distinct from `isLocked` purely in framing — nothing was ever charged
@@ -377,6 +394,13 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         actionLabel: 'Reactivate', onAction: submitReactivate,
       };
     }
+    if (scheduledChange && current) {
+      return {
+        tone: 'info' as const, Icon: Clock,
+        text: `Your plan changes to ${scheduledChange.planName} (${scheduledChange.interval}) on ${new Date(current.currentPeriodEnd).toDateString()}. You keep your current plan until then.`,
+        actionLabel: 'Keep current plan', onAction: submitCancelScheduledChange,
+      };
+    }
     if (isTrialing && trialDaysLeft != null && trialDaysLeft <= 7) {
       return {
         tone: 'info' as const, Icon: Clock,
@@ -387,7 +411,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTrialEnded, isLocked, isPastDue, isCancelPending, isTrialing, trialDaysLeft, current]);
+  }, [isTrialEnded, isLocked, isPastDue, isCancelPending, isTrialing, trialDaysLeft, current, scheduledChange]);
 
   const BANNER_STYLE = {
     error:   { bg: 'bg-error-bg', border: 'border-error-border', text: 'text-error', icon: 'text-error' },
@@ -437,7 +461,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                 <banner.Icon size={15} className={`shrink-0 ${s.icon}`} />
                 {banner.text}
               </span>
-              <Button size="sm" variant="outline" loading={reactivateBusy || portalBusy} onClick={banner.onAction}>
+              <Button size="sm" variant="outline" loading={reactivateBusy || portalBusy || scheduledBusy} onClick={banner.onAction}>
                 {banner.actionLabel}
               </Button>
             </div>
@@ -512,9 +536,9 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             // with no explicit yearlyPriceUSD is charged monthly x 12, never
             // the bare monthly figure — this card must show that same number
             // or it understates what "Switch to this plan" will actually bill.
-            const price = interval === 'yearly'
-              ? (plan.yearlyPriceUSD ?? Math.round((plan.monthlyPriceUSD ?? 0) * 12 * 100) / 100)
-              : plan.monthlyPriceUSD;
+            const price = interval === 'yearly' ? yearlyTotal(plan) : plan.monthlyPriceUSD;
+            const isScheduled = scheduledChange?.planId === plan._id;
+            const savings = yearlySavingsPercent(plan);
             return (
               <div key={plan._id} className="bg-white border rounded-[10px] px-5 py-4 flex flex-col" style={{ borderColor: isCurrent ? '#D97757' : '#E8E6DC', borderWidth: isCurrent ? 2 : 1 }}>
                 <div className="flex items-start justify-between mb-1">
@@ -522,8 +546,11 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                   {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
                 </div>
                 <p className="text-[20px] font-bold text-brand-orange">
-                  {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : `$${price}/${interval === 'yearly' ? 'yr' : 'mo'}`}
+                  {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : interval === 'yearly' ? `${formatUsd(yearlyMonthlyEquivalent(plan))}/mo` : `${price}/mo`}
                 </p>
+                {interval === 'yearly' && !plan.isFree && !plan.isCustomPricing && (
+                  <p className="text-[11.5px] text-slate -mt-0.5">Billed {formatUsd(yearlyTotal(plan))} yearly{savings > 0 ? ` · save ${savings}%` : ''}</p>
+                )}
                 {/* Intro offer (monthly only — same rule the backend applies when it creates the subscription). */}
                 <p className="text-[11.5px] font-medium text-success mb-2 min-h-[16px]">
                   {interval === 'monthly' && !isCurrent && !plan.isFree && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null
@@ -535,7 +562,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite"><Check size={12} className="text-brand-orange mt-[2px] shrink-0" />{f}</li>
                   ))}
                 </ul>
-                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent} loading={changingId === plan._id} onClick={() => {
+                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent || isScheduled} loading={changingId === plan._id} onClick={() => {
                   setActionError('');
                   // Enterprise has no self-serve checkout — it's agreed with sales and assigned by an admin.
                   if (plan.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`; return; }
@@ -548,7 +575,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree || cardOnFile === false);
                   if (needsCheckout) setCheckoutPlanId(plan._id); else setConfirmingPlan(plan);
                 }}>
-                  {isCurrent ? 'Current Plan' : plan.isCustomPricing ? 'Contact sales' : 'Switch to this plan'}
+                  {isCurrent ? 'Current Plan' : isScheduled ? 'Starts next cycle' : plan.isCustomPricing ? 'Contact sales' : 'Switch to this plan'}
                 </Button>
               </div>
             );
@@ -682,7 +709,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         <Modal title="Confirm Plan Change" width={440} onClose={() => setConfirmingPlan(null)}
           footer={<>
             <Button variant="outline" onClick={() => setConfirmingPlan(null)} disabled={changingId === confirmingPlan._id}>Cancel</Button>
-            <Button onClick={submitChangePlan} loading={changingId === confirmingPlan._id} disabled={previewLoading || !preview}>Confirm & Switch</Button>
+            <Button onClick={submitChangePlan} loading={changingId === confirmingPlan._id} disabled={previewLoading || !preview}>{preview && !preview.effectiveImmediately ? 'Confirm & schedule' : 'Confirm & Switch'}</Button>
           </>}
         >
           <p className="text-[13px] text-charcoal mb-3">
@@ -692,6 +719,20 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
           {previewLoading ? (
             <div className="flex items-center gap-2 text-[12.5px] text-slate py-3">
               <Loader2 size={14} className="animate-spin" /> Calculating exact proration…
+            </div>
+          ) : preview && !preview.effectiveImmediately ? (
+            <div className="bg-cream border border-bone rounded-lg p-3.5 flex flex-col gap-[6px]">
+              <div className="flex justify-between text-[12.5px]">
+                <span className="text-slate">New plan price</span>
+                <span className="text-charcoal font-medium">${preview.newAmountUSD.toFixed(2)}/{preview.newBillingInterval === 'yearly' ? 'yr' : 'mo'}</span>
+              </div>
+              <div className="flex justify-between text-[12.5px]">
+                <span className="text-slate">Starts on</span>
+                <span className="text-charcoal font-medium">{preview.effectiveAt ? new Date(preview.effectiveAt).toLocaleDateString() : 'next renewal'}</span>
+              </div>
+              <p className="text-[11.5px] text-slate pt-[6px] mt-[2px] border-t border-bone">
+                Nothing is charged or refunded today. You keep {preview.currentPlanName} until then — plans are billed in advance.
+              </p>
             </div>
           ) : preview ? (
             <div className="bg-cream border border-bone rounded-lg p-3.5 flex flex-col gap-[6px]">

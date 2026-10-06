@@ -29,6 +29,7 @@ import { EditShippingAddressModal } from './EditShippingAddressModal';
 import { BuyShippingLabelModal } from './BuyShippingLabelModal';
 import { EditTrackingModal } from './EditTrackingModal';
 import { ReturnLabelModal } from './ReturnLabelModal';
+import { ReturnLinesPanel } from './ReturnLinesPanel';
 import { openPackingSlips, toPackingSlipOrder } from '@/utils/packingSlip';
 import { FulfilItemsModal } from './FulfilItemsModal';
 import { shippedQuantities, isShippableLine } from './fulfilment';
@@ -100,6 +101,7 @@ export function StoreOrderDetail() {
   const [showLabelModal, setShowLabelModal] = useState(false);
   const [showEditOrder, setShowEditOrder] = useState(false);
   const [showExchange, setShowExchange] = useState(false);
+  const [exchangeIds, setExchangeIds] = useState<string[]>([]);
   const [showEditTracking, setShowEditTracking] = useState(false);
   // Return labels: approved returned lines the seller ticked, then the rate dialog.
   const [returnPick, setReturnPick] = useState<string[]>([]);
@@ -247,7 +249,7 @@ export function StoreOrderDetail() {
     return (
       <div className="p-4 lg:p-7 flex flex-col gap-4">
         <SkeletonBox width={240} height={22} rounded="6px" />
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px] gap-5">
           <SkeletonBox height={320} rounded="10px" />
           <SkeletonBox height={320} rounded="10px" />
         </div>
@@ -290,8 +292,9 @@ export function StoreOrderDetail() {
   const returnLabelCandidates = !isPickup ? so.items.filter(i => i.type === 'physical' && i.returnStatus === 'approved' && !i.returnLabel) : [];
   const labelledReturns = so.items.filter(i => i.returnLabel);
   const canBuyReturnLabel = canBuyLabelPerm && returnLabelCandidates.length > 0;
-  // Exchanges: pending physical returns that can still be resolved as an exchange, and lines already exchanged.
-  const exchangeCandidates = so.items.filter(i => i.type === 'physical' && i.returnStatus === 'requested' && !i.exchangeOrderId);
+  // Returns (Shopify flow: requested -> approved -> received -> refunded | exchanged). Exchanges can resolve any open physical line.
+  const returnLines = so.items.filter(i => i.returnStatus && i.returnStatus !== 'none');
+  const exchangeCandidates = so.items.filter(i => i.type === 'physical' && ['requested', 'approved', 'received'].includes(i.returnStatus) && !i.exchangeOrderId);
   const exchangedLines = so.items.filter(i => i.exchangeOrderId);
   const canCreateExchange = canReturnPerm && exchangeCandidates.length > 0 && !detail.exchangeOf;
   const canMarkDelivered  = !isPickup && so.status === 'shipped' && shipments.length === 0;
@@ -330,7 +333,7 @@ export function StoreOrderDetail() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
+        <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
           {/* Left column */}
           <div className="flex flex-col gap-4 min-w-0">
             <Card
@@ -449,7 +452,7 @@ export function StoreOrderDetail() {
               </Card>
             )}
 
-            {(returnLabelCandidates.length > 0 || labelledReturns.length > 0 || exchangeCandidates.length > 0 || exchangedLines.length > 0 || detail.exchangeOf) && (
+            {(returnLines.length > 0 || returnLabelCandidates.length > 0 || labelledReturns.length > 0 || exchangedLines.length > 0 || detail.exchangeOf) && (
               <Card title="Returns" icon={RotateCcw}>
                 {detail.exchangeOf && (
                   <div className="mb-3">
@@ -459,17 +462,18 @@ export function StoreOrderDetail() {
                     </button>
                   </div>
                 )}
-                {exchangeCandidates.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-[12px] text-slate mb-2">Return requested — resolve it as a refund on the Returns page, or exchange it for other items.</p>
-                    <p className="text-[12.5px] text-charcoal mb-2">{exchangeCandidates.map(i => `${i.name} × ${i.quantity}`).join(', ')}</p>
-                    {canCreateExchange && (
-                      <Button size="xs" variant="outline" disabled={busy} onClick={() => setShowExchange(true)}>
-                        <RefreshCw size={12} /> Create exchange
-                      </Button>
-                    )}
-                  </div>
-                )}
+                <ReturnLinesPanel
+                  storeId={storeId}
+                  orderId={orderId}
+                  orderNumber={detail.orderNumber}
+                  isPaid={detail.isPaid}
+                  lines={returnLines}
+                  canAct={canReturnPerm}
+                  busy={busy}
+                  canExchange={canCreateExchange}
+                  onChanged={load}
+                  onExchange={ids => { setExchangeIds(ids); setShowExchange(true); }}
+                />
                 {exchangedLines.map(i => (
                   <div key={`ex-${i._id}`} className="mb-2 text-[12.5px] text-charcoal">
                     {i.name} × {i.quantity} — exchanged for{' '}
@@ -842,11 +846,11 @@ export function StoreOrderDetail() {
           storeId={storeId}
           orderId={orderId}
           orderNumber={detail.orderNumber}
-          lines={exchangeCandidates}
+          lines={exchangeCandidates.filter(i => exchangeIds.length === 0 || exchangeIds.includes(i._id))}
           symbol={symbol}
           isPaid={detail.isPaid}
-          onClose={() => setShowExchange(false)}
-          onDone={() => { setShowExchange(false); load(); }}
+          onClose={() => { setShowExchange(false); setExchangeIds([]); }}
+          onDone={() => { setShowExchange(false); setExchangeIds([]); load(); }}
         />
       )}
 

@@ -11,6 +11,8 @@ import {
 } from '../../orderUi';
 import { OrderBadge, OrderDownloadLink } from '../../OrderUiParts';
 import { ExchangeItemLink, ExchangeOrderBanner } from '../../ExchangeNotice';
+import { ReturnProgress } from '../../ReturnProgress';
+import { returnNextStepHint } from '../../returnText';
 import { OrderShipments, OrderPickupLocation, type FulfilmentLook } from '../../OrderFulfilmentParts';
 import { useBuyAgain } from '../../useBuyAgain';
 import { novaTheme as t } from '../theme.config';
@@ -147,10 +149,12 @@ export function NovaOrderDetailPage() {
                 {(item.refundedAmount ?? 0) > 0 && !item.exchangeOrderId && (
                   <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Refunded {money(item.refundedAmount ?? 0)}</p>
                 )}
+                <ReturnProgress status={item.returnStatus} rejectReason={item.returnRejectReason} look={{ fontFamily: t.fonts.body, color: t.colors.ink, accent: t.colors.accent, border: t.colors.border, muted: t.colors.inkMuted }} />
                 {item.status === 'cancelled' && <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Cancelled</p>}
                 {item.exchangeOrderId && (
                   <div style={{ marginTop: '4px' }}><ExchangeItemLink orderId={item.exchangeOrderId} orderNumber={item.exchangeOrderNumber} color={t.colors.accent} fontFamily={t.fonts.body} /></div>
                 )}
+                {returnNextStepHint(item.returnStatus) && <p style={{ ...muted, marginTop: '4px' }}>{returnNextStepHint(item.returnStatus)}</p>}
                 {isDigitalItem(item) && (
                   <div style={{ marginTop: '6px' }}>
                     <OrderDownloadLink orderId={order._id} productId={item.productId} color={t.colors.accent} fontFamily={t.fonts.body} />

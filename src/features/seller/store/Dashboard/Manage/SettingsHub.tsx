@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
   Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell,
@@ -20,8 +20,11 @@ import { MetaobjectTypesPage } from './Metaobjects/MetaobjectTypesPage';
 import { ActivityLogTab } from './tabs/ActivityLogTab';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 
+// Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
+const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
+
 const TABS: Tab[] = [
-  { id: 'store-profile', label: 'Store Profile',    icon: <Store size={13} /> },
+  { id: 'profile', label: 'Store Profile',    icon: <Store size={13} /> },
   { id: 'product-types', label: 'Product Types',    icon: <Package size={13} /> },
   { id: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={13} /> },
   { id: 'domains',       label: 'Domains',           icon: <Globe size={13} /> },
@@ -32,7 +35,7 @@ const TABS: Tab[] = [
   { id: 'staff',        label: 'Staff',        icon: <Users size={13} /> },
   { id: 'custom-fields', label: 'Custom Fields', icon: <SlidersHorizontal size={13} /> },
   { id: 'content-types', label: 'Content Types', icon: <Boxes size={13} /> },
-  { id: 'activity',     label: 'Activity Log', icon: <History size={13} /> },
+  { id: 'activity-log', label: 'Activity Log', icon: <History size={13} /> },
 ];
 
 // ── Mobile-only store hero — same gradient hero + stats-strip pattern as
@@ -156,29 +159,32 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
  *  visitor is already looking at Settings' own tabs directly above it. */
 export default function SettingsHub() {
   const { store, storeId } = useStoreWorkspace();
-  // Deep-link support (`?tab=activity`, `?tab=billing`, …) — e.g. the
-  // Dashboard's "View activity"/"View plan" links land on the right tab
-  // instead of always opening on General. One-way only (reading the initial
-  // value); switching tabs afterward doesn't rewrite the URL, same as
-  // SellerSettings' own `?tab=` handling elsewhere in this app.
+  // Every tab has its own URL: /store/:storeId/settings/:tab. No tab = the
+  // mobile menu screen (desktop redirects to /profile). Old `?tab=` links
+  // (dashboard, notification bell, bookmarks) are redirected to the path form.
+  const { tab: tabParam } = useParams<{ tab?: string }>();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const requestedTab = searchParams.get('tab');
-  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs(
-    requestedTab && TABS.some(t => t.id === requestedTab) ? requestedTab : 'store-profile',
-  );
-  // Mobile-only drill-in state — mirrors SellerSettings.tsx's own
-  // `mobileDrilledIn` pattern (the buyer AccountLayout's back-arrow drill-in,
-  // done via local state since this hub has no per-tab routes). A mobile
-  // visitor lands on a clean menu (this hub's own tabs + every other store
-  // section) instead of straight into the Store Profile form — the real
-  // regression this restores. Desktop ignores this entirely; the TabBar +
-  // content are always shown there regardless.
-  const [mobileDrilledIn, setMobileDrilledIn] = useState(
-    !!(requestedTab && TABS.some(t => t.id === requestedTab)),
-  );
+  const legacyTab = searchParams.get('tab');
+  const legacyId = legacyTab ? (LEGACY_TAB_IDS[legacyTab] ?? legacyTab) : null;
+  const validTab = tabParam && TABS.some(t => t.id === tabParam) ? tabParam : null;
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs(validTab ?? 'profile');
+  useEffect(() => { if (validTab) setActiveTab(validTab); }, [validTab, setActiveTab]);
+  useEffect(() => {
+    if (!tabParam && !legacyId && window.matchMedia('(min-width: 1024px)').matches) {
+      navigate(`/store/${storeId}/settings/profile`, { replace: true });
+    }
+  }, [tabParam, legacyId, storeId, navigate]);
+  // Mobile drill-in = a tab is in the URL (back arrow returns to /settings).
+  const mobileDrilledIn = !!validTab;
   const activeTabLabel = TABS.find(t => t.id === activeTab)?.label ?? 'Settings';
 
-  const openTab = (id: string) => { setActiveTab(id); setMobileDrilledIn(true); };
+  const openTab = (id: string) => navigate(`/store/${storeId}/settings/${id}`);
+
+  if (legacyId && !tabParam && TABS.some(t => t.id === legacyId)) {
+    return <Navigate to={`/store/${storeId}/settings/${legacyId}`} replace />;
+  }
+  if (tabParam && !validTab) return <Navigate to={`/store/${storeId}/settings/profile`} replace />;
 
   return (
     <>
@@ -223,7 +229,7 @@ export default function SettingsHub() {
       {mobileDrilledIn && (
         <div className="lg:hidden flex items-center gap-2 px-4 pt-3 pb-1">
           <button
-            onClick={() => setMobileDrilledIn(false)}
+            onClick={() => navigate(`/store/${storeId}/settings`)}
             aria-label="Back to settings menu"
             className="size-8 -ml-1 flex items-center justify-center rounded-full bg-transparent border-none cursor-pointer text-charcoal hover:bg-cream transition-colors"
           >
@@ -234,7 +240,7 @@ export default function SettingsHub() {
       )}
 
       <div className="hidden lg:block px-4 md:px-7 pt-3">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={TABS} active={activeTab} onChange={openTab} />
       </div>
 
       {/* Store Profile/Product Types/Payment Methods/Domains/Privacy/Billing/
@@ -248,7 +254,7 @@ export default function SettingsHub() {
       {/* Each tab stays mounted (hidden via CSS) once visited, instead of
          unmounting on switch — a repeat visit is instant, no refetch/skeleton. */}
       <div className={mobileDrilledIn ? '' : 'hidden lg:block'}>
-        {isVisited('store-profile')    && <div className={paneClassName('store-profile')}><StoreProfileTab /></div>}
+        {isVisited('profile')    && <div className={paneClassName('profile')}><StoreProfileTab /></div>}
         {isVisited('product-types')    && <div className={paneClassName('product-types')}><ProductTypesTab /></div>}
         {isVisited('payment-methods')  && <div className={paneClassName('payment-methods')}><PaymentMethodsTab /></div>}
         {isVisited('domains')          && <div className={paneClassName('domains')}><DomainSettingsTab /></div>}
@@ -259,7 +265,7 @@ export default function SettingsHub() {
         {isVisited('staff')         && <div className={paneClassName('staff')}><StaffPage embedded /></div>}
         {isVisited('custom-fields') && <div className={paneClassName('custom-fields') + ' px-4 lg:px-7 py-6'}><MetafieldDefinitionsPage embedded /></div>}
         {isVisited('content-types') && <div className={paneClassName('content-types') + ' px-4 lg:px-7 py-6'}><MetaobjectTypesPage embedded /></div>}
-        {isVisited('activity')      && <div className={paneClassName('activity') + ' px-4 lg:px-7 py-6'}><ActivityLogTab /></div>}
+        {isVisited('activity-log')      && <div className={paneClassName('activity-log') + ' px-4 lg:px-7 py-6'}><ActivityLogTab /></div>}
       </div>
     </>
   );

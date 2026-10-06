@@ -11,6 +11,7 @@ import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PlanCard } from '@/components/comman/ui/PlanCard';
+import { maxYearlySavingsPercent } from '@/utils/planPricing';
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -121,8 +122,8 @@ export function PricingPage() {
                 <span className={clsx('text-[13px] capitalize', billing === b ? 'font-semibold text-carbon' : 'font-normal text-slate')}>
                   {b}
                 </span>
-                {b === 'annual' && (
-                  <span className="text-[10px] font-semibold text-success">Save 20%</span>
+                {b === 'annual' && maxYearlySavingsPercent(plans) > 0 && (
+                  <span className="text-[10px] font-semibold text-success">Save {maxYearlySavingsPercent(plans)}%</span>
                 )}
               </button>
             ))}

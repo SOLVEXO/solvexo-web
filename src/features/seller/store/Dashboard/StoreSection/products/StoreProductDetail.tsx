@@ -120,7 +120,7 @@ export default function StoreProductDetail() {
           </div>
 
           {/* ── Content grid skeleton ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 items-start">
+          <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_280px] gap-4 items-start">
 
             {/* Left column */}
             <div className="flex flex-col gap-4">
@@ -252,7 +252,7 @@ export default function StoreProductDetail() {
         </div>
 
         {/* ── Content grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 items-start">
+        <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_280px] gap-4 items-start">
 
           {/* ── Left column ── */}
           <div className="flex flex-col gap-4">

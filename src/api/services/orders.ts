@@ -23,7 +23,9 @@ export interface UpdateStatusPayload {
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
-export type ReturnStatus = 'none' | 'requested' | 'partial_requested' | 'approved' | 'rejected';
+/** Per-line return status (Shopify flow): requested -> approved -> received -> refunded | exchanged; rejected / closed end it early.
+ *  Sub-order roll-ups add partial_* and resolved. Older "approved + already refunded" lines arrive as refunded / exchanged. */
+export type ReturnStatus = 'none' | 'requested' | 'partial_requested' | 'approved' | 'partial_approved' | 'received' | 'partial_received' | 'refunded' | 'exchanged' | 'closed' | 'resolved' | 'rejected';
 
 export interface BuyerReturnLabel {
   labelUrl:       string | null;
@@ -46,6 +48,12 @@ export interface OrderLineItem {
   totalPrice: number;
   status:     string;
   returnStatus?: ReturnStatus;
+  returnApprovedAt?: string | null;
+  returnReceivedAt?: string | null;
+  returnResolvedAt?: string | null;
+  returnResolution?: 'refund' | 'exchange' | 'closed' | null;
+  returnRefundTo?:   'original' | 'store_credit' | null;
+  returnRejectReason?: string | null;
   /** Set when the return was resolved by an exchange: the replacement order (buyer-visible). */
   exchangeOrderId?: string | null;
   exchangeOrderNumber?: string | null;
@@ -170,6 +178,15 @@ export interface SellerReturnItem {
   returnStatus:       ReturnStatus;
   returnRejectReason: string | null;
   returnRequestedAt:  string;
+  quantity:           number;
+  returnApprovedAt?:  string | null;
+  returnReceivedAt?:  string | null;
+  returnResolvedAt?:  string | null;
+  returnResolution?:  'refund' | 'exchange' | 'closed' | null;
+  returnRefundTo?:    'original' | 'store_credit' | null;
+  returnRestock?:     'restock' | 'damaged' | 'none' | null;
+  returnLabel?:       { labelUrl?: string | null; trackingNumber?: string | null } | null;
+  itemType?:          'physical' | 'digital';
   exchangeOrderId?:     string | null;
   exchangeOrderNumber?: string | null;
 }
@@ -187,14 +204,27 @@ interface SellerReturnsResponse {
 export interface ReturnActionPayload {
   storeId:      string;
   itemIds:      string[];
-  action:       'approve' | 'reject';
+  /** approve / reject (declines a request) / close (ends an approved or received return without a refund). No money or stock moves. */
+  action:       'approve' | 'reject' | 'close';
   rejectReason?: string;
-  // Keyed by the same OrderItem ids as `itemIds` — omit entirely (or a
-  // given item's key) to leave stock untouched, exactly like before this
-  // existed. 'restock' credits real sellable stock back; 'damaged' credits
-  // the separate unsellable damagedStock pool instead (still genuinely
-  // on-hand — see ProductVariant.damagedStock).
-  restockDecisions?: Record<string, 'restock' | 'damaged'>;
+}
+
+export interface ReceiveReturnPayload {
+  itemIds:  string[];
+  /** Default for every line; per-line overrides in restockDecisions. 'none' leaves stock untouched. */
+  restock?: 'restock' | 'damaged' | 'none';
+  restockDecisions?: Record<string, 'restock' | 'damaged' | 'none'>;
+  note?:    string;
+}
+export interface RefundReturnPayload {
+  itemIds:   string[];
+  refundTo?: 'original' | 'store_credit';
+  note?:     string;
+}
+export interface ReturnStepResult {
+  success: boolean;
+  message: string;
+  data: { orderId: string; refundedAmount?: number; refundedTo?: string | null; refundNote?: string; stockProblems?: string[] };
 }
 interface ReturnActionResponse {
   success: boolean;
@@ -450,6 +480,16 @@ export interface EditOrderResult {
 /** POST /api/orders/edit/:storeId/:orderId — `dryRun: true` only previews. */
 export function apiEditOrder(storeId: string, orderId: string, payload: EditOrderPayload) {
   return client.post<never, OrderApiResponse<EditOrderResult>>(ENDPOINTS.ORDERS.EDIT(storeId, orderId), payload);
+}
+
+/** POST /api/orders/return-receive/:storeId/:orderId — Shopify "Mark as received" (+ restock choice). */
+export function apiReceiveReturn(storeId: string, orderId: string, payload: ReceiveReturnPayload) {
+  return client.post<never, ReturnStepResult>(ENDPOINTS.ORDERS.RETURN_RECEIVE(storeId, orderId), payload);
+}
+
+/** POST /api/orders/return-refund/:storeId/:orderId — refund received return lines (original payment method or store credit). */
+export function apiRefundReturn(storeId: string, orderId: string, payload: RefundReturnPayload) {
+  return client.post<never, ReturnStepResult>(ENDPOINTS.ORDERS.RETURN_REFUND(storeId, orderId), payload);
 }
 
 // ── Exchanges (seller) ───────────────────────────────────────────────────────

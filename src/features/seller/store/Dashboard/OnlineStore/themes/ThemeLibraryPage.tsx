@@ -13,6 +13,7 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/storefront-themes/registry';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { ThemeThumbnail } from './AtelierThemeDemoPreview';
+import { apiApplyThemeDefinition, apiListThemeCatalog, type ThemeDefinition } from '@/api/services/themeCatalog';
 
 /**
  * The Theme Library (route: `online-store/themes`) — browse every
@@ -130,6 +131,10 @@ export function ThemeLibraryPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [sharePreviewRow, setSharePreviewRow] = useState<StoreThemeData | null>(null);
+  const [catalogThemes, setCatalogThemes] = useState<ThemeDefinition[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogTargetId, setCatalogTargetId] = useState('');
+  const [applyingCatalogId, setApplyingCatalogId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -138,13 +143,32 @@ export function ThemeLibraryPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    apiListThemeCatalog()
+      .then(res => setCatalogThemes(res.data))
+      .catch(() => setCatalogThemes([]))
+      .finally(() => setCatalogLoading(false));
+  }, []);
+
   const installedByDefinitionId = useMemo(
-    () => new Map(installed.map((row) => [row.themeDefinitionId, row])),
+    () => {
+      const byDefinition = new Map<string, StoreThemeData>();
+      for (const row of installed) {
+        if (!row.themeDefinitionId) continue;
+        if (!byDefinition.has(row.themeDefinitionId) || row.status === 'active') byDefinition.set(row.themeDefinitionId, row);
+      }
+      return byDefinition;
+    },
     [installed],
   );
   const activeRow = installed.find((row) => row.status === 'active') ?? null;
   const newThemeEntries = listNewThemeEntries();
   const activeThemeName = newThemeEntries.find((t) => t.id === activeRow?.themeDefinitionId)?.name;
+
+  useEffect(() => {
+    if (activeRow?._id) setCatalogTargetId(activeRow._id);
+    else if (installed[0]?._id) setCatalogTargetId(installed[0]._id);
+  }, [activeRow?._id, installed]);
 
   const handleInstallNewTheme = async (id: string, name: string, installDefaults: ThemeInstallColorDefaults) => {
     setInstallingId(id);
@@ -208,6 +232,20 @@ export function ThemeLibraryPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to duplicate theme.');
     } finally {
       setBusyRowId(null);
+    }
+  };
+
+  const handleApplyCatalogTheme = async (theme: ThemeDefinition) => {
+    if (!catalogTargetId) return;
+    setApplyingCatalogId(theme._id);
+    try {
+      await apiApplyThemeDefinition(storeId, theme._id, catalogTargetId);
+      toast.success(`${theme.name} is ready in the selected theme's draft. Review it, then publish.`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not apply this theme preset.');
+    } finally {
+      setApplyingCatalogId(null);
     }
   };
 
@@ -321,20 +359,20 @@ export function ThemeLibraryPage() {
                             alongside the same pages' title bars, which had
                             the identical hardcoded-"Atelier" bug). */}
                         <Link
-                          to={`${entry.id}/customize`}
+                          to={`${row?._id ?? entry.id}/customize`}
                           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border-none bg-brand-orange text-white hover:bg-brand-deep-orange no-underline"
                         >
                           <Settings2 size={13} /> Customize
                         </Link>
                         <Link
-                          to={`${entry.id}/header-footer`}
+                          to={`${row?._id ?? entry.id}/header-footer`}
                           className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
                           title="Header & Footer"
                         >
                           <PanelTop size={13} />
                         </Link>
                         <Link
-                          to={`${entry.id}/edit-code`}
+                          to={`${row?._id ?? entry.id}/edit-code`}
                           className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
                           title="Edit Code"
                         >
@@ -384,6 +422,44 @@ export function ThemeLibraryPage() {
           </div>
         </section>
 
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h2 className="text-[14px] font-bold text-charcoal">Theme catalog</h2>
+              <p className="text-[11.5px] text-slate mt-1">Apply a catalog design to an installed theme, review its draft, then publish.</p>
+            </div>
+            {installed.length > 0 && (
+              <label className="flex items-center gap-2 text-[11.5px] text-slate">
+                Apply to
+                <select value={catalogTargetId} onChange={event => setCatalogTargetId(event.target.value)} className="px-2.5 py-2 border border-bone rounded-lg bg-white text-charcoal">
+                  {installed.map(row => <option key={row._id} value={row._id}>{row.name || newThemeEntries.find(theme => theme.id === row.themeDefinitionId)?.name || 'Theme'}{row.status === 'active' ? ' (Active)' : ''}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+          {catalogLoading ? (
+            <div className="flex items-center gap-2 py-5 text-[12px] text-slate"><Loader2 size={14} className="animate-spin" /> Loading catalog…</div>
+          ) : catalogThemes.length === 0 ? (
+            <p className="text-[12px] text-slate bg-white border border-bone rounded-xl p-4">No published catalog themes are available yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {catalogThemes.map(theme => (
+                <article key={theme._id} className="bg-white border border-bone rounded-xl p-3 flex flex-col gap-2">
+                  {theme.thumbnail && <img src={theme.thumbnail} alt={`${theme.name} theme preview`} loading="lazy" className="w-full aspect-[16/9] object-cover rounded-lg border border-bone" />}
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-[13px] font-bold text-charcoal">{theme.name}</h3>
+                    {theme.featured && <span className="text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange">Featured</span>}
+                  </div>
+                  <p className="text-[11.5px] text-slate leading-snug line-clamp-3">{theme.description || 'A curated storefront design.'}</p>
+                  <button type="button" onClick={() => handleApplyCatalogTheme(theme)} disabled={!catalogTargetId || applyingCatalogId === theme._id} className="mt-auto px-3 py-2 rounded-lg border-none bg-brand-orange text-white text-[11.5px] font-semibold cursor-pointer disabled:opacity-60">
+                    {applyingCatalogId === theme._id ? 'Applying…' : 'Apply to selected theme'}
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Every INSTALLED ROW, not one card per theme package — this is
             the only place a duplicate (two rows of the same
             `themeDefinitionId`, see `duplicateTheme`) is actually visible;
@@ -408,6 +484,9 @@ export function ThemeLibraryPage() {
                     <span className="text-[13px] font-semibold text-charcoal flex-1 truncate">{displayName}</span>
                   )}
                   {row.status === 'active' && <span className="px-2 py-[3px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[10px] font-bold shrink-0">ACTIVE</span>}
+                  <Link to={`${row._id}/customize`} title="Customize this installed theme" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><Settings2 size={13} /></Link>
+                  <Link to={`${row._id}/header-footer`} title="Edit header and footer" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><PanelTop size={13} /></Link>
+                  <Link to={`${row._id}/edit-code`} title="Edit theme files" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><Code2 size={13} /></Link>
                   {isRenaming ? (
                     <button type="button" onClick={() => handleSaveRename(row)} disabled={busyRowId === row._id}
                       className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border-none bg-brand-orange text-white cursor-pointer disabled:opacity-60">

@@ -31,6 +31,32 @@ describe('useResolvedThemeInstance', () => {
     expect(result.current).toEqual({ status: 'ready', installedThemeId: 'row-nova', themeDefinitionId: 'theme-02-nova' });
   });
 
+  it('resolves duplicate copies independently by installed row id', async () => {
+    mockUseParams.mockReturnValue({ themeId: 'row-atelier-copy' });
+    mockApiListInstalledThemes.mockResolvedValue({
+      data: [
+        { _id: 'row-atelier', themeDefinitionId: 'theme-01-atelier', status: 'active' },
+        { _id: 'row-atelier-copy', themeDefinitionId: 'theme-01-atelier', status: 'installed' },
+      ],
+    });
+    const { result } = renderHook(() => useResolvedThemeInstance('store-1'));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current).toEqual({ status: 'ready', installedThemeId: 'row-atelier-copy', themeDefinitionId: 'theme-01-atelier' });
+  });
+
+  it('keeps older definition-id editor links pointed at the active duplicate', async () => {
+    mockUseParams.mockReturnValue({ themeId: 'theme-01-atelier' });
+    mockApiListInstalledThemes.mockResolvedValue({
+      data: [
+        { _id: 'row-atelier-copy', themeDefinitionId: 'theme-01-atelier', status: 'installed' },
+        { _id: 'row-atelier', themeDefinitionId: 'theme-01-atelier', status: 'active' },
+      ],
+    });
+    const { result } = renderHook(() => useResolvedThemeInstance('store-1'));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current).toEqual({ status: 'ready', installedThemeId: 'row-atelier', themeDefinitionId: 'theme-01-atelier' });
+  });
+
   it('rejects safely (not-found) when the themeId has no installed row on this store', async () => {
     mockUseParams.mockReturnValue({ themeId: 'theme-99-doesnotexist' });
     mockApiListInstalledThemes.mockResolvedValue({

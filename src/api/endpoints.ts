@@ -835,6 +835,8 @@ export const ENDPOINTS = {
     RETURN_REQUEST:  (orderId: string) => `/api/orders/return-request/${orderId}`,
     SELLER_RETURNS:  '/api/orders/returns',
     RETURN_ACTION:   (orderId: string) => `/api/orders/return-action/${orderId}`,
+    RETURN_RECEIVE:  (storeId: string, orderId: string) => `/api/orders/return-receive/${storeId}/${orderId}`,
+    RETURN_REFUND:   (storeId: string, orderId: string) => `/api/orders/return-refund/${storeId}/${orderId}`,
     GET_DOWNLOAD_LINK: '/api/orders/get-download-link',
     STREAM_PDF:        '/api/orders/stream-pdf',
   },

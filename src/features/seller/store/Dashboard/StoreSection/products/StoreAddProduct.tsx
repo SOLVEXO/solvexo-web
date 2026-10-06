@@ -265,7 +265,7 @@ export default function StoreAddProduct() {
       </div>
 
       {/* ── 2-column body ── */}
-      <div className="px-4 sm:px-7 py-6 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
+      <div className="px-4 sm:px-7 py-6 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_296px] gap-5 items-start">
 
         {/* Left column */}
         <div className="flex flex-col gap-5">

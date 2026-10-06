@@ -38,6 +38,8 @@ export interface StorePageDraft {
 export interface StorePageData {
   _id:             string;
   storeId:         string;
+  /** The installed theme instance whose sections/draft/version history are represented in this response. */
+  installedThemeId?: string | null;
   type:            StorePageType;
   slug:            string;
   title:           string;
@@ -66,12 +68,16 @@ export interface PublicPageSummary {
 
 // ── Seller ───────────────────────────────────────────────────────────────────
 
-export function apiListStorePages(storeId: string) {
-  return client.get<never, ApiResponse<StorePageData[]>>(ENDPOINTS.STORE_PAGES.LIST(storeId));
+function withInstance(path: string, installedThemeId?: string) {
+  return installedThemeId ? `${path}?instance=${encodeURIComponent(installedThemeId)}` : path;
 }
 
-export function apiGetStorePage(storeId: string, pageId: string) {
-  return client.get<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.GET(storeId, pageId));
+export function apiListStorePages(storeId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<StorePageData[]>>(withInstance(ENDPOINTS.STORE_PAGES.LIST(storeId), installedThemeId));
+}
+
+export function apiGetStorePage(storeId: string, pageId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.GET(storeId, pageId), installedThemeId));
 }
 
 export function apiCreateStorePage(storeId: string, payload: { title: string; slug: string }) {
@@ -82,17 +88,17 @@ export function apiUpdateStorePage(storeId: string, pageId: string, payload: Par
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UPDATE(storeId, pageId), payload);
 }
 
-export function apiUpdateStorePageSections(storeId: string, pageId: string, sections: Section[]) {
-  return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UPDATE_SECTIONS(storeId, pageId), { sections });
+export function apiUpdateStorePageSections(storeId: string, pageId: string, sections: Section[], installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.UPDATE_SECTIONS(storeId, pageId), installedThemeId), { sections });
 }
 
 /** The seller editor's working copy — `draft.sections` plus `lastPublishedAt`, mirroring `apiGetStoreThemeDraft`'s shape/purpose. Not required for today's Pages tab (which reads `draft` off the normal `apiGetStorePage`/`apiListStorePages` response), but available for anything that wants just the draft without the rest of the page doc. */
-export function apiGetStorePageDraft(storeId: string, pageId: string) {
-  return client.get<never, ApiResponse<{ sections: Section[]; lastPublishedAt: string | null }>>(ENDPOINTS.STORE_PAGES.DRAFT(storeId, pageId));
+export function apiGetStorePageDraft(storeId: string, pageId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<{ sections: Section[]; lastPublishedAt: string | null }>>(withInstance(ENDPOINTS.STORE_PAGES.DRAFT(storeId, pageId), installedThemeId));
 }
 
-export function apiPublishStorePage(storeId: string, pageId: string) {
-  return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.PUBLISH(storeId, pageId));
+export function apiPublishStorePage(storeId: string, pageId: string, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.PUBLISH(storeId, pageId), installedThemeId));
 }
 
 export function apiUnpublishStorePage(storeId: string, pageId: string) {
@@ -100,8 +106,8 @@ export function apiUnpublishStorePage(storeId: string, pageId: string) {
 }
 
 /** "Discard unsaved changes" — copies the live `sections` back over `draft.sections`. Mirrors `apiRevertStoreThemeDraft`. */
-export function apiRevertStorePageDraft(storeId: string, pageId: string) {
-  return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.REVERT_DRAFT(storeId, pageId));
+export function apiRevertStorePageDraft(storeId: string, pageId: string, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.REVERT_DRAFT(storeId, pageId), installedThemeId));
 }
 
 export interface StorePageVersionData {
@@ -110,12 +116,12 @@ export interface StorePageVersionData {
   publishedAt: string;
 }
 
-export function apiListStorePageVersions(storeId: string, pageId: string) {
-  return client.get<never, ApiResponse<StorePageVersionData[]>>(ENDPOINTS.STORE_PAGES.VERSIONS(storeId, pageId));
+export function apiListStorePageVersions(storeId: string, pageId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<StorePageVersionData[]>>(withInstance(ENDPOINTS.STORE_PAGES.VERSIONS(storeId, pageId), installedThemeId));
 }
 
-export function apiRestoreStorePageVersion(storeId: string, pageId: string, versionId: string) {
-  return client.post<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.RESTORE_VERSION(storeId, pageId, versionId));
+export function apiRestoreStorePageVersion(storeId: string, pageId: string, versionId: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.RESTORE_VERSION(storeId, pageId, versionId), installedThemeId));
 }
 
 export function apiDeleteStorePage(storeId: string, pageId: string) {

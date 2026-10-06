@@ -338,6 +338,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
   ownerResource?: MetafieldOwnerResource | null;
 }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [insertAt, setInsertAt] = useState(sections.length);
 
   return (
     <div className="flex flex-col gap-3">
@@ -367,7 +368,23 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
 
       {sections.length > 0 && (
         <>
-          <SortableList items={sections} keyFor={(s, i) => s._id ?? `new-${i}`} onReorder={onChange}>
+          <SortableList
+            items={sections}
+            keyFor={(s, i) => s._id ?? `new-${i}`}
+            onReorder={onChange}
+            renderInsertion={index => index < sections.length ? (
+              <button
+                type="button"
+                aria-label={`Add section at position ${index + 1}`}
+                onClick={() => { setInsertAt(index); setShowAdd(true); }}
+                className="group flex h-3 w-full items-center justify-center border-0 bg-transparent p-0 cursor-pointer transition-[height] hover:h-8 focus-visible:h-8"
+              >
+                <span className="flex items-center gap-1 rounded-full border border-bone bg-white px-2 py-1 text-[10px] font-semibold text-slate opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <Plus size={11} /> Add section here
+                </span>
+              </button>
+            ) : null}
+          >
             {(section, i) => {
               // Must match `AtelierSectionRenderer`'s own `String(section._id
               // ?? i)` exactly — same array, same order, same fallback — so a
@@ -417,7 +434,9 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
           supportedTypes={supportedSectionTypes}
           onPick={type => {
             const meta = SECTION_META_BY_TYPE[type];
-            onChange([...sections, { type, settings: { ...meta.defaultSettings }, blocks: [] }]);
+            const next = [...sections];
+            next.splice(Math.min(insertAt, sections.length), 0, { type, settings: { ...meta.defaultSettings }, blocks: [] });
+            onChange(next);
           }}
         />
       )}

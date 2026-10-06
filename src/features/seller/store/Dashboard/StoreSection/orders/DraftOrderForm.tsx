@@ -345,7 +345,7 @@ export default function DraftOrderForm() {
         }
       />
 
-      <div className="px-4 lg:px-7 pt-5 pb-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-10 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px] gap-5">
         <div className="flex flex-col gap-5">
           <div className="bg-white rounded-xl border border-bone p-4">
             <p className="text-[13px] font-bold text-charcoal mb-3">Customer</p>

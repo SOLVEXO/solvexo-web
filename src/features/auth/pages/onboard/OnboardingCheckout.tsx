@@ -10,6 +10,7 @@ import {
 } from '@/api/services/platformPlans';
 import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
 import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
+import { maxYearlySavingsPercent } from '@/utils/planPricing';
 
 /** Same-day-next-month arithmetic, clamped so Jan 31 + 1 month is Feb 28/29, not Mar 3. */
 function addMonths(d: Date, n: number): Date {
@@ -430,7 +431,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
                   <button key={b} type="button" onClick={() => onBillingChange(b)} aria-pressed={billing === b}
                     className="relative z-10 px-7 py-2 rounded-full cursor-pointer flex items-center justify-center gap-[6px] border-0 bg-transparent">
                     <span className={clsx('text-[13px] capitalize transition-colors duration-300', billing === b ? 'font-semibold text-white' : 'font-medium text-slate')}>{b}</span>
-                    {b === 'annual' && <span className={clsx('text-[10px] font-semibold transition-colors duration-300', billing === b ? 'text-white/90' : 'text-success')}>Save 20%</span>}
+                    {b === 'annual' && maxYearlySavingsPercent(plans) > 0 && <span className={clsx('text-[10px] font-semibold transition-colors duration-300', billing === b ? 'text-white/90' : 'text-success')}>Save {maxYearlySavingsPercent(plans)}%</span>}
                   </button>
                 ))}
               </div>

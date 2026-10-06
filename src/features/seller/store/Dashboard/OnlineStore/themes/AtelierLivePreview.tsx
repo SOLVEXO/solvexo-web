@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
@@ -9,6 +10,61 @@ import { CartProvider } from '@/contexts/CartContext';
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+
+/** Render the preview in its own browsing context. Besides making responsive
+ *  breakpoints use the selected device width (instead of the dashboard
+ *  window), this prevents merchant custom CSS from restyling the editor UI. */
+function ThemePreviewFrame({ children }: { children: ReactNode }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const syncDocument = () => {
+      const previewDocument = frame.contentDocument;
+      if (!previewDocument) return;
+      previewDocument.documentElement.lang = document.documentElement.lang;
+      const rootStyles = getComputedStyle(document.documentElement);
+      for (let index = 0; index < rootStyles.length; index += 1) {
+        const property = rootStyles.item(index);
+        if (property.startsWith('--')) {
+          previewDocument.documentElement.style.setProperty(property, rootStyles.getPropertyValue(property));
+        }
+      }
+      previewDocument.head.replaceChildren();
+      document.head.querySelectorAll('link[rel~="stylesheet"], style').forEach((source) => {
+        const copy = source.cloneNode(true) as HTMLElement;
+        if (copy instanceof HTMLLinkElement) copy.href = copy.href;
+        previewDocument.head.appendChild(copy);
+      });
+      previewDocument.body.replaceChildren();
+      previewDocument.body.style.margin = '0';
+      previewDocument.body.style.minHeight = '100vh';
+      const root = previewDocument.createElement('div');
+      root.id = 'solvexo-theme-preview-root';
+      previewDocument.body.appendChild(root);
+      setMountNode(root);
+    };
+    frame.addEventListener('load', syncDocument);
+    if (frame.contentDocument?.readyState === 'complete') syncDocument();
+    return () => frame.removeEventListener('load', syncDocument);
+  }, []);
+
+  return (
+    <>
+      <iframe
+        ref={frameRef}
+        title="Storefront preview"
+        sandbox="allow-same-origin"
+        srcDoc={'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'}
+        className="block w-full border-0"
+        style={{ height: 'calc(100vh - 260px)', minHeight: 600 }}
+      />
+      {mountNode ? createPortal(children, mountNode) : null}
+    </>
+  );
+}
 
 /** Shape of `PublicStoreData['announcementBar']` — repeated here (not
  *  imported) because that field is inline-typed on `PublicStoreData` rather
@@ -191,5 +247,6 @@ export function AtelierLivePreview({
   // is shown, so the lighter section-only scopes (Product/Collection/
   // Search/Cart/Blog) skip mounting a real CartProvider (and its real
   // fetch) entirely, same as before this extraction.
-  return showChrome ? <CartProvider storeId={store.storeId}>{body}</CartProvider> : body;
+  const frame = <ThemePreviewFrame>{body}</ThemePreviewFrame>;
+  return showChrome ? <CartProvider storeId={store.storeId}>{frame}</CartProvider> : frame;
 }
