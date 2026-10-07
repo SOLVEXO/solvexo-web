@@ -399,8 +399,15 @@ export function AtelierHeaderFooterPage() {
   // live preview at all" — previously this page had no preview panel.
   const previewTheme: StoreThemeData | null = useMemo(() => {
     if (!themeDoc || !headerDraft || !footerDraft) return themeDoc;
-    return { ...themeDoc, draft: { ...themeDoc.draft, header: headerDraft, footer: footerDraft } };
-  }, [themeDoc, headerDraft, footerDraft]);
+    const attachedMenu = menus.find(menu => menu._id === headerDraft.menuId);
+    const previewHeader = attachedMenu
+      ? {
+          ...headerDraft,
+          blocks: attachedMenu.items.map(item => ({ _id: item.id, type: 'nav_link', settings: item, enabled: true })),
+        }
+      : headerDraft;
+    return { ...themeDoc, draft: { ...themeDoc.draft, header: previewHeader, footer: footerDraft } };
+  }, [themeDoc, headerDraft, footerDraft, menus]);
 
   // The preview PANEL's own background — resolved against the real active
   // theme (not hardcoded to Atelier), same fix as `AtelierCustomizePage.tsx`'s

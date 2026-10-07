@@ -5,6 +5,7 @@ import type { PublicStoreData } from '@/api/services/store';
 import { getThemeDemoPreview } from '@/features/storefront-themes/themeDemoPreview';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { resolveStorefrontLink } from '@/features/storefront/StorefrontContext';
 import { apiGetPreviewByToken, type PreviewByTokenData } from '@/api/services/storeTheme';
 import '@/features/storefront-themes/theme-01-atelier/atelier.css';
 import '@/features/storefront-themes/theme-02-nova/nova.css';
@@ -82,8 +83,18 @@ export function ThemeSharePreviewPage() {
     <StorefrontProvider value={contextValue}>
       <div style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, minHeight: '100vh' }}>
         <header style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
-          <div className="mx-auto flex items-center justify-between" style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}>
+          <div className="mx-auto flex items-center justify-between gap-6" style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}>
             <span style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink }}>{demoStore.name}</span>
+            <nav aria-label="Store navigation" className="flex items-center gap-5">
+              {(data.header?.blocks ?? []).filter(block => block.type === 'nav_link' && block.enabled !== false).map(block => {
+                const target = resolveStorefrontLink(block.settings);
+                return (
+                  <a key={block._id ?? block.settings.label} href={target.to ?? target.href ?? '/'} className="no-underline" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600 }}>
+                    {block.settings.label}
+                  </a>
+                );
+              })}
+            </nav>
             <span
               style={{
                 border: `1px solid ${t.colors.border}`,

@@ -192,7 +192,18 @@ export function AtelierLivePreview({
   const preview = getThemePreviewComponents(themeIdOverride ?? draftTheme?.themeDefinitionId, DEFAULT_THEME_ID);
   const { SectionRenderer, Navbar, Footer, theme: t, applyMerchantThemeOverrides } = preview;
 
-  const theme: StoreThemeData | null = draftTheme ?? null;
+  // Storefront chrome reads the live-shaped `theme.header`/`theme.footer`
+  // fields from context. Project the draft over those fields so Navbar and
+  // Footer render the same edits the preview's colors already use.
+  const theme: StoreThemeData | null = draftTheme
+    ? {
+        ...draftTheme,
+        theme: draftTheme.draft?.theme ?? draftTheme.theme,
+        header: draftTheme.draft?.header ?? draftTheme.header,
+        footer: draftTheme.draft?.footer ?? draftTheme.footer,
+        customCss: draftTheme.draft?.customCss ?? draftTheme.customCss,
+      }
+    : null;
   const contextValue: StorefrontContextValue = {
     store,
     theme,
