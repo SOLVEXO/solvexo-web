@@ -94,7 +94,7 @@ export function NovaNavbar() {
               {shopOpen && hasShopMenu && (
                 <div
                   className="absolute left-0 z-20 flex gap-10"
-                  style={{ top: 'calc(100% + 14px)', background: '#FFFFFF', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px 26px', minWidth: '360px', boxShadow: '0 12px 32px rgba(20,18,31,0.10)' }}
+                  style={{ top: '100%', background: '#FFFFFF', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px 26px', minWidth: '360px', boxShadow: '0 12px 32px rgba(20,18,31,0.10)' }}
                 >
                   {categories.length > 0 && (
                     <div className="flex flex-col gap-2.5">

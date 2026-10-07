@@ -91,7 +91,7 @@ export function AtelierNavbar() {
             {shopOpen && hasShopMenu && (
               <div
                 className="absolute left-0 z-20 flex gap-10"
-                style={{ top: 'calc(100% + 14px)', background: '#FFFFFF', border: `1px solid ${t.colors.border}`, padding: '22px 26px', minWidth: '360px' }}
+                style={{ top: '100%', background: '#FFFFFF', border: `1px solid ${t.colors.border}`, padding: '22px 26px', minWidth: '360px' }}
               >
                 {categories.length > 0 && (
                   <div className="flex flex-col gap-2.5">
