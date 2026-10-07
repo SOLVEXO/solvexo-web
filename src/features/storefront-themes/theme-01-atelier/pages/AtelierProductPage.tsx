@@ -17,7 +17,7 @@ import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput } from '../components/atelierFormStyles';
 import { useBackInStock } from '../../useBackInStock';
-import { useCartDrawer } from '../../CartDrawer';
+import { useCartDrawer } from '../../cartDrawerContext';
 import { variantAvailable, variantCanBuy, variantMaxQty, stockState, optionValueAvailable } from '../../variantAvailability';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
@@ -146,7 +146,7 @@ export function AtelierProductPage() {
   const symbol = currencySymbol(displayCurrency);
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [qty, setQty] = useState(1);
+  const [rawQty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(slug ?? '');
@@ -219,6 +219,7 @@ export function AtelierProductPage() {
   const maxQty = variantMaxQty(activeVariant, isDigital);
   const state = stockState(activeVariant, isDigital, store.lowStockThreshold);
   const cartDrawer = useCartDrawer();
+  const qty = Math.max(1, Math.min(rawQty, maxQty));
   const pctOff = activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price
     ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100) : null;
   const displayPrice = activeVariant ? convert(activeVariant.price, activeVariant.currency) : null;
@@ -228,7 +229,6 @@ export function AtelierProductPage() {
   const money = (n: number) => (ratesOk ? `${symbol}${fmt2(n)}` : '—');
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
-  useEffect(() => { setQty(q => Math.max(1, Math.min(q, maxQty))); }, [maxQty]);
   // "Notify me when available" — only for a physical variant that's sold out.
   const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && !canBuy);
 

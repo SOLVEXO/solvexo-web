@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, Clock, EyeOff, ShieldCheck } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion } from '@/api/services/store';
+import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { CustomerAccountsSection } from './CustomerAccountsSection';
 import { DomainsSection } from './DomainsSection';
+import { TaxOverridesEditor } from './TaxOverridesEditor';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
@@ -116,6 +117,8 @@ export function StoreProfileTab() {
   const [taxRate, setTaxRate] = useState(0);
   const [taxRegions, setTaxRegions] = useState<TaxRegion[]>([]);
   const [taxShipping, setTaxShipping] = useState(false);
+  const [taxPricesIncludeTax, setTaxPricesIncludeTax] = useState(false);
+  const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
   const [showDutiesNotice, setShowDutiesNotice] = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -135,6 +138,8 @@ export function StoreProfileTab() {
     setTaxRate(store.taxRate ?? 0);
     setTaxRegions(store.taxRegions ?? []);
     setTaxShipping(!!store.taxShipping);
+    setTaxPricesIncludeTax(!!store.taxPricesIncludeTax);
+    setTaxOverrides(store.taxOverrides ?? []);
     setShowDutiesNotice(store.showDutiesNotice !== false);
   }, [store]);
 
@@ -143,7 +148,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -167,6 +172,8 @@ export function StoreProfileTab() {
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
       taxShipping !== !!store.taxShipping ||
+      taxPricesIncludeTax !== !!store.taxPricesIncludeTax ||
+      JSON.stringify(taxOverrides) !== JSON.stringify(store.taxOverrides ?? []) ||
       showDutiesNotice !== (store.showDutiesNotice !== false) ||
       JSON.stringify(taxRegions) !== JSON.stringify(store.taxRegions ?? []));
 
@@ -245,6 +252,14 @@ export function StoreProfileTab() {
             <p className="text-[11px] text-slate mt-1">The default rate, used only when no tax region below matches the buyer's address (and no TaxJar connection is active — see Integrations).</p>
           </Field>
 
+          <Field label="Prices include tax">
+            <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+              <input type="checkbox" checked={taxPricesIncludeTax} onChange={e => setTaxPricesIncludeTax(e.target.checked)} />
+              All prices and shipping rates already include tax
+            </label>
+            <p className="text-[11px] text-slate mt-1">Checkout then shows "Including $X in taxes" and extracts the tax from the price instead of adding it. You can change this per country in Tax Regions below. TaxJar quotes are always added on top.</p>
+          </Field>
+
           <Field label="Charge tax on shipping rates">
             <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
               <input type="checkbox" checked={taxShipping} onChange={e => setTaxShipping(e.target.checked)} />
@@ -288,6 +303,16 @@ export function StoreProfileTab() {
                   onChange={e => setTaxRegions(rs => rs.map((x, j) => j === i ? { ...x, rate: Math.min(100, Math.max(0, Number(e.target.value) || 0)) } : x))}
                   className={`${inputCls} w-20`}
                 />
+                <select
+                  value={r.pricesIncludeTax == null ? '' : r.pricesIncludeTax ? 'in' : 'ex'}
+                  onChange={e => setTaxRegions(rs => rs.map((x, j) => j === i ? { ...x, pricesIncludeTax: e.target.value === '' ? null : e.target.value === 'in' } : x))}
+                  className={`${inputCls} w-28`}
+                  aria-label="Prices include tax in this region"
+                >
+                  <option value="">Store default</option>
+                  <option value="in">Tax included</option>
+                  <option value="ex">Tax added</option>
+                </select>
                 <button
                   type="button"
                   onClick={() => setTaxRegions(rs => rs.filter((_, j) => j !== i))}
@@ -314,6 +339,8 @@ export function StoreProfileTab() {
               />
             </div>
           </div>
+
+          <TaxOverridesEditor storeId={storeId} value={taxOverrides} onChange={setTaxOverrides} />
 
           {/* Review moderation */}
           <div className="border-t border-bone pt-[18px]">

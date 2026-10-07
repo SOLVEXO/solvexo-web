@@ -13,6 +13,7 @@ import {
 } from '@/api/services/integrations';
 import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
 import { ShippingSettingsSection } from './ShippingSettingsSection';
+import { ManualPaymentMethodsSection, PkGatewayConnectModal, ModeSwitch, StripePayoutsPanel, WhatsAppNotificationsPanel } from './PaymentExtras';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
 
 const STATUS_STYLE: Record<StoreIntegrationView['status'], { label: string; bg: string; color: string }> = {
@@ -108,7 +109,7 @@ function WebhookSetupPanel({ storeId, integration, onSaved }: { storeId: string;
   const [webhookSecret, setWebhookSecret] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const webhookUrl = `${API_BASE_URL ?? ''}/api/webhooks/payments/${integration.provider}/${integration.webhookToken ?? ''}`;
+  const webhookUrl = `${API_BASE_URL ?? ''}/webhooks/payments/${integration.provider}/${integration.webhookToken ?? ''}`;
 
   async function save() {
     if (!integration.id || !webhookSecret) return;
@@ -476,11 +477,7 @@ function StripeConnectSection({ integration, storeId, onChanged }: { integration
           </Button>
         </div>
       )}
-      {isActive && (
-        <p className="text-[11px] text-slate">
-          Not seeing a store you expect here? Stripe Connect is tied to your seller account as a whole, not one specific store.
-        </p>
-      )}
+      {isActive && <StripePayoutsPanel storeId={storeId} />}
     </div>
   );
 }
@@ -575,7 +572,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
                 className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full"
                 style={integration.mode === 'live' ? { background: '#E3F4EA', color: '#1E7A3C' } : { background: '#F0EEE6', color: '#5A5852' }}
               >
-                {integration.mode === 'live' ? 'Live' : 'Sandbox'}
+                {integration.mode === 'live' ? 'Live' : 'Test mode'}
               </span>
             </div>
           </div>
@@ -592,9 +589,16 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
         </>
       ) : (
         <div className="flex flex-col gap-3">
-          {!integration.maskedHints?.webhookSecret && (
+          {integration.provider === 'safepay' && !integration.maskedHints?.webhookSecret && (
             <WebhookSetupPanel storeId={storeId} integration={integration} onSaved={onChanged} />
           )}
+          {integration.provider === 'payfast' && integration.webhookToken && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[11.5px] text-slate">PayFast IPN URL (set it in your PayFast merchant portal if it asks for a notification URL — it is also sent with every payment):</p>
+              <CopyableValue value={`${API_BASE_URL ?? ''}/webhooks/payments/payfast/${integration.webhookToken}`} />
+            </div>
+          )}
+          <ModeSwitch storeId={storeId} integration={integration} onChanged={onChanged} />
           {Object.keys(integration.maskedHints).length > 0 && (
             <div className="flex flex-wrap gap-x-5 gap-y-1">
               {Object.entries(integration.maskedHints).map(([k, v]) => (
@@ -624,7 +628,10 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
         </div>
       )}
 
-      {showConnect && (
+      {showConnect && (integration.provider === 'jazzcash' || integration.provider === 'payfast') && (
+        <PkGatewayConnectModal storeId={storeId} provider={integration.provider} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
+      )}
+      {showConnect && integration.provider === 'safepay' && (
         <SafepayConnectModal storeId={storeId} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
       )}
       {pendingDisconnect && (
@@ -702,7 +709,7 @@ function WhatsAppCard({ integration, storeId, onChanged }: { integration: StoreI
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-bold text-carbon truncate">{integration.config?.displayName ?? 'WhatsApp Business'}</p>
-            <p className="text-[11px] text-slate">Order shipped/delivered updates sent straight to your buyers' WhatsApp</p>
+            <p className="text-[11px] text-slate">Order confirmation, cancel, refund, shipped and delivered messages sent to your buyers' WhatsApp</p>
           </div>
         </div>
         <StatusPill status={integration.status} />
@@ -727,6 +734,7 @@ function WhatsAppCard({ integration, storeId, onChanged }: { integration: StoreI
             <p className="flex items-center gap-1.5 text-[12px] text-error"><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
           )}
           {testResult && <p className={`text-[12px] ${testResult.ok ? 'text-success' : 'text-error'}`}>{testResult.message}</p>}
+          {integration.status === 'connected' && <WhatsAppNotificationsPanel storeId={storeId} />}
           <div className="flex items-center gap-2">
             {integration.status === 'needs_reauth' ? (
               !isMetaConfigured() ? (
@@ -1074,7 +1082,7 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
           <>
             <div>
               <p className="text-[13px] font-bold text-carbon mb-1">Payment Gateways</p>
-              <p className="text-[12px] text-slate mb-3">Only one is ever active at checkout at a time — enable the one you want buyers to see.</p>
+              <p className="text-[12px] text-slate mb-3">Every gateway you enable is offered to buyers at checkout — turn on as many as you like.</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {data.payment.map(integration => (
                   integration.provider === 'bank_transfer'
@@ -1082,6 +1090,12 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
                     : <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
                 ))}
               </div>
+            </div>
+
+            <div>
+              <p className="text-[13px] font-bold text-carbon mb-1">Manual payments</p>
+              <p className="text-[12px] text-slate mb-3">Custom methods you name yourself. Shown at checkout next to your gateways.</p>
+              <ManualPaymentMethodsSection storeId={storeId} methods={data.manualMethods ?? []} onChanged={load} />
             </div>
 
             <div>

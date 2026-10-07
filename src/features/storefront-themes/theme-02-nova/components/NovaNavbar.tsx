@@ -4,7 +4,7 @@ import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-r
 import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
-import { useCartDrawer } from '../../CartDrawer';
+import { useCartDrawer } from '../../cartDrawerContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
 import { CurrencySelector } from '@/components/comman/ui';

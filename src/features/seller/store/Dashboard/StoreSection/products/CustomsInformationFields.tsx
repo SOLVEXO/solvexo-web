@@ -2,20 +2,28 @@ import { COUNTRY_OPTIONS } from '../../../../../../utils/countries';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 
-export type CustomsKey = 'countryOfOrigin' | 'hsCode' | 'customsDescription';
+export type CustomsKey = 'countryOfOrigin' | 'hsCode' | 'customsDescription' | 'taxable';
 
 interface Props {
   countryOfOrigin: string;
   hsCode: string;
   customsDescription: string;
+  /** 'yes' | 'no' — Shopify "Charge tax on this product". Omit to hide the checkbox. */
+  taxable?: string;
   onChange: (key: CustomsKey, value: string) => void;
 }
 
 /** Shopify product "Customs information" (optional): country/region of origin + HS code, used for the customs
  *  declaration of international shipping labels. */
-export function CustomsInformationFields({ countryOfOrigin, hsCode, customsDescription, onChange }: Props) {
+export function CustomsInformationFields({ countryOfOrigin, hsCode, customsDescription, taxable, onChange }: Props) {
   return (
     <div>
+      {taxable !== undefined && (
+        <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer mb-4">
+          <input type="checkbox" checked={taxable !== 'no'} onChange={e => onChange('taxable', e.target.checked ? 'yes' : 'no')} />
+          Charge tax on this product
+        </label>
+      )}
       <p className="block text-[12px] font-semibold text-charcoal mb-1.5">Customs information</p>
       <p className="text-[11px] text-slate mb-2">Used on the customs declaration when you buy an international shipping label. Optional for domestic selling.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

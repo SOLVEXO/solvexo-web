@@ -172,6 +172,7 @@ export function NovaOrderDetailPage() {
           {discounts.map(d => row(d.label, `-${money(d.amount)}`))}
           {row('Shipping', money(order.shippingFee))}
           {row('Tax', money(order.taxAmount))}
+          {(order.includedTaxAmount ?? 0) > 0 && row('Including taxes', money(order.includedTaxAmount ?? 0))}
           <div style={{ borderTop: `1.5px solid ${t.colors.border}`, marginTop: '8px', paddingTop: '8px' }}>
             {row('Total', money(order.totalAmount), true)}
           </div>

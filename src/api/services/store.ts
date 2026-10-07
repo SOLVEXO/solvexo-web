@@ -33,6 +33,8 @@ export interface TaxRegion {
   country: string;
   state: string | null;
   rate: number;
+  /** true/false overrides the store-wide "prices include tax" for buyers in this region; null/absent = follow the store. */
+  pricesIncludeTax?: boolean | null;
 }
 
 /** GET /api/store/public/enabled-currencies — the platform's real, dynamic
@@ -103,6 +105,10 @@ export interface UpdateStorePayload {
   taxRegions?: TaxRegion[];
   /** Shopify "Charge tax on shipping rates". */
   taxShipping?: boolean;
+  /** Shopify "Include tax in all prices": checkout extracts the tax from prices instead of adding it. */
+  taxPricesIncludeTax?: boolean;
+  /** Shopify "Tax overrides" (per collection / category). */
+  taxOverrides?: TaxOverride[];
   /** Show the "duties and import taxes may be charged on delivery" notice at international checkouts (default true). */
   showDutiesNotice?: boolean;
   /** "Markets" — which of the platform's supported currencies buyers may
@@ -144,6 +150,11 @@ export interface StoreData {
   taxRegions: TaxRegion[];
   /** Shipping fee is part of the taxable base. */
   taxShipping?: boolean;
+  taxPricesIncludeTax?: boolean;
+  taxOverrides?: TaxOverride[];
+  /** Public store data: countries whose buyers see tax-inclusive / tax-exclusive prices regardless of the store default. */
+  taxIncludedCountries?: string[];
+  taxExcludedCountries?: string[];
   showDutiesNotice?: boolean;
   sellerType:   SellerType;
   productTypes: ProductType[];

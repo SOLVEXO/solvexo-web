@@ -81,7 +81,7 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const initPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', categoryId: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', taxable: 'yes', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   shippingProfileId: '',
@@ -494,7 +494,7 @@ export default function StoreAddProduct() {
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>
                 <PackageDimensionsFields length={phys.length} width={phys.width} height={phys.height} onChange={(k, v) => sp(k, v)} />
-                <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} onChange={(k, v) => sp(k, v)} />
+                <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} taxable={phys.taxable} onChange={(k, v) => sp(k, v)} />
               </div>
             </Card>
           )}
@@ -629,7 +629,7 @@ export default function StoreAddProduct() {
                           <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
                         </F>
                         <PackageDimensionsFields length={phys.length} width={phys.width} height={phys.height} onChange={(k, v) => sp(k, v)} />
-                        <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} onChange={(k, v) => sp(k, v)} />
+                        <CustomsInformationFields countryOfOrigin={phys.countryOfOrigin} hsCode={phys.hsCode} customsDescription={phys.customsDescription} taxable={phys.taxable} onChange={(k, v) => sp(k, v)} />
                       </>
                     )}
                   </>

@@ -28,8 +28,12 @@ export interface StoreIntegrationView {
   manageVia?: { statusUrl: string; connectUrl: string };
 }
 
+export interface ManualPaymentMethodView { id: string; name: string; instructions: string; isActive: boolean; sortOrder: number }
+
 export interface StoreIntegrationsList {
   payment: StoreIntegrationView[];
+  /** Seller-defined custom manual payment methods (Shopify "Custom payment method"). */
+  manualMethods: ManualPaymentMethodView[];
   whatsapp: StoreIntegrationView;
   /** Real, live per-order tax calculation (TaxJar) — see TaxService's own
    *  doc comment. `not_connected` is the normal default; the store's
@@ -62,6 +66,12 @@ export function apiListStoreIntegrations(storeId: string) {
 export interface ConnectSafepayPayload {
   secretKey: string;
   clientId: string;
+  mode?: IntegrationMode;
+}
+
+/** POST .../payment/jazzcash|payfast/connect — JazzCash: merchantId/password/integritySalt; PayFast: merchantId/securedKey (+ merchantName). */
+export function apiConnectPkGateway(storeId: string, provider: 'jazzcash' | 'payfast', payload: Record<string, string | undefined>) {
+  return client.post<never, ApiResponse<StoreIntegrationView>>(ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'payment', provider), payload);
 }
 
 /** POST /api/store/:storeId/integrations/payment/safepay/connect */
@@ -180,7 +190,7 @@ export function apiTestIntegration(storeId: string, id: string) {
  *  `webhookSecret` is step 2 of the Safepay connect flow (see
  *  `ConnectSafepayPayload`) — merged into the existing stored credentials,
  *  never replaces `secretKey`/`clientId`. */
-export function apiUpdateIntegration(storeId: string, id: string, payload: { isEnabledForCheckout?: boolean; displayName?: string; webhookSecret?: string }) {
+export function apiUpdateIntegration(storeId: string, id: string, payload: { isEnabledForCheckout?: boolean; displayName?: string; webhookSecret?: string; mode?: IntegrationMode }) {
   return client.patch<never, ApiResponse<StoreIntegrationView>>(ENDPOINTS.STORE_INTEGRATIONS.UPDATE(storeId, id), payload);
 }
 
@@ -193,7 +203,10 @@ export function apiDisconnectIntegration(storeId: string, id: string) {
 // ── Buyer-facing checkout payment methods ──────────────────────────────────
 
 export interface PublicPaymentMethod {
-  provider: PaymentProviderKey;
+  provider: PaymentProviderKey | 'manual';
+  /** Set only for provider 'manual' (a seller-defined method). */
+  methodId?: string;
+  instructions?: string;
   displayName: string;
   /** Real, dynamic currency code (see the Markets architecture) — a store's
    *  real `baseCurrency`, not a fixed literal union. */
@@ -204,13 +217,22 @@ export interface PublicPaymentMethod {
 /** GET /api/checkout/:checkoutId/payment-methods — always `[]` for a
  *  checkout spanning more than one store (that keeps using the existing
  *  COD/Stripe checkout path, unaffected by this). */
-export function apiGetCheckoutPaymentMethods(checkoutId: string) {
-  return client.get<never, ApiResponse<PublicPaymentMethod[]>>(ENDPOINTS.CHECKOUT.PAYMENT_METHODS(checkoutId));
+export async function apiGetCheckoutPaymentMethods(checkoutId: string): Promise<ApiResponse<PublicPaymentMethod[]>> {
+  // Backend returns `data: { currency, methods: [...] }`; callers want the plain array. Never hand back a non-array
+  // (an object here made the checkout page crash on `.some` / `.map`).
+  const res = await client.get<never, ApiResponse<PublicPaymentMethod[] | { currency?: string | null; methods?: PublicPaymentMethod[] }>>(
+    ENDPOINTS.CHECKOUT.PAYMENT_METHODS(checkoutId),
+  );
+  const raw = res.data as any;
+  const methods: PublicPaymentMethod[] = Array.isArray(raw) ? raw : Array.isArray(raw?.methods) ? raw.methods : [];
+  return { ...(res as any), data: methods };
 }
 
 export interface PaymentSession {
   /** Hosted-checkout redirect (Safepay, JazzCash, Easypaisa, PayFast) — send the buyer here. */
   redirectUrl?: string;
+  /** Fields to POST to `redirectUrl` (JazzCash / PayFast) — when present, submit a form instead of a plain redirect. */
+  formFields?: Record<string, string>;
   /** Client-side SDK token (Stripe PaymentIntent client secret) — not used for Safepay. */
   clientToken?: string;
   /** Provider's own attempt id — stored so the return page can poll/verify status. */
@@ -220,9 +242,49 @@ export interface PaymentSession {
 /** POST /api/checkout/:checkoutId/payment-methods/:provider/initiate —
  *  idempotency-key protected (same interceptor as the rest of checkout), so
  *  a retried tap never opens two payment sessions. */
-export function apiInitiateCheckoutPaymentMethod(checkoutId: string, provider: PaymentProviderKey, returnUrl: string, cancelUrl: string) {
+export function apiInitiateCheckoutPaymentMethod(checkoutId: string, provider: PaymentProviderKey | string, returnUrl: string, cancelUrl: string) {
   return client.post<never, ApiResponse<PaymentSession>>(
     ENDPOINTS.CHECKOUT.INITIATE_PAYMENT_METHOD(checkoutId, provider),
     { returnUrl, cancelUrl },
   );
+}
+
+// ── Custom manual payment methods ──────────────────────────────────────────
+/** POST api/store/:storeId/integrations/manual-methods */
+export function apiCreateManualMethod(storeId: string, payload: { name: string; instructions?: string; isActive?: boolean }) {
+  return client.post<never, ApiResponse<ManualPaymentMethodView>>(ENDPOINTS.STORE_INTEGRATIONS.MANUAL_METHODS(storeId), payload);
+}
+export function apiUpdateManualMethod(storeId: string, id: string, payload: Partial<{ name: string; instructions: string; isActive: boolean }>) {
+  return client.patch<never, ApiResponse<ManualPaymentMethodView>>(ENDPOINTS.STORE_INTEGRATIONS.MANUAL_METHOD(storeId, id), payload);
+}
+export function apiDeleteManualMethod(storeId: string, id: string) {
+  return client.delete<never, ApiResponse<null>>(ENDPOINTS.STORE_INTEGRATIONS.MANUAL_METHOD(storeId, id));
+}
+/** Buyer: place the order with a seller-defined manual method (unpaid until the seller marks it paid). */
+export function apiPlaceManualMethodOrder(checkoutId: string, methodId: string) {
+  return client.post<never, ApiResponse<{ orders: { orderId: string; orderNumber: string; currency: string; summary: { total: number } }[] }>>(
+    ENDPOINTS.CHECKOUT.PLACE_MANUAL_METHOD(checkoutId, methodId),
+  );
+}
+
+// ── WhatsApp order messages ────────────────────────────────────────────────
+export type WhatsAppEventKey = 'order_confirmed' | 'order_cancelled' | 'order_refunded' | 'order_shipped' | 'order_delivered';
+export interface WhatsAppEventSettings { event: WhatsAppEventKey; enabled: boolean; templateName: string; languageCode: string; params: string[] }
+export interface WhatsAppNotificationsView { events: WhatsAppEventSettings[]; paramTokens: string[] }
+export interface WhatsAppTemplateView { id?: string; name: string; language: string; status: string; category: string; rejectedReason: string | null; bodyText: string }
+
+export function apiGetWhatsAppNotifications(storeId: string) {
+  return client.get<never, ApiResponse<WhatsAppNotificationsView>>(ENDPOINTS.STORE_INTEGRATIONS.WHATSAPP_NOTIFICATIONS(storeId));
+}
+export function apiUpdateWhatsAppNotification(storeId: string, payload: { event: WhatsAppEventKey } & Partial<Pick<WhatsAppEventSettings, 'enabled' | 'templateName' | 'languageCode' | 'params'>>) {
+  return client.put<never, ApiResponse<WhatsAppNotificationsView>>(ENDPOINTS.STORE_INTEGRATIONS.WHATSAPP_NOTIFICATIONS(storeId), payload);
+}
+export function apiListWhatsAppTemplates(storeId: string) {
+  return client.get<never, ApiResponse<WhatsAppTemplateView[]>>(ENDPOINTS.STORE_INTEGRATIONS.WHATSAPP_TEMPLATES(storeId));
+}
+export function apiCreateWhatsAppTemplate(storeId: string, payload: { name: string; language: string; category: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION'; bodyText: string; examples: string[] }) {
+  return client.post<never, ApiResponse<{ id?: string; status: string }>>(ENDPOINTS.STORE_INTEGRATIONS.WHATSAPP_TEMPLATES(storeId), payload);
+}
+export function apiDeleteWhatsAppTemplate(storeId: string, name: string) {
+  return client.delete<never, ApiResponse<null>>(ENDPOINTS.STORE_INTEGRATIONS.WHATSAPP_TEMPLATE(storeId, name));
 }

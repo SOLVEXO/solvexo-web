@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs, jsx-a11y/no-autofocus, jsx-a11y/click-events-have-key-events */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';

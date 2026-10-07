@@ -74,6 +74,8 @@ export interface ProductVariant {
   countryOfOrigin?:    string | null;
   hsCode?:             string | null;
   customsDescription?: string | null;
+  /** Shopify "Charge tax on this product" (default true). */
+  taxable?:       boolean;
   images:         string[];
   isDefault:      boolean;
   status:         string;
@@ -96,6 +98,7 @@ export interface VariantInput {
   countryOfOrigin?:    string | null;
   hsCode?:             string | null;
   customsDescription?: string | null;
+  taxable?:       boolean;
   images?:        string[];
   sku?:           string;
   barcode?:       string;

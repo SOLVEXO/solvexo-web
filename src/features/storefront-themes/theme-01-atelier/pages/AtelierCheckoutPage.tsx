@@ -20,7 +20,8 @@ import {
   type Checkout, type CheckoutSummary,
 } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus, type PlacedOrder } from '@/api/services/payment';
-import { apiGetCheckoutPaymentMethods, apiInitiateCheckoutPaymentMethod, type PublicPaymentMethod } from '@/api/services/integrations';
+import { apiGetCheckoutPaymentMethods, apiInitiateCheckoutPaymentMethod, apiPlaceManualMethodOrder, type PublicPaymentMethod } from '@/api/services/integrations';
+import { goToGateway } from '@/utils/gatewayRedirect';
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
@@ -285,7 +286,7 @@ export function AtelierCheckoutPage() {
                 ? { selections: gp.selections }
                 : chosen?.isLiveRate ? { liveRateId: selectedZoneId ?? undefined } : { shippingZoneId: selectedZoneId ?? undefined }),
             });
-            setSummary(s => s ? { ...s, shippingFee: shipRes.data.shippingFee, totalAmount: shipRes.data.totalAmount, taxAmount: shipRes.data.taxAmount ?? s.taxAmount, internationalDutiesNotice: shipRes.data.internationalDutiesNotice } : s);
+            setSummary(s => s ? { ...s, shippingFee: shipRes.data.shippingFee, totalAmount: shipRes.data.totalAmount, taxAmount: shipRes.data.taxAmount ?? s.taxAmount, includedTaxAmount: shipRes.data.includedTaxAmount ?? s.includedTaxAmount, internationalDutiesNotice: shipRes.data.internationalDutiesNotice } : s);
           } catch (err) {
             setCheckoutError(err instanceof Error ? err.message : 'Failed to apply shipping to this checkout.');
           }
@@ -312,7 +313,7 @@ export function AtelierCheckoutPage() {
 
   useEffect(() => {
     if (allowedMethods.length === 1 && extraMethods.length === 0) setSelectedMethod(allowedMethods[0]);
-    else if (allowedMethods.length === 0 && extraMethods.length === 1) setSelectedMethod(extraMethods[0].provider);
+    else if (allowedMethods.length === 0 && extraMethods.length === 1) setSelectedMethod((extraMethods[0].methodId ?? extraMethods[0].provider));
   }, [allowedMethods, extraMethods]);
 
   useEffect(() => {
@@ -468,7 +469,7 @@ export function AtelierCheckoutPage() {
       const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl);
       if (res.data.redirectUrl) {
         recordMarketingConsent();
-        window.location.href = res.data.redirectUrl;
+        goToGateway(res.data.redirectUrl, res.data.formFields);
         return;
       }
       setExtraInitiateErr('This payment method could not be started.');
@@ -479,9 +480,29 @@ export function AtelierCheckoutPage() {
     }
   };
 
+  /** Seller-defined manual method: the order is placed now and stays unpaid until the seller marks it paid. */
+  const placeManualOrder = async (methodId: string) => {
+    if (!checkout) return;
+    setInitiatingExtra(true); setExtraInitiateErr('');
+    try {
+      const res = await apiPlaceManualMethodOrder(checkout._id, methodId);
+      recordMarketingConsent();
+      await clearCart();
+      setPlacedOrders(res.data.orders as any);
+    } catch (err) {
+      setExtraInitiateErr(err instanceof Error ? err.message : 'Failed to place order.');
+    } finally {
+      setInitiatingExtra(false);
+    }
+  };
+
+  const handleExtraMethodClick = (method: PublicPaymentMethod) =>
+    method.provider === 'manual' && method.methodId ? placeManualOrder(method.methodId) : handleInitiateExtraMethod(method.provider);
+
   const orderSubtotal = checkout ? checkout.items.reduce((s, i) => s + i.totalPrice, 0) : cartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
   const shipping = summary?.shippingFee ?? 0;
   const tax = summary?.taxAmount ?? 0;
+  const incTax = summary?.includedTaxAmount ?? 0;
   const couponDiscount = checkout?.couponDiscountUSD ?? 0;
   const giftCardDiscount = checkout?.giftCardDiscountUSD ?? 0;
   const storeCreditDiscount = checkout?.storeCreditDiscountTotalUSD ?? 0;
@@ -727,11 +748,11 @@ export function AtelierCheckoutPage() {
                     ))}
                     {extraMethods.map(m => (
                       <label
-                        key={m.provider}
+                        key={(m.methodId ?? m.provider)}
                         className="flex items-center gap-2.5 cursor-pointer"
-                        style={{ padding: '12px 14px', border: `1px solid ${selectedMethod === m.provider ? t.colors.ink : t.colors.border}` }}
+                        style={{ padding: '12px 14px', border: `1px solid ${selectedMethod === (m.methodId ?? m.provider) ? t.colors.ink : t.colors.border}` }}
                       >
-                        <input type="radio" checked={selectedMethod === m.provider} onChange={() => setSelectedMethod(m.provider)} />
+                        <input type="radio" checked={selectedMethod === (m.methodId ?? m.provider)} onChange={() => setSelectedMethod((m.methodId ?? m.provider))} />
                         <CreditCard size={15} style={{ color: t.colors.inkMuted }} />
                         <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 500, color: t.colors.ink }}>{m.displayName}</span>
                       </label>
@@ -774,18 +795,20 @@ export function AtelierCheckoutPage() {
                   </AtelierButton>
                 )}
 
-                {extraMethods.some(m => m.provider === selectedMethod) && (() => {
-                  const method = extraMethods.find(m => m.provider === selectedMethod)!;
+                {extraMethods.some(m => (m.methodId ?? m.provider) === selectedMethod) && (() => {
+                  const method = extraMethods.find(m => (m.methodId ?? m.provider) === selectedMethod)!;
                   return (
                     <div className="flex flex-col gap-2.5">
-                      <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
-                        You'll be taken to {method.displayName} to complete your payment securely, then brought back here.
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, whiteSpace: 'pre-line' }}>
+                        {method.provider === 'manual'
+                          ? (method.instructions || 'Place your order, then pay the store directly as described by them. Your order is confirmed once they receive your payment.')
+                          : <>You'll be taken to {method.displayName} to complete your payment securely, then brought back here.</>}
                       </p>
                       {extraInitiateErr && (
                         <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{extraInitiateErr}</p>
                       )}
-                      <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={initiatingExtra} onClick={() => handleInitiateExtraMethod(method.provider)}>
-                        Continue to {method.displayName}
+                      <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={initiatingExtra} onClick={() => handleExtraMethodClick(method)}>
+                        {method.provider === 'manual' ? 'Place order' : <>Continue to {method.displayName}</>}
                       </AtelierButton>
                     </div>
                   );
@@ -820,6 +843,7 @@ export function AtelierCheckoutPage() {
             <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Subtotal</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(orderSubtotal)}</span></div>
             {!isDigital && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Shipping</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(shipping)}</span></div>}
             {tax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Tax</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(tax)}</span></div>}
+            {incTax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Including taxes</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(incTax)}</span></div>}
             {couponDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Coupon</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(couponDiscount)}</span></div>}
             {giftCardDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Gift card</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(giftCardDiscount)}</span></div>}
             {storeCreditDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Store credit</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(storeCreditDiscount)}</span></div>}

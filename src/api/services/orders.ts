@@ -132,6 +132,8 @@ export interface OrderDetail {
   subtotal:        number;
   shippingFee:     number;
   taxAmount:       number;
+  /** Tax already inside the prices (tax-inclusive store); informational, not added to totalAmount. */
+  includedTaxAmount?: number;
   totalAmount:     number;
   currency:        string;
   shippingAddress: Record<string, unknown> | null;

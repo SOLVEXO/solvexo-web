@@ -8,7 +8,7 @@ import {
   type BulkEditProductUpdate, type BulkEditVariantUpdate, type BulkProductStatus,
 } from '@/api/services/productsBulk';
 
-interface VariantRow { id: string; label: string; sku: string; price: string; compare: string; stock: string; unlimited: boolean }
+interface VariantRow { id: string; label: string; sku: string; price: string; compare: string; stock: string; unlimited: boolean; len: string; wid: string; hei: string; origin: string; hs: string; taxable: string }
 interface ProductRow {
   id: string; name: string; status: string; tags: string; digital: boolean;
   variants: VariantRow[]; loadError?: string;
@@ -73,6 +73,8 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                 label: v.options?.map(o => o.value).join(' / ') || 'Default',
                 sku: v.sku ?? '', price: numStr(v.price), compare: numStr(v.compareAtPrice),
                 stock: numStr(v.stock), unlimited: !!v.unlimitedStock,
+                len: numStr(v.length), wid: numStr(v.width), hei: numStr(v.height),
+                origin: v.countryOfOrigin ?? '', hs: v.hsCode ?? '', taxable: v.taxable === false ? 'no' : 'yes',
               })),
             };
           } catch (e) {
@@ -100,6 +102,8 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
       for (const v of p.variants) {
         m[`v:${v.id}:sku`] = v.sku; m[`v:${v.id}:price`] = v.price;
         m[`v:${v.id}:compare`] = v.compare; m[`v:${v.id}:stock`] = v.stock;
+        m[`v:${v.id}:len`] = v.len; m[`v:${v.id}:wid`] = v.wid; m[`v:${v.id}:hei`] = v.hei;
+        m[`v:${v.id}:origin`] = v.origin; m[`v:${v.id}:hs`] = v.hs; m[`v:${v.id}:taxable`] = v.taxable;
       }
     }
     return m;
@@ -122,6 +126,9 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
     if (key.endsWith(':price')) return v !== '' && Number.isFinite(Number(v)) && Number(v) >= 0 ? null : 'Enter a price of 0 or more';
     if (key.endsWith(':compare')) return v === '' || (Number.isFinite(Number(v)) && Number(v) >= 0) ? null : 'Enter 0 or more';
     if (key.endsWith(':stock')) return v !== '' && /^\d+$/.test(v) ? null : 'Enter a whole number, 0 or more';
+    if (/:(len|wid|hei)$/.test(key)) return v === '' || (Number.isFinite(Number(v)) && Number(v) >= 0) ? null : 'Enter 0 or more (cm)';
+    if (key.endsWith(':origin')) return v === '' || /^[A-Za-z]{2}$/.test(v) ? null : 'Use a 2-letter country code';
+    if (key.endsWith(':hs')) return v === '' || /^\d[\d.]{4,12}\d$/.test(v) ? null : 'HS code: 6 to 10 digits';
     return null;
   };
   const compareWarning = (vid: string): boolean => {
@@ -149,6 +156,12 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
         if (`v:${v.id}:price` in edits)   { vu.price = Number(edits[`v:${v.id}:price`]); vt = true; }
         if (`v:${v.id}:compare` in edits) { const c = edits[`v:${v.id}:compare`].trim(); vu.compareAtPrice = c === '' ? null : Number(c); vt = true; }
         if (`v:${v.id}:stock` in edits)   { vu.stock = Number(edits[`v:${v.id}:stock`]); vt = true; }
+        for (const [f, field] of [['len', 'length'], ['wid', 'width'], ['hei', 'height']] as const) {
+          if (`v:${v.id}:${f}` in edits) { const x = edits[`v:${v.id}:${f}`].trim(); vu[field] = x === '' ? null : Number(x); vt = true; }
+        }
+        if (`v:${v.id}:origin` in edits) { vu.countryOfOrigin = edits[`v:${v.id}:origin`].trim().toUpperCase(); vt = true; }
+        if (`v:${v.id}:hs` in edits)     { vu.hsCode = edits[`v:${v.id}:hs`].trim(); vt = true; }
+        if (`v:${v.id}:taxable` in edits) { vu.taxable = edits[`v:${v.id}:taxable`] !== 'no'; vt = true; }
         if (vt) vs.push(vu);
       }
       if (vs.length) { u.variants = vs; touched = true; }
@@ -189,6 +202,8 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
             ...v,
             sku: g(`v:${v.id}:sku`, v.sku), price: g(`v:${v.id}:price`, v.price),
             compare: g(`v:${v.id}:compare`, v.compare), stock: g(`v:${v.id}:stock`, v.stock),
+            len: g(`v:${v.id}:len`, v.len), wid: g(`v:${v.id}:wid`, v.wid), hei: g(`v:${v.id}:hei`, v.hei),
+            origin: g(`v:${v.id}:origin`, v.origin), hs: g(`v:${v.id}:hs`, v.hs), taxable: g(`v:${v.id}:taxable`, v.taxable),
           })),
         };
       }));
@@ -258,7 +273,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[12px]" style={{ minWidth: 980 }}>
+            <table className="w-full border-collapse text-[12px]" style={{ minWidth: 1500 }}>
               <thead>
                 <tr className="border-b border-bone bg-cream">
                   <th className={TH} style={{ width: '24%' }}>Title</th>
@@ -268,6 +283,12 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                   <th className={TH} style={{ width: 90 }}>Price ({currencyLabel})</th>
                   <th className={TH} style={{ width: 100 }}>Compare-at ({currencyLabel})</th>
                   <th className={TH} style={{ width: 90 }}>Inventory</th>
+                  <th className={TH} style={{ width: 70 }}>L (cm)</th>
+                  <th className={TH} style={{ width: 70 }}>W (cm)</th>
+                  <th className={TH} style={{ width: 70 }}>H (cm)</th>
+                  <th className={TH} style={{ width: 70 }}>Origin</th>
+                  <th className={TH} style={{ width: 100 }}>HS code</th>
+                  <th className={TH} style={{ width: 60 }}>Taxable</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,6 +319,16 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                             disabled={p.digital || v.unlimited}
                             onChange={e => setCell(k('stock'), e.target.value)} aria-label="Inventory" title={cellError(k('stock')) ?? undefined} />
                         </td>
+                        {(['len', 'wid', 'hei', 'origin', 'hs'] as const).map(f => (
+                          <td key={f} className="px-2 py-1.5">
+                            <input className={cls(k(f))} inputMode={f === 'origin' ? 'text' : 'decimal'} maxLength={f === 'origin' ? 2 : 14}
+                              value={p.digital ? '' : val(k(f))} disabled={p.digital} placeholder={p.digital ? 'N/A' : ''}
+                              onChange={e => setCell(k(f), e.target.value)} aria-label={f === 'hs' ? 'HS code' : f === 'origin' ? 'Country of origin' : 'Package dimension (cm)'} title={cellError(k(f)) ?? undefined} />
+                          </td>
+                        ))}
+                        <td className="px-2 py-1.5 text-center">
+                          <input type="checkbox" checked={val(k('taxable')) !== 'no'} onChange={e => setCell(k('taxable'), e.target.checked ? 'yes' : 'no')} aria-label="Charge tax on this product" />
+                        </td>
                       </>
                     );
                   };
@@ -322,7 +353,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                           <input className={cls(tagsKey)} value={val(tagsKey)} disabled={!!p.loadError} placeholder="tag, tag"
                             onChange={e => setCell(tagsKey, e.target.value)} aria-label="Tags" />
                         </td>
-                        {single ? renderVariantCells(p.variants[0]) : <td colSpan={4} className="px-2 py-1.5 text-slate">{p.loadError ? '' : `${p.variants.length} variants`}</td>}
+                        {single ? renderVariantCells(p.variants[0]) : <td colSpan={10} className="px-2 py-1.5 text-slate">{p.loadError ? '' : `${p.variants.length} variants`}</td>}
                       </tr>
                       {!single && p.variants.map(v => (
                         <tr key={v.id} className="border-b border-[#f0eee6]">

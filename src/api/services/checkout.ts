@@ -60,6 +60,8 @@ export interface CheckoutSummary {
   subtotal:    number;
   shippingFee: number;
   taxAmount:   number;
+  /** Tax already inside the prices (tax-inclusive store) — shown as "Including $X in taxes", never added. */
+  includedTaxAmount?: number;
   totalAmount: number;
   campaignDiscountUSD?: number;
   autoDiscountUSD?: number;
@@ -184,6 +186,7 @@ export interface AddShippingData {
   shippingFee:   number;
   /** Tax after shipping was added (includes tax on shipping when the store taxes shipping). */
   taxAmount?:    number;
+  includedTaxAmount?: number;
   fulfillmentMethod?: 'ship' | 'pickup';
   pickupLocation?: { name: string | null; address: string | null; instructions: string | null } | null;
   subtotal:      number;

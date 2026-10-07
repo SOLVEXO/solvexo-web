@@ -536,6 +536,7 @@ export const ENDPOINTS = {
     STATUS:          (storeId: string) => `/api/stripe-connect/${storeId}/status`,
     ONBOARDING_LINK: (storeId: string) => `/api/stripe-connect/${storeId}/onboarding-link`,
     SYNC:            (storeId: string) => `/api/stripe-connect/${storeId}/sync`,
+    PAYOUTS:         (storeId: string) => `/api/stripe-connect/${storeId}/payouts`,
   },
 
   PRODUCTS_BULK: {
@@ -663,6 +664,7 @@ export const ENDPOINTS = {
     // non-empty for a single-store checkout, see CheckoutPaymentMethodsService.
     PAYMENT_METHODS: (checkoutId: string) => `/api/checkout/${checkoutId}/payment-methods`,
     INITIATE_PAYMENT_METHOD: (checkoutId: string, provider: string) => `/api/checkout/${checkoutId}/payment-methods/${provider}/initiate`,
+    PLACE_MANUAL_METHOD: (checkoutId: string, methodId: string) => `/api/checkout/${checkoutId}/payment-methods/manual/${methodId}/place`,
     // Real live carrier rates (Shippo) — additional option next to the flat
     // getShippingZones list, see CheckoutService.getLiveShippingRates.
     LIVE_SHIPPING_RATES: '/api/checkout/live-shipping-rates',
@@ -676,6 +678,11 @@ export const ENDPOINTS = {
     UPDATE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
     DELETE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
     SHIPPING_SETTINGS: (storeId: string) => `/api/store/${storeId}/integrations/shipping/settings`,
+    MANUAL_METHODS: (storeId: string) => `/api/store/${storeId}/integrations/manual-methods`,
+    MANUAL_METHOD:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/manual-methods/${id}`,
+    WHATSAPP_NOTIFICATIONS: (storeId: string) => `/api/store/${storeId}/integrations/whatsapp/notifications`,
+    WHATSAPP_TEMPLATES: (storeId: string) => `/api/store/${storeId}/integrations/whatsapp/templates`,
+    WHATSAPP_TEMPLATE: (storeId: string, name: string) => `/api/store/${storeId}/integrations/whatsapp/templates/${encodeURIComponent(name)}`,
   },
 
   // ── CUSTOMER SOCIAL LOGIN (a store's own Google/Facebook app for its buyers) ─

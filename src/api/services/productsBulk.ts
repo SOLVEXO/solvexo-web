@@ -37,6 +37,15 @@ export interface BulkEditVariantUpdate {
   compareAtPrice?: number | null;
   sku?:            string;
   stock?:          number;
+  /** Package dimensions in cm (physical); null clears. */
+  length?:         number | null;
+  width?:          number | null;
+  height?:         number | null;
+  /** Customs information (physical); '' clears. */
+  countryOfOrigin?: string | null;
+  hsCode?:          string | null;
+  /** "Charge tax on this product". */
+  taxable?:        boolean;
 }
 
 export interface BulkEditProductUpdate {

@@ -1,7 +1,8 @@
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  useCallback, useEffect, useMemo, useRef, useState,
   type ComponentType, type ButtonHTMLAttributes, type ReactNode,
 } from 'react';
+import { CartDrawerContext } from './cartDrawerContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Download, ImageOff, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useCartContext } from '@/contexts/CartContext';
@@ -26,28 +27,23 @@ export interface CartDrawerTheme {
 
 type DrawerButton = ComponentType<ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'outline'; loading?: boolean }>;
 
-interface CartDrawerCtx { open: boolean; openDrawer: () => void; closeDrawer: () => void; mounted: boolean }
-const noop = () => {};
-const Ctx = createContext<CartDrawerCtx>({ open: false, openDrawer: noop, closeDrawer: noop, mounted: false });
-
-/** Safe anywhere: outside a provider `mounted` is false and open/close are no-ops. */
-export function useCartDrawer() { return useContext(Ctx); }
 
 const noteKey = (storeId: string) => `solvexo_cart_note_${storeId}`;
 
 export function CartDrawerProvider({ theme, Button, children }: { theme: CartDrawerTheme; Button: DrawerButton; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const openDrawer = useCallback(() => setOpen(true), []);
-  const closeDrawer = useCallback(() => setOpen(false), []);
   const location = useLocation();
-  // Navigating anywhere (checkout, /cart, a product link) dismisses the drawer.
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  // Open state is tied to the path it was opened on, so navigating anywhere (checkout, /cart,
+  // a product link) dismisses the drawer without an effect.
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const open = openPath === location.pathname;
+  const openDrawer = useCallback(() => setOpenPath(location.pathname), [location.pathname]);
+  const closeDrawer = useCallback(() => setOpenPath(null), []);
   const value = useMemo(() => ({ open, openDrawer, closeDrawer, mounted: true }), [open, openDrawer, closeDrawer]);
   return (
-    <Ctx.Provider value={value}>
+    <CartDrawerContext.Provider value={value}>
       {children}
       {open && <CartDrawerPanel theme={theme} Button={Button} onClose={closeDrawer} />}
-    </Ctx.Provider>
+    </CartDrawerContext.Provider>
   );
 }
 
