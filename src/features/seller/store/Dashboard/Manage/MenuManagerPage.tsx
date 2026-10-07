@@ -21,12 +21,13 @@ function newItem(): MenuItem {
  *  already support in the Header/Footer editor. Kept as its own component
  *  since it recurses one level for children, reusing `LinkTargetFields`/
  *  `SortableList` rather than a bespoke duplicate editor. */
-function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId }: {
+function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth = 1 }: {
   item: MenuItem;
   onChange: (next: MenuItem) => void;
   onRemove: () => void;
   pageOptions: { slug: string; title: string }[];
   storeId: string;
+  depth?: number;
 }) {
   const children = item.children ?? [];
   return (
@@ -43,19 +44,21 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId }: {
       </div>
 
       <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-bone">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Dropdown items</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">{depth === 1 ? 'Dropdown items' : `Level ${depth + 1} items`}</p>
         {children.length === 0 && <p className="text-[12px] text-slate">No dropdown — this link goes straight to its target above.</p>}
         <SortableList<MenuItemChild> items={children} keyFor={c => c.id} onReorder={next => onChange({ ...item, children: next })}>
           {(child, i) => (
-            <div className="border border-bone rounded-lg p-2 relative bg-cream/40">
-              <button type="button" onClick={() => onChange({ ...item, children: children.filter((_, j) => j !== i) })}
-                className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
-              <Field label="Label"><input className={inp} value={child.label} onChange={e => onChange({ ...item, children: children.map((c, j) => j === i ? { ...c, label: e.target.value } : c) })} /></Field>
-              <LinkTargetFields value={child} onChange={next => onChange({ ...item, children: children.map((c, j) => j === i ? { ...c, ...next } : c) })} pageOptions={pageOptions} storeId={storeId} />
-            </div>
+            <MenuItemEditor
+              item={child}
+              depth={depth + 1}
+              storeId={storeId}
+              pageOptions={pageOptions}
+              onChange={next => onChange({ ...item, children: children.map((c, j) => j === i ? { ...c, ...next } : c) })}
+              onRemove={() => onChange({ ...item, children: children.filter((_, j) => j !== i) })}
+            />
           )}
         </SortableList>
-        {children.length < 8 && (
+        {depth < 3 && children.length < 8 && (
           <button type="button" onClick={() => onChange({ ...item, children: [...children, { id: `new-${Date.now()}`, label: '', linkType: 'home' }] })}
             className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add dropdown item</button>
         )}

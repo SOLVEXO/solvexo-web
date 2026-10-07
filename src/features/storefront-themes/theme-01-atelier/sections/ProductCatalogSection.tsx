@@ -2,7 +2,8 @@ import type { Section } from '@/api/services/storefrontTypes';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
-import { useAtelierCollectionScope } from './collectionScope';
+import { resolveAtelierCollectionId, useAtelierCollectionScope } from './collectionScope';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
 
 // No section-root color reads here — `AtelierProductGrid` is a shared
 // component (also used by the collection-scoped grid below) that stays on
@@ -11,7 +12,7 @@ import { useAtelierCollectionScope } from './collectionScope';
 registerAtelierSection('product_catalog', (section: Section, _blocks, _colors: AtelierSectionColors) => (
   <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
     <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-      <AtelierProductGrid heading={section.settings.heading} categoryId={section.settings.categoryId} collectionId={section.settings.collectionId} />
+      <AtelierProductGrid heading={section.settings.heading} categoryId={section.settings.categoryId} collectionId={section.settings.collectionId} defaultSort={section.settings.defaultSort} columns={section.settings.columns} showFilters={section.settings.showFilters} />
     </div>
   </div>
 ));
@@ -24,15 +25,17 @@ registerAtelierSection('product_catalog', (section: Section, _blocks, _colors: A
 // comes from `AtelierCollectionScopeProvider` (set by `AtelierCollectionPage`)
 // — without it this would silently render every product in the store
 // instead of just this collection's.
-function CollectionProductGrid() {
-  const collectionId = useAtelierCollectionScope();
+function CollectionProductGrid({ section }: { section: Section }) {
+  const routeCollectionId = useAtelierCollectionScope();
+  const { previewCollectionId } = useStorefront();
+  const collectionId = resolveAtelierCollectionId(routeCollectionId, previewCollectionId);
   return (
     <div style={{ padding: `0 ${t.layout.containerPadX} ${t.layout.sectionPadY}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-        <AtelierProductGrid collectionId={collectionId ?? undefined} syncUrl />
+        <AtelierProductGrid collectionId={collectionId ?? undefined} syncUrl defaultSort={section.settings.defaultSort} columns={section.settings.columns} showFilters={section.settings.showFilters} />
       </div>
     </div>
   );
 }
 
-registerAtelierSection('collection_product_grid', (_section, _blocks, _colors: AtelierSectionColors) => <CollectionProductGrid />);
+registerAtelierSection('collection_product_grid', (section, _blocks, _colors: AtelierSectionColors) => <CollectionProductGrid section={section} />);

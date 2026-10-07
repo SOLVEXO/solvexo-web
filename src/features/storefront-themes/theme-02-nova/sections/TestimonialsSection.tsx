@@ -2,6 +2,7 @@ import { Star } from 'lucide-react';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 function TestimonialCard({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   const s = block.settings;
@@ -33,7 +34,7 @@ registerNovaSection('testimonials', (section: Section, blocks: Block[], colors: 
           </h2>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {blocks.map((b, i) => <TestimonialCard key={b._id ?? i} block={b} colors={colors} />)}
+          {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><TestimonialCard block={b} colors={colors} /></PreviewBlock>)}
         </div>
       </div>
     </div>

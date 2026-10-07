@@ -18,7 +18,7 @@ registerNovaSection('rich_text', (section: Section, blocks: Block[], colors: Nov
             {heading}
           </h2>
         )}
-        <NovaContentBlocks blocks={blocks.map(b => ({ type: b.type, settings: b.settings }))} dynamicSourceValues={dynamicSourceValues} />
+        <NovaContentBlocks blocks={blocks.map((b, i) => ({ id: String(b._id ?? i), type: b.type, settings: b.settings }))} dynamicSourceValues={dynamicSourceValues} />
       </div>
     </div>
   );

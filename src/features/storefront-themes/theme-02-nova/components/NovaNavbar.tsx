@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
@@ -30,6 +30,7 @@ export function NovaNavbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  const shopCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const isLoggedIn = TokenStorage.isLoggedIn();
 
@@ -42,6 +43,18 @@ export function NovaNavbar() {
   }, [store.storeId]);
 
   const hasShopMenu = categories.length > 0 || collections.length > 0;
+  const keepShopOpen = () => {
+    if (shopCloseTimer.current) clearTimeout(shopCloseTimer.current);
+    shopCloseTimer.current = null;
+    setShopOpen(true);
+  };
+  const scheduleShopClose = () => {
+    if (shopCloseTimer.current) clearTimeout(shopCloseTimer.current);
+    shopCloseTimer.current = setTimeout(() => {
+      setShopOpen(false);
+      shopCloseTimer.current = null;
+    }, 180);
+  };
 
   // Real, merchant-authored nav links (Customize → Header) — the same
   // `nav_link` block vocabulary every theme's header content uses.
@@ -69,17 +82,16 @@ export function NovaNavbar() {
           </button>
 
           <Link to="/" className="no-underline flex items-center gap-2">
-            {store.logo && <img src={store.logo} alt="" className="w-8 h-8 object-contain" style={{ borderRadius: t.radius.sm }} />}
-            <span style={{ fontFamily: t.fonts.display, fontSize: '21px', fontWeight: 700, color: t.colors.ink }}>
-              {store.name}
-            </span>
+            {store.logo
+              ? <img src={store.logo} alt={store.name} className="max-h-10 max-w-[180px] object-contain" style={{ borderRadius: t.radius.sm }} />
+              : <span style={{ fontFamily: t.fonts.display, fontSize: '21px', fontWeight: 700, color: t.colors.ink }}>{store.name}</span>}
           </Link>
 
           <nav className="hidden lg:flex items-center gap-6">
             <div
               className="relative"
-              onMouseEnter={() => hasShopMenu && setShopOpen(true)}
-              onMouseLeave={() => setShopOpen(false)}
+              onMouseEnter={() => { if (hasShopMenu) keepShopOpen(); }}
+              onMouseLeave={scheduleShopClose}
             >
               <button
                 type="button"
@@ -93,6 +105,7 @@ export function NovaNavbar() {
               </button>
               {shopOpen && hasShopMenu && (
                 <div
+                  onMouseEnter={keepShopOpen}
                   className="absolute left-0 z-20 flex gap-10"
                   style={{ top: '100%', background: '#FFFFFF', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px 26px', minWidth: '360px', boxShadow: '0 12px 32px rgba(20,18,31,0.10)' }}
                 >
@@ -123,7 +136,14 @@ export function NovaNavbar() {
               <div key={item.id} className="relative group">
                 {item.link.to ? <Link to={item.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</Link> : <a href={item.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</a>}
                 {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
-                  {item.children.map(child => child.link.to ? <Link key={child.id} to={child.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{child.label}</Link> : <a key={child.id} href={child.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{child.label}</a>)}
+                  {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string }; children?: { id: string; label: string; link: { to?: string; href?: string } }[] }) => (
+                    <div key={child.id} className="relative group/sub">
+                      {child.link.to ? <Link to={child.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{child.label}</Link> : <a href={child.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{child.label}</a>}
+                      {!!child.children?.length && <div className="absolute left-full top-0 z-40 hidden min-w-[180px] flex-col gap-3 border p-4 group-hover/sub:flex group-focus-within/sub:flex" style={{ background: t.colors.bg, borderColor: t.colors.border, borderRadius: t.radius.sm }}>
+                        {child.children.map(grandchild => grandchild.link.to ? <Link key={grandchild.id} to={grandchild.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{grandchild.label}</Link> : <a key={grandchild.id} href={grandchild.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{grandchild.label}</a>)}
+                      </div>}
+                    </div>
+                  ))}
                 </div>}
               </div>
             ))}
@@ -233,7 +253,10 @@ export function NovaNavbar() {
           ))}
           {navLinks.map(item => <div key={item.id}>
             {item.link.to ? <Link to={item.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}>{item.label}</Link> : <a href={item.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}>{item.label}</a>}
-            {item.children.map(child => child.link.to ? <Link key={child.id} to={child.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '13px', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</Link> : <a key={child.id} href={child.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '13px', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</a>)}
+            {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string }; children?: { id: string; label: string; link: { to?: string; href?: string } }[] }) => <div key={child.id}>
+              {child.link.to ? <Link to={child.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '13px', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</Link> : <a href={child.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '13px', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</a>}
+              {child.children?.map(grandchild => grandchild.link.to ? <Link key={grandchild.id} to={grandchild.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '12px', fontFamily: t.fonts.body, padding: `9px calc(${t.layout.containerPadX} + 36px)`, borderBottom: `1px solid ${t.colors.border}` }}>{grandchild.label}</Link> : <a key={grandchild.id} href={grandchild.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '12px', fontFamily: t.fonts.body, padding: `9px calc(${t.layout.containerPadX} + 36px)`, borderBottom: `1px solid ${t.colors.border}` }}>{grandchild.label}</a>)}
+            </div>)}
           </div>)}
         </nav>
       )}

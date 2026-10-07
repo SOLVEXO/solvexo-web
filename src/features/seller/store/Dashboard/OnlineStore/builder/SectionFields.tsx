@@ -1,6 +1,6 @@
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { MetafieldOwnerResource } from '@/api/services/metafields';
-import { SchemaForm } from './SchemaForm';
+import { SchemaForm, type FieldSchema } from './SchemaForm';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
 import type { PageOption } from './BlockFields';
 
@@ -19,5 +19,10 @@ export function SectionFields({ type, settings, onChange, storeId, pageOptions, 
   ownerResource?: MetafieldOwnerResource | null;
 }) {
   const schema = SECTION_META_BY_TYPE[type]?.settingsSchema ?? [];
-  return <SchemaForm schema={schema} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />;
+  const isLocked = SECTION_META_BY_TYPE[type]?.locked;
+  const spacingSchema: FieldSchema[] = isLocked ? [] : [
+    { key: 'spacingTop', kind: 'number', label: 'Space above (px)', min: 0, max: 160, step: 4, half: true },
+    { key: 'spacingBottom', kind: 'number', label: 'Space below (px)', min: 0, max: 160, step: 4, half: true },
+  ];
+  return <SchemaForm schema={[...schema, ...spacingSchema]} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />;
 }

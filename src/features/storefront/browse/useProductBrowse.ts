@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreFacets, type PublicStoreProduct } from '@/api/services/store';
-import { parseBrowseState, writeBrowseState, type BrowseState } from './browseState';
+import { DEFAULT_SORT, parseBrowseState, writeBrowseState, type BrowseSort, type BrowseState } from './browseState';
 
 export const BROWSE_PAGE_SIZE = 12;
 
@@ -14,7 +14,7 @@ interface Scope { categoryId?: string; collectionId?: string; search?: string }
  *  `syncUrl` keeps the state in the query string (history entries per change, so
  *  back/forward and shared links restore it); otherwise it lives in memory (used
  *  by listings embedded in the home page where the URL must stay untouched). */
-export function useProductBrowse({ categoryId, collectionId, search, syncUrl }: Scope & { syncUrl: boolean }) {
+export function useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort = DEFAULT_SORT }: Scope & { syncUrl: boolean; defaultSort?: BrowseSort }) {
   const { store } = useStorefront();
   const { currency, convert, ratesLoaded } = useCurrencyPreference();
   const [urlParams, setUrlParams] = useSearchParams();
@@ -23,13 +23,19 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl }: 
   const paramsKey = params.toString();
   const paramsRef = useRef(params);
   paramsRef.current = params;
-  const state = useMemo(() => parseBrowseState(new URLSearchParams(paramsKey)), [paramsKey]);
+  const state = useMemo(() => {
+    const parsed = parseBrowseState(new URLSearchParams(paramsKey));
+    return new URLSearchParams(paramsKey).has('sort_by') ? parsed : { ...parsed, sort: defaultSort };
+  }, [paramsKey, defaultSort]);
 
   const update = useCallback((fn: (s: BrowseState) => BrowseState, opts?: { replace?: boolean }) => {
-    const next = writeBrowseState(paramsRef.current, fn(parseBrowseState(paramsRef.current)));
+    const currentParams = paramsRef.current;
+    const current = parseBrowseState(currentParams);
+    if (!currentParams.has('sort_by')) current.sort = defaultSort;
+    const next = writeBrowseState(currentParams, fn(current));
     if (syncUrl) setUrlParams(next, { replace: opts?.replace });
     else setLocalParams(next);
-  }, [syncUrl, setUrlParams]);
+  }, [syncUrl, setUrlParams, defaultSort]);
 
   // In-memory listings start fresh when their scope changes.
   useEffect(() => { if (!syncUrl) setLocalParams(new URLSearchParams()); }, [syncUrl, categoryId, collectionId, search]);

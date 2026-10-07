@@ -2,7 +2,8 @@ import type { Section } from '@/api/services/storefrontTypes';
 import { NovaProductGrid } from '../components/NovaProductGrid';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
-import { useNovaCollectionScope } from './collectionScope';
+import { resolveNovaCollectionId, useNovaCollectionScope } from './collectionScope';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
 
 // No section-root color reads here — `NovaProductGrid` is a shared
 // component (also used by the collection-scoped grid below) that stays on
@@ -11,7 +12,7 @@ import { useNovaCollectionScope } from './collectionScope';
 registerNovaSection('product_catalog', (section: Section, _blocks, _colors: NovaSectionColors) => (
   <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
     <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-      <NovaProductGrid heading={section.settings.heading} categoryId={section.settings.categoryId} collectionId={section.settings.collectionId} />
+      <NovaProductGrid heading={section.settings.heading} categoryId={section.settings.categoryId} collectionId={section.settings.collectionId} defaultSort={section.settings.defaultSort} columns={section.settings.columns} showFilters={section.settings.showFilters} />
     </div>
   </div>
 ));
@@ -20,15 +21,17 @@ registerNovaSection('product_catalog', (section: Section, _blocks, _colors: Nova
 // `theme-01-atelier`'s `CollectionProductGrid`: only ever appears inside a
 // Collection template, real collection id comes from
 // `NovaCollectionScopeProvider` (set by `NovaCollectionPage`).
-function CollectionProductGrid() {
-  const collectionId = useNovaCollectionScope();
+function CollectionProductGrid({ section }: { section: Section }) {
+  const routeCollectionId = useNovaCollectionScope();
+  const { previewCollectionId } = useStorefront();
+  const collectionId = resolveNovaCollectionId(routeCollectionId, previewCollectionId);
   return (
     <div style={{ padding: `0 ${t.layout.containerPadX} ${t.layout.sectionPadY}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-        <NovaProductGrid collectionId={collectionId ?? undefined} syncUrl />
+        <NovaProductGrid collectionId={collectionId ?? undefined} syncUrl defaultSort={section.settings.defaultSort} columns={section.settings.columns} showFilters={section.settings.showFilters} />
       </div>
     </div>
   );
 }
 
-registerNovaSection('collection_product_grid', (_section, _blocks, _colors: NovaSectionColors) => <CollectionProductGrid />);
+registerNovaSection('collection_product_grid', (section, _blocks, _colors: NovaSectionColors) => <CollectionProductGrid section={section} />);

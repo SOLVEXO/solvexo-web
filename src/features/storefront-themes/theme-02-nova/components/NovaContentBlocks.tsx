@@ -1,8 +1,10 @@
 import { novaTheme as t } from '../theme.config';
 import { renderRichText } from '@/utils/richText';
 import { AppBlockRenderer } from '@/features/storefront/AppBlockRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 export interface ContentBlock {
+  id?: string;
   type: string;
   settings: Record<string, any>;
 }
@@ -27,9 +29,9 @@ export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: Con
             const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
-              <p key={i} style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>
                 {text}
-              </p>
+              </p></PreviewBlock>
             );
           }
           case 'paragraph': {
@@ -40,56 +42,55 @@ export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: Con
             const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
-              <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '15px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><p style={{ fontFamily: t.fonts.body, fontSize: '15px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
                 {renderRichText(text)}
-              </p>
+              </p></PreviewBlock>
             );
           }
           case 'image':
             return (
-              <figure key={i} className="m-0">
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><figure className="m-0">
                 <img src={block.settings.imageUrl} alt={block.settings.alt ?? ''} className="max-w-full" style={{ borderRadius: t.radius.md }} />
                 {block.settings.caption && (
                   <figcaption style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginTop: '6px' }}>
                     {block.settings.caption}
                   </figcaption>
                 )}
-              </figure>
+              </figure></PreviewBlock>
             );
           case 'quote':
             return (
-              <blockquote key={i} style={{ borderLeft: `3px solid ${t.colors.accent}`, paddingLeft: '18px', fontFamily: t.fonts.display, fontStyle: 'italic', fontSize: '17px', color: t.colors.ink }}>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><blockquote style={{ borderLeft: `3px solid ${t.colors.accent}`, paddingLeft: '18px', fontFamily: t.fonts.display, fontStyle: 'italic', fontSize: '17px', color: t.colors.ink }}>
                 “{block.settings.text}”
                 {block.settings.author && (
                   <footer style={{ fontFamily: t.fonts.body, fontStyle: 'normal', fontSize: '12px', color: t.colors.inkMuted, marginTop: '6px' }}>
                     — {block.settings.author}
                   </footer>
                 )}
-              </blockquote>
+              </blockquote></PreviewBlock>
             );
           case 'list':
-            return block.settings.style === 'numbered' ? (
-              <ol key={i} className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: t.colors.ink, listStyleType: 'decimal' }}>
+            return <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}>{block.settings.style === 'numbered' ? (
+              <ol className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: t.colors.ink, listStyleType: 'decimal' }}>
                 {(block.settings.items ?? []).map((item: string, j: number) => <li key={j}>{item}</li>)}
               </ol>
             ) : (
-              <ul key={i} className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: t.colors.ink, listStyleType: 'disc' }}>
+              <ul className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: t.colors.ink, listStyleType: 'disc' }}>
                 {(block.settings.items ?? []).map((item: string, j: number) => <li key={j}>{item}</li>)}
               </ul>
-            );
+            )}</PreviewBlock>;
           case 'divider':
-            return <hr key={i} style={{ border: 0, borderTop: `1.5px solid ${t.colors.border}` }} />;
+            return <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><hr style={{ border: 0, borderTop: `1.5px solid ${t.colors.border}` }} /></PreviewBlock>;
           default:
             // Phase 8 — App Blocks. See the identical comment in
             // `AtelierContentBlocks.tsx` for the full rationale.
             if (block.type.startsWith('app:')) {
               return (
-                <AppBlockRenderer
-                  key={i}
+                <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><AppBlockRenderer
                   type={block.type}
                   settings={block.settings}
                   colors={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, accent: t.colors.accent, border: t.colors.border, bg: t.colors.bgAlt }}
-                />
+                /></PreviewBlock>
               );
             }
             return null;

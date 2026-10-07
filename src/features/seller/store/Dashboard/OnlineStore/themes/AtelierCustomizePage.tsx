@@ -235,7 +235,16 @@ export function AtelierCustomizePage() {
   // the sections being edited change out from under it (scope/template
   // switch), so a stale id never appears to "select" an unrelated section.
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
-  useEffect(() => { setSelectedSectionId(null); }, [scope, templateKey]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const selectPreviewSection = (sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    setSelectedBlockId(null);
+  };
+  const selectPreviewBlock = (sectionId: string, blockId: string) => {
+    setSelectedSectionId(sectionId);
+    setSelectedBlockId(blockId);
+  };
+  useEffect(() => { setSelectedSectionId(null); setSelectedBlockId(null); }, [scope, templateKey]);
 
   useEffect(() => {
     if (themeInstance.status !== 'ready') return;
@@ -775,6 +784,16 @@ export function AtelierCustomizePage() {
 
             {scope !== 'theme' && (
               <div className="flex items-center gap-2 shrink-0">
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className={`hidden sm:inline text-[11.5px] ${editor.phase === 'error' ? 'text-error' : editor.dirty ? 'text-amber-700' : 'text-slate'}`}
+                >
+                  {editor.phase === 'dirty' ? 'Unsaved changes' :
+                    editor.phase === 'saving' ? 'Saving draft…' :
+                      editor.phase === 'error' ? (editor.errorMessage ?? 'Save failed') :
+                        editor.phase === 'published' ? 'Published' : 'Draft saved'}
+                </span>
                 {editor.hasUnpublishedChanges && (
                   <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
                     <RotateCcw size={13} /> Discard Draft
@@ -836,7 +855,9 @@ export function AtelierCustomizePage() {
               pageOptions={pageOptions}
               storeId={storeId}
               selectedSectionId={selectedSectionId}
-              onSelectSection={setSelectedSectionId}
+              selectedBlockId={selectedBlockId}
+              onSelectSection={selectPreviewSection}
+              onSelectBlock={selectPreviewBlock}
               supportedSectionTypes={effectiveSupportedSectionTypes}
               colorSchemes={draftTheme?.theme.colorSchemes ?? []}
               helperText={SCOPE_HELPER_TEXT[scope]}
@@ -854,9 +875,12 @@ export function AtelierCustomizePage() {
                   draftTheme={effectiveDraftTheme}
                   interactive
                   selectedSectionId={selectedSectionId}
-                  onSelectSection={setSelectedSectionId}
+                  onSelectSection={selectPreviewSection}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={selectPreviewBlock}
                   previewContext={previewContext}
                   dynamicSourceValues={dynamicSourceValues}
+                  previewCollectionId={needsCollectionPicker ? selectedCollectionId : null}
                 />
               </div>
             </div>

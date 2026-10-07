@@ -7,6 +7,7 @@ import { NovaButton } from '../components/NovaButton';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 const HEIGHT_PX: Record<string, string> = { small: '380px', medium: '580px', large: '780px' };
 
@@ -69,7 +70,7 @@ function HeroSection({ blocks, colors }: { blocks: Block[]; colors: NovaSectionC
 
   return (
     <div className="relative">
-      <HeroSlide block={slide} colors={colors} />
+      <PreviewBlock blockId={String(slide._id ?? Math.min(active, blocks.length - 1))}><HeroSlide block={slide} colors={colors} /></PreviewBlock>
       {blocks.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
           {blocks.map((_, i) => (

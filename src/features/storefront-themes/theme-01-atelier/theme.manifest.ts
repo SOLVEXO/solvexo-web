@@ -24,8 +24,8 @@ export const atelierThemeManifest: ThemeManifest = {
 
   templates: [
     { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },
-    { id: 'product', label: 'Product', group: 'products', showChrome: false, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
-    { id: 'collection', label: 'Collection', group: 'collections', showChrome: false, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'product', label: 'Product', group: 'products', showChrome: true, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'collection', label: 'Collection', group: 'collections', showChrome: true, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
     // Phase 5 — any real merchant-created custom page (About Us, Shipping
     // Policy, …), picked via the Customize editor's own resource picker
     // (see `AtelierCustomizePage.tsx`). Reuses the exact same `store-page`
@@ -34,10 +34,10 @@ export const atelierThemeManifest: ThemeManifest = {
     // screen, this just makes it reachable from Customize too, without a
     // second editing surface.
     { id: 'pages', label: 'Pages', group: 'pages', showChrome: true, resource: { kind: 'store-page', pageType: 'custom' } },
-    { id: 'search', label: 'Search', group: 'search', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
-    { id: 'cart', label: 'Cart', group: 'cart', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
-    { id: 'blogIndex', label: 'Blog (Journal) Index', group: 'blogs', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
-    { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
+    { id: 'search', label: 'Search', group: 'search', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
+    { id: 'cart', label: 'Cart', group: 'cart', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
+    { id: 'blogIndex', label: 'Blog (Journal) Index', group: 'blogs', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
+    { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
   ],
 
   themeSettingsFields: [

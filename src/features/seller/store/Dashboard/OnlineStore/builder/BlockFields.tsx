@@ -104,6 +104,19 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                     className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                   <Field label="Label"><input className={inp} value={child.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, label: e.target.value } : c) })} /></Field>
                   <LinkTargetFields value={child} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, ...next } : c) })} pageOptions={pageOptions} storeId={storeId} />
+                  <div className="mt-2 ml-3 pl-3 border-l border-bone flex flex-col gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate">Nested items (level 3)</p>
+                    {(child.children ?? []).map((grandchild: any, k: number) => (
+                      <div key={grandchild.id ?? k} className="border border-bone rounded-lg p-2 bg-cream/40 relative">
+                        <button type="button" onClick={() => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).filter((_: unknown, n: number) => n !== k) } : c) })}
+                          className="absolute top-1 right-1 text-[10px] text-error bg-transparent border-none cursor-pointer">Remove</button>
+                        <Field label="Label"><input className={inp} value={grandchild.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, label: e.target.value } : g) } : c) })} /></Field>
+                        <LinkTargetFields value={grandchild} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, ...next } : g) } : c) })} pageOptions={pageOptions} storeId={storeId} />
+                      </div>
+                    ))}
+                    {(child.children ?? []).length < 8 && <button type="button" onClick={() => set({ children: children.map((c, j) => j === i ? { ...c, children: [...(c.children ?? []), { id: `new-${Date.now()}`, label: '', linkType: 'home' }] } : c) })}
+                      className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add nested item</button>}
+                  </div>
                 </div>
               )}
             </SortableList>

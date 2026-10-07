@@ -78,12 +78,10 @@ export interface ThemeTemplateScopeDef {
   /** Which group this scope is listed under in the Customize editor's
    *  template picker — see `ThemeTemplateScopeGroup`. */
   group: ThemeTemplateScopeGroup;
-  /** Whether the live preview for this scope renders full site chrome
-   *  (navbar/announcement bar/footer) or just the section content in
-   *  isolation — Home shows chrome; a product/collection/search/cart/blog
-   *  template's OWN page component supplies its own surrounding chrome on
-   *  the real storefront, so previewing it standalone (no double chrome)
-   *  matches what a buyer actually sees there. */
+  /** Whether the editor preview renders the shared site chrome
+   *  (navbar/announcement bar/footer). Public storefront routes render this
+   *  shared chrome around their page template, so all page-template previews
+   *  that represent a complete storefront page should enable it. */
   showChrome: boolean;
   /** How this scope's `Section[]` document is stored/addressed on the
    *  backend — a real `StorePage` (Home, one per store, or Phase 5: any

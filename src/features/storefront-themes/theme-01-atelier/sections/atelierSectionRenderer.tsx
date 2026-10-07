@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { resolveSectionColors, type AtelierSectionColors } from '../theme.config';
+import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 
 /** Third argument is this section's resolved color palette — the theme's
  *  own colors by default, or a saved `ColorScheme`'s derived palette when
@@ -67,6 +68,8 @@ interface AtelierSectionRendererProps {
   selectable?: boolean;
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  selectedBlockId?: string | null;
+  onSelectBlock?: PreviewBlockSelection;
   /** Dynamic Sources lookup — see `SectionRenderFn`'s own doc comment.
    *  Omitted/empty everywhere except a resource-scoped template render. */
   dynamicSourceValues?: Record<string, string>;
@@ -78,7 +81,7 @@ interface AtelierSectionRendererProps {
  *  through Atelier's own section components. Unknown/unregistered types and
  *  `enabled: false` sections are skipped silently — matches the legacy
  *  engine's own established convention (missing `enabled` behaves like `true`). */
-export function AtelierSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, dynamicSourceValues, previewContext }: AtelierSectionRendererProps) {
+export function AtelierSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, selectedBlockId, onSelectBlock, dynamicSourceValues, previewContext }: AtelierSectionRendererProps) {
   const { theme } = useStorefront();
   const colorSchemes = theme?.theme.colorSchemes;
   const dynamicValues = dynamicSourceValues ?? {};
@@ -90,9 +93,9 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
           if (section.enabled === false) return null;
           const render = getAtelierSectionRender(section.type);
           if (!render) return null;
-          const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+          const blocks = (section.blocks ?? []).map((block, index) => block._id ? block : { ...block, _id: String(index) }).filter(b => b.enabled !== false);
           const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
-          return <div key={section._id ?? i} style={{ background: colors.bg }}>{render(section, blocks, colors, dynamicValues, previewContext)}</div>;
+          return <div key={section._id ?? i} style={{ background: colors.bg, paddingTop: section.settings?.spacingTop, paddingBottom: section.settings?.spacingBottom }}>{render(section, blocks, colors, dynamicValues, previewContext)}</div>;
         })}
       </>
     );
@@ -106,12 +109,15 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
         .atelier-section-selectable{outline:2px solid transparent;outline-offset:-2px;cursor:pointer;transition:outline-color 120ms ease;}
         .atelier-section-selectable:hover{outline-color:rgba(217,119,87,0.35);}
         .atelier-section-selected{outline:2px solid #D97757;outline-offset:-2px;cursor:pointer;}
+        .theme-editor-block-target{outline:1px dashed transparent;outline-offset:2px;cursor:pointer;}
+        .theme-editor-block-target:hover{outline-color:rgba(217,119,87,0.72);}
+        .theme-editor-block-selected{outline:2px solid #B3413A;outline-offset:2px;cursor:pointer;}
       `}</style>
       {sections.map((section, i) => {
         if (section.enabled === false) return null;
         const render = getAtelierSectionRender(section.type);
         if (!render) return null;
-        const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+        const blocks = (section.blocks ?? []).map((block, index) => block._id ? block : { ...block, _id: String(index) }).filter(b => b.enabled !== false);
         const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
         const sectionId = String(section._id ?? i);
         const isSelected = selectedSectionId === sectionId;
@@ -120,14 +126,18 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
             key={section._id ?? i}
             data-atelier-section-id={sectionId}
             className={isSelected ? 'atelier-section-selected' : 'atelier-section-selectable'}
-            style={{ background: colors.bg }}
+            style={{ background: colors.bg, paddingTop: section.settings?.spacingTop, paddingBottom: section.settings?.spacingBottom }}
             onClickCapture={e => {
+              const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
               e.stopPropagation();
-              onSelectSection?.(sectionId);
+              if (block) onSelectBlock?.(sectionId, block.dataset.editorBlockId ?? '');
+              else onSelectSection?.(sectionId);
             }}
           >
-            {render(section, blocks, colors, dynamicValues, previewContext)}
+            <PreviewInspectorProvider value={{ sectionId, selectedBlockId: selectedSectionId === sectionId ? selectedBlockId : null, onSelectBlock }}>
+              {render(section, blocks, colors, dynamicValues, previewContext)}
+            </PreviewInspectorProvider>
           </div>
         );
       })}

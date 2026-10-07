@@ -191,6 +191,9 @@ export interface StorefrontContextValue {
   cfg:    StorefrontCfg;
   /** Resolves a nav_link/footer-link block's link settings into a real in-app path or external href. */
   resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string };
+  /** Editor-only selected collection used to render collection templates in
+   *  the Customize preview. Public storefront pages keep using route context. */
+  previewCollectionId?: string | null;
 }
 
 const StorefrontContext = createContext<StorefrontContextValue | null>(null);

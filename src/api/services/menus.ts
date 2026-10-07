@@ -8,6 +8,7 @@ export interface MenuItemChild extends LinkTarget {
   id: string;
   label: string;
   highlight?: boolean;
+  children?: MenuItemChild[];
 }
 
 export interface MenuItem extends LinkTarget {

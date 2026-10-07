@@ -12,3 +12,7 @@ export const AtelierCollectionScopeProvider = AtelierCollectionScope.Provider;
 export function useAtelierCollectionScope(): string | null {
   return useContext(AtelierCollectionScope);
 }
+
+export function resolveAtelierCollectionId(routeCollectionId: string | null, previewCollectionId: string | null | undefined): string | null {
+  return routeCollectionId ?? previewCollectionId ?? null;
+}

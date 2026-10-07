@@ -34,15 +34,15 @@ export const novaThemeManifest: ThemeManifest = {
 
   templates: [
     { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },
-    { id: 'product', label: 'Product', group: 'products', showChrome: false, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
-    { id: 'collection', label: 'Collection', group: 'collections', showChrome: false, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'product', label: 'Product', group: 'products', showChrome: true, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'collection', label: 'Collection', group: 'collections', showChrome: true, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
     // Phase 5 — same generalization as Atelier's manifest, see its own
     // comment on this same entry.
     { id: 'pages', label: 'Pages', group: 'pages', showChrome: true, resource: { kind: 'store-page', pageType: 'custom' } },
-    { id: 'search', label: 'Search', group: 'search', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
-    { id: 'cart', label: 'Cart', group: 'cart', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
-    { id: 'blogIndex', label: 'Blog (Stories) Index', group: 'blogs', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
-    { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
+    { id: 'search', label: 'Search', group: 'search', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
+    { id: 'cart', label: 'Cart', group: 'cart', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
+    { id: 'blogIndex', label: 'Blog (Stories) Index', group: 'blogs', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
+    { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
   ],
 
   themeSettingsFields: [

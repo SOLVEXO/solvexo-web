@@ -19,7 +19,7 @@ registerAtelierSection('rich_text', (section: Section, blocks: Block[], colors: 
             {heading}
           </h2>
         )}
-        <AtelierContentBlocks blocks={blocks.map(b => ({ type: b.type, settings: b.settings }))} dynamicSourceValues={dynamicSourceValues} />
+        <AtelierContentBlocks blocks={blocks.map((b, i) => ({ id: String(b._id ?? i), type: b.type, settings: b.settings }))} dynamicSourceValues={dynamicSourceValues} />
       </div>
     </div>
   );

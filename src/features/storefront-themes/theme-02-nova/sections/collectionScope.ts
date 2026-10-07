@@ -14,3 +14,7 @@ export const NovaCollectionScopeProvider = NovaCollectionScope.Provider;
 export function useNovaCollectionScope(): string | null {
   return useContext(NovaCollectionScope);
 }
+
+export function resolveNovaCollectionId(routeCollectionId: string | null, previewCollectionId: string | null | undefined): string | null {
+  return routeCollectionId ?? previewCollectionId ?? null;
+}

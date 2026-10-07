@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { resolveSectionColors, type NovaSectionColors } from '../theme.config';
+import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 
 /** Third argument is this section's resolved color palette; fourth is the
  *  Dynamic Sources lookup (current resource's real metafield values, keyed
@@ -47,6 +48,8 @@ interface NovaSectionRendererProps {
   selectable?: boolean;
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  selectedBlockId?: string | null;
+  onSelectBlock?: PreviewBlockSelection;
   /** Dynamic Sources lookup — see `SectionRenderFn`'s own doc comment. */
   dynamicSourceValues?: Record<string, string>;
   /** Phase 5 — see `SectionRenderFn`'s own doc comment. */
@@ -58,7 +61,7 @@ interface NovaSectionRendererProps {
  *  theme implements a real subset of the shared vocabulary — see this
  *  theme's own README in `theme.config.ts`) and `enabled: false` sections
  *  are skipped silently — matches the platform's own established convention. */
-export function NovaSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, dynamicSourceValues, previewContext }: NovaSectionRendererProps) {
+export function NovaSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, selectedBlockId, onSelectBlock, dynamicSourceValues, previewContext }: NovaSectionRendererProps) {
   const { theme } = useStorefront();
   const colorSchemes = theme?.theme.colorSchemes;
   const dynamicValues = dynamicSourceValues ?? {};
@@ -70,9 +73,9 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
           if (section.enabled === false) return null;
           const render = getNovaSectionRender(section.type);
           if (!render) return null;
-          const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+          const blocks = (section.blocks ?? []).map((block, index) => block._id ? block : { ...block, _id: String(index) }).filter(b => b.enabled !== false);
           const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
-          return <div key={section._id ?? i} style={{ background: colors.bg }}>{render(section, blocks, colors, dynamicValues, previewContext)}</div>;
+          return <div key={section._id ?? i} style={{ background: colors.bg, paddingTop: section.settings?.spacingTop, paddingBottom: section.settings?.spacingBottom }}>{render(section, blocks, colors, dynamicValues, previewContext)}</div>;
         })}
       </>
     );
@@ -84,12 +87,15 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
         .nova-section-selectable{outline:2px solid transparent;outline-offset:-2px;cursor:pointer;transition:outline-color 120ms ease;}
         .nova-section-selectable:hover{outline-color:rgba(75,59,255,0.35);}
         .nova-section-selected{outline:2px solid #4B3BFF;outline-offset:-2px;cursor:pointer;}
+        .theme-editor-block-target{outline:1px dashed transparent;outline-offset:2px;cursor:pointer;}
+        .theme-editor-block-target:hover{outline-color:rgba(75,59,255,0.72);}
+        .theme-editor-block-selected{outline:2px solid #4B3BFF;outline-offset:2px;cursor:pointer;}
       `}</style>
       {sections.map((section, i) => {
         if (section.enabled === false) return null;
         const render = getNovaSectionRender(section.type);
         if (!render) return null;
-        const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+        const blocks = (section.blocks ?? []).map((block, index) => block._id ? block : { ...block, _id: String(index) }).filter(b => b.enabled !== false);
         const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
         const sectionId = String(section._id ?? i);
         const isSelected = selectedSectionId === sectionId;
@@ -98,14 +104,18 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
             key={section._id ?? i}
             data-nova-section-id={sectionId}
             className={isSelected ? 'nova-section-selected' : 'nova-section-selectable'}
-            style={{ background: colors.bg }}
+            style={{ background: colors.bg, paddingTop: section.settings?.spacingTop, paddingBottom: section.settings?.spacingBottom }}
             onClickCapture={e => {
+              const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
               e.stopPropagation();
-              onSelectSection?.(sectionId);
+              if (block) onSelectBlock?.(sectionId, block.dataset.editorBlockId ?? '');
+              else onSelectSection?.(sectionId);
             }}
           >
-            {render(section, blocks, colors, dynamicValues, previewContext)}
+            <PreviewInspectorProvider value={{ sectionId, selectedBlockId: selectedSectionId === sectionId ? selectedBlockId : null, onSelectBlock }}>
+              {render(section, blocks, colors, dynamicValues, previewContext)}
+            </PreviewInspectorProvider>
           </div>
         );
       })}

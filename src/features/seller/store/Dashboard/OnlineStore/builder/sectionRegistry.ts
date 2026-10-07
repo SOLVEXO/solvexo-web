@@ -75,7 +75,7 @@ export const SECTION_META: SectionMeta[] = [
   {
     type: 'featured_products', label: 'Featured Products', description: 'A curated strip of products — pinned, best sellers, trending, new arrivals, a category, or hand-picked.',
     Icon: Star, color: '#F59E0B',
-    defaultSettings: { heading: 'Featured', source: 'pinned', limit: 8 },
+    defaultSettings: { heading: 'Featured', source: 'pinned', limit: 8, columns: 4 },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
@@ -91,6 +91,9 @@ export const SECTION_META: SectionMeta[] = [
       // last surviving one of those in the whole builder, closed here.
       { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual' },
       { key: 'limit', kind: 'number', label: 'How many to show', min: 1, max: 24 },
+      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
+        { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
+      ] },
     ]),
   },
   {
@@ -146,11 +149,14 @@ export const SECTION_META: SectionMeta[] = [
   {
     type: 'featured_category_grid', label: 'Category Grid', description: 'Tiles linking to your subcategories — a "shop by category" grid.',
     Icon: Grid3x3, color: '#0891B2',
-    defaultSettings: { heading: 'Shop by Category', categoryIds: [] },
+    defaultSettings: { heading: 'Shop by Category', categoryIds: [], columns: 4 },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'categoryIds', kind: 'categoryMultiPicker', label: 'Categories', hint: 'Tiles are shown in the order chosen.', max: 12 },
+      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
+        { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
+      ] },
     ]),
   },
   {

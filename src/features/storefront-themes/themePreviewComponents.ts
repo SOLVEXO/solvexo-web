@@ -2,6 +2,8 @@ import type { ComponentType } from 'react';
 import type { Section, SectionType, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
+export type PreviewBlockSelection = (sectionId: string, blockId: string) => void;
+
 /**
  * The Theme Preview Components contract — closes a real gap found during
  * Theme B (Nova)'s build: `AtelierLivePreview.tsx` (the live preview panel
@@ -34,6 +36,8 @@ export interface ThemePreviewComponents {
     selectable?: boolean;
     selectedSectionId?: string | null;
     onSelectSection?: (sectionId: string) => void;
+    selectedBlockId?: string | null;
+    onSelectBlock?: PreviewBlockSelection;
     /** Phase 5 — see `CoreSectionPreviewContext`'s own doc comment
      *  (`api/services/storefrontTypes.ts`). */
     previewContext?: CoreSectionPreviewContext;

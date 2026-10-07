@@ -7,6 +7,7 @@ import { AtelierButton } from '../components/AtelierButton';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 const HEIGHT_PX: Record<string, string> = { small: '360px', medium: '560px', large: '760px' };
 
@@ -72,7 +73,7 @@ function HeroSection({ blocks, colors }: { blocks: Block[]; colors: AtelierSecti
 
   return (
     <div className="relative">
-      <HeroSlide block={slide} colors={colors} />
+      <PreviewBlock blockId={String(slide._id ?? Math.min(active, blocks.length - 1))}><HeroSlide block={slide} colors={colors} /></PreviewBlock>
       {blocks.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
           {blocks.map((_, i) => (

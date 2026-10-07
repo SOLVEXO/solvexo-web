@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 function FaqRow({ block, colors }: { block: Block; colors: AtelierSectionColors }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +38,7 @@ registerAtelierSection('faq', (section: Section, blocks: Block[], colors: Atelie
             {section.settings.heading}
           </h2>
         )}
-        {blocks.map((b, i) => <FaqRow key={b._id ?? i} block={b} colors={colors} />)}
+        {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
       </div>
     </div>
   );

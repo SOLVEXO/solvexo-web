@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
+import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import type { PublicStoreData } from '@/api/services/store';
+import { apiGetPublicStore } from '@/api/services/store';
 import { getThemeDemoPreview } from '@/features/storefront-themes/themeDemoPreview';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
-import { resolveStorefrontLink } from '@/features/storefront/StorefrontContext';
 import { apiGetPreviewByToken, type PreviewByTokenData } from '@/api/services/storeTheme';
 import '@/features/storefront-themes/theme-01-atelier/atelier.css';
 import '@/features/storefront-themes/theme-02-nova/nova.css';
@@ -26,11 +26,17 @@ import '@/features/storefront-themes/theme-02-nova/nova.css';
 export function ThemeSharePreviewPage() {
   const { storeId = '', token = '' } = useParams<{ storeId: string; token: string }>();
   const [data, setData] = useState<PreviewByTokenData | null>(null);
+  const [store, setStore] = useState<PublicStoreData | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     apiGetPreviewByToken(storeId, token)
-      .then(res => setData(res.data))
+      .then(async res => {
+        if (!res.data.storeSlug) throw new Error('This store preview is unavailable.');
+        const publicStore = await apiGetPublicStore(res.data.storeSlug);
+        setStore(publicStore.data);
+        setData(res.data);
+      })
       .catch(err => setError(err instanceof Error ? err.message : 'This preview link is invalid or has expired.'));
   }, [storeId, token]);
 
@@ -41,7 +47,7 @@ export function ThemeSharePreviewPage() {
       </div>
     );
   }
-  if (!data) {
+  if (!data || !store) {
     return <div className="min-h-screen bg-[#FAF9F5]" />;
   }
 
@@ -63,17 +69,9 @@ export function ThemeSharePreviewPage() {
   // of either static defaults or live-published ones.
   applyMerchantThemeOverrides(data.theme);
 
-  const { demoStore, demoSections, SectionRenderer, theme: t } = preview;
+  const { SectionRenderer, theme: t } = preview;
   const contextValue: StorefrontContextValue = {
-    store: {
-      storeId: 'preview', sellerId: 'preview', name: demoStore.name, slug: 'preview',
-      logo: null, coverImage: null, description: demoStore.description, tagline: demoStore.tagline,
-      contactEmail: null, contactPhone: null, categoryId: null, followersCount: 0, averageRating: 0, reviewCount: 0,
-      builderConfig: null, baseCurrency: 'USD', enabledCurrencies: null, sellerType: null, badges: [], createdAt: new Date().toISOString(),
-      activeCampaign: null, announcementBar: null, privacyMode: 'public', faviconUrl: null,
-      cookieBannerEnabled: false, cookieBannerMessage: null, cookieBannerPosition: 'bottom_bar', cookieBannerColorMode: 'dark', showDoNotSellLink: false, guestCheckoutEnabled: false,
-      primaryDomain: null, canonicalHost: null,
-    } as PublicStoreData,
+    store,
     theme: null,
     cfg: resolveStorefrontCfg(null),
     resolveLink: resolveStorefrontLink,
@@ -84,10 +82,10 @@ export function ThemeSharePreviewPage() {
       <div style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, minHeight: '100vh' }}>
         <header style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
           <div className="mx-auto flex items-center justify-between gap-6" style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}>
-            <span style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink }}>{demoStore.name}</span>
+            <span style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink }}>{store.name}</span>
             <nav aria-label="Store navigation" className="flex items-center gap-5">
               {(data.header?.blocks ?? []).filter(block => block.type === 'nav_link' && block.enabled !== false).map(block => {
-                const target = resolveStorefrontLink(block.settings);
+                const target = resolveStorefrontLink(block.settings as StorefrontLinkSettings);
                 return (
                   <div key={block._id ?? block.settings.label} className="relative group">
                     <a href={target.to ?? target.href ?? '/'} className="no-underline" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600 }}>
@@ -119,16 +117,29 @@ export function ThemeSharePreviewPage() {
           </div>
         </header>
 
-        <main>
-          <SectionRenderer sections={demoSections} />
+        <main onClick={event => event.preventDefault()} onSubmit={event => event.preventDefault()}>
+          <SectionRenderer sections={data.homeSections} />
         </main>
 
         <footer style={{ background: t.colors.ink, color: t.colors.bg, marginTop: 0 }}>
+          <div className="mx-auto grid gap-8 sm:grid-cols-2 lg:grid-cols-4" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
+            {data.footer.blocks.filter(block => block.enabled !== false && block.type === 'footer_column').map((block, index) => (
+              <section key={block._id ?? index}>
+                <h2 className="mb-3 text-xs uppercase tracking-widest">{block.settings.heading}</h2>
+                <div className="flex flex-col gap-2">
+                  {(block.settings.links ?? []).map((link: StorefrontLinkSettings & { label: string }, linkIndex: number) => {
+                    const target = resolveStorefrontLink(link);
+                    return <a key={linkIndex} href={target.to ?? target.href ?? '#'} className="no-underline opacity-80">{link.label}</a>;
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
           <p
             className="mx-auto text-center"
             style={{ maxWidth: t.layout.maxWidth, padding: `24px ${t.layout.containerPadX}`, fontFamily: t.fonts.body, fontSize: '12px', opacity: 0.6 }}
           >
-            © {new Date().getFullYear()} {demoStore.name} — draft preview (sample content, real branding).
+            © {new Date().getFullYear()} {store.name} — unpublished theme preview.
           </p>
         </footer>
       </div>

@@ -17,7 +17,7 @@ export function NovaSearchPage() {
   const { store } = useStorefront();
   const [searchParams] = useSearchParams();
   const q = searchParams.get('q') ?? '';
-  useStorefrontSeo({ title: q ? `"${q}"` : 'Search' });
+  useStorefrontSeo({ title: q ? `"${q}"` : 'Search', noindex: true });
 
   const [sections, setSections] = useState<Section[]>([]);
   useEffect(() => {

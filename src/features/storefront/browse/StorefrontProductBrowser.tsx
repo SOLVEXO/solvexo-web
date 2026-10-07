@@ -10,6 +10,7 @@ import {
   type BrowseState,
 } from './browseState';
 import { useProductBrowse } from './useProductBrowse';
+import { responsiveGridColumnsClass } from './gridLayout';
 
 /** The slice of a theme's design tokens this shared listing UI needs. Both
  *  themes pass their own live (mutable) token object, so merchant overrides apply. */
@@ -32,15 +33,19 @@ interface Props {
   search?: string;
   /** Keep filters/sort/page in the URL (collection, category, search pages). */
   syncUrl?: boolean;
+  /** Theme section settings; omitted values keep the storefront defaults. */
+  defaultSort?: BrowseState['sort'];
+  columns?: 2 | 3 | 4;
+  showFilters?: boolean;
   emptyText?: string;
 }
 
 type Panel = string | null;
 
-export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categoryId, collectionId, search, syncUrl = false, emptyText }: Props) {
+export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText }: Props) {
   const { store } = useStorefront();
   const { currency, convert } = useCurrencyPreference();
-  const { state, update, products, total, totalPages, facets, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl });
+  const { state, update, products, total, totalPages, facets, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort });
   const [open, setOpen] = useState<Panel>(null);
   const [drawer, setDrawer] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -156,7 +161,7 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
 
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4" style={{ borderTop: border, borderBottom: border, padding: '14px 0' }}>
         {/* Desktop facet dropdowns */}
-        <div className="hidden md:flex items-center gap-3 flex-wrap">
+        {showFilters && <div className="hidden md:flex items-center gap-3 flex-wrap">
           {groups.length > 0 && <span style={muted}>Filter:</span>}
           {groups.map(g => (
             <div key={g.id} className="relative z-10">
@@ -166,12 +171,12 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
               {open === g.id && <div className="absolute left-0" style={{ ...menuStyle, minWidth: g.id === 'price' ? '280px' : '210px', paddingTop: '6px', paddingBottom: '6px' }}>{g.body(false)}</div>}
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* Mobile: one button opening the drawer */}
-        <button type="button" className="md:hidden flex items-center gap-2 cursor-pointer" style={triggerStyle} onClick={() => setDrawer(true)} aria-haspopup="dialog">
+        {showFilters && <button type="button" className="md:hidden flex items-center gap-2 cursor-pointer" style={triggerStyle} onClick={() => setDrawer(true)} aria-haspopup="dialog">
           <SlidersHorizontal size={14} aria-hidden="true" /> Filter and sort{chips.length > 0 ? ` (${chips.length})` : ''}
-        </button>
+        </button>}
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2">
@@ -214,7 +219,7 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
         </div>
       )}
 
-      {first && !error && <Skeleton t={t} />}
+      {first && !error && <Skeleton t={t} columns={columns} />}
 
       {error && (
         <div role="alert" className="flex flex-col items-center gap-3 text-center" style={{ padding: '48px 0' }}>
@@ -237,14 +242,14 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
 
       {products !== null && products.length > 0 && !error && (
         <div aria-busy={loading} style={{ opacity: loading ? 0.5 : 1, transition: 'opacity .15s' }}>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <div className={`grid ${responsiveGridColumnsClass(columns)} gap-x-6 gap-y-10`}>
             {products.map(p => <div key={p._id}>{renderCard(p, currency)}</div>)}
           </div>
           {totalPages > 1 && <Pagination t={t} border={border} page={state.page} totalPages={totalPages} onPage={goPage} />}
         </div>
       )}
 
-      {drawer && (
+      {showFilters && drawer && (
         <FilterDrawer t={t} border={border} onClose={() => setDrawer(false)} total={total} active={active}
           onClear={() => change(clearFilters)} groups={groups} sort={state.sort} onSort={v => change(s => ({ ...s, sort: v }))} facets={facets} />
       )}
@@ -252,9 +257,9 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
   );
 }
 
-function Skeleton({ t }: { t: BrowseTokens }) {
+function Skeleton({ t, columns }: { t: BrowseTokens; columns?: 2 | 3 | 4 }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10" aria-busy="true">
+    <div className={`grid ${responsiveGridColumnsClass(columns)} gap-x-6 gap-y-10`} aria-busy="true">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="flex flex-col gap-3">
           <div className="animate-pulse" style={{ aspectRatio: t.skeletonAspect, background: t.colors.bgAlt, borderRadius: t.radius }} />
@@ -265,6 +270,7 @@ function Skeleton({ t }: { t: BrowseTokens }) {
     </div>
   );
 }
+
 
 function OutlineButton({ t, onClick, children }: { t: BrowseTokens; onClick: () => void; children: ReactNode }) {
   return (

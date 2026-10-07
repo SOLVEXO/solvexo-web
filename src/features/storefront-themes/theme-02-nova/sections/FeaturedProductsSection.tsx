@@ -5,6 +5,7 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct, type PublicStoreProductsParams } from '@/api/services/store';
 import { apiGetPinnedProducts } from '@/api/services/product';
 import { NovaProductCard } from '../components/NovaProductCard';
+import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 
@@ -56,7 +57,7 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
           </h2>
         )}
         {products === null ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <div className={`grid ${responsiveGridColumnsClass(section.settings.columns)} gap-x-6 gap-y-10`}>
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-3">
                 <div className="animate-pulse" style={{ aspectRatio: '1/1', background: colors.bgAlt, borderRadius: t.radius.md }} />
@@ -65,7 +66,7 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <div className={`grid ${responsiveGridColumnsClass(section.settings.columns)} gap-x-6 gap-y-10`}>
             {products.map(p => <NovaProductCard key={p._id} product={p} currency={currency} demo={!!demoProducts} />)}
           </div>
         )}

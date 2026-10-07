@@ -1,8 +1,10 @@
 import { atelierTheme as t } from '../theme.config';
 import { renderRichText } from '@/utils/richText';
 import { AppBlockRenderer } from '@/features/storefront/AppBlockRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 export interface ContentBlock {
+  id?: string;
   type: string;
   settings: Record<string, any>;
 }
@@ -33,9 +35,9 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
             const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
-              <p key={i} style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 600, color: t.colors.ink }}>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><p style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 600, color: t.colors.ink }}>
                 {text}
-              </p>
+              </p></PreviewBlock>
             );
           }
           case 'paragraph': {
@@ -50,45 +52,45 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
             const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
-              <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '14.5px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><p style={{ fontFamily: t.fonts.body, fontSize: '14.5px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
                 {renderRichText(text)}
-              </p>
+              </p></PreviewBlock>
             );
           }
           case 'image':
             return (
-              <figure key={i} className="m-0">
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><figure className="m-0">
                 <img src={block.settings.imageUrl} alt={block.settings.alt ?? ''} className="max-w-full" />
                 {block.settings.caption && (
                   <figcaption style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginTop: '6px' }}>
                     {block.settings.caption}
                   </figcaption>
                 )}
-              </figure>
+              </figure></PreviewBlock>
             );
           case 'quote':
             return (
-              <blockquote key={i} style={{ borderLeft: `2px solid ${t.colors.accent}`, paddingLeft: '18px', fontFamily: t.fonts.display, fontStyle: 'italic', fontSize: '16.5px', color: t.colors.ink }}>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><blockquote style={{ borderLeft: `2px solid ${t.colors.accent}`, paddingLeft: '18px', fontFamily: t.fonts.display, fontStyle: 'italic', fontSize: '16.5px', color: t.colors.ink }}>
                 “{block.settings.text}”
                 {block.settings.author && (
                   <footer style={{ fontFamily: t.fonts.body, fontStyle: 'normal', fontSize: '12px', color: t.colors.inkMuted, marginTop: '6px' }}>
                     — {block.settings.author}
                   </footer>
                 )}
-              </blockquote>
+              </blockquote></PreviewBlock>
             );
           case 'list':
-            return block.settings.style === 'numbered' ? (
-              <ol key={i} className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, listStyleType: 'decimal' }}>
+            return <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}>{block.settings.style === 'numbered' ? (
+              <ol className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, listStyleType: 'decimal' }}>
                 {(block.settings.items ?? []).map((item: string, j: number) => <li key={j}>{item}</li>)}
               </ol>
             ) : (
-              <ul key={i} className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, listStyleType: 'disc' }}>
+              <ul className="pl-5 flex flex-col gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, listStyleType: 'disc' }}>
                 {(block.settings.items ?? []).map((item: string, j: number) => <li key={j}>{item}</li>)}
               </ul>
-            );
+            )}</PreviewBlock>;
           case 'divider':
-            return <hr key={i} style={{ border: 0, borderTop: `1px solid ${t.colors.border}` }} />;
+            return <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><hr style={{ border: 0, borderTop: `1px solid ${t.colors.border}` }} /></PreviewBlock>;
           default:
             // Phase 8 — App Blocks. `heading`/`paragraph`/etc above are this
             // theme's own fixed vocabulary; an app-provided block (`Block.type`
@@ -98,12 +100,11 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
             // Anything else unknown still silently renders nothing, unchanged.
             if (block.type.startsWith('app:')) {
               return (
-                <AppBlockRenderer
-                  key={i}
+                <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><AppBlockRenderer
                   type={block.type}
                   settings={block.settings}
                   colors={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, accent: t.colors.accent, border: t.colors.border, bg: t.colors.bgAlt }}
-                />
+                /></PreviewBlock>
               );
             }
             return null;

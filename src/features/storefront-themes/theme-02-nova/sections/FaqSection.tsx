@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 function FaqRow({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +38,7 @@ registerNovaSection('faq', (section: Section, blocks: Block[], colors: NovaSecti
             {section.settings.heading}
           </h2>
         )}
-        {blocks.map((b, i) => <FaqRow key={b._id ?? i} block={b} colors={colors} />)}
+        {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
       </div>
     </div>
   );

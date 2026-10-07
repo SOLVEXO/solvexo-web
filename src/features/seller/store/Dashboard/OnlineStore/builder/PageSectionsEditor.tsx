@@ -19,8 +19,11 @@ function cloneWithoutId<T extends { _id?: string }>(item: T): T {
   return { ...rest } as T;
 }
 
-function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {
+function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {
   block: Block;
+  blockId: string;
+  isSelected?: boolean;
+  onSelectBlock?: (blockId: string) => void;
   sectionType: string;
   onChange: (next: Block) => void;
   onRemove: () => void;
@@ -40,6 +43,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
 }) {
   const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const rowRef = useRef<HTMLDivElement>(null);
   // An app block's own real label (e.g. "Rating Badge") stands in for the
   // parent section's generic child-block placeholder ("Block") once every
   // settings-derived fallback comes up empty — showing the raw `app:...`
@@ -50,11 +54,17 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
   const label = block.settings.label || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
   const hidden = block.enabled === false;
 
+  useEffect(() => {
+    if (!isSelected) return;
+    setOpen(true);
+    rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [isSelected]);
+
   return (
-    <div className={`border rounded-lg bg-white transition-colors ${open ? 'border-brand-orange/30' : 'border-bone'} ${hidden ? 'opacity-50' : ''}`}>
+    <div ref={rowRef} className={`border rounded-lg bg-white transition-colors ${isSelected ? 'border-brand-orange ring-2 ring-brand-orange/20' : open ? 'border-brand-orange/30' : 'border-bone'} ${hidden ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-1.5 pl-1 pr-2 py-1.5">
         <GripVertical size={13} className="text-bone shrink-0" />
-        <button type="button" onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-0 py-0.5">
+        <button type="button" onClick={() => { setOpen(o => !o); onSelectBlock?.(blockId); }} className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-0 py-0.5">
           {open ? <ChevronUp size={13} className="text-slate shrink-0" /> : <ChevronDown size={13} className="text-slate shrink-0" />}
           <span className="text-[12.5px] font-medium text-charcoal truncate">{label || '(untitled)'}</span>
           {hidden && <span className="text-[10px] font-bold uppercase tracking-wide text-slate shrink-0">Hidden</span>}
@@ -91,14 +101,16 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
   );
 }
 
-function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource }: {
+function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelectSection, onSelectBlock, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource }: {
   section: Section;
   /** Same id shape `AtelierSectionRenderer` computes (`section._id ?? index`,
    *  stringified) — lets a click in the live preview and a card here refer
    *  to "the same section" without either side needing the other's index. */
   sectionId: string;
   isSelected?: boolean;
+  selectedBlockId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  onSelectBlock?: (sectionId: string, blockId: string) => void;
   onChange: (next: Section) => void;
   onRemove: () => void;
   onDuplicate: () => void;
@@ -224,6 +236,9 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
                 {(block, i) => (
                   <BlockRow
                     block={block}
+                    blockId={String(block._id ?? i)}
+                    isSelected={isSelected && selectedBlockId === String(block._id ?? i)}
+                    onSelectBlock={blockId => onSelectBlock?.(sectionId, blockId)}
                     sectionType={section.type}
                     onChange={next => onChange({ ...section, blocks: section.blocks.map((b, j) => j === i ? next : b) })}
                     onRemove={() => {
@@ -293,7 +308,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes, colorSchemes = [], helperText, installedApps, ownerResource }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, selectedBlockId, onSelectSection, onSelectBlock, supportedSectionTypes, colorSchemes = [], helperText, installedApps, ownerResource }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -308,7 +323,9 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
    *  component behaves exactly as before wherever a caller doesn't pass
    *  them. */
   selectedSectionId?: string | null;
+  selectedBlockId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  onSelectBlock?: (sectionId: string, blockId: string) => void;
   /** The active store's real theme's registered section types (see
    *  `AddSectionModal`'s own doc comment for the bug this closes) — passed
    *  straight through to the "Add a Section" picker. Optional and defaults
@@ -395,7 +412,9 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   section={section}
                   sectionId={sectionId}
                   isSelected={selectedSectionId === sectionId}
+                  selectedBlockId={selectedBlockId}
                   onSelectSection={onSelectSection}
+                  onSelectBlock={onSelectBlock}
                   onChange={next => onChange(sections.map((s, j) => j === i ? next : s))}
                   onRemove={() => {
                     const next = sections.filter((_, j) => j !== i);

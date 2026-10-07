@@ -6,6 +6,7 @@ import { NovaButton } from '../components/NovaButton';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 import { renderRichText } from '@/utils/richText';
+import { PreviewBlock } from '../../previewInspector';
 
 function Pair({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   const { resolveLink } = useStorefront();
@@ -32,5 +33,5 @@ function Pair({ block, colors }: { block: Block; colors: NovaSectionColors }) {
 }
 
 registerNovaSection('image_with_text', (_section: Section, blocks: Block[], colors: NovaSectionColors) => (
-  <>{blocks.map((b, i) => <Pair key={b._id ?? i} block={b} colors={colors} />)}</>
+  <>{blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><Pair block={b} colors={colors} /></PreviewBlock>)}</>
 ));

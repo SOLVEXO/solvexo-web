@@ -6,6 +6,7 @@ import { AtelierButton } from '../components/AtelierButton';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 import { renderRichText } from '@/utils/richText';
+import { PreviewBlock } from '../../previewInspector';
 
 function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors }) {
   const { resolveLink } = useStorefront();
@@ -32,5 +33,5 @@ function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors })
 }
 
 registerAtelierSection('image_with_text', (_section: Section, blocks: Block[], colors: AtelierSectionColors) => (
-  <>{blocks.map((b, i) => <Pair key={b._id ?? i} block={b} colors={colors} />)}</>
+  <>{blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><Pair block={b} colors={colors} /></PreviewBlock>)}</>
 ));

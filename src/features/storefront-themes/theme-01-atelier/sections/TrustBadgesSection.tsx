@@ -2,6 +2,7 @@ import { Truck, ShieldCheck, RefreshCw, Headset, Lock } from 'lucide-react';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { PreviewBlock } from '../../previewInspector';
 
 const ICONS: Record<string, typeof Truck> = { truck: Truck, shield: ShieldCheck, refresh: RefreshCw, headset: Headset, lock: Lock };
 
@@ -16,10 +17,12 @@ registerAtelierSection('trust_badges', (_section: Section, blocks: Block[], colo
         {blocks.map((b, i) => {
           const Icon = ICONS[b.settings.icon] ?? ShieldCheck;
           return (
-            <div key={b._id ?? i} className="flex flex-col items-center gap-2">
+            <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
+            <div className="flex flex-col items-center gap-2">
               <Icon size={20} style={{ color: colors.accent }} />
               <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted }}>{b.settings.text}</p>
             </div>
+            </PreviewBlock>
           );
         })}
       </div>

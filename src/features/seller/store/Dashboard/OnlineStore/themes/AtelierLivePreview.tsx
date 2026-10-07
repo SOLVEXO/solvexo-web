@@ -8,6 +8,7 @@ import type { StoreThemeData } from '@/api/services/storeTheme';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { CartProvider } from '@/contexts/CartContext';
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
+import { apiListMenus, type Menu } from '@/api/services/menus';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
@@ -137,6 +138,7 @@ export interface AnnouncementBarPreviewValue {
  *  in that section's markup can fire, and reports the section id instead. */
 export function AtelierLivePreview({
   sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
+  selectedBlockId, onSelectBlock, previewCollectionId,
 }: {
   sections: Section[];
   showChrome: boolean;
@@ -145,6 +147,9 @@ export function AtelierLivePreview({
   interactive?: boolean;
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  selectedBlockId?: string | null;
+  onSelectBlock?: (sectionId: string, blockId: string) => void;
+  previewCollectionId?: string | null;
   /** Phase 5 — real data for whichever Blog/Article a merchant picked in
    *  Customize's resource picker, threaded straight through to the active
    *  theme's `SectionRenderer` (see `CoreSectionPreviewContext`'s own doc
@@ -171,6 +176,7 @@ export function AtelierLivePreview({
   dynamicSourceValues?: Record<string, string>;
 }) {
   const [store, setStore] = useState<PublicStoreData | null>(null);
+  const [menus, setMenus] = useState<Menu[]>([]);
   const { store: workspaceStore } = useStoreWorkspace();
 
   useEffect(() => {
@@ -179,6 +185,15 @@ export function AtelierLivePreview({
     apiGetPublicStore(workspaceStore.slug).then(res => { if (!cancelled) setStore(res.data); }).catch(() => {});
     return () => { cancelled = true; };
   }, [workspaceStore?.slug]);
+
+  useEffect(() => {
+    if (!store?.storeId || !showChrome) return;
+    let cancelled = false;
+    apiListMenus(store.storeId)
+      .then(res => { if (!cancelled) setMenus(res.data); })
+      .catch(() => { if (!cancelled) setMenus([]); });
+    return () => { cancelled = true; };
+  }, [store?.storeId, showChrome]);
 
   if (!store) {
     return <div className="flex items-center justify-center h-full"><Loader2 size={20} className="animate-spin text-slate" /></div>;
@@ -196,19 +211,36 @@ export function AtelierLivePreview({
   // fields from context. Project the draft over those fields so Navbar and
   // Footer render the same edits the preview's colors already use.
   const theme: StoreThemeData | null = draftTheme
-    ? {
-        ...draftTheme,
-        theme: draftTheme.draft?.theme ?? draftTheme.theme,
-        header: draftTheme.draft?.header ?? draftTheme.header,
-        footer: draftTheme.draft?.footer ?? draftTheme.footer,
-        customCss: draftTheme.draft?.customCss ?? draftTheme.customCss,
-      }
+    ? (() => {
+        const header = draftTheme.draft?.header ?? draftTheme.header;
+        const footer = draftTheme.draft?.footer ?? draftTheme.footer;
+        const headerMenu = menus.find(menu => menu._id === header.menuId);
+        const footerMenu = menus.find(menu => menu._id === footer.menuId);
+        return {
+          ...draftTheme,
+          theme: draftTheme.draft?.theme ?? draftTheme.theme,
+          header: headerMenu
+            ? { ...header, blocks: headerMenu.items.map(item => ({ _id: item.id, type: 'nav_link', settings: item, enabled: true })) }
+            : header,
+          footer: footerMenu
+            ? {
+                ...footer,
+                blocks: [
+                  { _id: `menu-${footerMenu._id}`, type: 'footer_column', settings: { heading: footerMenu.name, links: footerMenu.items }, enabled: true },
+                  ...(footer.blocks ?? []).filter(block => block.type !== 'footer_column'),
+                ],
+              }
+            : footer,
+          customCss: draftTheme.draft?.customCss ?? draftTheme.customCss,
+        };
+      })()
     : null;
   const contextValue: StorefrontContextValue = {
     store,
     theme,
     cfg: resolveStorefrontCfg(theme),
     resolveLink: resolveStorefrontLink,
+    previewCollectionId,
   };
 
   // Preview always shows the DRAFT (unsaved-but-saved-as-draft, or — when
@@ -245,6 +277,8 @@ export function AtelierLivePreview({
             selectable={interactive}
             selectedSectionId={selectedSectionId}
             onSelectSection={onSelectSection}
+            selectedBlockId={selectedBlockId}
+            onSelectBlock={onSelectBlock}
             previewContext={previewContext}
             dynamicSourceValues={dynamicSourceValues}
           />

@@ -4,6 +4,7 @@ import { ImageOff } from 'lucide-react';
 import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 
@@ -40,11 +41,11 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
           </h2>
         )}
         {all === null ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <div className={`grid ${responsiveGridColumnsClass(section.settings.columns)} gap-5`}>
             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="animate-pulse" style={{ aspectRatio: '1/1', background: colors.bgAlt }} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <div className={`grid ${responsiveGridColumnsClass(section.settings.columns)} gap-5`}>
             {selected.map(c => {
               const tile = (
                 <>

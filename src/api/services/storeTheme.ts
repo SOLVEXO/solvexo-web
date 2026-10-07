@@ -296,6 +296,8 @@ export interface PreviewByTokenData {
   identityBanner: IdentityBanner;
   themeDefinitionId: string | null;
   customCss: string | null;
+  storeSlug: string | null;
+  homeSections: import('./storefrontTypes').Section[];
 }
 
 export function apiGetPreviewByToken(storeId: string, token: string) {
