@@ -89,9 +89,17 @@ export function ThemeSharePreviewPage() {
               {(data.header?.blocks ?? []).filter(block => block.type === 'nav_link' && block.enabled !== false).map(block => {
                 const target = resolveStorefrontLink(block.settings);
                 return (
-                  <a key={block._id ?? block.settings.label} href={target.to ?? target.href ?? '/'} className="no-underline" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600 }}>
-                    {block.settings.label}
-                  </a>
+                  <div key={block._id ?? block.settings.label} className="relative group">
+                    <a href={target.to ?? target.href ?? '/'} className="no-underline" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600 }}>
+                      {block.settings.label}
+                    </a>
+                    {(block.settings.children ?? []).length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[180px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
+                      {block.settings.children.map((child: { id: string; label: string; linkType: string; pageSlug?: string; url?: string; categoryId?: string; collectionId?: string; productId?: string }) => {
+                        const childTarget = resolveStorefrontLink(child);
+                        return <a key={child.id} href={childTarget.to ?? childTarget.href ?? '/'} className="no-underline" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '12px' }}>{child.label}</a>;
+                      })}
+                    </div>}
+                  </div>
                 );
               })}
             </nav>
