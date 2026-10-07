@@ -42,7 +42,7 @@ export function AtelierCategoryPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-      <AtelierProductGrid heading={category.name} categoryId={category._id} />
+      <AtelierProductGrid heading={category.name} categoryId={category._id} syncUrl />
     </main>
   );
 }

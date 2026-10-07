@@ -29,7 +29,7 @@ function CollectionProductGrid() {
   return (
     <div style={{ padding: `0 ${t.layout.containerPadX} ${t.layout.sectionPadY}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-        <AtelierProductGrid collectionId={collectionId ?? undefined} />
+        <AtelierProductGrid collectionId={collectionId ?? undefined} syncUrl />
       </div>
     </div>
   );

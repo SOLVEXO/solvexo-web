@@ -5,6 +5,7 @@ import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axio
 // `TokenStorage`) to avoid a circular import, since `auth.ts` itself imports
 // this `client` module.
 import { getAuthCookie, clearAuthCookie } from '@/utils/authCookie';
+import { getCurrentStorefrontStoreId, getStorefrontToken } from '@/utils/currentStorefront';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
 // Endpoints where a 401 means "this specific attempt was rejected" (wrong
@@ -60,6 +61,8 @@ client.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    const sfToken = getStorefrontToken(getCurrentStorefrontStoreId());
+    if (sfToken && config.headers) config.headers['x-storefront-token'] = sfToken;
     // Let browser set multipart/form-data boundary automatically for FormData
     if (config.data instanceof FormData && config.headers) {
       delete config.headers['Content-Type'];
@@ -125,6 +128,7 @@ client.interceptors.response.use(
     return Promise.reject(Object.assign(new Error(msg), {
       isNetworkError: !err.response,
       status: err.response?.status,
+      apiCode: err.response?.data?.code as string | undefined,
     }));
   },
 );

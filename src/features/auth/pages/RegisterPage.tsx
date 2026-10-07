@@ -92,7 +92,7 @@ export function RegisterPage() {
   const detectedCountry = useDetectedCountry();
   const { values, errors, set, setValue, blur, handleSubmit } = useForm(
     registerSchema,
-    { name: '', email: '', password: '', phone: '', address: '', role },
+    { name: '', email: (searchParams.get('email') ?? '').slice(0, 254), password: '', phone: '', address: '', role },
     {
       onSubmit: async (data: RegisterFormData) => {
         const isSellerSignup = data.role === 'seller';

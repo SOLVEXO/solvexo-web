@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
+import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
+import { useCartDrawer } from '../../CartDrawer';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
 import { CurrencySelector } from '@/components/comman/ui';
@@ -23,12 +25,13 @@ import { atelierTheme as t } from '../theme.config';
 export function AtelierNavbar() {
   const { store, theme, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
+  const cartDrawer = useCartDrawer();
+  const { pathname } = useLocation();
   const { wishlistCount } = useWishlistContext();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [q, setQ] = useState('');
   const isLoggedIn = TokenStorage.isLoggedIn();
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
@@ -50,13 +53,6 @@ export function AtelierNavbar() {
     ? headerNavBlocks.map(b => ({ id: b._id ?? b.settings.label, label: b.settings.label as string, link: resolveLink(b.settings as StorefrontLinkSettings) }))
     : [{ id: 'journal', label: 'Journal', link: { to: '/blog' } }];
 
-  const submitSearch = (e: FormEvent) => {
-    e.preventDefault();
-    if (!q.trim()) return;
-    navigate(`/search?q=${encodeURIComponent(q.trim())}`);
-    setSearchOpen(false);
-    setQ('');
-  };
 
   return (
     <header style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
@@ -184,7 +180,7 @@ export function AtelierNavbar() {
               )}
             </Link>
           )}
-          <Link to="/cart" aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`} className="relative" style={{ color: t.colors.ink }}>
+          <Link to="/cart" onClick={e => { if (cartDrawer.mounted && pathname !== '/cart') { e.preventDefault(); cartDrawer.openDrawer(); } }} aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`} className="relative" style={{ color: t.colors.ink }}>
             <ShoppingBag size={18} />
             {cartCount > 0 && (
               <span
@@ -200,18 +196,12 @@ export function AtelierNavbar() {
       </div>
 
       {searchOpen && (
-        <form onSubmit={submitSearch} className="border-t" style={{ borderColor: t.colors.border, padding: `12px ${t.layout.containerPadX}` }}>
-          <label htmlFor="atelier-search" className="sr-only">Search products</label>
-          <input
-            id="atelier-search"
-            autoFocus
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder="Search products…"
-            className="w-full bg-transparent outline-none"
-            style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, maxWidth: t.layout.maxWidth, margin: '0 auto', display: 'block' }}
+        <div className="border-t" style={{ borderColor: t.colors.border, padding: `12px ${t.layout.containerPadX}` }}>
+          <StorefrontPredictiveSearch
+            tokens={{ fonts: t.fonts, colors: t.colors, radius: t.radius.sm, borderWidth: '1px', headingWeight: 600, skeletonAspect: '3/4' }}
+            inputId="atelier-search" maxWidth={t.layout.maxWidth} onDone={() => setSearchOpen(false)}
           />
-        </form>
+        </div>
       )}
 
       {mobileOpen && (

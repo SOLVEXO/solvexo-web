@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { CartDrawerProvider } from '../../CartDrawer';
+import { NovaButton } from '../components/NovaButton';
 import { NovaNavbar } from '../components/NovaNavbar';
 import { NovaFooter } from '../components/NovaFooter';
 import { novaTheme as t, applyMerchantThemeOverrides } from '../theme.config';
@@ -20,6 +22,7 @@ export function NovaLayout({ children }: { children: ReactNode }) {
   // `t.colors.x`/`t.fonts.x` — see the doc comment on `novaTheme`.
   applyMerchantThemeOverrides(theme?.theme ?? null);
   return (
+    <CartDrawerProvider theme={t} Button={NovaButton}>
     <div style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, minHeight: '100vh' }}>
       {theme?.customCss && <style>{theme.customCss}</style>}
       <NovaNavbar />
@@ -35,5 +38,6 @@ export function NovaLayout({ children }: { children: ReactNode }) {
       {children}
       <NovaFooter />
     </div>
+    </CartDrawerProvider>
   );
 }

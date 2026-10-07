@@ -77,8 +77,8 @@ export function apiGetCollectionTemplateDraft(storeId: string, resourceType?: Re
   return client.get<never, ApiResponse<{ sections: Section[]; lastPublishedAt: string | null }>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DRAFT(storeId), resourceType, templateKey, installedThemeId));
 }
 
-export function apiUpdateCollectionTemplateSections(storeId: string, sections: Section[], resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {
-  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.UPDATE_SECTIONS(storeId), resourceType, templateKey, installedThemeId), { sections });
+export function apiUpdateCollectionTemplateSections(storeId: string, sections: Section[], resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string, baseUpdatedAt?: string) {
+  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.UPDATE_SECTIONS(storeId), resourceType, templateKey, installedThemeId), { sections, ...(baseUpdatedAt ? { baseUpdatedAt } : {}) });
 }
 
 export function apiPublishCollectionTemplate(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {

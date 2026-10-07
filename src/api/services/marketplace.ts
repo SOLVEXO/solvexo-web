@@ -16,6 +16,12 @@ export interface ProductVariant {
   options:        VariantOption[];
   stock:          number;
   unlimitedStock?: boolean;
+  /** Raw inventory components (public product endpoint returns the whole variant); available = stock - committed - damaged - inTransit. */
+  committedStock?: number;
+  damagedStock?: number;
+  inTransitStock?: number;
+  /** Shopify "Continue selling when out of stock". */
+  allowBackorder?: boolean;
   shippingWeight: string | null;
   images:         string[];
   isDefault?:     boolean;

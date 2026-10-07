@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, Outlet, useBlocker, useLocation, useParams } from 'react-router-dom';
 import { StoreWorkspaceProvider, resolveStoreAccessRedirect } from './StoreLayout';
 import { ThemeEditorUnsavedProvider } from './ThemeEditorUnsavedContext';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 /**
  * Dedicated, distraction-free fullscreen shell for the theme editor
@@ -29,19 +30,13 @@ import { ThemeEditorUnsavedProvider } from './ThemeEditorUnsavedContext';
  */
 export function ThemeEditorLayout() {
   const { pathname: currentPath } = useLocation();
-  const { storeId: routeStoreId } = useParams<{ storeId: string }>();
+  const { storeId: routeStoreId, themeId: routeThemeId } = useParams<{ storeId: string; themeId: string }>();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const reportUnsavedChanges = useCallback((dirty: boolean) => setHasUnsavedChanges(dirty), []);
   const blocker = useBlocker(hasUnsavedChanges);
   const blockerRef = useRef(blocker);
   blockerRef.current = blocker;
 
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return;
-    const shouldLeave = window.confirm('You have unsaved theme changes. Leave this editor and discard those changes?');
-    if (shouldLeave) blockerRef.current.proceed?.();
-    else blockerRef.current.reset?.();
-  }, [blocker.state]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) return;
@@ -65,8 +60,19 @@ export function ThemeEditorLayout() {
          height/overflow of its own); only the live-preview/JSON panels are
          separately height-constrained with their own internal scroll. */}
       <div data-lenis-prevent className="h-screen w-screen overflow-y-auto bg-[#FAF9F5]">
-        <Outlet />
+        {/* Keyed by store + theme so switching either remounts the editor page:
+           no stale doc/selection/draft state from the previous store/theme can
+           be saved over the new one. */}
+        <Outlet key={`${routeStoreId}:${routeThemeId}`} />
       </div>
+      {blocker.state === 'blocked' && (
+        <UnsavedChangesDialog
+          message="You have unsaved theme changes. Leave this editor and discard them?"
+          confirmLabel="Leave and discard"
+          onConfirm={() => blockerRef.current.proceed?.()}
+          onCancel={() => blockerRef.current.reset?.()}
+        />
+      )}
       </ThemeEditorUnsavedProvider>
     </StoreWorkspaceProvider>
   );

@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown,
-  ClipboardList, Megaphone, Star, Search, Wallet,
+  ClipboardList, Megaphone, Star, Search, Wallet, HelpCircle,
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
@@ -23,6 +23,7 @@ import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
+import { FEATURES } from '@/constants/features';
 import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -153,6 +154,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // Marketing), matching where Shopify itself puts banners/announcement
       // content: under the storefront's own customization area, not
       // Marketing. Same APIs/data as before, just relocated.
+      { id: 'online-store-faqs',        Icon: HelpCircle, label: 'FAQs',      path: 'faqs',                   requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar', requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-featured',     Icon: Pin,               label: 'Featured & Collections', path: 'online-store/featured', requiredPermission: 'onlinestore.content.manage' },
@@ -199,8 +201,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // OR'd with `giftcards.manage` (issue/adjust balance) — a staff
       // member granted only that, not general view, still needs a nav path.
       { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards',    requiredPermission: ['giftcards.view', 'giftcards.manage'] },
-      // Hidden from the UI (not built-in on Shopify) — to become an installable App later; code/data kept.
-      // { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' },
+      // Hidden via FEATURES.loyalty (not built-in on Shopify) — to become an installable App later; code/data kept.
+      ...(FEATURES.loyalty ? [{ id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' as const }] : []),
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
       { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],

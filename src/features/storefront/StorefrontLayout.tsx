@@ -14,8 +14,9 @@ import { useFavicon } from '@/hooks/useFavicon';
 import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
 import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
 import { CookieConsentBanner } from './CookieConsentBanner';
+import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
-import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout } from '@/utils/currentStorefront';
+import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout, getStorefrontToken, setStorefrontToken } from '@/utils/currentStorefront';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -81,7 +82,7 @@ export function StorefrontLayout() {
 
   // Affiliate referral links land here with ?ref=CODE — remembered for
   // checkout attribution (see utils/affiliateAttribution.ts).
-  useEffect(() => { captureAffiliateRef(); }, []);
+  useEffect(() => { if (FEATURES.affiliates) captureAffiliateRef(); }, []);
   // Publish the active store for code outside this context (AuthGateModal / social login).
   useEffect(() => {
     setCurrentStorefrontStoreId(store?.storeId ?? null);
@@ -101,9 +102,21 @@ export function StorefrontLayout() {
       .then(res => {
         if (cancelled) return;
         setStore(res.data);
-        setUnlocked(sessionStorage.getItem(`storefront_unlock_${res.data.storeId}`) === '1');
-        setCookieConsent(!res.data.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(res.data.storeId));
-        return apiGetPublicStoreTheme(res.data.storeId).then(r => { if (!cancelled) setTheme(r.data); });
+        const id = res.data.storeId;
+        // Set now (not only in the effect) so the axios client already sends this store's access token below.
+        setCurrentStorefrontStoreId(id);
+        const hasToken = res.data.privacyMode === 'password' && !!getStorefrontToken(id);
+        setUnlocked(hasToken);
+        setCookieConsent(!res.data.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(id));
+        // A password-protected store's theme is server-locked until the visitor unlocks it (fetched in onUnlocked).
+        if (res.data.privacyMode === 'password' && !hasToken) return;
+        return apiGetPublicStoreTheme(id)
+          .then(r => { if (!cancelled) setTheme(r.data); })
+          .catch(err => {
+            // Expired/invalid access token → back to the gate instead of "Store not found".
+            if (err?.status === 403 && res.data.privacyMode === 'password') { setStorefrontToken(id, null); if (!cancelled) setUnlocked(false); return; }
+            throw err;
+          });
       })
       .catch(() => { if (!cancelled) setError('Store not found'); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -145,6 +158,7 @@ export function StorefrontLayout() {
   // visitor accepts (real Customer-Privacy enforcement, not cosmetic).
   useEffect(() => {
     if (!store?.storeId || !cookieConsent) return;
+    if (!cookieConsent.analytics && !cookieConsent.marketing) return; // rejected: nothing to load
     let cancelled = false;
     apiGetPublicTrackingPixelSettings(store.storeId)
       .then(res => {
@@ -227,7 +241,13 @@ export function StorefrontLayout() {
     const Gate = impl.GatePage;
     return (
       <StorefrontProvider value={contextValue}>
-        <Gate store={store} onUnlocked={() => setUnlocked(true)} />
+        <Gate
+          store={store}
+          onUnlocked={() => {
+            setUnlocked(true);
+            apiGetPublicStoreTheme(store.storeId).then(r => setTheme(r.data)).catch(() => setError('Store not found'));
+          }}
+        />
       </StorefrontProvider>
     );
   }

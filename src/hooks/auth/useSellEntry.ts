@@ -44,5 +44,15 @@ export function useSellEntry() {
     go();
   }, [go]);
 
-  return { go, goWithPlan, loading: false };
+  /** Pricing-page closing CTA: same entry, but carries the typed email into the registration form. */
+  const goWithEmail = useCallback((email: string) => {
+    const user = TokenStorage.getUser<{ role?: AppRole }>();
+    if (email && (!TokenStorage.isLoggedIn() || user?.role !== 'seller')) {
+      navigate(`/register?role=seller&email=${encodeURIComponent(email)}`);
+      return;
+    }
+    go();
+  }, [navigate, go]);
+
+  return { go, goWithPlan, goWithEmail, loading: false };
 }

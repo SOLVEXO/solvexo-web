@@ -13,6 +13,7 @@ import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { ThemeEditorLayout } from '@/components/layouts/ThemeEditorLayout';
+import { FEATURES } from '@/constants/features';
 import { RequireRole }  from './RequireRole';
 
 // ── Every route below is code-split via React.lazy() — this used to be ~100
@@ -116,12 +117,13 @@ const StoreReturnList = lazy(() => import('@/features/seller/store/Dashboard/Sto
 const DisputesList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DisputesList'));
 const StoreAnalytics = lazy(() => import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics').then(m => ({ default: m.StoreAnalytics })));
 const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio').then(m => ({ default: m.StoreAIStudio })));
+const StoreFaqs = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreFaqs'));
+const AdminPlatformCoupons = lazy(() => import('@/features/admin/pages/AdminPlatformCoupons'));
 const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO').then(m => ({ default: m.StoreSEO })));
 const StoreFinance = lazy(() => import('@/features/seller/store/Dashboard/Operations/finance/Finance').then(m => ({ default: m.StoreFinance })));
 const StoreReviews = lazy(() => import('@/features/seller/store/Dashboard/Operations/reviews/reviews').then(m => ({ default: m.StoreReviews })));
 const InventoryHub = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryHub').then(m => ({ default: m.InventoryHub })));
 const StockCountSession = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/StockCountSession'));
-const InventoryReports = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryReports'));
 const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
 const StoreLoyalty = lazy(() => import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty').then(m => ({ default: m.StoreLoyalty })));
 const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/Operations/integrations/Integrations').then(m => ({ default: m.StoreIntegrations })));
@@ -211,9 +213,10 @@ const storefrontRouter = createBrowserRouter([
           { path: 'new-password', element: <ThemedRoute routeKey="newPassword" /> },
           { path: 'account', element: <ThemedRoute routeKey="account" /> },
           { path: 'wishlist', element: <ThemedRoute routeKey="wishlist" /> },
-          { path: 'loyalty', element: <ThemedRoute routeKey="loyalty" /> },
+          { path: 'loyalty', element: FEATURES.loyalty ? <ThemedRoute routeKey="loyalty" /> : <Navigate to="/account" replace /> },
           { path: 'messages', element: <ThemedRoute routeKey="messages" /> },
           { path: 'notifications', element: <ThemedRoute routeKey="notifications" /> },
+          { path: 'faqs',                             element: <StoreFaqs /> },
           { path: 'returns', element: <ThemedRoute routeKey="returns" /> },
           { path: 'gift-cards', element: <ThemedRoute routeKey="giftCards" /> },
           { path: 'store-credit', element: <ThemedRoute routeKey="storeCredit" /> },
@@ -396,20 +399,20 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/featured',             element: <StoreFeaturedCollections /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'disputes',                         element: <DisputesList /> },
-          { path: 'seo',                              element: <StoreSEO /> },
+          { path: 'seo/:tab?',                        element: <StoreSEO /> },
           { path: 'ai/studio',                        element: <StoreAIStudio /> },
           { path: 'reviews',                          element: <StoreReviews /> },
           { path: 'finance',                          element: <StoreFinance /> },
-          { path: 'inventory',                        element: <InventoryHub /> },
+          { path: 'inventory/:tab?',                  element: <InventoryHub /> },
           { path: 'inventory/count/:countId',          element: <StockCountSession /> },
-          { path: 'inventory/reports',                 element: <InventoryReports /> },
-          { path: 'marketing',                        element: <StoreMarketing /> },
+          { path: 'inventory/reports',                 element: <InventoryHub forcedTab="reports" /> },
+          { path: 'marketing/:tab?',                  element: <StoreMarketing /> },
           { path: 'discounts',                        element: <StoreDiscounts /> },
           { path: 'metafields',                       element: <MetafieldDefinitionsPage /> },
           { path: 'metaobjects',                      element: <MetaobjectTypesPage /> },
           { path: 'metaobjects/:definitionId',        element: <MetaobjectEntriesPage /> },
           { path: 'gift-cards',                       element: <StoreGiftCards /> },
-          { path: 'loyalty',                          element: <StoreLoyalty /> },
+          { path: 'loyalty',                          element: FEATURES.loyalty ? <StoreLoyalty /> : <Navigate to="../dashboard" replace /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'mobile-app',                       element: <StoreMobileApp /> },
           { path: 'activity',                         element: <Navigate to="../settings" replace /> },
@@ -510,6 +513,7 @@ const mainRouter = createBrowserRouter([
           { path: 'settings',     element: <RequireRole role="admin"><AdminSettingsHub /></RequireRole> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
+          { path: 'platform-coupons', element: <RequireRole role="admin"><AdminPlatformCoupons /></RequireRole> },
           { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },
           { path: 'store-app-requests', element: <RequireRole role="admin"><AdminStoreAppRequests /></RequireRole> },
         ],

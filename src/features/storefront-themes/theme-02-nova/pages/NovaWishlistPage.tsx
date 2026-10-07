@@ -6,6 +6,7 @@ import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { variantCanBuy } from '../../variantAvailability';
 import { NovaButton } from '../components/NovaButton';
 import { novaTheme as t } from '../theme.config';
 
@@ -64,6 +65,7 @@ export function NovaWishlistPage() {
             const isBusy = wishlisting === variant._id;
             const isAdding = adding === variant._id;
             const justAdded = addedId === variant._id;
+            const soldOut = !variantCanBuy(variant, !(product.productType === 'physical' || product.type === 'physical'));
             const type = product.productType === 'physical' || product.type === 'physical' ? 'physical' : 'digital';
             return (
               <div key={product._id} className="flex gap-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '16px' }}>
@@ -85,12 +87,12 @@ export function NovaWishlistPage() {
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product._id, variant._id, type)}
-                      disabled={isAdding || variant.stock <= 0}
+                      disabled={isAdding || soldOut}
                       className="flex items-center gap-1.5 cursor-pointer bg-transparent border-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accent }}
                     >
                       {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingBag size={13} />}
-                      {variant.stock <= 0 ? 'Out of stock' : justAdded ? 'Added ✓' : 'Add to Cart'}
+                      {soldOut ? 'Sold out' : justAdded ? 'Added ✓' : 'Add to Cart'}
                     </button>
                     <button
                       type="button"

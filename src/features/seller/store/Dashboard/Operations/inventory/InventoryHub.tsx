@@ -3,7 +3,9 @@ import {
 } from 'lucide-react';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
-import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
+import { useRouteTabs } from '@/hooks/useRouteTabs';
+import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
+import { Navigate } from 'react-router-dom';
 
 import { StoreInventory } from './Inventory';
 import InventoryReports from './InventoryReports';
@@ -37,15 +39,28 @@ const TABS: Tab[] = [
  *  (Orders/Products/Finance/Settings/etc), not just Inventory — burying
  *  its management inside this one module's tab bar was a real
  *  architectural mismatch, not just a UI nicety.** */
-export function InventoryHub() {
-  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('stock');
+const TAB_PERMS: Record<string, string[]> = {
+  stock: ['inventory.view', 'inventory.adjust', 'inventory.receive', 'inventory.transfer', 'settings.locations.manage'],
+  'purchase-orders': ['purchase_orders.manage'],
+  reorder: ['purchase_orders.manage'],
+  counts: ['inventory.count', 'inventory.approve'],
+  reports: ['inventory.view'],
+};
+
+/** `forcedTab`: legacy /inventory/reports route renders the hub pinned to Reports. */
+export function InventoryHub({ forcedTab }: { forcedTab?: string } = {}) {
+  const { visibleTabs, activeTab, openTab: setActiveTab, isVisited, paneClassName, redirectTo, blocked } = useRouteTabs({
+    tabs: TABS, base: 'inventory', permissions: TAB_PERMS, forcedTab,
+  });
+  if (redirectTo) return <Navigate to={redirectTo} replace />;
+  if (blocked) return <NoTabAccess title="Inventory" />;
 
   return (
     <>
       <StorePageHeader title="Inventory" subtitle="Stock, purchasing, counts, and reports — all in one place." />
 
       <div className="px-4 md:px-7 pt-3">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
       </div>
 
       {/* Each tab stays mounted (hidden via CSS) once visited, instead of

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
+import { UnsavedChangesDialog } from '@/components/layouts/UnsavedChangesDialog';
 import { Loader2, FileJson, FileCode, Folder, Save, CheckCircle2, UploadCloud, AlertCircle, AlertTriangle, Image as ImageIcon, ExternalLink, Monitor, Tablet, Smartphone, History, RotateCcw, Code2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
@@ -170,6 +171,8 @@ export function AtelierEditCodePage() {
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
   const [sourcePackageOpen, setSourcePackageOpen] = useState(false);
+  // File the seller clicked while the open one had unsaved JSON — awaiting confirmation.
+  const [pendingFileId, setPendingFileId] = useState<string | null>(null);
 
   // Live preview for the currently-open templates/*.json file — reuses the
   // exact same `AtelierLivePreview` the visual Customizer uses, per the
@@ -274,9 +277,13 @@ export function AtelierEditCodePage() {
       if (homePage) setJsonText(JSON.stringify(homePage.draft?.sections ?? homePage.sections, null, 2));
       return;
     }
+    // Ignore a late response for a file the seller already switched away from —
+    // otherwise it overwrites the new file's text and Save writes it to the wrong template.
+    let cancelled = false;
     apiGetCollectionTemplate(storeId, selectedTemplate.resourceType, selectedTemplate.templateKey, installedThemeId)
-      .then(res => setJsonText(JSON.stringify(res.data.draft?.sections ?? res.data.sections, null, 2)))
-      .catch(() => setJsonText('[]'));
+      .then(res => { if (!cancelled) setJsonText(JSON.stringify(res.data.draft?.sections ?? res.data.sections, null, 2)); })
+      .catch(() => { if (!cancelled) setJsonText('[]'); });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, storeId, homePage?._id, installedThemeId]);
 
@@ -564,7 +571,11 @@ export function AtelierEditCodePage() {
                   <button
                     key={f.id}
                     type="button"
-                    onClick={() => setSelectedId(f.id)}
+                    onClick={() => {
+                      if (f.id === selectedId) return;
+                      if (saving || publishing || discarding) return;
+                      if (dirty) setPendingFileId(f.id); else setSelectedId(f.id);
+                    }}
                     className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-transparent border-none cursor-pointer"
                     style={{ background: selectedId === f.id ? '#F1EDE5' : 'transparent', color: f.kind === 'unavailable' ? '#B0AC9F' : '#2E2C29' }}
                   >
@@ -662,6 +673,13 @@ export function AtelierEditCodePage() {
         onClose={() => setVersionsOpen(false)}
         onRestore={restoreVersion}
       />
+      {pendingFileId && (
+        <UnsavedChangesDialog
+          message="This file has unsaved changes. Switch files and discard them?"
+          onCancel={() => setPendingFileId(null)}
+          onConfirm={() => { setSelectedId(pendingFileId); setPendingFileId(null); }}
+        />
+      )}
       {sourcePackageOpen && installedThemeId && <ThemeSourcePackageDialog storeId={storeId} installedThemeId={installedThemeId} onClose={() => setSourcePackageOpen(false)} />}
     </div>
   );

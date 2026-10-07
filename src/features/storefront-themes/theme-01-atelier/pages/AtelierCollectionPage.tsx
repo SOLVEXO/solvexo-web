@@ -85,7 +85,7 @@ export function AtelierCollectionPage() {
       <AtelierCollectionScopeProvider value={collection._id}>
         <AtelierSectionRenderer sections={sections} dynamicSourceValues={dynamicSourceValues} />
       </AtelierCollectionScopeProvider>
-      {!hasGridAnchor && <AtelierProductGrid collectionId={collection._id} />}
+      {!hasGridAnchor && <AtelierProductGrid collectionId={collection._id} syncUrl />}
     </main>
   );
 }

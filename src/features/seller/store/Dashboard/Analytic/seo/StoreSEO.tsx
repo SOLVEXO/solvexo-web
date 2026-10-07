@@ -7,8 +7,10 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { PlanFeatureLock, type PlanFeatureFlag } from '@/components/comman/ui';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
-import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
+import { useRouteTabs } from '@/hooks/useRouteTabs';
+import { Navigate } from 'react-router-dom';
 
+import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
 import { OverviewTab } from './tabs/OverviewTab';
 import { AuditTab } from './tabs/AuditTab';
 import { ProductsTab } from './tabs/ProductsTab';
@@ -39,7 +41,10 @@ const TABS: Tab[] = [
 
 export function StoreSEO() {
   const { storeId, store } = useStoreWorkspace();
-  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
+  const SEO_PERM = ['seo.view', 'seo.manage'];
+  const { visibleTabs, activeTab, openTab: setActiveTab, isVisited, paneClassName, redirectTo, blocked } = useRouteTabs({
+    tabs: TABS, base: 'seo', permissions: Object.fromEntries(TABS.map(t => [t.id, SEO_PERM])),
+  });
 
   // 4 of these 12 tabs are gated by a real PlatformPlan entitlement — locked
   // here BEFORE the seller tries them, instead of only finding out when the
@@ -56,6 +61,9 @@ export function StoreSEO() {
   const searchConsoleFeature = entitlements?.searchConsoleIntegrationAllowed as PlanFeatureFlag;
   const redirectsFeature = entitlements?.customRedirectsAllowed as PlanFeatureFlag;
 
+  if (redirectTo) return <Navigate to={redirectTo} replace />;
+  if (blocked) return <NoTabAccess title="SEO Center" />;
+
   return (
     <>
       <StorePageHeader
@@ -64,7 +72,7 @@ export function StoreSEO() {
       />
 
       <div className="px-4 md:px-7 pt-3">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
       </div>
 
       {/* Each tab stays mounted (hidden via CSS) once visited, instead of

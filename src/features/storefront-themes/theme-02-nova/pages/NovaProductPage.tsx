@@ -17,6 +17,8 @@ import { NovaSectionRenderer } from '../sections';
 import { NovaButton } from '../components/NovaButton';
 import { novaInput } from '../components/novaFormStyles';
 import { useBackInStock } from '../../useBackInStock';
+import { useCartDrawer } from '../../CartDrawer';
+import { variantAvailable, variantCanBuy, variantMaxQty, stockState, optionValueAvailable } from '../../variantAvailability';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { novaTheme as t } from '../theme.config';
@@ -64,8 +66,8 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
   );
 }
 
-function VariantSelector({ variants, selected, onSelect }: {
-  variants: ProductVariant[]; selected: ProductVariant | null; onSelect: (v: ProductVariant) => void;
+function VariantSelector({ variants, selected, onSelect, isDigital }: {
+  variants: ProductVariant[]; selected: ProductVariant | null; onSelect: (v: ProductVariant) => void; isDigital: boolean;
 }) {
   const attributeNames = Array.from(new Set(variants.flatMap(v => (v.options ?? []).map(o => o.name))));
   if (!attributeNames.length) return null;
@@ -90,13 +92,19 @@ function VariantSelector({ variants, selected, onSelect }: {
             <div className="flex flex-wrap gap-2">
               {values.map(val => {
                 const active = valueOf(selected, name) === val;
+                // Dawn: unavailable combinations stay selectable but are dimmed + struck through.
+                const unavailable = !optionValueAvailable(variants, selected, name, val, isDigital);
                 return (
                   <button
                     key={val}
                     type="button"
                     onClick={() => pickVariant(name, val)}
+                    aria-pressed={active}
+                    title={unavailable ? `${val} — sold out or unavailable` : undefined}
                     className="cursor-pointer"
                     style={{
+                      opacity: unavailable && !active ? 0.45 : 1,
+                      textDecoration: unavailable ? 'line-through' : 'none',
                       fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, padding: '9px 16px', borderRadius: '9999px',
                       border: `1.5px solid ${active ? t.colors.accent : t.colors.border}`,
                       background: active ? t.colors.accent : 'transparent',
@@ -199,7 +207,13 @@ export function NovaProductPage() {
   const allImages = [...(product?.images ?? []), ...(activeVariant?.images ?? [])].filter((v, i, a) => a.indexOf(v) === i);
   const pType = product?.productType ?? product?.type ?? 'physical';
   const isDigital = pType !== 'physical';
-  const stock = isDigital || activeVariant?.unlimitedStock ? Infinity : (activeVariant?.stock ?? 0);
+  // Shopify-style availability from the server's own formula (stock - committed - damaged - inTransit);
+  // allowBackorder = "continue selling when out of stock".
+  const stock = variantAvailable(activeVariant, isDigital);
+  const canBuy = variantCanBuy(activeVariant, isDigital);
+  const maxQty = variantMaxQty(activeVariant, isDigital);
+  const state = stockState(activeVariant, isDigital, store.lowStockThreshold);
+  const cartDrawer = useCartDrawer();
   const pctOff = activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price
     ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100) : null;
   const displayPrice = activeVariant ? convert(activeVariant.price, activeVariant.currency) : null;
@@ -209,16 +223,19 @@ export function NovaProductPage() {
   const money = (n: number) => (ratesOk ? `${symbol}${fmt2(n)}` : '—');
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
+  useEffect(() => { setQty(q => Math.max(1, Math.min(q, maxQty))); }, [maxQty]);
   // "Notify me when available" — only for a physical variant that's sold out.
-  const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && stock <= 0);
+  const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && !canBuy);
 
   const handleAddToCart = async () => {
-    if (!product || !activeVariant) return;
+    if (!product || !activeVariant || !canBuy) return;
+    const wanted = Math.max(1, Math.min(qty, maxQty));
     await addToCart(product._id, activeVariant._id, isDigital ? 'digital' : 'physical');
-    for (let i = 1; i < qty; i++) {
+    for (let i = 1; i < wanted; i++) {
       await updateQty(product._id, activeVariant._id, 'increase');
     }
     setAddedFeedback(true);
+    cartDrawer.openDrawer();
     setTimeout(() => setAddedFeedback(false), 2000);
   };
 
@@ -272,21 +289,21 @@ export function NovaProductPage() {
             </div>
           )}
 
-          {isBlockOn('product_variant_picker') && <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />}
+          {isBlockOn('product_variant_picker') && <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} isDigital={isDigital} />}
 
           {isBlockOn('product_quantity') && !isDigital && (
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: '9999px' }}>
-                <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+                <button type="button" disabled={qty <= 1} aria-label="Decrease quantity" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
                   <Minus size={13} />
                 </button>
                 <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, width: '36px', textAlign: 'center' }}>{qty}</span>
-                <button type="button" onClick={() => setQty(q => Math.min(stock === Infinity ? q + 1 : stock, q + 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+                <button type="button" onClick={() => setQty(q => Math.min(maxQty, q + 1))} disabled={!canBuy || qty >= maxQty} aria-label="Increase quantity" className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
                   <Plus size={13} />
                 </button>
               </div>
               <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
-                {stock > 0 ? `${stock === Infinity ? '' : stock + ' '}in stock` : 'Out of stock'}
+                {state === 'sold_out' ? 'Sold out' : state === 'low' ? `Only ${stock} left` : state === 'backorder' ? 'Available on backorder' : 'In stock'}
               </span>
             </div>
           )}
@@ -304,12 +321,12 @@ export function NovaProductPage() {
 
           {isBlockOn('product_buy_buttons') && (
             <NovaButton
-              disabled={stock <= 0}
+              disabled={!canBuy}
               loading={adding === activeVariant?._id}
               onClick={handleAddToCart}
               style={{ width: '100%', justifyContent: 'center' }}
             >
-              {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+              {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : !canBuy ? 'Sold out' : 'Add to Cart'}
             </NovaButton>
           )}
 

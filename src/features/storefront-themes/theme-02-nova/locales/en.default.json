@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "shop": "Shop",
+    "stories": "Stories",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "account": "Account",
+    "cart": "Cart"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "soldOut": "Sold out",
+    "inStock": "In stock",
+    "lowStock": "Only {count} left",
+    "backorder": "Available on backorder",
+    "notAvailable": "This product isn't available.",
+    "backToShop": "Back to shop",
+    "description": "Description"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Nothing here yet — browse the shop to find something you'll love.",
+    "orderSummary": "Order Summary",
+    "total": "Total",
+    "checkout": "Checkout",
+    "clearCart": "Clear Cart",
+    "remove": "Remove"
+  },
+  "search": {
+    "resultsFor": "Results for \"{query}\""
+  },
+  "account": {
+    "myAccount": "My Account",
+    "orderHistory": "Order History",
+    "logOut": "Log out",
+    "saveChanges": "Save Changes"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "createAccount": "Create an account"
+  }
+}

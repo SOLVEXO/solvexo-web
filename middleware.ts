@@ -1,32 +1,46 @@
-import { rewrite } from '@vercel/functions';
+import { next, rewrite } from '@vercel/functions';
 
-const PLATFORM_APEX = 'solvexo.store';
-const RESERVED_PREFIXES = new Set(['www', 'staging', 'api']);
+const PLATFORM_HOSTS = new Set(['solvexo.store', 'www.solvexo.store', 'solvexo.com', 'www.solvexo.com']);
+const RESERVED_SUBDOMAINS = new Set(['www', 'staging', 'api', 'admin', 'app', 'seller', 'dashboard', 'cdn', 'assets', 'mail']);
 const SEO_API_ORIGIN = 'https://api.solvexo.store';
 
-/** Serve crawler files from the store's own origin while resolving them from
- * the backend with the incoming host preserved. All other storefront routes
- * continue through the existing SPA route. */
-export default function storefrontCrawlerFiles(request: Request) {
-  const incoming = new URL(request.url);
-  const host = (request.headers.get('host') || incoming.host).split(':')[0].toLowerCase();
-  const path = incoming.pathname;
-  const isCrawlerFile = path === '/robots.txt' || path === '/sitemap.xml' || /^\/sitemap-\d+\.xml$/.test(path);
-  if (!isCrawlerFile || !isStorefrontHost(host)) return;
+export default function middleware(request: Request) {
+  const hostname = request.headers.get('host')?.split(':')[0]?.toLowerCase();
+  const pathname = new URL(request.url).pathname;
+  const crawlerFile = pathname === '/robots.txt' || pathname === '/sitemap.xml' || /^\/sitemap-\d+\.xml$/.test(pathname);
+  if (crawlerFile && hostname && isStorefrontHost(hostname)) {
+    const target = new URL(`${SEO_API_ORIGIN}/api/storefront-seo${pathname}`);
+    target.searchParams.set('host', hostname);
+    return rewrite(target);
+  }
+  if (!hostname || isPlatformHost(hostname) || hostname.endsWith('.vercel.app') || hostname === 'localhost' || pathname.startsWith('/api/') || pathname.startsWith('/assets/') || pathname === '/favicon.ico') {
+    return next();
+  }
+  if (pathname === '/manifest.webmanifest' || pathname === '/site.webmanifest') return next();
 
-  const destination = new URL(`${SEO_API_ORIGIN}/api/storefront-seo${path}`);
-  destination.searchParams.set('host', host);
-  return rewrite(destination);
+  const target = new URL('/api/storefront-document', request.url);
+  target.searchParams.set('host', hostname);
+  target.searchParams.set('path', pathname);
+  return rewrite(target);
 }
 
-export const config = { matcher: ['/robots.txt', '/sitemap.xml', '/sitemap-:page(\\d+).xml'] };
+function isPlatformHost(host: string) {
+  if (PLATFORM_HOSTS.has(host)) return true;
+  if (host.endsWith('.solvexo.store')) {
+    const subdomain = host.slice(0, -'.solvexo.store'.length);
+    return !subdomain || subdomain.includes('.') || RESERVED_SUBDOMAINS.has(subdomain);
+  }
+  return false;
+}
 
-function isStorefrontHost(host: string): boolean {
+function isStorefrontHost(host: string) {
   if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.vercel.app')) return false;
-  if (host === PLATFORM_APEX || host === `www.${PLATFORM_APEX}`) return false;
-  if (host.endsWith(`.${PLATFORM_APEX}`)) {
-    const prefix = host.slice(0, -(`.${PLATFORM_APEX}`).length);
-    return !prefix.includes('.') && !RESERVED_PREFIXES.has(prefix);
+  if (host === 'solvexo.store' || host === 'www.solvexo.store') return false;
+  if (host.endsWith('.solvexo.store')) {
+    const subdomain = host.slice(0, -'.solvexo.store'.length);
+    return !subdomain.includes('.') && !RESERVED_SUBDOMAINS.has(subdomain);
   }
   return true;
 }
+
+export const config = { matcher: '/:path*' };

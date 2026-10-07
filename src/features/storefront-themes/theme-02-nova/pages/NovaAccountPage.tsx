@@ -1,7 +1,8 @@
+import { FEATURES } from '@/constants/features';
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, MessageCircle, Bell, RotateCcw, Gift, Wallet, MapPin, Star, ChevronRight } from 'lucide-react';
+import { Award, LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, MessageCircle, Bell, RotateCcw, Gift, Wallet, MapPin, Star, ChevronRight } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -193,8 +194,8 @@ export function NovaAccountPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" style={{ marginBottom: '36px' }}>
         {[
-          // Hidden from the UI (not built-in on Shopify) — to become an installable App later; code/data kept.
-          // { to: '/loyalty', icon: Award, label: 'Loyalty & Rewards' },
+          // Hidden via FEATURES.loyalty (not built-in on Shopify) — to become an installable App later; code/data kept.
+          ...(FEATURES.loyalty ? [{ to: '/loyalty', icon: Award, label: 'Loyalty & Rewards' }] : []),
           { to: '/orders', icon: Package, label: 'Orders' },
           { to: '/messages', icon: MessageCircle, label: 'Messages' },
           { to: '/notifications', icon: Bell, label: 'Notifications' },

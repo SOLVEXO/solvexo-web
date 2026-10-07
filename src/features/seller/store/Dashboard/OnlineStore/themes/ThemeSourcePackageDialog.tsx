@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Code2, FileCode2, Loader2, RotateCcw, Save, UploadCloud, X } from 'lucide-react';
+import { AlertTriangle, Code2, FileCode2, Loader2, MonitorPlay, RotateCcw, Save, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import {
   apiEditThemePackageFile, apiGetThemePackageRevision, apiListThemePackageRevisions,
-  apiRollbackThemePackage, apiUploadThemePackage, type ThemePackageRevision,
+  apiRollbackThemePackage, apiUploadThemePackage, apiPreviewThemePackage, type ThemePackageRevision,
 } from '@/api/services/storeTheme';
 
 export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }: { storeId: string; installedThemeId: string; onClose: () => void }) {
@@ -16,8 +16,10 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
 
   const reload = async () => {
+    setPreviewHtml('');
     const result = await apiListThemePackageRevisions(storeId, installedThemeId);
     const rows = result.data ?? [];
     setRevisions(rows);
@@ -26,6 +28,7 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   };
 
   const openRevision = async (version: number) => {
+    setPreviewHtml('');
     const result = await apiGetThemePackageRevision(storeId, installedThemeId, version);
     setSelected(result.data);
     const firstEditable = result.data.files.find((f) => f.encoding === 'utf8');
@@ -73,6 +76,15 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
     finally { setBusy(false); }
   };
 
+  const preview = async () => {
+    setBusy(true); setError('');
+    try {
+      const result = await apiPreviewThemePackage(storeId, installedThemeId, selected?.version);
+      setPreviewHtml(result.data.html);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Theme preview could not be rendered.'); }
+    finally { setBusy(false); }
+  };
+
   const chooseFile = async (path: string) => {
     if (!selected) return;
     if (dirty && !window.confirm('Discard your unsaved source edits and switch files?')) return;
@@ -104,9 +116,9 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
         <main className="p-4 flex flex-col min-w-0 min-h-0">
           {error && <p className="flex items-start gap-2 p-2.5 rounded-lg bg-error-bg text-error text-[12px]"><AlertTriangle size={14} className="shrink-0" />{error}</p>}
           {selected ? <>
-            <div className="flex items-center justify-between gap-3 mb-2"><span className="text-[12px] font-semibold truncate">{filePath || 'Choose a file'}</span><div className="flex gap-2 shrink-0"><button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button><button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button></div></div>
-            <textarea value={content} disabled={selectedFile?.encoding !== 'utf8'} onChange={(e) => { setContent(e.target.value); setDirty(true); }} spellCheck={false} className="flex-1 min-h-0 w-full resize-none rounded-xl bg-[#1E1B18] text-[#EDE9E1] disabled:text-[#B8B2A6] border border-bone p-4 font-mono text-[12px] leading-relaxed" />
-            <p className="m-0 mt-2 text-[10px] text-slate">Each source edit creates a new immutable revision. Theme source changes are stored separately from the currently rendered React theme.</p>
+            <div className="flex items-center justify-between gap-3 mb-2"><span className="text-[12px] font-semibold truncate">{filePath || 'Choose a file'}</span><div className="flex gap-2 shrink-0">{previewHtml && <button type="button" onClick={() => setPreviewHtml('')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer"><Code2 size={12} /> Edit source</button>}<button type="button" disabled={busy || dirty} onClick={preview} title={dirty ? 'Save the source edit to preview its new revision.' : undefined} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><MonitorPlay size={12} /> Preview revision</button><button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button><button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button></div></div>
+            {previewHtml ? <div className="flex-1 min-h-0 rounded-xl border border-bone overflow-hidden"><iframe title={`Theme source revision ${selected.version} preview`} sandbox="allow-scripts" srcDoc={previewHtml} className="w-full h-full border-0 bg-white" /></div> : <textarea value={content} disabled={selectedFile?.encoding !== 'utf8'} onChange={(e) => { setContent(e.target.value); setDirty(true); }} spellCheck={false} className="flex-1 min-h-0 w-full resize-none rounded-xl bg-[#1E1B18] text-[#EDE9E1] disabled:text-[#B8B2A6] border border-bone p-4 font-mono text-[12px] leading-relaxed" />}
+            <p className="m-0 mt-2 text-[10px] text-slate">Preview renders Liquid sections with sample store data in an isolated frame. This source preview is not the published storefront yet.</p>
           </> : <div className="flex-1 flex items-center justify-center text-center text-[12px] text-slate">Import a Shopify theme ZIP to start a versioned source workspace.</div>}
         </main>
       </div>

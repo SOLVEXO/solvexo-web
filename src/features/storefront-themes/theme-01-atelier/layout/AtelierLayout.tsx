@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { CartDrawerProvider } from '../../CartDrawer';
+import { AtelierButton } from '../components/AtelierButton';
 import { AtelierNavbar } from '../components/AtelierNavbar';
 import { AtelierFooter } from '../components/AtelierFooter';
 import { atelierTheme as t, applyMerchantThemeOverrides } from '../theme.config';
@@ -20,6 +22,7 @@ export function AtelierLayout({ children }: { children: ReactNode }) {
   // reads `t.colors.x`/`t.fonts.x` — see the doc comment on `atelierTheme`.
   applyMerchantThemeOverrides(theme?.theme ?? null);
   return (
+    <CartDrawerProvider theme={t} Button={AtelierButton}>
     <div style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, minHeight: '100vh' }}>
       {theme?.customCss && <style>{theme.customCss}</style>}
       <AtelierNavbar />
@@ -35,5 +38,6 @@ export function AtelierLayout({ children }: { children: ReactNode }) {
       {children}
       <AtelierFooter />
     </div>
+    </CartDrawerProvider>
   );
 }

@@ -1,3 +1,4 @@
+import { FEATURES } from '@/constants/features';
 import { useEffect, useState } from 'react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { Toggle } from './Toggle';
@@ -183,7 +184,8 @@ export function NotificationsPanel() {
                   />
                 </div>
 
-                <div className="flex justify-between items-center gap-4">
+                {FEATURES.loyalty && (
+<div className="flex justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
                     <div className="size-7 rounded bg-[#fff8e7] flex items-center justify-center shrink-0">
                       <Star size={13} className="text-[#d4af37]" />
@@ -199,6 +201,7 @@ export function NotificationsPanel() {
                     onChange={(v) => handleTogglePref('loyalty', v)}
                   />
                 </div>
+)}
 
                 <div className="flex justify-between items-center gap-4">
                   <div className="flex items-center gap-3">

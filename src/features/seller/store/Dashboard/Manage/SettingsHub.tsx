@@ -4,7 +4,8 @@ import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
   Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell,
 } from 'lucide-react';
-import { StorePageHeader, StoreNavMenu, useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { TokenStorage, type AppRole } from '@/api/services/auth';
+import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { NotificationsPanel } from '@/components/comman/ui';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
@@ -23,7 +24,7 @@ import { StoreIntegrations } from '../Operations/integrations/Integrations';
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
 const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
 
-const TABS: Tab[] = [
+const ALL_TABS: Tab[] = [
   { id: 'profile', label: 'Store Profile',    icon: <Store size={13} /> },
   { id: 'product-types', label: 'Product Types',    icon: <Package size={13} /> },
   { id: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={13} /> },
@@ -128,6 +129,15 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
   );
 }
 
+// Staff permission per tab (any-of); no entry = every role. UX gate only; the backend enforces.
+const TAB_PERMS: Record<string, string[]> = {
+  profile: ['settings.general.manage'], 'product-types': ['settings.general.manage'],
+  'payment-methods': ['settings.payments.manage'], domains: ['settings.domains.manage'], privacy: ['settings.general.manage'],
+  billing: ['settings.billing.view', 'settings.billing.manage'], integrations: ['settings.payments.manage', 'settings.shipping.manage'],
+  staff: ['staff.manage'], 'custom-fields': ['content.menus.manage', 'content.metaobjects.manage'],
+  'content-types': ['content.menus.manage', 'content.metaobjects.manage'], 'activity-log': ['settings.general.manage'],
+};
+
 /** Single tabbed "Settings" hub — same Inventory-Hub-style consolidation
  *  (`InventoryHub.tsx`) of what used to be 6 separate top-level pages/routes
  *  (Store Settings, Billing, Integrations, Staff, Custom Fields, Content
@@ -159,6 +169,8 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
  *  visitor is already looking at Settings' own tabs directly above it. */
 export default function SettingsHub() {
   const { store, storeId } = useStoreWorkspace();
+  const user = TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>();
+  const TABS = ALL_TABS.filter(t => !TAB_PERMS[t.id] || hasNavPermission(user, TAB_PERMS[t.id]));
   // Every tab has its own URL: /store/:storeId/settings/:tab. No tab = the
   // mobile menu screen (desktop redirects to /profile). Old `?tab=` links
   // (dashboard, notification bell, bookmarks) are redirected to the path form.
@@ -168,11 +180,11 @@ export default function SettingsHub() {
   const legacyTab = searchParams.get('tab');
   const legacyId = legacyTab ? (LEGACY_TAB_IDS[legacyTab] ?? legacyTab) : null;
   const validTab = tabParam && TABS.some(t => t.id === tabParam) ? tabParam : null;
-  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs(validTab ?? 'profile');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs(validTab ?? TABS[0]?.id ?? 'notifications');
   useEffect(() => { if (validTab) setActiveTab(validTab); }, [validTab, setActiveTab]);
   useEffect(() => {
     if (!tabParam && !legacyId && window.matchMedia('(min-width: 1024px)').matches) {
-      navigate(`/store/${storeId}/settings/profile`, { replace: true });
+      navigate(`/store/${storeId}/settings/${TABS[0]?.id ?? 'notifications'}`, { replace: true });
     }
   }, [tabParam, legacyId, storeId, navigate]);
   // Mobile drill-in = a tab is in the URL (back arrow returns to /settings).
@@ -184,7 +196,7 @@ export default function SettingsHub() {
   if (legacyId && !tabParam && TABS.some(t => t.id === legacyId)) {
     return <Navigate to={`/store/${storeId}/settings/${legacyId}`} replace />;
   }
-  if (tabParam && !validTab) return <Navigate to={`/store/${storeId}/settings/profile`} replace />;
+  if (tabParam && !validTab) return <Navigate to={`/store/${storeId}/settings/${TABS[0]?.id ?? 'notifications'}`} replace />;
 
   return (
     <>

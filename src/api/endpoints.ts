@@ -114,7 +114,6 @@ export const ENDPOINTS = {
     // Seller — a store's own subscriber list
     STORE_SUBSCRIBERS:       (storeId: string) => `/api/newsletter/stores/${storeId}/subscribers`,
     STORE_SUBSCRIBERS_EXPORT:(storeId: string) => `/api/newsletter/stores/${storeId}/subscribers/export`,
-    STORE_SUBSCRIBERS_IMPORT:(storeId: string) => `/api/newsletter/stores/${storeId}/subscribers/import`,
     STORE_SUBSCRIBER:        (storeId: string, id: string) => `/api/newsletter/stores/${storeId}/subscribers/${id}`,
     // Admin — Solvexo's own platform list + broadcasts
     ADMIN_SUBSCRIBERS:        '/api/admin/newsletter/subscribers',
@@ -205,7 +204,7 @@ export const ENDPOINTS = {
     PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,
     PRIVACY_REQUEST_SUBMIT:   (storeId: string) => `/api/store/public/${storeId}/privacy-requests`,
     PRIVACY_REQUEST_COMPLETE: (storeId: string, requestId: string) => `/api/store/${storeId}/privacy-requests/${requestId}/complete`,
-    VERIFY_PASSWORD: (storeId: string) => `/api/store/public/${storeId}/verify-password`,
+    VERIFY_PASSWORD: (storeId: string) => `/api/store/${storeId}/storefront-password/verify`,
     ROBOTS_TXT:    (storeId: string) => `/api/store/${storeId}/robots-txt`,
     // Solvexo's own single POS app — a single, already-published, PAID
     // Google Play listing. Google Play collects payment directly from the
@@ -600,6 +599,8 @@ export const ENDPOINTS = {
     STORES:   '/api/search/stores',
     PRODUCTS: '/api/search/products',
     RECENT:   '/api/search/recent',
+    PUBLIC_SUGGEST: '/api/public/search/suggest',
+    PUBLIC_CONTENT: '/api/public/search/content',
   },
 
   // ── PRODUCT VIEWS (Phase 5 tracking foundation) ─────────────────────────────

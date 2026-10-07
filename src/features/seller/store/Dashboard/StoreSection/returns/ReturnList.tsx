@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { Table, Pagination, type TableColumn } from '@/components/comman/ui';
 import { apiGetSellerReturns, type SellerReturnItem } from '@/api/services/orders';
+import { apiGetSellerOrderDetail } from '@/api/services/product';
+import type { SellerOrderDetailItem } from '@/api/services/product';
+import { TokenStorage } from '@/api/services/auth';
+import { ExchangeModal } from '../orders/ExchangeModal';
 import { currencySymbol } from '@/utils/currency';
 import { ReturnWorkflowModal } from './ReturnWorkflowModal';
 import {
@@ -40,6 +44,27 @@ export function StoreReturnList() {
   const [acting, setActing]   = useState<{ mode: ReturnWorkflowMode; item: SellerReturnItem } | null>(null);
 
   const refetch = useCallback(() => setRefreshKey(k => k + 1), []);
+
+  // Exchange: the same ExchangeModal as the order page. The order is loaded first (it needs the order's lines + paid state);
+  // only the clicked return line is offered. Needs the `orders.return` permission, like the backend route.
+  const canExchangePerm = hasNavPermission(TokenStorage.getUser() as Parameters<typeof hasNavPermission>[0], 'orders.return');
+  const [exchangeLoading, setExchangeLoading] = useState<string | null>(null);
+  const [exchangeError, setExchangeError] = useState('');
+  const [exchanging, setExchanging] = useState<{ item: SellerReturnItem; lines: SellerOrderDetailItem[]; isPaid: boolean } | null>(null);
+  const openExchange = (r: SellerReturnItem) => {
+    setExchangeLoading(r.itemId);
+    setExchangeError('');
+    apiGetSellerOrderDetail(r.storeId, r.orderId)
+      .then(res => {
+        const d = res.data;
+        const lines = d.sellerOrder.items.filter(i => i._id === r.itemId && i.type === 'physical' && ['requested', 'approved', 'received'].includes(i.returnStatus) && !i.exchangeOrderId);
+        if (d.exchangeOf) setExchangeError('This order is itself an exchange order and cannot be exchanged again.');
+        else if (lines.length === 0) setExchangeError('This return line can no longer be exchanged - refresh the list.');
+        else setExchanging({ item: r, lines, isPaid: d.isPaid });
+      })
+      .catch((err: unknown) => setExchangeError(err instanceof Error ? err.message : 'Could not load the order.'))
+      .finally(() => setExchangeLoading(null));
+  };
 
   useEffect(() => {
     if (!storeId) return;
@@ -91,8 +116,13 @@ export function StoreReturnList() {
           <div className="flex items-center gap-1.5">
             {mode && <button onClick={() => setActing({ mode, item: r })} className={rowBtn}>{PRIMARY_RETURN_LABEL[mode]}</button>}
             {canClose && <button onClick={() => setActing({ mode: 'close', item: r })} className={rowBtn}>Close</button>}
+            {canExchangePerm && ['requested', 'approved', 'received'].includes(r.returnStatus) && !r.exchangeOrderId && r.itemType !== 'digital' && (
+              <button onClick={() => openExchange(r)} disabled={exchangeLoading === r.itemId} className={rowBtn}>
+                {exchangeLoading === r.itemId ? 'Loading...' : 'Exchange'}
+              </button>
+            )}
             <button onClick={() => navigate(`/store/${storeId}/orders/detail/${r.orderId}`)} className={rowBtn}>
-              {mode ? 'Exchange / label' : 'Order'}
+              {mode ? 'Order / label' : 'Order'}
             </button>
           </div>
         );
@@ -130,6 +160,14 @@ export function StoreReturnList() {
             1. Approve the request (no money moves). 2. When the items arrive, mark them as received and choose whether to restock. 3. Refund them to the original payment method or store credit, or exchange them for other items.
           </p>
         </div>
+
+        {exchangeError && (
+          <div role="alert" className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
+            <AlertCircle size={16} className="text-error shrink-0" />
+            <span className="text-[13px] text-error flex-1">{exchangeError}</span>
+            <button onClick={() => setExchangeError('')} className="text-[12px] text-error font-semibold cursor-pointer">Dismiss</button>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -193,6 +231,19 @@ export function StoreReturnList() {
           </div>
         )}
       </div>
+
+      {exchanging && (
+        <ExchangeModal
+          storeId={exchanging.item.storeId}
+          orderId={exchanging.item.orderId}
+          orderNumber={exchanging.item.orderNumber}
+          lines={exchanging.lines}
+          symbol={currencySymbol(store?.baseCurrency)}
+          isPaid={exchanging.isPaid}
+          onClose={() => setExchanging(null)}
+          onDone={() => { setExchanging(null); refetch(); }}
+        />
+      )}
 
       {acting && (
         <ReturnWorkflowModal

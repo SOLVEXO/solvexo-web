@@ -19,13 +19,8 @@ const SNIPPET_SOURCES = import.meta.glob([
   './components/novaFormStyles.ts',
 ], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
-// Nova has no `locales/en.default.json` file of its own yet (disclosed
-// limitation — this theme's own microcopy hasn't been separately versioned
-// out to a locale file the way Atelier's has). Per `ThemeDevFiles`'
-// own contract ("a theme with no such file registers `{}`"), this is a
-// real, honest empty registration rather than a glob over a path that
-// doesn't exist.
-const LOCALE_SOURCE: Record<string, string> = {};
+// `locales/` — read-only reference of this theme's user-facing microcopy (same scope as Atelier's).
+const LOCALE_SOURCE = import.meta.glob('./locales/en.default.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 registerThemeDevFiles({
   id: 'theme-02-nova',

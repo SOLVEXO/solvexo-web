@@ -6,6 +6,8 @@ import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplat
 import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
+import { StorefrontSearchTabs } from '@/features/storefront/browse/StorefrontSearchTabs';
+import type { BrowseTokens } from '@/features/storefront/browse/StorefrontProductBrowser';
 import { atelierTheme as t } from '../theme.config';
 
 /** `/search?q=` — the results grid itself is fixed commerce-critical core
@@ -46,10 +48,13 @@ export function AtelierSearchPage() {
   // results grid; rendering it again would duplicate the grid on the page.
   const surrounding = sections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
 
+  const tokens: BrowseTokens = { fonts: t.fonts, colors: t.colors, radius: t.radius.sm, borderWidth: '1px', headingWeight: 600, skeletonAspect: '3/4' };
+
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
       {surrounding.length > 0 && <div style={{ marginBottom: '32px' }}><AtelierSectionRenderer sections={surrounding} /></div>}
-      <AtelierProductGrid heading={`Results for "${q}"`} search={q} />
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, marginBottom: '24px' }}>Results for &quot;{q}&quot;</h1>
+      <StorefrontSearchTabs tokens={tokens} q={q} products={<AtelierProductGrid search={q} syncUrl />} />
     </main>
   );
 }

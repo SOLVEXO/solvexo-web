@@ -17,6 +17,17 @@ export interface EnabledCurrency {
   sanityBandMax: number | null;
 }
 
+/** Tax override: a different rate for specific collections/categories (optionally per country/state) — Shopify "tax overrides". */
+export interface TaxOverride {
+  id: string;
+  name: string;
+  country: string | null;
+  state: string | null;
+  rate: number;
+  collectionIds: string[];
+  categoryIds: string[];
+}
+
 /** One manual "Tax region" entry — see `UpdateStorePayload.taxRegions`. */
 export interface TaxRegion {
   country: string;
@@ -343,7 +354,7 @@ export function apiCompletePrivacyRequest(storeId: string, requestId: string) {
 /** POST /api/store/public/:storeId/verify-password — the storefront gate's
  *  own submit call (`AtelierStorefrontGate`/`NovaStorefrontGate`). */
 export function apiVerifyStorePassword(storeId: string, password: string) {
-  return client.post<never, ApiResponse<{ valid: boolean }>>(ENDPOINTS.STORE.VERIFY_PASSWORD(storeId), { password });
+  return client.post<never, ApiResponse<{ valid: boolean; token: string | null }>>(ENDPOINTS.STORE.VERIFY_PASSWORD(storeId), { password });
 }
 
 /** PATCH /api/store/:storeId/robots-txt — seller-facing custom robots.txt
@@ -444,6 +455,8 @@ export interface PublicStoreData {
   tagline:        string | null;
   contactEmail:   string | null;
   contactPhone:   string | null;
+  /** Store "low stock" cutoff (public) — drives the product page low-stock text. */
+  lowStockThreshold?: number;
   /** The store's single fixed root category — needed to resolve its own
    *  subcategory tree for `/category/:slugOrId` (`apiGetCategoryTree`). */
   categoryId:     string | null;
@@ -466,6 +479,8 @@ export interface PublicStoreData {
    *  sees the real site, same as before this field existed. See
    *  `StorefrontLayout.tsx` for where this is enforced. */
   privacyMode: 'public' | 'password' | 'coming_soon';
+  /** True when visitors need the storefront password (server-enforced via `x-storefront-token`). */
+  passwordProtected?: boolean;
   /** Customer Privacy — see `StoreData`'s identical fields for the full doc
    *  comment. `cookieBannerEnabled`/`showDoNotSellLink` default false. */
   cookieBannerEnabled: boolean;
@@ -495,6 +510,22 @@ export interface PublicStoreProductsParams {
   tag?:          string;
   search?:       string;
   onSale?:       boolean;
+  /** Multi-value filters (any-of within a group). */
+  tags?:         string[];
+  productTypes?: string[];
+  /** Variant option filters, e.g. { Color: ['Red','Blue'] } (any-of within a name, all names must match). */
+  options?:      Record<string, string[]>;
+  /** Ask for facet counts (disjunctive) alongside the page. */
+  facets?:       boolean;
+}
+
+export interface PublicStoreFacets {
+  availability: { in_stock: number; out_of_stock: number };
+  /** Cheapest-variant price range of the currently matching products, in the STORE currency. */
+  price: { min: number | null; max: number | null; currency: string | null };
+  productTypes: { value: string; count: number }[];
+  tags: { value: string; count: number }[];
+  options: { name: string; values: { value: string; count: number }[] }[];
 }
 
 export interface PublicStoreProduct {
@@ -520,6 +551,7 @@ export interface PublicStoreProduct {
 export interface PublicStoreProductsData {
   pagination: { page: number; limit: number; total: number; totalPages: number };
   products:   PublicStoreProduct[];
+  facets?:    PublicStoreFacets;
 }
 
 /** GET /api/store/public/:slug */
@@ -528,7 +560,7 @@ export function apiGetPublicStore(slug: string) {
 }
 
 /** GET /api/store/public/:storeId/products */
-export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreProductsParams) {
+export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreProductsParams, signal?: AbortSignal) {
   const query = new URLSearchParams();
   if (params?.page)       query.set('page',       String(params.page));
   if (params?.limit)      query.set('limit',      String(params.limit));
@@ -542,9 +574,16 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
   if (params?.availability) query.set('availability', params.availability);
   if (params?.minPrice != null) query.set('minPrice', String(params.minPrice));
   if (params?.maxPrice != null) query.set('maxPrice', String(params.maxPrice));
+  if (params?.tags?.length)         query.set('tags',        params.tags.join(','));
+  if (params?.productTypes?.length) query.set('productType', params.productTypes.join(','));
+  for (const [name, values] of Object.entries(params?.options ?? {})) {
+    if (values.length) query.set('option.' + name, values.join(','));
+  }
+  if (params?.facets)       query.set('facets',       'true');
   const qs = query.toString();
   return client.get<never, ApiResponse<PublicStoreProductsData>>(
     `${ENDPOINTS.STORE.PUBLIC_PRODUCTS(storeId)}${qs ? `?${qs}` : ''}`,
+    { signal },
   );
 }
 

@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
+import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
+import { useCartDrawer } from '../../CartDrawer';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
 import { CurrencySelector } from '@/components/comman/ui';
@@ -22,12 +24,13 @@ import { novaTheme as t } from '../theme.config';
 export function NovaNavbar() {
   const { store, theme, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
+  const cartDrawer = useCartDrawer();
+  const { pathname } = useLocation();
   const { wishlistCount } = useWishlistContext();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [q, setQ] = useState('');
   const isLoggedIn = TokenStorage.isLoggedIn();
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
@@ -47,13 +50,6 @@ export function NovaNavbar() {
     ? headerNavBlocks.map(b => ({ id: b._id ?? b.settings.label, label: b.settings.label as string, link: resolveLink(b.settings as StorefrontLinkSettings) }))
     : [{ id: 'stories', label: 'Stories', link: { to: '/blog' } }];
 
-  const submitSearch = (e: FormEvent) => {
-    e.preventDefault();
-    if (!q.trim()) return;
-    navigate(`/search?q=${encodeURIComponent(q.trim())}`);
-    setSearchOpen(false);
-    setQ('');
-  };
 
   return (
     <header style={{ borderBottom: `1.5px solid ${t.colors.border}`, background: t.colors.bg }}>
@@ -188,6 +184,7 @@ export function NovaNavbar() {
           )}
           <Link
             to="/cart"
+            onClick={e => { if (cartDrawer.mounted && pathname !== '/cart') { e.preventDefault(); cartDrawer.openDrawer(); } }}
             aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`}
             className="relative flex items-center justify-center"
             style={{ color: t.colors.accentInk, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.accent }}
@@ -207,18 +204,12 @@ export function NovaNavbar() {
       </div>
 
       {searchOpen && (
-        <form onSubmit={submitSearch} className="border-t" style={{ borderColor: t.colors.border, padding: `12px ${t.layout.containerPadX}` }}>
-          <label htmlFor="nova-search" className="sr-only">Search products</label>
-          <input
-            id="nova-search"
-            autoFocus
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder="Search products…"
-            className="w-full bg-transparent outline-none"
-            style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink, maxWidth: t.layout.maxWidth, margin: '0 auto', display: 'block' }}
+        <div className="border-t" style={{ borderColor: t.colors.border, padding: `12px ${t.layout.containerPadX}` }}>
+          <StorefrontPredictiveSearch
+            tokens={{ fonts: t.fonts, colors: t.colors, radius: t.radius.sm, borderWidth: '1.5px', headingWeight: 700, skeletonAspect: '1/1' }}
+            inputId="nova-search" maxWidth={t.layout.maxWidth} onDone={() => setSearchOpen(false)}
           />
-        </form>
+        </div>
       )}
 
       {mobileOpen && (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Lock, AlertCircle, Clock } from 'lucide-react';
 import type { PublicStoreData } from '@/api/services/store';
 import { apiVerifyStorePassword } from '@/api/services/store';
+import { setStorefrontToken } from '@/utils/currentStorefront';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput, atelierLabel } from '../components/atelierFormStyles';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -29,7 +30,7 @@ export function AtelierStorefrontGate({ store, onUnlocked }: { store: PublicStor
     try {
       const res = await apiVerifyStorePassword(store.storeId, password);
       if (res.data.valid) {
-        sessionStorage.setItem(`storefront_unlock_${store.storeId}`, '1');
+        setStorefrontToken(store.storeId, res.data.token);
         onUnlocked();
       } else {
         setError('Incorrect password. Please try again.');

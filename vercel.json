@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/storefront-document.js": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

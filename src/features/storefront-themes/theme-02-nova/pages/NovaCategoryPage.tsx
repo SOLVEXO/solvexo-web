@@ -42,7 +42,7 @@ export function NovaCategoryPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-      <NovaProductGrid heading={category.name} categoryId={category._id} />
+      <NovaProductGrid heading={category.name} categoryId={category._id} syncUrl />
     </main>
   );
 }

@@ -88,8 +88,8 @@ export function apiUpdateStorePage(storeId: string, pageId: string, payload: Par
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UPDATE(storeId, pageId), payload);
 }
 
-export function apiUpdateStorePageSections(storeId: string, pageId: string, sections: Section[], installedThemeId?: string) {
-  return client.patch<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.UPDATE_SECTIONS(storeId, pageId), installedThemeId), { sections });
+export function apiUpdateStorePageSections(storeId: string, pageId: string, sections: Section[], installedThemeId?: string, baseUpdatedAt?: string) {
+  return client.patch<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.UPDATE_SECTIONS(storeId, pageId), installedThemeId), { sections, ...(baseUpdatedAt ? { baseUpdatedAt } : {}) });
 }
 
 /** The seller editor's working copy — `draft.sections` plus `lastPublishedAt`, mirroring `apiGetStoreThemeDraft`'s shape/purpose. Not required for today's Pages tab (which reads `draft` off the normal `apiGetStorePage`/`apiListStorePages` response), but available for anything that wants just the draft without the rest of the page doc. */

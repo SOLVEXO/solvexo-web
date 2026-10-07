@@ -65,6 +65,14 @@ export function CookieConsentBanner({
           </button>
           <button
             type="button"
+            onClick={() => onDecide({ analytics: false, marketing: false })}
+            className="px-4 py-2 rounded-lg text-[12.5px] font-semibold border-none cursor-pointer shrink-0"
+            style={{ background: p.buttonBg, color: p.buttonText }}
+          >
+            Reject All
+          </button>
+          <button
+            type="button"
             onClick={() => onDecide({ analytics: true, marketing: true })}
             className="px-4 py-2 rounded-lg text-[12.5px] font-semibold border-none cursor-pointer shrink-0"
             style={{ background: p.buttonBg, color: p.buttonText }}

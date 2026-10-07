@@ -6,6 +6,8 @@ import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplat
 import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
 import { NovaProductGrid } from '../components/NovaProductGrid';
+import { StorefrontSearchTabs } from '@/features/storefront/browse/StorefrontSearchTabs';
+import type { BrowseTokens } from '@/features/storefront/browse/StorefrontProductBrowser';
 import { novaTheme as t } from '../theme.config';
 
 /** `/search?q=` — same real template-driven shape as `AtelierSearchPage`
@@ -37,10 +39,13 @@ export function NovaSearchPage() {
   // grid; see the identical comment in `AtelierSearchPage.tsx`.
   const surrounding = sections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
 
+  const tokens: BrowseTokens = { fonts: t.fonts, colors: t.colors, radius: t.radius.sm, borderWidth: '1.5px', headingWeight: 700, skeletonAspect: '1/1' };
+
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
       {surrounding.length > 0 && <div style={{ marginBottom: '32px' }}><NovaSectionRenderer sections={surrounding} /></div>}
-      <NovaProductGrid heading={`Results for "${q}"`} search={q} />
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '24px' }}>Results for &quot;{q}&quot;</h1>
+      <StorefrontSearchTabs tokens={tokens} q={q} products={<NovaProductGrid search={q} syncUrl />} />
     </main>
   );
 }

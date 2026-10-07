@@ -79,7 +79,7 @@ export function NovaCollectionPage() {
       <NovaCollectionScopeProvider value={collection._id}>
         <NovaSectionRenderer sections={sections} dynamicSourceValues={dynamicSourceValues} />
       </NovaCollectionScopeProvider>
-      {!hasGridAnchor && <NovaProductGrid collectionId={collection._id} />}
+      {!hasGridAnchor && <NovaProductGrid collectionId={collection._id} syncUrl />}
     </main>
   );
 }

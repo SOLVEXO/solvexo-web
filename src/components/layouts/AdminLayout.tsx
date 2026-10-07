@@ -7,6 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
+  Tag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -50,6 +51,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
   // tabbed page — see ADMIN_MODULES' doc comment below for why.
   { id: 'content',       Icon: ImageIcon,       label: 'Site Content',    path: '/admin/content'       },
+  { id: 'platform-coupons', Icon: Tag,           label: 'Platform Coupons', path: '/admin/platform-coupons' },
   { id: 'newsletter',    Icon: Mail,            label: 'Newsletter',      path: '/admin/newsletter'    },
   { id: 'config',        Icon: Settings,        label: 'Platform Config', path: '/admin/config'        },
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
@@ -142,7 +144,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   // queue (seller white-label branded apps), unrelated to buyer-subscribes-
   // to-seller-plan monitoring or Solvexo's own SaaS plan catalog, which is
   // what Billing actually is.
-  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter'], collapsible: true },
+  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter', 'platform-coupons'], collapsible: true },
   // Manual bank-transfer verification moved to each seller's own Store
   // Workspace (money lands directly in the seller's own bank account now,
   // never Solvexo's — see ManualPaymentsService) — just one destination

@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRouteTabs } from '@/hooks/useRouteTabs';
+import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
+import { Navigate } from 'react-router-dom';
+import { FEATURES } from '@/constants/features';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
@@ -44,8 +48,8 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'email',     label: 'Email Campaigns', Icon: Mail         },
   { id: 'automations', label: 'Automations',   Icon: Zap          },
   { id: 'cart',      label: 'Abandoned Cart',  Icon: ShoppingCart },
-  // Hidden from the UI (not built-in on Shopify) — to become an installable App later; code/data kept.
-  // { id: 'affiliate', label: 'Affiliate',       Icon: Handshake    },
+  // Hidden via FEATURES.affiliates (not built-in on Shopify) — to become an installable App later; code/data kept.
+  ...(FEATURES.affiliates ? [{ id: 'affiliate' as Tab, label: 'Affiliate', Icon: Handshake }] : []),
   { id: 'pixels',    label: 'Tracking Pixels', Icon: Target       },
 ];
 
@@ -169,7 +173,15 @@ function AffiliateFormModal({ storeId, onClose, onSaved }: { storeId: string; on
 
 export function StoreMarketing() {
   const { store, storeId } = useStoreWorkspace();
-  const [tab, setTab] = useState<Tab>('coupons');
+  const MARKETING_PERMS: Record<string, string[]> = {
+    coupons: ['discounts.manage'], platform: ['marketing.manage'], email: ['marketing.manage'],
+    automations: ['marketing.manage'], cart: ['marketing.manage'], affiliate: ['marketing.manage'], pixels: ['settings.pixels.manage'],
+  };
+  const { visibleTabs, activeTab, openTab, redirectTo, blocked } = useRouteTabs({
+    tabs: TABS.map(t => ({ id: t.id, label: t.label })), base: 'marketing', permissions: MARKETING_PERMS,
+  });
+  const tab = (activeTab === 'none' ? 'coupons' : activeTab) as Tab;
+  const setTab = (id: Tab) => openTab(id);
   // Every tab below lives in this ONE component (never unmounted on switch) —
   // its own useEffect gates on `tab === 'x'`, but without this guard, that
   // effect re-fires (and refetches) every single time the tab is revisited,
@@ -567,6 +579,9 @@ export function StoreMarketing() {
   const activeCount = coupons.filter(c => c.isActive).length;
   const totalRedemptions = coupons.reduce((sum, c) => sum + c.usageCount, 0);
 
+  if (redirectTo) return <Navigate to={redirectTo} replace />;
+  if (blocked) return <NoTabAccess title="Marketing" />;
+
   return (
     <>
       <StorePageHeader
@@ -592,7 +607,7 @@ export function StoreMarketing() {
         {/* Tab bar — horizontally scrollable so 9 tabs never wrap/get cut off on narrower screens */}
         <div className="border-b border-bone overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-0.5 w-max">
-            {TABS.map(t => (
+            {TABS.filter(t => visibleTabs.some(v => v.id === t.id)).map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className="flex items-center gap-1.5 shrink-0 whitespace-nowrap px-3 sm:px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent -mb-px transition-colors duration-150 hover:text-brand-orange rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                 style={{ borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`, color: tab === t.id ? '#D97757' : '#8C8A82' }}

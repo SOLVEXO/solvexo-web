@@ -72,6 +72,8 @@ export function useStorefrontSeo({ entityType, entityId, title, description, ima
       .catch(() => { if (!cancelled) setResolved(null); });
     return () => { cancelled = true; };
   }, [entityType, entityId]);
+  // Storefront's own host (already redirected to the primary domain) — the backend URL is apex/path-based.
+  const pageUrl = `${window.location.origin}${window.location.pathname}`;
 
   useEffect(() => {
     if (resolved) {
@@ -80,13 +82,13 @@ export function useStorefrontSeo({ entityType, entityId, title, description, ima
       setMetaTag('property', 'og:title', resolved.ogTitle);
       setMetaTag('property', 'og:description', resolved.ogDescription);
       setMetaTag('property', 'og:type', resolved.entityType === 'product' ? 'product' : 'website');
-      setMetaTag('property', 'og:url', resolved.url);
+      setMetaTag('property', 'og:url', pageUrl);
       if (resolved.ogImage) setMetaTag('property', 'og:image', resolved.ogImage);
       setMetaTag('name', 'twitter:card', resolved.twitterCard);
       setMetaTag('name', 'twitter:title', resolved.ogTitle);
       setMetaTag('name', 'twitter:description', resolved.ogDescription);
       if (resolved.ogImage) setMetaTag('name', 'twitter:image', resolved.ogImage);
-      setCanonicalLink(resolved.canonicalUrl);
+      setCanonicalLink(pageUrl);
       setMetaTag('name', 'robots', resolved.noindex ? 'noindex, nofollow' : 'index, follow');
       setJsonLd(resolved.jsonLd ?? []);
       return () => {

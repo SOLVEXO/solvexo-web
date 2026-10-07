@@ -25,7 +25,7 @@ function CollectionProductGrid() {
   return (
     <div style={{ padding: `0 ${t.layout.containerPadX} ${t.layout.sectionPadY}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-        <NovaProductGrid collectionId={collectionId ?? undefined} />
+        <NovaProductGrid collectionId={collectionId ?? undefined} syncUrl />
       </div>
     </div>
   );

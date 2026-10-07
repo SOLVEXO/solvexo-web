@@ -225,6 +225,10 @@ export function apiUploadThemePackage(storeId: string, installedThemeId: string,
   return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body);
 }
 
+export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number) {
+  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, version === undefined ? {} : { version });
+}
+
 export function apiGetThemePackageRevision(storeId: string, installedThemeId: string, version: number) {
   return client.get<never, ApiResponse<ThemePackageRevision>>( `${themePackagePath(storeId, installedThemeId)}/${version}`);
 }

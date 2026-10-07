@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
@@ -44,6 +44,7 @@ import { getThemeManifest, type ThemeTemplateScopeDef } from '@/features/storefr
 // below is called.
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
+import { UnsavedChangesDialog } from '@/components/layouts/UnsavedChangesDialog';
 
 const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = { desktop: '100%', tablet: '768px', mobile: '390px' };
 
@@ -107,10 +108,14 @@ function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: b
  *  alternate templates for Product/Collection. Reuses the exact same real
  *  section/block editor (`PageSectionsEditor`) and draft/publish/version-
  *  history engine the Pages tool already uses — no parallel editor built. */
+/** 409 DRAFT_CONFLICT from a sections save (stale baseUpdatedAt). */
+const isDraftConflict = (err: unknown) => (err as { status?: number; apiCode?: string })?.status === 409 && (err as { apiCode?: string }).apiCode === 'DRAFT_CONFLICT';
+
 export function AtelierCustomizePage() {
   const { storeId, loading: storeLoading } = useStoreWorkspace();
   const toast = useToast();
   const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
+  const [draftConflict, setDraftConflict] = useState(false);
 
   // Fix for a confirmed P0: resolves the URL's `:themeId` to THIS theme's own
   // installed row so every load/save/publish/discard/version call below acts
@@ -234,7 +239,9 @@ export function AtelierCustomizePage() {
 
   useEffect(() => {
     if (themeInstance.status !== 'ready') return;
-    apiGetStoreTheme(storeId, themeInstance.installedThemeId).then(res => setDraftTheme(res.data)).catch(() => {});
+    let cancelled = false;
+    apiGetStoreTheme(storeId, themeInstance.installedThemeId).then(res => { if (!cancelled) setDraftTheme(res.data); }).catch(() => {});
+    return () => { cancelled = true; };
   }, [storeId, themeInstance.status, installedThemeId]);
 
   // Phase 8 — this store's real installed apps (+ every catalog app's
@@ -295,12 +302,15 @@ export function AtelierCustomizePage() {
       .catch(() => setCollectionsList([]));
   }, [storeId]);
 
+  const templateLoadToken = useRef(0);
   const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean) => {
     setLoading(true);
+    // Only the latest scope's response may land (a slow earlier scope must not overwrite it).
+    const token = ++templateLoadToken.current;
     const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType, installedThemeId) : Promise.resolve({ data: [] as CollectionTemplateData[] });
     Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key, installedThemeId)])
-      .then(([listRes, docRes]) => { setTemplateList(listRes.data); setActiveTemplate(docRes.data); })
-      .finally(() => setLoading(false));
+      .then(([listRes, docRes]) => { if (token !== templateLoadToken.current) return; setTemplateList(listRes.data); setActiveTemplate(docRes.data); })
+      .finally(() => { if (token === templateLoadToken.current) setLoading(false); });
   }, [storeId, installedThemeId]);
 
   useEffect(() => {
@@ -361,7 +371,13 @@ export function AtelierCustomizePage() {
   // only — the other scopes' `templateKey` never changes from its fixed value).
   useEffect(() => {
     if (!config || !config.allowAltTemplates) return;
-    apiGetCollectionTemplate(storeId, config.resourceType, templateKey, installedThemeId).then(res => setActiveTemplate(res.data));
+    // Ignore a response for a template the seller has already switched away
+    // from — otherwise it lands late and replaces the doc being edited.
+    let cancelled = false;
+    apiGetCollectionTemplate(storeId, config.resourceType, templateKey, installedThemeId)
+      .then(res => { if (!cancelled) setActiveTemplate(res.data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, templateKey, installedThemeId]);
 
@@ -378,23 +394,49 @@ export function AtelierCustomizePage() {
 
   const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding;
 
+  // After switching the alternate template, the editor still holds the OLD
+  // template's sections until the new one is fetched — saving in that window
+  // would write them into the newly selected template. Block it.
+  const templateSwitchPending = !isStorePage && !!config && !!activeTemplate && activeTemplate.templateKey !== templateKey;
+
+  /** Conflict recovery: re-fetch the page/template and replace the editor's working copy with the server draft. */
+  const reloadDraftFromServer = async () => {
+    setDraftConflict(false);
+    try {
+      if (isStorePage) {
+        const res = await apiListStorePages(storeId, installedThemeId);
+        setPages(res.data);
+        const fresh = res.data.find(p => p._id === currentStorePage?._id);
+        if (fresh) loadEditor(fresh.sections, fresh.draft?.sections ?? fresh.sections);
+      } else {
+        const res = await apiGetCollectionTemplate(storeId, config!.resourceType, templateKey, installedThemeId);
+        setActiveTemplate(res.data);
+        loadEditor(res.data.sections, res.data.draft?.sections ?? res.data.sections);
+      }
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to reload.');
+    }
+  };
+
   const handleSave = async () => {
     if (!editor.workingCopy) return;
+    if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
     editor.markSaving();
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId);
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId, currentStorePage.updatedAt);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.markSaved(res.data.draft.sections);
       } else {
-        const res = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId);
+        const res = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
         setActiveTemplate(res.data);
         editor.markSaved(res.data.draft.sections);
       }
       flash(true, 'Draft saved — Publish to make it live.');
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
+      if (isDraftConflict(err)) { setDraftConflict(true); return; }
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
     }
   };
@@ -410,24 +452,27 @@ export function AtelierCustomizePage() {
     // changed — a real, confusing local/server divergence, not just a
     // missed toast.
     const rollbackTo = editor.workingCopy;
+    if (templateSwitchPending) return;
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, next, installedThemeId);
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, next, installedThemeId, currentStorePage.updatedAt);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
         editor.markSaved(res.data.draft.sections);
       } else {
-        const res = await apiUpdateCollectionTemplateSections(storeId, next, config!.resourceType, templateKey, installedThemeId);
+        const res = await apiUpdateCollectionTemplateSections(storeId, next, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
         setActiveTemplate(res.data);
         editor.markSaved(res.data.draft.sections);
       }
     } catch (err) {
+      if (isDraftConflict(err)) { setDraftConflict(true); return; }
       if (rollbackTo) editor.discardDraft(rollbackTo);
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
     }
   };
 
   const handlePublish = async () => {
+    if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
     editor.markPublishing();
     try {
       // Publish must never republish a stale backend draft — if there's a
@@ -436,9 +481,11 @@ export function AtelierCustomizePage() {
       if (editor.dirty && editor.workingCopy) {
         if (isStorePage) {
           if (!currentStorePage) return;
-          await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId);
+          const saved = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId, currentStorePage.updatedAt);
+          setPages(prev => prev.map(p => p._id === saved.data._id ? saved.data : p));
         } else {
-          await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId);
+          const saved = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
+          setActiveTemplate(saved.data);
         }
       }
       if (isStorePage) {
@@ -454,6 +501,7 @@ export function AtelierCustomizePage() {
       flash(true, 'Published — your storefront is now live with these changes.');
     } catch (err) {
       editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
+      if (isDraftConflict(err)) { setDraftConflict(true); return; }
       flash(false, err instanceof Error ? err.message : 'Failed to publish.');
     }
   };
@@ -479,20 +527,27 @@ export function AtelierCustomizePage() {
     }
   };
 
-  const changeScope = (nextScope: string) => {
-    const hasLocalChanges = scope === 'theme' ? themeSettingsDirty : editor.dirty;
-    if (hasLocalChanges) {
-      const confirmed = window.confirm('Discard unsaved changes in this editor? Choose Cancel to stay here and save your draft first.');
-      if (!confirmed) return;
-      if (scope === 'theme') {
-        setThemeSettingsDirty(false);
-      } else {
-        const savedDraft = isStorePage ? currentStorePage?.draft?.sections : activeTemplate?.draft?.sections;
-        if (savedDraft) editor.discardDraft(savedDraft);
-      }
+  // Pending "leave the current edits" action, confirmed via `UnsavedChangesDialog`.
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
+  const hasLocalChanges = scope === 'theme' ? themeSettingsDirty : editor.dirty;
+
+  const discardLocalChanges = () => {
+    if (scope === 'theme') {
+      setThemeSettingsDirty(false);
+    } else {
+      const savedDraft = isStorePage ? currentStorePage?.draft?.sections : activeTemplate?.draft?.sections;
+      if (savedDraft) editor.discardDraft(savedDraft);
     }
-    setScope(nextScope);
   };
+
+  const guardUnsaved = (proceed: () => void) => {
+    if (busy) return; // never switch away while a save/publish is in flight (its response would land on the wrong doc)
+    if (!hasLocalChanges) { proceed(); return; }
+    setPendingLeave(() => proceed);
+  };
+
+  const changeScope = (nextScope: string) => guardUnsaved(() => setScope(nextScope));
+  const changeTemplateKey = (key: string) => guardUnsaved(() => setTemplateKey(key));
 
   const openVersions = () => {
     setVersionsOpen(true);
@@ -628,7 +683,7 @@ export function AtelierCustomizePage() {
                 <ResourcePicker
                   items={customPages.map(p => ({ id: p._id, label: p.title }))}
                   valueId={selectedPageId}
-                  onChange={setSelectedPageId}
+                  onChange={id => guardUnsaved(() => setSelectedPageId(id))}
                   placeholder="Choose a page…"
                 />
               )}
@@ -680,7 +735,7 @@ export function AtelierCustomizePage() {
                 <>
                   <select
                     value={templateKey}
-                    onChange={e => setTemplateKey(e.target.value)}
+                    onChange={e => changeTemplateKey(e.target.value)}
                     className="shrink-0 text-[12.5px] font-semibold border border-bone rounded-lg px-2.5 py-[7px] bg-white text-charcoal cursor-pointer"
                   >
                     {templateList.length === 0 && <option value="default">Default</option>}
@@ -807,6 +862,24 @@ export function AtelierCustomizePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {draftConflict && (
+        <UnsavedChangesDialog
+          title="Draft changed elsewhere"
+          message="This draft was changed elsewhere (another tab or teammate). Reload to get the latest draft, or keep editing to keep your local changes. Saving again will not overwrite until you reload."
+          confirmLabel="Reload"
+          onCancel={() => setDraftConflict(false)}
+          onConfirm={() => { void reloadDraftFromServer(); }}
+        />
+      )}
+
+      {pendingLeave && (
+        <UnsavedChangesDialog
+          message="Discard unsaved changes in this editor? Keep editing to save your draft first."
+          onCancel={() => setPendingLeave(null)}
+          onConfirm={() => { const run = pendingLeave; setPendingLeave(null); discardLocalChanges(); run(); }}
+        />
       )}
 
       <VersionHistoryModal

@@ -152,7 +152,7 @@ export interface CreateCheckoutPayload {
 const CURRENCY_STORAGE_KEY = 'solvexo_currency_preference';
 function getCurrencyPreference(): string | undefined {
   const saved = localStorage.getItem(CURRENCY_STORAGE_KEY);
-  return saved === 'PKR' || saved === 'USD' ? saved : undefined;
+  return saved && /^[A-Z]{3}$/.test(saved) ? saved : undefined;
 }
 
 interface CreateCheckoutResponse {

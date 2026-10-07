@@ -12,3 +12,17 @@ let currentGuestCheckout = false;
 
 export function setStorefrontGuestCheckout(enabled: boolean) { currentGuestCheckout = enabled; }
 export function getStorefrontGuestCheckout(): boolean { return currentGuestCheckout; }
+
+// Password-page access token (Shopify storefront password). Minted by POST api/store/:storeId/storefront-password/verify,
+// kept per tab (sessionStorage; every access wrapped — it can throw in private mode) and sent by the axios client as
+// `x-storefront-token` for the store currently being browsed. The server enforces it; this is only transport.
+const tokenKey = (storeId: string) => `storefront_token_${storeId}`;
+export function getStorefrontToken(storeId: string | null | undefined): string | null {
+  if (!storeId) return null;
+  try { return sessionStorage.getItem(tokenKey(storeId)); } catch { return null; }
+}
+export function setStorefrontToken(storeId: string, token: string | null) {
+  try {
+    if (token) sessionStorage.setItem(tokenKey(storeId), token); else sessionStorage.removeItem(tokenKey(storeId));
+  } catch { /* storage unavailable */ }
+}
