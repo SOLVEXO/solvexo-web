@@ -42,7 +42,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
       srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
       sizes="(min-width: 1024px) 25vw, 50vw"
       alt={product.name}
-      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+      className={`w-full h-full object-cover transition-transform duration-300 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
       loading="lazy"
     />
   ) : (
@@ -54,7 +54,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
 
   return (
     <div className="group flex flex-col">
-      <div className="relative" style={{ aspectRatio: '1/1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.radius.md }}>
+      <div className="relative" style={{ aspectRatio: t.productImageRatio === 'portrait' ? '3/4' : '1/1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.productCardRadiusPx }}>
         {demo ? (
           <div className="block w-full h-full">{media}</div>
         ) : (

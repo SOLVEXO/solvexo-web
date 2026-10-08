@@ -233,9 +233,12 @@ const storefrontRouter = createBrowserRouter([
           { path: 'product/:slug', element: <ThemedRoute routeKey="product" /> },
           { path: 'search', element: <ThemedRoute routeKey="search" /> },
           { path: ':pageSlug', element: <ThemedRoute routeKey="customPage" /> },
+          // Keep deep unknown URLs inside StorefrontLayout so the theme's
+          // not-found page receives the same store/theme context as every
+          // other public storefront route.
+          { path: '*', element: <ThemedRoute routeKey="notFound" /> },
         ],
       },
-      { path: '*', element: <ThemedRoute routeKey="notFound" /> },
     ],
   },
 ]);

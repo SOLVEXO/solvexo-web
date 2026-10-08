@@ -48,11 +48,11 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
         srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
         sizes="(min-width: 1024px) 25vw, 50vw"
         alt={product.name}
-        className={`w-full h-full object-cover transition-transform duration-500 ${second ? '' : 'group-hover:scale-[1.03]'}`}
+        className={`w-full h-full object-cover transition-transform duration-500 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
         loading="lazy"
       />
       {/* Shopify-style: the second product image fades in on hover. */}
-      {second && (
+      {second && t.productImageHover === 'second-image' && (
         <img
           src={cloudinaryUrl(second, 480)}
           srcSet={cloudinarySrcSet(second, CARD_WIDTHS)}
@@ -73,7 +73,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
 
   return (
     <div className="group flex flex-col">
-      <div className="relative" style={{ aspectRatio: '3/4', background: t.colors.bgAlt, overflow: 'hidden' }}>
+      <div className="relative" style={{ aspectRatio: t.productImageRatio === 'portrait' ? '3/4' : '1/1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.productCardRadiusPx }}>
         {demo ? (
           <div className="block w-full h-full">{media}</div>
         ) : (

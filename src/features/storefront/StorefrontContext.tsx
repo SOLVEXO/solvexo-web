@@ -166,6 +166,21 @@ export interface StorefrontLinkSettings {
   productId?:    string;
 }
 
+/** Recursive navigation item shape used by standalone Menus and inline
+ *  header blocks. The backend stores up to three levels. */
+export interface StorefrontNavItemSettings extends StorefrontLinkSettings {
+  id?: string;
+  label: string;
+  children?: StorefrontNavItemSettings[];
+}
+
+export interface ResolvedStorefrontNavItem {
+  id: string;
+  label: string;
+  link: { to?: string; href?: string };
+  children: ResolvedStorefrontNavItem[];
+}
+
 /** Resolves a nav_link/footer-link/CTA block's link settings into a real
  *  in-app path or external href — the one place `category`/`collection`
  *  (Phase 4) join the pre-existing `home`/`page`/`blog`/`external` types.

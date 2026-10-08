@@ -287,6 +287,8 @@ export interface StoreDomainEntry {
   verifiedAt: string | null;
   lastCheckedAt: string | null;
   dnsError: string | null;
+  /** Ownership TXT record to add (only while unverified). `host` is the full name, e.g. `_solvexo-challenge.shop.example.com`. */
+  txt: { host: string; value: string } | null;
 }
 
 export interface StoreDomainsData {

@@ -39,6 +39,13 @@ const PAGE_TEMPLATES: PageTemplate[] = [
     ]),
   },
   {
+    id: 'contact', label: 'Contact Us', title: 'Contact Us', slug: 'contact-us',
+    sections: policyTemplate('Contact Us', [
+      'Replace this text with the best way for customers to reach your team, such as your support email, phone number, or business address.',
+      'Add your usual response time and support hours so customers know when to expect a reply.',
+    ]),
+  },
+  {
     id: 'shipping', label: 'Shipping Policy', title: 'Shipping Policy', slug: 'shipping-policy',
     sections: policyTemplate('Shipping Policy', [
       'Replace this with your own shipping policy — which regions you ship to, how long delivery typically takes, and what shipping costs buyers can expect.',

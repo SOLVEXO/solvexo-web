@@ -17,7 +17,7 @@ function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors })
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center" style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
-      <div className={imageFirst ? 'order-1' : 'order-1 lg:order-2'} style={{ aspectRatio: '4/3', background: colors.bgAlt }}>
+      <div className={imageFirst ? 'order-1' : 'order-1 lg:order-2'} style={{ aspectRatio: '4/3', background: colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}>
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} onError={() => setErrored(true)} className="w-full h-full object-cover" />}
       </div>
       <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'}>

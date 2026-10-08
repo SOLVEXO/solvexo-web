@@ -48,8 +48,9 @@ export const atelierThemeManifest: ThemeManifest = {
     {
       key: 'font', label: 'Body & UI Font', group: 'Typography',
       control: { kind: 'select', options: ['Inter', 'Poppins', 'Roboto', 'Montserrat', 'Playfair Display', 'Fraunces', 'DM Sans', 'Nunito', 'Space Grotesk'].map(f => ({ value: f, label: f })) },
-      helpText: "Headline typeface (Fraunces) is part of Atelier's signature look and stays fixed.",
+      helpText: "Sets the typeface used by headings across this theme.",
     },
+    { key: 'headingFont', label: 'Heading Font', group: 'Typography', control: { kind: 'select', options: ['Fraunces', 'Playfair Display', 'Lora', 'Inter', 'Poppins', 'Roboto', 'Montserrat', 'DM Sans', 'Space Grotesk'].map(f => ({ value: f, label: f })) } },
 
     {
       key: 'buttonStyle', label: 'Style', group: 'Buttons',
@@ -72,6 +73,10 @@ export const atelierThemeManifest: ThemeManifest = {
       key: 'containerWidth', label: 'Container Width', group: 'Layout & Spacing',
       control: { kind: 'select', options: [{ value: 'narrow', label: 'Narrow' }, { value: 'standard', label: 'Standard' }, { value: 'wide', label: 'Wide' }] },
     },
+    { key: 'imageRadius', label: 'Image Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
+    { key: 'productCardRadius', label: 'Product Card Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
+    { key: 'productImageRatio', label: 'Product Image Ratio', group: 'Images', control: { kind: 'select', options: [{ value: 'square', label: 'Square' }, { value: 'portrait', label: 'Portrait' }] } },
+    { key: 'productImageHover', label: 'Product Image Hover', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'None' }, { value: 'zoom', label: 'Zoom' }] } },
   ],
 };
 

@@ -27,6 +27,10 @@ const STATIC_DEFAULTS = {
     display: `'Space Grotesk', sans-serif`,
     body: `'DM Sans', sans-serif`,
   },
+  imageRadiusPx: '14px',
+  productCardRadiusPx: '14px',
+  productImageRatio: 'square' as 'square' | 'portrait',
+  productImageHover: 'zoom' as 'none' | 'zoom' | 'second-image',
 
   // Color system — white ground, near-black ink with a cool undertone, one
   // vivid indigo used generously (fills, primary buttons, active states) —
@@ -96,6 +100,7 @@ const MAX_WIDTH_PRESET: Record<'narrow' | 'standard' | 'wide', string> = {
 const BUTTON_RADIUS_PRESET: Record<'none' | 'small' | 'medium' | 'large' | 'full', string> = {
   none: '0px', small: '4px', medium: '8px', large: '16px', full: '9999px',
 };
+const IMAGE_RADIUS_PRESET: Record<'none' | 'small' | 'medium' | 'large' | 'full', string> = { none: '0px', small: '4px', medium: '12px', large: '20px', full: '9999px' };
 
 // Identical color-relationship math to `theme.config.ts` in `theme-01-atelier`
 // — see that file's doc comment for why derived roles (bgAlt/inkMuted/
@@ -125,7 +130,8 @@ export function relativeLuminance(hex: string): number {
  *  set). Passing `null` resets every field back to this theme's own static
  *  defaults. */
 export function applyMerchantThemeOverrides(colors: {
-  bgColor?: string; textColor?: string; primaryColor?: string; font?: string;
+  bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
+  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait'; productImageHover?: 'none' | 'zoom';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';
@@ -147,6 +153,11 @@ export function applyMerchantThemeOverrides(colors: {
   novaTheme.colors.accentInk = relativeLuminance(accent) < 0.5 ? '#FFFFFF' : d.colors.ink;
 
   novaTheme.fonts.body = colors?.font ? `'${colors.font}', sans-serif` : d.fonts.body;
+  novaTheme.fonts.display = colors?.headingFont ? `'${colors.headingFont}', sans-serif` : d.fonts.display;
+  novaTheme.imageRadiusPx = IMAGE_RADIUS_PRESET[colors?.imageRadius ?? 'medium'];
+  novaTheme.productCardRadiusPx = IMAGE_RADIUS_PRESET[colors?.productCardRadius ?? 'medium'];
+  novaTheme.productImageRatio = colors?.productImageRatio ?? 'square';
+  novaTheme.productImageHover = colors?.productImageHover === 'zoom' ? 'zoom' : colors?.productImageHover === 'none' ? 'none' : 'zoom';
 
   novaTheme.buttonStyle = colors?.buttonStyle ?? d.buttonStyle;
   novaTheme.buttonRadiusPx = BUTTON_RADIUS_PRESET[colors?.buttonRadius ?? 'full'];

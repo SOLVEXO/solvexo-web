@@ -50,7 +50,7 @@ export interface ThemeSettingsFieldDef {
    *  same document every theme's `StoreTheme.theme`/`.draft.theme` uses). */
   key: keyof StorefrontColors;
   label: string;
-  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing';
+  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images';
   control:
     | { kind: 'color' }
     | { kind: 'select'; options: { value: string; label: string }[] };

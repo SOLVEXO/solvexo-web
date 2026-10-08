@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
-import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
+import { useStorefront, type StorefrontNavItemSettings, type ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
@@ -10,6 +10,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { CurrencySelector } from '@/components/comman/ui';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
+import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { novaTheme as t } from '../theme.config';
 
 /** Theme 02's own navbar — logo left, links left-aligned beside it, bold
@@ -36,10 +37,12 @@ export function NovaNavbar() {
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
+  const [navigationPages, setNavigationPages] = useState<PublicPageSummary[]>([]);
 
   useEffect(() => {
     apiGetStoreCategoryTree(store.storeId).then(res => setCategories((res.data ?? []).flatMap(c => [c, ...c.children]))).catch(() => {});
     apiGetPublicCollections(store.storeId).then(res => setCollections(res.data ?? [])).catch(() => {});
+    apiListPublicStorePages(store.storeId).then(res => setNavigationPages(res.data.filter(page => page.showInNav))).catch(() => setNavigationPages([]));
   }, [store.storeId]);
 
   const hasShopMenu = categories.length > 0 || collections.length > 0;
@@ -59,9 +62,20 @@ export function NovaNavbar() {
   // Real, merchant-authored nav links (Customize → Header) — the same
   // `nav_link` block vocabulary every theme's header content uses.
   const headerNavBlocks = (theme?.header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
-  const navLinks = headerNavBlocks.length > 0
-    ? headerNavBlocks.map(b => ({ id: b._id ?? b.settings.label, label: b.settings.label as string, link: resolveLink(b.settings as StorefrontLinkSettings), children: (b.settings.children ?? []).map((child: StorefrontLinkSettings & { id: string; label: string }) => ({ id: child.id, label: child.label, link: resolveLink(child) })) }))
+  const normalizeNavItem = (item: StorefrontNavItemSettings): ResolvedStorefrontNavItem => ({
+    id: item.id ?? item.label,
+    label: item.label,
+    link: resolveLink(item),
+    children: (item.children ?? []).map(normalizeNavItem),
+  });
+  const navLinks: ResolvedStorefrontNavItem[] = headerNavBlocks.length > 0
+    ? headerNavBlocks.map(b => normalizeNavItem(b.settings as unknown as StorefrontNavItemSettings))
     : [{ id: 'stories', label: 'Stories', link: { to: '/blog' }, children: [] }];
+  const visibleNavLinks: ResolvedStorefrontNavItem[] = [...navLinks];
+  navigationPages.forEach(page => {
+    const to = `/${page.slug}`;
+    if (!visibleNavLinks.some(item => item.link.to === to)) visibleNavLinks.push({ id: page._id, label: page.title, link: { to }, children: [] });
+  });
 
 
   return (
@@ -82,8 +96,8 @@ export function NovaNavbar() {
           </button>
 
           <Link to="/" className="no-underline flex items-center gap-2">
-            {store.logo
-              ? <img src={store.logo} alt={store.name} className="max-h-10 max-w-[180px] object-contain" style={{ borderRadius: t.radius.sm }} />
+            {(theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo)
+              ? <img src={(theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo)!} alt={store.name} className="max-h-10 max-w-[180px] object-contain" style={{ borderRadius: t.radius.sm }} />
               : <span style={{ fontFamily: t.fonts.display, fontSize: '21px', fontWeight: 700, color: t.colors.ink }}>{store.name}</span>}
           </Link>
 
@@ -132,7 +146,7 @@ export function NovaNavbar() {
                 </div>
               )}
             </div>
-            {navLinks.map(item => (
+            {visibleNavLinks.map(item => (
               <div key={item.id} className="relative group">
                 {item.link.to ? <Link to={item.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</Link> : <a href={item.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</a>}
                 {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
@@ -251,7 +265,7 @@ export function NovaNavbar() {
               {c.name}
             </Link>
           ))}
-          {navLinks.map(item => <div key={item.id}>
+          {visibleNavLinks.map(item => <div key={item.id}>
             {item.link.to ? <Link to={item.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}>{item.label}</Link> : <a href={item.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}>{item.label}</a>}
             {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string }; children?: { id: string; label: string; link: { to?: string; href?: string } }[] }) => <div key={child.id}>
               {child.link.to ? <Link to={child.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '13px', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</Link> : <a href={child.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '13px', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</a>}

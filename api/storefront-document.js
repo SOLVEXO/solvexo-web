@@ -34,6 +34,17 @@ function injectMetadata(html, meta) {
   return withoutOldSeo.replace('</head>', `    ${tags}\n  </head>`);
 }
 
+async function sendStorefrontShell(response, status = 200) {
+  const file = path.join(process.cwd(), 'dist', 'index.html');
+  const shell = await fs.readFile(file, 'utf8');
+  const fallbackShell = shell
+    .replace(/<title>[\s\S]*?<\/title>/i, '<title>Online Store</title>')
+    .replace('</head>', '    <meta name="robots" content="noindex, nofollow">\n  </head>');
+  response.setHeader('Cache-Control', 'private, no-store');
+  response.setHeader('Vary', 'Host');
+  response.status(status).setHeader('Content-Type', 'text/html; charset=utf-8').send(fallbackShell);
+}
+
 export default async function handler(request, response) {
   const host = String(request.headers['x-forwarded-host'] || request.headers.host || '').split(',')[0].trim().toLowerCase();
   const routePath = typeof request.query.path === 'string' ? request.query.path : '/';
@@ -72,7 +83,13 @@ export default async function handler(request, response) {
         response.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(notFoundShell);
         return;
       }
-      response.status(apiResponse.status >= 500 ? 503 : apiResponse.status).send('Storefront metadata is temporarily unavailable');
+      if (apiResponse.status >= 500) {
+        // Metadata is an SEO enhancement; a transient metadata outage must not
+        // prevent the client storefront from rendering a valid deep link.
+        await sendStorefrontShell(response);
+        return;
+      }
+      response.status(apiResponse.status).send('Invalid storefront route');
       return;
     }
     const meta = await apiResponse.json();
@@ -89,6 +106,16 @@ export default async function handler(request, response) {
     response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(injectMetadata(shell, meta));
   } catch (error) {
     console.error('Storefront document rendering failed', error);
-    response.status(503).send('Storefront is temporarily unavailable');
+    if (routePath === '/robots.txt' || /^\/sitemap(?:-\d+)?\.xml$/.test(routePath)) {
+      response.status(503).send('Storefront metadata is temporarily unavailable');
+      return;
+    }
+    try {
+      // Keep storefront navigation available if the metadata API times out.
+      await sendStorefrontShell(response);
+    } catch (shellError) {
+      console.error('Storefront fallback shell could not be loaded', shellError);
+      response.status(503).send('Storefront is temporarily unavailable');
+    }
   }
 }

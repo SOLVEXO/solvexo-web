@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, Plus, RotateCcw, History, Undo2, Redo2, Monitor, Tablet, Smartphone, Megaphone, Eye, EyeOff, Copy } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, Toggle } from '@/components/comman/ui';
+import { SkeletonBox, Toggle, ImageUpload } from '@/components/comman/ui';
 import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
 import {
   apiGetStoreTheme, apiUpdateStoreHeader, apiUpdateStoreFooter, apiPublishStoreTheme, apiRevertStoreThemeDraft,
@@ -516,6 +516,20 @@ export function AtelierHeaderFooterPage() {
 
           {tab === 'header' ? (
             <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 pb-3 mb-1 border-b border-bone">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Storefront logo</label>
+                <select
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
+                  value={headerDraft.logoSource ?? 'store'}
+                  onChange={e => editor.edit(prev => ({ ...prev!, header: { ...headerDraft, logoSource: e.target.value as StorefrontHeader['logoSource'] } }))}
+                >
+                  <option value="store">Use store logo</option>
+                  <option value="custom">Use a theme-specific logo</option>
+                </select>
+                {headerDraft.logoSource === 'custom' && (
+                  <ImageUpload value={headerDraft.customLogoUrl ? [headerDraft.customLogoUrl] : []} onChange={urls => editor.edit(prev => ({ ...prev!, header: { ...headerDraft, customLogoUrl: urls[0] ?? null } }))} maxFiles={1} storeId={storeId} />
+                )}
+              </div>
               <div className="flex flex-col gap-1.5 pb-3 mb-1 border-b border-bone">
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Navigation source</label>
                 <select
@@ -564,6 +578,18 @@ export function AtelierHeaderFooterPage() {
             </div>
           ) : tab === 'footer' ? (
             <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 pb-3 mb-1 border-b border-bone">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Footer layout</label>
+                <select
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
+                  value={footerDraft.footerStyle ?? 'columns'}
+                  onChange={e => editor.edit(prev => ({ ...prev!, footer: { ...footerDraft, footerStyle: e.target.value as StorefrontFooter['footerStyle'] } }))}
+                >
+                  <option value="columns">Columns</option>
+                  <option value="minimal">Compact</option>
+                </select>
+                <p className="text-[11px] text-slate">Compact keeps your content and links, with a tighter two-column layout.</p>
+              </div>
               <div className="flex flex-col gap-1.5 pb-3 mb-1 border-b border-bone">
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Quick Links menu</label>
                 <select

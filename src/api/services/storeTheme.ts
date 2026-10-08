@@ -31,6 +31,7 @@ export interface StorefrontColors {
   textColor:    string;
   accentColor:  string;
   font:         string;
+  headingFont?: string | null;
   buttonStyle:  ThemeButtonStyle;
   /** Buttons scope — independent from product/testimonial cards and images. */
   buttonRadius: ThemeBorderRadius;

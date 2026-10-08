@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Field, ImageUpload, Toggle } from '@/components/comman/ui';
 import { useUpload } from '@/hooks/upload/useUpload';
+import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import type { PageOption } from './BlockFields';
 import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
 import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOwnerResource } from '@/api/services/metafields';
+
+const MediaLibraryPickerModal = lazy(() => import('./MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })));
 
 /**
  * The schema-driven settings engine — this is the piece that was entirely
@@ -191,13 +194,15 @@ function MetafieldKeyPickerField({ value, storeId, ownerResource, onChange }: { 
 
 /** Upload a video file (public Cloudinary upload) and keep its URL — the
  *  alternative to pasting a YouTube/Vimeo link, like Shopify's Video section. */
-function VideoUploadField({ value, onChange }: { value: string | undefined; onChange: (url: string) => void }) {
+function VideoUploadField({ value, onChange, storeId }: { value: string | undefined; onChange: (url: string) => void; storeId: string }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const { upload, uploading, error } = useUpload('public');
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !file.type.startsWith('video/')) return;
-    upload(file).then(d => onChange(d.url)).catch(() => {});
+    (storeId ? apiUploadMediaAsset(storeId, file).then(res => ({ url: res.data.url })) : upload(file))
+      .then(d => onChange(d.url)).catch(() => {});
   };
   return (
     <div className="flex flex-col gap-2">
@@ -212,7 +217,11 @@ function VideoUploadField({ value, onChange }: { value: string | undefined; onCh
           <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={onFile} disabled={uploading} />
         </label>
       )}
+      {!value && storeId && !uploading && (
+        <button type="button" onClick={() => setPickerOpen(true)} className="self-start text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer">Browse video library</button>
+      )}
       {error && <p className="text-[11px] text-error">{error}</p>}
+      {pickerOpen && <Suspense fallback={null}><MediaLibraryPickerModal open onClose={() => setPickerOpen(false)} storeId={storeId} mediaType="video" onSelect={url => { onChange(url); setPickerOpen(false); }} /></Suspense>}
     </div>
   );
 }
@@ -287,10 +296,7 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
       return <ImageUpload value={value ? [value] : []} onChange={urls => set({ [field.key]: urls[0] ?? '' })} maxFiles={1} storeId={storeId} />;
 
     case 'video':
-      return <VideoUploadField value={value} onChange={url => set({ [field.key]: url })} />;
-
-    case 'video':
-      return <VideoUploadField value={value} onChange={url => set({ [field.key]: url })} />;
+      return <VideoUploadField value={value} onChange={url => set({ [field.key]: url })} storeId={storeId} />;
 
     case 'link':
       return (

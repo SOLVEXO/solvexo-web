@@ -22,6 +22,10 @@ const STATIC_DEFAULTS = {
     display: `'Fraunces', serif`,
     body: `'Inter', sans-serif`,
   },
+  imageRadiusPx: '12px',
+  productCardRadiusPx: '8px',
+  productImageRatio: 'portrait' as 'square' | 'portrait',
+  productImageHover: 'second-image' as 'none' | 'zoom' | 'second-image',
 
   // Color system — warm ivory ground, near-black ink, one restrained brass
   // accent used sparingly (never as a background fill, only for small
@@ -96,6 +100,7 @@ const MAX_WIDTH_PRESET: Record<'narrow' | 'standard' | 'wide', string> = {
 const BUTTON_RADIUS_PRESET: Record<'none' | 'small' | 'medium' | 'large' | 'full', string> = {
   none: '0px', small: '4px', medium: '8px', large: '16px', full: '9999px',
 };
+const IMAGE_RADIUS_PRESET: Record<'none' | 'small' | 'medium' | 'large' | 'full', string> = { none: '0px', small: '4px', medium: '12px', large: '20px', full: '9999px' };
 
 /** Real color-relationship math, not literal merchant fields for every
  *  token — Atelier has 9 color roles but a merchant only ever picks 3
@@ -127,7 +132,8 @@ export function relativeLuminance(hex: string): number {
  *  is exposed. Passing `null` resets every field back to the theme's own
  *  static defaults (a store that never customizes, or Explicitly Reset). */
 export function applyMerchantThemeOverrides(colors: {
-  bgColor?: string; textColor?: string; primaryColor?: string; font?: string;
+  bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
+  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait'; productImageHover?: 'none' | 'zoom';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';
@@ -150,6 +156,11 @@ export function applyMerchantThemeOverrides(colors: {
   atelierTheme.colors.accentInk = relativeLuminance(accent) < 0.5 ? '#FFFFFF' : d.colors.ink;
 
   atelierTheme.fonts.body = colors?.font ? `'${colors.font}', sans-serif` : d.fonts.body;
+  atelierTheme.fonts.display = colors?.headingFont ? `'${colors.headingFont}', sans-serif` : d.fonts.display;
+  atelierTheme.imageRadiusPx = IMAGE_RADIUS_PRESET[colors?.imageRadius ?? 'medium'];
+  atelierTheme.productCardRadiusPx = IMAGE_RADIUS_PRESET[colors?.productCardRadius ?? 'medium'];
+  atelierTheme.productImageRatio = colors?.productImageRatio ?? 'portrait';
+  atelierTheme.productImageHover = colors?.productImageHover === 'zoom' ? 'zoom' : colors?.productImageHover === 'none' ? 'none' : 'second-image';
 
   atelierTheme.buttonStyle = colors?.buttonStyle ?? d.buttonStyle;
   atelierTheme.buttonRadiusPx = BUTTON_RADIUS_PRESET[colors?.buttonRadius ?? 'none'];

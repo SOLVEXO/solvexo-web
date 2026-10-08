@@ -82,7 +82,7 @@ export function NovaFooter() {
     <footer style={{ background: t.colors.ink, color: '#EDEBFF' }}>
       <div
         className="mx-auto grid gap-10"
-        style={{ maxWidth: t.layout.maxWidth, padding: `56px ${t.layout.containerPadX}`, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}
+        style={{ maxWidth: t.layout.maxWidth, padding: `${theme?.footer?.footerStyle === 'minimal' ? '32px' : '56px'} ${t.layout.containerPadX}`, gap: theme?.footer?.footerStyle === 'minimal' ? '24px' : '40px', gridTemplateColumns: theme?.footer?.footerStyle === 'minimal' ? 'repeat(auto-fit, minmax(260px, 1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))' }}
       >
         <div>
           <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, marginBottom: '10px' }}>{store.name}</p>

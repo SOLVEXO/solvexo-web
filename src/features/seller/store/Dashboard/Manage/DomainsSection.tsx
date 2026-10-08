@@ -90,8 +90,9 @@ function Pill({ children }: { children: React.ReactNode }) {
   return <span className="inline-flex items-center text-[12px] font-medium px-2 py-0.5 rounded-full bg-bone text-charcoal">{children}</span>;
 }
 
-function DnsPanel({ domain, dns, dnsError, note, lastCheckedAt }: {
+function DnsPanel({ domain, dns, dnsError, note, lastCheckedAt, txt }: {
   domain: string; dns: StoreDomainsData['dns']; dnsError: string | null; note: string; lastCheckedAt: string | null;
+  txt: StoreDomainEntry['txt'];
 }) {
   const { host, isApex } = dnsHostFor(domain);
   const hasA = !!dns.aRecord;
@@ -105,8 +106,8 @@ function DnsPanel({ domain, dns, dnsError, note, lastCheckedAt }: {
     <div className="mt-4 rounded-lg border border-bone bg-cream/60 p-3 sm:p-4">
       <p className="text-[14px] font-semibold text-charcoal">Configure DNS</p>
       <p className="text-[13px] text-slate mt-1">
-        Add the record below at your domain provider (where you bought the domain). Changes can take a few minutes up to
-        48 hours — this page checks automatically.
+        Add {txt ? 'both records' : 'the record'} below at your domain provider (where you bought the domain). Changes can take a few
+        minutes up to 48 hours — this page checks automatically.
       </p>
 
       <div role="tablist" aria-label="DNS record type" className="flex gap-1 mt-3">
@@ -146,6 +147,13 @@ function DnsPanel({ domain, dns, dnsError, note, lastCheckedAt }: {
               <td className="px-3 py-2.5"><Cell value={row.name} label="record name" /></td>
               <td className="px-3 py-2.5"><Cell value={row.value} label="record value" /></td>
             </tr>
+            {txt && (
+              <tr className="border-t border-bone align-middle">
+                <td className="px-3 py-2.5"><code className="text-[12.5px] font-semibold text-charcoal">TXT</code></td>
+                <td className="px-3 py-2.5"><Cell value={isApex ? txt.host.split('.')[0] : `${txt.host.split('.')[0]}.${host}`} label="TXT record name" /></td>
+                <td className="px-3 py-2.5"><Cell value={txt.value} label="TXT record value" /></td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -153,6 +161,12 @@ function DnsPanel({ domain, dns, dnsError, note, lastCheckedAt }: {
       {isApex && (
         <p className="text-[12.5px] text-slate mt-3">
           Tip: you can also connect <strong>www.{domain}</strong> with a CNAME record and redirect the root domain to it at your provider.
+        </p>
+      )}
+
+      {txt && (
+        <p className="text-[12.5px] text-slate mt-3">
+          The TXT record proves you own this domain, so nobody else can connect it to their store.
         </p>
       )}
 
@@ -505,6 +519,7 @@ export function DomainsSection({ storeId }: { storeId: string }) {
                     dnsError={d.dnsError}
                     note={rowNote[d.domain] ?? ''}
                     lastCheckedAt={d.lastCheckedAt}
+                    txt={d.txt}
                   />
                 )}
 
