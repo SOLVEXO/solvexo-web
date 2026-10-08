@@ -6,8 +6,8 @@ import {
 import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import {
-  apiListStoreDomains, apiAddStoreDomain, apiVerifyStoreDomain, apiSetPrimaryStoreDomain, apiRemoveStoreDomain,
-  type StoreDomainsData, type StoreDomainEntry,
+  apiListStoreDomains, apiAddStoreDomain, apiVerifyStoreDomain, apiSetPrimaryStoreDomain, apiRemoveStoreDomain, apiGetStoreDomainGuide,
+  type StoreDomainsData, type StoreDomainEntry, type DomainGuide, type DomainGuideRecord,
 } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { useToast } from '@/contexts/ToastContext';
@@ -15,19 +15,9 @@ import { Modal } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 
 const POLL_MS = 15_000;
-const SECOND_LEVEL_TLDS = new Set(['co', 'com', 'org', 'net', 'gov', 'edu', 'ac']);
 
 function errMsg(err: unknown, fallback: string) {
   return err instanceof Error && err.message ? err.message : fallback;
-}
-
-/** Splits a domain into its DNS "host" label (what goes in the registrar's
- *  Name/Host column) and whether it is an apex/root domain. */
-function dnsHostFor(domain: string): { host: string; isApex: boolean } {
-  const labels = domain.toLowerCase().split('.').filter(Boolean);
-  const registrableLen = labels.length >= 3 && labels[labels.length - 1].length === 2 && SECOND_LEVEL_TLDS.has(labels[labels.length - 2]) ? 3 : 2;
-  const sub = labels.slice(0, Math.max(0, labels.length - registrableLen)).join('.');
-  return sub ? { host: sub, isApex: false } : { host: '@', isApex: true };
 }
 
 function timeAgo(iso: string | null): string {
@@ -90,90 +80,185 @@ function Pill({ children }: { children: React.ReactNode }) {
   return <span className="inline-flex items-center text-[12px] font-medium px-2 py-0.5 rounded-full bg-bone text-charcoal">{children}</span>;
 }
 
-function DnsPanel({ domain, dns, dnsError, note, lastCheckedAt, txt }: {
-  domain: string; dns: StoreDomainsData['dns']; dnsError: string | null; note: string; lastCheckedAt: string | null;
-  txt: StoreDomainEntry['txt'];
+type StepState = 'done' | 'current' | 'pending' | 'error';
+
+function Step({ state, title, children, last }: { state: StepState; title: string; children?: React.ReactNode; last?: boolean }) {
+  const icon = state === 'done'
+    ? <span className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center"><Check size={12} /></span>
+    : state === 'current'
+      ? <Loader2 size={20} className="animate-spin text-brand-orange" />
+      : state === 'error'
+        ? <span className="w-5 h-5 rounded-full bg-error text-white flex items-center justify-center text-[12px] font-bold" aria-hidden="true">!</span>
+        : <span className="w-5 h-5 rounded-full border-2 border-bone bg-white" />;
+  return (
+    <li className="flex gap-3">
+      <div className="flex flex-col items-center">
+        <span className="shrink-0 mt-0.5">{icon}</span>
+        {!last && <span className="flex-1 w-px bg-bone mt-1" aria-hidden="true" />}
+      </div>
+      <div className={`min-w-0 flex-1 ${last ? '' : 'pb-4'}`}>
+        <p className={`text-[14px] m-0 ${state === 'pending' ? 'text-slate' : 'text-charcoal font-semibold'}`}>
+          {title}
+          <span className="sr-only"> — {state === 'done' ? 'completed' : state === 'current' ? 'in progress' : state === 'error' ? 'needs attention' : 'not started'}</span>
+        </p>
+        {children}
+      </div>
+    </li>
+  );
+}
+
+const ACTION_LABEL: Record<DomainGuideRecord['action'], { text: string; cls: string }> = {
+  ok: { text: 'Correct', cls: 'text-success bg-success-bg' },
+  add: { text: 'Add', cls: 'text-warning bg-warning-bg' },
+  update: { text: 'Update', cls: 'text-warning bg-warning-bg' },
+};
+
+/** Shopify "Configure DNS records": reads the domain's current DNS, lists what to add / change / remove at the DNS host,
+ *  and walks the seller through DNS → propagation → SSL. */
+function DnsPanel({ storeId, entry, checking, note, onCheck }: {
+  storeId: string; entry: StoreDomainEntry; checking: boolean; note: string; onCheck: () => void;
 }) {
-  const { host, isApex } = dnsHostFor(domain);
-  const hasA = !!dns.aRecord;
-  const [tab, setTab] = useState<'CNAME' | 'A'>(isApex && hasA ? 'A' : 'CNAME');
-  const row = tab === 'A'
-    ? { type: 'A', name: '@', value: dns.aRecord ?? '' }
-    : { type: 'CNAME', name: host, value: dns.cnameTarget };
-  const reason = note || dnsError;
+  const [guide, setGuide] = useState<DomainGuide | null>(null);
+  const [guideError, setGuideError] = useState('');
+  const [retryTick, setRetryTick] = useState(0);
+  const guideLoading = !guide && !guideError;
+
+  // Re-read the domain's DNS on mount and whenever a check has just run (the server stamps lastCheckedAt).
+  useEffect(() => {
+    let cancelled = false;
+    apiGetStoreDomainGuide(storeId, entry.domain)
+      .then(res => { if (!cancelled) { setGuide(res.data); setGuideError(''); } })
+      .catch(err => { if (!cancelled) setGuideError(errMsg(err, 'Could not read your current DNS records.')); });
+    return () => { cancelled = true; };
+  }, [storeId, entry.domain, entry.lastCheckedAt, retryTick]);
+
+  const reason = note || entry.dnsError;
+  const provider = guide?.provider ?? null;
+  const records = guide?.records ?? [];
+  const remove = guide?.remove ?? [];
+  const txt = entry.txt;
 
   return (
     <div className="mt-4 rounded-lg border border-bone bg-cream/60 p-3 sm:p-4">
-      <p className="text-[14px] font-semibold text-charcoal">Configure DNS</p>
-      <p className="text-[13px] text-slate mt-1">
-        Add {txt ? 'both records' : 'the record'} below at your domain provider (where you bought the domain). Changes can take a few
-        minutes up to 48 hours — this page checks automatically.
-      </p>
+      <p className="text-[14px] font-semibold text-charcoal m-0">Finish connecting {entry.domain}</p>
+      <ol className="list-none p-0 mt-3 mb-0">
+        <Step state="current" title="Configure DNS records">
+          <div className="mt-2 text-[13px] text-slate">
+            <p className="m-0">
+              Log in to {provider ? <strong>{provider.name}</strong> : 'the provider where you bought the domain'} and open DNS
+              management for <strong>{guide?.registrable ?? entry.domain}</strong>.
+              {provider?.url && (
+                <>
+                  {' '}
+                  <a href={provider.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-orange font-medium">
+                    Open {provider.name} <ExternalLink size={12} />
+                  </a>
+                </>
+              )}
+            </p>
 
-      <div role="tablist" aria-label="DNS record type" className="flex gap-1 mt-3">
-        {(['CNAME', 'A'] as const).map(t => {
-          const disabled = t === 'A' && !hasA;
-          const active = tab === t;
-          return (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              disabled={disabled}
-              onClick={() => setTab(t)}
-              className={`min-h-[36px] px-3 rounded-md text-[13px] font-medium border cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-50 disabled:cursor-not-allowed ${
-                active ? 'bg-white border-brand-orange text-charcoal' : 'bg-transparent border-bone text-slate hover:bg-white'
-              }`}
-            >
-              {t === 'A' ? 'A record' : 'CNAME'}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-3 overflow-x-auto rounded-lg border border-bone bg-white">
-        <table className="w-full min-w-[480px] text-left border-collapse">
-          <thead>
-            <tr className="bg-cream text-[12px] text-slate">
-              <th scope="col" className="font-semibold px-3 py-2">Type</th>
-              <th scope="col" className="font-semibold px-3 py-2">Name</th>
-              <th scope="col" className="font-semibold px-3 py-2">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-t border-bone align-middle">
-              <td className="px-3 py-2.5"><code className="text-[12.5px] font-semibold text-charcoal">{row.type}</code></td>
-              <td className="px-3 py-2.5"><Cell value={row.name} label="record name" /></td>
-              <td className="px-3 py-2.5"><Cell value={row.value} label="record value" /></td>
-            </tr>
-            {txt && (
-              <tr className="border-t border-bone align-middle">
-                <td className="px-3 py-2.5"><code className="text-[12.5px] font-semibold text-charcoal">TXT</code></td>
-                <td className="px-3 py-2.5"><Cell value={isApex ? txt.host.split('.')[0] : `${txt.host.split('.')[0]}.${host}`} label="TXT record name" /></td>
-                <td className="px-3 py-2.5"><Cell value={txt.value} label="TXT record value" /></td>
-              </tr>
+            {guideLoading && !guide && <div className="animate-pulse rounded-lg bg-bone h-[88px] mt-3" aria-busy="true" />}
+            {guideError && (
+              <div className="mt-3 flex items-center justify-between gap-3 flex-wrap text-error" role="alert">
+                <span>{guideError}</span>
+                <Button size="sm" variant="outline" onClick={() => { setGuideError(''); setRetryTick(t => t + 1); }} className="min-h-[36px]">Retry</Button>
+              </div>
             )}
-          </tbody>
-        </table>
-      </div>
 
-      {isApex && (
-        <p className="text-[12.5px] text-slate mt-3">
-          Tip: you can also connect <strong>www.{domain}</strong> with a CNAME record and redirect the root domain to it at your provider.
-        </p>
-      )}
+            {guide && (
+              <>
+                {remove.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[13px] font-semibold text-charcoal m-0">1. Remove these records</p>
+                    <p className="text-[12px] text-slate mt-0.5 mb-0">An old record on the same name stops the new one from working.</p>
+                    <div className="mt-2 overflow-x-auto rounded-lg border border-bone bg-white">
+                      <table className="w-full min-w-[420px] text-left border-collapse">
+                        <thead><tr className="bg-cream text-[12px] text-slate">
+                          <th scope="col" className="font-semibold px-3 py-2">Type</th>
+                          <th scope="col" className="font-semibold px-3 py-2">Name</th>
+                          <th scope="col" className="font-semibold px-3 py-2">Current value</th>
+                        </tr></thead>
+                        <tbody>
+                          {remove.map(r => (
+                            <tr key={`${r.type}-${r.fqdn}-${r.value}`} className="border-t border-bone">
+                              <td className="px-3 py-2.5"><code className="text-[12.5px] font-semibold text-charcoal">{r.type}</code></td>
+                              <td className="px-3 py-2.5"><code className="text-[12.5px] text-charcoal">{r.name}</code></td>
+                              <td className="px-3 py-2.5"><code className="text-[12.5px] text-charcoal break-all">{r.value}</code></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
-      {txt && (
-        <p className="text-[12.5px] text-slate mt-3">
-          The TXT record proves you own this domain, so nobody else can connect it to their store.
-        </p>
-      )}
+                <div className="mt-3">
+                  <p className="text-[13px] font-semibold text-charcoal m-0">{remove.length > 0 ? '2. ' : ''}Add or update these records</p>
+                  <div className="mt-2 overflow-x-auto rounded-lg border border-bone bg-white">
+                    <table className="w-full min-w-[560px] text-left border-collapse">
+                      <thead><tr className="bg-cream text-[12px] text-slate">
+                        <th scope="col" className="font-semibold px-3 py-2">Type</th>
+                        <th scope="col" className="font-semibold px-3 py-2">Name</th>
+                        <th scope="col" className="font-semibold px-3 py-2">Current</th>
+                        <th scope="col" className="font-semibold px-3 py-2">Set to</th>
+                      </tr></thead>
+                      <tbody>
+                        {records.map(r => (
+                          <tr key={`${r.type}-${r.fqdn}`} className="border-t border-bone align-middle">
+                            <td className="px-3 py-2.5"><code className="text-[12.5px] font-semibold text-charcoal">{r.type}</code></td>
+                            <td className="px-3 py-2.5"><Cell value={r.name} label="record name" /></td>
+                            <td className="px-3 py-2.5">
+                              <code className="text-[12.5px] text-slate break-all">{r.current.length ? r.current.join(', ') : '(empty)'}</code>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Cell value={r.expected} label="record value" />
+                                <span className={`text-[11.5px] font-semibold px-2 py-0.5 rounded-full ${ACTION_LABEL[r.action].cls}`}>{ACTION_LABEL[r.action].text}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {txt && (
+                          <tr className="border-t border-bone align-middle">
+                            <td className="px-3 py-2.5"><code className="text-[12.5px] font-semibold text-charcoal">TXT</code></td>
+                            <td className="px-3 py-2.5"><Cell value={txt.host.slice(0, txt.host.length - guide.registrable.length - 1)} label="TXT record name" /></td>
+                            <td className="px-3 py-2.5"><code className="text-[12.5px] text-slate">(empty)</code></td>
+                            <td className="px-3 py-2.5"><Cell value={txt.value} label="TXT record value" /></td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {txt && (
+                    <p className="text-[12px] text-slate mt-2 mb-0">
+                      The TXT record proves you own this domain — another store had already started connecting it.
+                    </p>
+                  )}
+                  {records.length > 1 && (
+                    <p className="text-[12px] text-slate mt-2 mb-0">
+                      Both records are needed so customers reach your store whether they type <strong>{guide.registrable}</strong> or <strong>www.{guide.registrable}</strong>.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
-      {reason && (
-        <p className="text-[12.5px] text-error mt-3" role="alert">{reason}</p>
-      )}
-      <p className="text-[12px] text-slate mt-2">Last checked {timeAgo(lastCheckedAt)}</p>
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              <Button size="md" loading={checking} onClick={onCheck} className="min-h-[40px]">I&apos;ve updated the DNS records</Button>
+              <span className="text-[12px] text-slate">Last checked {timeAgo(entry.lastCheckedAt)}</span>
+            </div>
+            {reason && <p className="text-[12.5px] text-error mt-3 mb-0" role="alert">{reason}</p>}
+          </div>
+        </Step>
+        <Step state={checking ? 'current' : 'pending'} title="DNS propagation">
+          <p className="text-[12.5px] text-slate mt-1 mb-0">
+            {checking ? 'Checking your records…' : 'DNS changes can take a few minutes up to 48 hours. This page checks automatically.'}
+          </p>
+        </Step>
+        <Step state="pending" title="SSL certificate" last>
+          <p className="text-[12.5px] text-slate mt-1 mb-0">Issued automatically once your DNS records are correct.</p>
+        </Step>
+      </ol>
     </div>
   );
 }
@@ -481,8 +566,8 @@ export function DomainsSection({ storeId }: { storeId: string }) {
                         {checking
                           ? <StatusBadge tone="warn"><Loader2 size={12} className="animate-spin" /> Checking…</StatusBadge>
                           : unverified
-                            ? <StatusBadge tone="err">Invalid configuration</StatusBadge>
-                            : <StatusBadge tone="ok">Valid configuration</StatusBadge>}
+                            ? <StatusBadge tone="warn">Needs setup</StatusBadge>
+                            : <StatusBadge tone="ok">Connected</StatusBadge>}
                         {!checking && sslLine(d)}
                       </div>
                     </div>
@@ -513,19 +598,17 @@ export function DomainsSection({ storeId }: { storeId: string }) {
                 )}
 
                 {unverified && (
-                  <DnsPanel
-                    domain={d.domain}
-                    dns={data.dns}
-                    dnsError={d.dnsError}
-                    note={rowNote[d.domain] ?? ''}
-                    lastCheckedAt={d.lastCheckedAt}
-                    txt={d.txt}
-                  />
+                  <DnsPanel storeId={storeId} entry={d} checking={checking} note={rowNote[d.domain] ?? ''} onCheck={() => verify(d.domain)} />
                 )}
 
-                {allSet && (
+                {allSet && d.isPrimary && (
                   <p className="text-[13px] text-success mt-3 mb-0 flex items-center gap-1.5" role="status">
                     <Check size={14} /> All set — your store is live on this domain
+                  </p>
+                )}
+                {!unverified && !d.isPrimary && (
+                  <p className="text-[13px] text-slate mt-3 mb-0" role="status">
+                    Redirects to <strong>{data.canonicalHost}</strong>. Make this domain primary to serve your store here.
                   </p>
                 )}
               </div>

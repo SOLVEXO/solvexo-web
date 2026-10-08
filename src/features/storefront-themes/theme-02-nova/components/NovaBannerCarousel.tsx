@@ -29,16 +29,21 @@ function resolveBannerLink(banner: StoreBanner): { to?: string; href?: string } 
  *  a subtle bottom gradient (Nova's own darker-glass convention, same as
  *  `HeroSlide`'s image overlay). One image, `object-cover`-cropped at every
  *  breakpoint — no separate mobile crop upload. */
-function BannerSlide({ banner }: { banner: StoreBanner }) {
+function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean }) {
   const [errored, setErrored] = useState(false);
   const link = resolveBannerLink(banner);
   const isExternal = !!link.href;
   // See AtelierHomePage's identical `BannerSlide` for the full rationale —
   // both themes share the same `StoreBanner` shape and video/poster contract.
   const isVideoBanner = banner.type === 'video' && !!banner.videoUrl;
+  // "Adapt to image" (Hero height setting): the whole banner image at its own proportions, nothing cropped.
+  const adaptImage = adapt && !isVideoBanner;
+  const sizeStyle = adaptImage
+    ? { display: 'block', width: '100%', height: 'auto' } as const
+    : { display: 'block', minHeight: '320px', maxHeight: '640px' } as const;
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
+    <section className="relative w-full overflow-hidden" style={adaptImage ? { background: t.colors.bgAlt } : { minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
       {isVideoBanner ? (
         <video
           src={banner.videoUrl!}
@@ -57,8 +62,8 @@ function BannerSlide({ banner }: { banner: StoreBanner }) {
           sizes="100vw"
           alt={banner.ctaLabel ?? ''}
           onError={() => setErrored(true)}
-          className="w-full h-full object-cover"
-          style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
+          className={adaptImage ? undefined : 'w-full h-full object-cover'}
+          style={sizeStyle}
           loading="eager"
           fetchPriority="high"
         />
@@ -87,7 +92,7 @@ function BannerSlide({ banner }: { banner: StoreBanner }) {
  *  never rendered anywhere on the live storefront). Same manual dot-carousel
  *  UX as the theme-editor `HeroSection`, kept as its own component since the
  *  underlying data shape (`StoreBanner` vs. section `Block`) is unrelated. */
-export function StoreBannerCarousel({ banners }: { banners: StoreBanner[] }) {
+export function StoreBannerCarousel({ banners, adapt = false }: { banners: StoreBanner[]; adapt?: boolean }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   // Auto-advance every 5s (pauses on hover/touch; skipped for reduced-motion users).
@@ -102,7 +107,7 @@ export function StoreBannerCarousel({ banners }: { banners: StoreBanner[] }) {
 
   return (
     <div className="relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={() => setPaused(true)}>
-      <BannerSlide banner={banner} />
+      <BannerSlide banner={banner} adapt={adapt} />
       {banners.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
           {banners.map((b, i) => (
@@ -126,7 +131,7 @@ export function StoreBannerCarousel({ banners }: { banners: StoreBanner[] }) {
  *  shows the store's Store Banners (Marketing → Banners) right here, at the
  *  section's position on the page. One place (Online Store → Pages) controls
  *  where the hero sits; the Banners page controls what's in it. */
-export function StoreBannersHero() {
+export function StoreBannersHero({ adapt = false }: { adapt?: boolean }) {
   const { store } = useStorefront();
   const [banners, setBanners] = useState<StoreBanner[]>([]);
   useEffect(() => {
@@ -136,5 +141,5 @@ export function StoreBannersHero() {
       .catch(() => { if (!cancelled) setBanners([]); });
     return () => { cancelled = true; };
   }, [store.storeId]);
-  return <StoreBannerCarousel banners={banners} />;
+  return <StoreBannerCarousel banners={banners} adapt={adapt} />;
 }

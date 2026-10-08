@@ -39,8 +39,8 @@ interface ClearResponse  { message: string; data: [] }
 // its own isolated shopping session) — every call now carries the storeId
 // of the store currently being shopped on.
 
-export function apiAddToCart(productId: string, productVariantId: string, storeId: string) {
-  return client.post<never, CartResponse>(ENDPOINTS.CART.ADD, { productId, productVariantId, storeId });
+export function apiAddToCart(productId: string, productVariantId: string, storeId: string, quantity = 1) {
+  return client.post<never, CartResponse>(ENDPOINTS.CART.ADD, { productId, productVariantId, storeId, quantity });
 }
 
 export function apiGetCart(storeId: string) {
@@ -55,6 +55,12 @@ export function apiUpdateCartQuantity(
 ) {
   return client.post<never, ItemResponse>(ENDPOINTS.CART.UPDATE_QUANTITY, {
     productId, productVariantId, action, storeId,
+  });
+}
+
+export function apiSetCartQuantity(productId: string, productVariantId: string, quantity: number, storeId: string) {
+  return client.post<never, ItemResponse>(ENDPOINTS.CART.UPDATE_QUANTITY, {
+    productId, productVariantId, quantity, storeId,
   });
 }
 

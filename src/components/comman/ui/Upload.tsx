@@ -1,6 +1,11 @@
-import { type ChangeEvent, type KeyboardEvent, useState, lazy, Suspense } from 'react';
+import { type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Camera, Plus, Upload, Loader2, X, File as FileIcon, FolderOpen, Link2 } from 'lucide-react';
 import { clsx } from 'clsx';
+import {
+  DndContext, closestCenter, MouseSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, useSortable, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { PrivateUploadData } from '@/api/upload';
 import { apiUploadMediaAsset, apiUploadMediaAssetFromUrl } from '@/api/services/mediaLibrary';
@@ -16,6 +21,40 @@ const MediaLibraryPickerModal = lazy(() =>
 
 // ── ImageUpload ───────────────────────────────────────────────────────────────
 
+function SortableImageTile({ id, url, isCover, draggable, onRemove }: {
+  id: string; url: string; isCover: boolean; draggable: boolean; onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !draggable });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...(draggable ? listeners : {})}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1, zIndex: isDragging ? 10 : undefined }}
+      className={clsx(
+        'relative w-[88px] h-[88px] rounded-lg overflow-hidden border group select-none',
+        isCover ? 'border-brand-orange' : 'border-bone',
+        draggable && 'cursor-grab active:cursor-grabbing',
+      )}
+      aria-label={draggable ? `Image ${Number(id) + 1}${isCover ? ' (cover)' : ''} — drag to reorder` : undefined}
+    >
+      <img loading="lazy" decoding="async" src={url} alt="" draggable={false} className="w-full h-full object-cover pointer-events-none" />
+      {isCover && (
+        <span className="absolute bottom-0 inset-x-0 bg-brand-orange text-white text-[10px] font-semibold text-center py-[2px] pointer-events-none">Cover</span>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        onPointerDown={e => e.stopPropagation()}
+        aria-label="Remove image"
+        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity"
+      >
+        <X size={10} />
+      </button>
+    </div>
+  );
+}
+
 interface ImageUploadProps {
   value:      string[];
   onChange:   (urls: string[]) => void;
@@ -28,10 +67,12 @@ interface ImageUploadProps {
    *  call sites with no store context (e.g. a buyer review photo) — nothing
    *  changes for them. */
   storeId?: string;
+  /** Multi mode: mark the first image with a "Cover" badge (product images). Images can always be dragged to reorder. */
+  showCover?: boolean;
 }
 
 export function ImageUpload({
-  value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className, storeId,
+  value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className, storeId, showCover = false,
 }: ImageUploadProps) {
   const { upload, uploadUrl, uploading: plainUploading, error: plainError } = useUpload('public');
   const [libraryUploading, setLibraryUploading] = useState(false);
@@ -39,29 +80,60 @@ export function ImageUpload({
   // "Paste a URL" is the alternative to the default file picker below — off
   // by default, every call site still opens straight to a file dialog.
   const [urlMode, setUrlMode] = useState(false);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  // Focus the URL box when the seller opens it (instead of the autoFocus prop).
+  useEffect(() => { if (urlMode) urlInputRef.current?.focus(); }, [urlMode]);
   const [urlValue, setUrlValue] = useState('');
   const [urlError, setUrlError] = useState('');
-  const uploading = plainUploading || libraryUploading;
-  const error = plainError || urlError;
+  // Several files can be picked at once in multi mode, so "uploading" is tracked
+  // for the whole batch (useUpload's own flag flips off as soon as the first
+  // file in the batch finishes).
+  const [batchUploading, setBatchUploading] = useState(false);
+  const [notice, setNotice] = useState('');
+  const uploading = plainUploading || libraryUploading || batchUploading;
+  const error = plainError || urlError || notice;
 
   const addUrl = (url: string) => {
     if (maxFiles === 1) onChange([url]);
     else onChange([...value, url].slice(0, maxFiles));
   };
 
+  const uploadOne = (file: File): Promise<string> =>
+    storeId
+      ? apiUploadMediaAsset(storeId, file).then(res => res.data.url)
+      : upload(file).then(data => data.url);
+
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const picked = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (storeId) {
-      setLibraryUploading(true);
-      apiUploadMediaAsset(storeId, file)
-        .then(res => addUrl(res.data.url))
-        .catch(() => {})
-        .finally(() => setLibraryUploading(false));
-    } else {
-      upload(file).then(data => addUrl(data.url)).catch(() => {});
+    if (picked.length === 0) return;
+    setNotice('');
+
+    // Single-image widgets (logo, cover, …) keep the original one-file behaviour.
+    if (maxFiles === 1) {
+      if (storeId) setLibraryUploading(true);
+      uploadOne(picked[0]).then(addUrl).catch(() => {}).finally(() => setLibraryUploading(false));
+      return;
     }
+
+    const room = maxFiles - value.length;
+    const files = picked.slice(0, Math.max(0, room));
+    if (picked.length > files.length) {
+      setNotice(`Only ${maxFiles} images are allowed — ${picked.length - files.length} extra ${picked.length - files.length === 1 ? 'file was' : 'files were'} skipped.`);
+    }
+    if (files.length === 0) return;
+
+    setBatchUploading(true);
+    // Uploaded in parallel; results are applied in the order the files were
+    // picked, and one failed file doesn't drop the others.
+    Promise.allSettled(files.map(uploadOne))
+      .then(results => {
+        const urls = results.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []));
+        const failed = results.length - urls.length;
+        if (urls.length > 0) onChange([...value, ...urls].slice(0, maxFiles));
+        if (failed > 0) setNotice(`${failed} ${failed === 1 ? 'image' : 'images'} could not be uploaded. Please try again.`);
+      })
+      .finally(() => setBatchUploading(false));
   };
 
   const submitUrl = () => {
@@ -95,7 +167,7 @@ export function ImageUpload({
     <div className="flex items-center gap-1.5 w-full max-w-[320px]">
       <input
         type="url"
-        autoFocus
+        ref={urlInputRef}
         value={urlValue}
         onChange={e => setUrlValue(e.target.value)}
         onKeyDown={handleUrlKeyDown}
@@ -121,7 +193,20 @@ export function ImageUpload({
     </div>
   );
 
-  const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+  const remove = (i: number) => { setNotice(''); onChange(value.filter((_, idx) => idx !== i)); };
+
+  // Drag to reorder (mouse, touch-and-hold, or keyboard). The first image is the
+  // cover, so dropping a tile in slot 1 makes it the cover.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    onChange(arrayMove(value, Number(active.id), Number(over.id)));
+  };
   const canAdd = value.length < maxFiles;
 
   const libraryPicker = storeId && pickerOpen && (
@@ -131,6 +216,8 @@ export function ImageUpload({
         onClose={() => setPickerOpen(false)}
         storeId={storeId}
         onSelect={url => { addUrl(url); setPickerOpen(false); }}
+        maxSelect={maxFiles > 1 ? maxFiles - value.length : undefined}
+        onSelectMany={maxFiles > 1 ? (urls => { onChange([...value, ...urls].slice(0, maxFiles)); setPickerOpen(false); }) : undefined}
       />
     </Suspense>
   );
@@ -173,28 +260,23 @@ export function ImageUpload({
   return (
     <div className={clsx('flex flex-col gap-1.5', className)}>
       <div className="flex flex-wrap gap-2">
-        {value.map((url, i) => (
-          <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-bone group">
-            <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={() => remove(i)}
-              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X size={10} />
-            </button>
-          </div>
-        ))}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={value.map((_, i) => String(i))} strategy={rectSortingStrategy}>
+            {value.map((url, i) => (
+              <SortableImageTile key={i} id={String(i)} url={url} isCover={showCover && i === 0} draggable={value.length > 1} onRemove={() => remove(i)} />
+            ))}
+          </SortableContext>
+        </DndContext>
         {canAdd && (
           <label className={clsx(
-            'w-16 h-16 rounded-lg border-2 border-dashed border-bone flex items-center justify-center',
+            'w-[88px] h-[88px] rounded-lg border-2 border-dashed border-bone flex items-center justify-center',
             'hover:border-brand-orange hover:bg-brand-pale-orange transition-colors',
             uploading ? 'cursor-wait opacity-60' : 'cursor-pointer',
           )}>
             {uploading
               ? <Loader2 size={16} className="text-brand-orange animate-spin" />
               : <Plus size={18} className="text-slate" />}
-            <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
+            <input type="file" accept={accept} multiple className="hidden" onChange={handleFile} disabled={uploading} />
           </label>
         )}
       </div>
@@ -231,6 +313,8 @@ interface PasteImageUrlProps {
 
 export function PasteImageUrl({ upload, onUploaded, className }: PasteImageUrlProps) {
   const [mode, setMode] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (mode) inputRef.current?.focus(); }, [mode]);
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -265,7 +349,7 @@ export function PasteImageUrl({ upload, onUploaded, className }: PasteImageUrlPr
       <div className="flex items-center gap-1.5">
         <input
           type="url"
-          autoFocus
+          ref={inputRef}
           value={value}
           onChange={e => setValue(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') reset(); }}

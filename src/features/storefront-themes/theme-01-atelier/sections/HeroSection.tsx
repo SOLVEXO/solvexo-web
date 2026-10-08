@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { StoreBannersHero } from '../components/AtelierBannerCarousel';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
@@ -8,31 +8,53 @@ import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 import { PreviewBlock } from '../../previewInspector';
+import { HeroCarousel, type HeroCarouselSettings } from '../../HeroCarousel';
+import { focalOf, mobileHeightOf, MOBILE_MAX, type HeightPreset } from '../../imageFit';
 
 const HEIGHT_PX: Record<string, string> = { small: '360px', medium: '560px', large: '760px' };
 
-function HeroSlide({ block, colors }: { block: Block; colors: AtelierSectionColors }) {
+/** One breakpoint's sizing: a fixed-height box that crops the image (`cover`), or `adapt` — the image keeps its
+ *  own proportions and the slide is exactly as tall as the image. */
+function sizeRules(scope: string, adapt: boolean, height: string) {
+  return adapt
+    ? `${scope}{min-height:0}${scope} .ai{min-height:0}${scope} .ai img{display:block;width:100%;height:auto;min-height:0}`
+    : `${scope}{min-height:${height}}${scope} .ai{min-height:320px}${scope} .ai img{display:block;width:100%;height:100%;min-height:320px;object-fit:cover}`;
+}
+
+function HeroSlide({ block, colors, height, mobileHeight, eager }: {
+  block: Block; colors: AtelierSectionColors; height?: HeightPreset; mobileHeight?: HeightPreset; eager: boolean;
+}) {
   const { resolveLink } = useStorefront();
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const s = block.settings;
   const [errored, setErrored] = useState(false);
   const link = s.ctaLink ? resolveLink(s.ctaLink) : null;
+  const align: 'left' | 'center' | 'right' = s.contentAlign === 'center' || s.contentAlign === 'right' ? s.contentAlign : 'left';
+  const textColor: string | undefined = /^#[0-9a-fA-F]{6}$/.test(s.textColor ?? '') ? s.textColor : undefined;
+  const hasImage = !!s.imageUrl && !errored;
+  const scope = `.ah-${uid}`;
+  const mPreset = mobileHeight ?? height;
+  const css = [
+    sizeRules(scope, hasImage && height === 'adapt', HEIGHT_PX[height ?? ''] ?? HEIGHT_PX.medium),
+    `@media (max-width:${MOBILE_MAX}px){`,
+    sizeRules(scope, hasImage && mPreset === 'adapt', HEIGHT_PX[mPreset ?? ''] ?? HEIGHT_PX.medium),
+    `}`,
+  ].join('');
 
   return (
-    <section
-      className="grid grid-cols-1 lg:grid-cols-2 items-stretch"
-      style={{ minHeight: HEIGHT_PX[block.settings.heightPreset] ?? HEIGHT_PX.medium }}
-    >
+    <section className={`ah-${uid} grid grid-cols-1 lg:grid-cols-2 items-stretch`}>
+      <style>{css}</style>
       <div
-        className="flex flex-col justify-center gap-6 order-2 lg:order-1"
+        className={`flex flex-col justify-center gap-6 order-2 lg:order-1 ${align === 'center' ? 'items-center text-center' : align === 'right' ? 'items-end text-right' : ''}`}
         style={{ padding: `48px ${t.layout.containerPadX}` }}
       >
         {s.subheading && (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: colors.accent }}>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: textColor ?? colors.accent }}>
             {s.subheading}
           </p>
         )}
         {s.heading && (
-          <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(32px, 4.5vw, 54px)', fontWeight: 600, color: colors.ink, lineHeight: 1.08, maxWidth: '560px' }}>
+          <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(32px, 4.5vw, 54px)', fontWeight: 600, color: textColor ?? colors.ink, lineHeight: 1.08, maxWidth: '560px' }}>
             {s.heading}
           </h1>
         )}
@@ -46,18 +68,17 @@ function HeroSlide({ block, colors }: { block: Block; colors: AtelierSectionColo
           </div>
         )}
       </div>
-      <div className="order-1 lg:order-2" style={{ background: colors.bgAlt, minHeight: '320px' }}>
-        {s.imageUrl && !errored ? (
+      <div className="ai order-1 lg:order-2" style={{ background: colors.bgAlt }}>
+        {hasImage ? (
           <img
             src={cloudinaryUrl(s.imageUrl, 1200)}
             srcSet={cloudinarySrcSet(s.imageUrl, [640, 900, 1200, 1600])}
             sizes="(min-width: 1024px) 50vw, 100vw"
             alt={s.heading ?? ''}
             onError={() => setErrored(true)}
-            className="w-full h-full object-cover"
-            style={{ minHeight: '320px' }}
-            loading="eager"
-            fetchPriority="high"
+            style={{ objectPosition: focalOf(s.focalPoint) }}
+            loading={eager ? 'eager' : 'lazy'}
+            fetchPriority={eager ? 'high' : 'auto'}
           />
         ) : null}
       </div>
@@ -65,31 +86,24 @@ function HeroSlide({ block, colors }: { block: Block; colors: AtelierSectionColo
   );
 }
 
-function HeroSection({ blocks, colors }: { blocks: Block[]; colors: AtelierSectionColors }) {
-  const [active, setActive] = useState(0);
+function HeroSection({ blocks, colors, settings }: { blocks: Block[]; colors: AtelierSectionColors; settings: HeroCarouselSettings }) {
   // No slides of its own → show the store's Store Banners at this position.
-  if (blocks.length === 0) return <StoreBannersHero />;
-  const slide = blocks[Math.min(active, blocks.length - 1)];
+  if (blocks.length === 0) return <StoreBannersHero adapt={settings.heightPreset === 'adapt'} />;
+  const blockIds = blocks.map((b, i) => String(b._id ?? i));
+  const mobileHeight = mobileHeightOf(settings.heightPreset, settings.mobileHeightPreset);
 
   return (
-    <div className="relative">
-      <PreviewBlock blockId={String(slide._id ?? Math.min(active, blocks.length - 1))}><HeroSlide block={slide} colors={colors} /></PreviewBlock>
-      {blocks.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {blocks.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActive(i)}
-              aria-label={`Slide ${i + 1}`}
-              className="cursor-pointer border-0 p-0"
-              style={{ width: '8px', height: '8px', borderRadius: '50%', background: i === active ? colors.ink : colors.border }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    <HeroCarousel
+      blockIds={blockIds}
+      settings={settings}
+      colors={{ active: colors.ink, inactive: colors.border, controlBg: 'rgba(255,255,255,0.92)', controlFg: colors.ink }}
+      slides={blocks.map((block, i) => (
+        <PreviewBlock key={blockIds[i]} blockId={blockIds[i]}>
+          <HeroSlide block={block} colors={colors} height={settings.heightPreset} mobileHeight={mobileHeight} eager={i === 0} />
+        </PreviewBlock>
+      ))}
+    />
   );
 }
 
-registerAtelierSection('hero', (_section: Section, blocks: Block[], colors: AtelierSectionColors) => <HeroSection blocks={blocks} colors={colors} />);
+registerAtelierSection('hero', (section: Section, blocks: Block[], colors: AtelierSectionColors) => <HeroSection blocks={blocks} colors={colors} settings={section.settings ?? {}} />);

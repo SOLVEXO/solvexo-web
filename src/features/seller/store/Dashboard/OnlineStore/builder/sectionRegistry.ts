@@ -39,16 +39,39 @@ const SORT_COLUMNS_FIELDS: FieldSchema[] = [
   ] },
 ];
 
+// Shopify's "Image ratio": the section's own built-in crop, the whole image uncropped, or a fixed ratio.
+const IMAGE_RATIO_OPTIONS = [
+  { value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' },
+  { value: 'portrait', label: 'Portrait (3:4)' }, { value: 'square', label: 'Square (1:1)' }, { value: 'landscape', label: 'Landscape (4:3)' },
+];
+
 export const SECTION_META: SectionMeta[] = [
   {
     type: 'hero', label: 'Hero / Slider', description: 'Full-width image slides with a headline and call-to-action button.',
     Icon: Image, color: '#D97757',
-    defaultSettings: { heightPreset: 'medium' },
+    defaultSettings: { heightPreset: 'medium', autoplay: true, autoplaySeconds: 5, showArrows: false, showPauseButton: false, pagination: 'dots', transition: 'slide' },
     allowedBlockTypes: ['hero_slide'], blockLabel: 'Slide',
-    defaultBlockSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' } },
+    defaultBlockSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, focalPoint: 'center' },
     settingsSchema: [
-      { key: 'heightPreset', kind: 'select', label: 'Height', options: [
+      { key: 'heightPreset', kind: 'select', label: 'Slide height', hint: '"Adapt to image" shows each image whole — nothing is cropped.', options: [
+        { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+      ] },
+      { key: 'mobileHeightPreset', kind: 'select', label: 'Slide height on mobile', options: [
+        { value: 'same', label: 'Same as desktop' }, { value: 'adapt', label: 'Adapt to image' },
         { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+      ] },
+      { key: 'mobileTextLayout', kind: 'select', label: 'Text on mobile', hint: 'Overlay themes only (e.g. Nova). "Below image" moves the text out from over the picture.', options: [
+        { value: 'overlay', label: 'Over the image' }, { value: 'below', label: 'Below the image' },
+      ] },
+      { key: 'transition', kind: 'select', label: 'Slide transition', options: [
+        { value: 'slide', label: 'Slide' }, { value: 'fade', label: 'Fade' },
+      ] },
+      { key: 'autoplay', kind: 'checkbox', label: 'Auto-rotate slides' },
+      { key: 'autoplaySeconds', kind: 'number', label: 'Change slides every (seconds)', min: 3, max: 10, step: 1, showIf: s => s.autoplay !== false },
+      { key: 'showArrows', kind: 'checkbox', label: 'Show navigation arrows', defaultOff: true },
+      { key: 'showPauseButton', kind: 'checkbox', label: 'Show pause / play button', defaultOff: true, showIf: s => s.autoplay !== false },
+      { key: 'pagination', kind: 'select', label: 'Pagination', options: [
+        { value: 'dots', label: 'Dots' }, { value: 'counter', label: 'Counter (1 / 3)' }, { value: 'none', label: 'None' },
       ] },
     ],
   },
@@ -157,6 +180,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
         { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
       ] },
+      { key: 'imageRatio', kind: 'select', label: 'Image ratio', hint: 'Default is square tiles.', options: IMAGE_RATIO_OPTIONS },
     ]),
   },
   {
@@ -177,6 +201,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'limit', kind: 'select', label: 'Number of posts', numeric: true, options: [
         { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '6', label: '6' }, { value: '9', label: '9' }, { value: '12', label: '12' },
       ] },
+      { key: 'imageRatio', kind: 'select', label: 'Image ratio', hint: 'Default is 4:3.', options: IMAGE_RATIO_OPTIONS },
     ]),
   },
   {
@@ -300,10 +325,17 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   hero_slide: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
+    { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped (small screens, fixed heights).' },
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'subheading', kind: 'text', label: 'Subheading' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+    // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (Nova); Atelier's split layout ignores it.
+    { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [
+      { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
+    ] },
+    { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', half: true, min: 0, max: 80, step: 5, hint: 'Darkens the image behind the text. Only themes that put text over the image use it (e.g. Nova). Blank = theme default.' },
+    { key: 'textColor', kind: 'color', label: 'Text colour' },
   ],
   // "Dynamic Sources" — dynamicSourceKey, when set, binds this block's
   // `text` to one of the store's own real custom fields instead of a
@@ -354,6 +386,8 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'imagePosition', kind: 'select', label: 'Image position', options: [
       { value: 'left', label: 'Left' }, { value: 'right', label: 'Right' },
     ] },
+    { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: IMAGE_RATIO_OPTIONS },
+    { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', showIf: s => s.imageRatio !== 'adapt', hint: 'The part of the image that stays visible when it is cropped.' },
   ],
   testimonial: [
     { key: 'quote', kind: 'textarea', label: 'Quote', maxLength: 500 },

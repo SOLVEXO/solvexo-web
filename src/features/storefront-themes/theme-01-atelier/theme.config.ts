@@ -24,7 +24,7 @@ const STATIC_DEFAULTS = {
   },
   imageRadiusPx: '12px',
   productCardRadiusPx: '8px',
-  productImageRatio: 'portrait' as 'square' | 'portrait',
+  productImageRatio: 'portrait' as 'square' | 'portrait' | 'landscape' | 'adapt',
   productImageHover: 'second-image' as 'none' | 'zoom' | 'second-image',
 
   // Color system — warm ivory ground, near-black ink, one restrained brass
@@ -133,7 +133,7 @@ export function relativeLuminance(hex: string): number {
  *  static defaults (a store that never customizes, or Explicitly Reset). */
 export function applyMerchantThemeOverrides(colors: {
   bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
-  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait'; productImageHover?: 'none' | 'zoom';
+  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';

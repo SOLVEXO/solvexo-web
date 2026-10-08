@@ -29,7 +29,7 @@ const STATIC_DEFAULTS = {
   },
   imageRadiusPx: '14px',
   productCardRadiusPx: '14px',
-  productImageRatio: 'square' as 'square' | 'portrait',
+  productImageRatio: 'square' as 'square' | 'portrait' | 'landscape' | 'adapt',
   productImageHover: 'zoom' as 'none' | 'zoom' | 'second-image',
 
   // Color system — white ground, near-black ink with a cool undertone, one
@@ -131,7 +131,7 @@ export function relativeLuminance(hex: string): number {
  *  defaults. */
 export function applyMerchantThemeOverrides(colors: {
   bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
-  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait'; productImageHover?: 'none' | 'zoom';
+  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';

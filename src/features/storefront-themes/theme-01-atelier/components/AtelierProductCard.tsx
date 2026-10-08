@@ -7,8 +7,10 @@ import { useCurrencyPreferenceOptional } from '@/contexts/CurrencyPreferenceCont
 import type { PublicStoreProduct } from '@/api/services/store';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
+import { PRODUCT_CARD_RATIO } from '../../imageFit';
 
 const CARD_WIDTHS = [320, 480, 640];
+const CARD_RATIO = PRODUCT_CARD_RATIO;
 
 /** Theme 01's own product card — portrait ratio, no border, generous
  *  whitespace, price emphasis with the brass accent. Independently
@@ -48,7 +50,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
         srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
         sizes="(min-width: 1024px) 25vw, 50vw"
         alt={product.name}
-        className={`w-full h-full object-cover transition-transform duration-500 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
+        className={`${t.productImageRatio === 'adapt' ? 'block w-full h-auto' : 'w-full h-full object-cover'} transition-transform duration-500 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
         loading="lazy"
       />
       {/* Shopify-style: the second product image fades in on hover. */}
@@ -73,7 +75,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
 
   return (
     <div className="group flex flex-col">
-      <div className="relative" style={{ aspectRatio: t.productImageRatio === 'portrait' ? '3/4' : '1/1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.productCardRadiusPx }}>
+      <div className="relative" style={{ aspectRatio: CARD_RATIO[t.productImageRatio] ?? '1 / 1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.productCardRadiusPx }}>
         {demo ? (
           <div className="block w-full h-full">{media}</div>
         ) : (

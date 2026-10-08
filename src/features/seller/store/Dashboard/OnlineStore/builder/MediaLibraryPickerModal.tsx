@@ -10,14 +10,29 @@ import { apiBrowseMediaLibrary, apiUploadMediaAsset, apiUploadMediaAssetFromUrl,
  *  library itself is populated by, so uploading from inside the picker
  *  behaves identically to uploading from the standalone Files Library page. */
 export function MediaLibraryPickerModal({
-  open, onClose, storeId, onSelect, mediaType = 'image',
+  open, onClose, storeId, onSelect, mediaType = 'image', maxSelect, onSelectMany,
 }: {
   open: boolean;
   onClose: () => void;
   storeId: string;
+  /** Single-pick mode (default): called with the one chosen file. */
   onSelect: (url: string) => void;
   mediaType?: 'image' | 'video';
+  /** Multi-pick mode: set `maxSelect` > 1 AND `onSelectMany` — tiles toggle, and an
+   *  "Add N" button hands back every chosen URL, in the order they were picked. */
+  maxSelect?: number;
+  onSelectMany?: (urls: string[]) => void;
 }) {
+  const multi = !!onSelectMany && (maxSelect ?? 1) > 1;
+  const [selected, setSelected] = useState<string[]>([]);
+  const toggle = (url: string) => {
+    setError('');
+    setSelected(prev => {
+      if (prev.includes(url)) return prev.filter(u => u !== url);
+      if (prev.length >= (maxSelect ?? 1)) { setError(`You can choose up to ${maxSelect} images.`); return prev; }
+      return [...prev, url];
+    });
+  };
   const [items, setItems] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,16 +62,35 @@ export function MediaLibraryPickerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  const handleUpload = (file: File | undefined) => {
-    if (!file) return;
-    if (mediaType === 'video' ? !file.type.startsWith('video/') : !file.type.startsWith('image/')) {
+  const handleUpload = (fileList: FileList | null) => {
+    const files = Array.from(fileList ?? []);
+    if (files.length === 0) return;
+    if (files.some(f => (mediaType === 'video' ? !f.type.startsWith('video/') : !f.type.startsWith('image/')))) {
       setError(`Choose a ${mediaType} file.`);
       return;
     }
+    setError('');
+    if (!multi) {
+      setUploading(true);
+      apiUploadMediaAsset(storeId, files[0])
+        .then(res => onSelect(res.data.url))
+        .catch(() => setError('Upload failed.'))
+        .finally(() => setUploading(false));
+      return;
+    }
+    // Multi mode: uploaded files join the selection (and the grid) instead of closing the picker.
+    const room = (maxSelect ?? 1) - selected.length;
+    const batch = files.slice(0, Math.max(0, room));
+    if (batch.length < files.length) setError(`You can choose up to ${maxSelect} images — extra files were skipped.`);
+    if (batch.length === 0) return;
     setUploading(true);
-    apiUploadMediaAsset(storeId, file)
-      .then(res => onSelect(res.data.url))
-      .catch(() => setError('Upload failed.'))
+    Promise.allSettled(batch.map(f => apiUploadMediaAsset(storeId, f)))
+      .then(results => {
+        const assets = results.flatMap(r => (r.status === 'fulfilled' ? [r.value.data] : []));
+        if (assets.length < results.length) setError(`${results.length - assets.length} upload(s) failed.`);
+        if (assets.length > 0) load(query || undefined); // new files show up in the grid, already selected
+        setSelected(prev => [...prev, ...assets.map(a => a.url)].slice(0, maxSelect));
+      })
       .finally(() => setUploading(false));
   };
 
@@ -77,9 +111,9 @@ export function MediaLibraryPickerModal({
           <Button variant="outline" size="sm" icon={uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} onClick={() => fileRef.current?.click()} disabled={uploading}>
             {uploading ? 'Uploading…' : 'Upload new'}
           </Button>
-          <input ref={fileRef} type="file" accept={mediaType === 'video' ? 'video/mp4,video/webm,video/quicktime' : 'image/png,image/jpeg,image/webp'} className="hidden" onChange={e => { handleUpload(e.target.files?.[0]); e.target.value = ''; }} />
+          <input ref={fileRef} type="file" accept={mediaType === 'video' ? 'video/mp4,video/webm,video/quicktime' : 'image/png,image/jpeg,image/webp'} multiple={multi} className="hidden" onChange={e => { handleUpload(e.target.files); e.target.value = ''; }} />
         </div>
-        {mediaType === 'image' && <PasteImageUrl upload={url => apiUploadMediaAssetFromUrl(storeId, url).then(res => res.data)} onUploaded={onSelect} />}
+        {mediaType === 'image' && <PasteImageUrl upload={url => apiUploadMediaAssetFromUrl(storeId, url).then(res => res.data)} onUploaded={url => (multi ? setSelected(prev => (prev.length < (maxSelect ?? 1) ? [...prev, url] : prev)) : onSelect(url))} />}
 
         {error && <p className="text-[12px] text-error">{error}</p>}
 
@@ -92,22 +126,39 @@ export function MediaLibraryPickerModal({
               <p className="text-[12.5px]">{query ? 'No matches.' : `Your Files Library has no ${mediaType}s yet — upload one.`}</p>
             </div>
           ) : (
-            items.map(item => (
-              <button
-                key={item._id} type="button" onClick={() => onSelect(item.url)}
-                className="relative aspect-square rounded-lg overflow-hidden border border-bone hover:border-brand-orange transition-colors group"
-                title={item.filename || item.altText}
-              >
-                {mediaType === 'video'
-                  ? <video src={item.url} aria-label={item.filename || 'Store video'} className="w-full h-full object-cover" muted playsInline preload="metadata" />
-                  : <img src={item.url} alt={item.altText} className="w-full h-full object-cover" loading="lazy" />}
-                <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <Check size={18} className="text-white" />
-                </span>
-              </button>
-            ))
+            items.map(item => {
+              const order = selected.indexOf(item.url);
+              const isSelected = multi && order >= 0;
+              return (
+                <button
+                  key={item._id} type="button" onClick={() => (multi ? toggle(item.url) : onSelect(item.url))}
+                  aria-pressed={multi ? isSelected : undefined}
+                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors group ${isSelected ? 'border-brand-orange' : 'border-bone hover:border-brand-orange'}`}
+                  title={item.filename || item.altText}
+                >
+                  {mediaType === 'video'
+                    ? <video src={item.url} aria-label={item.filename || 'Store video'} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                    : <img src={item.url} alt={item.altText} className="w-full h-full object-cover" loading="lazy" />}
+                  {isSelected ? (
+                    <span className="absolute top-1 right-1 size-5 rounded-full bg-brand-orange text-white text-[11px] font-bold flex items-center justify-center">{order + 1}</span>
+                  ) : (
+                    <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Check size={18} className="text-white" />
+                    </span>
+                  )}
+                </button>
+              );
+            })
           )}
         </div>
+        {multi && (
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span className="text-[12px] text-slate">{selected.length} of {maxSelect} selected</span>
+            <Button size="sm" disabled={selected.length === 0 || uploading} onClick={() => onSelectMany?.(selected)}>
+              {selected.length > 0 ? `Add ${selected.length} ${selected.length === 1 ? 'image' : 'images'}` : 'Add images'}
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

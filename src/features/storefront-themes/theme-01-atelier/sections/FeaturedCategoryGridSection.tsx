@@ -7,6 +7,7 @@ import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categ
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { imageFit } from '../../imageFit';
 
 function FeaturedCategoryGridSection({ section, colors }: { section: Section; colors: AtelierSectionColors }) {
   const { store } = useStorefront();
@@ -31,6 +32,7 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
   const ids: string[] = section.settings.categoryIds ?? [];
   const selected = demoCategories ?? (ids.length > 0 ? (all ?? []).filter(c => ids.includes(c._id)) : (all ?? []));
   if (all !== null && selected.length === 0) return null;
+  const fit = imageFit(section.settings.imageRatio, '1 / 1');
 
   return (
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
@@ -49,9 +51,9 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
             {selected.map(c => {
               const tile = (
                 <>
-                  <div className="relative flex items-center justify-center" style={{ aspectRatio: '1/1', background: colors.bgAlt, overflow: 'hidden' }}>
+                  <div className="relative flex items-center justify-center" style={{ ...(c.image ? fit.box : { aspectRatio: '1 / 1' }), background: colors.bgAlt, overflow: 'hidden' }}>
                     {c.image ? (
-                      <img src={c.image} alt={c.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <img src={c.image} alt={c.name} style={fit.img} className="transition-transform duration-500 group-hover:scale-105" />
                     ) : (
                       <ImageOff size={24} style={{ color: colors.inkMuted }} />
                     )}

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
 import { Store } from 'lucide-react';
 import { apiGetPublicStore, apiResolveStoreByDomain, apiSuggestLocationForStore, type PublicStoreData } from '@/api/services/store';
@@ -17,6 +18,8 @@ import { CookieConsentBanner } from './CookieConsentBanner';
 import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
 import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout, getStorefrontToken, setStorefrontToken } from '@/utils/currentStorefront';
+import { PublishedLiquidStorefront } from './PublishedLiquidStorefront';
+import { isLiquidStorefrontRoute } from './liquidStorefrontRouting';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -61,6 +64,7 @@ function readSavedConsent(storeId: string): CookieConsentCategories | null {
 // every child route (home, custom pages, blog), and renders the seller's
 // own zero-Solvexo-branding navbar/footer around them.
 export function StorefrontLayout() {
+  const location = useLocation();
   const slug = getStoreSlugFromHost();
   const [store, setStore] = useState<PublicStoreData | null>(null);
   const [theme, setTheme] = useState<StoreThemeData | null>(null);
@@ -233,6 +237,7 @@ export function StorefrontLayout() {
   const themeId = theme?.themeDefinitionId;
   const impl = (themeId && NEW_THEME_REGISTRY[themeId]) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID];
   const Layout = impl.Layout;
+  const liquidRoute = isLiquidStorefrontRoute(location.pathname);
 
   // The gate replaces the ENTIRE tree (no navbar/cart/footer/Outlet) — every
   // real route, including `notFound`, is meaningless on a store nobody but
@@ -255,9 +260,9 @@ export function StorefrontLayout() {
     <StorefrontProvider value={contextValue}>
       <CartProvider storeId={store.storeId}>
         <WishlistProvider storeId={store.storeId}>
-          <Layout>
-            <Outlet />
-          </Layout>
+          {theme?.sourcePackageVersion != null && liquidRoute
+            ? <PublishedLiquidStorefront key={`${store.storeId}:${theme.sourcePackageVersion}`} storeId={store.storeId} />
+            : <Layout><Outlet /></Layout>}
           {store.cookieBannerEnabled && !cookieConsent && (
             <CookieConsentBanner
               message={store.cookieBannerMessage}

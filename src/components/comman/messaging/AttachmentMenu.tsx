@@ -5,7 +5,7 @@ import { Paperclip, Image as ImageIcon, FileText, Camera, ShoppingBag } from 'lu
 const DEFAULT_MAX_SIZE_BYTES = 100 * 1024 * 1024; // matches the backend's multer limit (messaging.controller.ts)
 
 interface AttachmentMenuProps {
-  onFileSelected: (file: File) => void;
+  onFileSelected: (file: File) => void | Promise<void>;
   onShareProduct?: () => void;
   disabled?: boolean;
   /** Called instead of onFileSelected when a chosen file exceeds maxSizeBytes — lets the page show its own toast/error without this component depending on one. */
@@ -18,7 +18,7 @@ interface MenuAction {
   label: string;
   bg:    string;
   fg:    string;
-  onClick: () => void;
+  kind:  'media' | 'doc' | 'camera' | 'share';
 }
 
 // WhatsApp-style attach popover: distinct entry points for Photo/Video,
@@ -46,19 +46,31 @@ export function AttachmentMenu({ onFileSelected, onShareProduct, disabled, onFil
     };
   }, [open]);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Several files can be picked at once (photos of a damaged item, a few
+  // documents…). Each is sent as its own message, one after another in the order
+  // picked — the parent's handler returns a promise so uploads don't overlap.
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!file) return;
-    if (file.size > maxSizeBytes) { onFileTooLarge?.(file, maxSizeBytes); return; }
-    onFileSelected(file);
+    for (const file of files) {
+      if (file.size > maxSizeBytes) { onFileTooLarge?.(file, maxSizeBytes); continue; }
+      await onFileSelected(file);
+    }
   };
 
+  // `actions` is plain data; the refs are only touched inside this click handler.
+  const runAction = (kind: MenuAction['kind']) => {
+    setOpen(false);
+    if (kind === 'media') mediaRef.current?.click();
+    else if (kind === 'doc') docRef.current?.click();
+    else if (kind === 'camera') cameraRef.current?.click();
+    else onShareProduct?.();
+  };
   const actions: MenuAction[] = [
-    { icon: ImageIcon,   label: 'Photo & Video', bg: '#EEF7FF', fg: '#1A65A8', onClick: () => mediaRef.current?.click() },
-    { icon: FileText,    label: 'Document',      bg: '#F3F0FF', fg: '#6D28D9', onClick: () => docRef.current?.click() },
-    { icon: Camera,      label: 'Camera',        bg: '#FFF4DC', fg: '#B36200', onClick: () => cameraRef.current?.click() },
-    ...(onShareProduct ? [{ icon: ShoppingBag, label: 'Share Product', bg: '#FBECE4', fg: '#B95A3A', onClick: onShareProduct }] : []),
+    { icon: ImageIcon,   label: 'Photo & Video', bg: '#EEF7FF', fg: '#1A65A8', kind: 'media' },
+    { icon: FileText,    label: 'Document',      bg: '#F3F0FF', fg: '#6D28D9', kind: 'doc' },
+    { icon: Camera,      label: 'Camera',        bg: '#FFF4DC', fg: '#B36200', kind: 'camera' },
+    ...(onShareProduct ? [{ icon: ShoppingBag, label: 'Share Product', bg: '#FBECE4', fg: '#B95A3A', kind: 'share' as const }] : []),
   ];
 
   return (
@@ -85,7 +97,7 @@ export function AttachmentMenu({ onFileSelected, onShareProduct, disabled, onFil
               key={a.label}
               role="menuitem"
               type="button"
-              onClick={() => { a.onClick(); setOpen(false); }}
+              onClick={() => runAction(a.kind)}
               className="w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[9px] text-[13px] font-medium text-charcoal hover:bg-cream cursor-pointer bg-transparent border-none text-left"
             >
               <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: a.bg, color: a.fg }}>
@@ -97,8 +109,8 @@ export function AttachmentMenu({ onFileSelected, onShareProduct, disabled, onFil
         </div>
       )}
 
-      <input ref={mediaRef} type="file" className="hidden" accept="image/*,video/*" onChange={handleFile} />
-      <input ref={docRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.zip,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleFile} />
+      <input ref={mediaRef} type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleFile} />
+      <input ref={docRef} type="file" multiple className="hidden" accept=".pdf,.doc,.docx,.zip,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleFile} />
       <input ref={cameraRef} type="file" className="hidden" accept="image/*" capture="environment" onChange={handleFile} />
     </div>
   );

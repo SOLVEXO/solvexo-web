@@ -14,6 +14,11 @@ export function PreviewInspectorProvider({ value, children }: { value: PreviewIn
   return <PreviewInspectorContext.Provider value={value}>{children}</PreviewInspectorContext.Provider>;
 }
 
+/** The editor-preview inspector, or null on the live storefront. */
+export function usePreviewInspector() {
+  return useContext(PreviewInspectorContext);
+}
+
 /** Adds an inspector hit target only in the editor preview. Storefront output
  * remains unchanged because the section renderer doesn't provide this context. */
 export function PreviewBlock({ blockId, children }: { blockId: string; children: ReactNode }) {

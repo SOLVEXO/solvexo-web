@@ -20,14 +20,27 @@ function saveGuestCartItems(items: GuestCartItem[]): void {
   localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
 }
 
-export function addGuestCartItem(productId: string, productVariantId: string, type?: 'physical' | 'digital'): GuestCartItem[] {
+export function addGuestCartItem(
+  productId: string,
+  productVariantId: string,
+  type?: 'physical' | 'digital',
+  quantity = 1,
+): GuestCartItem[] {
   const items = getGuestCartItems();
   const existing = items.find(i => i.productVariantId === productVariantId);
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity = Math.min(999, existing.quantity + quantity);
   } else {
-    items.push({ productId, productVariantId, quantity: 1, type });
+    items.push({ productId, productVariantId, quantity: Math.min(999, quantity), type });
   }
+  saveGuestCartItems(items);
+  return items;
+}
+
+export function setGuestCartItemQuantity(productVariantId: string, quantity: number): GuestCartItem[] {
+  const items = getGuestCartItems().map(item =>
+    item.productVariantId === productVariantId ? { ...item, quantity } : item,
+  );
   saveGuestCartItems(items);
   return items;
 }

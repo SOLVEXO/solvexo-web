@@ -199,6 +199,7 @@ export const ENDPOINTS = {
     DOMAIN_PRIMARY:  (storeId: string) => `/api/store/${storeId}/domains/primary`,
     DOMAIN_ITEM:     (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}`,
     DOMAIN_VERIFY:   (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}/verify`,
+    DOMAIN_GUIDE:    (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}/guide`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,

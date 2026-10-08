@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import {
-  apiGetCart, apiAddToCart, apiUpdateCartQuantity, apiRemoveCartItem, apiClearCart,
+  apiGetCart, apiAddToCart, apiUpdateCartQuantity, apiSetCartQuantity, apiRemoveCartItem, apiClearCart,
   type Cart, type CartItem,
 } from '@/api/services/cart';
 import { apiGetProductById, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 import { TokenStorage } from '@/api/services/auth';
 import {
-  getGuestCartItems, addGuestCartItem, updateGuestCartQty, removeGuestCartItem, clearGuestCart,
+  getGuestCartItems, addGuestCartItem, updateGuestCartQty, setGuestCartItemQuantity, removeGuestCartItem, clearGuestCart,
 } from '@/utils/guestCart';
 import { useToast } from '@/contexts/ToastContext';
 import { trackPixelEvent } from '@/utils/trackingPixels';
@@ -55,9 +55,10 @@ interface CartContextValue {
   adding:        string | null;
   error:         string | null;
   clearError:    () => void;
-  addToCart:     (productId: string, productVariantId: string, type?: 'physical' | 'digital') => Promise<void>;
-  updateQty:     (productId: string, productVariantId: string, action: 'increase' | 'decrease') => Promise<void>;
-  removeItem:    (productId: string, productVariantId: string) => Promise<void>;
+  addToCart:     (productId: string, productVariantId: string, type?: 'physical' | 'digital', quantity?: number) => Promise<boolean>;
+  updateQty:     (productId: string, productVariantId: string, action: 'increase' | 'decrease') => Promise<boolean>;
+  setQty:        (productId: string, productVariantId: string, quantity: number) => Promise<boolean>;
+  removeItem:    (productId: string, productVariantId: string) => Promise<boolean>;
   clearCart:     () => Promise<void>;
   refetch:       () => void;
 }
@@ -186,31 +187,35 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     productId: string,
     productVariantId: string,
     type?: 'physical' | 'digital',
+    quantity = 1,
   ) => {
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) return false;
     if (type) storeType(productVariantId, type);
     setError(null);
     setAdding(productVariantId);
 
     if (!TokenStorage.isLoggedIn()) {
-      addGuestCartItem(productId, productVariantId, type);
+      addGuestCartItem(productId, productVariantId, type, quantity);
       await refreshGuestCartDisplay();
       setAdding(null);
       toast.success('Added to cart');
       trackPixelEvent('AddToCart', { contentIds: [productId] });
-      return;
+      return true;
     }
 
-    if (!storeId) { setAdding(null); return; }
+    if (!storeId) { setAdding(null); return false; }
 
     try {
-      const res = await apiAddToCart(productId, productVariantId, storeId);
+      const res = await apiAddToCart(productId, productVariantId, storeId, quantity);
       setCart(mergeTypes(res.data));
       toast.success('Added to cart');
       trackPixelEvent('AddToCart', { contentIds: [productId] });
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add item to cart.';
       setError(message);
       toast.error(message);
+      return false;
     } finally {
       setAdding(null);
     }
@@ -222,10 +227,10 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     if (!TokenStorage.isLoggedIn()) {
       updateGuestCartQty(productVariantId, action);
       await refreshGuestCartDisplay();
-      return;
+      return true;
     }
 
-    if (!storeId) return;
+    if (!storeId) return false;
 
     setCart(prev => {
       if (!prev) return prev;
@@ -243,14 +248,48 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     setError(null);
     try {
       await apiUpdateCartQuantity(productId, productVariantId, action, storeId);
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update quantity.';
       setError(message);
       toast.error(message);
+      return false;
     } finally {
       syncCart(storeId, c => setCart(c));
     }
   }, [refreshGuestCartDisplay, toast, storeId]);
+
+  const setQty = useCallback(async (productId: string, productVariantId: string, quantity: number) => {
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) return false;
+    if (!TokenStorage.isLoggedIn()) {
+      setGuestCartItemQuantity(productVariantId, quantity);
+      await refreshGuestCartDisplay();
+      return true;
+    }
+    if (!storeId) return false;
+    setCart(prev => {
+      if (!prev) return prev;
+      const items = (prev.items ?? []).map(item => item.productVariantId === productVariantId
+        ? { ...item, quantity, itemTotal: (item.unitPrice ?? item.price ?? 0) * quantity }
+        : item);
+      return {
+        ...prev, items,
+        totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
+        totalPrice: items.reduce((sum, item) => sum + (item.itemTotal ?? 0), 0),
+      };
+    });
+    try {
+      await apiSetCartQuantity(productId, productVariantId, quantity, storeId);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to set cart quantity.';
+      setError(message);
+      toast.error(message);
+      return false;
+    } finally {
+      syncCart(storeId, c => setCart(c));
+    }
+  }, [refreshGuestCartDisplay, storeId, toast]);
 
   const removeItem = useCallback(async (productId: string, productVariantId: string) => {
     removeType(productVariantId);
@@ -259,10 +298,10 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       removeGuestCartItem(productVariantId);
       await refreshGuestCartDisplay();
       toast.success('Removed from cart');
-      return;
+      return true;
     }
 
-    if (!storeId) return;
+    if (!storeId) return false;
 
     setCart(prev => {
       if (!prev) return prev;
@@ -276,10 +315,12 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     try {
       await apiRemoveCartItem(productId, productVariantId, storeId);
       toast.success('Removed from cart');
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to remove item.';
       setError(message);
       toast.error(message);
+      return false;
     } finally {
       syncCart(storeId, c => setCart(c));
     }
@@ -309,8 +350,8 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
   }, [cart, toast, storeId]);
 
   const value = useMemo<CartContextValue>(() => ({
-    cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, removeItem, clearCart, refetch: fetchCart,
-  }), [cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, removeItem, clearCart, fetchCart]);
+    cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, setQty, removeItem, clearCart, refetch: fetchCart,
+  }), [cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, setQty, removeItem, clearCart, fetchCart]);
 
   return (
     <CartCtx.Provider value={value}>

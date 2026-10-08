@@ -318,6 +318,31 @@ export function apiVerifyStoreDomain(storeId: string, domain: string) {
   );
 }
 
+export interface DomainGuideRecord {
+  type: 'A' | 'CNAME';
+  /** The "Name/Host" value for the registrar form: `@`, `www`, `shop`… */
+  name: string;
+  fqdn: string;
+  expected: string;
+  current: string[];
+  action: 'ok' | 'add' | 'update';
+}
+export interface DomainGuideRemove { type: 'A' | 'AAAA' | 'CNAME'; name: string; fqdn: string; value: string }
+export interface DomainGuide {
+  domain: string;
+  registrable: string;
+  records: DomainGuideRecord[];
+  remove: DomainGuideRemove[];
+  provider: { name: string; url: string | null } | null;
+  nameservers: string[];
+  allSet: boolean;
+}
+
+/** GET /api/store/:storeId/domains/:domain/guide — what to add / change / delete at the DNS host (read live from DNS). */
+export function apiGetStoreDomainGuide(storeId: string, domain: string) {
+  return client.get<never, ApiResponse<DomainGuide>>(ENDPOINTS.STORE.DOMAIN_GUIDE(storeId, domain));
+}
+
 /** POST /api/store/:storeId/domains/primary — `null` = the free address. */
 export function apiSetPrimaryStoreDomain(storeId: string, domain: string | null) {
   return client.post<never, ApiResponse<StoreDomainsData>>(ENDPOINTS.STORE.DOMAIN_PRIMARY(storeId), { domain });

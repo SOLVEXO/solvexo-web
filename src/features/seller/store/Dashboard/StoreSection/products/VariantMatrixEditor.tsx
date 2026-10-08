@@ -156,29 +156,64 @@ export function VariantTableEditor({
           This would create {rows.length} variants — Solvexo supports up to {MAX_VARIANT_COMBINATIONS} per product. Go back and remove some values before saving.
         </p>
       )}
-      <div className="overflow-x-auto border border-bone rounded-lg">
-        <table className="w-full text-[12.5px] border-collapse min-w-[720px]">
+      {/* Phones: one labelled card per variant (a 7-column table can't fit). */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {rows.map(row => {
+          const name = row.options.map(o => o.value).join(' / ');
+          return (
+            <div key={row.key} className="border border-bone rounded-lg p-3 bg-white">
+              <p className="text-[13px] font-semibold text-charcoal mb-2 break-words">{name}</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Price ({currencySymbol})
+                  <input type="number" inputMode="decimal" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Compare-at
+                  <input type="number" inputMode="decimal" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">SKU
+                  <input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Barcode
+                  <input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={inp} placeholder="Optional" />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Stock
+                  <input type="number" inputMode="numeric" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={`${inp} disabled:bg-cream disabled:text-slate`} placeholder="0" />
+                </label>
+                <div className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Unlimited
+                  <div className="h-[34px] flex items-center">
+                    <Toggle checked={row.unlimitedStock} size="sm" onChange={v => updateRow(row.key, { unlimitedStock: v })} ariaLabel={`Unlimited stock for ${name}`} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tablet/desktop: table with fixed column minimums so Price/Stock never collapse; scrolls sideways only if the modal is narrower than the table. */}
+      <div className="hidden sm:block overflow-x-auto border border-bone rounded-lg">
+        <table className="w-full text-[12.5px] border-collapse" style={{ minWidth: 800 }}>
           <thead>
             <tr className="bg-cream text-left">
-              <th className="px-3 py-2 font-semibold text-graphite">Variant</th>
-              <th className="px-3 py-2 font-semibold text-graphite">Price ({currencySymbol})</th>
-              <th className="px-3 py-2 font-semibold text-graphite">Compare-at</th>
-              <th className="px-3 py-2 font-semibold text-graphite">SKU</th>
-              <th className="px-3 py-2 font-semibold text-graphite">Barcode</th>
-              <th className="px-3 py-2 font-semibold text-graphite">Stock</th>
-              <th className="px-3 py-2 font-semibold text-graphite">Unlimited</th>
+              <th className="px-3 py-2 font-semibold text-graphite" style={{ minWidth: 170 }}>Variant</th>
+              <th className="px-2 py-2 font-semibold text-graphite whitespace-nowrap" style={{ minWidth: 110 }}>Price ({currencySymbol})</th>
+              <th className="px-2 py-2 font-semibold text-graphite whitespace-nowrap" style={{ minWidth: 110 }}>Compare-at</th>
+              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 120 }}>SKU</th>
+              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 120 }}>Barcode</th>
+              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 90 }}>Stock</th>
+              <th className="px-2 py-2 font-semibold text-graphite whitespace-nowrap text-center" style={{ minWidth: 80 }}>Unlimited</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(row => (
               <tr key={row.key} className="border-t border-bone">
-                <td className="px-3 py-2 font-medium text-charcoal whitespace-nowrap">{row.options.map(o => o.value).join(' / ')}</td>
-                <td className="px-3 py-1.5"><input type="number" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" /></td>
-                <td className="px-3 py-1.5"><input type="number" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" /></td>
-                <td className="px-3 py-1.5"><input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" /></td>
-                <td className="px-3 py-1.5"><input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={inp} placeholder="Optional" /></td>
-                <td className="px-3 py-1.5"><input type="number" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={inp} placeholder="0" /></td>
-                <td className="px-3 py-1.5 text-center">
+                <td className="px-3 py-2 font-medium text-charcoal break-words">{row.options.map(o => o.value).join(' / ')}</td>
+                <td className="px-2 py-1.5"><input type="number" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" aria-label="Price" /></td>
+                <td className="px-2 py-1.5"><input type="number" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" aria-label="Compare-at price" /></td>
+                <td className="px-2 py-1.5"><input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" aria-label="SKU" /></td>
+                <td className="px-2 py-1.5"><input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={inp} placeholder="Optional" aria-label="Barcode" /></td>
+                <td className="px-2 py-1.5"><input type="number" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={`${inp} disabled:bg-cream disabled:text-slate`} placeholder="0" aria-label="Stock" /></td>
+                <td className="px-2 py-1.5 text-center">
                   <Toggle
                     checked={row.unlimitedStock} size="sm"
                     onChange={v => updateRow(row.key, { unlimitedStock: v })}

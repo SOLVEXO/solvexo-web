@@ -35,7 +35,7 @@ interface ChatWindowProps {
   /** 0-100 while `uploading` — omit to fall back to an indeterminate spinner only. */
   uploadProgress?: number;
   onSend:          (payload: SendMessagePayload) => void;
-  onUpload:        (file: File) => void;
+  onUpload:        (file: File) => void | Promise<void>;
   onFileTooLarge?: (file: File, maxSizeBytes: number) => void;
   onEditMessage:   (id: string, text: string) => void;
   onDeleteMessage: (id: string) => void;

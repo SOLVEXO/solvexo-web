@@ -7,6 +7,7 @@ import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categ
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { imageFit } from '../../imageFit';
 
 /** Theme 02's port of Atelier's `FeaturedCategoryGridSection` — same real
  *  `apiGetCategoryTree` data source and `section.settings.categoryIds`
@@ -36,6 +37,7 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
   const ids: string[] = section.settings.categoryIds ?? [];
   const selected = demoCategories ?? (ids.length > 0 ? (all ?? []).filter(c => ids.includes(c._id)) : (all ?? []));
   if (all !== null && selected.length === 0) return null;
+  const fit = imageFit(section.settings.imageRatio, '1 / 1');
 
   return (
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
@@ -54,9 +56,9 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
             {selected.map(c => {
               const tile = (
                 <>
-                  <div className="relative flex items-center justify-center" style={{ aspectRatio: '1/1', background: colors.bgAlt, overflow: 'hidden', borderRadius: t.radius.md }}>
+                  <div className="relative flex items-center justify-center" style={{ ...(c.image ? fit.box : { aspectRatio: '1 / 1' }), background: colors.bgAlt, overflow: 'hidden', borderRadius: t.radius.md }}>
                     {c.image ? (
-                      <img src={c.image} alt={c.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <img src={c.image} alt={c.name} style={fit.img} className="transition-transform duration-300 group-hover:scale-105" />
                     ) : (
                       <ImageOff size={24} style={{ color: colors.inkMuted }} />
                     )}

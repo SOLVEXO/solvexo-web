@@ -17,7 +17,7 @@ export type ThemeCardStyle          = 'flat' | 'outlined' | 'elevated';
 export type ThemeButtonSize         = 'sm' | 'md' | 'lg';
 export type ThemeHeroStyle          = 'overlay' | 'split';
 export type ThemeHeroAlignment      = 'left' | 'center';
-export type ThemeProductImageRatio  = 'square' | 'portrait';
+export type ThemeProductImageRatio  = 'square' | 'portrait' | 'landscape' | 'adapt';
 export type ThemeProductImageHover  = 'none' | 'zoom';
 export type ThemeProductGridDensity = 'cozy' | 'relaxed';
 export type ThemeTestimonialStyle   = 'cards' | 'minimal';
@@ -153,6 +153,7 @@ export interface StoreThemeData {
   // installation of, and whether it's the one the public storefront renders.
   // See the Theme Definition ⟷ Installed Theme Instance split.
   themeDefinitionId: string | null;
+  sourcePackageVersion?: number | null;
   status:         InstalledThemeStatus;
   installedAt:    string;
   /** Merchant override for this row's display name (e.g. "Copy of Atelier") — null means "just show the theme package's own name". */
@@ -213,6 +214,31 @@ export interface ThemePackageRevision {
   files: Array<{ path: string; size: number; sha256: string; encoding?: 'utf8' | 'base64'; content?: string }>;
 }
 
+export interface ThemePackageStructure {
+  version: number;
+  components: Array<{
+    kind: 'section' | 'block';
+    type: string;
+    path: string;
+    schema: ThemePackageComponentSchema;
+  }>;
+  templates: string[];
+  sectionGroups: string[];
+  themeSettings: Array<{ name?: string; settings?: Array<{ id?: string; type?: string; label?: string; [key: string]: unknown }>; [key: string]: unknown }>;
+}
+
+export interface ThemePackageComponentSchema {
+  name: string;
+  settings?: Array<{ id?: string; type?: string; label?: string; [key: string]: unknown }>;
+  blocks?: Array<{ type?: string; name?: string; limit?: number; settings?: Array<{ id?: string; type?: string; label?: string; [key: string]: unknown }>; [key: string]: unknown }>;
+  presets?: Array<{ name?: string; [key: string]: unknown }>;
+  limit?: number;
+  max_blocks?: number;
+  enabled_on?: { templates?: string[]; [key: string]: unknown };
+  disabled_on?: { templates?: string[]; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
 const themePackagePath = (storeId: string, installedThemeId: string) =>
   `/api/store-theme/${storeId}/installed/${installedThemeId}/package`;
 
@@ -226,12 +252,16 @@ export function apiUploadThemePackage(storeId: string, installedThemeId: string,
   return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body);
 }
 
-export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number) {
-  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, version === undefined ? {} : { version });
+export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number, path = '/') {
+  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, { version, path });
 }
 
 export function apiGetThemePackageRevision(storeId: string, installedThemeId: string, version: number) {
   return client.get<never, ApiResponse<ThemePackageRevision>>( `${themePackagePath(storeId, installedThemeId)}/${version}`);
+}
+
+export function apiGetThemePackageStructure(storeId: string, installedThemeId: string, version: number) {
+  return client.get<never, ApiResponse<ThemePackageStructure>>(`${themePackagePath(storeId, installedThemeId)}/${version}/structure`);
 }
 
 export function apiEditThemePackageFile(storeId: string, installedThemeId: string, path: string, content: string) {
@@ -240,6 +270,21 @@ export function apiEditThemePackageFile(storeId: string, installedThemeId: strin
 
 export function apiRollbackThemePackage(storeId: string, installedThemeId: string, version: number) {
   return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/rollback`);
+}
+
+export function apiPublishThemePackage(storeId: string, installedThemeId: string, version: number) {
+  return client.post<never, ApiResponse<{ installedThemeId: string; version: number; status: string }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/publish`);
+}
+
+export function apiGetPublishedLiquidThemeHtml(
+  storeId: string,
+  path: string,
+  cartItems: { productId: string; productVariantId: string; quantity: number }[] = [],
+) {
+  return client.post<never, ApiResponse<{ html: string; version: number }>>(
+    `/api/public/store-theme/${encodeURIComponent(storeId)}/source/render?path=${encodeURIComponent(path)}`,
+    { cartItems },
+  );
 }
 
 export function apiGetStoreThemeDraft(storeId: string, installedThemeId?: string) {

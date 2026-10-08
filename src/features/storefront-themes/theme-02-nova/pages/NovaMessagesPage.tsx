@@ -13,7 +13,7 @@ import { novaTheme as t } from '../theme.config';
 /** Theme 02's own "Message Seller" page — ported functionally 1:1 from
  *  `AtelierMessagesPage`. Reuses the real, shared `ChatWindow` widget as-is
  *  (see that file's own doc comment for why). */
-export function NovaMessagesPage() {
+export function NovaMessagesPage() {
   useRequireRealAccount();
   useStorefrontSeo({ title: 'Messages', noindex: true });
   const { store } = useStorefront();
@@ -110,7 +110,7 @@ export function NovaMessagesPage() {
             sending={sending}
             uploading={uploading}
             onSend={payload => void send(payload)}
-            onUpload={file => void handleUpload(file)}
+            onUpload={handleUpload}
             onEditMessage={(id, text) => void edit(id, text)}
             onDeleteMessage={id => void remove(id)}
             onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}

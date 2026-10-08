@@ -7,6 +7,7 @@ import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import type { PageOption } from './BlockFields';
 import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
 import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOwnerResource } from '@/api/services/metafields';
+import { FOCAL_POINTS } from '@/features/storefront-themes/imageFit';
 
 const MediaLibraryPickerModal = lazy(() => import('./MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })));
 
@@ -36,7 +37,7 @@ const MediaLibraryPickerModal = lazy(() => import('./MediaLibraryPickerModal').t
 
 export type FieldKind =
   | 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
-  | 'image' | 'video' | 'url' | 'link' | 'datetime'
+  | 'image' | 'video' | 'url' | 'link' | 'datetime' | 'color' | 'focalPoint'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
   | 'metaobjectTypePicker' | 'metafieldKeyPicker'
   | 'itemList';
@@ -58,6 +59,8 @@ export interface FieldSchema {
   rows?: number; // 'textarea'
   /** Renders this field as half-width, paired with the next `half: true` field into one row — mirrors the old hand-written `grid grid-cols-2` layouts (e.g. testimonial's Author name/Author role). */
   half?: boolean;
+  /** 'checkbox' only — an unset value means OFF (default is ON). */
+  defaultOff?: boolean;
   /** 'select' only — store the chosen option as a Number (e.g. `columns`), not the raw string the <select> element gives back. */
   numeric?: boolean;
   /** Other settings keys to null out when this field changes — e.g. picking a category clears a previously-picked collection on the same "filter to" slot, matching the old hand-written mutual-exclusivity behavior. */
@@ -288,7 +291,41 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
       return (
         <div className="flex items-center justify-between">
           <span className="text-[12px] text-charcoal">{field.label}</span>
-          <Toggle checked={value !== false} onChange={v => set({ [field.key]: v })} />
+          <Toggle checked={field.defaultOff ? value === true : value !== false} onChange={v => set({ [field.key]: v })} />
+        </div>
+      );
+
+    case 'focalPoint': {
+      // 3×3 grid: which part of the image must stay visible when it is cropped (becomes CSS object-position).
+      const current = value ?? 'center';
+      return (
+        <div role="radiogroup" aria-label={field.label} className="grid grid-cols-3 gap-1 w-[96px]">
+          {FOCAL_POINTS.map(p => (
+            <button
+              key={p} type="button" role="radio" aria-checked={current === p} aria-label={p}
+              title={p}
+              onClick={() => set({ [field.key]: p })}
+              className={`h-8 rounded-md border cursor-pointer ${current === p ? 'bg-brand-orange border-brand-orange' : 'bg-white border-bone hover:border-brand-orange'}`}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    case 'color':
+      // Empty = "use the theme's own colour"; the backend only accepts #RRGGBB.
+      return (
+        <div className="flex items-center gap-2">
+          <input
+            type="color" aria-label={field.label}
+            className="h-9 w-14 rounded-lg border border-bone bg-white p-1 cursor-pointer"
+            value={/^#[0-9a-fA-F]{6}$/.test(value ?? '') ? value : '#ffffff'}
+            onChange={e => set({ [field.key]: e.target.value })}
+          />
+          <span className="text-[12px] text-slate">{value || 'Theme default'}</span>
+          {value && (
+            <button type="button" className="text-[12px] text-slate underline" onClick={() => set({ [field.key]: '' })}>Reset</button>
+          )}
         </div>
       );
 

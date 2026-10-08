@@ -6,12 +6,14 @@ import { apiListPublicBlogPosts, type BlogPostSummary } from '@/api/services/sto
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { imageFit } from '../../imageFit';
 
 /** Latest posts from the store's default blog — same card look as the Journal index. */
 function BlogPostsSection({ section, colors }: { section: Section; colors: NovaSectionColors }) {
   const { store } = useStorefront();
   const [posts, setPosts] = useState<BlogPostSummary[] | null>(null);
   const limit = section.settings.limit ?? 3;
+  const fit = imageFit(section.settings.imageRatio, '4 / 3');
 
   useEffect(() => {
     let cancelled = false;
@@ -36,9 +38,11 @@ function BlogPostsSection({ section, colors }: { section: Section; colors: NovaS
           {posts.map(post => (
             <Link key={post.slug} to={`/blog/${post.slug}`} className="block no-underline">
               {post.coverImage ? (
-                <img src={post.coverImage} alt={post.title} loading="lazy" className="w-full object-cover" style={{ aspectRatio: '4/3' }} />
+                <div style={{ ...fit.box, overflow: 'hidden' }}>
+                  <img src={post.coverImage} alt={post.title} loading="lazy" style={fit.img} />
+                </div>
               ) : (
-                <div className="w-full flex items-center justify-center" style={{ aspectRatio: '4/3', background: colors.bgAlt }}>
+                <div className="w-full flex items-center justify-center" style={{ aspectRatio: '4 / 3', background: colors.bgAlt }}>
                   <ImageOff size={22} style={{ color: t.colors.inkMuted }} />
                 </div>
               )}

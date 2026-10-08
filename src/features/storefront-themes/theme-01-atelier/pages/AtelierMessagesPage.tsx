@@ -18,7 +18,7 @@ import { atelierTheme as t } from '../theme.config';
  *  rebuilding this considerable surface twice per theme — a deliberate,
  *  disclosed scope choice, the same shared-widget precedent `CurrencySelector`
  *  already set. */
-export function AtelierMessagesPage() {
+export function AtelierMessagesPage() {
   useRequireRealAccount();
   useStorefrontSeo({ title: 'Messages', noindex: true });
   const { store } = useStorefront();
@@ -120,7 +120,7 @@ export function AtelierMessagesPage() {
             sending={sending}
             uploading={uploading}
             onSend={payload => void send(payload)}
-            onUpload={file => void handleUpload(file)}
+            onUpload={handleUpload}
             onEditMessage={(id, text) => void edit(id, text)}
             onDeleteMessage={id => void remove(id)}
             onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}

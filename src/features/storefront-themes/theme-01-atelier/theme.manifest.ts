@@ -75,7 +75,7 @@ export const atelierThemeManifest: ThemeManifest = {
     },
     { key: 'imageRadius', label: 'Image Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
     { key: 'productCardRadius', label: 'Product Card Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
-    { key: 'productImageRatio', label: 'Product Image Ratio', group: 'Images', control: { kind: 'select', options: [{ value: 'square', label: 'Square' }, { value: 'portrait', label: 'Portrait' }] } },
+    { key: 'productImageRatio', label: 'Product Image Ratio', group: 'Images', control: { kind: 'select', options: [{ value: 'adapt', label: 'Adapt to image' }, { value: 'square', label: 'Square' }, { value: 'portrait', label: 'Portrait' }, { value: 'landscape', label: 'Landscape' }] } },
     { key: 'productImageHover', label: 'Product Image Hover', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'None' }, { value: 'zoom', label: 'Zoom' }] } },
   ],
 };

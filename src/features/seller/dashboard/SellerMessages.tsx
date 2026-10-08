@@ -284,7 +284,7 @@ export function SellerMessages() {
           uploading={uploading}
           uploadProgress={uploadProgress}
           onSend={payload => void send(payload)}
-          onUpload={file => void handleUpload(file)}
+          onUpload={handleUpload}
           onFileTooLarge={handleFileTooLarge}
           onEditMessage={(id, text) => void edit(id, text)}
           onDeleteMessage={id => void removeMessage(id)}

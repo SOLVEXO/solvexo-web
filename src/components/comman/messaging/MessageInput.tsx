@@ -9,7 +9,7 @@ interface MessageInputProps {
   value:          string;
   onChange:       (v: string) => void;
   onSend:         () => void;
-  onFileSelect:   (file: File) => void;
+  onFileSelect:   (file: File) => void | Promise<void>;
   onFileTooLarge?: (file: File, maxSizeBytes: number) => void;
   uploading:      boolean;
   /** 0-100 while `uploading` — omit to fall back to an indeterminate spinner only. */
