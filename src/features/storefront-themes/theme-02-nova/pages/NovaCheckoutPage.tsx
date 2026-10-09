@@ -126,6 +126,8 @@ export function NovaCheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'cash_on_delivery' | string | null>(null);
   const [initiatingExtra, setInitiatingExtra] = useState(false);
   const [extraInitiateErr, setExtraInitiateErr] = useState('');
+  // Easypaisa account number (push approval in the Easypaisa app); empty = the delivery address phone.
+  const [walletAccount, setWalletAccount] = useState('');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [chargeAmount, setChargeAmount] = useState<number | null>(null);
   const [initiating, setInitiating] = useState(false);
@@ -421,7 +423,7 @@ export function NovaCheckoutPage() {
     try {
       const returnUrl = `${window.location.origin}/checkout/${checkout._id}/return`;
       const cancelUrl = `${window.location.origin}/checkout`;
-      const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl);
+      const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl, provider === 'easypaisa' ? walletAccount.trim() || undefined : undefined);
       if (res.data.redirectUrl) {
         recordMarketingConsent();
         goToGateway(res.data.redirectUrl, res.data.formFields);
@@ -760,13 +762,27 @@ export function NovaCheckoutPage() {
                       <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, whiteSpace: 'pre-line' }}>
                         {method.provider === 'manual'
                           ? (method.instructions || 'Place your order, then pay the store directly as described by them. Your order is confirmed once they receive your payment.')
-                          : <>You'll be taken to {method.displayName} to complete your payment securely, then brought back here.</>}
+                          : method.provider === 'easypaisa'
+                            ? <>You'll get a payment request in your Easypaisa app. Approve it there to place your order.</>
+                            : <>You'll be taken to {method.displayName} to complete your payment securely, then brought back here.</>}
                       </p>
+                      {method.provider === 'easypaisa' && (
+                        <input
+                          style={inputStyle}
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          aria-label="Easypaisa account number"
+                          placeholder="Easypaisa account number (03XXXXXXXXX)"
+                          value={walletAccount}
+                          onChange={e => setWalletAccount(e.target.value)}
+                        />
+                      )}
                       {extraInitiateErr && (
                         <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{extraInitiateErr}</p>
                       )}
                       <NovaButton style={{ width: '100%', justifyContent: 'center' }} loading={initiatingExtra} onClick={() => handleExtraMethodClick(method)}>
-                        {method.provider === 'manual' ? 'Place order' : <>Continue to {method.displayName}</>}
+                        {method.provider === 'manual' ? 'Place order' : method.provider === 'easypaisa' ? 'Pay with Easypaisa' : <>Continue to {method.displayName}</>}
                       </NovaButton>
                     </div>
                   );

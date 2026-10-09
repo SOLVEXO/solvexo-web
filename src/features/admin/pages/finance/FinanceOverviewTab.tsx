@@ -26,9 +26,10 @@ function PlatformRevenueSection({ params }: { params: AdminFinanceParams }) {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <MetricCard label="Total revenue" value={formatMoneyCompact(d.totalRevenueUSD, 'USD')} icon={<DollarSign size={18} />} sub="Plans + collected transaction fees" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <MetricCard label="Total revenue" value={formatMoneyCompact(d.totalRevenueUSD, 'USD')} icon={<DollarSign size={18} />} sub="Plans + add-ons + collected transaction fees" />
             <MetricCard label="Plans & subscriptions" value={formatMoneyCompact(d.planRevenue.netUSD, 'USD')} icon={<Wallet size={16} />} sub={`${formatNumber(d.planRevenue.invoiceCount)} paid invoice(s), net of ${formatMoneyCompact(d.planRevenue.refundedUSD, 'USD')} refunds`} />
+            <MetricCard label="Add-ons" value={formatMoneyCompact(d.addons?.grossUSD ?? 0, 'USD')} icon={<ShoppingCart size={16} />} sub={`${formatNumber(d.addons?.chargeCount ?? 0)} charge(s)`} />
             <MetricCard label="Transaction fees collected" value={formatMoneyCompact(d.transactionFees.collectedUSD, 'USD')} icon={<Percent size={16} />} sub={`${formatNumber(d.transactionFees.billCount)} paid monthly bill(s)`} />
             <MetricCard label="Fees not yet collected" value={formatMoneyCompact(d.transactionFees.invoicedUnpaidUSD + d.transactionFees.accruedUnbilledUSD, 'USD')} icon={<Clock size={16} />} sub={`Invoiced ${formatMoneyCompact(d.transactionFees.invoicedUnpaidUSD, 'USD')} · accrued ${formatMoneyCompact(d.transactionFees.accruedUnbilledUSD, 'USD')}`} />
           </div>

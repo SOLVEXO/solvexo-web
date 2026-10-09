@@ -171,6 +171,10 @@ export interface StorefrontLinkSettings {
 export interface StorefrontNavItemSettings extends StorefrontLinkSettings {
   id?: string;
   label: string;
+  /** Top-level only: `mega` renders the children as a full-width panel. */
+  menuStyle?: 'dropdown' | 'mega';
+  /** Optional mega-panel tile image. */
+  imageUrl?: string | null;
   children?: StorefrontNavItemSettings[];
 }
 
@@ -178,6 +182,9 @@ export interface ResolvedStorefrontNavItem {
   id: string;
   label: string;
   link: { to?: string; href?: string };
+  menuStyle?: 'dropdown' | 'mega';
+  /** Seller-set image, else the linked category/collection image, else null. */
+  imageUrl?: string | null;
   children: ResolvedStorefrontNavItem[];
 }
 

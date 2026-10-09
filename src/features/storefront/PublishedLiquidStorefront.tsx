@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { apiGetPublishedLiquidThemeHtml } from '@/api/services/storeTheme';
+import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import { useCartContext } from '@/contexts/CartContext';
 import { resolveLiquidStorefrontPath } from './liquidStorefrontRouting';
 
@@ -60,6 +61,14 @@ export function PublishedLiquidStorefront({ storeId }: { storeId: string }) {
       if (event.data.type === 'solvexo:navigate' && typeof event.data.path === 'string') {
         navigate(event.data.path);
       }
+      if (event.data.type === 'solvexo:subscribe') {
+        const email = typeof event.data.email === 'string' ? event.data.email.trim().slice(0, 254) : '';
+        const reply = (ok: boolean, message: string) => frameRef.current?.contentWindow?.postMessage({ type: 'solvexo:subscribed', ok, message }, '*');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { reply(false, 'Enter a valid email address.'); return; }
+        void apiSubscribeNewsletter(email, { storeId, source: 'store_section' })
+          .then(() => reply(true, "Thanks for subscribing! If this store asks for confirmation, check your inbox."))
+          .catch((reason) => reply(false, reason instanceof Error ? reason.message : 'Could not subscribe right now.'));
+      }
       if (event.data.type === 'solvexo:checkout') navigate('/checkout');
       if (event.data.type === 'solvexo:cart-clear') {
         void clearCart().then(() => navigate('/cart'));
@@ -104,7 +113,7 @@ export function PublishedLiquidStorefront({ storeId }: { storeId: string }) {
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [addToCart, cart, clearCart, removeItem, setQty]);
+  }, [addToCart, cart, clearCart, removeItem, setQty, storeId]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-slate"><Loader2 size={18} className="animate-spin" /> Loading published theme…</div>;
   if (error) return <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">

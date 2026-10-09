@@ -4,6 +4,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { Button, Modal, Field, Toggle, EmptyState } from '@/components/comman/ui';
 import { LinkTargetFields, type LinkTarget } from '@/features/seller/store/Dashboard/OnlineStore/builder/LinkTargetFields';
 import { SortableList } from '@/features/seller/store/Dashboard/OnlineStore/builder/Sortable';
+import { MenuStyleField, MenuImageField } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtraFields';
 import { apiListStorePages } from '@/api/services/storePages';
 import {
   apiListMenus, apiCreateMenu, apiUpdateMenu, apiDeleteMenu,
@@ -16,20 +17,24 @@ function newItem(): MenuItem {
   return { id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: '', linkType: 'home', children: [] };
 }
 
-/** One top-level item — label + link target + highlight + its own (single-
- *  level) dropdown children, the exact same shape/depth `nav_link` blocks
- *  already support in the Header/Footer editor. Kept as its own component
- *  since it recurses one level for children, reusing `LinkTargetFields`/
- *  `SortableList` rather than a bespoke duplicate editor. */
-function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth = 1 }: {
+/** One menu item — label + link target + highlight + its own nested
+ *  children (up to three levels, the exact same shape/depth `nav_link`
+ *  blocks support in the Header/Footer editor). Top-level items choose how
+ *  their children are shown (dropdown or mega menu); inside a mega menu each
+ *  child/grandchild can carry a tile image. Recurses for children, reusing
+ *  `LinkTargetFields`/`SortableList` rather than a bespoke duplicate editor. */
+function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth = 1, parentMega = false }: {
   item: MenuItem;
   onChange: (next: MenuItem) => void;
   onRemove: () => void;
   pageOptions: { slug: string; title: string }[];
   storeId: string;
   depth?: number;
+  /** True when the top-level ancestor is a mega menu (enables the tile image field). */
+  parentMega?: boolean;
 }) {
   const children = item.children ?? [];
+  const mega = depth === 1 ? item.menuStyle === 'mega' : parentMega;
   return (
     <div className="border border-bone rounded-lg p-3 bg-white relative">
       <button type="button" onClick={onRemove}
@@ -41,6 +46,12 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
           <span className="text-[12px] text-charcoal">Highlight as button</span>
           <Toggle checked={!!item.highlight} onChange={v => onChange({ ...item, highlight: v })} />
         </div>
+        {depth === 1 && (
+          <MenuStyleField value={item.menuStyle} onChange={menuStyle => onChange({ ...item, menuStyle })} hasChildren={children.length > 0} />
+        )}
+        {depth > 1 && mega && (
+          <MenuImageField value={item.imageUrl} onChange={imageUrl => onChange({ ...item, imageUrl })} storeId={storeId} />
+        )}
       </div>
 
       <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-bone">
@@ -51,6 +62,7 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
             <MenuItemEditor
               item={child}
               depth={depth + 1}
+              parentMega={mega}
               storeId={storeId}
               pageOptions={pageOptions}
               onChange={next => onChange({ ...item, children: children.map((c, j) => j === i ? { ...c, ...next } : c) })}

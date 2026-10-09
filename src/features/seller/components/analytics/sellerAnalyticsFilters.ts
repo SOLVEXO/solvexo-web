@@ -18,10 +18,12 @@ export const CSV_SECTION_OPTIONS = [
 /** Maps the active tab to a sensible default CSV section — still fully overridable via the filter bar's dropdown. */
 export const TAB_TO_CSV_SECTION: Record<string, string> = {
   overview: 'revenue',
+  sessions: 'revenue',
   revenue: 'revenue',
   products: 'products',
   customers: 'customers',
   traffic: 'orders',
+  reports: 'sales-summary',
 };
 
 /** Seller analytics has no admin-style storeId/sellerId drill-down — the store is already fixed by context, so the UI filter shape is just the shared date-range fields. */

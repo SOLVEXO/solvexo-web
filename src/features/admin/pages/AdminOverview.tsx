@@ -37,6 +37,8 @@ export function AdminOverview() {
   const [error, setError]         = useState('');
   const forecast = useAdminAnalyticsGrowthForecast();
 
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -53,14 +55,14 @@ export function AdminOverview() {
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load platform overview.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [reloadKey]);
 
   const metrics = overview ? [
     { label: 'Seller Accounts',        value: formatNumber(overview.totalSellers),             trend: undefined, trendUp: true, sub: undefined, icon: <Users size={16} />, color: '#8B5CF6' },
-    { label: 'Sellers Active This Month', value: formatNumber(overview.sellersActiveThisMonth), trend: overview.sellersActiveThisMonthChange ? formatPercent(overview.sellersActiveThisMonthChange, { signed: true }) : undefined, trendUp: (overview.sellersActiveThisMonthChange ?? 0) >= 0, sub: undefined, icon: <UserCheck size={16} />, color: '#22C55E' },
+    { label: 'Sellers Active (30 days)', value: formatNumber(overview.sellersActiveThisMonth), trend: overview.sellersActiveThisMonthChange ? `${overview.sellersActiveThisMonthChange > 0 ? '+' : ''}${formatNumber(overview.sellersActiveThisMonthChange)}` : undefined, trendUp: (overview.sellersActiveThisMonthChange ?? 0) >= 0, sub: undefined, icon: <UserCheck size={16} />, color: '#22C55E' },
     { label: 'Total Stores',           value: formatNumber(overview.totalStores),              trend: undefined, trendUp: true, sub: undefined, icon: <Store size={16} />, color: '#0D9488' },
     { label: 'Active Stores',          value: formatNumber(overview.activeStores),             trend: undefined, trendUp: true, sub: undefined, icon: <Store size={16} />, color: '#0EA5E9' },
-    { label: 'GMV (30 days)',          value: formatCurrency(overview.totalGMV),                trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : undefined, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: undefined, icon: <DollarSign size={16} />, color: '#D97757' },
+    { label: 'GMV (30 days)',          value: formatCurrency(overview.totalGMV),                trend: overview.totalGMVChangePercent != null ? formatPercent(overview.totalGMVChangePercent, { signed: true }) : undefined, trendUp: (overview.totalGMVChangePercent ?? 0) >= 0, sub: undefined, icon: <DollarSign size={16} />, color: '#D97757' },
     { label: 'New Users',              value: formatNumber(overview.newUsers),                  trend: undefined, trendUp: true, sub: `${formatNumber(overview.totalCustomers)} total customers`, icon: <UserPlus size={16} />, color: '#0EA5E9' },
   ] : [];
 
@@ -79,6 +81,7 @@ export function AdminOverview() {
             <p className="font-semibold text-error">Couldn't load the platform overview</p>
             <p className="text-error/80">{error}</p>
           </div>
+          <button type="button" onClick={() => setReloadKey(k => k + 1)} className="ml-auto px-3 py-1.5 rounded-lg border border-error/20 bg-white text-error text-[12px] font-semibold cursor-pointer">Retry</button>
         </div>
       )}
 
@@ -106,11 +109,11 @@ export function AdminOverview() {
           </div>
           <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
             <div>
-              <p className="text-[11px] text-slate">Next 7 days (GMV)</p>
+              <p className="text-[11px] text-slate">Next 7 days (net order revenue)</p>
               <p className="text-[15px] font-bold text-charcoal">{formatCurrency(forecast.data.projectedNext7Days)}</p>
             </div>
             <div>
-              <p className="text-[11px] text-slate">Next 30 days (GMV)</p>
+              <p className="text-[11px] text-slate">Next 30 days (net order revenue)</p>
               <p className="text-[15px] font-bold text-charcoal">{formatCurrency(forecast.data.projectedNext30Days)}</p>
             </div>
           </div>

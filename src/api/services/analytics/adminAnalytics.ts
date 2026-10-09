@@ -90,6 +90,8 @@ export interface AdminOverviewData {
   totalSellers: number;
   sellersActiveThisMonth: number;
   sellersActiveThisMonthChange: number;
+  /** GMV % change vs the previous period of equal length (null when the previous period had none). */
+  totalGMVChangePercent?: number | null;
   totalStores: number;
   activeStores: number;
   totalCustomers: number;

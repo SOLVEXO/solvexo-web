@@ -30,7 +30,8 @@ export interface SellerProductPerformanceParams extends SellerAnalyticsParams {
   limit?: number;
 }
 
-export type SellerExportSection = 'revenue' | 'orders' | 'products' | 'customers';
+export type SellerExportSection = 'revenue' | 'orders' | 'products' | 'customers'
+  | 'sales-summary' | 'sales-by-variant' | 'sales-by-discount' | 'sales-by-channel' | 'cohorts' | 'inventory-abc';
 
 export interface SellerExportParams extends SellerAnalyticsParams {
   format: 'pdf' | 'csv';
@@ -103,6 +104,125 @@ export interface SellerOrdersOverTimeData { granularity: AnalyticsGranularity; s
 export type AttributionSource = 'marketplace_search' | 'direct_link' | 'social_media' | 'email' | 'other';
 export interface TrafficSourceRow { source: AttributionSource; count: number; revenue: number; percent: number }
 export interface SellerTrafficSourcesData { total: number; breakdown: TrafficSourceRow[] }
+
+// ── D2. Online store sessions + conversion (Shopify: Sessions, Conversion rate, funnel) ─────────────────
+
+export interface SessionBreakdownRow { sessions: number; conversionRate: number }
+
+export interface SellerSessionsData {
+  granularity: 'day' | 'week' | 'month';
+  /** First recorded visit — sessions exist from this date forward only (no backfill). Null = none yet. */
+  trackingSince: string | null;
+  sessions: number;
+  sessionsChangePercent: number | null;
+  visitors: number;
+  returningVisitorRate: number;
+  pageViews: number;
+  pagesPerSession: number;
+  bounceRate: number;
+  conversionRate: number;
+  /** Percentage points vs the previous period. */
+  conversionRateChange: number;
+  funnel: {
+    sessions: number;
+    addedToCart: number; addedToCartRate: number;
+    reachedCheckout: number; reachedCheckoutRate: number;
+    converted: number; conversionRate: number;
+  };
+  series: { date: string; sessions: number; conversionRate: number }[];
+  byDevice: (SessionBreakdownRow & { deviceType: string })[];
+  byCountry: (SessionBreakdownRow & { country: string | null })[];
+  byTrafficSource: (SessionBreakdownRow & { source: string })[];
+  byReferrer: (SessionBreakdownRow & { referrer: string })[];
+  byLandingPage: (SessionBreakdownRow & { path: string })[];
+}
+
+export function apiSellerAnalyticsSessions(params: SellerAnalyticsParams) {
+  return client.get<never, ApiResponse<SellerSessionsData>>(`${ENDPOINTS.ANALYTICS.SELLER.SESSIONS}${qs(params)}`);
+}
+
+export interface SellerLiveViewData {
+  asOf: string;
+  currency: string;
+  visitorsNow: number;
+  activeCarts: number;
+  checkingOut: number;
+  purchasedNow: number;
+  topPages: { path: string; visitors: number }[];
+  countries: { country: string | null; visitors: number }[];
+  devices: { deviceType: string; visitors: number }[];
+  today: { sessions: number; conversionRate: number; orders: number; sales: number };
+}
+
+export function apiSellerAnalyticsLive(storeId: string) {
+  return client.get<never, ApiResponse<SellerLiveViewData>>(`${ENDPOINTS.ANALYTICS.SELLER.LIVE}${qs({ storeId })}`);
+}
+
+// ── D3. Report library (Shopify Analytics > Reports) — store currency, store time zone ──────────────
+
+export interface SalesMoneyTotals {
+  orders: number;
+  grossSales: number;
+  discounts: number;
+  returns: number;
+  netSales: number;
+  shipping: number;
+  taxes: number;
+  totalSales: number;
+}
+
+export interface SellerSalesSummaryData {
+  currency: string;
+  granularity: 'day' | 'week' | 'month';
+  period: { from: string; to: string };
+  previousPeriod: { from: string; to: string };
+  totals: SalesMoneyTotals;
+  previous: SalesMoneyTotals;
+  changePercent: Record<keyof SalesMoneyTotals, number | null>;
+  series: (SalesMoneyTotals & { date: string })[];
+  note?: string;
+}
+
+export function apiSellerReportSalesSummary(params: SellerAnalyticsParams) {
+  return client.get<never, ApiResponse<SellerSalesSummaryData>>(`${ENDPOINTS.ANALYTICS.SELLER.REPORT_SALES_SUMMARY}${qs(params)}`);
+}
+
+export interface VariantSalesRow {
+  productId: string; variantId: string | null; name: string; sku: string | null; variantTitle: string | null;
+  orders: number; units: number; grossSales: number; discounts: number; returns: number; netSales: number;
+}
+export interface DiscountSalesRow { type: 'code' | 'automatic' | 'campaign'; name: string; orders: number; discountAmount: number; grossSales: number; netSales: number }
+export interface ChannelSalesRow extends SalesMoneyTotals { channel: string; label: string }
+
+export type SalesByDimension = 'variant' | 'discount' | 'channel';
+export interface SellerSalesByData<R> { currency: string; dimension: SalesByDimension; rows: R[] }
+
+export function apiSellerReportSalesBy<R>(params: SellerAnalyticsParams & { dimension: SalesByDimension }) {
+  return client.get<never, ApiResponse<SellerSalesByData<R>>>(`${ENDPOINTS.ANALYTICS.SELLER.REPORT_SALES_BY}${qs(params)}`);
+}
+
+export interface SellerCohortsData {
+  months: number;
+  cohorts: { month: string; customers: number; retention: number[] }[];
+}
+
+export function apiSellerReportCohorts(params: { storeId: string; months?: number }) {
+  return client.get<never, ApiResponse<SellerCohortsData>>(`${ENDPOINTS.ANALYTICS.SELLER.REPORT_COHORTS}${qs(params)}`);
+}
+
+export interface InventoryAbcRow {
+  productId: string; variantId: string; name: string; variantTitle: string | null; sku: string | null;
+  revenue90: number; unitsSold90: number; available: number | null; daysOfInventory: number | null; grade: 'A' | 'B' | 'C';
+}
+export interface SellerInventoryAbcData {
+  currency: string;
+  summary: Record<'A' | 'B' | 'C', { variants: number; revenue: number; revenueShare: number }>;
+  rows: InventoryAbcRow[];
+}
+
+export function apiSellerReportInventoryAbc(params: { storeId: string }) {
+  return client.get<never, ApiResponse<SellerInventoryAbcData>>(`${ENDPOINTS.ANALYTICS.SELLER.REPORT_INVENTORY_ABC}${qs(params)}`);
+}
 
 // ── E. Top products ───────────────────────────────────────────────────────────────
 

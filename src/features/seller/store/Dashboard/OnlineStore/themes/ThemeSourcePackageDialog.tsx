@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Code2, FileCode2, Loader2, MonitorPlay, RotateCcw, Save, UploadCloud, X } from 'lucide-react';
+import { AlertTriangle, Code2, Download, FilePlus2, FileCode2, Loader2, MonitorPlay, Pencil, RotateCcw, Save, Trash2, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import {
   apiEditThemePackageFile, apiGetThemePackageRevision, apiListThemePackageRevisions,
-  apiRollbackThemePackage, apiUploadThemePackage, apiPreviewThemePackage, apiGetThemePackageStructure, apiPublishThemePackage,
+  apiRollbackThemePackage, apiUploadThemePackage, apiAddThemePackageFile, apiDeleteThemePackageFile, apiRenameThemePackageFile, apiUnpublishThemePackage, apiExportThemePackage, apiPreviewThemePackage, apiGetThemePackageStructure, apiPublishThemePackage,
   type ThemePackageRevision, type ThemePackageStructure,
 } from '@/api/services/storeTheme';
 import { ShopifyTemplateEditor } from './ShopifyTemplateEditor';
@@ -11,6 +11,7 @@ import { ShopifyTemplateEditor } from './ShopifyTemplateEditor';
 export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }: { storeId: string; installedThemeId: string; onClose: () => void }) {
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const assetRef = useRef<HTMLInputElement>(null);
   const [revisions, setRevisions] = useState<ThemePackageRevision[]>([]);
   const [selected, setSelected] = useState<ThemePackageRevision | null>(null);
   const [filePath, setFilePath] = useState('');
@@ -20,6 +21,9 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const [error, setError] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
   const [structure, setStructure] = useState<ThemePackageStructure | null>(null);
+  const [previewPath, setPreviewPath] = useState('/');
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [fileOp, setFileOp] = useState<{ mode: 'new' | 'rename'; value: string } | null>(null);
   const [activePanel, setActivePanel] = useState<'files' | 'structure' | 'editor'>('files');
 
   const openRevision = useCallback(async (version: number) => {
@@ -115,7 +119,7 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const preview = async () => {
     setBusy(true); setError('');
     try {
-      const result = await apiPreviewThemePackage(storeId, installedThemeId, selected?.version);
+      const result = await apiPreviewThemePackage(storeId, installedThemeId, selected?.version, previewPath.startsWith('/') ? previewPath : `/${previewPath}`, dirty && filePath && selectedFile?.encoding === 'utf8' ? { path: filePath, content } : undefined);
       setPreviewHtml(result.data.html);
     } catch (e) { setError(e instanceof Error ? e.message : 'Theme preview could not be rendered.'); }
     finally { setBusy(false); }
@@ -128,6 +132,68 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
       await apiPublishThemePackage(storeId, installedThemeId, selected.version);
       toast.success(`Theme revision ${selected.version} is now published to the storefront.`);
     } catch (e) { setError(e instanceof Error ? e.message : 'Theme could not be published.'); }
+    finally { setBusy(false); }
+  };
+
+  const runFileOp = async () => {
+    if (!fileOp || !fileOp.value.trim()) return;
+    if (dirty && !window.confirm('Discard unsaved source edits first?')) return;
+    const target = fileOp.value.trim().replace(/^\/+/, '');
+    setBusy(true); setError('');
+    try {
+      if (fileOp.mode === 'new') await apiAddThemePackageFile(storeId, installedThemeId, target, '');
+      else await apiRenameThemePackageFile(storeId, installedThemeId, filePath, target);
+      toast.success(fileOp.mode === 'new' ? 'File added as a new revision.' : 'File renamed as a new revision.');
+      setFileOp(null);
+      await reload();
+    } catch (e) { setError(e instanceof Error ? e.message : 'File change failed.'); }
+    finally { setBusy(false); }
+  };
+
+  const removeFile = async () => {
+    if (!filePath || !window.confirm(`Delete ${filePath}? You can restore it from the previous revision.`)) return;
+    setBusy(true); setError('');
+    try {
+      await apiDeleteThemePackageFile(storeId, installedThemeId, filePath);
+      toast.success('File deleted as a new revision.');
+      await reload();
+    } catch (e) { setError(e instanceof Error ? e.message : 'File could not be deleted.'); }
+    finally { setBusy(false); }
+  };
+
+  const uploadAsset = async (file?: File) => {
+    if (!file) return;
+    const buf = await file.arrayBuffer();
+    let binary = '';
+    new Uint8Array(buf).forEach((b) => { binary += String.fromCharCode(b); });
+    setBusy(true); setError('');
+    try {
+      await apiAddThemePackageFile(storeId, installedThemeId, `assets/${file.name}`, btoa(binary), 'base64');
+      toast.success('Asset uploaded as a new revision.');
+      await reload();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Asset could not be uploaded.'); }
+    finally { setBusy(false); if (assetRef.current) assetRef.current.value = ''; }
+  };
+
+  const exportZip = async () => {
+    setBusy(true); setError('');
+    try {
+      const blob = await apiExportThemePackage(storeId, installedThemeId, selected?.version);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `theme-v${selected?.version ?? 'latest'}.zip`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Theme could not be exported.'); }
+    finally { setBusy(false); }
+  };
+
+  const unpublish = async () => {
+    if (!window.confirm('Switch this store back to its native theme? The Liquid source and all revisions are kept.')) return;
+    setBusy(true); setError('');
+    try {
+      await apiUnpublishThemePackage(storeId, installedThemeId);
+      toast.success('Liquid theme unpublished — the storefront uses the native theme again.');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not unpublish the theme.'); }
     finally { setBusy(false); }
   };
 
@@ -147,6 +213,9 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
         <div className="flex items-center gap-2"><Code2 size={18} /><div><h2 className="m-0 text-[16px] font-bold text-charcoal">Theme source files</h2><p className="m-0 mt-1 text-[11px] text-slate">Shopify Liquid theme ZIP import, source edits and revision rollback</p></div></div>
         <div className="flex items-center gap-2">
           <input ref={inputRef} type="file" accept=".zip,application/zip" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+          <input ref={assetRef} type="file" accept="image/*,font/*,.woff,.woff2,.ttf,.otf,.mp4,.webm,.css,.js,.svg" className="hidden" onChange={(e) => uploadAsset(e.target.files?.[0])} />
+          <button type="button" onClick={exportZip} disabled={busy || !selected} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-bone bg-white text-[12px] font-semibold cursor-pointer disabled:opacity-50"><Download size={14} /> Export ZIP</button>
+          <button type="button" onClick={unpublish} disabled={busy || !selected} title="Stop using this Liquid theme; go back to the native theme" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-bone bg-white text-[12px] font-semibold cursor-pointer disabled:opacity-50">Unpublish</button>
           <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-charcoal text-white text-[12px] font-semibold border-0 cursor-pointer disabled:opacity-50"><UploadCloud size={14} /> Import ZIP</button>
           <button type="button" onClick={() => { if (!dirty || window.confirm('Discard unsaved source edits and close?')) onClose(); }} className="p-2 rounded-lg border border-bone bg-white cursor-pointer" aria-label="Close"><X size={16} /></button>
         </div>
@@ -167,6 +236,19 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
             }} disabled={!selected || !structure} className="px-2 py-1 rounded-md border-0 text-[11px] font-semibold cursor-pointer disabled:opacity-50" style={{ background: activePanel === 'editor' ? '#F1EDE5' : 'transparent' }}>Template editor</button>
             <button type="button" onClick={() => setActivePanel('structure')} disabled={!selected} className="px-2 py-1 rounded-md border-0 text-[11px] font-semibold cursor-pointer disabled:opacity-50" style={{ background: activePanel === 'structure' ? '#F1EDE5' : 'transparent' }}>Theme structure</button>
           </div>
+          {activePanel === 'files' && selected && <div className="mb-2">
+            <div className="flex gap-1">
+              <button type="button" onClick={() => setFileOp({ mode: 'new', value: 'sections/' })} className="flex items-center gap-1 px-2 py-1 rounded-md border border-bone bg-white text-[11px] font-semibold cursor-pointer"><FilePlus2 size={12} /> New file</button>
+              <button type="button" onClick={() => assetRef.current?.click()} className="flex items-center gap-1 px-2 py-1 rounded-md border border-bone bg-white text-[11px] font-semibold cursor-pointer"><UploadCloud size={12} /> Asset</button>
+              <button type="button" disabled={!filePath} onClick={() => setFileOp({ mode: 'rename', value: filePath })} aria-label="Rename file" title="Rename selected file" className="p-1.5 rounded-md border border-bone bg-white cursor-pointer disabled:opacity-40"><Pencil size={12} /></button>
+              <button type="button" disabled={!filePath} onClick={removeFile} aria-label="Delete file" title="Delete selected file" className="p-1.5 rounded-md border border-bone bg-white cursor-pointer disabled:opacity-40"><Trash2 size={12} /></button>
+            </div>
+            {fileOp && <form className="mt-2 flex gap-1" onSubmit={(e) => { e.preventDefault(); void runFileOp(); }}>
+              <input autoFocus aria-label={fileOp.mode === 'new' ? 'New file path' : 'New file name'} value={fileOp.value} onChange={(e) => setFileOp({ ...fileOp, value: e.target.value })} placeholder="sections/my-section.liquid" className="flex-1 min-w-0 px-2 py-1 rounded-md border border-bone text-[11px]" />
+              <button type="submit" className="px-2 py-1 rounded-md bg-charcoal text-white text-[11px] font-semibold border-0 cursor-pointer">{fileOp.mode === 'new' ? 'Add' : 'Rename'}</button>
+              <button type="button" onClick={() => setFileOp(null)} className="px-2 py-1 rounded-md border border-bone bg-white text-[11px] cursor-pointer">Cancel</button>
+            </form>}
+          </div>}
           {activePanel === 'files' ? selected?.files.map((file) => <button key={file.path} type="button" onClick={() => chooseFile(file.path)} className="w-full flex items-center gap-2 text-left p-2 rounded-lg border-0 bg-transparent hover:bg-cream cursor-pointer"><FileCode2 size={13} className="shrink-0" /><span className="truncate text-[11px]">{file.path}</span></button>) : structure && <>
             {activePanel === 'editor' ? null : <>
             <p className="px-2 text-[10px] font-bold uppercase tracking-wide text-slate">Templates</p>
@@ -190,8 +272,8 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
         <main className="p-4 flex flex-col min-w-0 min-h-0">
           {error && <p className="flex items-start gap-2 p-2.5 rounded-lg bg-error-bg text-error text-[12px]"><AlertTriangle size={14} className="shrink-0" />{error}</p>}
           {selected ? <>
-            <div className="flex items-center justify-between gap-3 mb-2"><span className="text-[12px] font-semibold truncate">{filePath || 'Choose a file'}</span><div className="flex gap-2 shrink-0">{previewHtml && <button type="button" onClick={() => setPreviewHtml('')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer"><Code2 size={12} /> Edit source</button>}<button type="button" disabled={busy || dirty} onClick={preview} title={dirty ? 'Save the source edit to preview its new revision.' : undefined} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><MonitorPlay size={12} /> Preview revision</button><button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button><button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button><button type="button" disabled={busy || dirty} onClick={publish} title={dirty ? 'Save source changes before publishing.' : 'Publish this source revision to the live storefront'} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-charcoal text-white text-[11px] font-semibold border-0 cursor-pointer disabled:opacity-50">Publish to storefront</button></div></div>
-            {previewHtml ? <div className="flex-1 min-h-0 rounded-xl border border-bone overflow-hidden"><iframe title={`Theme source revision ${selected.version} preview`} sandbox="allow-scripts" srcDoc={previewHtml} className="w-full h-full border-0 bg-white" /></div>
+            <div className="flex items-center justify-between gap-3 mb-2"><span className="text-[12px] font-semibold truncate">{filePath || 'Choose a file'}</span><div className="flex gap-2 shrink-0">{previewHtml && <button type="button" onClick={() => setPreviewHtml('')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer"><Code2 size={12} /> Edit source</button>}<input aria-label="Preview page path" value={previewPath} onChange={(e) => setPreviewPath(e.target.value)} placeholder="/products/handle" className="w-36 px-2 py-1 rounded-lg border border-bone text-[11px]" /><select aria-label="Preview device" value={device} onChange={(e) => setDevice(e.target.value as 'desktop' | 'tablet' | 'mobile')} className="px-2 py-1 rounded-lg border border-bone bg-white text-[11px]"><option value="desktop">Desktop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option></select><button type="button" disabled={busy} onClick={preview} title={dirty ? 'Previews your unsaved edit without saving it.' : undefined} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><MonitorPlay size={12} /> Preview revision</button><button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button><button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button><button type="button" disabled={busy || dirty} onClick={publish} title={dirty ? 'Save source changes before publishing.' : 'Publish this source revision to the live storefront'} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-charcoal text-white text-[11px] font-semibold border-0 cursor-pointer disabled:opacity-50">Publish to storefront</button></div></div>
+            {previewHtml ? <div className="flex-1 min-h-0 rounded-xl border border-bone overflow-auto bg-cream flex justify-center"><iframe title={`Theme source revision ${selected.version} preview`} sandbox="allow-scripts" srcDoc={previewHtml} style={{ width: device === 'mobile' ? 390 : device === 'tablet' ? 820 : '100%', maxWidth: '100%' }} className="h-full border-0 bg-white" /></div>
               : activePanel === 'editor' && structure ? <div className="flex-1 min-h-0 rounded-xl border border-bone p-3"><ShopifyTemplateEditor
                 storeId={storeId}
                 structure={structure}

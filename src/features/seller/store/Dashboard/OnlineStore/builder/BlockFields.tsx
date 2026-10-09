@@ -1,6 +1,7 @@
 import { Field, Toggle } from '@/components/comman/ui';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import { SortableList } from './Sortable';
+import { MenuStyleField, MenuImageField } from './MenuItemExtraFields';
 import { SchemaForm, type FieldSchema, type FieldKind } from './SchemaForm';
 import { BLOCK_SCHEMAS } from './sectionRegistry';
 import { isAppBlockType, findInstalledAppBlock, type AppCatalogEntry, type AppBlockFieldKind } from '@/api/services/apps';
@@ -91,6 +92,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
             <span className="text-[12px] text-charcoal">Highlight as button</span>
             <Toggle checked={!!settings.highlight} onChange={v => set({ highlight: v })} />
           </div>
+          <MenuStyleField value={settings.menuStyle} onChange={menuStyle => set({ menuStyle })} hasChildren={children.length > 0} />
 
           <div className="flex flex-col gap-2 mt-1 pt-2 border-t border-bone">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Dropdown items</p>
@@ -104,6 +106,9 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                     className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                   <Field label="Label"><input className={inp} value={child.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, label: e.target.value } : c) })} /></Field>
                   <LinkTargetFields value={child} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, ...next } : c) })} pageOptions={pageOptions} storeId={storeId} />
+                  {settings.menuStyle === 'mega' && (
+                    <MenuImageField value={child.imageUrl} onChange={imageUrl => set({ children: children.map((c, j) => j === i ? { ...c, imageUrl } : c) })} storeId={storeId} />
+                  )}
                   <div className="mt-2 ml-3 pl-3 border-l border-bone flex flex-col gap-2">
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-slate">Nested items (level 3)</p>
                     {(child.children ?? []).map((grandchild: any, k: number) => (
@@ -112,6 +117,9 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                           className="absolute top-1 right-1 text-[10px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                         <Field label="Label"><input className={inp} value={grandchild.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, label: e.target.value } : g) } : c) })} /></Field>
                         <LinkTargetFields value={grandchild} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, ...next } : g) } : c) })} pageOptions={pageOptions} storeId={storeId} />
+                        {settings.menuStyle === 'mega' && (
+                          <MenuImageField value={grandchild.imageUrl} onChange={imageUrl => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: Record<string, unknown>, n: number) => n === k ? { ...g, imageUrl } : g) } : c) })} storeId={storeId} />
+                        )}
                       </div>
                     ))}
                     {(child.children ?? []).length < 8 && <button type="button" onClick={() => set({ children: children.map((c, j) => j === i ? { ...c, children: [...(c.children ?? []), { id: `new-${Date.now()}`, label: '', linkType: 'home' }] } : c) })}

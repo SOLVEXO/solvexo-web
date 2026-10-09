@@ -18,6 +18,7 @@ import './NewsletterSection';
 import './BlogPostsSection';
 import './DropCountdownSection';
 import './MetaobjectListSection';
+import './LibrarySections';
 import './CoreSections';
 
 export { AtelierSectionRenderer, getRegisteredAtelierSectionTypes } from './atelierSectionRenderer';

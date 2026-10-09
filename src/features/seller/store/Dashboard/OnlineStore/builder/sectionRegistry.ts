@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 
@@ -246,6 +246,80 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
     ]),
   },
+  // ── Shopify-parity section library ───────────────────────────────────────
+  {
+    type: 'multicolumn', label: 'Multicolumn', description: 'Columns of image, heading, text and a button — features, benefits, categories, steps.',
+    Icon: Columns3, color: '#0D9488',
+    defaultSettings: { heading: '', columns: 3, textAlign: 'left' },
+    allowedBlockTypes: ['multicolumn_column'], blockLabel: 'Column',
+    defaultBlockSettings: { imageUrl: '', heading: '', body: '', ctaText: '' },
+    settingsSchema: withHeading([
+      { key: 'columns', kind: 'select', label: 'Columns per row', numeric: true, options: [
+        { value: '1', label: '1' }, { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
+      ] },
+      { key: 'textAlign', kind: 'select', label: 'Text alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
+      { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: IMAGE_RATIO_OPTIONS },
+    ]),
+  },
+  {
+    type: 'logo_list', label: 'Logo List', description: 'A row of brand, press or partner logos.',
+    Icon: Images, color: '#6B7280',
+    defaultSettings: { heading: '', logoHeight: 48, grayscale: true },
+    allowedBlockTypes: ['logo_item'], blockLabel: 'Logo',
+    defaultBlockSettings: { imageUrl: '', alt: '' },
+    settingsSchema: withHeading([
+      { key: 'logoHeight', kind: 'number', label: 'Logo height (px)', min: 24, max: 120, step: 4 },
+      { key: 'grayscale', kind: 'checkbox', label: 'Show logos in grayscale' },
+    ]),
+  },
+  {
+    type: 'marquee', label: 'Marquee', description: 'A continuously scrolling strip of short messages — offers, shipping info, announcements.',
+    Icon: ArrowLeftRight, color: '#E11D48',
+    defaultSettings: { speed: 'medium', direction: 'left', pauseOnHover: true },
+    allowedBlockTypes: ['marquee_item'], blockLabel: 'Message',
+    defaultBlockSettings: { text: '' },
+    settingsSchema: [
+      { key: 'speed', kind: 'select', label: 'Speed', options: [{ value: 'slow', label: 'Slow' }, { value: 'medium', label: 'Medium' }, { value: 'fast', label: 'Fast' }] },
+      { key: 'direction', kind: 'select', label: 'Direction', options: [{ value: 'left', label: 'Right to left' }, { value: 'right', label: 'Left to right' }] },
+      { key: 'pauseOnHover', kind: 'checkbox', label: 'Pause on hover' },
+    ],
+  },
+  {
+    type: 'custom_html', label: 'Custom HTML', description: 'Your own HTML and inline styles. Scripts, iframes, forms and event handlers are removed for safety.',
+    Icon: Code, color: '#475569',
+    defaultSettings: { html: '' },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: [
+      { key: 'html', kind: 'textarea', label: 'HTML', maxLength: 20000, hint: 'Allowed: headings, text, images, links, lists, tables, inline style. Not allowed: <script>, <iframe>, <form>, on… handlers, javascript: links.' },
+    ],
+  },
+  {
+    type: 'image_banner', label: 'Image Banner', description: 'A full-width image with a heading, text and button on top.',
+    Icon: Image, color: '#F97316',
+    defaultSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, heightPreset: 'medium', contentAlign: 'center', contentPosition: 'middle', overlayOpacity: 30 },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: [
+      { key: 'imageUrl', kind: 'image', label: 'Image' },
+      { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped.' },
+      { key: 'heading', kind: 'text', label: 'Heading' },
+      { key: 'subheading', kind: 'text', label: 'Text' },
+      { key: 'ctaText', kind: 'text', label: 'Button text' },
+      { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+      { key: 'heightPreset', kind: 'select', label: 'Banner height', options: [
+        { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+      ] },
+      { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [
+        { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
+      ] },
+      { key: 'contentPosition', kind: 'select', label: 'Text position', half: true, options: [
+        { value: 'top', label: 'Top' }, { value: 'middle', label: 'Middle' }, { value: 'bottom', label: 'Bottom' },
+      ] },
+      { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', min: 0, max: 80, step: 5 },
+      { key: 'textColor', kind: 'color', label: 'Text colour' },
+    ],
+  },
   // ── Core/locked sections (Phase 4) — always pre-seeded, never manually
   // addable (`hidden: true`) and never removable once present (`locked: true`).
   // See `CORE_SECTION_TYPES` in `storefrontTypes.ts` for the full story. ────
@@ -377,6 +451,22 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     ] },
   ],
   divider: [],
+  multicolumn_column: [
+    { key: 'imageUrl', kind: 'image', label: 'Image' },
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+    { key: 'body', kind: 'textarea', label: 'Text', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+    { key: 'ctaText', kind: 'text', label: 'Button text' },
+    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+  ],
+  logo_item: [
+    { key: 'imageUrl', kind: 'image', label: 'Logo', required: true },
+    { key: 'alt', kind: 'text', label: 'Alt text', hint: 'The brand name, for screen readers.' },
+    { key: 'link', kind: 'link', label: 'Link (optional)' },
+  ],
+  marquee_item: [
+    { key: 'text', kind: 'text', label: 'Message', required: true, maxLength: 120 },
+    { key: 'link', kind: 'link', label: 'Link (optional)' },
+  ],
   image_text_pair: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     { key: 'heading', kind: 'text', label: 'Heading' },

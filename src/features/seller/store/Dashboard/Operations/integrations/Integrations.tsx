@@ -13,7 +13,7 @@ import {
 } from '@/api/services/integrations';
 import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
 import { ShippingSettingsSection } from './ShippingSettingsSection';
-import { ManualPaymentMethodsSection, PkGatewayConnectModal, ModeSwitch, StripePayoutsPanel, WhatsAppNotificationsPanel } from './PaymentExtras';
+import { CashOnDeliveryCard, ManualPaymentMethodsSection, PkGatewayConnectModal, ModeSwitch, StripePayoutsPanel, WhatsAppNotificationsPanel } from './PaymentExtras';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
 
 const STATUS_STYLE: Record<StoreIntegrationView['status'], { label: string; bg: string; color: string }> = {
@@ -568,12 +568,15 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
               <span className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full bg-cream text-slate">
                 {integration.config?.currency ?? 'PKR'}
               </span>
-              <span
-                className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full"
-                style={integration.mode === 'live' ? { background: '#E3F4EA', color: '#1E7A3C' } : { background: '#F0EEE6', color: '#5A5852' }}
-              >
-                {integration.mode === 'live' ? 'Live' : 'Test mode'}
-              </span>
+              {/* Stripe's mode mirrors the platform key — only meaningful once the store's account is connected. */}
+              {(!isStripe || integration.status === 'connected') && (
+                <span
+                  className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full"
+                  style={integration.mode === 'live' ? { background: '#E3F4EA', color: '#1E7A3C' } : { background: '#F0EEE6', color: '#5A5852' }}
+                >
+                  {integration.mode === 'live' ? 'Live' : 'Test mode'}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -628,7 +631,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
         </div>
       )}
 
-      {showConnect && (integration.provider === 'jazzcash' || integration.provider === 'payfast') && (
+      {showConnect && (integration.provider === 'jazzcash' || integration.provider === 'payfast' || integration.provider === 'easypaisa') && (
         <PkGatewayConnectModal storeId={storeId} provider={integration.provider} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
       )}
       {showConnect && integration.provider === 'safepay' && (
@@ -1077,24 +1080,31 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
             {Array.from({ length: 2 }).map((_, i) => <SkeletonBox key={i} height={160} rounded="10px" />)}
           </div>
         ) : error ? (
-          <p className="text-[13px] text-error">{error}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-[13px] text-error">{error}</p>
+            <Button size="sm" variant="outline" icon={<RefreshCw size={12} />} onClick={load}>Retry</Button>
+          </div>
         ) : data && (
           <>
             <div>
-              <p className="text-[13px] font-bold text-carbon mb-1">Payment Gateways</p>
-              <p className="text-[12px] text-slate mb-3">Every gateway you enable is offered to buyers at checkout — turn on as many as you like.</p>
+              <p className="text-[13px] font-bold text-carbon mb-1">Payment providers</p>
+              <p className="text-[12px] text-slate mb-3">Online payments go straight to your own provider account. Every provider you enable is shown to buyers at checkout.</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {data.payment.map(integration => (
-                  integration.provider === 'bank_transfer'
-                    ? <BankTransferIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
-                    : <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
+                {data.payment.filter(i => i.provider !== 'bank_transfer').map(integration => (
+                  <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
                 ))}
               </div>
             </div>
 
             <div>
-              <p className="text-[13px] font-bold text-carbon mb-1">Manual payments</p>
-              <p className="text-[12px] text-slate mb-3">Custom methods you name yourself. Shown at checkout next to your gateways.</p>
+              <p className="text-[13px] font-bold text-carbon mb-1">Manual payment methods</p>
+              <p className="text-[12px] text-slate mb-3">Payments you collect yourself. The order stays unpaid until you mark it paid; no transaction fee.</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <CashOnDeliveryCard />
+                {data.payment.filter(i => i.provider === 'bank_transfer').map(integration => (
+                  <BankTransferIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
+                ))}
+              </div>
               <ManualPaymentMethodsSection storeId={storeId} methods={data.manualMethods ?? []} onChanged={load} />
             </div>
 

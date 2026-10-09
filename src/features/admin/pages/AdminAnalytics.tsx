@@ -62,7 +62,7 @@ export function AdminAnalytics() {
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
-  const { exportReport, exporting } = useAdminAnalyticsExport();
+  const { exportReport, exporting, error: exportError } = useAdminAnalyticsExport();
 
   // Re-point the CSV section at whatever's most relevant to the tab the user just opened —
   // but only as a default; `setCsvSection` below still lets them override it explicitly.
@@ -113,6 +113,7 @@ export function AdminAnalytics() {
           </>
         }
       />
+      {exportError && <p role="alert" className="text-[12px] text-error">{exportError}</p>}
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Loader2, XCircle, ChevronRight } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -26,6 +26,9 @@ export function AtelierCheckoutReturnPage() {
   const { store } = useStorefront();
   const { clearCart } = useCartContext();
   const { checkoutId } = useParams<{ checkoutId: string }>();
+  // Easypaisa: the buyer approves in their Easypaisa app while this page waits (no redirect to the gateway).
+  const [searchParams] = useSearchParams();
+  const awaitingWalletApproval = searchParams.get('wallet') === 'easypaisa';
 
   const [status, setStatus] = useState<'pending' | 'completed' | 'failed'>('pending');
   const [placedOrders, setPlacedOrders] = useState<PlacedOrder[] | null>(null);
@@ -66,9 +69,9 @@ export function AtelierCheckoutReturnPage() {
     };
     poll();
 
-    const timeout = setTimeout(() => { if (!stopped) setTimedOut(true); }, 45_000);
+    const timeout = setTimeout(() => { if (!stopped) setTimedOut(true); }, awaitingWalletApproval ? 180_000 : 45_000);
     return () => { stopped = true; if (pollTimer.current) clearTimeout(pollTimer.current); clearTimeout(timeout); };
-  }, [checkoutId, clearCart]);
+  }, [checkoutId, clearCart, awaitingWalletApproval]);
 
   if (status === 'completed' && placedOrders) {
     return (
@@ -107,11 +110,13 @@ export function AtelierCheckoutReturnPage() {
   return (
     <div className="mx-auto text-center" style={{ maxWidth: '480px', padding: '96px 20px' }}>
       <Loader2 size={24} className="animate-spin mx-auto" style={{ color: t.colors.accent, marginBottom: '18px' }} />
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>Confirming your payment…</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>{awaitingWalletApproval && !timedOut ? 'Approve the payment in your Easypaisa app' : 'Confirming your payment…'}</h1>
       <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>
         {timedOut
           ? "This is taking longer than expected — your payment may still be processing. Check your orders in a few minutes, or contact us if it doesn't show up."
-          : "This only takes a moment — please don't close this page."}
+          : awaitingWalletApproval
+            ? "Open the Easypaisa app on your phone and approve the payment request. Keep this page open — your order is placed as soon as you approve."
+            : "This only takes a moment — please don't close this page."}
       </p>
     </div>
   );

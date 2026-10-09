@@ -51,7 +51,7 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
     // The admin API returns tax amounts already converted to USD (null = no FX rate set for that store's currency).
     { key: 'totalRevenue', header: 'Revenue (USD)', align: 'right', render: (r) => <UsdAmount usd={r.totalRevenue} native={r.totalRevenue ?? 0} currency="USD" /> },
     { key: 'netRevenue', header: 'Net (USD)', align: 'right', render: (r) => <UsdAmount usd={r.netRevenue} native={r.netRevenue ?? 0} currency="USD" /> },
-    { key: 'estimatedTax', header: 'Est. Tax (USD)', align: 'right', render: (r) => <UsdAmount usd={r.estimatedTax} native={r.estimatedTax ?? 0} currency="USD" /> },
+    { key: 'estimatedTax', header: 'Tax collected (USD)', align: 'right', render: (r) => <UsdAmount usd={r.estimatedTax} native={r.estimatedTax ?? 0} currency="USD" /> },
   ];
 
   return (

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Search } from 'lucide-react';
 import { Modal } from '@/components/comman/ui';
 import { SECTION_META } from './sectionRegistry';
 import type { SectionType } from '@/api/services/storefrontTypes';
@@ -18,10 +20,22 @@ export function AddSectionModal({
    *  never registered those two types. */
   supportedTypes?: SectionType[];
 }) {
-  const pickable = SECTION_META.filter(meta => !meta.hidden && (!supportedTypes || supportedTypes.includes(meta.type)));
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const pickable = SECTION_META.filter(meta => !meta.hidden && (!supportedTypes || supportedTypes.includes(meta.type))
+    && (!q || meta.label.toLowerCase().includes(q) || meta.description.toLowerCase().includes(q) || meta.type.replace(/_/g, ' ').includes(q)));
   return (
     <Modal title="Add a Section" onClose={onClose}>
       <p className="text-[13px] text-slate -mt-1 mb-4">Choose a block to add to your page. You can rearrange or remove it anytime.</p>
+      <div className="relative mb-4">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate" aria-hidden />
+        <input
+          autoFocus type="search" value={query} onChange={e => setQuery(e.target.value)}
+          aria-label="Search sections" placeholder="Search sections"
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-bone text-[13px] bg-white"
+        />
+      </div>
+      {pickable.length === 0 && <p role="status" className="text-[13px] text-slate py-6 text-center">No sections match &ldquo;{query}&rdquo;.</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {pickable.map(meta => (
           <button

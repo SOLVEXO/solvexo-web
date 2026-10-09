@@ -14,6 +14,7 @@ import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-them
 import { useFavicon } from '@/hooks/useFavicon';
 import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
 import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
+import { setStorefrontAnalyticsConsent, trackStorefrontPageView } from '@/utils/storefrontAnalytics';
 import { CookieConsentBanner } from './CookieConsentBanner';
 import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
@@ -173,6 +174,17 @@ export function StorefrontLayout() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [store?.storeId, cookieConsent]);
+
+  // First-party store analytics (sessions, conversion funnel, Live View for the seller). Same consent rule as the
+  // pixels above: nothing is recorded until the visitor allows analytics where the store shows a cookie banner.
+  useEffect(() => {
+    setStorefrontAnalyticsConsent(!!cookieConsent?.analytics);
+  }, [cookieConsent?.analytics]);
+
+  useEffect(() => {
+    if (!store?.storeId || !cookieConsent?.analytics) return;
+    trackStorefrontPageView(store.storeId, location.pathname);
+  }, [store?.storeId, cookieConsent?.analytics, location.pathname]);
 
   const decideCookies = (consent: CookieConsentCategories) => {
     if (store?.storeId) {

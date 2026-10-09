@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { clsx } from 'clsx';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Download, Plus, X, Star, AlertTriangle, Zap, CheckCircle2 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
@@ -9,6 +10,8 @@ import type { BadgeColor } from '@/types';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
+import { useToast } from '@/contexts/ToastContext';
+import { StripeMoneySection } from './StripeMoneySection';
 import {
   apiGetFinanceDashboard, apiGetFinancePayoutForecast, apiGetFinanceTransactions, apiExportFinanceTransactions,
   apiRequestPayout, apiGetPayouts, apiGetPayoutById,
@@ -269,11 +272,22 @@ function ScheduleModal({ onClose, onSaved, storeId, schedule }: { onClose: () =>
 // ── Payout detail modal ───────────────────────────────────────────────────────
 function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void; storeId: string; payoutId: string }) {
   const [payout, setPayout] = useState<Payout | null>(null);
-  useEffect(() => { apiGetPayoutById(storeId, payoutId).then(setPayout).catch(() => {}); }, [storeId, payoutId]);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    apiGetPayoutById(storeId, payoutId)
+      .then(setPayout)
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load payout details.'));
+  }, [storeId, payoutId, attempt]);
 
   return (
     <Modal title="Payout Details" width={380} onClose={onClose}>
-      {!payout ? (
+      {error ? (
+        <div className="flex flex-col items-center gap-3 text-center py-4">
+          <p className="text-[12px] text-error" role="alert">{error}</p>
+          <Button size="sm" variant="outline" onClick={() => { setError(''); setAttempt(a => a + 1); }}>Try Again</Button>
+        </div>
+      ) : !payout ? (
         <SkeletonBox height={120} rounded="8px" />
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -302,6 +316,7 @@ function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreFinance() {
   const { storeId } = useStoreWorkspace();
+  const toast = useToast();
 
   const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
   const [payoutForecast, setPayoutForecast] = useState<PayoutForecastRow[]>([]);
@@ -318,6 +333,8 @@ export function StoreFinance() {
   const [recentPayouts, setRecentPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [walletError, setWalletError] = useState('');
+  const [txError, setTxError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [generatingTax, setGeneratingTax] = useState(false);
   // Per-SELLER (not per-store — see the Integrations page's Stripe card),
@@ -345,7 +362,21 @@ export function StoreFinance() {
       key: 'amount', header: 'Amount',
       render: t => <span className={clsx('font-semibold whitespace-nowrap', t.amount >= 0 ? 'text-success' : 'text-error')}>{t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}</span>,
     },
-    { key: 'balanceAfter', header: 'Balance', render: t => <span className="font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</span> },
+    {
+      // A pending sale has not moved the available balance yet, so "balance after" would read as an unchanged
+      // number on every row. Show where each entry stands instead; only balance-moving entries show the balance.
+      key: 'balanceAfter', header: 'Status / Balance',
+      render: t => {
+        if (t.type === 'sale' && t.status === 'pending') {
+          const clears = new Date(new Date(t.createdAt).getTime() + (t.metadata?.clearingDays ?? 3) * 86_400_000);
+          return <span className="text-[11.5px] text-warning whitespace-nowrap">Clears {clears.toLocaleDateString()}</span>;
+        }
+        if (t.type === 'sale' && t.metadata?.settledDirectly) return <span className="text-[11.5px] text-slate whitespace-nowrap">Paid to you directly</span>;
+        if (t.type === 'fee' && t.metadata?.billing?.status === 'pending_invoice') return <span className="text-[11.5px] text-slate whitespace-nowrap">Billed monthly</span>;
+        if (t.type === 'sale' || t.type === 'fee' || t.type === 'platform_subsidy') return <span className="text-[11.5px] text-slate whitespace-nowrap">Included in sale</span>;
+        return <span className="font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</span>;
+      },
+    },
   ];
 
   const [methodModal, setMethodModal] = useState(false);
@@ -387,23 +418,25 @@ export function StoreFinance() {
       apiGetPayoutSchedule(storeId, activeCurrency),
       apiGetPayouts(storeId, { limit: 5, currency: activeCurrency }),
     ])
-      .then(([s, p]) => { setSchedule(s); setRecentPayouts(p.payouts ?? []); })
-      .catch(() => {});
+      .then(([s, p]) => { setWalletError(''); setSchedule(s); setRecentPayouts(p.payouts ?? []); })
+      .catch(err => setWalletError(err instanceof Error ? err.message : 'Failed to load payout schedule and recent payouts.'));
   }, [storeId, activeCurrency]);
 
   const loadTransactions = useCallback(() => {
     if (!storeId) return;
     apiGetFinanceTransactions(storeId, { page: txPage, limit: 10, type: txType || undefined, currency: activeCurrency || undefined })
-      .then(res => { setTransactions(res.transactions ?? []); setTxTotal(res.total); })
-      .catch(() => {});
+      .then(res => { setTxError(''); setTransactions(res.transactions ?? []); setTxTotal(res.total); })
+      .catch(err => setTxError(err instanceof Error ? err.message : 'Failed to load transactions.'));
   }, [storeId, txPage, txType, activeCurrency]);
 
   useEffect(loadCore, [loadCore]);
   useEffect(loadWalletScoped, [loadWalletScoped]);
   useEffect(loadTransactions, [loadTransactions]);
   useEffect(() => {
-    apiGetStripeConnectStatus(storeId).then(res => setConnectStatus(res.data)).catch(() => {});
-  }, [storeId]);
+    apiGetStripeConnectStatus(storeId)
+      .then(res => setConnectStatus(res.data))
+      .catch(err => toast.error(err instanceof Error ? err.message : 'Could not check your Stripe Connect status.'));
+  }, [storeId, toast]);
 
   async function handleConnectStripe() {
     setConnecting(true);
@@ -411,8 +444,9 @@ export function StoreFinance() {
       const returnUrl = `${window.location.origin}${window.location.pathname}`;
       const res = await apiCreateStripeConnectOnboardingLink(storeId, returnUrl, returnUrl);
       window.location.href = res.data.url;
-    } catch {
+    } catch (err) {
       setConnecting(false);
+      toast.error(err instanceof Error ? err.message : 'Could not start Stripe setup. Please try again.');
     }
   }
 
@@ -425,6 +459,8 @@ export function StoreFinance() {
       const a = document.createElement('a');
       a.href = url; a.download = `transactions-${storeId}.csv`; a.click();
       URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to export transactions.');
     } finally {
       setExporting(false);
     }
@@ -438,15 +474,21 @@ export function StoreFinance() {
       await apiGenerateTaxReport(storeId, now.getFullYear(), `q${q}` as 'q1' | 'q2' | 'q3' | 'q4', activeCurrency || undefined);
       const reports = await apiGetTaxReports(storeId);
       setTaxReports(reports ?? []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to generate the tax report.');
     } finally {
       setGeneratingTax(false);
     }
   }
 
   async function handleSetDefaultMethod(methodId: string) {
-    await apiSetDefaultPayoutMethod(storeId, methodId);
-    const m = await apiGetPayoutMethods(storeId);
-    setMethods(m ?? []);
+    try {
+      await apiSetDefaultPayoutMethod(storeId, methodId);
+      const m = await apiGetPayoutMethods(storeId);
+      setMethods(m ?? []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to set the default payout method.');
+    }
   }
 
   async function confirmDeleteMethod() {
@@ -523,21 +565,15 @@ export function StoreFinance() {
 
       <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
 
-        {stripeConnectActive && (
-          <div className="flex items-start gap-3 bg-info-bg border border-[#BFDCF2] rounded-[10px] px-4 py-3">
-            <AlertTriangle size={16} className="text-info shrink-0 mt-[1px]" />
-            <p className="text-[12.5px] text-[#124469] leading-[1.5]">
-              <strong>Stripe Connect is active on your account.</strong> Eligible sales settle directly to your
-              own connected bank account and never pass through Solvexo's ledger — so the wallet balance below
-              can look low or zero even while you're making real sales. Check your{' '}
-              <a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer" className="font-semibold underline">
-                Stripe Dashboard
-              </a>{' '}
-              for those payouts; this page only tracks money that settled into Solvexo's own ledger (e.g. Cash on
-              Delivery, split payments, or sales from before Connect was active).
-            </p>
+        {walletError && (
+          <div className="flex items-center justify-between gap-3 bg-error-bg rounded-[10px] px-4 py-3" role="alert">
+            <p className="text-[12.5px] text-error">{walletError} The schedule and recent payouts shown may be out of date.</p>
+            <Button size="sm" variant="outline" onClick={loadWalletScoped}>Try Again</Button>
           </div>
         )}
+
+        {/* Card sales: money, payouts and per-payout transactions live in the store's own Stripe account (Shopify Payments style). */}
+        {stripeConnectActive && <StripeMoneySection storeId={storeId} />}
 
         {/* Automatic-payout enablement — same underlying Stripe Connect
             account as the banner above, different concern: this one is
@@ -655,7 +691,7 @@ export function StoreFinance() {
           />
           <MetricCard label="Platform Fees" value={fmt(activeWallet.summary.platformFees, activeWallet.currency)} sub="This month" />
           <MetricCard label="Total Paid Out" value={fmt(activeWallet.summary.totalPaidOut, activeWallet.currency)} sub="All time" />
-          <MetricCard label="Pending Tax" value={fmt(activeWallet.summary.pendingTax, activeWallet.currency)} sub="Estimated" />
+          <MetricCard label="Tax Collected" value={fmt(activeWallet.summary.pendingTax, activeWallet.currency)} sub="This month, from buyers" />
         </div>
 
         {/* 2-col layout */}
@@ -664,7 +700,7 @@ export function StoreFinance() {
           {/* LEFT — Transaction History */}
           <div className="flex-1 min-w-0 w-full bg-white border border-bone rounded-[10px] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
-              <p className="text-sm font-semibold text-carbon">Transaction History</p>
+              <p className="text-sm font-semibold text-carbon">Ledger — COD, bank transfer &amp; older balances</p>
               <div className="flex items-center gap-2">
                 <select value={txType} onChange={e => { setTxType(e.target.value as TransactionType | ''); setTxPage(1); }}
                   className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none">
@@ -677,6 +713,12 @@ export function StoreFinance() {
               </div>
             </div>
 
+            {txError && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3" role="alert">
+                <p className="text-[12px] text-error">{txError}</p>
+                <Button size="sm" variant="outline" onClick={loadTransactions}>Try Again</Button>
+              </div>
+            )}
             <Table
               columns={transactionColumns}
               data={transactions}
@@ -777,12 +819,17 @@ export function StoreFinance() {
                   ['Digital Delivery', dashboard.feeBreakdown.digitalDelivery],
                   ['AI Credits', dashboard.feeBreakdown.aiCredits],
                 ].map(([label, val]) => (
-                  <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-slate">{label}</span>
-                    <span className="text-xs font-medium text-graphite">{val}</span>
+                  // Long explanations (transaction / processing fee) sit under their label instead of squeezing beside it.
+                  <div key={label} className={clsx('flex gap-x-3 gap-y-0.5', String(val).length > 24 ? 'flex-col' : 'justify-between items-center')}>
+                    <span className="text-xs text-slate shrink-0">{label}</span>
+                    <span className={clsx('text-xs font-medium text-graphite', String(val).length > 24 ? 'leading-[1.5]' : 'text-right')}>{val}</span>
                   </div>
                 ))}
               </div>
+              {/* Third-party gateway fees are billed monthly on the platform bill (Shopify "Bills"), not taken from sales. */}
+              <Link to={`/store/${storeId}/plan-billing`} className="inline-block mt-3 text-[11.5px] text-brand-orange hover:underline">
+                View bills &amp; transaction fees →
+              </Link>
             </div>
 
             {/* Tax Reports */}
@@ -802,11 +849,11 @@ export function StoreFinance() {
                     <div key={r._id} className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-graphite leading-[1.3] capitalize">{r.period} {r.year}</p>
-                        <p className="text-[11px] text-slate mt-0.5">Net {fmt(r.netRevenue, r.currency)} · Est. tax {fmt(r.estimatedTax, r.currency)}</p>
+                        <p className="text-[11px] text-slate mt-0.5">Net {fmt(r.netRevenue, r.currency)} · Tax collected {fmt(r.estimatedTax, r.currency)}</p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => apiDownloadTaxReportPdf(storeId, r._id).catch(() => {})}
+                        onClick={() => apiDownloadTaxReportPdf(storeId, r._id).catch(err => toast.error(err instanceof Error ? err.message : 'Failed to download the tax report.'))}
                         className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate hover:border-brand-orange/40 cursor-pointer"
                       >
                         <Download className="w-3 h-3" /> PDF

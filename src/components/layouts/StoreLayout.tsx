@@ -1245,7 +1245,7 @@ function PlatformBillingBanner() {
     return (
       <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
         <AlertTriangle size={14} className="shrink-0" />
-        Your plan payment failed (attempt {sub.failedPaymentAttempts}) — update your payment method to avoid losing access.
+        Your plan payment failed{sub.failedPaymentAttempts > 0 ? ` (attempt ${sub.failedPaymentAttempts})` : ''} — update your payment method to avoid losing access.
         <span className="underline font-semibold">Fix now</span>
       </button>
     );

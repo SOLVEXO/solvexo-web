@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Banknote, Pencil, Plus, Trash2, RefreshCw, FlaskConical } from 'lucide-react';
+import { Banknote, Pencil, Plus, Trash2, RefreshCw, FlaskConical, HandCoins } from 'lucide-react';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input, Textarea, Select } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
@@ -12,6 +12,54 @@ import {
   type WhatsAppNotificationsView, type WhatsAppTemplateView, type WhatsAppEventKey,
 } from '@/api/services/integrations';
 import { apiGetStripePayouts, type StripePayoutOverview } from '@/api/services/stripeConnect';
+import { apiUpdateStore } from '@/api/services/store';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+
+// ── Cash on Delivery (Shopify "Manual payment methods > Cash on Delivery (COD)") — saves instantly, like the other cards here ──
+export function CashOnDeliveryCard() {
+  const { store, storeId, refetch } = useStoreWorkspace();
+  const toast = useToast();
+  const [override, setOverride] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+  const stored = store?.codEnabled !== false;
+  const enabled = override ?? stored;
+  // Keep the optimistic value until the refetched store value changes (no flicker back).
+  const [prevStored, setPrevStored] = useState(stored);
+  if (stored !== prevStored) { setPrevStored(stored); setOverride(null); }
+
+  async function toggle(next: boolean) {
+    if (!storeId) return;
+    setOverride(next); setSaving(true);
+    try {
+      await apiUpdateStore({ storeId, codEnabled: next });
+      refetch();
+    } catch (err) {
+      setOverride(null);
+      toast.error(err instanceof Error ? err.message : 'Failed to update Cash on Delivery.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-[42px] h-[42px] rounded-[10px] bg-cream flex items-center justify-center shrink-0"><HandCoins size={20} className="text-slate" /></div>
+          <div className="min-w-0">
+            <p className="text-[14.5px] font-bold text-carbon truncate">Cash on Delivery (COD)</p>
+            <p className="text-[11px] text-slate">Buyers pay in cash when their physical order arrives</p>
+          </div>
+        </div>
+      </div>
+      <p className="text-[12.5px] text-slate mb-3">The order stays unpaid until you mark it paid. No transaction fee.</p>
+      <div className="flex items-center gap-2">
+        <Toggle checked={enabled} disabled={saving || !store} onChange={toggle} ariaLabel="Enable Cash on Delivery at checkout" />
+        <span className="text-[12.5px] text-graphite">Enabled at checkout</span>
+      </div>
+    </div>
+  );
+}
 
 // ── Custom manual payment methods (Shopify "Manual payment methods > Custom payment method") ──
 function ManualMethodModal({ storeId, initial, onClose, onSaved }: {
@@ -89,8 +137,8 @@ export function ManualPaymentMethodsSection({ storeId, methods, onChanged }: {
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-[42px] h-[42px] rounded-[10px] bg-cream flex items-center justify-center shrink-0"><Banknote size={20} className="text-slate" /></div>
           <div className="min-w-0">
-            <p className="text-[14.5px] font-bold text-carbon">Manual payment methods</p>
-            <p className="text-[12px] text-slate">Payments you collect yourself (bank/wallet transfer, pay at pickup…). The order stays unpaid until you mark it paid; no transaction fee.</p>
+            <p className="text-[14.5px] font-bold text-carbon">Custom payment methods</p>
+            <p className="text-[12px] text-slate">Name your own method — e.g. Easypaisa transfer or pay at pickup — with instructions shown to buyers at checkout.</p>
           </div>
         </div>
         <Button size="sm" icon={<Plus size={13} />} onClick={() => setEditing('new')}>Add</Button>
@@ -131,8 +179,8 @@ export function ManualPaymentMethodsSection({ storeId, methods, onChanged }: {
   );
 }
 
-// ── JazzCash / PayFast connect form (credentials differ per gateway) ──────────
-const PK_FIELDS: Record<'jazzcash' | 'payfast', { label: string; fields: { key: string; label: string; secret?: boolean; optional?: boolean }[]; help: string }> = {
+// ── JazzCash / PayFast / Easypaisa connect form (credentials differ per gateway) ──────────
+const PK_FIELDS: Record<'jazzcash' | 'payfast' | 'easypaisa', { label: string; fields: { key: string; label: string; secret?: boolean; optional?: boolean }[]; help: string }> = {
   jazzcash: {
     label: 'JazzCash',
     help: 'From your JazzCash merchant portal (Page Redirection credentials): Merchant ID, API password and Integrity Salt. Sandbox credentials only work in Test mode.',
@@ -143,10 +191,15 @@ const PK_FIELDS: Record<'jazzcash' | 'payfast', { label: string; fields: { key: 
     help: 'From your PayFast (Pakistan) merchant account: Merchant ID and Secured Key. Register the IPN URL shown after connecting in the PayFast portal if it asks for one.',
     fields: [{ key: 'merchantId', label: 'Merchant ID' }, { key: 'securedKey', label: 'Secured Key', secret: true }, { key: 'merchantName', label: 'Merchant name on checkout page', optional: true }],
   },
+  easypaisa: {
+    label: 'Easypaisa',
+    help: 'From your Easypaisa merchant account (Easypay REST API): Store ID, merchant account number and API username/password. Buyers enter their Easypaisa number at checkout and approve the payment in their Easypaisa app. Sandbox credentials only work in Test mode.',
+    fields: [{ key: 'easypaisaStoreId', label: 'Store ID' }, { key: 'accountNum', label: 'Merchant account number' }, { key: 'username', label: 'API username' }, { key: 'password', label: 'API password', secret: true }],
+  },
 };
 
 export function PkGatewayConnectModal({ storeId, provider, onClose, onSaved }: {
-  storeId: string; provider: 'jazzcash' | 'payfast'; onClose: () => void; onSaved: () => void;
+  storeId: string; provider: 'jazzcash' | 'payfast' | 'easypaisa'; onClose: () => void; onSaved: () => void;
 }) {
   const spec = PK_FIELDS[provider];
   const [values, setValues] = useState<Record<string, string>>({});

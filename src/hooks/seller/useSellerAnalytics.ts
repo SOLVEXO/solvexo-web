@@ -6,6 +6,7 @@ import {
   apiSellerAnalyticsWeekdayPerformance,
   apiSellerAnalyticsOrdersOverTime,
   apiSellerAnalyticsTrafficSources,
+  apiSellerAnalyticsSessions,
   apiSellerAnalyticsTopProducts,
   apiSellerAnalyticsTrendingProducts,
   apiSellerAnalyticsCustomers,
@@ -55,6 +56,10 @@ export function useSellerAnalyticsOrdersOverTime(params: SellerAnalyticsParams) 
 
 export function useSellerAnalyticsTrafficSources(params: SellerAnalyticsParams) {
   return useAnalyticsQuery(apiSellerAnalyticsTrafficSources, params);
+}
+
+export function useSellerAnalyticsSessions(params: SellerAnalyticsParams) {
+  return useAnalyticsQuery(apiSellerAnalyticsSessions, params);
 }
 
 // ── E. Top products ───────────────────────────────────────────────────────────────

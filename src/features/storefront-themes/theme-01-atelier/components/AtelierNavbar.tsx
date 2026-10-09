@@ -12,6 +12,10 @@ import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categ
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { atelierTheme as t } from '../theme.config';
+import { buildNavImageLookup, isMegaItem, normalizeNavItems, useMegaNav } from '../../navigation/megaNav';
+import { MobileNavItem, type MobileNavTokens } from '../../navigation/MobileNavItem';
+import { NavAnchor } from '../../navigation/NavAnchor';
+import { AtelierMegaPanel } from './AtelierMegaPanel';
 
 /** Theme 01's own navbar — centered logo, spread nav links either side,
  *  minimal icon cluster. Independently implemented: no import from the
@@ -65,14 +69,8 @@ export function AtelierNavbar() {
   // back to a single "Journal" link only when the seller hasn't configured
   // any yet, so a brand-new store's nav isn't empty.
   const headerNavBlocks = (theme?.header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
-  const normalizeNavItem = (item: StorefrontNavItemSettings): ResolvedStorefrontNavItem => ({
-    id: item.id ?? item.label,
-    label: item.label,
-    link: resolveLink(item),
-    children: (item.children ?? []).map(normalizeNavItem),
-  });
   const navLinks: ResolvedStorefrontNavItem[] = headerNavBlocks.length > 0
-    ? headerNavBlocks.map(b => normalizeNavItem(b.settings as unknown as StorefrontNavItemSettings))
+    ? normalizeNavItems(headerNavBlocks.map(b => b.settings as unknown as StorefrontNavItemSettings), resolveLink, buildNavImageLookup(categories, collections))
     : [{ id: 'journal', label: 'Journal', link: { to: '/blog' }, children: [] }];
   const visibleNavLinks: ResolvedStorefrontNavItem[] = [...navLinks];
   navigationPages.forEach(page => {
@@ -80,9 +78,21 @@ export function AtelierNavbar() {
     if (!visibleNavLinks.some(item => item.link.to === to)) visibleNavLinks.push({ id: page._id, label: page.title, link: { to }, children: [] });
   });
 
+  // Mega menu (items the seller set to "Mega menu"): one shared full-width
+  // panel under the header, driven by hover / the chevron button / keyboard.
+  const megaNav = useMegaNav();
+  const openMegaItem = visibleNavLinks.find(item => item.id === megaNav.openId && isMegaItem(item));
+  const mobileNavTokens: MobileNavTokens = {
+    colors: { ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, bgAlt: t.colors.bgAlt, accent: t.colors.accent },
+    fonts: { body: t.fonts.body },
+    padX: t.layout.containerPadX,
+    tileRadius: t.imageRadiusPx,
+    topUppercase: true, topSize: '13px', topWeight: 400, topTracking: '0.1em', childSize: '12.5px',
+  };
 
   return (
-    <header style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
+    <header {...megaNav.headerProps} style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
+      <div className="relative">
       <div
         className="relative mx-auto flex items-center justify-between"
         style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
@@ -144,7 +154,27 @@ export function AtelierNavbar() {
               </div>
             )}
           </div>
-          {visibleNavLinks.map(item => (
+          {visibleNavLinks.map(item => isMegaItem(item) ? (
+            <div
+              key={item.id}
+              className="flex items-center gap-1"
+              onMouseEnter={() => megaNav.open(item.id)}
+              onMouseLeave={megaNav.scheduleClose}
+            >
+              <NavAnchor link={item.link} onClick={megaNav.closeNow} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</NavAnchor>
+              <button
+                type="button"
+                onClick={() => megaNav.toggle(item.id)}
+                aria-label={`${item.label} menu`}
+                aria-expanded={megaNav.openId === item.id}
+                aria-controls={megaNav.openId === item.id ? `atelier-mega-${item.id}` : undefined}
+                className="atelier-focus-ring bg-transparent border-0 cursor-pointer p-0 flex items-center"
+                style={{ color: t.colors.ink }}
+              >
+                <ChevronDown size={12} style={{ transform: megaNav.openId === item.id ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s ease' }} />
+              </button>
+            </div>
+          ) : (
             <div key={item.id} className="relative group">
               {item.link.to ? <Link to={item.link.to} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</Link> : <a href={item.link.href} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</a>}
               {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
@@ -215,6 +245,16 @@ export function AtelierNavbar() {
           </Link>
         </div>
       </div>
+      {openMegaItem && (
+        <AtelierMegaPanel
+          item={openMegaItem}
+          id={`atelier-mega-${openMegaItem.id}`}
+          onNavigate={megaNav.closeNow}
+          onMouseEnter={megaNav.keepOpen}
+          onMouseLeave={megaNav.scheduleClose}
+        />
+      )}
+      </div>
 
       {searchOpen && (
         <div className="border-t" style={{ borderColor: t.colors.border, padding: `12px ${t.layout.containerPadX}` }}>
@@ -257,13 +297,7 @@ export function AtelierNavbar() {
               {c.name}
             </Link>
           ))}
-          {visibleNavLinks.map(item => <div key={item.id}>
-            {item.link.to ? <Link to={item.link.to} onClick={() => setMobileOpen(false)} className="no-underline uppercase block" style={{ color: t.colors.ink, fontSize: '13px', letterSpacing: '0.1em', fontFamily: t.fonts.body, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}>{item.label}</Link> : <a href={item.link.href} onClick={() => setMobileOpen(false)} className="no-underline uppercase block" style={{ color: t.colors.ink, fontSize: '13px', letterSpacing: '0.1em', fontFamily: t.fonts.body, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}>{item.label}</a>}
-            {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string }; children?: { id: string; label: string; link: { to?: string; href?: string } }[] }) => <div key={child.id}>
-              {child.link.to ? <Link to={child.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</Link> : <a href={child.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body, padding: `10px calc(${t.layout.containerPadX} + 18px)`, borderBottom: `1px solid ${t.colors.border}` }}>{child.label}</a>}
-              {child.children?.map(grandchild => grandchild.link.to ? <Link key={grandchild.id} to={grandchild.link.to} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '11.5px', fontFamily: t.fonts.body, padding: `9px calc(${t.layout.containerPadX} + 36px)`, borderBottom: `1px solid ${t.colors.border}` }}>{grandchild.label}</Link> : <a key={grandchild.id} href={grandchild.link.href} onClick={() => setMobileOpen(false)} className="no-underline block" style={{ color: t.colors.inkMuted, fontSize: '11.5px', fontFamily: t.fonts.body, padding: `9px calc(${t.layout.containerPadX} + 36px)`, borderBottom: `1px solid ${t.colors.border}` }}>{grandchild.label}</a>)}
-            </div>)}
-          </div>)}
+          {visibleNavLinks.map(item => <MobileNavItem key={item.id} item={item} tokens={mobileNavTokens} onNavigate={() => setMobileOpen(false)} />)}
         </nav>
       )}
     </header>

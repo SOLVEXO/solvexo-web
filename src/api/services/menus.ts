@@ -8,13 +8,20 @@ export interface MenuItemChild extends LinkTarget {
   id: string;
   label: string;
   highlight?: boolean;
+  /** Optional mega-panel tile image. */
+  imageUrl?: string | null;
   children?: MenuItemChild[];
 }
+
+export type MenuStyle = 'dropdown' | 'mega';
 
 export interface MenuItem extends LinkTarget {
   id: string;
   label: string;
   highlight?: boolean;
+  /** How this top-level item's children are shown. Absent = dropdown. */
+  menuStyle?: MenuStyle;
+  imageUrl?: string | null;
   children?: MenuItemChild[];
 }
 

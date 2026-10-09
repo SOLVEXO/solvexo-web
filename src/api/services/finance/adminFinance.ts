@@ -408,6 +408,8 @@ export interface AdminPlatformRevenueData {
   currency: 'USD';
   range: FinancePeriod;
   planRevenue: { grossUSD: number; refundedUSD: number; netUSD: number; invoiceCount: number };
+  /** Add-ons (extra AI credits, staff seats...): every successful charge in the range. */
+  addons: { grossUSD: number; chargeCount: number };
   transactionFees: {
     collectedUSD: number;
     billCount: number;

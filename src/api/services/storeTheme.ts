@@ -252,8 +252,8 @@ export function apiUploadThemePackage(storeId: string, installedThemeId: string,
   return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body);
 }
 
-export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number, path = '/') {
-  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, { version, path });
+export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number, path = '/', draft?: { path: string; content: string }) {
+  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, { version, path, draft });
 }
 
 export function apiGetThemePackageRevision(storeId: string, installedThemeId: string, version: number) {
@@ -266,6 +266,27 @@ export function apiGetThemePackageStructure(storeId: string, installedThemeId: s
 
 export function apiEditThemePackageFile(storeId: string, installedThemeId: string, path: string, content: string) {
   return client.patch<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { path, content });
+}
+
+export function apiAddThemePackageFile(storeId: string, installedThemeId: string, path: string, content = '', encoding: 'utf8' | 'base64' = 'utf8') {
+  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { path, content, encoding });
+}
+
+export function apiDeleteThemePackageFile(storeId: string, installedThemeId: string, path: string) {
+  return client.delete<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { data: { path } });
+}
+
+export function apiRenameThemePackageFile(storeId: string, installedThemeId: string, from: string, to: string) {
+  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file/rename`, { from, to });
+}
+
+export function apiUnpublishThemePackage(storeId: string, installedThemeId: string) {
+  return client.post<never, ApiResponse<{ installedThemeId: string; version: null }>>(`${themePackagePath(storeId, installedThemeId)}/unpublish`);
+}
+
+/** Downloads a revision as a standard Shopify theme ZIP (the axios interceptor unwraps `res.data`, so this resolves to the Blob). */
+export function apiExportThemePackage(storeId: string, installedThemeId: string, version?: number) {
+  return client.get<never, Blob>(`${themePackagePath(storeId, installedThemeId)}/export/zip`, { params: version === undefined ? undefined : { version }, responseType: 'blob' });
 }
 
 export function apiRollbackThemePackage(storeId: string, installedThemeId: string, version: number) {

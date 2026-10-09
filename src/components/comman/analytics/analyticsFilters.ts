@@ -6,13 +6,23 @@ export interface BaseAnalyticsUIFilters {
   from: string; // yyyy-mm-dd — only sent when range === 'custom'
   to: string;
   compareToPreviousPeriod: boolean;
+  /** Which period the comparison uses (Shopify: previous period or previous year). */
+  compareTo: AnalyticsCompareTo;
 }
+
+export type AnalyticsCompareTo = 'previous_period' | 'previous_year';
+
+export const COMPARE_TO_OPTIONS: { value: AnalyticsCompareTo; label: string }[] = [
+  { value: 'previous_period', label: 'Previous period' },
+  { value: 'previous_year', label: 'Previous year' },
+];
 
 export const DEFAULT_ANALYTICS_UI_FILTERS: BaseAnalyticsUIFilters = {
   range: '30d',
   from: '',
   to: '',
   compareToPreviousPeriod: false,
+  compareTo: 'previous_period',
 };
 
 export const RANGE_PRESET_OPTIONS: { value: AnalyticsRangePreset; label: string }[] = [
@@ -29,6 +39,7 @@ export interface BaseAnalyticsApiParams {
   from?: string;
   to?: string;
   compareToPreviousPeriod?: boolean;
+  compareTo?: AnalyticsCompareTo;
 }
 
 /** Converts UI filter state into the base query params every backend `AnalyticsQueryDto`/`AdminAnalyticsQueryDto` expects — drops empty/default values instead of sending them explicitly. */
@@ -39,5 +50,6 @@ export function toBaseAnalyticsApiParams(filters: BaseAnalyticsUIFilters): BaseA
     if (filters.to) params.to = filters.to;
   }
   if (filters.compareToPreviousPeriod) params.compareToPreviousPeriod = true;
+  if (filters.compareTo === 'previous_year') params.compareTo = 'previous_year';
   return params;
 }

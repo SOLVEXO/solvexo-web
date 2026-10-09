@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, DollarSign, Package, Users, Globe2 } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Package, Users, Globe2, Activity, FileBarChart2 } from 'lucide-react';
 import { TabBar, type Tab } from '@/components/comman/ui';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { AnalyticsFilterBar } from '@/components/comman/analytics/AnalyticsFilterBar';
@@ -18,13 +18,17 @@ import { SellerRevenueTab } from './tabs/SellerRevenueTab';
 import { SellerProductsTab } from './tabs/SellerProductsTab';
 import { SellerCustomersTab } from './tabs/SellerCustomersTab';
 import { SellerTrafficPaymentsTab } from './tabs/SellerTrafficPaymentsTab';
+import { SellerSessionsTab } from './tabs/SellerSessionsTab';
+import { SellerReportsTab } from './tabs/SellerReportsTab';
 
 const TABS: Tab[] = [
   { id: 'overview',  label: 'Overview',  icon: <LayoutDashboard size={14} /> },
+  { id: 'sessions',  label: 'Sessions & Conversion', icon: <Activity size={14} /> },
   { id: 'revenue',   label: 'Revenue',   icon: <DollarSign size={14} /> },
   { id: 'products',  label: 'Products',  icon: <Package size={14} /> },
   { id: 'customers', label: 'Customers', icon: <Users size={14} /> },
   { id: 'traffic',   label: 'Traffic & Payments', icon: <Globe2 size={14} /> },
+  { id: 'reports',   label: 'Reports', icon: <FileBarChart2 size={14} /> },
 ];
 
 interface SellerAnalyticsViewProps {
@@ -57,7 +61,7 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_SELLER_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
-  const { exportReport, exporting } = useSellerAnalyticsExport();
+  const { exportReport, exporting, error: exportError } = useSellerAnalyticsExport();
 
   useEffect(() => { setCsvSection(TAB_TO_CSV_SECTION[activeTab] ?? 'revenue'); }, [activeTab]);
 
@@ -76,6 +80,7 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
         onCsvSectionChange={setCsvSection}
         showExport={!!storeId}
       />
+      {exportError && <p role="alert" className="text-[12px] text-error -mt-3">{exportError}</p>}
 
       {storeId && (
         <SavedReportsPanel
@@ -90,7 +95,8 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
               compareToPreviousPeriod: config.compareToPreviousPeriod ?? f.compareToPreviousPeriod,
             }));
             if (config.section) setCsvSection(config.section);
-            exportReport(config);
+            // A saved config has no storeId of its own — run it for THIS store (it used to fail every time).
+            exportReport({ ...config, storeId });
           }}
         />
       )}
@@ -98,9 +104,11 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {isVisited('overview')  && <div className={paneClassName('overview')}><SellerOverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} currency={currency} /></div>}
+      {isVisited('sessions')  && <div className={paneClassName('sessions')}><SellerSessionsTab params={params} storeId={storeId} /></div>}
       {isVisited('revenue')   && <div className={paneClassName('revenue')}><SellerRevenueTab params={params} currency={currency} /></div>}
       {isVisited('products')  && <div className={paneClassName('products')}><SellerProductsTab params={params} currency={currency} /></div>}
       {isVisited('customers') && <div className={paneClassName('customers')}><SellerCustomersTab params={params} currency={currency} /></div>}
+      {isVisited('reports')   && <div className={paneClassName('reports')}><SellerReportsTab params={params} storeId={storeId} compare={filters.compareToPreviousPeriod} exporting={exporting} onExportCsv={section => exportReport({ ...params, format: 'csv', section })} /></div>}
       {isVisited('traffic')   && <div className={paneClassName('traffic')}><SellerTrafficPaymentsTab params={params} currency={currency} /></div>}
     </div>
   );

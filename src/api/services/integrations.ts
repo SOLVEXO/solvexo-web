@@ -70,7 +70,7 @@ export interface ConnectSafepayPayload {
 }
 
 /** POST .../payment/jazzcash|payfast/connect — JazzCash: merchantId/password/integritySalt; PayFast: merchantId/securedKey (+ merchantName). */
-export function apiConnectPkGateway(storeId: string, provider: 'jazzcash' | 'payfast', payload: Record<string, string | undefined>) {
+export function apiConnectPkGateway(storeId: string, provider: 'jazzcash' | 'payfast' | 'easypaisa', payload: Record<string, string | undefined>) {
   return client.post<never, ApiResponse<StoreIntegrationView>>(ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'payment', provider), payload);
 }
 
@@ -242,10 +242,10 @@ export interface PaymentSession {
 /** POST /api/checkout/:checkoutId/payment-methods/:provider/initiate —
  *  idempotency-key protected (same interceptor as the rest of checkout), so
  *  a retried tap never opens two payment sessions. */
-export function apiInitiateCheckoutPaymentMethod(checkoutId: string, provider: PaymentProviderKey | string, returnUrl: string, cancelUrl: string) {
+export function apiInitiateCheckoutPaymentMethod(checkoutId: string, provider: PaymentProviderKey | string, returnUrl: string, cancelUrl: string, walletAccount?: string) {
   return client.post<never, ApiResponse<PaymentSession>>(
     ENDPOINTS.CHECKOUT.INITIATE_PAYMENT_METHOD(checkoutId, provider),
-    { returnUrl, cancelUrl },
+    { returnUrl, cancelUrl, ...(walletAccount ? { walletAccount } : {}) },
   );
 }
 

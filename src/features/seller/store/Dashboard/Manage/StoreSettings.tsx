@@ -102,6 +102,15 @@ function SaveBar({ isDirty, saving, onSave, saveMsg }: {
 // "Store Visibility" each moved out to their own Settings Hub tab — see
 // `SettingsHub.tsx`'s TABS — since each is its own real configuration
 // concern, not a sub-section of "General.")
+/** IANA zones the browser knows (every modern browser); a short fallback list otherwise. */
+const TIME_ZONES: string[] = (() => {
+  try {
+    const list = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone');
+    if (list && list.length) return list;
+  } catch { /* older browser */ }
+  return ['UTC', 'Asia/Karachi', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Riyadh', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Australia/Sydney'];
+})();
+
 export function StoreProfileTab() {
   const { store, storeId, loading, refetch } = useStoreWorkspace();
   const [name,         setName]         = useState('');
@@ -120,6 +129,7 @@ export function StoreProfileTab() {
   const [taxPricesIncludeTax, setTaxPricesIncludeTax] = useState(false);
   const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
   const [showDutiesNotice, setShowDutiesNotice] = useState(true);
+  const [timezone, setTimezone] = useState('');
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -141,6 +151,7 @@ export function StoreProfileTab() {
     setTaxPricesIncludeTax(!!store.taxPricesIncludeTax);
     setTaxOverrides(store.taxOverrides ?? []);
     setShowDutiesNotice(store.showDutiesNotice !== false);
+    setTimezone(store.timezone ?? '');
   }, [store]);
 
   const handleSave = async () => {
@@ -148,7 +159,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -165,6 +176,7 @@ export function StoreProfileTab() {
       tagline !== (store.tagline ?? '') ||
       contactEmail !== (store.contactEmail ?? '') ||
       contactPhone !== (store.contactPhone ?? '') ||
+      timezone !== (store.timezone ?? '') ||
       logo !== (store.logo ?? '') ||
       coverImage !== (store.coverImage ?? '') ||
       faviconUrl !== (store.faviconUrl ?? '') ||
@@ -238,6 +250,14 @@ export function StoreProfileTab() {
               <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+1 555 123 4567" className={inputCls} />
             </Field>
           </div>
+
+          <Field label="Time zone">
+            <select value={timezone} onChange={e => setTimezone(e.target.value)} className={inputCls} aria-label="Store time zone">
+              <option value="">Automatic (from your store country)</option>
+              {TIME_ZONES.map(z => <option key={z} value={z}>{z.replace(/_/g, ' ')}</option>)}
+            </select>
+            <p className="text-[11px] text-slate mt-1">Analytics days, "Today" and report dates use this time zone.</p>
+          </Field>
         </div>
 
         {/* Right column — behavior + read-only identity */}
@@ -456,7 +476,6 @@ export function PaymentMethodsTab() {
   // accept, its own currency included (-1 = unlimited). Same rule the
   // backend enforces on save (StoreService.updateStore).
   const maxMarkets = typeof entitlements?.maxMarkets === 'number' ? entitlements.maxMarkets : -1;
-  const [codEnabled, setCodEnabled] = useState(true);
   const [paymentCaptureMethod, setPaymentCaptureMethod] = useState<'automatic' | 'manual'>('automatic');
   // `null` is a real, distinct state here — "no restriction, every platform
   // currency is accepted" (the schema default) — never collapsed into an
@@ -472,7 +491,6 @@ export function PaymentMethodsTab() {
 
   useEffect(() => {
     if (!store) return;
-    setCodEnabled(store.codEnabled !== false);
     setPaymentCaptureMethod(store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic');
     setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : null);
   }, [store]);
@@ -482,7 +500,7 @@ export function PaymentMethodsTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, codEnabled, paymentCaptureMethod, enabledCurrencies });
+      await apiUpdateStore({ storeId, paymentCaptureMethod, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Payment methods updated successfully.' });
     } catch (err) {
@@ -494,8 +512,7 @@ export function PaymentMethodsTab() {
 
   const isDirty =
     !!store &&
-    (codEnabled !== (store.codEnabled !== false) ||
-      paymentCaptureMethod !== (store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic') ||
+    (paymentCaptureMethod !== (store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic') ||
       JSON.stringify(enabledCurrencies ? enabledCurrencies.slice().sort() : null) !==
         JSON.stringify(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies.slice().sort() : null));
 
@@ -508,13 +525,8 @@ export function PaymentMethodsTab() {
       <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
         <p className="text-[14px] font-semibold text-charcoal mb-4">Payment Methods</p>
 
-        <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-          <div>
-            <p className="text-[13px] font-medium text-charcoal">Cash on Delivery</p>
-            <p className="text-[11px] text-slate">Let buyers pay in cash when their physical order arrives.</p>
-          </div>
-          <Toggle checked={codEnabled} onChange={setCodEnabled} ariaLabel="Enable Cash on Delivery" />
-        </div>
+        {/* Cash on Delivery now lives with the other manual payment methods on the Integrations tab (Shopify layout). */}
+        <p className="text-[11.5px] text-slate">Payment providers, Cash on Delivery, bank transfer and custom payment methods are managed on the Integrations tab.</p>
 
         {/* Payment capture method — Shopify's real "Automatically at checkout"
            vs "Manually" setting. Only affects online Stripe checkouts on a

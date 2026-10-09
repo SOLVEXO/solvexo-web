@@ -3,6 +3,8 @@ import { ENDPOINTS } from '../endpoints';
 import { getCheckoutAttributionFields } from '@/utils/promotionAttribution';
 import { getAffiliateRef } from '@/utils/affiliateAttribution';
 import type { VariantOption } from './product';
+import { analyticsSessionFields } from '@/utils/storefrontAnalytics';
+import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -218,6 +220,8 @@ export function apiCreateCheckout(payload: CreateCheckoutPayload) {
   return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, {
     ...payload,
     ...getCheckoutAttributionFields(),
+    // The visit this checkout starts in (store conversion funnel) — the server marks it converted on order.
+    ...analyticsSessionFields(getCurrentStorefrontStoreId()),
     attributedAffiliateCode: getAffiliateRef(),
     currencyPreference: getCurrencyPreference(),
   });

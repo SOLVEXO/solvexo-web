@@ -81,6 +81,8 @@ export interface CreateStorePayload {
 
 export interface UpdateStorePayload {
   storeId:      string;
+  /** IANA time zone for reports (Shopify Settings > General). Null = automatic from the store country. */
+  timezone?:    string | null;
   name?:        string;
   logo?:        string;
   coverImage?:  string | null;
@@ -159,6 +161,8 @@ export interface StoreData {
   sellerType:   SellerType;
   productTypes: ProductType[];
   baseCurrency: SupportedCurrency;
+  /** Report time zone (IANA). Null/absent = automatic from the store country. */
+  timezone?: string | null;
   /** "Markets" — real, seller-configurable subset of `SUPPORTED_CURRENCIES`
    *  a buyer may check out in on this store. Null/absent (a pre-existing
    *  store that never touched this setting) means every supported currency

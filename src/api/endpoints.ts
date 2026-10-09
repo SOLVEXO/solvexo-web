@@ -538,6 +538,8 @@ export const ENDPOINTS = {
     ONBOARDING_LINK: (storeId: string) => `/api/stripe-connect/${storeId}/onboarding-link`,
     SYNC:            (storeId: string) => `/api/stripe-connect/${storeId}/sync`,
     PAYOUTS:         (storeId: string) => `/api/stripe-connect/${storeId}/payouts`,
+    PAYOUT_DETAIL:   (storeId: string, payoutId: string) => `/api/stripe-connect/${storeId}/payouts/${payoutId}`,
+    BALANCE_TRANSACTIONS: (storeId: string) => `/api/stripe-connect/${storeId}/balance-transactions`,
   },
 
   PRODUCTS_BULK: {
@@ -1110,6 +1112,12 @@ export const ENDPOINTS = {
       INVENTORY_INSIGHTS:   '/api/seller/analytics/inventory-insights',
       PAYMENT_METHODS:      '/api/seller/analytics/payment-methods',
       REVENUE_BREAKDOWN:    '/api/seller/analytics/revenue-breakdown',
+      SESSIONS:             '/api/seller/analytics/sessions',
+      LIVE:                 '/api/seller/analytics/live',
+      REPORT_SALES_SUMMARY: '/api/seller/analytics/reports/sales-summary',
+      REPORT_SALES_BY:      '/api/seller/analytics/reports/sales-by',
+      REPORT_COHORTS:       '/api/seller/analytics/reports/cohorts',
+      REPORT_INVENTORY_ABC: '/api/seller/analytics/reports/inventory-abc',
       EXPORT:               '/api/seller/analytics/export',
       SAVED_REPORTS:        '/api/seller/analytics/saved-reports',
       DELETE_SAVED_REPORT:  (reportId: string) => `/api/seller/analytics/saved-reports/${reportId}`,

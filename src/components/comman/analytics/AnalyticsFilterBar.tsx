@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Download, SlidersHorizontal, FileText } from 'lucide-react';
 import { Button, FilterDropdown, Input, Toggle } from '@/components/comman/ui';
-import { RANGE_PRESET_OPTIONS, type BaseAnalyticsUIFilters } from './analyticsFilters';
+import { COMPARE_TO_OPTIONS, RANGE_PRESET_OPTIONS, type AnalyticsCompareTo, type BaseAnalyticsUIFilters } from './analyticsFilters';
 
 interface FilterOption { value: string; label: string }
 
@@ -67,8 +67,16 @@ export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
             onChange={v => patch({ compareToPreviousPeriod: v } as Partial<T>)}
             size="sm"
           />
-          <span className="text-[12px] text-graphite">Compare to previous period</span>
+          <span className="text-[12px] text-graphite">Compare</span>
         </label>
+        {filters.compareToPreviousPeriod && (
+          <FilterDropdown
+            options={COMPARE_TO_OPTIONS}
+            value={filters.compareTo ?? 'previous_period'}
+            onChange={v => patch({ compareTo: v as AnalyticsCompareTo } as Partial<T>)}
+            placeholder="Previous period"
+          />
+        )}
 
         {granularityOptions && onGranularityChange && (
           <FilterDropdown

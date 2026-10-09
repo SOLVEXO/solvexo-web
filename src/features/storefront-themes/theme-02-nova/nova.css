@@ -28,3 +28,44 @@
   outline: 2px solid #4B3BFF;
   outline-offset: 2px;
 }
+
+/* Mega menu (NovaMegaPanel) — colours come from the CSS variables the panel
+   sets inline from `novaTheme`, so merchant colours apply. */
+.nova-mega-panel {
+  animation: nova-mega-in 0.16s ease-out;
+}
+@keyframes nova-mega-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.nova-mega-rail {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.nova-mega-all {
+  color: var(--mm-accent);
+}
+.nova-mega-all:hover {
+  text-decoration: underline;
+}
+.nova-mega-tile img {
+  transition: transform 0.35s ease;
+}
+.nova-mega-tile:hover img {
+  transform: scale(1.06);
+}
+.nova-mega-chip {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.nova-mega-chip:hover,
+.nova-mega-chip:focus-visible {
+  background: var(--mm-accent);
+  border-color: var(--mm-accent) !important;
+  color: var(--mm-accent-ink) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-mega-panel { animation: none; }
+  .nova-mega-rail,
+  .nova-mega-chip,
+  .nova-mega-tile img { transition: none; }
+  .nova-mega-tile:hover img { transform: none; }
+}

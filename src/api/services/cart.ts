@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { analyticsSessionFields } from '@/utils/storefrontAnalytics';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -40,7 +41,8 @@ interface ClearResponse  { message: string; data: [] }
 // of the store currently being shopped on.
 
 export function apiAddToCart(productId: string, productVariantId: string, storeId: string, quantity = 1) {
-  return client.post<never, CartResponse>(ENDPOINTS.CART.ADD, { productId, productVariantId, storeId, quantity });
+  // analyticsSessionId: lets the server mark this visit 'added to cart' in the store's conversion funnel.
+  return client.post<never, CartResponse>(ENDPOINTS.CART.ADD, { productId, productVariantId, storeId, quantity, ...analyticsSessionFields(storeId) });
 }
 
 export function apiGetCart(storeId: string) {

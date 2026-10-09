@@ -47,6 +47,12 @@ export const SECTION_TYPES = [
   'craft_process',
   'tech_specs_compare',
   'soft_gallery',
+  // Shopify-parity section library — rendered by every theme.
+  'multicolumn',
+  'logo_list',
+  'marquee',
+  'custom_html',
+  'image_banner',
   // Core/locked sections (Phase 4) — always pre-seeded into their owning
   // Product/Search/Cart/Blog-Index/Blog-Article template, never removable
   // via the section editor (see `CORE_SECTION_TYPES` below and the backend's
