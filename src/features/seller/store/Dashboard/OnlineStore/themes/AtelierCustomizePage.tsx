@@ -146,6 +146,7 @@ export function AtelierCustomizePage() {
   const [templateKey, setTemplateKey] = useState('default');
   const [activeTemplate, setActiveTemplate] = useState<CollectionTemplateData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resourceLoadError, setResourceLoadError] = useState('');
   const [creatingTemplate, setCreatingTemplate] = useState(false);
   const [draftTheme, setDraftTheme] = useState<StoreThemeData | null>(null);
   const [themeSettingsDirty, setThemeSettingsDirty] = useState(false);
@@ -264,6 +265,7 @@ export function AtelierCustomizePage() {
 
   const loadPages = useCallback(() => {
     setLoading(true);
+    setResourceLoadError('');
     apiListStorePages(storeId, installedThemeId)
       .then(res => {
         setPages(res.data);
@@ -271,6 +273,7 @@ export function AtelierCustomizePage() {
         // is visited — never overrides a seller's own later pick.
         setSelectedPageId(prev => prev ?? res.data.find(p => p.type === 'custom')?._id ?? null);
       })
+      .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load pages.'))
       .finally(() => setLoading(false));
   }, [storeId, installedThemeId]);
 
@@ -280,6 +283,7 @@ export function AtelierCustomizePage() {
   // switch between the two.
   const loadBlogsAndPosts = useCallback(() => {
     setLoading(true);
+    setResourceLoadError('');
     Promise.all([apiListBlogs(storeId), apiListBlogPosts(storeId)])
       .then(([blogsRes, postsRes]) => {
         setBlogs(blogsRes.data);
@@ -287,6 +291,7 @@ export function AtelierCustomizePage() {
         setSelectedBlogId(prev => prev ?? blogsRes.data[0]?._id ?? null);
         setSelectedArticleId(prev => prev ?? postsRes.data[0]?._id ?? null);
       })
+      .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load blog content.'))
       .finally(() => setLoading(false));
   }, [storeId]);
 
@@ -314,11 +319,17 @@ export function AtelierCustomizePage() {
   const templateLoadToken = useRef(0);
   const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean) => {
     setLoading(true);
+    setResourceLoadError('');
     // Only the latest scope's response may land (a slow earlier scope must not overwrite it).
     const token = ++templateLoadToken.current;
     const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType, installedThemeId) : Promise.resolve({ data: [] as CollectionTemplateData[] });
     Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key, installedThemeId)])
       .then(([listRes, docRes]) => { if (token !== templateLoadToken.current) return; setTemplateList(listRes.data); setActiveTemplate(docRes.data); })
+      .catch(err => {
+        if (token === templateLoadToken.current) {
+          setResourceLoadError(err instanceof Error ? err.message : 'Could not load this template.');
+        }
+      })
       .finally(() => { if (token === templateLoadToken.current) setLoading(false); });
   }, [storeId, installedThemeId]);
 
@@ -638,6 +649,14 @@ export function AtelierCustomizePage() {
   // failure now, not "nothing exists yet" (which has its own real empty
   // state below, per Phase 5's requirement 8).
   const docMissing = scope === 'theme' || emptyResourceState ? false : isStorePage ? !currentStorePage : !activeTemplate;
+  const retryResourceLoad = () => {
+    if (isStorePage) {
+      loadPages();
+      return;
+    }
+    if (config?.previewPicker) loadBlogsAndPosts();
+    if (config) loadResourceTemplates(config.resourceType, templateKey, config.allowAltTemplates);
+  };
   const effectiveDraftTheme = scope === 'theme' && themeScopePreview ? themeScopePreview : draftTheme;
   // The preview PANEL's own background — resolved against the real active
   // theme (not hardcoded to Atelier) so the frame around the embedded
@@ -817,6 +836,17 @@ export function AtelierCustomizePage() {
               </div>
             </div>
           </div>
+        </div>
+      ) : resourceLoadError ? (
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
+          <p className="text-[13px] text-error">{resourceLoadError}</p>
+          <button
+            type="button"
+            onClick={retryResourceLoad}
+            className="rounded-lg border border-bone bg-white px-4 py-2 text-[13px] font-semibold text-charcoal cursor-pointer"
+          >
+            Retry loading
+          </button>
         </div>
       ) : emptyResourceState ? (
         // Phase 5, requirement 8 — a useful empty state (not a bare "Select

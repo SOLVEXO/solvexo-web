@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment, type ReactNode } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ImageOff, Minus, Plus, CheckCircle2, Star, Eye, Loader2 } from 'lucide-react';
 import { useProductById } from '@/hooks/marketplace/useProductById';
+import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
 import { Modal } from '@/components/comman/ui';
@@ -12,7 +13,8 @@ import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { CORE_SECTION_TYPES, type Section } from '@/api/services/storefrontTypes';
+import type { Section } from '@/api/services/storefrontTypes';
+import { resolveProductMainLayout, splitProductTemplateSections, type ProductInfoBlock } from '../../productPageLayout';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput } from '../components/atelierFormStyles';
@@ -27,12 +29,18 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
   const [selected, setSelected] = useState(0);
   const [errored, setErrored] = useState<Record<number, boolean>>({});
   const src = images[selected];
+  const ratio = {
+    square: '1 / 1',
+    portrait: '3 / 4',
+    landscape: '4 / 3',
+    adapt: undefined,
+  }[t.productImageRatio];
 
   return (
     <div className="flex flex-col gap-3 min-w-0">
       <div
         className="relative w-full flex items-center justify-center"
-        style={{ aspectRatio: '3/4', background: t.colors.bgAlt }}
+        style={{ aspectRatio: ratio ?? (src && !errored[selected] ? 'auto' : '3 / 4'), background: t.colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}
       >
         {src && !errored[selected]
           ? (
@@ -41,7 +49,7 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
               srcSet={cloudinarySrcSet(src, [640, 900, 1200])}
               sizes="(min-width: 1024px) 50vw, 100vw"
               alt={name}
-              className="w-full h-full object-cover"
+              className={ratio ? 'w-full h-full object-cover' : 'w-full h-auto object-cover'}
               onError={() => setErrored(e => ({ ...e, [selected]: true }))}
             />
           )
@@ -55,7 +63,7 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
               type="button"
               onClick={() => setSelected(i)}
               className="w-16 h-16 shrink-0 cursor-pointer border-0"
-              style={{ outline: selected === i ? `2px solid ${t.colors.ink}` : `1px solid ${t.colors.border}`, outlineOffset: '-1px' }}
+              style={{ borderRadius: t.imageRadiusPx, overflow: 'hidden', outline: selected === i ? `2px solid ${t.colors.ink}` : `1px solid ${t.colors.border}`, outlineOffset: '-1px' }}
             >
               <img src={cloudinaryUrl(img, 128)} alt="" className="w-full h-full object-cover" loading="lazy" />
             </button>
@@ -81,7 +89,7 @@ function VariantSelector({ variants, selected, onSelect, isDigital }: {
   };
 
   return (
-    <div className="flex flex-col gap-4 mb-6">
+    <div className="flex flex-col gap-4">
       {attributeNames.map(name => {
         const values = Array.from(new Set(variants.map(v => valueOf(v, name)).filter((x): x is string => !!x)));
         return (
@@ -157,6 +165,7 @@ export function AtelierProductPage() {
   const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   const product = detail?.product ?? null;
+  useRecordProductView(product?._id);
   useStorefrontSeo({
     entityType: 'product',
     entityId: product?._id,
@@ -179,7 +188,7 @@ export function AtelierProductPage() {
   // editor's section list/preview shows this fixed content instead of
   // looking blank. It is NOT re-rendered here via the generic section
   // renderer (that would duplicate this exact markup on the real page) —
-  // instead, `isBlockOn` reads its 7 blocks' real `enabled` flags so a
+  // instead, `resolveProductMainLayout` reads its 7 blocks' real `enabled` flags and order so a
   // merchant hiding one of them (e.g. Quantity) in the editor has a real
   // effect here, not a no-op. A store whose published template predates
   // this (no `product_main` entry at all) resolves every block to "on",
@@ -205,7 +214,6 @@ export function AtelierProductPage() {
   }, [product, slug, navigate]);
 
   const productMainSection = templateSections.find(s => s.type === 'product_main');
-  const isBlockOn = (blockType: string) => productMainSection ? productMainSection.blocks.find(b => b.type === blockType)?.enabled !== false : true;
 
   const variants = detail?.variants ?? [];
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
@@ -259,121 +267,143 @@ export function AtelierProductPage() {
     );
   }
 
+  const layout = resolveProductMainLayout(productMainSection);
+  const { before: sectionsBefore, after: sectionsAfter } = splitProductTemplateSections(templateSections);
+
+  const titleOn = layout.infoOrder.includes('product_title');
+  const buyOn = layout.infoOrder.includes('product_buy_buttons');
+  // A divider above Description only makes sense when something sits above it.
+  const descLeads = layout.infoOrder[0] === 'product_description' && (titleOn || !(product.averageRating > 0));
+
+  const ratingLine = product.averageRating > 0 && (
+    <div className="flex items-center gap-1.5 mt-2">
+      <Star size={13} fill={t.colors.accent} color={t.colors.accent} />
+      <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
+        {product.averageRating.toFixed(1)} ({product.totalRatings ?? 0} reviews)
+      </span>
+    </div>
+  );
+
+  const previewButton = isDigital && product.digital?.previewAvailable && (
+    <button
+      type="button"
+      onClick={() => { setPreviewOpen(true); loadPreview(); }}
+      className="w-full flex items-center justify-center gap-2 cursor-pointer bg-transparent"
+      style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink, border: `1px solid ${t.colors.border}`, padding: '11px 0' }}
+    >
+      <Eye size={14} /> Preview before you buy
+    </button>
+  );
+
+  const backInStockBox = backInStock.show && (
+    <div style={{ border: `1px solid ${t.colors.border}`, padding: '14px 16px', background: t.colors.bgAlt }}>
+      {backInStock.status === 'done' || backInStock.status === 'available' ? (
+        <p className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.success }}>
+          <CheckCircle2 size={14} className="mt-[2px] shrink-0" /> {backInStock.message}
+        </p>
+      ) : (
+        <form onSubmit={backInStock.submit} className="flex flex-col gap-2.5 atelier-form">
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink }}>Get notified when it's back</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              required
+              value={backInStock.email}
+              onChange={e => backInStock.setEmail(e.target.value)}
+              placeholder="Your email"
+              aria-label="Email for back-in-stock alert"
+              style={atelierInput}
+            />
+            <AtelierButton type="submit" loading={backInStock.status === 'loading'} style={{ flexShrink: 0 }}>Notify me</AtelierButton>
+          </div>
+          {backInStock.status === 'error' && (
+            <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{backInStock.message}</p>
+          )}
+        </form>
+      )}
+    </div>
+  );
+
+  // The info column, one entry per `product_main` block — rendered below in
+  // the order the seller arranged them in the editor (see `productPageLayout`).
+  const infoBlocks: Record<ProductInfoBlock, ReactNode> = {
+    product_title: (
+      <div className="flex flex-col">
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15 }}>
+          {product.name}
+        </h1>
+        {ratingLine}
+      </div>
+    ),
+    product_price: (
+      <div className="flex items-baseline gap-3">
+        <span style={{ fontFamily: t.fonts.body, fontSize: '22px', color: t.colors.ink, fontWeight: 500 }}>
+          {displayPrice != null ? money(displayPrice) : ''}
+        </span>
+        {displayCompareAt != null && (
+          <>
+            <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
+              {money(displayCompareAt)}
+            </span>
+            {pctOff != null && (
+              <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 600, color: t.colors.accent }}>−{pctOff}%</span>
+            )}
+          </>
+        )}
+      </div>
+    ),
+    product_variant_picker: <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} isDigital={isDigital} />,
+    product_quantity: !isDigital && (
+      <div className="flex items-center gap-4">
+        <div className="flex items-center" style={{ border: `1px solid ${t.colors.border}` }}>
+          <button type="button" disabled={qty <= 1} aria-label="Decrease quantity" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+            <Minus size={13} />
+          </button>
+          <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, width: '36px', textAlign: 'center' }}>{qty}</span>
+          <button type="button" onClick={() => setQty(q => Math.min(maxQty, q + 1))} disabled={!canBuy || qty >= maxQty} aria-label="Increase quantity" className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+            <Plus size={13} />
+          </button>
+        </div>
+        <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
+          {state === 'sold_out' ? 'Sold out' : state === 'low' ? `Only ${stock} left` : state === 'backorder' ? 'Available on backorder' : 'In stock'}
+        </span>
+      </div>
+    ),
+    product_buy_buttons: (
+      <div className="flex flex-col gap-3">
+        {previewButton}
+        <AtelierButton
+          disabled={!canBuy}
+          loading={adding === activeVariant?._id}
+          onClick={handleAddToCart}
+          style={{ width: '100%', justifyContent: 'center' }}
+        >
+          {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : !canBuy ? 'Sold out' : 'Add to Cart'}
+        </AtelierButton>
+        {backInStockBox}
+      </div>
+    ),
+    product_description: product.description && (
+      <div className={descLeads ? undefined : 'pt-6'} style={descLeads ? undefined : { borderTop: `1px solid ${t.colors.border}` }}>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '10px' }}>Description</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{product.description}</p>
+      </div>
+    ),
+  };
   return (
     <main>
-      <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
-        {isBlockOn('product_media') && <Gallery images={allImages} name={product.name} />}
+      {/* Sections the seller placed above the main product block. */}
+      {sectionsBefore.length > 0 && <AtelierSectionRenderer sections={sectionsBefore} dynamicSourceValues={dynamicSourceValues} />}
 
-        <div className="flex flex-col">
-          {isBlockOn('product_title') && (
-            <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15 }}>
-              {product.name}
-            </h1>
-          )}
+      <div className={`mx-auto grid grid-cols-1 gap-12 ${layout.mediaOn ? 'lg:grid-cols-2' : ''}`} style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
+        {layout.mediaOn && <Gallery images={allImages} name={product.name} />}
 
-          {product.averageRating > 0 && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <Star size={13} fill={t.colors.accent} color={t.colors.accent} />
-              <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
-                {product.averageRating.toFixed(1)} ({product.totalRatings ?? 0} reviews)
-              </span>
-            </div>
-          )}
-
-          {isBlockOn('product_price') && (
-            <div className="flex items-baseline gap-3 mt-4 mb-6">
-              <span style={{ fontFamily: t.fonts.body, fontSize: '22px', color: t.colors.ink, fontWeight: 500 }}>
-                {displayPrice != null ? money(displayPrice) : ''}
-              </span>
-              {displayCompareAt != null && (
-                <>
-                  <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, textDecoration: 'line-through' }}>
-                    {money(displayCompareAt)}
-                  </span>
-                  {pctOff != null && (
-                    <span style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 600, color: t.colors.accent }}>−{pctOff}%</span>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {isBlockOn('product_variant_picker') && <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} isDigital={isDigital} />}
-
-          {isBlockOn('product_quantity') && !isDigital && (
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex items-center" style={{ border: `1px solid ${t.colors.border}` }}>
-                <button type="button" disabled={qty <= 1} aria-label="Decrease quantity" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
-                  <Minus size={13} />
-                </button>
-                <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, width: '36px', textAlign: 'center' }}>{qty}</span>
-                <button type="button" onClick={() => setQty(q => Math.min(maxQty, q + 1))} disabled={!canBuy || qty >= maxQty} aria-label="Increase quantity" className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
-                  <Plus size={13} />
-                </button>
-              </div>
-              <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
-                {state === 'sold_out' ? 'Sold out' : state === 'low' ? `Only ${stock} left` : state === 'backorder' ? 'Available on backorder' : 'In stock'}
-              </span>
-            </div>
-          )}
-
-          {isDigital && product.digital?.previewAvailable && (
-            <button
-              type="button"
-              onClick={() => { setPreviewOpen(true); loadPreview(); }}
-              className="w-full flex items-center justify-center gap-2 cursor-pointer bg-transparent"
-              style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink, border: `1px solid ${t.colors.border}`, padding: '11px 0', marginBottom: '12px' }}
-            >
-              <Eye size={14} /> Preview before you buy
-            </button>
-          )}
-
-          {isBlockOn('product_buy_buttons') && (
-            <AtelierButton
-              disabled={!canBuy}
-              loading={adding === activeVariant?._id}
-              onClick={handleAddToCart}
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : !canBuy ? 'Sold out' : 'Add to Cart'}
-            </AtelierButton>
-          )}
-
-          {backInStock.show && (
-            <div className="mt-4" style={{ border: `1px solid ${t.colors.border}`, padding: '14px 16px', background: t.colors.bgAlt }}>
-              {backInStock.status === 'done' || backInStock.status === 'available' ? (
-                <p className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.success }}>
-                  <CheckCircle2 size={14} className="mt-[2px] shrink-0" /> {backInStock.message}
-                </p>
-              ) : (
-                <form onSubmit={backInStock.submit} className="flex flex-col gap-2.5 atelier-form">
-                  <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink }}>Get notified when it's back</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      required
-                      value={backInStock.email}
-                      onChange={e => backInStock.setEmail(e.target.value)}
-                      placeholder="Your email"
-                      aria-label="Email for back-in-stock alert"
-                      style={atelierInput}
-                    />
-                    <AtelierButton type="submit" loading={backInStock.status === 'loading'} style={{ flexShrink: 0 }}>Notify me</AtelierButton>
-                  </div>
-                  {backInStock.status === 'error' && (
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{backInStock.message}</p>
-                  )}
-                </form>
-              )}
-            </div>
-          )}
-
-          {isBlockOn('product_description') && product.description && (
-            <div className="mt-8 pt-8" style={{ borderTop: `1px solid ${t.colors.border}` }}>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '10px' }}>Description</p>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{product.description}</p>
-            </div>
-          )}
+        <div className={`flex flex-col gap-6 ${layout.mediaOn ? '' : 'w-full max-w-[640px] mx-auto'}`}>
+          {/* The rating, preview button and back-in-stock box always showed
+              even when their neighbouring block was hidden — keep that. */}
+          {!titleOn && ratingLine}
+          {layout.infoOrder.map(type => <Fragment key={type}>{infoBlocks[type]}</Fragment>)}
+          {!buyOn && <>{previewButton}{backInStockBox}</>}
         </div>
       </div>
 
@@ -386,10 +416,7 @@ export function AtelierProductPage() {
          gallery/title/price/etc. above; rendering it again via the generic
          section renderer would duplicate that content on the page. Only
          genuinely surrounding sections a seller added reach this call. */}
-      {(() => {
-        const surrounding = templateSections.filter(s => !CORE_SECTION_TYPES.includes(s.type));
-        return surrounding.length > 0 && <AtelierSectionRenderer sections={surrounding} dynamicSourceValues={dynamicSourceValues} />;
-      })()}
+      {sectionsAfter.length > 0 && <AtelierSectionRenderer sections={sectionsAfter} dynamicSourceValues={dynamicSourceValues} />}
 
       {previewOpen && (
         <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>

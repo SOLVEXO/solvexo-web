@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
@@ -11,7 +11,6 @@ import { NovaSectionRenderer } from '../sections';
 import { NovaButton } from '../components/NovaButton';
 import { NovaProductCard } from '../components/NovaProductCard';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
-import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { novaTheme as t } from '../theme.config';
 
 function ProductGridSkeleton() {
@@ -33,37 +32,26 @@ function ProductGridSkeleton() {
 function IdentityHero() {
   const { store } = useStorefront();
   return (
-    <section className="relative flex items-center" style={{ minHeight: '580px', background: t.colors.bgAlt }}>
-      {store.coverImage && (
-        <img
-          src={cloudinaryUrl(store.coverImage, 1600)}
-          srcSet={cloudinarySrcSet(store.coverImage, [640, 900, 1200, 1600])}
-          sizes="100vw"
-          alt={store.name}
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-          fetchPriority="high"
-        />
-      )}
-      {store.coverImage && (
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(20,18,31,0.6) 0%, rgba(20,18,31,0.05) 65%)' }} />
-      )}
-      <div className="relative flex flex-col gap-6" style={{ padding: `48px ${t.layout.containerPadX}`, maxWidth: '620px' }}>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: store.coverImage ? '#C9C3FF' : t.colors.accent }}>
-          {store.sellerType ?? 'New Drop'}
+    <section className="relative flex items-center overflow-hidden" style={{ minHeight: 'min(700px, calc(100vh - 120px))', background: t.colors.bgAlt }}>
+      <div aria-hidden="true" className="absolute right-[-8vw] top-[-20%] h-[80vw] w-[80vw] max-h-[760px] max-w-[760px] rounded-full opacity-20" style={{ background: `radial-gradient(circle, ${t.colors.accent}, transparent 68%)` }} />
+      <div className="relative flex flex-col gap-5" style={{ padding: `clamp(40px, 8vw, 112px) ${t.layout.containerPadX}`, maxWidth: '760px' }}>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.accent }}>
+          {store.sellerType?.replaceAll('_', ' ') ?? 'Independent store'}
         </p>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(38px, 5.5vw, 62px)', fontWeight: 700, color: store.coverImage ? '#FFFFFF' : t.colors.ink, lineHeight: 1.03 }}>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(42px, 6.4vw, 84px)', fontWeight: 700, color: t.colors.ink, lineHeight: 0.99, letterSpacing: '-0.055em', margin: 0 }}>
           {store.tagline || store.name}
         </h1>
         {store.description && (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '15.5px', color: store.coverImage ? '#E4E1FF' : t.colors.inkMuted, lineHeight: 1.7, maxWidth: '460px' }}>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '15.5px', color: t.colors.inkMuted, lineHeight: 1.7, maxWidth: '500px', margin: 0 }}>
             {store.description}
           </p>
         )}
-        <div>
-          <a href="#shop"><NovaButton>Shop Now</NovaButton></a>
+        <div className="flex items-center gap-4 pt-2">
+          <a href="#shop" className="no-underline"><NovaButton>Shop the latest</NovaButton></a>
+          <span style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.inkMuted }}>Find your next favorite</span>
         </div>
       </div>
+      {store.logo && <img src={store.logo} alt="" className="absolute right-[8%] top-1/2 hidden h-40 w-40 -translate-y-1/2 object-contain opacity-70 lg:block" />}
     </section>
   );
 }
@@ -74,25 +62,31 @@ function IdentityHero() {
 function DefaultHomeContent() {
   const { store } = useStorefront();
   const { currency } = useCurrencyPreference();
-  const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
-  const [error, setError] = useState('');
+  const [productResult, setProductResult] = useState<{ storeId: string; products?: PublicStoreProduct[]; error?: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setProducts(null);
-    setError('');
     apiGetPublicStoreProducts(store.storeId, { limit: 8, sort: 'newest' })
-      .then(res => { if (!cancelled) setProducts(res.data.products); })
-      .catch(() => { if (!cancelled) setError('Could not load products right now.'); });
+      .then(res => { if (!cancelled) setProductResult({ storeId: store.storeId, products: res.data.products }); })
+      .catch(() => { if (!cancelled) setProductResult({ storeId: store.storeId, error: 'Could not load products right now.' }); });
     return () => { cancelled = true; };
   }, [store.storeId]);
+  const products = productResult?.storeId === store.storeId ? productResult.products ?? null : null;
+  const error = productResult?.storeId === store.storeId ? productResult.error ?? '' : '';
 
   return (
     <>
-      <section style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+      <section style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}`, background: t.colors.bg }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-          <div className="flex items-end justify-between mb-10">
-            <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink }}>New Arrivals</h2>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10">
+            <div>
+              <p className="inline-flex items-center gap-2" style={{ fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.colors.accent, marginBottom: '10px' }}>
+                <span style={{ width: '18px', height: '2px', background: t.colors.accent }} /> Fresh on the store
+              </p>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 50px)', fontWeight: 700, color: t.colors.ink, letterSpacing: '-0.045em', lineHeight: 1, margin: 0 }}>Just dropped</h2>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '12px' }}>The newest finds from {store.name}.</p>
+            </div>
+            <Link to="/search" className="no-underline w-fit" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accent, borderBottom: `2px solid ${t.colors.accent}`, paddingBottom: '5px' }}>Explore all products</Link>
           </div>
           {products === null && !error && <ProductGridSkeleton />}
           {error && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{error}</p>}
@@ -100,25 +94,10 @@ function DefaultHomeContent() {
             <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>No products yet — check back soon.</p>
           )}
           {products !== null && products.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
               {products.map(p => <NovaProductCard key={p._id} product={p} currency={currency} />)}
             </div>
           )}
-        </div>
-      </section>
-
-      <section style={{ background: t.colors.bgAlt }}>
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-          {[
-            { title: 'Fast Shipping', body: 'Every order moves quick, tracked start to finish.' },
-            { title: 'Secure Checkout', body: 'Your payment details are always protected.' },
-            { title: 'Easy Returns', body: 'Not the right fit? We make it simple.' },
-          ].map(item => (
-            <div key={item.title}>
-              <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 700, color: t.colors.ink, marginBottom: '6px' }}>{item.title}</p>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>{item.body}</p>
-            </div>
-          ))}
         </div>
       </section>
     </>
@@ -134,7 +113,7 @@ export function NovaHomePage() {
     entityType: 'store',
     entityId: store.storeId,
     description: store.tagline || store.description || undefined,
-    image: store.coverImage || store.logo || undefined,
+    image: store.logo || undefined,
   });
 
   useEffect(() => {

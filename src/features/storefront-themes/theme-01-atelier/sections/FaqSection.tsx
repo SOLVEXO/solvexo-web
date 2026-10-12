@@ -32,13 +32,18 @@ registerAtelierSection('faq', (section: Section, blocks: Block[], colors: Atelie
   if (blocks.length === 0) return null;
   return (
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
-      <div className="mx-auto" style={{ maxWidth: '720px' }}>
-        {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: colors.ink, marginBottom: '20px' }}>
-            {section.settings.heading}
-          </h2>
-        )}
-        {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
+      <div className="mx-auto grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-8 lg:gap-16" style={{ maxWidth: '1100px' }}>
+        <div>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '12px' }}>Good to know</p>
+          {section.settings.heading && (
+            <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 46px)', fontWeight: 500, color: colors.ink, lineHeight: 1.08 }}>
+              {section.settings.heading}
+            </h2>
+          )}
+        </div>
+        <div style={{ borderTop: `1px solid ${colors.border}` }}>
+          {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
+        </div>
       </div>
     </div>
   );

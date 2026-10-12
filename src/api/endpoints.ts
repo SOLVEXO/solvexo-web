@@ -487,6 +487,18 @@ export const ENDPOINTS = {
     PURCHASE_INTENT: (storeId: string) => `/api/gift-cards/${storeId}/purchase-intent`,
   },
 
+  // ── ADMIN: platform email health ──────────────────────────────────────────
+  ADMIN_EMAIL_HEALTH: {
+    GET:  '/api/admin/email-health',
+    TEST: '/api/admin/email-health/test',
+  },
+
+  // ── STORE CUSTOMER NOTIFICATIONS (Settings → Notifications) ───────────────
+  STORE_NOTIFICATIONS: {
+    SETTINGS: (storeId: string) => `/api/store-notifications/${storeId}`,
+    PREVIEW:  (storeId: string) => `/api/store-notifications/${storeId}/preview`,
+  },
+
   // ── ABANDONED CART RECOVERY ───────────────────────────────────────────────
   ABANDONED_CART: {
     SETTINGS: (storeId: string) => `/api/abandoned-cart/${storeId}/settings`,
@@ -810,6 +822,7 @@ export const ENDPOINTS = {
 
   ORDERS: {
     MARK_PAID:     (storeId: string, id: string) => `/api/orders/mark-paid/${storeId}/${id}`,
+    RESEND_EMAIL:  (storeId: string, id: string) => `/api/orders/resend-email/${storeId}/${id}`,
     EDIT:             (storeId: string, id: string) => `/api/orders/edit/${storeId}/${id}`,
     EXCHANGE:         (storeId: string, id: string) => `/api/orders/exchange/${storeId}/${id}`,
     TIMELINE:         (storeId: string, id: string) => `/api/orders/timeline/${storeId}/${id}`,
@@ -1171,6 +1184,7 @@ export const ENDPOINTS = {
     ADMIN: {
       OVERVIEW:              '/api/admin/finance/overview',
       PLATFORM_REVENUE:      '/api/admin/finance/platform-revenue',
+      TRANSACTION_FEE_BILLS: '/api/admin/finance/transaction-fee-bills',
       REVENUE_OVER_TIME:     '/api/admin/finance/revenue-over-time',
       COMMISSION_OVER_TIME:  '/api/admin/finance/commission-over-time',
       SELLER_BALANCES:       '/api/admin/finance/sellers/balances',

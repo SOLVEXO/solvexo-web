@@ -117,7 +117,7 @@ export function useStorefrontSeo({ entityType, entityId, title, description, ima
     // account/auth pages are private-per-visitor or duplicate-shaped — they
     // shouldn't compete with the store's real product/collection pages in
     // search results.
-    const fullTitle = title ? `${title} · ${store.name}` : store.name;
+    const fullTitle = title ? `${title} – ${store.name}` : store.name;
     document.title = fullTitle;
     setMetaTag('property', 'og:title', fullTitle);
     setMetaTag('property', 'og:type', 'website');

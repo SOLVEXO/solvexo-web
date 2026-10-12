@@ -71,7 +71,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
       <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
     </div>
   );
-  const title = <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, fontWeight: 500 }}>{product.name}</p>;
+  const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 500, lineHeight: 1.4, margin: 0 }}>{product.name}</p>;
 
   return (
     <div className="group flex flex-col">
@@ -84,7 +84,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
         {(soldOut || onSale) && (
           <span
             className="absolute top-3 left-3 pointer-events-none"
-            style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.04em', padding: '4px 9px', background: soldOut ? t.colors.ink : t.colors.accent, color: '#FFFFFF' }}
+            style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 10px', background: soldOut ? t.colors.ink : t.colors.accent, color: '#FFFFFF' }}
           >
             {soldOut ? 'Sold out' : 'Sale'}
           </span>
@@ -95,7 +95,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
             onClick={() => toggleWishlist(product._id, product.variantId!)}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             className="absolute top-3 right-3 flex items-center justify-center cursor-pointer border-0"
-            style={{ width: '32px', height: '32px', background: 'rgba(250,248,244,0.9)' }}
+            style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(250,248,244,0.94)', boxShadow: '0 2px 12px rgba(22,20,18,0.08)' }}
           >
             <Heart size={14} fill={inWishlist ? t.colors.accent : 'none'} color={inWishlist ? t.colors.accent : t.colors.ink} />
           </button>
@@ -106,7 +106,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
       ) : (
         <Link to={`/product/${product.slug}`} className="no-underline mt-3">{title}</Link>
       )}
-      <div className="flex items-center gap-2 mt-1">
+      <div className="flex items-center gap-2 -mt-2">
         <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: onSale ? t.colors.accent : t.colors.inkMuted }}>
           {displayPrice != null ? `${symbol}${fmt2(displayPrice)}` : '—'}
         </span>

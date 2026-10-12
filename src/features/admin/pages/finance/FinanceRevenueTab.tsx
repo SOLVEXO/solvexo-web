@@ -1,14 +1,19 @@
 import { LineChart } from '@/components/comman/charts';
-import { useAdminFinanceRevenueOverTime, useAdminFinanceCommissionOverTime } from '@/hooks/admin/useAdminFinance';
+import { useAdminFinancePlatformRevenue } from '@/hooks/admin/useAdminFinance';
+import { MetricCard } from '@/components/comman/ui';
+import { formatMoneyCompact } from '@/utils/currency';
+import { useAdminAnalyticsRevenueOverTime } from '@/hooks/admin/useAdminAnalytics';
 import type { AdminFinanceParams } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatBucketLabel } from '@/components/comman/analytics/format';
 import { currencySymbol } from '@/utils/currency';
+import { FeeBillsCard } from './FeeBillsCard';
 
 export function FinanceRevenueTab({ params }: { params: AdminFinanceParams }) {
-  const revenue = useAdminFinanceRevenueOverTime(params);
-  const commission = useAdminFinanceCommissionOverTime(params);
+  // Order-based (same numbers as Admin Analytics and the Overview GMV), not the ledger — one definition of sales everywhere.
+  const revenue = useAdminAnalyticsRevenueOverTime(params);
+  const platform = useAdminFinancePlatformRevenue(params);
 
   // Single USD series per chart — the API converts non-USD (PKR) stores at the
   // latest FX rate, so the platform owner reads one consistent currency.
@@ -20,13 +25,13 @@ export function FinanceRevenueTab({ params }: { params: AdminFinanceParams }) {
         <AnalyticsErrorState message={revenue.error} onRetry={revenue.refetch} />
       ) : (
         <LineChart
-          title="Platform Revenue Over Time (USD)"
-          subtitle="Gross vs. net, from the finance ledger (non-USD stores converted at latest rate)"
+          title="Marketplace Sales Over Time (USD)"
+          subtitle="Item sales of non-cancelled store orders, before and after refunds — same numbers as Admin Analytics and the Overview GMV. Platform revenue (plans, add-ons, fees) is on the Overview card."
           height={280}
           data={(revenue.data?.series ?? []).map((p) => ({
             label: formatBucketLabel(p.date, revenue.data!.granularity),
-            gross: p.usd?.grossRevenue ?? 0,
-            net: p.usd?.netRevenue ?? 0,
+            gross: p.grossRevenue ?? 0,
+            net: p.netRevenue ?? 0,
           }))}
           lines={[
             { dataKey: 'gross', label: 'Gross Revenue', color: '#8C8A82' },
@@ -36,26 +41,21 @@ export function FinanceRevenueTab({ params }: { params: AdminFinanceParams }) {
         />
       )}
 
-      {commission.loading ? (
-        <ChartCardSkeleton />
-      ) : commission.error ? (
-        <AnalyticsErrorState message={commission.error} onRetry={commission.refetch} />
-      ) : (
-        <LineChart
-          title="Commission & Processing Fees (USD)"
-          subtitle="What the platform earns per sale, over time"
-          data={(commission.data?.series ?? []).map((p) => ({
-            label: formatBucketLabel(p.date, commission.data!.granularity),
-            commission: p.usd?.commission ?? 0,
-            processingFees: p.usd?.processingFees ?? 0,
-          }))}
-          lines={[
-            { dataKey: 'commission', label: 'Platform Commission', color: '#D97757' },
-            { dataKey: 'processingFees', label: 'Processing Fees', color: '#2156A8' },
-          ]}
-          valuePrefix={currencySymbol('USD')}
-        />
-      )}
+      {/* What sellers pay Solvexo (Option A): plans + add-ons + collected third-party transaction fees — not a sale commission. */}
+      {platform.loading ? (
+        <ChartCardSkeleton height={120} />
+      ) : platform.error ? (
+        <AnalyticsErrorState message={platform.error} onRetry={platform.refetch} />
+      ) : platform.data ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <MetricCard label="Seller plans (net)" value={formatMoneyCompact(platform.data.planRevenue.netUSD, 'USD')} sub={`${platform.data.planRevenue.invoiceCount} paid invoices`} />
+          <MetricCard label="Add-ons" value={formatMoneyCompact(platform.data.addons.grossUSD, 'USD')} sub={`${platform.data.addons.chargeCount} charges`} />
+          <MetricCard label="Transaction fees collected" value={formatMoneyCompact(platform.data.transactionFees.collectedUSD, 'USD')} sub={`${formatMoneyCompact(platform.data.transactionFees.invoicedUnpaidUSD, 'USD')} invoiced, unpaid`} />
+          <MetricCard label="Total platform revenue" value={formatMoneyCompact(platform.data.totalRevenueUSD, 'USD')} sub="Plans + add-ons + collected fees" />
+        </div>
+      ) : null}
+
+      <FeeBillsCard />
     </div>
   );
 }

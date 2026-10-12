@@ -19,6 +19,10 @@ export interface StoreBanner {
   imageUrl:        string;
   publicId:        string;
   videoUrl:        string | null;
+  heading?:        string | null;
+  subheading?:     string | null;
+  contentAlignment?: 'left' | 'center' | 'right';
+  overlayOpacity?: number;
   ctaLabel:        string | null;
   linkType:        StoreBannerLinkType;
   linkTarget:      string | null;
@@ -34,9 +38,13 @@ export interface StoreBanner {
 
 export interface CreateStoreBannerFields {
   type?:       StoreBannerType;
-  ctaLabel?:   string;
+  heading?:    string | null;
+  subheading?: string | null;
+  contentAlignment?: 'left' | 'center' | 'right';
+  overlayOpacity?: number;
+  ctaLabel?:   string | null;
   linkType?:   StoreBannerLinkType;
-  linkTarget?: string;
+  linkTarget?: string | null;
   order?:      number;
   priority?:   number;
   startAt?:    string;
@@ -65,7 +73,7 @@ export function apiCreateStoreBanner(storeId: string, fields: CreateStoreBannerF
   const fd = new FormData();
   fd.append('file', file);
   Object.entries(fields).forEach(([key, value]) => {
-    if (value !== undefined) fd.append(key, String(value));
+    if (value !== undefined && value !== null) fd.append(key, String(value));
   });
   return client.post<never, { success: boolean; message: string; data: StoreBanner }>(
     ENDPOINTS.STORE_BANNER.CREATE(storeId), fd,

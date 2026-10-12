@@ -12,7 +12,8 @@ export function StoreAnalytics() {
       />
 
       <div className="px-7 pt-5 pb-8">
-        <SellerAnalyticsView storeId={storeId} currency={store?.baseCurrency ?? null} />
+        {/* key + id check: after a store switch the previous store's currency must never label the new store's numbers */}
+        <SellerAnalyticsView key={storeId} storeId={storeId} currency={store?._id === storeId ? (store.baseCurrency ?? null) : null} />
       </div>
     </>
   );

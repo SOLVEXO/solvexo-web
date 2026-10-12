@@ -61,9 +61,15 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
         {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: colors.ink, marginBottom: '36px' }}>
-            {section.settings.heading}
-          </h2>
+          <div className="flex items-end gap-5 mb-9">
+            <div className="shrink-0">
+              <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: colors.accent, marginBottom: '8px' }}>The considered edit</p>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 500, color: colors.ink, lineHeight: 1.05 }}>
+                {section.settings.heading}
+              </h2>
+            </div>
+            <div className="hidden sm:block flex-1 mb-2" style={{ height: '1px', background: colors.border }} />
+          </div>
         )}
         {products === null ? (
           <div className={`grid ${responsiveGridColumnsClass(section.settings.columns)} gap-x-6 gap-y-10`}>

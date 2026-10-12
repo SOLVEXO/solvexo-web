@@ -19,6 +19,7 @@ import StaffPage from './Staff';
 import { MetafieldDefinitionsPage } from './MetafieldDefinitionsPage';
 import { MetaobjectTypesPage } from './Metaobjects/MetaobjectTypesPage';
 import { ActivityLogTab } from './tabs/ActivityLogTab';
+import { CustomerNotificationsSection } from './tabs/CustomerNotificationsSection';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
@@ -271,7 +272,12 @@ export default function SettingsHub() {
         {isVisited('payment-methods')  && <div className={paneClassName('payment-methods')}><PaymentMethodsTab /></div>}
         {isVisited('domains')          && <div className={paneClassName('domains')}><DomainSettingsTab /></div>}
         {isVisited('privacy')          && <div className={paneClassName('privacy')}><PrivacyTab /></div>}
-        {isVisited('notifications') && <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6'}><NotificationsPanel /></div>}
+        {isVisited('notifications') && (
+          <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6 flex flex-col gap-6'}>
+            {hasNavPermission(user, ['settings.general.manage']) && <CustomerNotificationsSection key={storeId} />}
+            <NotificationsPanel />
+          </div>
+        )}
         {isVisited('billing')       && <div className={paneClassName('billing')}><StorePlanBilling embedded /></div>}
         {isVisited('integrations')  && <div className={paneClassName('integrations')}><StoreIntegrations embedded /></div>}
         {isVisited('staff')         && <div className={paneClassName('staff')}><StaffPage embedded /></div>}

@@ -8,7 +8,7 @@ function TestimonialCard({ block, colors }: { block: Block; colors: NovaSectionC
   const s = block.settings;
   const rating = Math.max(1, Math.min(5, s.rating ?? 5));
   return (
-    <div className="flex flex-col gap-4" style={{ background: colors.bgAlt, borderRadius: t.radius.md, padding: '28px' }}>
+    <div className="flex flex-col gap-4" style={{ background: colors.bgAlt, borderRadius: t.radius.md, padding: '28px', border: `1px solid ${colors.border}`, boxShadow: '0 12px 30px rgba(20,18,31,0.06)' }}>
       <div className="flex gap-1">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star key={i} size={13} fill={i < rating ? colors.accent : 'none'} color={colors.accent} />
@@ -33,7 +33,7 @@ registerNovaSection('testimonials', (section: Section, blocks: Block[], colors: 
             {section.settings.heading}
           </h2>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><TestimonialCard block={b} colors={colors} /></PreviewBlock>)}
         </div>
       </div>

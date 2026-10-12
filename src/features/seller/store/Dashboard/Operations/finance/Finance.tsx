@@ -546,12 +546,15 @@ export function StoreFinance() {
     );
   }
 
+  // Hidden when nothing is held here: new stores are paid directly (card -> own Stripe, COD / transfer / own gateway).
+  const legacyBalance = activeWallet.hasLegacyBalance !== false;
+
   return (
     <>
       <StorePageHeader
-        title="Finance & Payouts"
-        subtitle="Track earnings, payouts, fees, and tax reports."
-        actions={
+        title={legacyBalance ? 'Finance & Payouts' : 'Finance'}
+        subtitle={legacyBalance ? 'Track earnings, payouts, fees, and tax reports.' : 'Track sales, refunds, fees, and tax reports. Card payouts are managed in your Stripe account.'}
+        actions={legacyBalance ? (
           <>
             <Button size="sm" variant="outline" icon={<Plus size={13} />} onClick={() => setMethodModal(true)}>
               Add Payout Method
@@ -560,7 +563,7 @@ export function StoreFinance() {
               Request Payout
             </Button>
           </>
-        }
+        ) : undefined}
       />
 
       <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
@@ -581,7 +584,7 @@ export function StoreFinance() {
             ever getting paid out without a human sending it. Not shown for
             a PKR wallet — Stripe doesn't operate in Pakistan, so that wallet
             has no automatable rail and stays on the manual admin-review flow. */}
-        {activeWallet.currency === 'USD' && connectStatus && (
+        {legacyBalance && activeWallet.currency === 'USD' && connectStatus && (
           stripeConnectActive ? (
             <div className="flex items-center gap-2.5 bg-success-bg border border-[#BEE6C9] rounded-[10px] px-4 py-3">
               <CheckCircle2 size={16} className="text-success shrink-0" />
@@ -628,7 +631,7 @@ export function StoreFinance() {
         )}
 
         {/* Balance Card */}
-        <div className="bg-carbon rounded-xl px-5 sm:px-7 py-6 flex flex-wrap justify-between items-center gap-4">
+        {legacyBalance && <div className="bg-carbon rounded-xl px-5 sm:px-7 py-6 flex flex-wrap justify-between items-center gap-4">
           <div>
             <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.1em] mb-2">Available Balance ({activeWallet.currency})</p>
             <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">{fmt(activeWallet.availableBalance, activeWallet.currency)}</p>
@@ -650,13 +653,13 @@ export function StoreFinance() {
           <Button size="md" onClick={() => setPayoutModal(true)} disabled={activeWallet.availableBalance <= 0} iconRight={<ArrowRight size={14} />}>
             Request Payout
           </Button>
-        </div>
+        </div>}
 
         {/* Upcoming Payout Availability — real, deterministic (each pending
             sale's own known clearing date), not a statistical guess. */}
         {(() => {
           const pf = payoutForecast.find(f => f.currency === activeWallet.currency);
-          if (!pf || pf.next30Days <= 0) return null;
+          if (!legacyBalance || !pf || pf.next30Days <= 0) return null;
           return (
             <div className="bg-white border border-bone rounded-xl px-5 py-4">
               <p className="text-[13px] font-bold text-charcoal mb-1">Upcoming Payout Availability</p>
@@ -690,7 +693,7 @@ export function StoreFinance() {
             trendUp={activeWallet.summary.revenueGrowthPercent >= 0}
           />
           <MetricCard label="Platform Fees" value={fmt(activeWallet.summary.platformFees, activeWallet.currency)} sub="This month" />
-          <MetricCard label="Total Paid Out" value={fmt(activeWallet.summary.totalPaidOut, activeWallet.currency)} sub="All time" />
+          {legacyBalance && <MetricCard label="Total Paid Out" value={fmt(activeWallet.summary.totalPaidOut, activeWallet.currency)} sub="All time" />}
           <MetricCard label="Tax Collected" value={fmt(activeWallet.summary.pendingTax, activeWallet.currency)} sub="This month, from buyers" />
         </div>
 
@@ -700,7 +703,7 @@ export function StoreFinance() {
           {/* LEFT — Transaction History */}
           <div className="flex-1 min-w-0 w-full bg-white border border-bone rounded-[10px] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
-              <p className="text-sm font-semibold text-carbon">Ledger — COD, bank transfer &amp; older balances</p>
+              <p className="text-sm font-semibold text-carbon">Sales ledger — orders, refunds &amp; fees</p>
               <div className="flex items-center gap-2">
                 <select value={txType} onChange={e => { setTxType(e.target.value as TransactionType | ''); setTxPage(1); }}
                   className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none">
@@ -732,7 +735,7 @@ export function StoreFinance() {
           <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3.5">
 
             {/* Payout Methods */}
-            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
+            <div className={legacyBalance ? 'bg-white border border-bone rounded-[10px] px-[18px] py-4' : 'hidden'}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[13px] font-semibold text-carbon">Payout Methods</p>
                 <button onClick={() => setMethodModal(true)} className="text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
@@ -783,7 +786,7 @@ export function StoreFinance() {
             </div>
 
             {/* Payout Schedule */}
-            {schedule && (
+            {legacyBalance && schedule && (
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
                 <p className="text-[13px] font-semibold text-carbon mb-3">Payout Schedule</p>
                 <div className="flex flex-col gap-2.5">
@@ -865,7 +868,7 @@ export function StoreFinance() {
             </div>
 
             {/* Recent Payouts */}
-            {recentPayouts.length > 0 && (
+            {legacyBalance && recentPayouts.length > 0 && (
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
                 <p className="text-[13px] font-semibold text-carbon mb-3">Recent Payouts</p>
                 <div className="flex flex-col gap-2.5">

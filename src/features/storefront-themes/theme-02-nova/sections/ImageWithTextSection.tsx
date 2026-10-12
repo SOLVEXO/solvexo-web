@@ -22,9 +22,10 @@ function Pair({ block, colors }: { block: Block; colors: NovaSectionColors }) {
       <div className={imageFirst ? 'order-1' : 'order-1 lg:order-2'} style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}>
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} onError={() => setErrored(true)} style={fit.img} />}
       </div>
-      <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'}>
-        {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 700, color: colors.ink, marginBottom: '16px' }}>{s.heading}</h2>}
-        {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '15px', color: colors.inkMuted, lineHeight: 1.75, marginBottom: '24px' }}>{renderRichText(s.body)}</p>}
+      <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'} style={{ background: colors.bgAlt, borderRadius: t.radius.md, padding: 'clamp(24px, 4vw, 48px)' }}>
+        <p style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '7px 12px', marginBottom: '16px' }}>Why it matters</p>
+        {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 46px)', fontWeight: 700, color: colors.ink, lineHeight: 1.05, marginBottom: '18px' }}>{s.heading}</h2>}
+        {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '15px', color: colors.inkMuted, lineHeight: 1.8, marginBottom: '26px' }}>{renderRichText(s.body)}</p>}
         {s.ctaText && link && (
           link.to ? <Link to={link.to} className="no-underline"><NovaButton variant="outline">{s.ctaText}</NovaButton></Link>
             : <a href={link.href} className="no-underline"><NovaButton variant="outline">{s.ctaText}</NovaButton></a>

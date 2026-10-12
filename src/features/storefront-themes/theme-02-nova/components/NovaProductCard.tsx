@@ -38,21 +38,35 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
   const displayPrice = price != null && ratesReady ? conv(price) : null;
   const onSale = product.compareAtPrice != null && product.defaultVariantPrice != null && product.compareAtPrice > product.defaultVariantPrice;
 
+  const second = product.images?.[1];
   const media = product.images?.[0] ? (
-    <img
-      src={cloudinaryUrl(product.images[0], 480)}
-      srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
-      sizes="(min-width: 1024px) 25vw, 50vw"
-      alt={product.name}
-      className={`${t.productImageRatio === 'adapt' ? 'block w-full h-auto' : 'w-full h-full object-cover'} transition-transform duration-300 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
-      loading="lazy"
-    />
+    <>
+      <img
+        src={cloudinaryUrl(product.images[0], 480)}
+        srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
+        sizes="(min-width: 1024px) 25vw, 50vw"
+        alt={product.name}
+        className={`${t.productImageRatio === 'adapt' ? 'block w-full h-auto' : 'w-full h-full object-cover'} transition-transform duration-300 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
+        loading="lazy"
+      />
+      {second && t.productImageHover === 'second-image' && (
+        <img
+          src={cloudinaryUrl(second, 480)}
+          srcSet={cloudinarySrcSet(second, CARD_WIDTHS)}
+          sizes="(min-width: 1024px) 25vw, 50vw"
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          loading="lazy"
+        />
+      )}
+    </>
   ) : (
     <div className="w-full h-full flex items-center justify-center">
       <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
     </div>
   );
-  const title = <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, fontWeight: 600 }}>{product.name}</p>;
+  const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 700, lineHeight: 1.4, margin: 0 }}>{product.name}</p>;
 
   return (
     <div className="group flex flex-col">
@@ -76,7 +90,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
             onClick={() => toggleWishlist(product._id, product.variantId!)}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             className="absolute top-3 right-3 flex items-center justify-center cursor-pointer border-0"
-            style={{ width: '32px', height: '32px', borderRadius: '9999px', background: 'rgba(255,255,255,0.92)' }}
+            style={{ width: '36px', height: '36px', borderRadius: '9999px', background: 'rgba(255,255,255,0.96)', boxShadow: '0 3px 14px rgba(20,18,31,0.12)' }}
           >
             <Heart size={14} fill={inWishlist ? t.colors.accent : 'none'} color={inWishlist ? t.colors.accent : t.colors.ink} />
           </button>
@@ -87,7 +101,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
       ) : (
         <Link to={`/product/${product.slug}`} className="no-underline mt-3">{title}</Link>
       )}
-      <div className="flex items-center gap-2 mt-1">
+      <div className="flex items-center gap-2 -mt-2">
         <span style={{ fontFamily: t.fonts.display, fontSize: '13.5px', fontWeight: 700, color: onSale ? t.colors.accent : t.colors.ink }}>
           {displayPrice != null ? `${symbol}${fmt2(displayPrice)}` : '—'}
         </span>

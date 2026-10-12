@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Menu as MenuIcon } from 'lucide-react';
+import { Plus, Trash2, Menu as MenuIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button, Modal, Field, Toggle, EmptyState } from '@/components/comman/ui';
 import { LinkTargetFields, type LinkTarget } from '@/features/seller/store/Dashboard/OnlineStore/builder/LinkTargetFields';
@@ -23,7 +23,7 @@ function newItem(): MenuItem {
  *  their children are shown (dropdown or mega menu); inside a mega menu each
  *  child/grandchild can carry a tile image. Recurses for children, reusing
  *  `LinkTargetFields`/`SortableList` rather than a bespoke duplicate editor. */
-function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth = 1, parentMega = false }: {
+function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth = 1, parentMega = false, bulk }: {
   item: MenuItem;
   onChange: (next: MenuItem) => void;
   onRemove: () => void;
@@ -32,14 +32,32 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
   depth?: number;
   /** True when the top-level ancestor is a mega menu (enables the tile image field). */
   parentMega?: boolean;
+  /** Collapse-all / expand-all request from the modal; `n` changes on every click. */
+  bulk?: { open: boolean; n: number };
 }) {
   const children = item.children ?? [];
   const mega = depth === 1 ? item.menuStyle === 'mega' : parentMega;
+  // Freshly added items start open so the label can be typed straight away; saved ones start collapsed.
+  const [open, setOpen] = useState(() => item.id.startsWith('new-'));
+  useEffect(() => { if (bulk && bulk.n > 0) setOpen(bulk.open); }, [bulk]);
+  const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <div className="border border-bone rounded-lg p-3 bg-white relative">
       <button type="button" onClick={onRemove}
         className="absolute top-2 right-2 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
-      <div className="flex flex-col gap-2 pr-14">
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
+        aria-label={open ? 'Collapse item' : 'Expand item'}
+        className="flex items-center gap-2 w-full pr-14 bg-transparent border-none cursor-pointer text-left p-0">
+        <Chevron size={16} className="text-slate shrink-0" />
+        <span className="text-[13px] font-semibold text-charcoal truncate">{item.label.trim() || '(no label)'}</span>
+        {!open && (
+          <span className="text-[11px] text-slate truncate">
+            {item.linkType}{children.length > 0 ? ` · ${children.length} item${children.length === 1 ? '' : 's'}` : ''}
+          </span>
+        )}
+      </button>
+      {open && <>
+      <div className="flex flex-col gap-2 pr-14 mt-2">
         <Field label="Label"><input className={inp} value={item.label} onChange={e => onChange({ ...item, label: e.target.value })} /></Field>
         <LinkTargetFields value={item as LinkTarget} onChange={next => onChange({ ...item, ...next })} pageOptions={pageOptions} storeId={storeId} />
         <div className="flex items-center justify-between">
@@ -63,6 +81,7 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
               item={child}
               depth={depth + 1}
               parentMega={mega}
+              bulk={bulk}
               storeId={storeId}
               pageOptions={pageOptions}
               onChange={next => onChange({ ...item, children: children.map((c, j) => j === i ? { ...c, ...next } : c) })}
@@ -70,11 +89,12 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
             />
           )}
         </SortableList>
-        {depth < 3 && children.length < 8 && (
+        {depth < 3 && (
           <button type="button" onClick={() => onChange({ ...item, children: [...children, { id: `new-${Date.now()}`, label: '', linkType: 'home' }] })}
             className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add dropdown item</button>
         )}
       </div>
+      </>}
     </div>
   );
 }
@@ -90,6 +110,7 @@ function MenuEditorModal({ storeId, menu, pageOptions, onClose, onSaved }: {
   const [items, setItems] = useState<MenuItem[]>(menu?.items ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [bulk, setBulk] = useState({ open: false, n: 0 });
 
   const handleSave = async () => {
     if (!name.trim()) { setError('Menu name is required.'); return; }
@@ -112,11 +133,22 @@ function MenuEditorModal({ storeId, menu, pageOptions, onClose, onSaved }: {
         <Field label="Menu name"><input className={inp} value={name} onChange={e => setName(e.target.value)} placeholder="Main menu" /></Field>
 
         <div className="flex flex-col gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Items</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Items</p>
+            {items.length > 0 && (
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setBulk(b => ({ open: false, n: b.n + 1 }))}
+                  className="text-[11px] text-slate bg-transparent border-none cursor-pointer">Collapse all</button>
+                <button type="button" onClick={() => setBulk(b => ({ open: true, n: b.n + 1 }))}
+                  className="text-[11px] text-slate bg-transparent border-none cursor-pointer">Expand all</button>
+              </div>
+            )}
+          </div>
           <SortableList<MenuItem> items={items} keyFor={i => i.id} onReorder={setItems}>
             {(item, i) => (
               <MenuItemEditor
                 item={item}
+                bulk={bulk}
                 storeId={storeId}
                 pageOptions={pageOptions}
                 onChange={next => setItems(items.map((it, j) => j === i ? next : it))}
@@ -124,10 +156,8 @@ function MenuEditorModal({ storeId, menu, pageOptions, onClose, onSaved }: {
               />
             )}
           </SortableList>
-          {items.length < 50 && (
-            <button type="button" onClick={() => setItems([...items, newItem()])}
-              className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add item</button>
-          )}
+          <button type="button" onClick={() => setItems([...items, newItem()])}
+            className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add item</button>
         </div>
 
         {error && <p className="text-[12px] text-error">{error}</p>}

@@ -527,6 +527,9 @@ export function StoreOrderDetail() {
               entries={detail.timeline ?? []}
               currentUserId={currentUserId}
               canComment={canComment}
+              canResend={canEditOrder}
+              isPickup={isPickup}
+              onResent={load}
               onPosted={entry => setDetail(d => d ? { ...d, timeline: [entry, ...(d.timeline ?? [])] } : d)}
             />
           </div>

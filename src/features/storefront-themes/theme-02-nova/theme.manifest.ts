@@ -53,7 +53,7 @@ export const novaThemeManifest: ThemeManifest = {
     {
       key: 'font', label: 'Body & UI Font', group: 'Typography',
       control: { kind: 'select', options: ['Inter', 'Poppins', 'Roboto', 'Montserrat', 'Playfair Display', 'Fraunces', 'DM Sans', 'Nunito', 'Space Grotesk'].map(f => ({ value: f, label: f })) },
-      helpText: "Sets the typeface used by headings across this theme.",
+      helpText: 'Sets body and interface text. Use Heading Font for display headings.',
     },
     { key: 'headingFont', label: 'Heading Font', group: 'Typography', control: { kind: 'select', options: ['Space Grotesk', 'Inter', 'Poppins', 'Roboto', 'Montserrat', 'Playfair Display', 'Fraunces', 'Lora', 'DM Sans'].map(f => ({ value: f, label: f })) } },
 
@@ -81,7 +81,7 @@ export const novaThemeManifest: ThemeManifest = {
     { key: 'imageRadius', label: 'Image Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
     { key: 'productCardRadius', label: 'Product Card Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
     { key: 'productImageRatio', label: 'Product Image Ratio', group: 'Images', control: { kind: 'select', options: [{ value: 'adapt', label: 'Adapt to image' }, { value: 'square', label: 'Square' }, { value: 'portrait', label: 'Portrait' }, { value: 'landscape', label: 'Landscape' }] } },
-    { key: 'productImageHover', label: 'Product Image Hover', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'None' }, { value: 'zoom', label: 'Zoom' }] } },
+    { key: 'productImageHover', label: 'Product Image Hover', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'None' }, { value: 'zoom', label: 'Zoom' }, { value: 'second-image', label: 'Show second image' }] } },
   ],
 };
 

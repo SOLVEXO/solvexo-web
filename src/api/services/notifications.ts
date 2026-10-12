@@ -39,12 +39,16 @@ export interface NotificationPreferenceFlags {
   promotions:    boolean;
   loyalty:       boolean;
   subscriptions: boolean;
+  /** Payouts, disputes (sellers). */
+  finance:       boolean;
+  /** Platform alerts (admins). */
+  admin:         boolean;
 }
 
 export interface NotificationPreferenceData {
   _id:          string;
   userId:       string;
-  role:         'user' | 'seller';
+  role:         'user' | 'seller' | 'admin';
   storeId:      string | null;
   prefs:        NotificationPreferenceFlags;
   pushEnabled:  boolean;

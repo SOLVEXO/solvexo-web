@@ -97,6 +97,26 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'analytics', Icon: BarChart2,       label: 'Analytics', path: 'analytics', requiredPermission: 'analytics.view' },
     ],
   },
+   {
+    // Made collapsible, same reasoning as Orders above — Products included
+    // inside, not split out as a bare item.
+    group: 'Catalog',
+    collapsible: true,
+    groupIcon: ShoppingBag,
+    items: [
+      { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products',        requiredPermission: 'products.view' },
+      // Inventory Hub is one page with 6 tabs (Stock/Purchase Orders/Reorder/
+      // Stock Counts/Reports/Staff) gated by several distinct permissions
+      // beyond the base `inventory.view` — OR'd so a staff member scoped to
+      // just one sub-capability (e.g. `purchase_orders.manage` for a
+      // procurement-only role, or `settings.locations.manage` for the
+      // "Manage Locations" modal this same page hosts) still has a nav path
+      // in, not just backend routes with no way to reach them.
+      { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory',       requiredPermission: ['inventory.view', 'inventory.adjust', 'inventory.receive', 'inventory.transfer', 'inventory.count', 'inventory.approve', 'purchase_orders.manage', 'settings.locations.manage'] },
+      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories',      requiredPermission: 'products.view' },
+      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections',     requiredPermission: 'products.view' },
+    ],
+  },
   {
     // Renamed from "Sales" and made collapsible — every order-related page
     // (Orders itself included, not split out) lives together in one dropdown,
@@ -119,23 +139,17 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     ],
   },
   {
-    // Made collapsible, same reasoning as Orders above — Products included
-    // inside, not split out as a bare item.
-    group: 'Catalog',
+    group: 'Customers',
     collapsible: true,
-    groupIcon: ShoppingBag,
+    groupIcon: Users,
     items: [
-      { id: 'products',        Icon: ShoppingBag,   label: 'Products',        path: 'products',        requiredPermission: 'products.view' },
-      // Inventory Hub is one page with 6 tabs (Stock/Purchase Orders/Reorder/
-      // Stock Counts/Reports/Staff) gated by several distinct permissions
-      // beyond the base `inventory.view` — OR'd so a staff member scoped to
-      // just one sub-capability (e.g. `purchase_orders.manage` for a
-      // procurement-only role, or `settings.locations.manage` for the
-      // "Manage Locations" modal this same page hosts) still has a nav path
-      // in, not just backend routes with no way to reach them.
-      { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory',       requiredPermission: ['inventory.view', 'inventory.adjust', 'inventory.receive', 'inventory.transfer', 'inventory.count', 'inventory.approve', 'purchase_orders.manage', 'settings.locations.manage'] },
-      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories',      requiredPermission: 'products.view' },
-      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections',     requiredPermission: 'products.view' },
+      // OR'd with `customers.edit` — a staff member granted create/edit but
+      // not general view (e.g. a data-entry-only role) still needs a nav
+      // path to the list that create/edit actually happens from.
+      { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
+      { id: 'subscribers', Icon: MailCheck,    label: 'Subscribers', path: 'customer/subscribers', requiredPermission: ['customers.view', 'customers.edit'] },
+      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: 'customers.view' },
+      { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
     ],
   },
   {
@@ -158,20 +172,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar', requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-featured',     Icon: Pin,               label: 'Featured & Collections', path: 'online-store/featured', requiredPermission: 'onlinestore.content.manage' },
-    ],
-  },
-  {
-    group: 'Customers',
-    collapsible: true,
-    groupIcon: Users,
-    items: [
-      // OR'd with `customers.edit` — a staff member granted create/edit but
-      // not general view (e.g. a data-entry-only role) still needs a nav
-      // path to the list that create/edit actually happens from.
-      { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
-      { id: 'subscribers', Icon: MailCheck,    label: 'Subscribers', path: 'customer/subscribers', requiredPermission: ['customers.view', 'customers.edit'] },
-      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: 'customers.view' },
-      { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
     ],
   },
   {

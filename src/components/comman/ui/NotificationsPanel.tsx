@@ -7,10 +7,12 @@ import { EmptyState } from './EmptyState';
 import { SkeletonBox } from './SkeletonBox';
 import {
   Bell, Mail, Smartphone, Check, Trash2,
-  Clock, Package, MessageSquare, Star, Sparkles, Filter
+  Clock, Package, MessageSquare, Star, Sparkles, Filter, AlertTriangle, Coins, Megaphone
 } from 'lucide-react';
+import type { NotificationPreferenceFlags } from '@/api/services/notifications';
 import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
+import { TokenStorage } from '@/api/services/auth';
 
 function formatFullTime(dateStr: string): string {
   try {
@@ -41,6 +43,18 @@ export function NotificationsPanel() {
     fetchPreferences,
     updatePreferences,
   } = useNotification();
+
+  const role = TokenStorage.getUser<{ role?: 'user' | 'seller' | 'admin' }>()?.role;
+  const topics: { key: keyof NotificationPreferenceFlags; title: string; hint: string; Icon: typeof Package; bg: string; color: string }[] = role === 'admin'
+    ? [{ key: 'admin', title: 'Platform alerts', hint: 'New sellers and stores, verification and payout requests, billing failures, email problems.', Icon: AlertTriangle, bg: 'bg-brand-pale-orange/50', color: 'text-brand-orange' }]
+    : [
+        { key: 'orders', title: 'Orders & Deliveries', hint: 'Updates on purchases, order progress, and deliveries.', Icon: Package, bg: 'bg-brand-pale-orange/50', color: 'text-brand-orange' },
+        { key: 'messages', title: 'Direct Messages', hint: 'Alerts when a client or admin sends a new message.', Icon: MessageSquare, bg: 'bg-[#eef7ff]', color: 'text-[#1a65a8]' },
+        ...(role === 'seller' ? [{ key: 'finance' as const, title: 'Payouts & Finance', hint: 'Payout updates and payment disputes.', Icon: Coins, bg: 'bg-[#eaf7ef]', color: 'text-[#1f8a4c]' }] : []),
+        ...(role === 'seller' ? [{ key: 'promotions' as const, title: 'Promotions & Store Updates', hint: 'Store approval, verification and promotion status.', Icon: Megaphone, bg: 'bg-[#fff1f0]', color: 'text-[#d4380d]' }] : []),
+        ...(FEATURES.loyalty ? [{ key: 'loyalty' as const, title: 'Loyalty & Reward Points', hint: 'Updates on loyalty milestones, points earned, or tier upgrades.', Icon: Star, bg: 'bg-[#fff8e7]', color: 'text-[#d4af37]' }] : []),
+        { key: 'subscriptions', title: 'Subscriptions & Plans', hint: 'Billing notices, renewal reminders, or payment issues.', Icon: Sparkles, bg: 'bg-[#f5f0ff]', color: 'text-[#7c3aed]' },
+      ];
 
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [prefError, setPrefError] = useState('');
@@ -146,79 +160,28 @@ export function NotificationsPanel() {
                 </div>
               </div>
 
-              {/* Notification Category Filters */}
+              {/* Notification Category Filters — which topics apply depends on who is looking */}
               <div className="flex flex-col gap-4 pt-4">
                 <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em]">Notification Topics</p>
-
-                <div className="flex justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-brand-pale-orange/50 flex items-center justify-center shrink-0">
-                      <Package size={13} className="text-brand-orange" />
+                {topics.map(t => (
+                  <div key={t.key} className="flex justify-between items-center gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`size-7 rounded flex items-center justify-center shrink-0 ${t.bg}`}>
+                        <t.Icon size={13} className={t.color} />
+                      </div>
+                      <div>
+                        <p className="text-[12.5px] font-medium text-charcoal">{t.title}</p>
+                        <p className="text-[10.5px] text-slate leading-normal">{t.hint}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[12.5px] font-medium text-charcoal">Orders & Deliveries</p>
-                      <p className="text-[10.5px] text-slate leading-normal">Updates on purchases, order progress, and deliveries.</p>
-                    </div>
+                    <Toggle
+                      size="sm"
+                      checked={preferences?.prefs?.[t.key] ?? true}
+                      onChange={(v) => handleTogglePref(t.key, v)}
+                      ariaLabel={t.title}
+                    />
                   </div>
-                  <Toggle
-                    size="sm"
-                    checked={preferences?.prefs?.orders ?? true}
-                    onChange={(v) => handleTogglePref('orders', v)}
-                  />
-                </div>
-
-                <div className="flex justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-[#eef7ff] flex items-center justify-center shrink-0">
-                      <MessageSquare size={13} className="text-[#1a65a8]" />
-                    </div>
-                    <div>
-                      <p className="text-[12.5px] font-medium text-charcoal">Direct Messages</p>
-                      <p className="text-[10.5px] text-slate leading-normal">Alerts when a client or admin sends a new message.</p>
-                    </div>
-                  </div>
-                  <Toggle
-                    size="sm"
-                    checked={preferences?.prefs?.messages ?? true}
-                    onChange={(v) => handleTogglePref('messages', v)}
-                  />
-                </div>
-
-                {FEATURES.loyalty && (
-<div className="flex justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-[#fff8e7] flex items-center justify-center shrink-0">
-                      <Star size={13} className="text-[#d4af37]" />
-                    </div>
-                    <div>
-                      <p className="text-[12.5px] font-medium text-charcoal">Loyalty & Reward Points</p>
-                      <p className="text-[10.5px] text-slate leading-normal">Updates on loyalty milestones, points earned, or tier upgrades.</p>
-                    </div>
-                  </div>
-                  <Toggle
-                    size="sm"
-                    checked={preferences?.prefs?.loyalty ?? true}
-                    onChange={(v) => handleTogglePref('loyalty', v)}
-                  />
-                </div>
-)}
-
-                <div className="flex justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-[#f5f0ff] flex items-center justify-center shrink-0">
-                      <Sparkles size={13} className="text-[#7c3aed]" />
-                    </div>
-                    <div>
-                      <p className="text-[12.5px] font-medium text-charcoal">Subscriptions & Plans</p>
-                      <p className="text-[10.5px] text-slate leading-normal">Billing notices, renewal reminders, or payment issues.</p>
-                    </div>
-                  </div>
-                  <Toggle
-                    size="sm"
-                    checked={preferences?.prefs?.subscriptions ?? true}
-                    onChange={(v) => handleTogglePref('subscriptions', v)}
-                  />
-                </div>
+                ))}
               </div>
             </>
           )}

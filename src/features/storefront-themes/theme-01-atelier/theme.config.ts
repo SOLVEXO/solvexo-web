@@ -133,7 +133,7 @@ export function relativeLuminance(hex: string): number {
  *  static defaults (a store that never customizes, or Explicitly Reset). */
 export function applyMerchantThemeOverrides(colors: {
   bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
-  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom';
+  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom' | 'second-image';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';
@@ -160,7 +160,7 @@ export function applyMerchantThemeOverrides(colors: {
   atelierTheme.imageRadiusPx = IMAGE_RADIUS_PRESET[colors?.imageRadius ?? 'medium'];
   atelierTheme.productCardRadiusPx = IMAGE_RADIUS_PRESET[colors?.productCardRadius ?? 'medium'];
   atelierTheme.productImageRatio = colors?.productImageRatio ?? 'portrait';
-  atelierTheme.productImageHover = colors?.productImageHover === 'zoom' ? 'zoom' : colors?.productImageHover === 'none' ? 'none' : 'second-image';
+  atelierTheme.productImageHover = colors?.productImageHover ?? 'second-image';
 
   atelierTheme.buttonStyle = colors?.buttonStyle ?? d.buttonStyle;
   atelierTheme.buttonRadiusPx = BUTTON_RADIUS_PRESET[colors?.buttonRadius ?? 'none'];

@@ -119,7 +119,6 @@ export function StoreProfileTab() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [logo,         setLogo]         = useState('');
-  const [coverImage,   setCoverImage]   = useState('');
   const [faviconUrl,   setFaviconUrl]   = useState('');
   const [reviewModerationEnabled, setReviewModerationEnabled] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
@@ -141,7 +140,6 @@ export function StoreProfileTab() {
     setContactEmail(store.contactEmail ?? '');
     setContactPhone(store.contactPhone ?? '');
     setLogo(store.logo ?? '');
-    setCoverImage(store.coverImage ?? '');
     setFaviconUrl(store.faviconUrl ?? '');
     setReviewModerationEnabled(!!store.reviewModerationEnabled);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
@@ -159,7 +157,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, logo, coverImage, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -178,7 +176,6 @@ export function StoreProfileTab() {
       contactPhone !== (store.contactPhone ?? '') ||
       timezone !== (store.timezone ?? '') ||
       logo !== (store.logo ?? '') ||
-      coverImage !== (store.coverImage ?? '') ||
       faviconUrl !== (store.faviconUrl ?? '') ||
       reviewModerationEnabled !== !!store.reviewModerationEnabled ||
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
@@ -210,13 +207,6 @@ export function StoreProfileTab() {
             <Field label="Store Logo">
               <div className="flex items-center gap-3">
                 <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-                <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
-              </div>
-            </Field>
-
-            <Field label="Cover Image">
-              <div className="flex items-center gap-3">
-                <ImageUpload value={coverImage ? [coverImage] : []} onChange={urls => setCoverImage(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
                 <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
               </div>
             </Field>

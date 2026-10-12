@@ -4,6 +4,9 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
+import { apiGetCategoryById } from '@/api/services/categories';
+import { apiGetCollection } from '@/api/services/collections';
+import { apiGetMyProductById } from '@/api/services/product';
 import type { PageOption } from './BlockFields';
 import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
 import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOwnerResource } from '@/api/services/metafields';
@@ -88,12 +91,48 @@ function EntityPickerField({ mode, multiple, value, onPick, label, storeId }: {
   storeId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [names, setNames] = useState<Record<string, string>>({});
   const selectedIds = multiple ? (Array.isArray(value) ? value : []) : (value ? [value as string] : []);
+  const idsKey = selectedIds.join(',');
   const countLabel = multiple
     ? (selectedIds.length > 0 ? `${selectedIds.length} selected — change` : label)
     : (selectedIds.length > 0 ? 'Change selection' : label);
+
+  // Resolve the saved ids to names so the seller sees what is selected without opening the picker.
+  useEffect(() => {
+    let cancelled = false;
+    const missing = selectedIds.filter(id => !(id in names));
+    if (missing.length === 0) return;
+    Promise.allSettled(missing.map(async id => {
+      if (mode === 'categories') return [id, (await apiGetCategoryById(id)).data.category.name] as const;
+      if (mode === 'collections') return [id, (await apiGetCollection(storeId, id)).data.name] as const;
+      return [id, (await apiGetMyProductById(id)).data.product.name] as const;
+    })).then(results => {
+      if (cancelled) return;
+      const found: Record<string, string> = {};
+      results.forEach((r, i) => { found[missing[i]] = r.status === 'fulfilled' ? r.value[1] : 'Deleted item'; });
+      setNames(prev => ({ ...prev, ...found }));
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey, mode, storeId]);
+
+  const remove = (id: string) => onPick(selectedIds.filter(x => x !== id));
   return (
     <>
+      {selectedIds.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedIds.map(id => (
+            <span key={id} className="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 text-[12px] rounded-full bg-cream text-charcoal border border-bone">
+              <span className="truncate">{names[id] ?? 'Loading…'}</span>
+              <button type="button" onClick={() => remove(id)} aria-label={`Remove ${names[id] ?? 'item'}`}
+                className="bg-transparent border-none cursor-pointer text-slate leading-none p-0">✕</button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[12px] text-slate m-0">Nothing selected{mode === 'products' ? '' : ' — showing all'}</p>
+      )}
       <button type="button" onClick={() => setOpen(true)}
         className="text-left px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white cursor-pointer">
         {countLabel}

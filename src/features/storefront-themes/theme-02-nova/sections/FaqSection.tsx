@@ -31,14 +31,19 @@ function FaqRow({ block, colors }: { block: Block; colors: NovaSectionColors }) 
 registerNovaSection('faq', (section: Section, blocks: Block[], colors: NovaSectionColors) => {
   if (blocks.length === 0) return null;
   return (
-    <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
-      <div className="mx-auto" style={{ maxWidth: '720px' }}>
-        {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: colors.ink, marginBottom: '20px' }}>
-            {section.settings.heading}
-          </h2>
-        )}
-        {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
+    <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}`, background: colors.bgAlt }}>
+      <div className="mx-auto" style={{ maxWidth: '900px' }}>
+        <div className="text-center mb-8">
+          <span style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '7px 13px', marginBottom: '14px' }}>Quick answers</span>
+          {section.settings.heading && (
+            <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 44px)', fontWeight: 700, color: colors.ink, lineHeight: 1.05 }}>
+              {section.settings.heading}
+            </h2>
+          )}
+        </div>
+        <div style={{ background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: t.radius.md, padding: '8px clamp(18px, 4vw, 36px)' }}>
+          {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
+        </div>
       </div>
     </div>
   );

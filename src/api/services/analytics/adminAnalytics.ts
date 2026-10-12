@@ -125,6 +125,9 @@ export interface AdminRevenueBreakdownPreviousPeriod {
   oneTimeOrderRevenue: number;
   platformCommissionRevenue: number;
   paymentProcessingFees: number;
+  planRevenue?: number;
+  addonRevenue?: number;
+  transactionFeeRevenue?: number;
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;
 }
@@ -134,6 +137,9 @@ export interface AdminRevenueBreakdownData {
   oneTimeOrderRevenue: number;
   platformCommissionRevenue: number;
   paymentProcessingFees: number;
+  planRevenue?: number;
+  addonRevenue?: number;
+  transactionFeeRevenue?: number;
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;
   // Currency codes whose commission could not be converted to USD (no FX rate) — present only when non-empty.

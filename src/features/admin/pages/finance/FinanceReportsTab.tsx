@@ -119,11 +119,11 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
         </div>
       ) : null}
 
-      {/* Reconciliation — daily buyer-collected vs. ledger comparison */}
+      {/* Reconciliation — daily orders-vs-ledger sales check */}
       <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3">
           <p className="text-[14px] font-bold text-charcoal">Reconciliation Runs</p>
-          <p className="text-[12px] text-slate">Daily comparison of buyer collections against the finance ledger, per currency.</p>
+          <p className="text-[12px] text-slate">Daily check that every order placed has its sale in the finance ledger with the same amount (flags missing or different sales), per currency.</p>
         </div>
         {reconciliation.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={reconciliation.error} onRetry={reconciliation.refetch} /></div>

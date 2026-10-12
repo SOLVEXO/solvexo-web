@@ -871,7 +871,7 @@ export interface SellerOrderDetail {
   note?:           string;
 }
 
-export type OrderTimelineType = 'placed' | 'exchange' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';
+export type OrderTimelineType = 'email' | 'placed' | 'exchange' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';
 
 export interface OrderTimelineEntry {
   type:      OrderTimelineType;

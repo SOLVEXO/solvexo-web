@@ -175,7 +175,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (dto.pushEnabled !== undefined) next.pushEnabled = dto.pushEnabled;
       if (dto.emailEnabled !== undefined) next.emailEnabled = dto.emailEnabled;
 
-      (['orders', 'messages', 'promotions', 'loyalty', 'subscriptions'] as const).forEach(key => {
+      (['orders', 'messages', 'promotions', 'loyalty', 'subscriptions', 'finance', 'admin'] as const).forEach(key => {
         if (dto[key] !== undefined) next.prefs[key] = dto[key]!;
       });
 

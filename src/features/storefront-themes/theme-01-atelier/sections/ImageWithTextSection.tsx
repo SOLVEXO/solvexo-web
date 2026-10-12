@@ -22,9 +22,10 @@ function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors })
       <div className={imageFirst ? 'order-1' : 'order-1 lg:order-2'} style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}>
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} onError={() => setErrored(true)} style={fit.img} />}
       </div>
-      <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'}>
-        {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 600, color: colors.ink, marginBottom: '16px' }}>{s.heading}</h2>}
-        {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: colors.inkMuted, lineHeight: 1.75, marginBottom: '24px' }}>{renderRichText(s.body)}</p>}
+      <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'} style={{ borderLeft: `1px solid ${colors.accent}`, paddingLeft: 'clamp(20px, 4vw, 48px)' }}>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '14px' }}>A closer look</p>
+        {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 500, color: colors.ink, lineHeight: 1.08, marginBottom: '20px' }}>{s.heading}</h2>}
+        {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: colors.inkMuted, lineHeight: 1.85, maxWidth: '520px', marginBottom: '28px' }}>{renderRichText(s.body)}</p>}
         {s.ctaText && link && (
           link.to ? <Link to={link.to} className="no-underline"><AtelierButton variant="outline">{s.ctaText}</AtelierButton></Link>
             : <a href={link.href} className="no-underline"><AtelierButton variant="outline">{s.ctaText}</AtelierButton></a>

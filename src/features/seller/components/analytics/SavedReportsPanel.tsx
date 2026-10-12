@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { BookmarkPlus, Play, Trash2, ChevronDown } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/comman/ui';
 import {
-  apiListSavedReports, apiCreateSavedReport, apiDeleteSavedReport,
-  type SavedReport, type SellerExportParams,
+  apiListSavedReports, apiCreateSavedReport, apiDeleteSavedReport, apiUpdateSavedReportSchedule,
+  type SavedReport, type SavedReportSchedule, type SellerExportParams,
 } from '@/api/services/analytics/analytics';
 
 /** Real "saved custom report" surface — a named, re-runnable filter
@@ -23,6 +23,7 @@ export function SavedReportsPanel({
   const [open, setOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [name, setName] = useState('');
+  const [schedule, setSchedule] = useState<SavedReportSchedule>('none');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -37,14 +38,24 @@ export function SavedReportsPanel({
     setSaving(true);
     setError('');
     try {
-      await apiCreateSavedReport(storeId, name.trim(), currentParams);
+      await apiCreateSavedReport(storeId, name.trim(), currentParams, schedule);
       setSaveOpen(false);
       setName('');
+      setSchedule('none');
       load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save report.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSchedule = async (reportId: string, next: SavedReportSchedule) => {
+    setReports(list => list.map(r => (r._id === reportId ? { ...r, schedule: next } : r)));
+    try {
+      await apiUpdateSavedReportSchedule(storeId, reportId, next);
+    } catch {
+      load(); // roll the optimistic change back to what the server has
     }
   };
 
@@ -73,6 +84,17 @@ export function SavedReportsPanel({
               {reports.map(r => (
                 <div key={r._id} className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-bone last:border-b-0">
                   <span className="text-[12.5px] font-medium text-charcoal truncate flex-1">{r.name}</span>
+                  <select
+                    aria-label={`Email schedule for ${r.name}`}
+                    value={r.schedule ?? 'none'}
+                    onChange={e => handleSchedule(r._id, e.target.value as SavedReportSchedule)}
+                    className="text-[11px] border border-bone rounded px-1 py-0.5 bg-white text-slate"
+                    title="Email this report automatically"
+                  >
+                    <option value="none">No email</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
                   <button
                     onClick={() => { onRun(r.config); setOpen(false); }}
                     className="p-1 text-brand-orange bg-transparent border-none cursor-pointer"
@@ -107,6 +129,18 @@ export function SavedReportsPanel({
         >
           {error && <p className="text-[12px] text-error mb-3">{error}</p>}
           <Input placeholder="e.g. Monthly Revenue Snapshot" value={name} onChange={e => setName(e.target.value)} />
+          <label className="block mt-3 text-[12px] text-slate">
+            Email me this report
+            <select
+              value={schedule}
+              onChange={e => setSchedule(e.target.value as SavedReportSchedule)}
+              className="mt-1 block w-full text-[13px] border border-bone rounded-lg px-3 py-2 bg-white text-charcoal"
+            >
+              <option value="none">Don't email</option>
+              <option value="weekly">Every Monday</option>
+              <option value="monthly">1st of every month</option>
+            </select>
+          </label>
         </Modal>
       )}
     </div>

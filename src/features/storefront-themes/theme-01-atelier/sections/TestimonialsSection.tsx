@@ -33,7 +33,7 @@ registerAtelierSection('testimonials', (section: Section, blocks: Block[], color
             {section.settings.heading}
           </h2>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0" style={{ borderTop: `1px solid ${colors.border}` }}>
           {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><TestimonialCard block={b} colors={colors} /></PreviewBlock>)}
         </div>
       </div>

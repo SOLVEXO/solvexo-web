@@ -41,7 +41,7 @@ export function OrdersTab({ params }: { params: BaseAnalyticsParams }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard label="Total Orders" value={s ? formatNumber(s.totalOrders) : ''} loading={statusBreakdown.loading} />
+        <MetricCard label="Total Orders" value={s ? formatNumber(s.totalOrders) : ''} loading={statusBreakdown.loading} sub="Store orders — a cart with items from 2 stores counts as 2" />
         <MetricCard label="Avg. Order Value" value={s ? formatCurrency(s.avgOrderValue) : ''} loading={statusBreakdown.loading} />
         <MetricCard label="Cancellation Rate" value={s ? formatPercent(s.cancellationRatePercent) : ''} loading={statusBreakdown.loading} sub={s ? `${s.cancelledOrders.toLocaleString()} cancelled orders` : undefined} />
         <MetricCard label="Refund Rate" value={s ? formatPercent(s.refundRatePercent) : ''} loading={statusBreakdown.loading} sub={s ? `${s.refundedOrders.toLocaleString()} refunded orders` : undefined} />

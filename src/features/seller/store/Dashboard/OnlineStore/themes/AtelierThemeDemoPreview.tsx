@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
 import type { PublicStoreData } from '@/api/services/store';
 import { getThemeDemoPreview, type ThemeDemoPreviewData } from '@/features/storefront-themes/themeDemoPreview';
+import '@/features/storefront-themes/registry';
 import '@/features/storefront-themes/theme-01-atelier/atelier.css';
 import '@/features/storefront-themes/theme-02-nova/nova.css';
 
@@ -12,7 +13,7 @@ import '@/features/storefront-themes/theme-02-nova/nova.css';
 function buildDemoContextValue(demoStore: ThemeDemoPreviewData['demoStore']): StorefrontContextValue {
   const demoStoreData: PublicStoreData = {
     storeId: 'demo', sellerId: 'demo', name: demoStore.name, slug: 'demo',
-    logo: null, coverImage: null, description: demoStore.description, tagline: demoStore.tagline,
+    logo: null,description: demoStore.description, tagline: demoStore.tagline,
     contactEmail: null, contactPhone: null, categoryId: null, followersCount: 0, averageRating: 0, reviewCount: 0,
     builderConfig: null, baseCurrency: 'USD', enabledCurrencies: null, sellerType: null, badges: [], createdAt: new Date().toISOString(),
     activeCampaign: null, announcementBar: null, privacyMode: 'public', faviconUrl: null,

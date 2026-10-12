@@ -30,6 +30,7 @@ function resolveBannerLink(banner: StoreBanner): { to?: string; href?: string } 
  *  `HeroSlide`'s image overlay). One image, `object-cover`-cropped at every
  *  breakpoint — no separate mobile crop upload. */
 function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean }) {
+  const { store } = useStorefront();
   const [errored, setErrored] = useState(false);
   const link = resolveBannerLink(banner);
   const isExternal = !!link.href;
@@ -41,9 +42,18 @@ function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean })
   const sizeStyle = adaptImage
     ? { display: 'block', width: '100%', height: 'auto' } as const
     : { display: 'block', minHeight: '320px', maxHeight: '640px' } as const;
+  const alignment = banner.contentAlignment ?? 'left';
+  const heading = banner.heading === undefined ? store.tagline || store.name : banner.heading?.trim();
+  const subheading = banner.subheading === undefined ? store.description : banner.subheading?.trim();
+  const overlayOpacity = Math.min(80, Math.max(0, banner.overlayOpacity ?? 35)) / 100;
+  const overlay = alignment === 'left'
+    ? `linear-gradient(90deg, rgba(20,18,31,${overlayOpacity}) 0%, rgba(20,18,31,${overlayOpacity * 0.35}) 64%, rgba(20,18,31,0) 100%)`
+    : alignment === 'right'
+      ? `linear-gradient(270deg, rgba(20,18,31,${overlayOpacity}) 0%, rgba(20,18,31,${overlayOpacity * 0.35}) 64%, rgba(20,18,31,0) 100%)`
+      : `rgba(20,18,31,${overlayOpacity})`;
 
   return (
-    <section className="relative w-full overflow-hidden" style={adaptImage ? { background: t.colors.bgAlt } : { minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
+    <section className="relative w-full overflow-hidden" style={adaptImage ? { minHeight: errored ? '320px' : undefined, background: t.colors.bgAlt } : { minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
       {isVideoBanner ? (
         <video
           src={banner.videoUrl!}
@@ -68,17 +78,25 @@ function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean })
           fetchPriority="high"
         />
       )}
-      {banner.ctaLabel && (link.to || link.href) && (
+      {(heading || subheading || (banner.ctaLabel && (link.to || link.href))) && (
         <>
-          {!errored && <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,18,31,0) 55%, rgba(20,18,31,0.45) 100%)' }} />}
-          <div className="absolute inset-0 flex items-center justify-center">
-            {link.to ? (
-              <Link to={link.to} className="no-underline"><NovaButton>{banner.ctaLabel}</NovaButton></Link>
-            ) : (
-              <a href={link.href} className="no-underline" target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined}>
-                <NovaButton>{banner.ctaLabel}</NovaButton>
-              </a>
-            )}
+          {!errored && <div className="absolute inset-0" style={{ background: overlay }} />}
+          <div className={`absolute inset-0 flex items-center px-6 sm:px-12 lg:px-20 ${alignment === 'center' ? 'justify-center text-center' : alignment === 'right' ? 'justify-end text-right' : 'justify-start text-left'}`}>
+            <div className="flex max-w-2xl flex-col gap-4 py-12">
+              {heading && <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(32px, 5.4vw, 68px)', lineHeight: 1.02, fontWeight: 700, color: errored ? t.colors.ink : '#FFFFFF', margin: 0, textShadow: errored ? undefined : '0 2px 20px rgba(0,0,0,0.24)' }}>{heading}</h1>}
+              {subheading && <p className="line-clamp-3" style={{ fontFamily: t.fonts.body, fontSize: 'clamp(14px, 1.6vw, 19px)', lineHeight: 1.55, color: errored ? t.colors.inkMuted : 'rgba(255,255,255,0.94)', maxWidth: '560px', margin: 0 }}>{subheading}</p>}
+              {banner.ctaLabel && (link.to || link.href) && (
+                <div className={alignment === 'center' ? 'flex justify-center' : alignment === 'right' ? 'flex justify-end' : 'flex'}>
+                  {link.to ? (
+                    <Link to={link.to} className="no-underline"><NovaButton>{banner.ctaLabel}</NovaButton></Link>
+                  ) : (
+                    <a href={link.href} className="no-underline" target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined}>
+                      <NovaButton>{banner.ctaLabel}</NovaButton>
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

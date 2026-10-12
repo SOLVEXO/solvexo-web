@@ -43,9 +43,9 @@ export function OverviewTab({ params, compareToPreviousPeriod }: { params: BaseA
       trend: d.totalRevenueChangePercent != null ? formatPercent(d.totalRevenueChangePercent, { signed: true }) : undefined,
       trendUp: (d.totalRevenueChangePercent ?? 0) >= 0,
     },
-    { label: 'Platform Earnings', value: formatCurrency(d.platformEarnings), icon: <DollarSign size={16} />, sub: `Commission ${formatCurrency(d.platformCommission)}` },
+    { label: 'Custom Commission', value: formatCurrency(d.platformEarnings), icon: <DollarSign size={16} />, sub: 'Only sellers with an admin-agreed rate — plan & fee revenue: Revenue tab' },
     {
-      label: 'Total Orders', value: formatNumber(d.totalOrders), icon: <ShoppingCart size={16} />,
+      label: 'Total Orders', sub: 'Store orders — a cart from 2 stores counts as 2', value: formatNumber(d.totalOrders), icon: <ShoppingCart size={16} />,
       trend: `${d.totalOrdersChange >= 0 ? '+' : ''}${d.totalOrdersChange} vs prev.`, trendUp: d.totalOrdersChange >= 0,
     },
     { label: 'Seller Accounts', value: formatNumber(d.totalSellers), icon: <Users size={16} /> },

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { apiRecordProductView } from '@/api/services/productViews';
+import { storefrontAnalyticsAllowed } from '@/utils/storefrontAnalytics';
 
 /**
  * Phase 5 — Product Tracking Foundation. Fires the view beacon once per
@@ -11,7 +12,7 @@ import { apiRecordProductView } from '@/api/services/productViews';
  */
 export function useRecordProductView(productId: string | undefined | null) {
   useEffect(() => {
-    if (!productId) return;
+    if (!productId || !storefrontAnalyticsAllowed()) return;
     apiRecordProductView(productId).catch(() => undefined);
   }, [productId]);
 }

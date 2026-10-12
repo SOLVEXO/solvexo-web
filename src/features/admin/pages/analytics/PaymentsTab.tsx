@@ -23,6 +23,11 @@ export function PaymentsTab({ params }: { params: BaseAnalyticsParams }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {(params.storeId || params.sellerId) && (
+        <p className="text-[11px] text-slate bg-cream border border-bone rounded-lg px-3 py-2">
+          Payment attempts (successful / failed / pending) cover checkouts that contain the selected store or seller. If a cart had several stores, the whole attempt is counted.
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MetricCard label="Successful Payments" value={d ? d.successfulPayments.count.toLocaleString() : ''} loading={payments.loading} sub={d ? formatCurrency(d.successfulPayments.amount) + (d.successfulPayments.unconvertibleCount > 0 ? ` (${d.successfulPayments.unconvertibleCount} not recorded)` : '') : undefined} />
         <MetricCard label="Failed Payments" value={d ? d.failedPayments.count.toLocaleString() : ''} loading={payments.loading} sub={d ? formatCurrency(d.failedPayments.amount) + (d.failedPayments.unconvertibleCount > 0 ? ` (${d.failedPayments.unconvertibleCount} not recorded)` : '') : undefined} />

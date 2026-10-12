@@ -99,7 +99,7 @@ export function useStorefrontSeo({ entityType, entityId, title, description, ima
       };
     }
 
-    const fullTitle = title ? `${title} · ${store.name}` : store.name;
+    const fullTitle = title ? `${title} – ${store.name}` : store.name;
     document.title = fullTitle;
     setMetaTag('property', 'og:title', fullTitle);
     setMetaTag('property', 'og:type', 'website');

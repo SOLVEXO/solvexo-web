@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { NotificationBell } from './NotificationBell';
 
 interface AdminPageHeaderProps {
   title:     string;
@@ -31,7 +32,10 @@ export function AdminPageHeader({ title, subtitle, actions, icon }: AdminPageHea
           {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-[2px]">{subtitle}</p>}
         </div>
       </div>
-      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      <div className="flex items-center gap-2 shrink-0">
+        {actions}
+        <NotificationBell />
+      </div>
     </div>
   );
 }

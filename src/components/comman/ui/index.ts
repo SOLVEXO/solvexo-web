@@ -122,4 +122,3 @@ export { MiniWishlist }                       from './MiniWishlist';
 
 export { StoreFeatureCard }                   from './StoreFeatureCard';
 
-export { CoverImage }                         from './CoverImage';

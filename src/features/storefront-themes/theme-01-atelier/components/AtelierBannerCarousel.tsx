@@ -29,6 +29,7 @@ function resolveBannerLink(banner: StoreBanner): { to?: string; href?: string } 
  *  image, `object-cover`-cropped at every breakpoint — no separate mobile
  *  crop upload. */
 function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean }) {
+  const { store } = useStorefront();
   const [errored, setErrored] = useState(false);
   const link = resolveBannerLink(banner);
   const isExternal = !!link.href;
@@ -44,9 +45,18 @@ function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean })
   const sizeStyle = adaptImage
     ? { display: 'block', width: '100%', height: 'auto' } as const
     : { display: 'block', minHeight: '320px', maxHeight: '640px' } as const;
+  const alignment = banner.contentAlignment ?? 'left';
+  const heading = banner.heading === undefined ? store.tagline || store.name : banner.heading?.trim();
+  const subheading = banner.subheading === undefined ? store.description : banner.subheading?.trim();
+  const overlayOpacity = Math.min(80, Math.max(0, banner.overlayOpacity ?? 35)) / 100;
+  const overlay = alignment === 'left'
+    ? `linear-gradient(90deg, rgba(22,20,18,${overlayOpacity}) 0%, rgba(22,20,18,${overlayOpacity * 0.45}) 58%, rgba(22,20,18,0) 100%)`
+    : alignment === 'right'
+      ? `linear-gradient(270deg, rgba(22,20,18,${overlayOpacity}) 0%, rgba(22,20,18,${overlayOpacity * 0.45}) 58%, rgba(22,20,18,0) 100%)`
+      : `rgba(22,20,18,${overlayOpacity})`;
 
   return (
-    <section className="relative w-full overflow-hidden" style={adaptImage ? { background: t.colors.bgAlt } : { minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
+    <section className="relative w-full overflow-hidden" style={adaptImage ? { minHeight: errored ? '320px' : undefined, background: t.colors.bgAlt } : { minHeight: '320px', maxHeight: '640px', background: t.colors.bgAlt }}>
       {isVideoBanner ? (
         <video
           src={banner.videoUrl!}
@@ -71,8 +81,17 @@ function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean })
           fetchPriority="high"
         />
       )}
-      {banner.ctaLabel && (link.to || link.href) && (
-        <div className="absolute inset-0 flex items-center justify-center">
+      {(heading || subheading || (banner.ctaLabel && (link.to || link.href))) && (
+        <>
+          {!errored && <div className="absolute inset-0" style={{ background: overlay }} />}
+          <div
+            className={`absolute inset-0 flex items-center px-6 sm:px-12 lg:px-20 ${alignment === 'center' ? 'justify-center text-center' : alignment === 'right' ? 'justify-end text-right' : 'justify-start text-left'}`}
+          >
+            <div className="flex max-w-2xl flex-col gap-4 py-12">
+              {heading && <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 5vw, 64px)', lineHeight: 1.05, fontWeight: 600, color: errored ? t.colors.ink : '#FFFFFF', margin: 0, textShadow: errored ? undefined : '0 2px 20px rgba(0,0,0,0.2)' }}>{heading}</h1>}
+              {subheading && <p className="line-clamp-3" style={{ fontFamily: t.fonts.body, fontSize: 'clamp(14px, 1.5vw, 18px)', lineHeight: 1.6, color: errored ? t.colors.inkMuted : 'rgba(255,255,255,0.92)', maxWidth: '560px', margin: 0 }}>{subheading}</p>}
+              {banner.ctaLabel && (link.to || link.href) && (
+                <div className={alignment === 'center' ? 'flex justify-center' : alignment === 'right' ? 'flex justify-end' : 'flex'}>
           {link.to ? (
             <Link to={link.to} className="no-underline"><AtelierButton>{banner.ctaLabel}</AtelierButton></Link>
           ) : (
@@ -80,7 +99,11 @@ function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean })
               <AtelierButton>{banner.ctaLabel}</AtelierButton>
             </a>
           )}
-        </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </section>
   );

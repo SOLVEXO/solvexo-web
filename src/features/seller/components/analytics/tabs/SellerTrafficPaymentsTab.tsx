@@ -8,11 +8,13 @@ import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkelet
 import { formatMoneyCompact } from '@/utils/currency';
 
 const SOURCE_LABELS: Record<string, string> = {
-  marketplace_search: 'Marketplace Search',
-  direct_link: 'Direct Link',
-  social_media: 'Social Media',
+  direct: 'Direct',
+  search: 'Search',
+  social: 'Social',
   email: 'Email',
-  other: 'Other',
+  paid: 'Paid',
+  referral: 'Referral',
+  unknown: 'Unknown (not tracked)',
 };
 
 export function SellerTrafficPaymentsTab({ params, currency }: { params: SellerAnalyticsParams; currency?: string | null }) {
@@ -34,7 +36,7 @@ export function SellerTrafficPaymentsTab({ params, currency }: { params: SellerA
       ) : (
         <DonutChart
           title="Traffic Sources"
-          subtitle="Orders by attribution source"
+          subtitle="Orders by visit source (only visits that allowed analytics are tracked)"
           centerLabel="Orders"
           data={(traffic.data?.breakdown ?? []).map(b => ({ label: SOURCE_LABELS[b.source] ?? b.source, value: b.count }))}
         />

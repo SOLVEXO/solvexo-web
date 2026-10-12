@@ -117,9 +117,10 @@ export function AtelierNavbar() {
           >
             <button
               type="button"
-              onClick={() => navigate('/#shop')}
+              onClick={() => hasShopMenu ? setShopOpen(open => !open) : navigate('/#shop')}
               aria-expanded={shopOpen}
               aria-haspopup={hasShopMenu ? 'true' : undefined}
+              aria-controls={hasShopMenu && shopOpen ? 'atelier-shop-menu' : undefined}
               className="no-underline uppercase flex items-center gap-1 bg-transparent border-0 cursor-pointer"
               style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500, padding: 0 }}
             >
@@ -128,9 +129,16 @@ export function AtelierNavbar() {
             {shopOpen && hasShopMenu && (
                 <div
                   onMouseEnter={keepShopOpen}
+                  id="atelier-shop-menu"
+                  role="region"
+                  aria-label="Shop categories and collections"
                 className="absolute left-0 z-20 flex gap-10"
                 style={{ top: '100%', background: '#FFFFFF', border: `1px solid ${t.colors.border}`, padding: '22px 26px', minWidth: '360px' }}
               >
+                <div className="flex flex-col gap-2.5">
+                  <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Explore</p>
+                  <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>All products</Link>
+                </div>
                 {categories.length > 0 && (
                   <div className="flex flex-col gap-2.5">
                     <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Categories</p>

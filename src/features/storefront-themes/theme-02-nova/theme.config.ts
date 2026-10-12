@@ -131,7 +131,7 @@ export function relativeLuminance(hex: string): number {
  *  defaults. */
 export function applyMerchantThemeOverrides(colors: {
   bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
-  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom';
+  imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom' | 'second-image';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';
@@ -157,7 +157,7 @@ export function applyMerchantThemeOverrides(colors: {
   novaTheme.imageRadiusPx = IMAGE_RADIUS_PRESET[colors?.imageRadius ?? 'medium'];
   novaTheme.productCardRadiusPx = IMAGE_RADIUS_PRESET[colors?.productCardRadius ?? 'medium'];
   novaTheme.productImageRatio = colors?.productImageRatio ?? 'square';
-  novaTheme.productImageHover = colors?.productImageHover === 'zoom' ? 'zoom' : colors?.productImageHover === 'none' ? 'none' : 'zoom';
+  novaTheme.productImageHover = colors?.productImageHover ?? 'zoom';
 
   novaTheme.buttonStyle = colors?.buttonStyle ?? d.buttonStyle;
   novaTheme.buttonRadiusPx = BUTTON_RADIUS_PRESET[colors?.buttonRadius ?? 'full'];

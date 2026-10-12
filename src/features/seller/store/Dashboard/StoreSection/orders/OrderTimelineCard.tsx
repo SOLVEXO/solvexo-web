@@ -1,16 +1,16 @@
 import { useState, type ElementType, type ReactNode } from 'react';
 import {
-  Clock, ShoppingBag, Pencil, RefreshCw, CreditCard, XCircle, Undo2, MessageSquare, StickyNote, MapPin, AlertCircle,
+  Clock, ShoppingBag, Pencil, RefreshCw, CreditCard, XCircle, Undo2, MessageSquare, StickyNote, MapPin, AlertCircle, Mail,
 } from 'lucide-react';
-import { Button, Textarea } from '@/components/comman/ui';
-import { apiAddOrderComment } from '@/api/services/orders';
+import { Button, Select, Textarea } from '@/components/comman/ui';
+import { apiAddOrderComment, apiResendOrderEmail, type ResendableCustomerEmail } from '@/api/services/orders';
 import type { OrderTimelineEntry, OrderTimelineType } from '@/api/services/product';
 import { timeAgo } from '@/utils/timeAgo';
 
 const MAX_COMMENT = 2000;
 
 const ICONS: Record<OrderTimelineType, ElementType> = {
-  placed: ShoppingBag, exchange: RefreshCw, edit: Pencil, status: RefreshCw, payment: CreditCard, cancel: XCircle,
+  email: Mail, placed: ShoppingBag, exchange: RefreshCw, edit: Pencil, status: RefreshCw, payment: CreditCard, cancel: XCircle,
   refund: Undo2, comment: MessageSquare, note: StickyNote, address: MapPin,
 };
 
@@ -48,9 +48,56 @@ interface Props {
   canComment: boolean;
   /** Called with the saved entry so the parent can prepend it (newest first). */
   onPosted: (entry: OrderTimelineEntry) => void;
+  /** Show the Shopify "Resend email" control (needs orders.edit). */
+  canResend?: boolean;
+  isPickup?: boolean;
+  /** Called after an email was resent so the parent reloads the order (the timeline gets the new entry). */
+  onResent?: () => void;
 }
 
-export function OrderTimelineCard({ storeId, orderId, entries, currentUserId, canComment, onPosted }: Props) {
+/** Shopify's "Resend email" — pick which customer email to send again. */
+function ResendEmail({ storeId, orderId, isPickup, onResent }: { storeId: string; orderId: string; isPickup: boolean; onResent?: () => void }) {
+  const [choice, setChoice] = useState<ResendableCustomerEmail | ''>('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const send = () => {
+    if (!choice || busy) return;
+    setBusy(true);
+    setMsg(null);
+    apiResendOrderEmail(storeId, orderId, choice)
+      .then(() => { setMsg({ ok: true, text: 'Email sent to the customer.' }); setChoice(''); onResent?.(); })
+      .catch((err: unknown) => setMsg({ ok: false, text: err instanceof Error ? err.message : 'Could not send the email.' }))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <div className="pb-4 mb-4 border-b border-bone flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <Select aria-label="Customer email to resend" value={choice} onChange={e => setChoice(e.target.value as ResendableCustomerEmail | '')} disabled={busy}>
+            <option value="">Resend an email to the customer…</option>
+            <option value="order_confirmation">Order confirmation</option>
+            {isPickup
+              ? <option value="order_ready_for_pickup">Ready for pickup</option>
+              : <option value="order_shipped">Shipping confirmation</option>}
+            <option value="order_delivered">{isPickup ? 'Picked up' : 'Delivered'}</option>
+            <option value="order_cancelled">Order canceled</option>
+            <option value="order_refunded">Refund</option>
+          </Select>
+        </div>
+        <Button size="sm" variant="outline" onClick={send} loading={busy} disabled={!choice || busy}>Send</Button>
+      </div>
+      {msg && (
+        <p role={msg.ok ? 'status' : 'alert'} className={msg.ok ? 'text-[12px] text-success' : 'flex items-center gap-1.5 text-[12px] text-error'}>
+          {!msg.ok && <AlertCircle size={13} />} {msg.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function OrderTimelineCard({ storeId, orderId, entries, currentUserId, canComment, onPosted, canResend = false, isPickup = false, onResent }: Props) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -68,6 +115,7 @@ export function OrderTimelineCard({ storeId, orderId, entries, currentUserId, ca
 
   return (
     <OrderSideCard title="Timeline" icon={Clock}>
+      {canResend && <ResendEmail storeId={storeId} orderId={orderId} isPickup={isPickup} onResent={onResent} />}
       {canComment && (
         <div className="flex flex-col gap-2 pb-4 mb-4 border-b border-bone">
           <Textarea

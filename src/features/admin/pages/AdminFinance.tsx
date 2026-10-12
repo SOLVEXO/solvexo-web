@@ -13,10 +13,9 @@ import {
 } from '../components/finance/financeFilters';
 import { FinanceOverviewTab } from './finance/FinanceOverviewTab';
 import { FinanceRevenueTab } from './finance/FinanceRevenueTab';
-// FinanceSellersTab retired — fully superseded by the Clients Manage
-// workspace's own Finance tab (per-client rollup, better than this
-// flat per-store list). File left on disk, unreferenced, same
-// "disconnect, don't delete" convention as AdminUsers.tsx.
+// The per-store balance list lives under Payouts ("Stores holding a platform balance"): it is where an admin opens a store's
+// financial details and sends a manual payout for an older platform-held balance.
+import { FinanceSellersTab } from './finance/FinanceSellersTab';
 import { FinancePayoutsTab } from './finance/FinancePayoutsTab';
 import { FinancePayoutMethodsTab } from './finance/FinancePayoutMethodsTab';
 import { FinanceTransactionsTab } from './finance/FinanceTransactionsTab';
@@ -93,7 +92,18 @@ export function AdminFinance() {
 
       {isVisited('overview') && <div className={paneClassName('overview')}><FinanceOverviewTab params={params} /></div>}
       {isVisited('revenue') && <div className={paneClassName('revenue')}><FinanceRevenueTab params={params} /></div>}
-      {isVisited('payouts') && <div className={paneClassName('payouts')}><FinancePayoutsTab /></div>}
+      {isVisited('payouts') && <div className={paneClassName('payouts')}>
+        <div className="flex flex-col gap-7">
+          <FinancePayoutsTab />
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-[14px] font-bold text-charcoal">Stores holding a platform balance</p>
+              <p className="text-[12px] text-slate">Older platform-held sales only (new sales are paid straight to sellers). Open a store to see its ledger or send a manual payout.</p>
+            </div>
+            <FinanceSellersTab />
+          </div>
+        </div>
+      </div>}
       {isVisited('payout-methods') && <div className={paneClassName('payout-methods')}><FinancePayoutMethodsTab /></div>}
       {isVisited('transactions') && <div className={paneClassName('transactions')}><FinanceTransactionsTab params={params} /></div>}
       {isVisited('reports') && <div className={paneClassName('reports')}><FinanceReportsTab params={params} /></div>}

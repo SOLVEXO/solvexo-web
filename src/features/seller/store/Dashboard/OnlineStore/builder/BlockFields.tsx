@@ -122,16 +122,14 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                         )}
                       </div>
                     ))}
-                    {(child.children ?? []).length < 8 && <button type="button" onClick={() => set({ children: children.map((c, j) => j === i ? { ...c, children: [...(c.children ?? []), { id: `new-${Date.now()}`, label: '', linkType: 'home' }] } : c) })}
-                      className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add nested item</button>}
+                    <button type="button" onClick={() => set({ children: children.map((c, j) => j === i ? { ...c, children: [...(c.children ?? []), { id: `new-${Date.now()}`, label: '', linkType: 'home' }] } : c) })}
+                      className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add nested item</button>
                   </div>
                 </div>
               )}
             </SortableList>
-            {children.length < 8 && (
-              <button type="button" onClick={() => set({ children: [...children, { label: '', linkType: 'home' }] })}
-                className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add dropdown item</button>
-            )}
+            <button type="button" onClick={() => set({ children: [...children, { label: '', linkType: 'home' }] })}
+              className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">+ Add dropdown item</button>
           </div>
         </div>
       );

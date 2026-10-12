@@ -85,7 +85,6 @@ export interface UpdateStorePayload {
   timezone?:    string | null;
   name?:        string;
   logo?:        string;
-  coverImage?:  string | null;
   faviconUrl?:  string | null;
   description?: string;
   tagline?:      string;
@@ -136,7 +135,6 @@ export interface StoreData {
   name:         string;
   slug:         string;
   logo:         string | null;
-  coverImage:   string | null;
   faviconUrl:   string | null;
   categoryId:   string;
   description:  string;
@@ -461,12 +459,10 @@ export function apiGetMyStores() {
 export interface SaveBuilderConfigPayload {
   storeId:       string;
   builderConfig: Record<string, unknown>;
-  coverImage?:   string;
 }
 
 export interface BuilderConfigData {
   builderConfig: Record<string, unknown> | null;
-  coverImage:    string | null;
   storeName:     string;
   description:   string;
 }
@@ -489,7 +485,6 @@ export interface PublicStoreData {
   name:           string;
   slug:           string;
   logo:           string | null;
-  coverImage:     string | null;
   /** Dedicated browser-tab icon override — falls back to `logo`, then the
    *  platform default, when null. See `StorefrontLayout.tsx`'s `useStorefrontFavicon`. */
   faviconUrl:     string | null;
@@ -643,7 +638,6 @@ export interface PublicStoreListItem {
   name:           string;
   slug:           string;
   logo:           string | null;
-  coverImage:     string | null;
   description:    string | null;
   categoryId:     string | null;
   followersCount: number;

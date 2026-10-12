@@ -264,6 +264,9 @@ export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftCh
   const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [doc, setDoc] = useState<StoreThemeData | null>(null);
   const [discarding, setDiscarding] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
@@ -280,16 +283,27 @@ export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftCh
   useUndoRedoShortcuts(editor.undo, editor.redo, true);
 
   useEffect(() => {
-    setLoading(true);
-    apiGetStoreTheme(storeId, installedThemeId).then(res => {
-      setDoc(res.data);
-      editor.load(
-        { colors: res.data.theme, customCss: res.data.customCss ?? '' },
-        { colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' },
-      );
-    }).finally(() => setLoading(false));
+    let cancelled = false;
+    const requestKey = `${storeId}:${installedThemeId ?? ''}:${loadAttempt}`;
+    apiGetStoreTheme(storeId, installedThemeId)
+      .then(res => {
+        if (cancelled) return;
+        setDoc(res.data);
+        setLoadedKey(requestKey);
+        editor.load(
+          { colors: res.data.theme, customCss: res.data.customCss ?? '' },
+          { colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' },
+        );
+      })
+      .catch(err => {
+        if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Could not load theme settings.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, installedThemeId]);
+  }, [storeId, installedThemeId, loadAttempt]);
 
   // Live-feed the in-progress working copy up to the parent so the shared
   // preview reflects every keystroke, same as the section editors do.
@@ -389,7 +403,22 @@ export function AtelierThemeSettingsPanel({ storeId, installedThemeId, onDraftCh
     }
   };
 
-  if (loading || !editor.workingCopy) {
+  if (loadError) {
+    return (
+      <div className="p-7 flex flex-col items-start gap-3">
+        <p className="text-[13px] text-error">{loadError}</p>
+        <button
+          type="button"
+          onClick={() => { setLoading(true); setLoadAttempt(attempt => attempt + 1); }}
+          className="px-4 py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-charcoal cursor-pointer"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+  const currentLoadKey = `${storeId}:${installedThemeId ?? ''}:${loadAttempt}`;
+  if (loading || !editor.workingCopy || loadedKey !== currentLoadKey) {
     return <div className="p-7 flex flex-col gap-3"><div className="h-[400px] bg-cream animate-pulse rounded-2xl" /></div>;
   }
 

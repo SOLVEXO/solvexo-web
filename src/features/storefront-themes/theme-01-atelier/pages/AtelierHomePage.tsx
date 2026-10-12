@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
@@ -11,7 +11,6 @@ import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
 import { AtelierProductCard } from '../components/AtelierProductCard';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
-import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
 
 function ProductGridSkeleton() {
@@ -34,11 +33,13 @@ function ProductGridSkeleton() {
  *  composition. */
 function IdentityHero() {
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 items-stretch" style={{ minHeight: '560px' }}>
-      <div className="flex flex-col justify-center gap-6 order-2 lg:order-1" style={{ padding: `48px ${t.layout.containerPadX}` }}>
+    <section className="grid grid-cols-1 lg:grid-cols-2 items-stretch" style={{ minHeight: 'min(680px, calc(100vh - 120px))' }}>
+      <div className="flex flex-col justify-center gap-5 order-2 lg:order-1" style={{ padding: `clamp(40px, 7vw, 96px) ${t.layout.containerPadX}` }}>
         <StoreHeroText />
       </div>
-      <StoreHeroImage />
+      <div className="order-1 lg:order-2 p-3 sm:p-5 lg:py-6 lg:pr-6">
+        <StoreHeroImage />
+      </div>
     </section>
   );
 }
@@ -47,19 +48,20 @@ function StoreHeroText() {
   const { store } = useStorefront();
   return (
     <>
-      <p style={{ fontFamily: t.fonts.body, fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: t.colors.accent }}>
-        {store.sellerType ?? 'New Collection'}
+      <p className="inline-flex w-fit items-center gap-2" style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: t.colors.accent, borderBottom: `1px solid ${t.colors.accent}`, paddingBottom: '8px' }}>
+        {store.sellerType?.replaceAll('_', ' ') ?? 'Independent store'}
       </p>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.05, maxWidth: '560px' }}>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(38px, 5.4vw, 72px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.02, maxWidth: '620px', letterSpacing: '-0.035em', margin: 0 }}>
         {store.tagline || store.name}
       </h1>
       {store.description && (
-        <p style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, lineHeight: 1.7, maxWidth: '440px' }}>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.inkMuted, lineHeight: 1.75, maxWidth: '460px', margin: 0 }}>
           {store.description}
         </p>
       )}
-      <div>
-        <a href="#shop"><AtelierButton>Shop the Collection</AtelierButton></a>
+      <div className="flex items-center gap-5 pt-2">
+        <a href="#shop" className="no-underline"><AtelierButton>Explore the collection</AtelierButton></a>
+        <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, letterSpacing: '0.04em' }}>Thoughtfully selected for you</span>
       </div>
     </>
   );
@@ -68,23 +70,11 @@ function StoreHeroText() {
 function StoreHeroImage() {
   const { store } = useStorefront();
   return (
-    <div className="order-1 lg:order-2" style={{ background: t.colors.bgAlt, minHeight: '320px' }}>
-      {store.coverImage ? (
-        <img
-          src={cloudinaryUrl(store.coverImage, 1200)}
-          srcSet={cloudinarySrcSet(store.coverImage, [640, 900, 1200, 1600])}
-          sizes="(min-width: 1024px) 50vw, 100vw"
-          alt={store.name}
-          className="w-full h-full object-cover"
-          style={{ minHeight: '320px' }}
-          loading="eager"
-          fetchPriority="high"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '320px' }}>
-          {store.logo && <img src={store.logo} alt="" className="w-24 h-24 object-contain opacity-60" />}
-        </div>
-      )}
+    <div className="relative h-full overflow-hidden" style={{ background: t.colors.bgAlt, minHeight: '320px', borderRadius: t.imageRadiusPx }}>
+      <div className="w-full h-full flex flex-col items-center justify-center gap-5" style={{ minHeight: '320px', background: `linear-gradient(145deg, ${t.colors.bgAlt}, ${t.colors.bg})` }}>
+        {store.logo ? <img src={store.logo} alt="" className="w-28 h-28 object-contain opacity-80" /> : <span style={{ fontFamily: t.fonts.display, fontSize: 'clamp(40px, 8vw, 100px)', color: t.colors.accent, opacity: 0.8 }}>{store.name.slice(0, 1).toUpperCase()}</span>}
+        <span style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: t.colors.inkMuted }}>{store.name}</span>
+      </div>
     </div>
   );
 }
@@ -98,25 +88,29 @@ function StoreHeroImage() {
 function DefaultHomeContent() {
   const { store } = useStorefront();
   const { currency } = useCurrencyPreference();
-  const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
-  const [error, setError] = useState('');
+  const [productResult, setProductResult] = useState<{ storeId: string; products?: PublicStoreProduct[]; error?: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setProducts(null);
-    setError('');
     apiGetPublicStoreProducts(store.storeId, { limit: 8, sort: 'newest' })
-      .then(res => { if (!cancelled) setProducts(res.data.products); })
-      .catch(() => { if (!cancelled) setError('Could not load products right now.'); });
+      .then(res => { if (!cancelled) setProductResult({ storeId: store.storeId, products: res.data.products }); })
+      .catch(() => { if (!cancelled) setProductResult({ storeId: store.storeId, error: 'Could not load products right now.' }); });
     return () => { cancelled = true; };
   }, [store.storeId]);
+  const products = productResult?.storeId === store.storeId ? productResult.products ?? null : null;
+  const error = productResult?.storeId === store.storeId ? productResult.error ?? '' : '';
 
   return (
     <>
-      <section style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+      <section style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}`, background: t.colors.bgAlt }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-          <div className="flex items-end justify-between mb-10">
-            <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink }}>New Arrivals</h2>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10">
+            <div>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: t.colors.accent, marginBottom: '10px' }}>The latest edit</p>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.6vw, 46px)', fontWeight: 600, color: t.colors.ink, letterSpacing: '-0.025em', lineHeight: 1.1, margin: 0 }}>New arrivals</h2>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '10px' }}>Discover the latest from {store.name}.</p>
+            </div>
+            <Link to="/search" className="no-underline w-fit" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.ink, borderBottom: `1px solid ${t.colors.ink}`, paddingBottom: '5px' }}>View all products</Link>
           </div>
           {products === null && !error && <ProductGridSkeleton />}
           {error && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{error}</p>}
@@ -124,25 +118,10 @@ function DefaultHomeContent() {
             <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>No products yet — check back soon.</p>
           )}
           {products !== null && products.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
               {products.map(p => <AtelierProductCard key={p._id} product={p} currency={currency} />)}
             </div>
           )}
-        </div>
-      </section>
-
-      <section style={{ borderTop: `1px solid ${t.colors.border}`, borderBottom: `1px solid ${t.colors.border}` }}>
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-          {[
-            { title: 'Considered Craft', body: 'Every piece selected for quality that lasts.' },
-            { title: 'Secure Checkout', body: 'Your payment details are always protected.' },
-            { title: 'Easy Returns', body: 'Not the right fit? We make it simple.' },
-          ].map(item => (
-            <div key={item.title}>
-              <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '6px' }}>{item.title}</p>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>{item.body}</p>
-            </div>
-          ))}
         </div>
       </section>
     </>
@@ -158,7 +137,7 @@ export function AtelierHomePage() {
     entityType: 'store',
     entityId: store.storeId,
     description: store.tagline || store.description || undefined,
-    image: store.coverImage || store.logo || undefined,
+    image: store.logo || undefined,
   });
 
   useEffect(() => {

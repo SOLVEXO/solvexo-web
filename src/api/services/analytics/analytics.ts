@@ -62,6 +62,11 @@ export interface SellerOverviewPreviousPeriod {
 
 export interface SellerOverviewData {
   period: AnalyticsPeriod;
+  /** Shopify "Total sales" = net sales + shipping + taxes. Single-store overview only. */
+  totalSales?: number;
+  totalSalesChangePercent?: number | null;
+  shipping?: number;
+  taxes?: number;
   grossRevenue: number;
   totalRevenue: number;
   totalRevenueChangePercent: number | null;
@@ -101,7 +106,7 @@ export interface SellerOrdersOverTimeData { granularity: AnalyticsGranularity; s
 
 // ── D. Traffic sources ───────────────────────────────────────────────────────────
 
-export type AttributionSource = 'marketplace_search' | 'direct_link' | 'social_media' | 'email' | 'other';
+export type AttributionSource = 'direct' | 'search' | 'social' | 'email' | 'paid' | 'referral' | 'unknown';
 export interface TrafficSourceRow { source: AttributionSource; count: number; revenue: number; percent: number }
 export interface SellerTrafficSourcesData { total: number; breakdown: TrafficSourceRow[] }
 
@@ -447,15 +452,23 @@ export interface SavedReport {
   storeId: string;
   name: string;
   config: SellerExportParams;
+  /** Emailed to the store owner: weekly = every Monday, monthly = the 1st. */
+  schedule?: SavedReportSchedule;
   createdAt: string;
 }
+
+export type SavedReportSchedule = 'none' | 'weekly' | 'monthly';
 
 export function apiListSavedReports(storeId: string) {
   return client.get<never, ApiResponse<SavedReport[]>>(`${ENDPOINTS.ANALYTICS.SELLER.SAVED_REPORTS}${qs({ storeId })}`);
 }
 
-export function apiCreateSavedReport(storeId: string, name: string, config: SellerExportParams) {
-  return client.post<never, ApiResponse<SavedReport>>(`${ENDPOINTS.ANALYTICS.SELLER.SAVED_REPORTS}${qs({ storeId })}`, { name, config });
+export function apiCreateSavedReport(storeId: string, name: string, config: SellerExportParams, schedule: SavedReportSchedule = 'none') {
+  return client.post<never, ApiResponse<SavedReport>>(`${ENDPOINTS.ANALYTICS.SELLER.SAVED_REPORTS}${qs({ storeId })}`, { name, config, schedule });
+}
+
+export function apiUpdateSavedReportSchedule(storeId: string, reportId: string, schedule: SavedReportSchedule) {
+  return client.patch<never, ApiResponse<SavedReport>>(`${ENDPOINTS.ANALYTICS.SELLER.DELETE_SAVED_REPORT(reportId)}/schedule${qs({ storeId })}`, { schedule });
 }
 
 export function apiDeleteSavedReport(storeId: string, reportId: string) {

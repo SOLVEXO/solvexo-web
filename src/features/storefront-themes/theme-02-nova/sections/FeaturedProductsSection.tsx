@@ -49,12 +49,18 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
   if (products !== null && products.length === 0) return null;
 
   return (
-    <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+    <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}`, background: colors.bgAlt }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
         {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: colors.ink, marginBottom: '36px' }}>
-            {section.settings.heading}
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+            <div>
+              <span style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '6px 12px', marginBottom: '12px' }}>Picked for you</span>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 700, color: colors.ink, lineHeight: 1.05 }}>
+                {section.settings.heading}
+              </h2>
+            </div>
+            <div className="hidden sm:block" aria-hidden="true" style={{ width: '52px', height: '6px', borderRadius: '9999px', background: colors.accent, marginBottom: '5px' }} />
+          </div>
         )}
         {products === null ? (
           <div className={`grid ${responsiveGridColumnsClass(section.settings.columns)} gap-x-6 gap-y-10`}>

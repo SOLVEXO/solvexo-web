@@ -36,7 +36,7 @@ function ThemePreviewFrame({ children }: { children: ReactNode }) {
       previewDocument.head.replaceChildren();
       document.head.querySelectorAll('link[rel~="stylesheet"], style').forEach((source) => {
         const copy = source.cloneNode(true) as HTMLElement;
-        if (copy instanceof HTMLLinkElement) copy.href = copy.href;
+        if (source instanceof HTMLLinkElement && copy instanceof HTMLLinkElement) copy.href = source.href;
         previewDocument.head.appendChild(copy);
       });
       previewDocument.body.replaceChildren();
@@ -175,16 +175,28 @@ export function AtelierLivePreview({
    *  before this prop existed. */
   dynamicSourceValues?: Record<string, string>;
 }) {
-  const [store, setStore] = useState<PublicStoreData | null>(null);
+  const [storeResult, setStoreResult] = useState<{ slug: string; store?: PublicStoreData; error?: string } | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [menus, setMenus] = useState<Menu[]>([]);
   const { store: workspaceStore } = useStoreWorkspace();
 
   useEffect(() => {
     if (!workspaceStore?.slug) return;
     let cancelled = false;
-    apiGetPublicStore(workspaceStore.slug).then(res => { if (!cancelled) setStore(res.data); }).catch(() => {});
+    apiGetPublicStore(workspaceStore.slug)
+      .then(res => { if (!cancelled) setStoreResult({ slug: workspaceStore.slug, store: res.data }); })
+      .catch(err => {
+        if (!cancelled) {
+          setStoreResult({
+            slug: workspaceStore.slug,
+            error: err instanceof Error ? err.message : 'Could not load the store preview.',
+          });
+        }
+      });
     return () => { cancelled = true; };
-  }, [workspaceStore?.slug]);
+  }, [workspaceStore?.slug, loadAttempt]);
+
+  const store = storeResult && storeResult.slug === workspaceStore?.slug ? storeResult.store ?? null : null;
 
   useEffect(() => {
     if (!store?.storeId || !showChrome) return;
@@ -196,6 +208,21 @@ export function AtelierLivePreview({
   }, [store?.storeId, showChrome]);
 
   if (!store) {
+    const error = storeResult && storeResult.slug === workspaceStore?.slug ? storeResult.error : undefined;
+    if (error) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <p className="text-[13px] text-error">{error}</p>
+          <button
+            type="button"
+            onClick={() => setLoadAttempt(attempt => attempt + 1)}
+            className="rounded-lg border border-bone bg-white px-4 py-2 text-[13px] font-semibold text-charcoal cursor-pointer"
+          >
+            Retry preview
+          </button>
+        </div>
+      );
+    }
     return <div className="flex items-center justify-center h-full"><Loader2 size={20} className="animate-spin text-slate" /></div>;
   }
 

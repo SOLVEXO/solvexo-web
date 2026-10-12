@@ -1,7 +1,9 @@
+import { Fragment } from 'react';
 import { ImageOff, Search, ShoppingCart, Newspaper } from 'lucide-react';
 import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { resolveProductMainLayout, type ProductInfoBlock } from '../../productPageLayout';
 
 /**
  * Core/locked sections — Phase 4 of the Online Store theme-editor rebuild
@@ -41,28 +43,32 @@ function PlaceholderShell({ label, colors, children }: { label: string; colors: 
 }
 
 registerAtelierSection('product_main', (_section: Section, blocks: Block[], colors: AtelierSectionColors) => {
-  const isOn = (type: string) => blocks.find(b => b.type === type)?.enabled !== false;
+  // Same order + visibility the real product page uses (see `productPageLayout`).
+  const layout = resolveProductMainLayout({ blocks });
+  const info: Record<ProductInfoBlock, React.ReactNode> = {
+    product_title: <div style={{ fontFamily: t.fonts.display, fontSize: '26px', fontWeight: 600, color: colors.ink }}>Sample Product Name</div>,
+    product_price: <div style={{ fontFamily: t.fonts.body, fontSize: '18px', color: colors.ink }}>$49.99</div>,
+    product_variant_picker: (
+      <div className="flex gap-2 mt-2">
+        {['S', 'M', 'L'].map(s => <span key={s} style={{ fontFamily: t.fonts.body, fontSize: '12px', padding: '6px 12px', border: `1px solid ${colors.border}`, color: colors.ink }}>{s}</span>)}
+      </div>
+    ),
+    product_quantity: <div style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted, marginTop: '8px' }}>Qty: 1</div>,
+    product_buy_buttons: (
+      <div style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: '#fff', background: colors.ink, padding: '11px 0', textAlign: 'center', marginTop: '8px' }}>Add to Cart</div>
+    ),
+    product_description: <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: colors.inkMuted, marginTop: '10px' }}>A short sample description of this product would appear here.</p>,
+  };
   return (
     <PlaceholderShell label="Main Product" colors={colors}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {isOn('product_media') && (
+        {layout.mediaOn && (
           <div className="flex items-center justify-center" style={{ aspectRatio: '3/4', background: colors.bgAlt }}>
             <ImageOff size={32} style={{ color: colors.inkMuted }} />
           </div>
         )}
         <div className="flex flex-col gap-3">
-          {isOn('product_title') && <div style={{ fontFamily: t.fonts.display, fontSize: '26px', fontWeight: 600, color: colors.ink }}>Sample Product Name</div>}
-          {isOn('product_price') && <div style={{ fontFamily: t.fonts.body, fontSize: '18px', color: colors.ink }}>$49.99</div>}
-          {isOn('product_variant_picker') && (
-            <div className="flex gap-2 mt-2">
-              {['S', 'M', 'L'].map(s => <span key={s} style={{ fontFamily: t.fonts.body, fontSize: '12px', padding: '6px 12px', border: `1px solid ${colors.border}`, color: colors.ink }}>{s}</span>)}
-            </div>
-          )}
-          {isOn('product_quantity') && <div style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted, marginTop: '8px' }}>Qty: 1</div>}
-          {isOn('product_buy_buttons') && (
-            <div style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: '#fff', background: colors.ink, padding: '11px 0', textAlign: 'center', marginTop: '8px' }}>Add to Cart</div>
-          )}
-          {isOn('product_description') && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: colors.inkMuted, marginTop: '10px' }}>A short sample description of this product would appear here.</p>}
+          {layout.infoOrder.map(type => <Fragment key={type}>{info[type]}</Fragment>)}
         </div>
       </div>
     </PlaceholderShell>

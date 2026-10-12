@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   apiAdminFinanceOverview,
   apiAdminFinancePlatformRevenue,
+  apiAdminTransactionFeeBills,
   apiAdminFinanceRevenueOverTime,
   apiAdminFinanceCommissionOverTime,
   apiAdminSellerBalances,
@@ -37,6 +38,10 @@ import {
 import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 
 // ── A. Dashboard overview ───────────────────────────────────────────────────────
+
+export function useAdminTransactionFeeBills(params: { status?: 'open' | 'payment_failed' | 'invoiced' | 'paid' | 'all'; page?: number; limit?: number }) {
+  return useAnalyticsQuery(apiAdminTransactionFeeBills, params);
+}
 
 export function useAdminFinancePlatformRevenue(params: AdminFinanceParams) {
   return useAnalyticsQuery(apiAdminFinancePlatformRevenue, params);

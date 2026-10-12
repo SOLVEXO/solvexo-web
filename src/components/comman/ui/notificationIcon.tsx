@@ -5,6 +5,9 @@ import { Bell, Package, MessageSquare, Star, Sparkles, AlertTriangle, Undo2, Shi
  *  mapping, which risked silently drifting apart if one was edited alone. */
 export function getNotificationIcon(type: string, size: number = 14) {
   const t = type.toLowerCase();
+  if (t.includes('email_failure')) return <AlertTriangle size={size} className="text-error" />;
+  if (t.startsWith('admin_')) return <ShieldAlert size={size} className="text-brand-orange" />;
+  if (t.includes('payout')) return <Sparkles size={size} className="text-[#7c3aed]" />;
   if (t.includes('stock')) return <AlertTriangle size={size} className="text-warning" />;
   if (t.includes('dispute')) return <ShieldAlert size={size} className="text-error" />;
   if (t.includes('refund')) return <Undo2 size={size} className="text-error" />;

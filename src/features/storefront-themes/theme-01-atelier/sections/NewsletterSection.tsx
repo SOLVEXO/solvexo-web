@@ -26,21 +26,26 @@ function NewsletterSection({ section, colors }: { section: Section; colors: Atel
   };
 
   return (
-    <div style={{ background: colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
-      <div className="mx-auto flex flex-col items-center text-center gap-3" style={{ maxWidth: '480px' }}>
-        <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 600, color: colors.ink }}>
-          {section.settings.heading || 'Stay in the loop'}
-        </h2>
-        {section.settings.subtext && <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.inkMuted }}>{section.settings.subtext}</p>}
+    <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+      <div className="mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center" style={{ maxWidth: t.layout.maxWidth, borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}`, padding: 'clamp(28px, 5vw, 56px) 0' }}>
+        <div>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '12px' }}>Private notes</p>
+          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 500, color: colors.ink, lineHeight: 1.08 }}>
+            {section.settings.heading || 'Stay in the loop'}
+          </h2>
+          {section.settings.subtext && <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.inkMuted, marginTop: '12px', lineHeight: 1.7 }}>{section.settings.subtext}</p>}
+        </div>
+        <div className="flex flex-col gap-3">
         {status === 'done' ? (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.success, marginTop: '8px' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.success }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
         ) : (
-          <form onSubmit={submit} className="flex gap-2 w-full atelier-form" style={{ marginTop: '8px' }}>
+          <form onSubmit={submit} className="flex flex-col sm:flex-row gap-2 w-full atelier-form">
             <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email" style={atelierInput} />
             <AtelierButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0 }}>Subscribe</AtelierButton>
           </form>
         )}
         {status === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.danger }}>Something went wrong — try again.</p>}
+        </div>
       </div>
     </div>
   );

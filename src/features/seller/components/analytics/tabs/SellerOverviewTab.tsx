@@ -24,12 +24,18 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod, currency }:
   const loading = overview.loading;
 
   const metrics = d && [
+    ...(d.totalSales != null ? [{
+      label: 'Total sales', value: formatMoneyCompact(d.totalSales, currency), icon: <DollarSign size={16} />,
+      trend: d.totalSalesChangePercent != null ? formatPercent(d.totalSalesChangePercent, { signed: true }) : undefined,
+      trendUp: (d.totalSalesChangePercent ?? 0) >= 0,
+      sub: 'Net sales + shipping + taxes',
+    }] : []),
     {
-      label: 'Total Revenue (net)', value: formatMoneyCompact(d.totalRevenue, currency), icon: <DollarSign size={16} />,
+      label: 'Net sales (excl. shipping & tax)', value: formatMoneyCompact(d.totalRevenue, currency), icon: <DollarSign size={16} />,
       trend: d.totalRevenueChangePercent != null ? formatPercent(d.totalRevenueChangePercent, { signed: true }) : undefined,
       trendUp: (d.totalRevenueChangePercent ?? 0) >= 0,
     },
-    { label: 'Gross Revenue', value: formatMoneyCompact(d.grossRevenue, currency), icon: <DollarSign size={16} /> },
+    { label: 'Gross sales (before refunds)', value: formatMoneyCompact(d.grossRevenue, currency), icon: <DollarSign size={16} /> },
     {
       label: 'Total Orders', value: formatNumber(d.totalOrders), icon: <ShoppingCart size={16} />,
       trend: `${d.totalOrdersChange >= 0 ? '+' : ''}${d.totalOrdersChange} vs prev.`, trendUp: d.totalOrdersChange >= 0,
@@ -57,8 +63,8 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod, currency }:
   ];
 
   const comparisonRows: ComparisonRow[] = d?.previousPeriod ? [
-    { metric: 'Gross Revenue', current: formatMoneyCompact(d.grossRevenue, currency), previous: formatMoneyCompact(d.previousPeriod.grossRevenue, currency) },
-    { metric: 'Total Revenue (net)', current: formatMoneyCompact(d.totalRevenue, currency), previous: formatMoneyCompact(d.previousPeriod.totalRevenue, currency) },
+    { metric: 'Gross sales (before refunds)', current: formatMoneyCompact(d.grossRevenue, currency), previous: formatMoneyCompact(d.previousPeriod.grossRevenue, currency) },
+    { metric: 'Net sales (excl. shipping & tax)', current: formatMoneyCompact(d.totalRevenue, currency), previous: formatMoneyCompact(d.previousPeriod.totalRevenue, currency) },
     { metric: 'Total Orders', current: formatNumber(d.totalOrders), previous: formatNumber(d.previousPeriod.totalOrders) },
     { metric: 'Avg. Order Value', current: formatMoneyCompact(d.avgOrderValue, currency), previous: formatMoneyCompact(d.previousPeriod.avgOrderValue, currency) },
     { metric: 'Repeat Buyers', current: formatPercent(d.repeatBuyerPercent), previous: formatPercent(d.previousPeriod.repeatBuyerPercent) },
@@ -130,14 +136,14 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod, currency }:
         ) : (
           <LineChart
             title="Revenue Over Time"
-            subtitle="Gross vs. net revenue"
+            subtitle="Item sales before and after refunds — shipping & tax are in Reports → Sales summary"
             data={(revenue.data?.series ?? []).map(p => ({
               label: formatBucketLabel(p.date, revenue.data!.granularity),
               gross: p.grossRevenue,
               net: p.netRevenue,
             }))}
             lines={[
-              { dataKey: 'gross', label: 'Gross Revenue', color: '#8C8A82' },
+              { dataKey: 'gross', label: 'Gross sales (before refunds)', color: '#8C8A82' },
               { dataKey: 'net', label: 'Net Revenue', color: '#D97757' },
             ]}
             valuePrefix={currencySymbol(currency)}

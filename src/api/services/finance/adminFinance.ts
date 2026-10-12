@@ -364,6 +364,11 @@ export interface ReconciliationCurrencyResult {
   refunds: number;
   expectedFromLedger: number;
   drift: number;
+  /** Orders should hold this much in the ledger / the ledger actually holds this much (order-vs-ledger check). */
+  expectedSales?: number;
+  ledgerSales?: number;
+  missingSaleCount?: number;
+  mismatchedSaleCount?: number;
   hasDiscrepancy: boolean;
 }
 export interface AdminReconciliationData {
@@ -419,6 +424,34 @@ export interface AdminPlatformRevenueData {
   };
   totalRevenueUSD: number;
   note: string;
+}
+
+export interface TransactionFeeBillRow {
+  billId: string;
+  periodKey: string;
+  storeId: string;
+  storeName: string;
+  sellerName: string;
+  sellerEmail: string;
+  amountUSD: number;
+  saleCount: number;
+  status: 'creating' | 'invoiced' | 'paid' | 'payment_failed' | 'failed';
+  failureReason: string | null;
+  hostedInvoiceUrl: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+export interface AdminTransactionFeeBillsData {
+  currency: 'USD';
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  /** Everything still unpaid (all pages): invoiced, payment failed or invoice not created. */
+  outstanding: { count: number; amountUSD: number };
+  bills: TransactionFeeBillRow[];
+}
+export type FeeBillFilter = 'open' | 'payment_failed' | 'invoiced' | 'paid' | 'all';
+
+export function apiAdminTransactionFeeBills(params: { status?: FeeBillFilter; page?: number; limit?: number } = {}) {
+  return client.get<never, ApiResponse<AdminTransactionFeeBillsData>>(`${ENDPOINTS.FINANCE.ADMIN.TRANSACTION_FEE_BILLS}${qs(params)}`);
 }
 
 export function apiAdminFinancePlatformRevenue(params: AdminFinanceParams = {}) {

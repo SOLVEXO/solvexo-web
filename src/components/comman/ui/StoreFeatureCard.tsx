@@ -1,7 +1,6 @@
 import { clsx } from 'clsx';
 import { Star, Users, Store, TrendingUp, BadgeCheck, PackageCheck } from 'lucide-react';
 import { type PublicStoreListItem } from '@/api/services/store';
-import { CoverImage } from './CoverImage';
 
 // ── Featured seller card — cover, avatar, badges, rating/followers/products ──
 export function StoreFeatureCard({ store, onClick, className }: {
@@ -23,21 +22,14 @@ export function StoreFeatureCard({ store, onClick, className }: {
         className,
       )}
     >
-      {/* Cover */}
-      <CoverImage
-        src={store.coverImage}
-        imgClassName="transition-transform duration-500 group-hover:scale-105"
-        className="h-[88px]"
-      >
-        {isTopSeller && (
-          <span className="absolute top-[8px] right-[8px] inline-flex items-center gap-[3px] px-[7px] py-[3px] rounded-full bg-carbon/80 backdrop-blur-sm text-white text-[9.5px] font-bold">
-            <TrendingUp size={9} /> Top Seller
-          </span>
-        )}
-      </CoverImage>
+      {isTopSeller && (
+        <span className="absolute top-[8px] right-[8px] inline-flex items-center gap-[3px] px-[7px] py-[3px] rounded-full bg-carbon/80 backdrop-blur-sm text-white text-[9.5px] font-bold">
+          <TrendingUp size={9} /> Top Seller
+        </span>
+      )}
 
       {/* Body */}
-      <div className="relative px-4 pb-4 -mt-7">
+      <div className="relative px-4 pt-4 pb-4">
         <div className="flex items-end mb-2">
           <div className="w-14 h-14 rounded-2xl bg-white border border-bone p-[3px]">
             <div className="w-full h-full rounded-[13px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">

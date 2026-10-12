@@ -553,3 +553,10 @@ export interface OrderShippingAddressPayload {
 export function apiUpdateOrderShippingAddress(storeId: string, orderId: string, payload: OrderShippingAddressPayload) {
   return client.patch<never, OrderApiResponse<OrderShippingAddressPayload>>(ENDPOINTS.ORDERS.SHIPPING_ADDRESS(storeId, orderId), payload);
 }
+
+export type ResendableCustomerEmail = 'order_confirmation' | 'order_shipped' | 'order_ready_for_pickup' | 'order_delivered' | 'order_cancelled' | 'order_refunded';
+
+/** POST /api/orders/resend-email/:storeId/:orderId — sends one of the store's customer emails again. */
+export function apiResendOrderEmail(storeId: string, orderId: string, event: ResendableCustomerEmail) {
+  return client.post<never, OrderActionResponse>(ENDPOINTS.ORDERS.RESEND_EMAIL(storeId, orderId), { event });
+}

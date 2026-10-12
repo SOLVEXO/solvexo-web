@@ -70,6 +70,11 @@ export function setStorefrontAnalyticsConsent(allowed: boolean) {
   consented = allowed;
 }
 
+/** True once the visitor allowed analytics (or the store has no cookie banner). */
+export function storefrontAnalyticsAllowed(): boolean {
+  return consented;
+}
+
 /** Spread into add-to-cart / create-checkout bodies: `{ analyticsSessionId }` when tracking is on, else nothing. */
 export function analyticsSessionFields(storeId: string | null | undefined): { analyticsSessionId?: string } {
   if (!consented || !storeId) return {};

@@ -119,9 +119,10 @@ export function NovaNavbar() {
             >
               <button
                 type="button"
-                onClick={() => navigate('/#shop')}
+                onClick={() => hasShopMenu ? setShopOpen(open => !open) : navigate('/#shop')}
                 aria-expanded={shopOpen}
                 aria-haspopup={hasShopMenu ? 'true' : undefined}
+                aria-controls={hasShopMenu && shopOpen ? 'nova-shop-menu' : undefined}
                 className="no-underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
                 style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: 0 }}
               >
@@ -130,9 +131,16 @@ export function NovaNavbar() {
               {shopOpen && hasShopMenu && (
                 <div
                   onMouseEnter={keepShopOpen}
+                  id="nova-shop-menu"
+                  role="region"
+                  aria-label="Shop categories and collections"
                   className="absolute left-0 z-20 flex gap-10"
                   style={{ top: '100%', background: '#FFFFFF', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px 26px', minWidth: '360px', boxShadow: '0 12px 32px rgba(20,18,31,0.10)' }}
                 >
+                  <div className="flex flex-col gap-2.5">
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, fontWeight: 700 }}>Explore</p>
+                    <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink }}>All products</Link>
+                  </div>
                   {categories.length > 0 && (
                     <div className="flex flex-col gap-2.5">
                       <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, fontWeight: 700 }}>Categories</p>

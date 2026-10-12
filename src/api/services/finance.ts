@@ -9,6 +9,8 @@ import { ENDPOINTS } from '../endpoints';
 // must show them separately (see StoreFinance's wallet selector).
 export interface FinanceWallet {
   currency:         string;
+  /** False for a store whose money all settles directly (card -> its own Stripe, COD, transfer, own gateway): no platform balance to show. */
+  hasLegacyBalance?: boolean;
   availableBalance: number;
   pendingBalance:   number;
   isFlaggedForReview: boolean;
