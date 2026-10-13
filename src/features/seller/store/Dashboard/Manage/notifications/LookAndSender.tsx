@@ -88,7 +88,7 @@ export function LookAndSender({ settings, onSave }: Props) {
   };
 
   return (
-    <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start max-w-[1040px]">
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start w-full">
       <div className="flex flex-col gap-5 min-w-0">
         <Card padding="none">
           <div className="px-5 py-3.5 border-b border-bone"><h3 className="text-[14px] font-bold text-carbon">Sender</h3></div>
@@ -178,7 +178,7 @@ export function LookAndSender({ settings, onSave }: Props) {
               ? <img src={settings.storeLogo} alt={displayName} className="inline-block max-h-10 max-w-[180px]" />
               : <span className="text-[20px] font-extrabold" style={{ color: effectiveAccent }}>{displayName}</span>}
           </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm">
+          <div className="bg-white rounded-xl p-5 border border-bone">
             <p className="text-[15px] font-bold text-carbon mb-2">Your order #1001 has shipped</p>
             <p className="text-[12px] text-slate leading-relaxed mb-1">Hi Alex, good news! Your order is on its way.</p>
             <p className="text-[12px] text-slate leading-relaxed mb-4">Carrier: TCS · Tracking: TRK123456789</p>
@@ -197,7 +197,7 @@ export function LookAndSender({ settings, onSave }: Props) {
       {/* ── one Save bar for the whole form ── */}
       {(dirty || justSaved || saveError) && (
         <div className="lg:col-span-2 sticky bottom-3 z-10">
-          <div className="max-w-[1040px] rounded-xl border border-bone bg-white shadow-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="w-full rounded-xl border border-bone bg-white px-4 py-3 flex flex-wrap items-center justify-between gap-3">
             <div className="text-[12.5px] min-w-0">
               {saveError
                 ? <span role="alert" className="flex items-center gap-1.5 text-error"><AlertCircle size={14} /> {saveError}</span>

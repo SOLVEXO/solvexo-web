@@ -91,7 +91,7 @@ export function EmailEditorPanel({ storeId, email, onClose, onSave }: Props) {
     <DialogShell
       onClose={requestClose}
       ariaLabel={`Edit ${email.label} email`}
-      className="w-[calc(100vw-24px)] max-w-[1120px] max-h-[94vh] flex flex-col bg-white rounded-xl shadow-xl overflow-hidden"
+      className="w-[calc(100vw-24px)] max-w-[1120px] max-h-[94vh] flex flex-col bg-white rounded-xl border border-bone overflow-hidden [&_.surface-panel]:!shadow-none [&_.surface-panel:hover]:!shadow-none [&_button]:!shadow-none [&_button:hover]:!shadow-none"
     >
       <div className="px-5 py-3.5 border-b border-bone flex items-start justify-between gap-3 shrink-0">
         <div className="min-w-0">

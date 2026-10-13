@@ -10,6 +10,9 @@ import { EmailEditorPanel } from './EmailEditorPanel';
 import { LookAndSender } from './LookAndSender';
 import { useCustomerEmailSettings } from './useCustomerEmailSettings';
 
+/** This section is flat — no card/button glow or drop shadows anywhere (focus rings are untouched). */
+const NO_SHADOWS = '[&_.surface-panel]:!shadow-none [&_.surface-panel:hover]:!shadow-none [&_button]:!shadow-none [&_button:hover]:!shadow-none';
+
 const VIEWS: Tab[] = [
   { id: 'emails', label: 'Customer emails', icon: <Mail size={13} /> },
   { id: 'look', label: 'Look & sender', icon: <Palette size={13} /> },
@@ -45,14 +48,14 @@ export function NotificationsHub({ storeId, canManage }: Props) {
 
   if (!canManage) {
     return (
-      <div className="max-w-[860px]">
+      <div className={NO_SHADOWS}>
         <NotificationsPanel />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className={`flex flex-col gap-5 w-full ${NO_SHADOWS}`}>
       <div>
         <h2 className="text-[18px] font-bold text-carbon">Notifications</h2>
         <p className="text-[12.5px] text-slate mt-0.5">Choose which emails your customers get, how they look, and which alerts you receive.</p>
@@ -61,7 +64,7 @@ export function NotificationsHub({ storeId, canManage }: Props) {
       <TabBar tabs={VIEWS} active={activeTab} onChange={changeView} dense />
 
       {isVisited('emails') && (
-        <div className={`${paneClassName('emails')} max-w-[860px]`}>
+        <div className={`${paneClassName('emails')} w-full`}>
           <CustomerEmailsList
             storeId={storeId}
             settings={data.settings}
@@ -97,7 +100,7 @@ export function NotificationsHub({ storeId, canManage }: Props) {
       )}
 
       {isVisited('alerts') && (
-        <div className={`${paneClassName('alerts')} max-w-[860px]`}>
+        <div className={`${paneClassName('alerts')} w-full`}>
           <NotificationsPanel />
         </div>
       )}

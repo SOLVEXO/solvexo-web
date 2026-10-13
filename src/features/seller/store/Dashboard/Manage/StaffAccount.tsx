@@ -43,7 +43,7 @@ function StaffAccountPage() {
   const [pwError, setPwError] = useState('');
 
   const shownName = name ?? profile?.name ?? '';
-  const permissions = (profile?.permissions ?? []) as string[];
+  const permissions = ((profile?.permissions ?? []) as string[]).filter(p => p in PERMISSION_LABELS);
 
   const saveName = async () => {
     setNameError('');

@@ -35,6 +35,15 @@ import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefron
 // builds are removed on the apex only (`deleteAuthCookie(..., 'shared')` is a
 // no-op on storefront hosts, so a buyer login/logout can never delete the
 // seller's apex session).
+/** Reads the `permissions` claim of a staff JWT (display/nav only — the server verifies the signature). */
+function permissionsFromToken(token: string | null | undefined): string[] | null {
+  try {
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return Array.isArray(payload.permissions) ? payload.permissions : null;
+  } catch { return null; }
+}
+
 export const TokenStorage = {
   save(accessToken: string, refreshToken: string) {
     deleteAuthCookie('accessToken', 'shared');
@@ -63,7 +72,16 @@ export const TokenStorage = {
   getRefresh()   { return getAuthCookie('refreshToken'); },
   getUser<T = Record<string, unknown>>(): T | null {
     const u = getAuthCookie('user');
-    return u ? (JSON.parse(u) as T) : null;
+    if (!u) return null;
+    const parsed = JSON.parse(u) as Record<string, unknown>;
+    // A staff session's permissions live in its token (that is what the backend
+    // enforces) — mirror them so the nav/UI gates match, even for a session whose
+    // cookie was saved without them.
+    if (parsed?.role === 'staff' && !Array.isArray(parsed.permissions)) {
+      const perms = permissionsFromToken(getAuthCookie('accessToken'));
+      if (perms) parsed.permissions = perms;
+    }
+    return parsed as T;
   },
   isLoggedIn()   { return !!getAuthCookie('accessToken'); },
 };

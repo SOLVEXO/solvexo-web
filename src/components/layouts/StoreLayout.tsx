@@ -269,6 +269,9 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
 // with no `requiredPermission` at all on the item fails closed (hidden) by
 // default, matching the desktop sidebar's existing convention that an
 // ungated destination shouldn't be surfaced to a staff session.
+/** Owner-only chrome (plan card, billing banner, store switcher) is hidden from staff sessions, like Shopify. */
+const isStaffSession = () => TokenStorage.getUser<{ role?: AppRole }>()?.role === 'staff';
+
 export function hasNavPermission(user: { role?: AppRole; permissions?: string[] } | null, requiredPermission?: string | string[]): boolean {
   if (!user || user.role !== 'staff') return true;
   if (!requiredPermission) return false;
@@ -536,7 +539,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // not a shared ancestor of this sidebar.
   const [platformSub, setPlatformSub] = useState<StorePlatformSubscription | null>(null);
   useEffect(() => {
-    if (!storeId) return;
+    if (!storeId || isStaffSession()) return;
     let cancelled = false;
     apiGetStorePlatformPlan(storeId).then(res => { if (!cancelled) setPlatformSub(res.data); }).catch(() => {});
     return () => { cancelled = true; };
@@ -1068,7 +1071,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
         {actions}
         {/* Shopify-style store switcher — jump to another of this seller's
            stores right from the navbar, on every store page. */}
-        <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />
+        {!isStaffSession() && <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />}
         <NotificationBell />
         {/* Account moved here from the sidebar NAV list — it's the seller's
            own personal identity/profile, not a store workspace section, so
@@ -1207,6 +1210,10 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
 // surfaced workspace-wide (not just on the Billing Center page) so a seller can't
 // miss it just by not visiting that one page. Same source of truth as StorePlanBilling. ──
 function PlatformBillingBanner() {
+  return isStaffSession() ? null : <OwnerBillingBanner />;
+}
+
+function OwnerBillingBanner() {
   const navigate = useNavigate();
   const { storeId } = useStoreWorkspace();
   const [sub, setSub] = useState<StorePlatformSubscription | null>(null);

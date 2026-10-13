@@ -69,7 +69,7 @@ export function StaffLoginPage() {
           invalidateMyStoresCache();
           try { Object.keys(window.localStorage).filter(k => k.startsWith('solvexo:store:')).forEach(k => window.localStorage.removeItem(k)); } catch { /* non-critical */ }
           TokenStorage.save(accessToken, accessToken);
-          TokenStorage.saveUser({ id: staff.id, name: staff.name, email: staff.email, role: 'staff', image: null, storeId: staff.storeId });
+          TokenStorage.saveUser({ id: staff.id, name: staff.name, email: staff.email, role: 'staff', image: null, storeId: staff.storeId, permissions: staff.permissions });
           navigate(redirectTo || `/store/${storeId}/dashboard`, { replace: true });
         } catch (err: unknown) {
           setApiError(err instanceof Error ? err.message : 'Invalid email or password.');
