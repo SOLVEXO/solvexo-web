@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, MailCheck, Landmark,
+  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, MailCheck, Landmark, ShieldOff,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -1398,9 +1398,41 @@ function StoreWorkspaceError({ error, onRetry }: { error: string; onRetry: () =>
 // Swaps in for `<Outlet/>` — renders the real nested route, or a shared
 // retry state if the store fetch itself failed, instead of each page
 // needing its own error handling.
+/** The nav item whose page contains this URL (longest path match), or null for pages that are not a nav destination. */
+export function navItemForPath(relPath: string): NavItem | null {
+  let best: NavItem | null = null;
+  for (const section of NAV) {
+    for (const item of section.items) {
+      if ((relPath === item.path || relPath.startsWith(item.path + '/')) && (!best || item.path.length > best.path.length)) best = item;
+    }
+  }
+  return best;
+}
+
+/** Staff opened a page by URL that their role doesn't cover — the sidebar hides it, this stops the page itself. */
+function NoAccess({ storeId }: { storeId: string }) {
+  const navigate = useNavigate();
+  return (
+    <div role="alert" className="px-4 lg:px-7 py-16 flex flex-col items-center text-center gap-3">
+      <div className="size-12 rounded-full bg-brand-pale-orange flex items-center justify-center"><ShieldOff size={22} className="text-brand-orange" /></div>
+      <h2 className="text-[17px] font-bold text-charcoal">You don't have access to this page</h2>
+      <p className="text-[13px] text-slate max-w-[420px]">Your role doesn't include it. If you need it, ask the store owner to update your role.</p>
+      <Button variant="outline" size="sm" onClick={() => navigate(`/store/${storeId}/account`)}>Go to my account</Button>
+    </div>
+  );
+}
+
 function GatedOutlet() {
-  const { loading, error, refetch } = useStoreWorkspace();
+  const { loading, error, refetch, storeId } = useStoreWorkspace();
+  const { pathname } = useLocation();
   if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
+  if (isStaffSession()) {
+    const rel = pathname.replace(new RegExp(`^/store/${storeId}/?`), '');
+    const item = navItemForPath(rel);
+    if (item && !hasNavPermission(TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>(), item.requiredPermission)) {
+      return <NoAccess storeId={storeId} />;
+    }
+  }
   // Local Suspense boundary (same reasoning/pattern as PublicLayout/BuyerLayout)
   // so a not-yet-loaded-this-session lazy route chunk suspends only this
   // content area, not RootLayout's outer big-spinner Suspense — otherwise
