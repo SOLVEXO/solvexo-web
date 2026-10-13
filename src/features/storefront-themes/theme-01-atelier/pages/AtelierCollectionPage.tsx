@@ -9,6 +9,8 @@ import { AtelierSectionRenderer } from '../sections';
 import { AtelierCollectionScopeProvider } from '../sections/collectionScope';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
+import { CollectionDefaultSortContext, gridSortFor } from '../../collectionSortScope';
+import { cloudinaryUrl } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
 
 /** `/collections/:slugOrId` — genuinely template-driven: renders the
@@ -52,8 +54,8 @@ export function AtelierCollectionPage() {
   }, [store.storeId, collection]);
 
   useStorefrontSeo({
-    title: collection ? collection.name : undefined,
-    description: collection?.description || undefined,
+    title: collection ? (collection.seo?.metaTitle || collection.name) : undefined,
+    description: collection?.seo?.metaDescription || collection?.description || undefined,
     image: collection?.image || undefined,
   });
 
@@ -74,6 +76,9 @@ export function AtelierCollectionPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
+      {collection.image && (
+        <img src={cloudinaryUrl(collection.image, 1600)} alt="" style={{ display: 'block', width: '100%', maxHeight: '360px', objectFit: 'cover', borderRadius: t.imageRadiusPx, marginBottom: '24px' }} />
+      )}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink }}>{collection.name}</h1>
         {collection.description && (
@@ -82,10 +87,12 @@ export function AtelierCollectionPage() {
           </p>
         )}
       </div>
+      <CollectionDefaultSortContext.Provider value={collection.defaultSort}>
       <AtelierCollectionScopeProvider value={collection._id}>
         <AtelierSectionRenderer sections={sections} dynamicSourceValues={dynamicSourceValues} />
       </AtelierCollectionScopeProvider>
-      {!hasGridAnchor && <AtelierProductGrid collectionId={collection._id} syncUrl />}
+      </CollectionDefaultSortContext.Provider>
+      {!hasGridAnchor && <AtelierProductGrid collectionId={collection._id} syncUrl defaultSort={gridSortFor(collection.defaultSort)} />}
     </main>
   );
 }

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Image as ImageIcon, Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Image as ImageIcon, Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { EmptyState, SkeletonBox, Modal, Button, FileDropSelect } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Modal, Button, FileDropSelect, ImageUpload } from '@/components/comman/ui';
+import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
+import { BannerLinkTarget } from './BannerLinkTarget';
 import {
-  apiGetStoreBanners, apiCreateStoreBanner, apiCreateStoreBannerFromUrl, apiUpdateStoreBanner, apiPauseStoreBanner, apiResumeStoreBanner, apiDeleteStoreBanner,
+  apiGetStoreBanners, apiCreateStoreBanner, apiCreateStoreBannerFromUrl, apiUpdateStoreBanner, apiReorderStoreBanners, apiPauseStoreBanner, apiResumeStoreBanner, apiDeleteStoreBanner,
   STORE_BANNER_TYPES, STORE_BANNER_LINK_TYPES,
   type StoreBanner, type StoreBannerType, type StoreBannerLinkType,
 } from '@/api/services/storeBanner';
@@ -18,6 +20,15 @@ import {
 const BANNER_TYPE_LABEL: Record<StoreBannerType, string> = {
   hero: 'Hero', promotion: 'Promotion', season: 'Season', collection: 'Collection', video: 'Video',
 };
+
+/** ISO string -> `datetime-local` value in the seller's own time zone (slicing the ISO string shows UTC). */
+function toLocalInput(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 const BANNER_STATUS_STYLE: Record<StoreBanner['status'], { bg: string; color: string; label: string }> = {
   active:    { bg: '#EAF7EF', color: '#1E7A3C', label: 'Active' },
@@ -54,8 +65,8 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
     ctaLabel: banner.ctaLabel ?? '',
     linkType: banner.linkType,
     linkTarget: banner.linkTarget ?? '',
-    startAt: banner.startAt ? new Date(banner.startAt).toISOString().slice(0, 16) : '',
-    endAt: banner.endAt ? new Date(banner.endAt).toISOString().slice(0, 16) : '',
+    startAt: toLocalInput(banner.startAt),
+    endAt: toLocalInput(banner.endAt),
   } : emptyBannerForm);
   const [file, setFile] = useState<File | null>(null);
   // "Paste a URL" alternative to the file picker below — image types only
@@ -63,6 +74,9 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
   // guard below). Default stays the file picker for every banner type.
   const [source, setSource] = useState<'file' | 'url'>('file');
   const [imageUrl, setImageUrl] = useState('');
+  // Optional phone crop, and (when editing) a replacement for the main image.
+  const [mobileImageUrl, setMobileImageUrl] = useState(banner?.mobileImageUrl ?? '');
+  const [replacementUrl, setReplacementUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const isVideo = form.type === 'video';
@@ -88,6 +102,7 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
     setSaving(true);
     const fields = {
       type: form.type,
+      mobileImageUrl: mobileImageUrl || undefined,
       heading: form.heading.trim() || null,
       subheading: form.subheading.trim() || null,
       contentAlignment: form.contentAlignment,
@@ -100,7 +115,8 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
     };
     try {
       if (banner) {
-        await apiUpdateStoreBanner(storeId, banner._id, fields);
+        // On edit an emptied date must clear the stored one, so send null (undefined would leave it unchanged).
+        await apiUpdateStoreBanner(storeId, banner._id, { ...fields, mobileImageUrl: mobileImageUrl || null, ...(replacementUrl ? { imageUrl: replacementUrl } : {}), startAt: fields.startAt ?? null, endAt: fields.endAt ?? null } as unknown as Parameters<typeof apiUpdateStoreBanner>[2]);
       } else if (source === 'url') {
         await apiCreateStoreBannerFromUrl(storeId, fields, imageUrl.trim());
       } else {
@@ -135,6 +151,20 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
             {STORE_BANNER_TYPES.map(t => <option key={t} value={t}>{BANNER_TYPE_LABEL[t]}</option>)}
           </select>
         </div>
+        {banner && !isVideo && (
+          <div>
+            <span className="block text-[12px] font-medium text-charcoal mb-1.5">Banner image</span>
+            <ImageUpload value={[replacementUrl || banner.imageUrl]} onChange={urls => setReplacementUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+            <p className="mt-1 text-[11px] text-slate">Upload a new image to replace this one. Order, schedule and link stay as they are.</p>
+          </div>
+        )}
+        {!isVideo && (
+          <div>
+            <span className="block text-[12px] font-medium text-charcoal mb-1.5">Phone image (optional)</span>
+            <ImageUpload value={mobileImageUrl ? [mobileImageUrl] : []} onChange={urls => setMobileImageUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+            <p className="mt-1 text-[11px] text-slate">A taller crop shown on phones. Leave empty to use the main image everywhere.</p>
+          </div>
+        )}
         {!banner && <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="block text-[12px] font-medium text-charcoal">{isVideo ? 'Video' : 'Image'}</span>
@@ -200,7 +230,7 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="store-banner-link-type" className="block text-[12px] font-medium text-charcoal mb-1.5">Link Type</label>
-            <select id="store-banner-link-type" value={form.linkType} onChange={e => setForm(f => ({ ...f, linkType: e.target.value as StoreBannerLinkType }))}
+            <select id="store-banner-link-type" value={form.linkType} onChange={e => setForm(f => ({ ...f, linkType: e.target.value as StoreBannerLinkType, linkTarget: '' }))}
               className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
               {STORE_BANNER_LINK_TYPES.map(t => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
             </select>
@@ -211,12 +241,7 @@ function StoreBannerFormModal({ storeId, banner, onClose, onSaved }: { storeId: 
               className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] outline-none transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
           </div>
         </div>
-        <div>
-          <label htmlFor="store-banner-link-target" className="block text-[12px] font-medium text-charcoal mb-1.5">Link Target</label>
-          <input id="store-banner-link-target" value={form.linkTarget} onChange={e => setForm(f => ({ ...f, linkTarget: e.target.value }))}
-            placeholder={form.linkType === 'external' ? 'https://…' : 'Product/category/collection id'}
-            className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] outline-none transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
-        </div>
+        <BannerLinkTarget storeId={storeId} linkType={form.linkType} value={form.linkTarget} onChange={v => setForm(f => ({ ...f, linkTarget: v }))} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="store-banner-start" className="block text-[12px] font-medium text-charcoal mb-1.5">Starts (optional)</label>
@@ -246,6 +271,7 @@ export default function StoreBanners() {
   const [addingBanner, setAddingBanner] = useState(false);
   const [editingBanner, setEditingBanner] = useState<StoreBanner | null>(null);
   const [bannerBusyId, setBannerBusyId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<StoreBanner | null>(null);
 
   function refetchStoreBanners() {
     if (!storeId) return;
@@ -308,6 +334,23 @@ export default function StoreBanners() {
       setStoreBannersError('Could not remove this banner. Please try again.');
     } finally {
       setBannerBusyId(null);
+      setPendingDelete(null);
+    }
+  }
+
+  /** Moves a banner one place up/down; the new order is saved straight away. */
+  async function moveBanner(id: string, direction: -1 | 1) {
+    const sorted = [...storeBanners].sort((a, b) => b.priority - a.priority || a.order - b.order);
+    const from = sorted.findIndex(b => b._id === id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= sorted.length) return;
+    [sorted[from], sorted[to]] = [sorted[to], sorted[from]];
+    setStoreBanners(sorted.map((b, order) => ({ ...b, order, priority: 0 })));
+    try {
+      await apiReorderStoreBanners(storeId, sorted.map(b => b._id));
+    } catch {
+      setStoreBannersError('Could not save the new order. Please try again.');
+      refetchStoreBanners();
     }
   }
 
@@ -335,7 +378,7 @@ export default function StoreBanners() {
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...storeBanners].sort((a, b) => b.priority - a.priority || a.order - b.order).map(b => {
+            {[...storeBanners].sort((a, b) => b.priority - a.priority || a.order - b.order).map((b, index, all) => {
               const st = BANNER_STATUS_STYLE[b.status] ?? BANNER_STATUS_STYLE.draft;
               return (
                 <div key={b._id} className="bg-white border border-bone rounded-[10px] overflow-hidden flex flex-col transition-colors duration-200 hover:border-brand-orange/25">
@@ -350,6 +393,12 @@ export default function StoreBanners() {
                     {(b.heading || b.ctaLabel) && <p className="text-[12px] text-charcoal font-medium truncate">{b.heading || b.ctaLabel}</p>}
                     {b.subheading && <p className="text-[11px] text-slate truncate">{b.subheading}</p>}
                     <div className="flex items-center gap-2 mt-auto pt-2">
+                      <div className="flex items-center">
+                        <button type="button" onClick={() => moveBanner(b._id, -1)} disabled={index === 0 || bannerBusyId === b._id}
+                          aria-label="Move banner earlier" title="Move earlier" className="p-1 text-slate bg-transparent border-0 cursor-pointer disabled:opacity-30"><ArrowUp size={13} /></button>
+                        <button type="button" onClick={() => moveBanner(b._id, 1)} disabled={index === all.length - 1 || bannerBusyId === b._id}
+                          aria-label="Move banner later" title="Move later" className="p-1 text-slate bg-transparent border-0 cursor-pointer disabled:opacity-30"><ArrowDown size={13} /></button>
+                      </div>
                       <button onClick={() => setEditingBanner(b)} disabled={bannerBusyId === b._id}
                         aria-label={`Edit ${b.heading || 'banner'}`} title="Edit banner"
                         className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50">
@@ -359,7 +408,7 @@ export default function StoreBanners() {
                         className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-bone disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                         {b.status === 'paused' ? <Play size={11} /> : <Pause size={11} />} {b.status === 'paused' ? 'Resume' : 'Pause'}
                       </button>
-                      <button onClick={() => removeBanner(b)} disabled={bannerBusyId === b._id}
+                      <button onClick={() => setPendingDelete(b)} disabled={bannerBusyId === b._id} aria-label="Delete banner"
                         className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-error-border cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                         <Trash2 size={11} />
                       </button>
@@ -372,6 +421,15 @@ export default function StoreBanners() {
         )}
       </div>
 
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete banner"
+          message="Delete this banner? Its image, order and schedule are lost and this cannot be undone."
+          confirmLabel="Delete"
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => removeBanner(pendingDelete)}
+        />
+      )}
       {addingBanner && (
         <StoreBannerFormModal
           storeId={storeId}

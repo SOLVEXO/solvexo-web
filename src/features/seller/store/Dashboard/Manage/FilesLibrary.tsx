@@ -59,7 +59,8 @@ function AssetDetailModal({ asset, storeId, onClose, onSaved, onDeleted }: {
       const res = await apiGetMediaAssetUsage(storeId, asset._id);
       setUsage(res.data);
     } catch {
-      setUsage([]);
+      // Never fall through to the plain "safe to delete" prompt when the check itself failed.
+      setUsage([{ type: 'unknown', label: "Couldn't check where this file is used — it may still be in use." }]);
     } finally {
       setCheckingUsage(false);
       setConfirmingDelete(true);
@@ -164,12 +165,28 @@ export default function FilesLibrary() {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [loadError, setLoadError] = useState('');
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const load = useCallback(() => {
     setLoading(true);
-    apiBrowseMediaLibrary(storeId, { search: search || undefined, type: typeFilter, limit: 100 })
+    setLoadError('');
+    setPage(1);
+    apiBrowseMediaLibrary(storeId, { search: search || undefined, type: typeFilter, limit: 100, page: 1 })
       .then(res => { setItems(res.data.items); setTotal(res.data.total); })
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Could not load your files.'))
       .finally(() => setLoading(false));
   }, [storeId, search, typeFilter]);
+
+  /** The library holds more files than one page — fetch the next page and append it. */
+  const loadMore = () => {
+    setLoadingMore(true);
+    apiBrowseMediaLibrary(storeId, { search: search || undefined, type: typeFilter, limit: 100, page: page + 1 })
+      .then(res => { setItems(prev => [...prev, ...res.data.items.filter(n => !prev.some(p => p._id === n._id))]); setTotal(res.data.total); setPage(page + 1); })
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Could not load more files.'))
+      .finally(() => setLoadingMore(false));
+  };
 
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
 
@@ -239,6 +256,11 @@ export default function FilesLibrary() {
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => <SkeletonBox key={i} height={120} rounded="10px" />)}
           </div>
+        ) : loadError && items.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <p className="text-[13px] text-slate">{loadError}</p>
+            <button type="button" onClick={load} className="px-4 py-2 rounded-lg text-[13px] font-semibold border border-bone bg-white cursor-pointer">Try again</button>
+          </div>
         ) : items.length === 0 ? (
           <EmptyState
             icon={<ImageIcon size={28} className="text-brand-orange opacity-55" />}
@@ -265,6 +287,14 @@ export default function FilesLibrary() {
             ))}
           </div>
         )}
+        {!loading && items.length > 0 && items.length < total && (
+          <div className="flex justify-center pt-2">
+            <button type="button" onClick={loadMore} disabled={loadingMore} className="px-5 py-2 rounded-lg text-[13px] font-semibold border border-bone bg-white cursor-pointer disabled:opacity-60">
+              {loadingMore ? 'Loading…' : `Load more (${items.length} of ${total})`}
+            </button>
+          </div>
+        )}
+        {loadError && items.length > 0 && <p className="text-[12px] text-error text-center">{loadError}</p>}
       </div>
 
       {selected && (

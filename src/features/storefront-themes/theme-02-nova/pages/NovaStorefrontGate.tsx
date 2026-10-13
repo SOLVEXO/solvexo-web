@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { Lock, AlertCircle, Clock } from 'lucide-react';
 import type { PublicStoreData } from '@/api/services/store';
 import { apiVerifyStorePassword } from '@/api/services/store';
@@ -76,14 +77,14 @@ export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '24px' }}>
             <div>
               <label htmlFor="nova-gate-password" style={novaLabel}>Password</label>
-              <input
+              <PasswordField
                 id="nova-gate-password"
-                type="password"
                 required
                 autoFocus
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                style={novaInput}
+                style={{ ...novaInput, paddingRight: 40 }}
               />
             </div>
             <NovaButton type="submit" style={{ width: '100%', justifyContent: 'center' }} loading={loading}>

@@ -26,6 +26,8 @@ import { AtelierReturnsPage } from './theme-01-atelier/pages/AtelierReturnsPage'
 import { AtelierGiftCardsPage } from './theme-01-atelier/pages/AtelierGiftCardsPage';
 import { AtelierCategoryPage } from './theme-01-atelier/pages/AtelierCategoryPage';
 import { AtelierCollectionPage } from './theme-01-atelier/pages/AtelierCollectionPage';
+import { AtelierCollectionsPage } from './theme-01-atelier/pages/AtelierCollectionsPage';
+import { AtelierFaqsPage } from './theme-01-atelier/pages/AtelierFaqsPage';
 import { AtelierSearchPage } from './theme-01-atelier/pages/AtelierSearchPage';
 import { AtelierBlogIndexPage } from './theme-01-atelier/pages/AtelierBlogIndexPage';
 import { AtelierBlogPostPage } from './theme-01-atelier/pages/AtelierBlogPostPage';
@@ -87,6 +89,8 @@ import { NovaReturnsPage } from './theme-02-nova/pages/NovaReturnsPage';
 import { NovaGiftCardsPage } from './theme-02-nova/pages/NovaGiftCardsPage';
 import { NovaCategoryPage } from './theme-02-nova/pages/NovaCategoryPage';
 import { NovaCollectionPage } from './theme-02-nova/pages/NovaCollectionPage';
+import { NovaCollectionsPage } from './theme-02-nova/pages/NovaCollectionsPage';
+import { NovaFaqsPage } from './theme-02-nova/pages/NovaFaqsPage';
 import { NovaSearchPage } from './theme-02-nova/pages/NovaSearchPage';
 import { NovaBlogIndexPage } from './theme-02-nova/pages/NovaBlogIndexPage';
 import { NovaBlogPostPage } from './theme-02-nova/pages/NovaBlogPostPage';
@@ -112,7 +116,7 @@ import './theme-02-nova/theme.demoPreview';
  *  `verifyOtp` — a storefront's own account-recovery flow is as required as
  *  being able to sign in at all, not a later nice-to-have. */
 export type StorefrontRouteKey =
-  | 'home' | 'product' | 'category' | 'collection' | 'search'
+  | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
   | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'storeCredit' | 'orders' | 'orderDetail' | 'orderStatus' | 'addresses' | 'myReviews'
   | 'blogIndex' | 'blogPost' | 'customPage'
@@ -228,6 +232,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       myReviews: AtelierMyReviewsPage,
       category: AtelierCategoryPage,
       collection: AtelierCollectionPage,
+      collections: AtelierCollectionsPage,
+      faqs: AtelierFaqsPage,
       search: AtelierSearchPage,
       blogIndex: AtelierBlogIndexPage,
       blogPost: AtelierBlogPostPage,
@@ -282,6 +288,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       myReviews: NovaMyReviewsPage,
       category: NovaCategoryPage,
       collection: NovaCollectionPage,
+      collections: NovaCollectionsPage,
+      faqs: NovaFaqsPage,
       search: NovaSearchPage,
       blogIndex: NovaBlogIndexPage,
       blogPost: NovaBlogPostPage,

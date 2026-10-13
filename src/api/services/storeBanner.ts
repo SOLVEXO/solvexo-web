@@ -19,6 +19,8 @@ export interface StoreBanner {
   imageUrl:        string;
   publicId:        string;
   videoUrl:        string | null;
+  /** Optional separate image for phones. */
+  mobileImageUrl?: string | null;
   heading?:        string | null;
   subheading?:     string | null;
   contentAlignment?: 'left' | 'center' | 'right';
@@ -38,6 +40,7 @@ export interface StoreBanner {
 
 export interface CreateStoreBannerFields {
   type?:       StoreBannerType;
+  mobileImageUrl?: string | null;
   heading?:    string | null;
   subheading?: string | null;
   contentAlignment?: 'left' | 'center' | 'right';
@@ -51,7 +54,7 @@ export interface CreateStoreBannerFields {
   endAt?:      string;
 }
 
-export type UpdateStoreBannerFields = Partial<CreateStoreBannerFields>;
+export type UpdateStoreBannerFields = Partial<CreateStoreBannerFields> & { imageUrl?: string };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC (storefront)
@@ -92,6 +95,11 @@ export function apiUpdateStoreBanner(storeId: string, bannerId: string, fields: 
   return client.patch<never, { success: boolean; message: string; data: StoreBanner }>(
     ENDPOINTS.STORE_BANNER.UPDATE(storeId, bannerId), fields,
   );
+}
+
+/** Saves the seller's display order (the list position becomes the order). */
+export function apiReorderStoreBanners(storeId: string, ids: string[]) {
+  return client.patch<never, { success: boolean; message: string }>(ENDPOINTS.STORE_BANNER.REORDER(storeId), { ids });
 }
 
 export function apiPauseStoreBanner(storeId: string, bannerId: string) {

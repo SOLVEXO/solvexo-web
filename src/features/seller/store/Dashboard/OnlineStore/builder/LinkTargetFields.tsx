@@ -6,12 +6,14 @@ import { apiGetCollection } from '@/api/services/collections';
 import { apiGetMyProductById } from '@/api/services/product';
 
 export interface LinkTarget {
-  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product';
+  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'email' | 'phone';
   pageSlug?: string;
   url?: string;
   categoryId?: string;
   collectionId?: string;
   productId?: string;
+  /** Open the link in a new tab. */
+  newTab?: boolean;
 }
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -57,6 +59,10 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
           <option value="product">A product…</option>
           <option value="category">A category…</option>
           <option value="collection">A collection…</option>
+          <option value="cart">Cart</option>
+          <option value="account">Account page</option>
+          <option value="email">Email address</option>
+          <option value="phone">Phone number</option>
           <option value="external">External URL</option>
         </select>
       </Field>
@@ -66,6 +72,11 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
             <option value="">Select a page</option>
             {pageOptions.map(p => <option key={p.slug} value={p.slug}>{p.title}</option>)}
           </select>
+        </Field>
+      )}
+      {(value.linkType === 'email' || value.linkType === 'phone') && (
+        <Field label={value.linkType === 'email' ? 'Email address' : 'Phone number'}>
+          <input className={inp} placeholder={value.linkType === 'email' ? 'hello@yourstore.com' : '+92 300 1234567'} value={value.url ?? ''} onChange={e => onChange({ ...value, url: e.target.value })} />
         </Field>
       )}
       {value.linkType === 'external' && (
@@ -85,6 +96,12 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
               : (value.productId ? (resolvedLabel || 'Selected') : 'Choose a product…')}
           </button>
         </Field>
+      )}
+
+      {value.linkType !== 'email' && value.linkType !== 'phone' && (
+        <label className="col-span-2 flex items-center gap-2 text-[12px] text-charcoal cursor-pointer">
+          <input type="checkbox" checked={!!value.newTab} onChange={e => onChange({ ...value, newTab: e.target.checked })} /> Open in a new tab
+        </label>
       )}
 
       {broken && (

@@ -211,8 +211,9 @@ export function apiReactivateStaff(storeId: string, staffId: string) {
 
 // ── The signed-in staff member's own account ─────────────────────────────
 
-export function apiUpdateOwnStaffProfile(name: string) {
-  return client.patch<never, ApiResponse<null>>(ENDPOINTS.STAFF.ME(), { name });
+/** Only the fields you pass are changed; '' clears phone / photo. */
+export function apiUpdateOwnStaffProfile(payload: { name?: string; phone?: string; profileImage?: string }) {
+  return client.patch<never, ApiResponse<null>>(ENDPOINTS.STAFF.ME(), payload);
 }
 
 /** Returns a fresh access token — the old one is revoked by the password change. */

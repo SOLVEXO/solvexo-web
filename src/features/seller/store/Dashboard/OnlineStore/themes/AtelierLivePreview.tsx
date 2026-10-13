@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
-import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementType } from '@/api/services/store';
+import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementBar as StoreAnnouncementBarValue } from '@/api/services/store';
 import type { StoreThemeData } from '@/api/services/storeTheme';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { CartProvider } from '@/contexts/CartContext';
@@ -70,12 +70,8 @@ function ThemePreviewFrame({ children }: { children: ReactNode }) {
 /** Shape of `PublicStoreData['announcementBar']` — repeated here (not
  *  imported) because that field is inline-typed on `PublicStoreData` rather
  *  than named, and this is the shape `announcementOverride` below accepts. */
-export interface AnnouncementBarPreviewValue {
-  message: string | null;
-  type: StoreAnnouncementType;
-  ctaLabel: string | null;
-  ctaLink: string | null;
-}
+export type AnnouncementBarPreviewValue = Pick<StoreAnnouncementBarValue,
+  'message' | 'type' | 'ctaLabel' | 'ctaLink' | 'moreMessages' | 'rotateSeconds' | 'closable' | 'bgColor' | 'textColor' | 'placement' | 'align'>;
 
 /** A real, isolated `StorefrontProvider` for a live preview panel — built
  *  from the SAME real store data the public storefront uses (fetched once
@@ -284,20 +280,30 @@ export function AtelierLivePreview({
   // preview never diverges from what a buyer actually sees.
   const announcementBar = announcementOverride !== undefined ? announcementOverride : store.announcementBar;
 
+  const previewAnnouncement = announcementBar?.message ? (
+    <StoreAnnouncementBar
+      storeId={store.storeId}
+      message={announcementBar.message}
+      type={announcementBar.type}
+      ctaLabel={announcementBar.ctaLabel}
+      ctaLink={announcementBar.ctaLink}
+      moreMessages={announcementBar.moreMessages}
+      rotateSeconds={announcementBar.rotateSeconds}
+      closable={announcementBar.closable}
+      bgColor={announcementBar.bgColor}
+      textColor={announcementBar.textColor}
+      align={announcementBar.align}
+      themeColors={{ bg: t.colors.bgAlt, text: t.colors.ink, border: t.colors.border }}
+    />
+  ) : null;
+
   const body = (
     <StorefrontProvider value={contextValue}>
       <div style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: 'none' }}>
         {previewCustomCss && <style>{previewCustomCss}</style>}
+        {showChrome && announcementBar?.placement === 'above' && previewAnnouncement}
         {showChrome && <Navbar />}
-        {showChrome && announcementBar?.message && (
-          <StoreAnnouncementBar
-            storeId={store.storeId}
-            message={announcementBar.message}
-            type={announcementBar.type}
-            ctaLabel={announcementBar.ctaLabel}
-            ctaLink={announcementBar.ctaLink}
-          />
-        )}
+        {showChrome && announcementBar?.placement !== 'above' && previewAnnouncement}
         <div style={{ pointerEvents: interactive ? 'auto' : 'none' }}>
           <SectionRenderer
             sections={sections}

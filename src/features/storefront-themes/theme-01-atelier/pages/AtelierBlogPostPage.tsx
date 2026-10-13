@@ -152,6 +152,13 @@ export function AtelierBlogPostPage() {
         </p>
       )}
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15, marginBottom: '20px' }}>{post.title}</h1>
+      {post.tags?.length > 0 && (
+        <ul className="flex flex-wrap gap-2 list-none p-0" style={{ margin: '0 0 20px' }} aria-label="Tags">
+          {post.tags.map((tag: string) => (
+            <li key={tag} style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: t.colors.inkMuted, border: `1px solid ${t.colors.border}`, borderRadius: '2px', padding: '3px 10px' }}>{tag}</li>
+          ))}
+        </ul>
+      )}
       {post.coverImage && <img src={post.coverImage} alt={post.title} className="w-full object-cover" style={{ maxHeight: '440px', marginBottom: '28px' }} />}
       <div className="flex flex-col gap-5">
         <AtelierContentBlocks blocks={post.content} dynamicSourceValues={dynamicSourceValues} />

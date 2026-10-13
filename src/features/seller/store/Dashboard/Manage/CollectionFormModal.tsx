@@ -11,8 +11,8 @@ import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetCategoryById } from '@/api/services/categories';
 import {
-  apiCreateCollection, apiUpdateCollection, apiUpdateCollectionProducts,
-  type CollectionData,
+  apiCreateCollection, apiUpdateCollection, apiUpdateCollectionProducts, COLLECTION_SORT_OPTIONS,
+  type CollectionData, type CollectionSort,
 } from '@/api/services/collections';
 
 function slugify(name: string) {
@@ -45,6 +45,10 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
   const [tags, setTags] = useState<string>((collection?.rules?.tags ?? []).join(', '));
   const [matchType, setMatchType] = useState<'all' | 'any'>(collection?.rules?.matchType ?? 'any');
   const [templateKey, setTemplateKey] = useState(collection?.templateKey ?? 'default');
+  const [titleContains, setTitleContains] = useState(collection?.rules?.titleContains ?? '');
+  const [defaultSort, setDefaultSort] = useState<CollectionSort>(collection?.defaultSort ?? 'manual');
+  const [metaTitle, setMetaTitle] = useState(collection?.seo?.metaTitle ?? '');
+  const [metaDescription, setMetaDescription] = useState(collection?.seo?.metaDescription ?? '');
 
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -88,14 +92,18 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
     try {
       const payload = {
         name: name.trim(),
-        description: description.trim() || undefined,
-        image: image || undefined,
+        // null (not undefined) so an emptied description / removed image really is cleared when editing
+        description: description.trim() || (isEdit ? null : undefined),
+        image: image || (isEdit ? null : undefined),
+        defaultSort,
+        seo: { metaTitle: metaTitle.trim() || null, metaDescription: metaDescription.trim() || null },
         type,
         productIds: type === 'manual' ? productIds : undefined,
         rules: type === 'automatic' ? {
           categoryId: categoryId ?? undefined,
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           matchType,
+          titleContains: titleContains.trim() || null,
         } : undefined,
         status,
       };
@@ -204,6 +212,12 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
                   className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
               </div>
               <div>
+                <label className="text-[12px] font-medium text-charcoal block mb-1.5">Title contains (optional)</label>
+                <input value={titleContains} onChange={e => setTitleContains(e.target.value)} placeholder="e.g. abaya" maxLength={60}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange" />
+                <p className="mt-1 text-[11px] text-slate">An automatic collection lists up to 250 products. With no category, tag or title rule it lists everything.</p>
+              </div>
+              <div>
                 <label className="text-[12px] font-medium text-charcoal block mb-1.5">Match</label>
                 <div className="flex gap-2">
                   {(['any', 'all'] as const).map(m => (
@@ -216,6 +230,22 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
               </div>
             </div>
           )}
+
+          <div>
+            <label htmlFor="collection-default-sort" className="text-[12px] font-medium text-charcoal block mb-1.5">Default sort on the storefront</label>
+            <select id="collection-default-sort" value={defaultSort} onChange={e => setDefaultSort(e.target.value as CollectionSort)}
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal">
+              {COLLECTION_SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2 border-t border-bone pt-3">
+            <p className="text-[12px] font-semibold text-charcoal">Search engine listing</p>
+            <input value={metaTitle} onChange={e => setMetaTitle(e.target.value)} maxLength={70} placeholder="Page title (defaults to the collection name)" aria-label="Page title"
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange" />
+            <textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value)} maxLength={160} rows={2} placeholder="Meta description (defaults to the description above)" aria-label="Meta description"
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white resize-none focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange" />
+          </div>
 
           {isEdit && (
             <TemplateKeyPicker storeId={storeId} resourceType="collection" value={templateKey} onChange={setTemplateKey} />

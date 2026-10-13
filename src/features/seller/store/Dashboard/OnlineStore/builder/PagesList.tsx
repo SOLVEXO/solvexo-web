@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FileText, Home, Trash2 } from 'lucide-react';
+import { Plus, FileText, Home, Trash2, Copy } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Modal, Button, Field } from '@/components/comman/ui';
 import type { StorePageData } from '@/api/services/storePages';
@@ -40,10 +40,13 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
   {
     id: 'contact', label: 'Contact Us', title: 'Contact Us', slug: 'contact-us',
-    sections: policyTemplate('Contact Us', [
-      'Replace this text with the best way for customers to reach your team, such as your support email, phone number, or business address.',
-      'Add your usual response time and support hours so customers know when to expect a reply.',
-    ]),
+    sections: [
+      ...policyTemplate('Contact Us', [
+        'Replace this text with the best way for customers to reach your team, such as your support email, phone number, or business address.',
+        'Add your usual response time and support hours so customers know when to expect a reply.',
+      ]),
+      { type: 'contact_form', settings: { heading: 'Send us a message', intro: 'We usually reply within one business day.', buttonLabel: 'Send message', showPhone: true }, blocks: [] } as unknown as Section,
+    ],
   },
   {
     id: 'shipping', label: 'Shipping Policy', title: 'Shipping Policy', slug: 'shipping-policy',
@@ -75,12 +78,13 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
 ];
 
-export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, creating }: {
+export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, onDuplicate, creating }: {
   pages: StorePageData[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onCreate: (title: string, slug: string, sections?: Section[]) => Promise<void>;
   onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
   creating: boolean;
 }) {
   const [showCreate, setShowCreate] = useState(false);
@@ -126,7 +130,8 @@ export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, cre
             <FileText size={14} className="shrink-0" /> <span className="truncate">{page.title}</span>
           </button>
           <span className={clsx('text-[10px] px-[6px] py-[1px] rounded-full shrink-0', page.status === 'published' ? 'bg-success-bg text-success' : 'bg-bone text-slate')}>{page.status}</span>
-          <button onClick={() => onDelete(page._id)} aria-label={`Delete ${page.title}`} className="shrink-0 opacity-0 group-hover:opacity-100 text-error bg-transparent border-none cursor-pointer p-1"><Trash2 size={13} /></button>
+          <button onClick={() => onDuplicate(page._id)} aria-label={`Duplicate ${page.title}`} title="Duplicate" className="shrink-0 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 text-slate bg-transparent border-none cursor-pointer p-1"><Copy size={13} /></button>
+          <button onClick={() => onDelete(page._id)} aria-label={`Delete ${page.title}`} className="shrink-0 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 text-error bg-transparent border-none cursor-pointer p-1"><Trash2 size={13} /></button>
         </div>
       ))}
 

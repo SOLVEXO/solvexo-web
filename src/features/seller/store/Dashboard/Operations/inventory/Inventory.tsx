@@ -259,7 +259,12 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
     setAdjusting(true);
     setAdjustError('');
     try {
-      await apiAdjustStock(storeId, adjustTarget.variantId, delta, adjustReason, adjustNote, hasMultipleLocations && !isBucketOnlyReason ? adjustLocationId : undefined);
+      const res = await apiAdjustStock(storeId, adjustTarget.variantId, delta, adjustReason, adjustNote, hasMultipleLocations && !isBucketOnlyReason ? adjustLocationId : undefined);
+      // a staff adjustment above the approval bar is only QUEUED — say so, instead of closing as if stock had changed
+      if (res.data?.pending) {
+        setAdjustError('Sent for manager approval. Stock stays unchanged until it is approved.');
+        return;
+      }
       setAdjustTarget(null);
       setRefreshKey(k => k + 1);
     } catch (err: unknown) {
@@ -642,12 +647,13 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
           {/* Reserved/damaged/in-transit only shown when non-zero — the
               common case (nothing pending on this SKU) stays exactly as
               simple as before any of these existed. */}
-          {!l.unlimitedStock && (l.committedStock > 0 || l.damagedStock > 0 || l.inTransitStock > 0) && (
+          {!l.unlimitedStock && (l.committedStock > 0 || l.damagedStock > 0 || l.inTransitStock > 0 || (l.expiredStock ?? 0) > 0) && (
             <p className="text-[10.5px] text-slate">
               {l.stock} on hand
               {l.committedStock > 0 && ` · ${l.committedStock} reserved`}
               {l.damagedStock > 0 && ` · ${l.damagedStock} damaged`}
               {l.inTransitStock > 0 && ` · ${l.inTransitStock} in transit`}
+              {(l.expiredStock ?? 0) > 0 && ` · ${l.expiredStock} expired`}
             </p>
           )}
         </div>

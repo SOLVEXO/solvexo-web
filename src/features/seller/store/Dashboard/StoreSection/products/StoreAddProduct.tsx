@@ -24,6 +24,7 @@ import { PackageDimensionsFields } from './PackageDimensionsFields';
 import { CustomsInformationFields } from './CustomsInformationFields';
 import { customsPayload } from './customsInfo';
 import { ShippingProfileField } from './ShippingProfileField';
+import { SellingOptionsField, initSellingOptions, sellingOptionsPayload } from './SellingOptionsField';
 import { dimensionPayload } from './packageDimensions';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
@@ -85,6 +86,7 @@ const initPhys = {
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   shippingProfileId: '',
+  selling: initSellingOptions,
   // Non-empty optionTypes switches the Pricing/Inventory cards over to the
   // real variant matrix (VariantMatrixEditor) — see the "Variants" card
   // below. Empty (the common case: most products don't need variants) keeps
@@ -213,6 +215,7 @@ export default function StoreAddProduct() {
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           shippingProfileId: phys.shippingProfileId || null,
+          ...sellingOptionsPayload(phys.selling),
           variants,
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
@@ -427,6 +430,8 @@ export default function StoreAddProduct() {
               </div>
             </Card>
           )}
+
+          {pType === 'physical' && <SellingOptionsField value={phys.selling} onChange={v => sp('selling', v)} />}
 
           {pType === 'physical' && (
             <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />

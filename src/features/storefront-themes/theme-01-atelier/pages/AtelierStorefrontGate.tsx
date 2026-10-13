@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { Lock, AlertCircle, Clock } from 'lucide-react';
 import type { PublicStoreData } from '@/api/services/store';
 import { apiVerifyStorePassword } from '@/api/services/store';
@@ -79,14 +80,14 @@ export function AtelierStorefrontGate({ store, onUnlocked }: { store: PublicStor
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 atelier-form text-left" style={{ border: `1px solid ${t.colors.border}`, padding: '24px' }}>
             <div>
               <label htmlFor="atelier-gate-password" style={atelierLabel}>Password</label>
-              <input
+              <PasswordField
                 id="atelier-gate-password"
-                type="password"
                 required
                 autoFocus
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                style={atelierInput}
+                style={{ ...atelierInput, paddingRight: 40 }}
               />
             </div>
             <AtelierButton type="submit" style={{ width: '100%', justifyContent: 'center' }} loading={loading}>

@@ -14,6 +14,10 @@ export interface CustomerSocialProviderSetup {
   /** Last-4 hint only — the secret itself is never returned. */
   maskedSecret: string | null;
   redirectUri: string;
+  /** When the provider last accepted the saved credentials (save or Test connection). */
+  lastVerifiedAt: string | null;
+  /** Set when the last Test connection failed. */
+  lastError: string | null;
 }
 
 export interface CustomerSocialSetup {
@@ -29,6 +33,11 @@ export function apiGetCustomerSocialSetup(storeId: string) {
 /** Seller: PUT /api/store/:storeId/customer-login/:provider */
 export function apiConnectCustomerSocial(storeId: string, provider: SocialProviderKey, body: { clientId: string; clientSecret: string }) {
   return client.put<never, ApiResponse<CustomerSocialSetup>>(ENDPOINTS.CUSTOMER_SOCIAL_LOGIN.PROVIDER(storeId, provider), body);
+}
+
+/** Seller: POST /api/store/:storeId/customer-login/:provider/test — re-checks the saved credentials with the provider. */
+export function apiTestCustomerSocial(storeId: string, provider: SocialProviderKey) {
+  return client.post<never, ApiResponse<CustomerSocialSetup> & { ok: boolean }>(ENDPOINTS.CUSTOMER_SOCIAL_LOGIN.TEST(storeId, provider));
 }
 
 /** Seller: DELETE /api/store/:storeId/customer-login/:provider */

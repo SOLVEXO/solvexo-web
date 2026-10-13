@@ -44,6 +44,11 @@ registerNovaSection('product_main', (_section: Section, blocks: Block[], colors:
     product_buy_buttons: (
       <div style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: colors.accentInk, background: colors.accent, borderRadius: '9999px', padding: '11px 0', textAlign: 'center', marginTop: '8px' }}>Add to Cart</div>
     ),
+    product_rating: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.inkMuted }}>★ 4.8 (24 reviews)</div>,
+    product_sku: <div style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted }}>SKU: SAMPLE-001</div>,
+    product_wishlist: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: colors.ink, border: `1px solid ${colors.border}`, borderRadius: '9999px', padding: '9px 14px', alignSelf: 'flex-start' }}>♡ Add to wishlist</div>,
+    product_share: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: colors.ink, border: `1px solid ${colors.border}`, borderRadius: '9999px', padding: '9px 14px', alignSelf: 'flex-start' }}>Share</div>,
+    product_specs: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.inkMuted, borderTop: `1px solid ${colors.border}`, paddingTop: '8px' }}>Specifications — your product's custom fields</div>,
     product_description: <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.inkMuted, marginTop: '10px' }}>A short sample description of this product would appear here.</p>,
   };
   return (

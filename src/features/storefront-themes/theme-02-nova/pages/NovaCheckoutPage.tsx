@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import {
   MapPin, Truck, CreditCard, Banknote, Loader2, AlertCircle,
   CheckCircle2, PackageCheck, ChevronRight, Plus,
@@ -67,6 +68,16 @@ export function NovaCheckoutPage() {
   const guestContact = useGuestContact(guest);
 
   const { store } = useStorefront();
+
+  // Link the store's tagged Privacy Policy / Terms of Service pages from checkout (same as Atelier).
+  const [policyPages, setPolicyPages] = useState<PublicPageSummary[]>([]);
+  useEffect(() => {
+    apiListPublicStorePages(store.storeId)
+      .then(res => setPolicyPages(res.data.filter(p => p.policyType === 'privacy_policy' || p.policyType === 'terms_of_service')))
+      .catch(() => setPolicyPages([]));
+  }, [store.storeId]);
+  const privacyPage = policyPages.find(p => p.policyType === 'privacy_policy');
+  const termsPage = policyPages.find(p => p.policyType === 'terms_of_service');
   const { cart, cartCount, clearCart } = useCartContext();
   const cartItems = cart?.items ?? [];
   const isDigital = cartItems.length > 0 && cartItems.every(i => i.type === 'digital');
@@ -790,6 +801,16 @@ export function NovaCheckoutPage() {
               </div>
             )}
           </SectionCard>
+
+          {(privacyPage || termsPage) && (
+            <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: t.colors.inkMuted, textAlign: 'center' }}>
+              By placing your order, you agree to our{' '}
+              {privacyPage && <Link to={`/${privacyPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>Privacy Policy</Link>}
+              {privacyPage && termsPage && ' and '}
+              {termsPage && <Link to={`/${termsPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>Terms of Service</Link>}
+              .
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px' }}>

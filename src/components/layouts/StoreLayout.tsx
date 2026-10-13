@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown,
-  ClipboardList, Megaphone, Star, Search, Wallet, HelpCircle,
+  ClipboardList, Megaphone, Star, Search, Wallet, HelpCircle, Inbox, SlidersHorizontal,
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
@@ -168,10 +168,12 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // Marketing), matching where Shopify itself puts banners/announcement
       // content: under the storefront's own customization area, not
       // Marketing. Same APIs/data as before, just relocated.
+      { id: 'online-store-preferences', Icon: SlidersHorizontal, label: 'Preferences', path: 'online-store/preferences', requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-faqs',        Icon: HelpCircle, label: 'FAQs',      path: 'faqs',                   requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-contact',       Icon: Inbox,      label: 'Contact Messages', path: 'online-store/contact-messages', requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar', requiredPermission: 'onlinestore.content.manage' },
-      { id: 'online-store-featured',     Icon: Pin,               label: 'Featured & Collections', path: 'online-store/featured', requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-featured',     Icon: Pin,               label: 'Featured Products', path: 'online-store/featured', requiredPermission: 'onlinestore.content.manage' },
     ],
   },
   {

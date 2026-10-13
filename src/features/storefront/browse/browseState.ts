@@ -37,15 +37,17 @@ const SORT_TO_URL: Record<BrowseSort, string> = {
   price_asc: 'price-ascending',
   price_desc: 'price-descending',
   best_rated: 'rating-descending',
+  best_selling: 'best-selling',
+  trending: 'trending',
 };
 const URL_TO_SORT: Record<string, BrowseSort> = {
   ...Object.fromEntries(Object.entries(SORT_TO_URL).map(([k, v]) => [v, k as BrowseSort])),
   'created-descending': 'newest',
-  'best-selling': 'newest',
 };
 
 export const SORT_OPTIONS: { value: BrowseSort; label: string }[] = [
   { value: 'newest', label: 'Featured' },
+  { value: 'best_selling', label: 'Best selling' },
   { value: 'best_rated', label: 'Best rated' },
   { value: 'title_asc', label: 'Alphabetically, A-Z' },
   { value: 'title_desc', label: 'Alphabetically, Z-A' },

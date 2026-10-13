@@ -23,7 +23,21 @@ export interface CollectionRules {
   categoryId: string | null;
   tags: string[];
   matchType: 'all' | 'any';
+  /** Only products whose title contains this text. */
+  titleContains?: string | null;
 }
+
+export const COLLECTION_SORT_OPTIONS = [
+  { value: 'manual', label: 'Featured (your order / newest first)' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'title_asc', label: 'Title A–Z' },
+  { value: 'title_desc', label: 'Title Z–A' },
+  { value: 'price_asc', label: 'Price, low to high' },
+  { value: 'price_desc', label: 'Price, high to low' },
+  { value: 'best_rated', label: 'Best rated' },
+  { value: 'best_selling', label: 'Best selling' },
+] as const;
+export type CollectionSort = (typeof COLLECTION_SORT_OPTIONS)[number]['value'];
 
 export interface CollectionData {
   _id: string;
@@ -35,6 +49,8 @@ export interface CollectionData {
   type: 'manual' | 'automatic';
   productIds: string[];
   rules: CollectionRules;
+  /** How the storefront page orders products until the shopper picks another sort. */
+  defaultSort?: CollectionSort;
   status: 'active' | 'draft';
   sortOrder: number;
   seo: CollectionSeo;
@@ -52,14 +68,19 @@ export interface PublicCollectionSummary {
   image: string | null;
   type: 'manual' | 'automatic';
   sortOrder: number;
+  defaultSort?: CollectionSort;
+  seo?: Partial<CollectionSeo>;
   /** Which of the store's own Collection alternate templates this collection renders through — see `CollectionDetailPage`. Defaults to `'default'` when absent. */
   templateKey?: string;
 }
 
 export interface CreateCollectionPayload {
   name: string;
-  description?: string;
-  image?: string;
+  /** null clears the stored value. */
+  description?: string | null;
+  image?: string | null;
+  defaultSort?: CollectionSort;
+  seo?: { metaTitle?: string | null; metaDescription?: string | null };
   type: 'manual' | 'automatic';
   productIds?: string[];
   rules?: Partial<CollectionRules>;

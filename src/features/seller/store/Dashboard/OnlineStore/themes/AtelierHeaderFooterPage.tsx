@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom';
 import { Loader2, Plus, RotateCcw, History, Undo2, Redo2, Monitor, Tablet, Smartphone, Megaphone, Eye, EyeOff, Copy } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, Toggle, ImageUpload } from '@/components/comman/ui';
+import { SkeletonBox, ImageUpload } from '@/components/comman/ui';
 import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
 import {
   apiGetStoreTheme, apiUpdateStoreHeader, apiUpdateStoreFooter, apiPublishStoreTheme, apiRevertStoreThemeDraft,
   apiListStoreThemeVersions, apiRestoreStoreThemeVersion,
   type StoreThemeData, type StorefrontHeader, type StorefrontFooter,
 } from '@/api/services/storeTheme';
-import { apiUpdateAnnouncementBar, type StoreAnnouncementBar as StoreAnnouncementBarValue, type StoreAnnouncementType } from '@/api/services/store';
+import { apiUpdateAnnouncementBar, type StoreAnnouncementBar as StoreAnnouncementBarValue } from '@/api/services/store';
 import type { Block } from '@/api/services/storefrontTypes';
 import { BlockFields, type PageOption } from '../builder/BlockFields';
 import { SortableList } from '../builder/Sortable';
@@ -23,6 +23,10 @@ import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { apiListStorePages } from '@/api/services/storePages';
 import { apiListMenus, type Menu } from '@/api/services/menus';
 import { AtelierLivePreview } from './AtelierLivePreview';
+import { AnnouncementForm } from './AnnouncementForm';
+import { DEFAULT_ANNOUNCEMENT } from './announcementDefaults';
+import { HeaderSettingsPanel, FooterSettingsPanel } from './HeaderFooterSettingsPanels';
+import { footerSettingsOf } from './headerFooterSettings';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { getThemeManifest } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
@@ -37,30 +41,6 @@ import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 // panel's own fix (see `themePreviewComponents.ts`).
 const ADMIN_ACCENT = '#D97757';
 
-const ANNOUNCEMENT_TYPE_LABEL: Record<StoreAnnouncementType, string> = {
-  info: 'Info', sale: 'Sale', coupon: 'Coupon', warning: 'Warning', shipping: 'Shipping', holiday: 'Holiday',
-};
-const DEFAULT_ANNOUNCEMENT: StoreAnnouncementBarValue = {
-  message: null, type: 'info', ctaLabel: null, ctaLink: null, isActive: false, startAt: null, endAt: null,
-};
-
-// `datetime-local` inputs need `YYYY-MM-DDTHH:mm` in the browser's own local
-// time, with no trailing `Z`/offset — this round-trips through the ISO
-// strings the API stores/returns without importing a date library for one
-// format conversion.
-function toDatetimeLocal(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-function fromDatetimeLocal(value: string): string | null {
-  if (!value) return null;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
-
 const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = { desktop: '100%', tablet: '768px', mobile: '390px' };
 
 interface HeaderFooterDraft { header: StorefrontHeader; footer: StorefrontFooter }
@@ -69,6 +49,9 @@ const FOOTER_BLOCK_OPTIONS: { type: string; label: string; defaults: Record<stri
   { type: 'footer_column', label: 'Link column', defaults: { heading: '', links: [] } },
   { type: 'social_link', label: 'Social link', defaults: { platform: 'facebook', url: '' } },
   { type: 'copyright_text', label: 'Copyright text', defaults: { text: '' } },
+  { type: 'footer_text', label: 'About text', defaults: { text: '' } },
+  { type: 'footer_contact', label: 'Contact details', defaults: { heading: 'Contact', email: '', phone: '', address: '', hours: '' } },
+  { type: 'footer_payment_icons', label: 'Payment methods', defaults: { icons: [] } },
 ];
 
 // Phase 7 — strips `_id` so a duplicated block persists as a genuinely new
@@ -116,99 +99,6 @@ function BlockRow({ block, onChange, onRemove, onDuplicate, pageOptions, storeId
       {confirming && (
         <ConfirmDialog title="Remove item" message={`Remove "${label}"? This cannot be undone.`} confirmLabel="Remove" onCancel={() => setConfirming(false)} onConfirm={() => { setConfirming(false); onRemove(); }} />
       )}
-    </div>
-  );
-}
-
-/** The Announcement tab's form — edits `Store.announcementBar` directly.
- *  Deliberately NOT wired into `useEditorState`/the draft-publish toolbar:
- *  unlike header/footer, this field has no draft — `apiUpdateAnnouncementBar`
- *  writes (and takes effect on the live storefront, subject to `isActive`/
- *  the schedule window) the moment the seller clicks Save. The form makes
- *  that explicit rather than borrowing "Save Draft" language that would be
- *  dishonest about what actually happens. */
-function AnnouncementForm({ value, onChange }: { value: StoreAnnouncementBarValue; onChange: (next: StoreAnnouncementBarValue) => void }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between bg-white border border-bone rounded-lg px-3 py-2.5">
-        <div>
-          <p className="text-[12.5px] font-semibold text-charcoal">Show announcement bar</p>
-          <p className="text-[11px] text-slate">When off, nothing shows even if a message is set below.</p>
-        </div>
-        <Toggle checked={value.isActive} onChange={isActive => onChange({ ...value, isActive })} ariaLabel="Show announcement bar" />
-      </div>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate">Message</span>
-        <textarea
-          value={value.message ?? ''}
-          onChange={e => onChange({ ...value, message: e.target.value || null })}
-          placeholder="Free shipping on orders over $50"
-          rows={2}
-          maxLength={200}
-          className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white resize-none focus:outline-none focus:ring-1"
-          style={{ fontFamily: 'inherit' }}
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate">Style</span>
-        <select
-          value={value.type}
-          onChange={e => onChange({ ...value, type: e.target.value as StoreAnnouncementType })}
-          className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white"
-        >
-          {(Object.keys(ANNOUNCEMENT_TYPE_LABEL) as StoreAnnouncementType[]).map(k => (
-            <option key={k} value={k}>{ANNOUNCEMENT_TYPE_LABEL[k]}</option>
-          ))}
-        </select>
-      </label>
-
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate">Button label</span>
-          <input
-            value={value.ctaLabel ?? ''}
-            onChange={e => onChange({ ...value, ctaLabel: e.target.value || null })}
-            placeholder="Shop now"
-            className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate">Button link</span>
-          <input
-            value={value.ctaLink ?? ''}
-            onChange={e => onChange({ ...value, ctaLink: e.target.value || null })}
-            placeholder="/collections/sale"
-            className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white"
-          />
-        </label>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate">Schedule (optional)</span>
-        <p className="text-[11px] text-slate -mt-1">Leave blank to show as soon as it's on, with no end date.</p>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-[10.5px] text-slate">Starts</span>
-            <input
-              type="datetime-local"
-              value={toDatetimeLocal(value.startAt)}
-              onChange={e => onChange({ ...value, startAt: fromDatetimeLocal(e.target.value) })}
-              className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[10.5px] text-slate">Ends</span>
-            <input
-              type="datetime-local"
-              value={toDatetimeLocal(value.endAt)}
-              onChange={e => onChange({ ...value, endAt: fromDatetimeLocal(e.target.value) })}
-              className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white"
-            />
-          </label>
-        </div>
-      </div>
     </div>
   );
 }
@@ -310,7 +200,7 @@ export function AtelierHeaderFooterPage() {
     try {
       const [hRes, fRes] = await Promise.all([
         apiUpdateStoreHeader(storeId, headerDraft, installedThemeId),
-        apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, installedThemeId, footerDraft.menuId),
+        apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, installedThemeId, footerDraft.menuId, footerSettingsOf(footerDraft)),
       ]);
       editor.markSaved({ header: hRes.data.draft.header, footer: fRes.data.draft.footer });
       flash(true, 'Draft saved — Publish to make it live.');
@@ -327,7 +217,7 @@ export function AtelierHeaderFooterPage() {
     const rollbackTo = editor.workingCopy;
     try {
       if (kind === 'header') await apiUpdateStoreHeader(storeId, next.header, installedThemeId);
-      else await apiUpdateStoreFooter(storeId, next.footer.blocks, next.footer.footerStyle, installedThemeId, next.footer.menuId);
+      else await apiUpdateStoreFooter(storeId, next.footer.blocks, next.footer.footerStyle, installedThemeId, next.footer.menuId, footerSettingsOf(next.footer));
       editor.markSaved(next);
     } catch (err) {
       if (rollbackTo) editor.discardDraft(rollbackTo);
@@ -344,7 +234,7 @@ export function AtelierHeaderFooterPage() {
       if (editor.dirty && headerDraft && footerDraft) {
         await Promise.all([
           apiUpdateStoreHeader(storeId, headerDraft, installedThemeId),
-          apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, installedThemeId, footerDraft.menuId),
+          apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, installedThemeId, footerDraft.menuId, footerSettingsOf(footerDraft)),
         ]);
       }
       const res = await apiPublishStoreTheme(storeId, installedThemeId);
@@ -530,6 +420,7 @@ export function AtelierHeaderFooterPage() {
                   <ImageUpload value={headerDraft.customLogoUrl ? [headerDraft.customLogoUrl] : []} onChange={urls => editor.edit(prev => ({ ...prev!, header: { ...headerDraft, customLogoUrl: urls[0] ?? null } }))} maxFiles={1} storeId={storeId} />
                 )}
               </div>
+              <HeaderSettingsPanel header={headerDraft} onChange={next => editor.edit(prev => ({ ...prev!, header: next }))} />
               <div className="flex flex-col gap-1.5 pb-3 mb-1 border-b border-bone">
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Navigation source</label>
                 <select
@@ -606,6 +497,7 @@ export function AtelierHeaderFooterPage() {
                     : `Manage reusable menus under Online Store → Menus, then pick one here to add it as a footer column.`}
                 </p>
               </div>
+              <FooterSettingsPanel footer={footerDraft} storeId={storeId} onChange={next => editor.edit(prev => ({ ...prev!, footer: next }))} />
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Footer Content</p>
               {footerDraft.blocks.length === 0 && (
                 <p className="text-[12.5px] text-slate leading-relaxed bg-white border border-bone rounded-lg px-3 py-2.5 mb-1">

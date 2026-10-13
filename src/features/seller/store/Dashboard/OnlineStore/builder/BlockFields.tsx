@@ -162,6 +162,29 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
       );
     }
 
+    case 'footer_payment_icons': {
+      const PAYMENT: { value: string; label: string }[] = [
+        { value: 'visa', label: 'Visa' }, { value: 'mastercard', label: 'Mastercard' }, { value: 'amex', label: 'Amex' }, { value: 'paypal', label: 'PayPal' },
+        { value: 'applepay', label: 'Apple Pay' }, { value: 'googlepay', label: 'Google Pay' }, { value: 'jazzcash', label: 'JazzCash' },
+        { value: 'easypaisa', label: 'Easypaisa' }, { value: 'cod', label: 'Cash on delivery' },
+      ];
+      const chosen: string[] = Array.isArray(settings.icons) ? settings.icons : [];
+      return (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[12px] text-slate">Tick the payment methods your store accepts — they show as small badges in the footer.</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {PAYMENT.map(p => (
+              <label key={p.value} className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                <input type="checkbox" checked={chosen.includes(p.value)}
+                  onChange={e => set({ icons: e.target.checked ? [...chosen, p.value] : chosen.filter(v => v !== p.value) })} />
+                {p.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     case 'divider':
       return <p className="text-[12px] text-slate italic">A plain divider line — no settings.</p>;
 

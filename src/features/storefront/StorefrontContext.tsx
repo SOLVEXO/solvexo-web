@@ -164,6 +164,8 @@ export interface StorefrontLinkSettings {
   categoryId?:   string;
   collectionId?: string;
   productId?:    string;
+  /** Open in a new tab. */
+  newTab?:       boolean;
 }
 
 /** Recursive navigation item shape used by standalone Menus and inline
@@ -181,7 +183,7 @@ export interface StorefrontNavItemSettings extends StorefrontLinkSettings {
 export interface ResolvedStorefrontNavItem {
   id: string;
   label: string;
-  link: { to?: string; href?: string };
+  link: { to?: string; href?: string; newTab?: boolean };
   menuStyle?: 'dropdown' | 'mega';
   /** Seller-set image, else the linked category/collection image, else null. */
   imageUrl?: string | null;
@@ -196,8 +198,17 @@ export interface ResolvedStorefrontNavItem {
  *  `categoryId`/`collectionId` here is always valid even though a slug would
  *  render a prettier URL — matches the existing Marketplace legacy-id
  *  redirect precedent rather than requiring a second slug lookup here. */
-export function resolveStorefrontLink(link: StorefrontLinkSettings): { to?: string; href?: string } {
+export function resolveStorefrontLink(link: StorefrontLinkSettings): { to?: string; href?: string; newTab?: boolean } {
+  const target = resolveLinkTarget(link);
+  return link.newTab ? { ...target, newTab: true } : target;
+}
+
+function resolveLinkTarget(link: StorefrontLinkSettings): { to?: string; href?: string } {
   if (link.linkType === 'external') return { href: link.url };
+  if (link.linkType === 'email' && link.url) return { href: `mailto:${link.url}` };
+  if (link.linkType === 'phone' && link.url) return { href: `tel:${link.url.replace(/[^\d+]/g, '')}` };
+  if (link.linkType === 'cart') return { to: `/cart` };
+  if (link.linkType === 'account') return { to: `/account` };
   if (link.linkType === 'blog') return { to: `/blog` };
   if (link.linkType === 'search') return { to: `/search` };
   if (link.linkType === 'page' && link.pageSlug) return { to: `/${link.pageSlug}` };
@@ -212,7 +223,7 @@ export interface StorefrontContextValue {
   theme:  StoreThemeData | null;
   cfg:    StorefrontCfg;
   /** Resolves a nav_link/footer-link block's link settings into a real in-app path or external href. */
-  resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string };
+  resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string; newTab?: boolean };
   /** Editor-only selected collection used to render collection templates in
    *  the Customize preview. Public storefront pages keep using route context. */
   previewCollectionId?: string | null;

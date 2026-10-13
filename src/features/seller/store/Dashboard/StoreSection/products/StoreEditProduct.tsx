@@ -28,6 +28,7 @@ import { PackageDimensionsFields } from './PackageDimensionsFields';
 import { CustomsInformationFields } from './CustomsInformationFields';
 import { customsPayload, customsText } from './customsInfo';
 import { ShippingProfileField } from './ShippingProfileField';
+import { SellingOptionsField, initSellingOptions, sellingOptionsFromProduct, sellingOptionsPayload } from './SellingOptionsField';
 import { dimensionPayload, dimensionText } from './packageDimensions';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
@@ -88,6 +89,7 @@ const blankPhys = {
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   shippingProfileId: '',
+  selling: initSellingOptions,
   // Non-empty optionTypes switches Pricing/Inventory over to the real
   // variant matrix — same convention as StoreAddProduct.tsx. Reconstructed
   // from the product's REAL variant list on load (see `loadPhysicalVariants`
@@ -127,6 +129,7 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
     shippingProfileId: p.shippingProfileId ?? '',
+    selling: sellingOptionsFromProduct(p),
     optionTypes: [], variantRows: [],
   };
 }
@@ -297,6 +300,7 @@ export default function StoreEditProduct() {
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           templateKey,
           shippingProfileId: phys.shippingProfileId || null,
+          ...sellingOptionsPayload(phys.selling),
         });
 
         // Reconcile the desired variant set (either the real matrix, or a
@@ -603,6 +607,8 @@ export default function StoreEditProduct() {
               </div>
             </Card>
           )}
+
+          {pType === 'physical' && <SellingOptionsField value={phys.selling} onChange={v => sp('selling', v)} />}
 
           {pType === 'physical' && (
             <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />

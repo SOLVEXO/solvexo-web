@@ -20,8 +20,8 @@ function paramsForSource(settings: Section['settings']): PublicStoreProductsPara
     case 'category':   return { categoryId: settings.categoryId, sort: 'newest', limit };
     case 'collection': return { collectionId: settings.collectionId, sort: 'newest', limit };
     case 'onSale':     return { onSale: true, sort: 'newest', limit };
-    case 'bestsellers':
-    case 'trending':   return { sort: 'best_rated', limit };
+    case 'bestsellers': return { sort: 'best_selling', limit };
+    case 'trending':    return { sort: 'trending', limit };
     case 'newArrivals':
     default:           return { sort: 'newest', limit };
   }

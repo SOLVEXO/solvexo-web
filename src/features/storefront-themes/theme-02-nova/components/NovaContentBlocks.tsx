@@ -16,6 +16,13 @@ export interface ContentBlock {
  *  shared engine's tokens. */
 /** `dynamicSourceValues` — see `AtelierContentBlocks.tsx`'s identical doc
  *  comment for the full "Dynamic Sources" rationale. */
+/** A real h2 / h3 / h4 (default h3 — the size these headings always had), so posts have a proper outline. */
+function ContentHeading({ level, baseSize, weight, text }: { level?: string; baseSize: number; weight: number; text: string }) {
+  const Tag = level === 'h2' ? 'h2' : level === 'h4' ? 'h4' : 'h3';
+  const size = Tag === 'h2' ? baseSize + 6 : Tag === 'h4' ? baseSize - 3 : baseSize;
+  return <Tag style={{ fontFamily: t.fonts.display, fontSize: size + 'px', fontWeight: weight, color: t.colors.ink, margin: 0 }}>{text}</Tag>;
+}
+
 export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: ContentBlock[]; dynamicSourceValues?: Record<string, string> }) {
   return (
     <>
@@ -29,9 +36,7 @@ export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: Con
             const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
-              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>
-                {text}
-              </p></PreviewBlock>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><ContentHeading level={block.settings.level} baseSize={20} weight={700} text={text} /></PreviewBlock>
             );
           }
           case 'paragraph': {

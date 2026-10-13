@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, UserPlus } from 'lucide-react';
+import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { apiGetStaffInvite, apiAcceptStaffInvite, type StaffInviteInfo } from '@/api/services/staff';
 
 /** Public, unauthenticated "Accept Invite" page — reached via the secure,
@@ -84,17 +85,19 @@ export default function StaffAcceptInvitePage() {
             <div className="flex flex-col gap-3">
               <p className="text-[12.5px] text-slate">Set your own password to activate your account. Only you will know it.</p>
               <div>
-                <label className="text-[12px] font-medium text-graphite mb-1 block">Password</label>
-                <input
-                  type="password" value={password} onChange={e => setPassword(e.target.value)}
+                <label htmlFor="staff-invite-pw" className="text-[12px] font-medium text-graphite mb-1 block">Password</label>
+                <PasswordField
+                  id="staff-invite-pw"
+                  autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
                   className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
                 />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-graphite mb-1 block">Confirm password</label>
-                <input
-                  type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                <label htmlFor="staff-invite-conf" className="text-[12px] font-medium text-graphite mb-1 block">Confirm password</label>
+                <PasswordField
+                  id="staff-invite-conf"
+                  autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                   className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
                 />
               </div>

@@ -138,6 +138,8 @@ const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Mana
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
 const StoreBanners = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreBanners'));
 const StoreAnnouncementBar = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreAnnouncementBar'));
+const ContactMessages = lazy(() => import('@/features/seller/store/Dashboard/Manage/ContactMessages'));
+const OnlineStorePreferences = lazy(() => import('@/features/seller/store/Dashboard/Manage/OnlineStorePreferences'));
 const StoreFeaturedCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreFeaturedCollections'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
@@ -218,7 +220,6 @@ const storefrontRouter = createBrowserRouter([
           { path: 'loyalty', element: FEATURES.loyalty ? <ThemedRoute routeKey="loyalty" /> : <Navigate to="/account" replace /> },
           { path: 'messages', element: <ThemedRoute routeKey="messages" /> },
           { path: 'notifications', element: <ThemedRoute routeKey="notifications" /> },
-          { path: 'faqs',                             element: <StoreFaqs /> },
           { path: 'returns', element: <ThemedRoute routeKey="returns" /> },
           { path: 'gift-cards', element: <ThemedRoute routeKey="giftCards" /> },
           { path: 'store-credit', element: <ThemedRoute routeKey="storeCredit" /> },
@@ -231,6 +232,8 @@ const storefrontRouter = createBrowserRouter([
           // 'collections'/'checkout' are reserved custom-page slugs precisely
           // so they can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
           { path: 'category/:slugOrId', element: <ThemedRoute routeKey="category" /> },
+          { path: 'collections', element: <ThemedRoute routeKey="collections" /> },
+          { path: 'faqs', element: <ThemedRoute routeKey="faqs" /> },
           { path: 'collections/:slugOrId', element: <ThemedRoute routeKey="collection" /> },
           { path: 'product/:slug', element: <ThemedRoute routeKey="product" /> },
           { path: 'search', element: <ThemedRoute routeKey="search" /> },
@@ -370,6 +373,7 @@ const mainRouter = createBrowserRouter([
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },
           { path: 'files',                            element: <FilesLibrary /> },
+          { path: 'faqs',                             element: <StoreFaqs /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
           // Verification's sidebar NAV item and workspace banner were removed
           // (dashboard-declutter request) while the underlying feature/page/
@@ -403,6 +407,8 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/apps',                 element: <AppsPage /> },
           { path: 'online-store/banners',              element: <StoreBanners /> },
           { path: 'online-store/announcement-bar',     element: <StoreAnnouncementBar /> },
+          { path: 'online-store/contact-messages',     element: <ContactMessages /> },
+          { path: 'online-store/preferences',           element: <OnlineStorePreferences /> },
           { path: 'online-store/featured',             element: <StoreFeaturedCollections /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'disputes',                         element: <DisputesList /> },

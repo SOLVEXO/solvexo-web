@@ -66,23 +66,29 @@ function BannerSlide({ banner, adapt }: { banner: StoreBanner; adapt: boolean })
           style={{ display: 'block', minHeight: '320px', maxHeight: '640px' }}
         />
       ) : !errored && (
-        <img
-          src={cloudinaryUrl(banner.imageUrl, 1600)}
-          srcSet={cloudinarySrcSet(banner.imageUrl, [768, 1200, 1600, 2560])}
-          sizes="100vw"
-          alt={banner.ctaLabel ?? ''}
-          onError={() => setErrored(true)}
-          className={adaptImage ? undefined : 'w-full h-full object-cover'}
-          style={sizeStyle}
-          loading="eager"
-          fetchPriority="high"
-        />
+        <picture style={{ display: 'contents' }}>
+          {banner.mobileImageUrl && <source media="(max-width: 767px)" srcSet={cloudinaryUrl(banner.mobileImageUrl, 900)} />}
+          <img
+            src={cloudinaryUrl(banner.imageUrl, 1600)}
+            srcSet={cloudinarySrcSet(banner.imageUrl, [768, 1200, 1600, 2560])}
+            sizes="100vw"
+            alt={banner.ctaLabel ?? ''}
+            onError={() => setErrored(true)}
+            className={adaptImage ? undefined : 'w-full h-full object-cover'}
+            style={sizeStyle}
+            loading="eager"
+            fetchPriority="high"
+          />
+        </picture>
       )}
+      {(link.to || link.href) && (link.to
+        ? <Link to={link.to} aria-label={heading || banner.ctaLabel || 'Open banner'} className="absolute inset-0 z-[1]" />
+        : <a href={link.href} aria-label={heading || banner.ctaLabel || 'Open banner'} className="absolute inset-0 z-[1]" target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined} />)}
       {(heading || subheading || (banner.ctaLabel && (link.to || link.href))) && (
         <>
           {!errored && <div className="absolute inset-0" style={{ background: overlay }} />}
-          <div className={`absolute inset-0 flex items-center px-6 sm:px-12 lg:px-20 ${alignment === 'center' ? 'justify-center text-center' : alignment === 'right' ? 'justify-end text-right' : 'justify-start text-left'}`}>
-            <div className="flex max-w-2xl flex-col gap-4 py-12">
+          <div className={`absolute inset-0 flex items-center pointer-events-none px-6 sm:px-12 lg:px-20 ${alignment === 'center' ? 'justify-center text-center' : alignment === 'right' ? 'justify-end text-right' : 'justify-start text-left'}`}>
+            <div className="pointer-events-auto relative z-[2] flex max-w-2xl flex-col gap-4 py-12">
               {heading && <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(32px, 5.4vw, 68px)', lineHeight: 1.02, fontWeight: 700, color: errored ? t.colors.ink : '#FFFFFF', margin: 0, textShadow: errored ? undefined : '0 2px 20px rgba(0,0,0,0.24)' }}>{heading}</h1>}
               {subheading && <p className="line-clamp-3" style={{ fontFamily: t.fonts.body, fontSize: 'clamp(14px, 1.6vw, 19px)', lineHeight: 1.55, color: errored ? t.colors.inkMuted : 'rgba(255,255,255,0.94)', maxWidth: '560px', margin: 0 }}>{subheading}</p>}
               {banner.ctaLabel && (link.to || link.href) && (

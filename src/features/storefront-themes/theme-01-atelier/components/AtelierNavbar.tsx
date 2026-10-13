@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, ChevronDown } from 'lucide-react';
 import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
 import { useStorefront, type StorefrontNavItemSettings, type ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
@@ -13,7 +13,9 @@ import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/ser
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { atelierTheme as t } from '../theme.config';
 import { buildNavImageLookup, isMegaItem, normalizeNavItems, useMegaNav } from '../../navigation/megaNav';
-import { MobileNavItem, type MobileNavTokens } from '../../navigation/MobileNavItem';
+import type { MobileNavTokens } from '../../navigation/MobileNavItem';
+import { MobileNavPanel } from '../../navigation/MobileNavPanel';
+import { readHeaderOptions, logoImageProps } from '../../navigation/headerOptions';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { AtelierMegaPanel } from './AtelierMegaPanel';
 
@@ -39,6 +41,10 @@ export function AtelierNavbar() {
   const shopCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const isLoggedIn = TokenStorage.isLoggedIn();
+  const opts = readHeaderOptions(theme?.header, 'Journal');
+  const centered = opts.headerStyle === 'centered';
+  // A custom logo with nothing uploaded falls back to the store logo instead of showing only the name.
+  const logoSrc = (theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : null) || store.logo;
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
@@ -71,9 +77,9 @@ export function AtelierNavbar() {
   const headerNavBlocks = (theme?.header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
   const navLinks: ResolvedStorefrontNavItem[] = headerNavBlocks.length > 0
     ? normalizeNavItems(headerNavBlocks.map(b => b.settings as unknown as StorefrontNavItemSettings), resolveLink, buildNavImageLookup(categories, collections))
-    : [{ id: 'journal', label: 'Journal', link: { to: '/blog' }, children: [] }];
+    : opts.showDefaultBlogLink ? [{ id: 'journal', label: opts.blogLabel, link: { to: '/blog' }, children: [] }] : [];
   const visibleNavLinks: ResolvedStorefrontNavItem[] = [...navLinks];
-  navigationPages.forEach(page => {
+  (opts.includePagesInNav ? navigationPages : []).forEach(page => {
     const to = `/${page.slug}`;
     if (!visibleNavLinks.some(item => item.link.to === to)) visibleNavLinks.push({ id: page._id, label: page.title, link: { to }, children: [] });
   });
@@ -90,128 +96,139 @@ export function AtelierNavbar() {
     topUppercase: true, topSize: '13px', topWeight: 400, topTracking: '0.1em', childSize: '12.5px',
   };
 
+  const desktopNav = (
+          <nav className="hidden lg:flex items-center gap-8">
+            {opts.showShopMenu && (
+            <div
+              className="relative"
+              onMouseEnter={() => { if (hasShopMenu) keepShopOpen(); }}
+              onMouseLeave={scheduleShopClose}
+            >
+              <button
+                type="button"
+                onClick={() => hasShopMenu ? setShopOpen(open => !open) : navigate('/#shop')}
+                aria-expanded={shopOpen}
+                aria-haspopup={hasShopMenu ? 'true' : undefined}
+                aria-controls={hasShopMenu && shopOpen ? 'atelier-shop-menu' : undefined}
+                className="no-underline uppercase flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+                style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500, padding: 0 }}
+              >
+                {opts.shopLabel} {hasShopMenu && <ChevronDown size={12} />}
+              </button>
+              {shopOpen && hasShopMenu && (
+                  <div
+                    onMouseEnter={keepShopOpen}
+                    id="atelier-shop-menu"
+                    role="region"
+                    aria-label="Shop categories and collections"
+                  className="absolute left-0 z-20 flex gap-10"
+                  style={{ top: '100%', background: '#FFFFFF', border: `1px solid ${t.colors.border}`, padding: '22px 26px', minWidth: '360px' }}
+                >
+                  <div className="flex flex-col gap-2.5">
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Explore</p>
+                    <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>All products</Link>
+                  </div>
+                  {categories.length > 0 && (
+                    <div className="flex flex-col gap-2.5">
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Categories</p>
+                      {categories.map(c => (
+                        <Link key={c._id} to={`/category/${c.slug || c._id}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>
+                          {c.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  {collections.length > 0 && (
+                    <div className="flex flex-col gap-2.5">
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Collections</p>
+                      {collections.map(c => (
+                        <Link key={c._id} to={`/collections/${c.slug}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>
+                          {c.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>)}
+            {visibleNavLinks.map(item => isMegaItem(item) ? (
+              <div
+                key={item.id}
+                className="flex items-center gap-1"
+                onMouseEnter={() => megaNav.open(item.id)}
+                onMouseLeave={megaNav.scheduleClose}
+              >
+                <NavAnchor link={item.link} onClick={megaNav.closeNow} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</NavAnchor>
+                <button
+                  type="button"
+                  onClick={() => megaNav.toggle(item.id)}
+                  aria-label={`${item.label} menu`}
+                  aria-expanded={megaNav.openId === item.id}
+                  aria-controls={megaNav.openId === item.id ? `atelier-mega-${item.id}` : undefined}
+                  className="atelier-focus-ring bg-transparent border-0 cursor-pointer p-0 flex items-center"
+                  style={{ color: t.colors.ink }}
+                >
+                  <ChevronDown size={12} style={{ transform: megaNav.openId === item.id ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s ease' }} />
+                </button>
+              </div>
+            ) : (
+              <div key={item.id} className="relative group">
+                {item.link.to ? <Link to={item.link.to} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</Link> : <a href={item.link.href} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</a>}
+                {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
+                  {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string; newTab?: boolean }; children?: { id: string; label: string; link: { to?: string; href?: string; newTab?: boolean } }[] }) => (
+                    <div key={child.id} className="relative group/sub">
+                      {child.link.to ? <Link to={child.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{child.label}</Link> : <a href={child.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{child.label}</a>}
+                      {!!child.children?.length && <div className="absolute left-full top-0 z-40 hidden min-w-[180px] flex-col gap-3 border p-4 group-hover/sub:flex group-focus-within/sub:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
+                        {child.children.map(grandchild => grandchild.link.to ? <Link key={grandchild.id} to={grandchild.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{grandchild.label}</Link> : <a key={grandchild.id} href={grandchild.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{grandchild.label}</a>)}
+                      </div>}
+                    </div>
+                  ))}
+                </div>}
+              </div>
+            ))}
+          </nav>
+  );
+  const logoLink = (
+          <Link
+            to="/"
+            className={`no-underline flex items-center gap-2 ${centered ? '' : 'absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0'}`}
+          >
+            {logoSrc
+              ? <img src={logoSrc} alt={store.name} {...logoImageProps(opts)} />
+              : <span style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink, letterSpacing: '0.02em' }}>{store.name}</span>}
+          </Link>
+  );
+
   return (
-    <header {...megaNav.headerProps} style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
+    <header {...megaNav.headerProps} style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg, ...(opts.sticky ? { position: 'sticky' as const, top: 0, zIndex: 40 } : {}) }}>
       <div className="relative">
       <div
-        className="relative mx-auto flex items-center justify-between"
+        className={`relative mx-auto items-center ${centered ? 'grid grid-cols-[1fr_auto_1fr] gap-6' : 'flex justify-between'}`}
         style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
       >
         {/* Mobile menu toggle */}
         <button
           type="button"
-          onClick={() => setMobileOpen(o => !o)}
-          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+          aria-haspopup="dialog"
           className="lg:hidden bg-transparent border-0 cursor-pointer p-1"
           style={{ color: t.colors.ink }}
         >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          <Menu size={20} />
         </button>
 
         {/* Left nav (desktop) */}
-        <nav className="hidden lg:flex items-center gap-8">
-          <div
-            className="relative"
-            onMouseEnter={() => { if (hasShopMenu) keepShopOpen(); }}
-            onMouseLeave={scheduleShopClose}
-          >
-            <button
-              type="button"
-              onClick={() => hasShopMenu ? setShopOpen(open => !open) : navigate('/#shop')}
-              aria-expanded={shopOpen}
-              aria-haspopup={hasShopMenu ? 'true' : undefined}
-              aria-controls={hasShopMenu && shopOpen ? 'atelier-shop-menu' : undefined}
-              className="no-underline uppercase flex items-center gap-1 bg-transparent border-0 cursor-pointer"
-              style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500, padding: 0 }}
-            >
-              Shop {hasShopMenu && <ChevronDown size={12} />}
-            </button>
-            {shopOpen && hasShopMenu && (
-                <div
-                  onMouseEnter={keepShopOpen}
-                  id="atelier-shop-menu"
-                  role="region"
-                  aria-label="Shop categories and collections"
-                className="absolute left-0 z-20 flex gap-10"
-                style={{ top: '100%', background: '#FFFFFF', border: `1px solid ${t.colors.border}`, padding: '22px 26px', minWidth: '360px' }}
-              >
-                <div className="flex flex-col gap-2.5">
-                  <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Explore</p>
-                  <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>All products</Link>
-                </div>
-                {categories.length > 0 && (
-                  <div className="flex flex-col gap-2.5">
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Categories</p>
-                    {categories.map(c => (
-                      <Link key={c._id} to={`/category/${c.slug || c._id}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>
-                        {c.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {collections.length > 0 && (
-                  <div className="flex flex-col gap-2.5">
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Collections</p>
-                    {collections.map(c => (
-                      <Link key={c._id} to={`/collections/${c.slug}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink }}>
-                        {c.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          {visibleNavLinks.map(item => isMegaItem(item) ? (
-            <div
-              key={item.id}
-              className="flex items-center gap-1"
-              onMouseEnter={() => megaNav.open(item.id)}
-              onMouseLeave={megaNav.scheduleClose}
-            >
-              <NavAnchor link={item.link} onClick={megaNav.closeNow} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</NavAnchor>
-              <button
-                type="button"
-                onClick={() => megaNav.toggle(item.id)}
-                aria-label={`${item.label} menu`}
-                aria-expanded={megaNav.openId === item.id}
-                aria-controls={megaNav.openId === item.id ? `atelier-mega-${item.id}` : undefined}
-                className="atelier-focus-ring bg-transparent border-0 cursor-pointer p-0 flex items-center"
-                style={{ color: t.colors.ink }}
-              >
-                <ChevronDown size={12} style={{ transform: megaNav.openId === item.id ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s ease' }} />
-              </button>
-            </div>
-          ) : (
-            <div key={item.id} className="relative group">
-              {item.link.to ? <Link to={item.link.to} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</Link> : <a href={item.link.href} className="no-underline uppercase" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}>{item.label}</a>}
-              {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
-                {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string }; children?: { id: string; label: string; link: { to?: string; href?: string } }[] }) => (
-                  <div key={child.id} className="relative group/sub">
-                    {child.link.to ? <Link to={child.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{child.label}</Link> : <a href={child.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{child.label}</a>}
-                    {!!child.children?.length && <div className="absolute left-full top-0 z-40 hidden min-w-[180px] flex-col gap-3 border p-4 group-hover/sub:flex group-focus-within/sub:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
-                      {child.children.map(grandchild => grandchild.link.to ? <Link key={grandchild.id} to={grandchild.link.to} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{grandchild.label}</Link> : <a key={grandchild.id} href={grandchild.link.href} className="no-underline" style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.04em', fontFamily: t.fonts.body }}>{grandchild.label}</a>)}
-                    </div>}
-                  </div>
-                ))}
-              </div>}
-            </div>
-          ))}
-        </nav>
+        {!centered && desktopNav}
 
         {/* Center wordmark */}
-        <Link
-          to="/"
-          className="no-underline flex items-center gap-2 absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
-        >
-          {(theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo)
-            ? <img src={(theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo)!} alt={store.name} className="max-h-10 max-w-[180px] object-contain" />
-            : <span style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink, letterSpacing: '0.02em' }}>{store.name}</span>}
-        </Link>
+        {logoLink}
 
         {/* Right icon cluster */}
-        <div className="flex items-center gap-4">
+        <div className={`flex items-center gap-4 ${centered ? 'justify-self-end' : ''}`}>
           <CurrencySelector allowed={store.enabledCurrencies ?? undefined} />
+          {opts.showSearch && (
           <button
             type="button"
             onClick={() => setSearchOpen(o => !o)}
@@ -222,10 +239,13 @@ export function AtelierNavbar() {
           >
             <Search size={18} />
           </button>
+          )}
+{opts.showAccount && (
           <Link to={isLoggedIn ? '/account' : '/login'} aria-label="Account" style={{ color: t.colors.ink }}>
             <User size={18} />
           </Link>
-          {isLoggedIn && (
+)}
+          {isLoggedIn && opts.showWishlist && (
             <Link to="/wishlist" aria-label={`Wishlist, ${wishlistCount} item${wishlistCount !== 1 ? 's' : ''}`} className="relative" style={{ color: t.colors.ink }}>
               <Heart size={18} />
               {wishlistCount > 0 && (
@@ -253,6 +273,11 @@ export function AtelierNavbar() {
           </Link>
         </div>
       </div>
+      {centered && (
+        <div className="hidden lg:flex mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `0 ${t.layout.containerPadX} 14px`, justifyContent: opts.navAlignment === 'center' ? 'center' : opts.navAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
+          {desktopNav}
+        </div>
+      )}
       {openMegaItem && (
         <AtelierMegaPanel
           item={openMegaItem}
@@ -273,41 +298,28 @@ export function AtelierNavbar() {
         </div>
       )}
 
-      {mobileOpen && (
-        <nav className="lg:hidden flex flex-col border-t" style={{ borderColor: t.colors.border }}>
-          <Link
-            to="/#shop"
-            onClick={() => setMobileOpen(false)}
-            className="no-underline uppercase"
-            style={{ color: t.colors.ink, fontSize: '13px', letterSpacing: '0.1em', fontFamily: t.fonts.body, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}
-          >
-            Shop
-          </Link>
-          {categories.map(c => (
-            <Link
-              key={c._id}
-              to={`/category/${c.slug || c._id}`}
-              onClick={() => setMobileOpen(false)}
-              className="no-underline"
-              style={{ color: t.colors.inkMuted, fontSize: '12.5px', fontFamily: t.fonts.body, padding: `10px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}
-            >
-              {c.name}
-            </Link>
-          ))}
-          {collections.map(c => (
-            <Link
-              key={c._id}
-              to={`/collections/${c.slug}`}
-              onClick={() => setMobileOpen(false)}
-              className="no-underline"
-              style={{ color: t.colors.inkMuted, fontSize: '12.5px', fontFamily: t.fonts.body, padding: `10px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}
-            >
-              {c.name}
-            </Link>
-          ))}
-          {visibleNavLinks.map(item => <MobileNavItem key={item.id} item={item} tokens={mobileNavTokens} onNavigate={() => setMobileOpen(false)} />)}
-        </nav>
-      )}
+      <MobileNavPanel
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        tokens={{ ...mobileNavTokens, bg: t.colors.bg, displayFont: t.fonts.display }}
+        storeName={store.name}
+        brand={logoSrc
+          ? <img src={logoSrc} alt={store.name} style={{ maxHeight: 36, maxWidth: 160, objectFit: 'contain' }} />
+          : <span style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 600, color: t.colors.ink }}>{store.name}</span>}
+        items={visibleNavLinks}
+        shop={opts.showShopMenu ? {
+          label: opts.shopLabel,
+          categories: categories.map(c => ({ id: c._id, label: c.name, to: `/category/${c.slug || c._id}` })),
+          collections: collections.map(c => ({ id: c._id, label: c.name, to: `/collections/${c.slug}` })),
+        } : null}
+        showSearch={opts.showSearch}
+        onSearch={() => setSearchOpen(true)}
+        showAccount={opts.showAccount}
+        accountTo={isLoggedIn ? '/account' : '/login'}
+        showWishlist={isLoggedIn && opts.showWishlist}
+        wishlistCount={wishlistCount}
+        footer={<CurrencySelector allowed={store.enabledCurrencies ?? undefined} />}
+      />
     </header>
   );
 }

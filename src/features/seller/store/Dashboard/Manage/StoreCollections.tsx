@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Layers, Plus } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useToast } from '@/contexts/ToastContext';
 import { SkeletonBox, EmptyState } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui/ActionMenu';
@@ -23,6 +24,8 @@ function StatusBadge({ status }: { status: 'active' | 'draft' }) {
 // manages (that tab is untouched; a seller can have both today).
 export default function StoreCollections() {
   const { storeId } = useStoreWorkspace();
+  const toast = useToast();
+  const [loadError, setLoadError] = useState(false);
   const [collections, setCollections] = useState<CollectionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -32,7 +35,11 @@ export default function StoreCollections() {
 
   const load = useCallback(() => {
     setLoading(true);
-    apiListCollections(storeId).then(res => setCollections(res.data)).finally(() => setLoading(false));
+    setLoadError(false);
+    apiListCollections(storeId)
+      .then(res => setCollections(res.data))
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
   }, [storeId]);
 
   useEffect(() => { load(); }, [load]);
@@ -44,6 +51,8 @@ export default function StoreCollections() {
       await apiDeleteCollection(storeId, pendingDeleteId);
       setCollections(prev => prev.filter(c => c._id !== pendingDeleteId));
       setPendingDeleteId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete this collection.');
     } finally {
       setDeleting(false);
     }
@@ -74,6 +83,11 @@ export default function StoreCollections() {
         {loading ? (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={64} rounded="10px" />)}
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <p className="text-[13px] text-error">Couldn't load your collections.</p>
+            <Button variant="outline" size="sm" onClick={load}>Try again</Button>
           </div>
         ) : collections.length === 0 ? (
           <EmptyState

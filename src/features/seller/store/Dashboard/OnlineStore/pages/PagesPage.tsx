@@ -6,7 +6,7 @@ import { SkeletonBox } from '@/components/comman/ui';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import {
   apiListStorePages, apiCreateStorePage, apiUpdateStorePageSections,
-  apiPublishStorePage, apiUnpublishStorePage, apiRevertStorePageDraft, apiDeleteStorePage,
+  apiPublishStorePage, apiUnpublishStorePage, apiRevertStorePageDraft, apiDeleteStorePage, apiDuplicateStorePage,
   apiListStorePageVersions, apiRestoreStorePageVersion,
   type StorePageData, type StorePageVersionData,
 } from '@/api/services/storePages';
@@ -194,6 +194,17 @@ export function PagesPage() {
     }
   };
 
+  const handleDuplicatePage = async (id: string) => {
+    try {
+      const res = await apiDuplicateStorePage(storeId, id);
+      setPages(prev => [...prev, res.data]);
+      setSelectedPageId(res.data._id);
+      flash(true, 'Page duplicated — it is a draft until you publish it.');
+    } catch (err: unknown) {
+      flash(false, err instanceof Error ? err.message : 'Could not duplicate this page.');
+    }
+  };
+
   // Nothing deletes straight from the row click — `onDelete` only opens the
   // confirm dialog below; the actual API call happens in `confirmDeletePage`.
   const [pendingDeletePageId, setPendingDeletePageId] = useState<string | null>(null);
@@ -207,6 +218,9 @@ export function PagesPage() {
       setPages(prev => prev.filter(p => p._id !== pendingDeletePageId));
       if (selectedPageId === pendingDeletePageId) setSelectedPageId(null);
       setPendingDeletePageId(null);
+    } catch (err: unknown) {
+      // keep the dialog open so the seller can retry; the failure must never be silent
+      flash(false, err instanceof Error ? err.message : 'Could not delete this page. Please try again.');
     } finally {
       setDeletingPage(false);
     }
@@ -329,7 +343,7 @@ export function PagesPage() {
       <div className="px-4 lg:px-7 py-5 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 items-start">
         <div className="bg-white border border-bone rounded-2xl p-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
           {pagesLoading ? <SkeletonBox height={160} rounded="8px" /> : (
-            <PagesList pages={pages} selectedId={selectedPageId} onSelect={setSelectedPageId} onCreate={handleCreatePage} onDelete={setPendingDeletePageId} creating={creatingPage} />
+            <PagesList pages={pages} selectedId={selectedPageId} onSelect={setSelectedPageId} onCreate={handleCreatePage} onDelete={setPendingDeletePageId} onDuplicate={handleDuplicatePage} creating={creatingPage} />
           )}
         </div>
 

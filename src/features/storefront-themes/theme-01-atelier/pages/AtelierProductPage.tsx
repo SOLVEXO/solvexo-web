@@ -15,11 +15,16 @@ import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import type { Section } from '@/api/services/storefrontTypes';
 import { resolveProductMainLayout, splitProductTemplateSections, type ProductInfoBlock } from '../../productPageLayout';
+import { ProductPageContext } from '../../productContext';
+import { ImageLightbox } from '../../ImageLightbox';
+import { ProductWishlistButton, ProductShareButton, ProductSku, ProductSpecs, type PartTokens } from '../../ProductPageParts';
+import type { MetafieldValueEntry } from '@/api/services/metafields';
 import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput } from '../components/atelierFormStyles';
 import { useBackInStock } from '../../useBackInStock';
 import { useCartDrawer } from '../../cartDrawerContext';
+import { resolveQtyRules, clampQty, qtyRuleHint, preorderLabel } from '../../sellingRules';
 import { variantAvailable, variantCanBuy, variantMaxQty, stockState, optionValueAvailable } from '../../variantAvailability';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
@@ -27,6 +32,7 @@ import { atelierTheme as t } from '../theme.config';
 
 function Gallery({ images, name }: { images: string[]; name: string }) {
   const [selected, setSelected] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
   const [errored, setErrored] = useState<Record<number, boolean>>({});
   const src = images[selected];
   const ratio = {
@@ -40,7 +46,12 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
     <div className="flex flex-col gap-3 min-w-0">
       <div
         className="relative w-full flex items-center justify-center"
-        style={{ aspectRatio: ratio ?? (src && !errored[selected] ? 'auto' : '3 / 4'), background: t.colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}
+        role={src && !errored[selected] ? 'button' : undefined}
+        tabIndex={src && !errored[selected] ? 0 : undefined}
+        aria-label={src && !errored[selected] ? 'Enlarge photo' : undefined}
+        onClick={() => { if (src && !errored[selected]) setZoomed(true); }}
+        onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && src && !errored[selected]) { e.preventDefault(); setZoomed(true); } }}
+        style={{ cursor: src && !errored[selected] ? 'zoom-in' : undefined, aspectRatio: ratio ?? (src && !errored[selected] ? 'auto' : '3 / 4'), background: t.colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}
       >
         {src && !errored[selected]
           ? (
@@ -70,6 +81,7 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
           ))}
         </div>
       )}
+      {zoomed && <ImageLightbox images={images} index={selected} alt={name} onIndexChange={setSelected} onClose={() => setZoomed(false)} />}
     </div>
   );
 }
@@ -163,6 +175,8 @@ export function AtelierProductPage() {
   // `"namespace:key"` for O(1) lookup by `RichTextSection`'s `paragraph`
   // block. See `atelierSectionRenderer.tsx`'s `SectionRenderFn` doc comment.
   const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
+  // The same values with their field names — the Specifications block lists these.
+  const [metafieldEntries, setMetafieldEntries] = useState<MetafieldValueEntry[]>([]);
 
   const product = detail?.product ?? null;
   useRecordProductView(product?._id);
@@ -203,8 +217,8 @@ export function AtelierProductPage() {
   useEffect(() => {
     if (!product) return;
     apiGetPublicMetafieldValues(store.storeId, 'product', product._id)
-      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
-      .catch(() => setDynamicSourceValues({}));
+      .then(res => { setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))); setMetafieldEntries(res.data); })
+      .catch(() => { setDynamicSourceValues({}); setMetafieldEntries([]); });
   }, [store.storeId, product?._id]);
 
   useEffect(() => {
@@ -227,7 +241,10 @@ export function AtelierProductPage() {
   const maxQty = variantMaxQty(activeVariant, isDigital);
   const state = stockState(activeVariant, isDigital, store.lowStockThreshold);
   const cartDrawer = useCartDrawer();
-  const qty = Math.max(1, Math.min(rawQty, maxQty));
+  const rules = resolveQtyRules(product, maxQty);
+  const qty = clampQty(rawQty, rules);
+  const preorderText = preorderLabel(product);
+  const ruleHint = qtyRuleHint(rules);
   const pctOff = activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price
     ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100) : null;
   const displayPrice = activeVariant ? convert(activeVariant.price, activeVariant.currency) : null;
@@ -236,13 +253,13 @@ export function AtelierProductPage() {
   const ratesOk = ratesLoaded || !activeVariant?.currency || activeVariant.currency === displayCurrency;
   const money = (n: number) => (ratesOk ? `${symbol}${fmt2(n)}` : '—');
 
-  useEffect(() => { setQty(1); }, [activeVariant?._id]);
+  useEffect(() => { setQty(rules.min); }, [activeVariant?._id, rules.min]);
   // "Notify me when available" — only for a physical variant that's sold out.
   const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && !canBuy);
 
   const handleAddToCart = async () => {
     if (!product || !activeVariant || !canBuy) return;
-    const wanted = Math.max(1, Math.min(qty, maxQty));
+    const wanted = qty;
     await addToCart(product._id, activeVariant._id, isDigital ? 'digital' : 'physical');
     // `addToCart` always adds exactly 1 unit (real shared CartContext/API
     // behavior, app-wide) — honor a higher selected quantity the same way
@@ -270,10 +287,11 @@ export function AtelierProductPage() {
   const layout = resolveProductMainLayout(productMainSection);
   const { before: sectionsBefore, after: sectionsAfter } = splitProductTemplateSections(templateSections);
 
-  const titleOn = layout.infoOrder.includes('product_title');
   const buyOn = layout.infoOrder.includes('product_buy_buttons');
+  const partTokens: PartTokens = { fonts: t.fonts, colors: t.colors, buttonRadius: '0px' };
+  const productContext = { productId: product._id, categoryId: product.categoryId ?? null };
   // A divider above Description only makes sense when something sits above it.
-  const descLeads = layout.infoOrder[0] === 'product_description' && (titleOn || !(product.averageRating > 0));
+  const descLeads = layout.infoOrder[0] === 'product_description';
 
   const ratingLine = product.averageRating > 0 && (
     <div className="flex items-center gap-1.5 mt-2">
@@ -328,13 +346,19 @@ export function AtelierProductPage() {
   // the order the seller arranged them in the editor (see `productPageLayout`).
   const infoBlocks: Record<ProductInfoBlock, ReactNode> = {
     product_title: (
-      <div className="flex flex-col">
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15 }}>
-          {product.name}
-        </h1>
-        {ratingLine}
+      <div>
+        {product.vendor ? <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: t.colors.inkMuted, margin: '0 0 6px' }}>{product.vendor}</p> : null}
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15 }}>
+        {product.name}
+      </h1>
+        {preorderText ? <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, margin: '8px 0 0' }}>{preorderText}</p> : null}
       </div>
     ),
+    product_rating: ratingLine,
+    product_sku: <ProductSku sku={activeVariant?.sku} tokens={partTokens} />,
+    product_wishlist: <ProductWishlistButton productId={product._id} variantId={activeVariant?._id} tokens={partTokens} />,
+    product_share: <ProductShareButton title={product.name} tokens={partTokens} />,
+    product_specs: <ProductSpecs entries={metafieldEntries} tokens={partTokens} />,
     product_price: (
       <div className="flex items-baseline gap-3">
         <span style={{ fontFamily: t.fonts.body, fontSize: '22px', color: t.colors.ink, fontWeight: 500 }}>
@@ -356,16 +380,17 @@ export function AtelierProductPage() {
     product_quantity: !isDigital && (
       <div className="flex items-center gap-4">
         <div className="flex items-center" style={{ border: `1px solid ${t.colors.border}` }}>
-          <button type="button" disabled={qty <= 1} aria-label="Decrease quantity" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+          <button type="button" disabled={qty <= rules.min} aria-label="Decrease quantity" onClick={() => setQty(q => clampQty(q - rules.step, rules))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
             <Minus size={13} />
           </button>
           <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, width: '36px', textAlign: 'center' }}>{qty}</span>
-          <button type="button" onClick={() => setQty(q => Math.min(maxQty, q + 1))} disabled={!canBuy || qty >= maxQty} aria-label="Increase quantity" className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+          <button type="button" onClick={() => setQty(q => clampQty(q + rules.step, rules))} disabled={!canBuy || qty >= rules.max} aria-label="Increase quantity" className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
             <Plus size={13} />
           </button>
         </div>
         <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
           {state === 'sold_out' ? 'Sold out' : state === 'low' ? `Only ${stock} left` : state === 'backorder' ? 'Available on backorder' : 'In stock'}
+          {ruleHint ? ` · ${ruleHint}` : ''}
         </span>
       </div>
     ),
@@ -378,7 +403,7 @@ export function AtelierProductPage() {
           onClick={handleAddToCart}
           style={{ width: '100%', justifyContent: 'center' }}
         >
-          {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : !canBuy ? 'Sold out' : 'Add to Cart'}
+          {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : !canBuy ? 'Sold out' : preorderText ? 'Pre-order' : 'Add to Cart'}
         </AtelierButton>
         {backInStockBox}
       </div>
@@ -390,8 +415,25 @@ export function AtelierProductPage() {
       </div>
     ),
   };
+  // Title + rating are one tight group; wishlist + share sit on one row; everything else stacks.
+  const renderedInfo: ReactNode[] = [];
+  for (let i = 0; i < layout.infoOrder.length; i++) {
+    const type = layout.infoOrder[i];
+    const next = layout.infoOrder[i + 1];
+    if (type === 'product_title' && next === 'product_rating') {
+      renderedInfo.push(<div key="title-rating" className="flex flex-col">{infoBlocks.product_title}{infoBlocks.product_rating}</div>);
+      i++;
+    } else if ((type === 'product_wishlist' && next === 'product_share') || (type === 'product_share' && next === 'product_wishlist')) {
+      renderedInfo.push(<div key="wishlist-share" className="flex flex-wrap gap-3">{infoBlocks[type]}{infoBlocks[next]}</div>);
+      i++;
+    } else {
+      renderedInfo.push(<Fragment key={type}>{infoBlocks[type]}</Fragment>);
+    }
+  }
+
   return (
     <main>
+      <ProductPageContext.Provider value={productContext}>
       {/* Sections the seller placed above the main product block. */}
       {sectionsBefore.length > 0 && <AtelierSectionRenderer sections={sectionsBefore} dynamicSourceValues={dynamicSourceValues} />}
 
@@ -401,8 +443,7 @@ export function AtelierProductPage() {
         <div className={`flex flex-col gap-6 ${layout.mediaOn ? '' : 'w-full max-w-[640px] mx-auto'}`}>
           {/* The rating, preview button and back-in-stock box always showed
               even when their neighbouring block was hidden — keep that. */}
-          {!titleOn && ratingLine}
-          {layout.infoOrder.map(type => <Fragment key={type}>{infoBlocks[type]}</Fragment>)}
+          {renderedInfo}
           {!buyOn && <>{previewButton}{backInStockBox}</>}
         </div>
       </div>
@@ -444,6 +485,7 @@ export function AtelierProductPage() {
           )}
         </Modal>
       )}
+      </ProductPageContext.Provider>
     </main>
   );
 }

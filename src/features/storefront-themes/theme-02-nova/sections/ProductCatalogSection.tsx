@@ -3,6 +3,7 @@ import { NovaProductGrid } from '../components/NovaProductGrid';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 import { resolveNovaCollectionId, useNovaCollectionScope } from './collectionScope';
+import { gridSortFor, useCollectionDefaultSort } from '../../collectionSortScope';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 
 // No section-root color reads here — `NovaProductGrid` is a shared
@@ -25,10 +26,11 @@ function CollectionProductGrid({ section }: { section: Section }) {
   const routeCollectionId = useNovaCollectionScope();
   const { previewCollectionId } = useStorefront();
   const collectionId = resolveNovaCollectionId(routeCollectionId, previewCollectionId);
+  const collectionSort = useCollectionDefaultSort();
   return (
     <div style={{ padding: `0 ${t.layout.containerPadX} ${t.layout.sectionPadY}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-        <NovaProductGrid collectionId={collectionId ?? undefined} syncUrl defaultSort={section.settings.defaultSort} columns={section.settings.columns} showFilters={section.settings.showFilters} />
+        <NovaProductGrid collectionId={collectionId ?? undefined} syncUrl defaultSort={gridSortFor(collectionSort, section.settings.defaultSort)} columns={section.settings.columns} showFilters={section.settings.showFilters} />
       </div>
     </div>
   );

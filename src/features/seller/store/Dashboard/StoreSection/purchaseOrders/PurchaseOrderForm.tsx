@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Plus, Trash2, Search, CheckCircle2, PackageCheck, XCircle } from 'lucide-react';
+import { Plus, Trash2, Search, CheckCircle2, PackageCheck, XCircle, Undo2 } from 'lucide-react';
+import { hasNavPermission } from '@/components/layouts/StoreLayout';
+import { TokenStorage } from '@/api/services/auth';
+import { SupplierReturnModal, type ReturnLine } from '@/features/seller/store/Dashboard/Operations/inventory/SupplierReturnModal';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui';
@@ -127,6 +130,7 @@ export default function PurchaseOrderForm() {
   const [marking, setMarking] = useState(false);
   const [closingShort, setClosingShort] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const currency = po?.currency ?? store?.baseCurrency ?? 'USD';
   const symbol = currencySymbol(currency);
   const isEditable = isNew || po?.status === 'draft';
@@ -251,6 +255,14 @@ export default function PurchaseOrderForm() {
   if (loading) return <div className="px-4 lg:px-7 py-8 text-[13px] text-slate">Loading…</div>;
 
   const canReceive = po && (po.status === 'ordered' || po.status === 'partially_received');
+  // lines that still have received-but-not-yet-returned units (the server enforces the same cap)
+  const returnableLines: ReturnLine[] = (po?.items ?? [])
+    .filter(i => i.quantityReceived - (i.quantityReturned ?? 0) > 0)
+    .map(i => ({
+      variantId: i.variantId, name: i.options.length ? `${i.name} — ${i.options.map(o => o.value).join(' / ')}` : i.name, sku: i.sku ?? '',
+      max: i.quantityReceived - (i.quantityReturned ?? 0), quantity: '1', unitCost: String(i.unitCost), purchaseOrderItemId: i._id,
+    }));
+  const canReturn = hasNavPermission(TokenStorage.getUser() as never, ['inventory.adjust']);
 
   return (
     <>
@@ -271,6 +283,9 @@ export default function PurchaseOrderForm() {
             )}
             {canReceive && (
               <Button size="sm" variant="primary" icon={<PackageCheck size={13} />} onClick={() => setReceiveOpen(true)}>Receive Shipment</Button>
+            )}
+            {!isNew && canReturn && returnableLines.length > 0 && (
+              <Button size="sm" variant="outline" icon={<Undo2 size={13} />} onClick={() => setReturnOpen(true)}>Return to supplier</Button>
             )}
             {!isNew && po?.status === 'partially_received' && (
               <Button variant="outline" size="sm" loading={closingShort} onClick={handleCloseShort}>Close as Short</Button>
@@ -381,6 +396,15 @@ export default function PurchaseOrderForm() {
 
       {confirmingCancel && (
         <ConfirmDialog title="Cancel this purchase order?" message="This cannot be undone." confirmLabel="Cancel Purchase Order" onConfirm={handleCancel} onCancel={() => setConfirmingCancel(false)} />
+      )}
+
+      {returnOpen && po && (
+        <SupplierReturnModal
+          storeId={storeId}
+          onClose={() => setReturnOpen(false)}
+          onDone={() => { setReturnOpen(false); loadPo(); }}
+          prefill={{ supplierId: po.supplierId ?? null, purchaseOrderId: po._id, poNumber: po.poNumber, lines: returnableLines }}
+        />
       )}
 
       {receiveOpen && po && poId && (

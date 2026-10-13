@@ -35,13 +35,24 @@ export function AtelierBlogIndexPage() {
   useStorefrontSeo({ title: blogTitle ?? 'Journal' });
   const [posts, setPosts] = useState<BlogPostSummary[] | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     setPosts(null);
     apiListPublicBlogPosts(store.storeId, blogSlug, 1, 20)
-      .then(res => { setPosts(res.data.posts); setBlogTitle(res.data.blog?.title ?? null); })
+      .then(res => { setPosts(res.data.posts); setPage(1); setTotalPages(res.data.pagination?.totalPages ?? 1); setBlogTitle(res.data.blog?.title ?? null); })
       .catch(() => setPosts([]));
   }, [store.storeId, blogSlug]);
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    apiListPublicBlogPosts(store.storeId, blogSlug, page + 1, 20)
+      .then(res => { setPosts(prev => [...(prev ?? []), ...res.data.posts]); setPage(page + 1); setTotalPages(res.data.pagination?.totalPages ?? totalPages); })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  };
 
   useEffect(() => {
     apiGetPublicCollectionTemplate(store.storeId, 'page', 'blog-index')
@@ -99,6 +110,15 @@ export function AtelierBlogIndexPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {posts !== null && page < totalPages && (
+        <div className="flex justify-center" style={{ marginTop: '40px' }}>
+          <button type="button" onClick={loadMore} disabled={loadingMore} className="cursor-pointer disabled:opacity-60"
+            style={{ fontFamily: t.fonts.body, fontSize: '12.5px', letterSpacing: '0.06em', padding: '12px 30px', border: `1px solid ${t.colors.ink}`, background: 'transparent', color: t.colors.ink, borderRadius: '0' }}>
+            {loadingMore ? 'Loading…' : 'Load more'}
+          </button>
         </div>
       )}
     </main>

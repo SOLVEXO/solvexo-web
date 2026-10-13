@@ -21,20 +21,31 @@ export function AtelierLayout({ children }: { children: ReactNode }) {
   // `atelierTheme` singleton synchronously, before any descendant below
   // reads `t.colors.x`/`t.fonts.x` — see the doc comment on `atelierTheme`.
   applyMerchantThemeOverrides(theme?.theme ?? null);
+  const bar = store.announcementBar;
+  const announcementAbove = bar?.placement === 'above';
+  const announcement = bar?.message ? (
+    <StoreAnnouncementBar
+      storeId={store.storeId}
+      message={bar.message}
+      type={bar.type}
+      ctaLabel={bar.ctaLabel}
+      ctaLink={bar.ctaLink}
+      moreMessages={bar.moreMessages}
+      rotateSeconds={bar.rotateSeconds}
+      closable={bar.closable}
+      bgColor={bar.bgColor}
+      textColor={bar.textColor}
+      align={bar.align}
+      themeColors={{ bg: t.colors.bgAlt, text: t.colors.ink, border: t.colors.border }}
+    />
+  ) : null;
   return (
     <CartDrawerProvider theme={t} Button={AtelierButton}>
     <div style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, minHeight: '100vh' }}>
       {theme?.customCss && <style>{theme.customCss}</style>}
+      {announcementAbove && announcement}
       <AtelierNavbar />
-      {store.announcementBar?.message && (
-        <StoreAnnouncementBar
-          storeId={store.storeId}
-          message={store.announcementBar.message}
-          type={store.announcementBar.type}
-          ctaLabel={store.announcementBar.ctaLabel}
-          ctaLink={store.announcementBar.ctaLink}
-        />
-      )}
+      {!announcementAbove && announcement}
       {children}
       <AtelierFooter />
     </div>

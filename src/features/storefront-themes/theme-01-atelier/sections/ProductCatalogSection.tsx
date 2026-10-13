@@ -3,6 +3,7 @@ import { AtelierProductGrid } from '../components/AtelierProductGrid';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 import { resolveAtelierCollectionId, useAtelierCollectionScope } from './collectionScope';
+import { gridSortFor, useCollectionDefaultSort } from '../../collectionSortScope';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 
 // No section-root color reads here — `AtelierProductGrid` is a shared
@@ -29,10 +30,11 @@ function CollectionProductGrid({ section }: { section: Section }) {
   const routeCollectionId = useAtelierCollectionScope();
   const { previewCollectionId } = useStorefront();
   const collectionId = resolveAtelierCollectionId(routeCollectionId, previewCollectionId);
+  const collectionSort = useCollectionDefaultSort();
   return (
     <div style={{ padding: `0 ${t.layout.containerPadX} ${t.layout.sectionPadY}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-        <AtelierProductGrid collectionId={collectionId ?? undefined} syncUrl defaultSort={section.settings.defaultSort} columns={section.settings.columns} showFilters={section.settings.showFilters} />
+        <AtelierProductGrid collectionId={collectionId ?? undefined} syncUrl defaultSort={gridSortFor(collectionSort, section.settings.defaultSort)} columns={section.settings.columns} showFilters={section.settings.showFilters} />
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link2 } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
+import { NavAnchor } from '../../navigation/NavAnchor';
+import { SocialIcon, FooterContact, PaymentBadges } from '../../navigation/FooterParts';
+import { readFooterOptions, expandCopyright } from '../../navigation/headerOptions';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import { apiSubmitPrivacyRequest } from '@/api/services/store';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
@@ -76,6 +78,12 @@ export function NovaFooter() {
   const socialBlocks = footerBlocks.filter(b => b.type === 'social_link');
   const copyrightBlock = footerBlocks.find(b => b.type === 'copyright_text');
   const privacyPage = footerPages.find(p => p.policyType === 'privacy_policy');
+  const opts = readFooterOptions(theme?.footer, 'Stories');
+  const textBlock = footerBlocks.find(b => b.type === 'footer_text');
+  const contactBlock = footerBlocks.find(b => b.type === 'footer_contact');
+  const paymentBlock = footerBlocks.find(b => b.type === 'footer_payment_icons');
+  const footerLogo = opts.logoSource === 'store' ? store.logo : opts.logoSource === 'custom' ? opts.logoUrl : null;
+  const partTokens = { fontFamily: t.fonts.body, color: '#EDEBFF', muted: '#ABA6C9', fontSize: '13px' };
 
   return (
     <>
@@ -85,8 +93,11 @@ export function NovaFooter() {
         style={{ maxWidth: t.layout.maxWidth, padding: `${theme?.footer?.footerStyle === 'minimal' ? '32px' : '56px'} ${t.layout.containerPadX}`, gap: theme?.footer?.footerStyle === 'minimal' ? '24px' : '40px', gridTemplateColumns: theme?.footer?.footerStyle === 'minimal' ? 'repeat(auto-fit, minmax(260px, 1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))' }}
       >
         <div>
-          <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, marginBottom: '10px' }}>{store.name}</p>
+          {footerLogo
+            ? <img src={footerLogo} alt={store.name} style={{ width: opts.logoWidth, maxWidth: '100%', height: 'auto', marginBottom: '10px' }} />
+            : <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, marginBottom: '10px' }}>{store.name}</p>}
           {store.tagline && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#ABA6C9', lineHeight: 1.6 }}>{store.tagline}</p>}
+          {textBlock && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#ABA6C9', lineHeight: 1.6, marginTop: '10px', whiteSpace: 'pre-line' }}>{textBlock.settings.text}</p>}
           {socialBlocks.length > 0 && (
             <div className="flex items-center gap-3" style={{ marginTop: '16px' }}>
               {socialBlocks.map((b, i) => (
@@ -99,7 +110,7 @@ export function NovaFooter() {
                   className="flex items-center justify-center"
                   style={{ color: '#EDEBFF', width: '32px', height: '32px', borderRadius: '9999px', background: 'rgba(255,255,255,0.08)' }}
                 >
-                  <Link2 size={15} />
+                  <SocialIcon platform={b.settings.platform} size={15} />
                 </a>
               ))}
             </div>
@@ -113,27 +124,23 @@ export function NovaFooter() {
               <div className="flex flex-col gap-2.5">
                 {(b.settings.links ?? []).map((link: StorefrontLinkSettings & { label: string }, j: number) => {
                   const resolved = resolveLink(link);
-                  return resolved.to ? (
-                    <Link key={j} to={resolved.to} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{link.label}</Link>
-                  ) : (
-                    <a key={j} href={resolved.href} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{link.label}</a>
-                  );
+                  return <NavAnchor key={j} link={resolved} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{link.label}</NavAnchor>;
                 })}
               </div>
             </div>
           ))
-        ) : (
+        ) : opts.showDefaultColumns ? (
           <>
             <div>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>Shop</p>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{opts.shopColumnHeading}</p>
               <div className="flex flex-col gap-2.5">
                 <Link to="/#shop" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>All Products</Link>
                 <Link to="/cart" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>Cart</Link>
-                <Link to="/blog" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>Stories</Link>
+                <Link to="/blog" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{opts.blogLabel}</Link>
               </div>
             </div>
             <div>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>Account</p>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{opts.accountColumnHeading}</p>
               <div className="flex flex-col gap-2.5">
                 <Link to="/account" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>My Account</Link>
                 <Link to="/login" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>Sign In</Link>
@@ -142,10 +149,18 @@ export function NovaFooter() {
               </div>
             </div>
           </>
-        )}
+        ) : null}
 
+        {contactBlock && (
+          <div>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{contactBlock.settings.heading || 'Contact'}</p>
+            <FooterContact settings={contactBlock.settings} tokens={partTokens} />
+          </div>
+        )}
+        {opts.showNewsletter && (
         <div>
-          <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>Stay in the loop</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{opts.newsletterHeading ?? 'Stay in the loop'}</p>
+          {opts.newsletterText && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#ABA6C9', lineHeight: 1.6, marginBottom: '10px' }}>{opts.newsletterText}</p>}
           {status === 'done' ? (
             <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#8B7CFF' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
           ) : (
@@ -173,6 +188,7 @@ export function NovaFooter() {
             </form>
           )}
         </div>
+        )}
       </div>
 
       <div style={{ borderTop: '1px solid #2E2A4F' }}>
@@ -180,10 +196,11 @@ export function NovaFooter() {
           className="mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center"
           style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
         >
+          {paymentBlock && <PaymentBadges icons={paymentBlock.settings.icons ?? []} tokens={partTokens} border="#3A3560" radius={t.radius.sm} />}
           <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#847EA8' }}>
-            {copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}
+            {expandCopyright(copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`)}
           </p>
-          {footerPages.length > 0 && (
+          {(footerPages.length > 0 || store.showDoNotSellLink) && (
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
               {footerPages.map(p => (
                 <Link

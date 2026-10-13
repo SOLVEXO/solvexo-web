@@ -110,7 +110,16 @@ export interface VariantInput {
   trackSerials?:  boolean;
 }
 
-export interface StoreProduct {
+/** Vendor label + order quantity rules + pre-order (physical products). */
+export interface ProductSellingOptions {
+  vendor?: string;
+  orderMinQuantity?: number;
+  orderMaxQuantity?: number | null;
+  orderQuantityStep?: number;
+  preorder?: { enabled: boolean; availableOn: string | null };
+}
+
+export interface StoreProduct extends ProductSellingOptions {
   _id:               string;
   sellerId:          string;
   storeId:           string;
@@ -145,7 +154,7 @@ export interface StoreProduct {
 
 // ── Request payloads ──────────────────────────────────────────────────────────
 
-export interface CreatePhysicalPayload {
+export interface CreatePhysicalPayload extends ProductSellingOptions {
   storeId:           string;
   name:              string;
   description:       string;
@@ -187,7 +196,7 @@ export interface CreateDigitalPayload {
 // Physical products manage price/stock/options per-variant exclusively through
 // the variant CRUD endpoints below now — this payload only touches
 // product-level fields (name/images/status/etc), never price or variants.
-export interface EditPhysicalPayload {
+export interface EditPhysicalPayload extends ProductSellingOptions {
   productId:         string;
   name:              string;
   description:       string;
@@ -432,6 +441,9 @@ export interface TopMoverItem {
 }
 export interface InventoryValuationData {
   totalValue: number;
+  /** value / units sitting in lots past their expiry date — NOT included in totalValue */
+  expiredValue?: number;
+  expiredUnits?: number;
   valuedSkuCount: number;
   totalSkuCount: number;
   deadStock: DeadStockItem[];
@@ -459,7 +471,7 @@ export function apiExportInventoryCsv(storeId: string) {
 // per-SKU rows, no way to adjust stock without opening the full Edit
 // Product form, no audit trail. This is the real, dedicated stock-line API.
 
-export type StockAdjustmentReason = 'restocked' | 'damaged' | 'return' | 'correction' | 'other' | 'purchase_received' | 'write_off';
+export type StockAdjustmentReason = 'restocked' | 'damaged' | 'return' | 'correction' | 'other' | 'purchase_received' | 'write_off' | 'supplier_return' | 'expired';
 
 export interface StockLine {
   variantId:      string;
@@ -473,6 +485,8 @@ export interface StockLine {
   committedStock: number;
   damagedStock:   number;
   inTransitStock: number;
+  /** units in lots past their expiry date — on hand but not sellable */
+  expiredStock?:  number;
   available:      number;
   unlimitedStock: boolean;
   status:         'in_stock' | 'low_stock' | 'out_of_stock' | 'unlimited';
@@ -520,6 +534,8 @@ export interface StockAdjustment {
 }
 
 export interface AdjustStockResult {
+  /** true when a staff adjustment was queued for manager approval instead of being applied */
+  pending?:      boolean;
   variantId:     string;
   previousStock: number;
   newStock:      number;

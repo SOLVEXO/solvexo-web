@@ -118,6 +118,18 @@ export interface StorefrontHeader {
   headerStyle:   ThemeHeaderStyle;
   /** A Menu id to render instead of `blocks` on the real storefront — `blocks` stays as the fallback, untouched. */
   menuId:        string | null;
+  // Retailer-controlled chrome. Optional because a store saved before these existed omits them — a missing value means today's look.
+  logoWidth?:           number | null;
+  mobileLogoWidth?:     number | null;
+  sticky?:              boolean;
+  showSearch?:          boolean;
+  showAccount?:         boolean;
+  showWishlist?:        boolean;
+  showShopMenu?:        boolean;
+  shopMenuLabel?:       string | null;
+  includePagesInNav?:   boolean;
+  showDefaultBlogLink?: boolean;
+  blogLinkLabel?:       string | null;
 }
 
 export interface StorefrontFooter {
@@ -128,7 +140,22 @@ export interface StorefrontFooter {
    *  blocks — `blocks`' own footer_column content stays as the fallback,
    *  untouched. See the backend's `StoreThemeService.resolveFooterMenu`. */
   menuId:      string | null;
+  logoSource?:           'none' | 'store' | 'custom';
+  logoUrl?:              string | null;
+  logoWidth?:            number | null;
+  showNewsletter?:       boolean;
+  newsletterHeading?:    string | null;
+  newsletterText?:       string | null;
+  showDefaultColumns?:   boolean;
+  shopColumnHeading?:    string | null;
+  accountColumnHeading?: string | null;
+  blogLinkLabel?:        string | null;
 }
+
+/** The footer settings the editor can save alongside its blocks. */
+export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
+  'logoSource' | 'logoUrl' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
+  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
 
@@ -406,8 +433,8 @@ export function apiUpdateStoreHeader(storeId: string, payload: Partial<Omit<Stor
   return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_HEADER(storeId), installedThemeId), payload);
 }
 
-export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerStyle?: ThemeFooterStyle, installedThemeId?: string, menuId?: string | null) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_FOOTER(storeId), installedThemeId), { blocks, footerStyle, ...(menuId !== undefined ? { menuId } : {}) });
+export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerStyle?: ThemeFooterStyle, installedThemeId?: string, menuId?: string | null, settings?: FooterSettingsPatch) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_FOOTER(storeId), installedThemeId), { blocks, footerStyle, ...(menuId !== undefined ? { menuId } : {}), ...(settings ?? {}) });
 }
 
 export function apiUpdateIdentityBanner(storeId: string, payload: Partial<IdentityBanner>, installedThemeId?: string) {

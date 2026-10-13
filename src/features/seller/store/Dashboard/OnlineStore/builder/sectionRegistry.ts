@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 
@@ -32,7 +32,7 @@ function withHeading(fields: FieldSchema[]): FieldSchema[] { return [HEADING_FIE
 const SORT_COLUMNS_FIELDS: FieldSchema[] = [
   { key: 'defaultSort', kind: 'select', label: 'Default sort', options: [
     { value: 'newest', label: 'Newest' }, { value: 'price_asc', label: 'Price: Low–High' },
-    { value: 'price_desc', label: 'Price: High–Low' }, { value: 'best_rated', label: 'Best Rated' },
+    { value: 'price_desc', label: 'Price: High–Low' }, { value: 'best_rated', label: 'Best Rated' }, { value: 'best_selling', label: 'Best Selling' },
   ] },
   { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
     { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
@@ -295,6 +295,62 @@ export const SECTION_META: SectionMeta[] = [
     ],
   },
   {
+    type: 'collection_list', label: 'Collection List', description: 'Tiles for your collections — a "shop by collection" grid linking to each collection page.',
+    Icon: LayoutGrid, color: '#0EA5E9',
+    defaultSettings: { heading: 'Shop by collection', columns: 3, limit: 6, imageRatio: 'default', showDescription: false },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'limit', kind: 'number', label: 'How many collections', min: 1, max: 24, step: 1 },
+      { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }] },
+      { key: 'showDescription', kind: 'checkbox', label: 'Show each collection\'s description', defaultOff: true },
+    ]),
+  },
+  {
+    type: 'contact_form', label: 'Contact Form', description: 'A form visitors use to message you. Messages arrive under Online Store → Contact Messages (and by email).',
+    Icon: MailIcon, color: '#0D9488',
+    defaultSettings: { heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.', showPhone: true },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'intro', kind: 'textarea', label: 'Text above the form', rows: 2, maxLength: 300 },
+      { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30 },
+      { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
+      { key: 'showPhone', kind: 'checkbox', label: 'Ask for a phone number' },
+    ]),
+  },
+  {
+    type: 'related_products', label: 'Related Products', description: 'Other products from the same category as the one being viewed. Place it on your Product template.',
+    Icon: ShoppingBag, color: '#E11D48',
+    defaultSettings: { heading: 'You may also like', columns: 4, limit: 4 },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'limit', kind: 'number', label: 'How many products', min: 2, max: 12, step: 1 },
+    ]),
+  },
+  {
+    type: 'gallery_grid', label: 'Image Gallery', description: 'A grid of photos — lookbook, behind the scenes, customer photos. Each photo can link somewhere.',
+    Icon: Images, color: '#A855F7',
+    defaultSettings: { heading: '', columns: 3, imageRatio: 'square' },
+    allowedBlockTypes: ['gallery_image'], blockLabel: 'Photo',
+    defaultBlockSettings: { imageUrl: '', alt: '' },
+    settingsSchema: withHeading([
+      { key: 'columns', kind: 'select', label: 'Photos per row', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '5', label: '5' }] },
+      { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }] },
+    ]),
+  },
+  {
+    type: 'store_locations', label: 'Store Locations', description: 'Your shops or pickup points: address, phone, opening hours and a "Get directions" link.',
+    Icon: MapPin, color: '#16A34A',
+    defaultSettings: { heading: 'Visit us' },
+    allowedBlockTypes: ['location_item'], blockLabel: 'Location',
+    defaultBlockSettings: { name: '', address: '', phone: '', email: '', hours: '', mapUrl: '' },
+    settingsSchema: withHeading([]),
+  },
+  {
     type: 'image_banner', label: 'Image Banner', description: 'A full-width image with a heading, text and button on top.',
     Icon: Image, color: '#F97316',
     defaultSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, heightPreset: 'medium', contentAlign: 'center', contentPosition: 'middle', overlayOpacity: 30 },
@@ -397,6 +453,16 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   copyright_text: [
     { key: 'text', kind: 'text', label: 'Copyright text', hint: "Leave blank to show a default © line with your store name." },
   ],
+  footer_text: [
+    { key: 'text', kind: 'textarea', label: 'About text', rows: 4, maxLength: 600, hint: 'A short description shown under your store name in the footer.' },
+  ],
+  footer_contact: [
+    { key: 'heading', kind: 'text', label: 'Column title', placeholder: 'Contact', maxLength: 60 },
+    { key: 'email', kind: 'text', label: 'Email', placeholder: 'hello@yourstore.com', maxLength: 120, half: true },
+    { key: 'phone', kind: 'text', label: 'Phone', placeholder: '+92 300 1234567', maxLength: 40, half: true },
+    { key: 'address', kind: 'textarea', label: 'Address', rows: 3, maxLength: 240 },
+    { key: 'hours', kind: 'textarea', label: 'Opening hours', rows: 2, maxLength: 160, placeholder: 'Mon–Sat, 10am–8pm' },
+  ],
   hero_slide: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped (small screens, fixed heights).' },
@@ -457,6 +523,19 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'body', kind: 'textarea', label: 'Text', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+  ],
+  gallery_image: [
+    { key: 'imageUrl', kind: 'image', label: 'Photo', required: true },
+    { key: 'alt', kind: 'text', label: 'Alt text', maxLength: 150, hint: 'Describe the photo for screen readers.' },
+    { key: 'link', kind: 'link', label: 'Link (optional)' },
+  ],
+  location_item: [
+    { key: 'name', kind: 'text', label: 'Name', required: true, maxLength: 80, placeholder: 'Main branch' },
+    { key: 'address', kind: 'textarea', label: 'Address', rows: 3, maxLength: 240 },
+    { key: 'phone', kind: 'text', label: 'Phone', maxLength: 40, half: true },
+    { key: 'email', kind: 'text', label: 'Email', maxLength: 120, half: true },
+    { key: 'hours', kind: 'textarea', label: 'Opening hours', rows: 2, maxLength: 160, placeholder: 'Mon–Sat, 10am–8pm' },
+    { key: 'mapUrl', kind: 'url', label: 'Directions link', placeholder: 'https://maps.google.com/…', hint: 'A Google / Apple Maps link.' },
   ],
   logo_item: [
     { key: 'imageUrl', kind: 'image', label: 'Logo', required: true },

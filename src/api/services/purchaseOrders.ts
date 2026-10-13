@@ -51,6 +51,8 @@ export interface PurchaseOrderItem {
   quantityOrdered: number;
   quantityReceived: number;
   quantityDamaged: number;
+  /** units already sent back to the supplier against this line */
+  quantityReturned?: number;
   unitCost: number;
 }
 

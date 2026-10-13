@@ -53,6 +53,11 @@ export const SECTION_TYPES = [
   'marquee',
   'custom_html',
   'image_banner',
+  'collection_list',
+  'store_locations',
+  'contact_form',
+  'related_products',
+  'gallery_grid',
   // Core/locked sections (Phase 4) — always pre-seeded into their owning
   // Product/Search/Cart/Blog-Index/Blog-Article template, never removable
   // via the section editor (see `CORE_SECTION_TYPES` below and the backend's

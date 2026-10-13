@@ -11,13 +11,11 @@ import {
   type BlogPostData, type BlogData, type BlogCommentData, type BlogCommentStatus,
 } from '@/api/services/storeBlog';
 import type { Block } from '@/api/services/storefrontTypes';
-import { BlockFields } from './BlockFields';
-import { SortableList } from './Sortable';
+import { BlogBlockEditor } from './BlogBlockEditor';
 import { ConfirmDialog } from './ConfirmDialog';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[70px]`;
-const CONTENT_BLOCK_TYPES = ['paragraph', 'heading', 'image', 'quote', 'list', 'divider'];
 
 function slugify(title: string) {
   return title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
@@ -116,7 +114,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
     }
   };
 
-  const handleSaveMeta = async (patch: Partial<{ title: string; excerpt: string; coverImage: string; authorName: string; seoTitle: string; seoDescription: string }>) => {
+  const handleSaveMeta = async (patch: Partial<{ title: string; excerpt: string; coverImage: string; authorName: string; seoTitle: string; seoDescription: string; tags: string[]; slug: string }>) => {
     if (!selected) return;
     try {
       const res = await apiUpdateBlogPost(storeId, selected._id, patch);
@@ -146,11 +144,17 @@ export function BlogTab({ storeId }: { storeId: string }) {
     if (!selected) return;
     setSaving(true);
     try {
+      // Publishing must publish what is on screen, so save the unsaved text first.
+      if (selected.status !== 'published' && selected.status !== 'scheduled') {
+        await apiUpdateBlogContent(storeId, selected._id, content);
+      }
       const res = selected.status === 'published' || selected.status === 'scheduled'
         ? await apiUnpublishBlogPost(storeId, selected._id)
         : await apiPublishBlogPost(storeId, selected._id, scheduledAt);
       setPosts(prev => prev.map(p => p._id === res.data._id ? res.data : p));
       flash(true, res.data.status === 'published' ? 'Post published.' : res.data.status === 'scheduled' ? 'Post scheduled.' : 'Post unpublished.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Could not update this post.');
     } finally {
       setSaving(false);
     }
@@ -210,11 +214,19 @@ export function BlogTab({ storeId }: { storeId: string }) {
         {selected ? (
           <>
             <div className="bg-white border border-bone rounded-xl p-4 flex flex-col gap-3">
-              <Field label="Title"><input className={inp} maxLength={120} defaultValue={selected.title} onBlur={e => handleSaveMeta({ title: e.target.value })} /></Field>
-              <Field label="Excerpt"><textarea className={ta} maxLength={240} defaultValue={selected.excerpt} onBlur={e => handleSaveMeta({ excerpt: e.target.value })} /></Field>
+              <Field label="Title"><input key={`${selected._id}-title`} className={inp} maxLength={120} defaultValue={selected.title} onBlur={e => handleSaveMeta({ title: e.target.value })} /></Field>
+              <Field label="Excerpt"><textarea key={`${selected._id}-excerpt`} className={ta} maxLength={240} defaultValue={selected.excerpt} onBlur={e => handleSaveMeta({ excerpt: e.target.value })} /></Field>
               <Field label="Cover image"><ImageUpload value={selected.coverImage ? [selected.coverImage] : []} onChange={urls => handleSaveMeta({ coverImage: urls[0] ?? '' })} maxFiles={1} storeId={storeId} /></Field>
               <Field label="Author" hint="Shown as the byline on the published article.">
                 <input key={selected._id} className={inp} maxLength={120} defaultValue={selected.authorName} onBlur={e => handleSaveMeta({ authorName: e.target.value })} placeholder="Your name" />
+              </Field>
+              <Field label="Tags" hint="Separate with commas. Shown under the post title.">
+                <input key={`${selected._id}-tags`} className={inp} defaultValue={(selected.tags ?? []).join(', ')} placeholder="news, how-to"
+                  onBlur={e => handleSaveMeta({ tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10) })} />
+              </Field>
+              <Field label="URL handle" hint="Changing it changes the post's link.">
+                <input key={`${selected._id}-slug`} className={inp} maxLength={100} defaultValue={selected.slug}
+                  onBlur={e => { const v = slugify(e.target.value); if (v && v !== selected.slug) handleSaveMeta({ slug: v }); else e.target.value = selected.slug; }} />
               </Field>
             </div>
 
@@ -255,22 +267,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
               </div>
             </div>
 
-            <SortableList items={content} keyFor={(b, i) => b._id ?? `new-${i}`} onReorder={setContent}>
-              {(block, i) => (
-                <div className="border border-bone rounded-lg bg-cream/40 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <select className="text-[12px] border border-bone rounded-md px-2 py-1" value={block.type} onChange={e => setContent(content.map((b, j) => j === i ? { type: e.target.value, settings: {} } : b))}>
-                      {CONTENT_BLOCK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <button onClick={() => setPendingRemoveBlockIndex(i)} className="text-error text-[11px] font-semibold bg-transparent border-none cursor-pointer">Remove</button>
-                  </div>
-                  <BlockFields type={block.type} settings={block.settings} onChange={settings => setContent(content.map((b, j) => j === i ? { ...b, settings } : b))} pageOptions={[]} storeId={storeId} />
-                </div>
-              )}
-            </SortableList>
-            <button onClick={() => setContent([...content, { type: 'paragraph', settings: {} }])} className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left flex items-center gap-1 self-start">
-              <Plus size={13} /> Add block
-            </button>
+            <BlogBlockEditor content={content} onChange={setContent} onRequestRemove={setPendingRemoveBlockIndex} storeId={storeId} />
           </>
         ) : (
           <p className="text-[13px] text-slate">Select or create a post to start writing.</p>

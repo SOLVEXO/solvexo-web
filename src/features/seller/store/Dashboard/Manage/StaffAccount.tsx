@@ -1,11 +1,13 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
-import { Check, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Store, User } from 'lucide-react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { Camera, Check, KeyRound, Trash2, LogOut, ShieldCheck, Store, User } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
+import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { SkeletonBox, Badge } from '@/components/comman/ui';
 import { TokenStorage } from '@/api/services/auth';
 import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
+import { useUpload } from '@/hooks/upload/useUpload';
 import { useToast } from '@/contexts/ToastContext';
 import {
   apiUpdateOwnStaffProfile, apiChangeOwnStaffPassword,
@@ -85,37 +87,63 @@ function StaffAccountPage() {
   const toast = useToast();
   const logout = useLogout();
 
-  const [name, setName] = useState<string | null>(null);
-  const [savingName, setSavingName] = useState(false);
-  const [nameError, setNameError] = useState('');
+  // Unsaved edits only - what is shown is the edit if there is one, else the saved profile value.
+  const [edits, setEdits] = useState<{ name?: string; phone?: string; image?: string }>({});
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { upload: uploadPhoto, uploading: photoUploading } = useUpload('public');
 
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [showPw, setShowPw] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
   const [pwError, setPwError] = useState('');
 
-  const shownName = name ?? profile?.name ?? '';
-  const nameDirty = name !== null && name.trim() !== '' && name.trim() !== profile?.name;
+  const shownName = edits.name ?? profile?.name ?? '';
+  const shownPhone = edits.phone ?? profile?.phone ?? '';
+  const shownImage = edits.image ?? profile?.profileImage ?? '';
+  const changed = {
+    name: edits.name !== undefined && edits.name.trim() !== (profile?.name ?? ''),
+    phone: edits.phone !== undefined && edits.phone.trim() !== (profile?.phone ?? ''),
+    image: edits.image !== undefined && edits.image !== (profile?.profileImage ?? ''),
+  };
+  const profileDirty = changed.name || changed.phone || changed.image;
   const groups = useMemo(() => groupPermissions((profile?.permissions ?? []) as string[]), [profile?.permissions]);
   const permissionCount = groups.reduce((n, g) => n + g.items.length, 0);
   const initials = (profile?.name ?? '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-  const saveName = async () => {
-    setNameError('');
-    if (!shownName.trim()) { setNameError('Name is required.'); return; }
-    setSavingName(true);
+  const pickPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    setProfileError('');
+    if (!file.type.startsWith('image/')) { setProfileError('Please choose an image file (JPG, PNG or WebP).'); return; }
+    if (file.size > 5 * 1024 * 1024) { setProfileError('That image is over 5 MB. Choose a smaller one.'); return; }
     try {
-      await apiUpdateOwnStaffProfile(shownName.trim());
+      const data = await uploadPhoto(file);
+      setEdits(e => ({ ...e, image: data.url }));
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : 'Photo upload failed. Please try again.');
+    }
+  };
+
+  const saveProfile = async () => {
+    setProfileError('');
+    if (changed.name && !(edits.name ?? '').trim()) { setProfileError('Name is required.'); return; }
+    const payload: { name?: string; phone?: string; profileImage?: string } = {};
+    if (changed.name) payload.name = (edits.name ?? '').trim();
+    if (changed.phone) payload.phone = (edits.phone ?? '').trim();
+    if (changed.image) payload.profileImage = edits.image ?? '';
+    setSavingProfile(true);
+    try {
+      await apiUpdateOwnStaffProfile(payload);
       invalidateProfileCache();
       refetch();
-      setName(null);
+      setEdits({});
       toast.success('Profile updated');
     } catch (err) {
-      setNameError(err instanceof Error ? err.message : 'Could not update your profile.');
+      setProfileError(err instanceof Error ? err.message : 'Could not update your profile.');
     } finally {
-      setSavingName(false);
+      setSavingProfile(false);
     }
   };
 
@@ -160,7 +188,9 @@ function StaffAccountPage() {
             <SkeletonBox height={56} rounded="12px" />
           ) : (
             <>
-              <div aria-hidden="true" className="size-14 rounded-full bg-brand-pale-orange text-brand-deep-orange flex items-center justify-center text-[18px] font-bold shrink-0">{initials}</div>
+              {profile?.profileImage
+                ? <img src={profile.profileImage} alt="" className="size-14 rounded-full object-cover shrink-0" />
+                : <div aria-hidden="true" className="size-14 rounded-full bg-brand-pale-orange text-brand-deep-orange flex items-center justify-center text-[18px] font-bold shrink-0">{initials}</div>}
               <div className="min-w-0 flex-1">
                 <p className="text-[17px] font-bold text-charcoal truncate">{profile?.name}</p>
                 <p className="text-[12.5px] text-slate truncate">{profile?.email}</p>
@@ -180,19 +210,39 @@ function StaffAccountPage() {
           <div className="flex flex-col gap-5 min-w-0">
             <Section icon={<User size={16} />} title="Profile" hint="This is the name your team sees.">
               {loading && !profile ? <SkeletonBox height={120} rounded="10px" /> : (
-                <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); if (nameDirty) saveName(); }}>
-                  <div>
-                    <label htmlFor="staff-acc-name" className={labelCls}>Name</label>
-                    <input id="staff-acc-name" className={inputCls} value={shownName} maxLength={80} onChange={e => setName(e.target.value)} />
+                <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); if (profileDirty) saveProfile(); }}>
+                  <div className="flex items-center gap-4">
+                    {shownImage
+                      ? <img src={shownImage} alt="Profile" className="size-16 rounded-full object-cover shrink-0" />
+                      : <div aria-hidden="true" className="size-16 rounded-full bg-brand-pale-orange text-brand-deep-orange flex items-center justify-center text-[20px] font-bold shrink-0">{initials}</div>}
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button type="button" size="sm" variant="outline" icon={<Camera size={13} />} loading={photoUploading} onClick={() => fileRef.current?.click()}>{shownImage ? 'Change photo' : 'Upload photo'}</Button>
+                        {shownImage && <Button type="button" size="sm" variant="ghost" icon={<Trash2 size={13} />} onClick={() => setEdits(e => ({ ...e, image: '' }))}>Remove</Button>}
+                      </div>
+                      <p className="text-[11.5px] text-slate">JPG, PNG or WebP, up to 5 MB.</p>
+                    </div>
+                    <input ref={fileRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label="Choose profile photo" onChange={e => { pickPhoto(e.target.files?.[0]); e.target.value = ''; }} />
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="staff-acc-name" className={labelCls}>Name</label>
+                      <input id="staff-acc-name" className={inputCls} value={shownName} maxLength={80} onChange={e => setEdits(x => ({ ...x, name: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label htmlFor="staff-acc-phone" className={labelCls}>Phone <span className="text-slate font-normal">(optional)</span></label>
+                      <input id="staff-acc-phone" type="tel" autoComplete="tel" placeholder="+92 300 1234567" className={inputCls} value={shownPhone} maxLength={30} onChange={e => setEdits(x => ({ ...x, phone: e.target.value }))} />
+                    </div>
                   </div>
                   <div>
                     <label htmlFor="staff-acc-email" className={labelCls}>Email</label>
                     <input id="staff-acc-email" className={inputCls} value={profile?.email ?? ''} disabled />
                     <p className="text-[11.5px] text-slate mt-1.5">Your sign-in email can only be changed by the store owner.</p>
                   </div>
-                  {nameError && <p role="alert" className="text-[12px] text-error">{nameError}</p>}
-                  <div className="flex justify-end">
-                    <Button type="submit" size="sm" loading={savingName} disabled={!nameDirty}>Save changes</Button>
+                  {profileError && <p role="alert" className="text-[12px] text-error">{profileError}</p>}
+                  <div className="flex justify-end gap-2">
+                    {profileDirty && <Button type="button" size="sm" variant="ghost" onClick={() => { setEdits({}); setProfileError(''); }}>Discard</Button>}
+                    <Button type="submit" size="sm" loading={savingProfile} disabled={!profileDirty || photoUploading}>Save changes</Button>
                   </div>
                 </form>
               )}
@@ -202,16 +252,16 @@ function StaffAccountPage() {
               <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); savePassword(); }}>
                 <div>
                   <label htmlFor="staff-acc-cur" className={labelCls}>Current password</label>
-                  <input id="staff-acc-cur" type={showPw ? 'text' : 'password'} autoComplete="current-password" className={inputCls} value={current} onChange={e => setCurrent(e.target.value)} />
+                  <PasswordField id="staff-acc-cur" autoComplete="current-password" className={inputCls} value={current} onChange={e => setCurrent(e.target.value)} />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="staff-acc-new" className={labelCls}>New password</label>
-                    <input id="staff-acc-new" type={showPw ? 'text' : 'password'} autoComplete="new-password" className={inputCls} value={next} onChange={e => setNext(e.target.value)} />
+                    <PasswordField id="staff-acc-new" autoComplete="new-password" className={inputCls} value={next} onChange={e => setNext(e.target.value)} />
                   </div>
                   <div>
                     <label htmlFor="staff-acc-conf" className={labelCls}>Confirm new password</label>
-                    <input id="staff-acc-conf" type={showPw ? 'text' : 'password'} autoComplete="new-password" className={inputCls} value={confirm} onChange={e => setConfirm(e.target.value)} />
+                    <PasswordField id="staff-acc-conf" autoComplete="new-password" className={inputCls} value={confirm} onChange={e => setConfirm(e.target.value)} />
                   </div>
                 </div>
                 <ul className="flex flex-wrap gap-x-5 gap-y-1.5" aria-label="Password requirements">
@@ -220,10 +270,7 @@ function StaffAccountPage() {
                   <Rule ok={rules.match} text="Both entries match" />
                 </ul>
                 {pwError && <p role="alert" className="text-[12px] text-error">{pwError}</p>}
-                <div className="flex items-center justify-between gap-3">
-                  <button type="button" onClick={() => setShowPw(s => !s)} className="inline-flex items-center gap-1.5 text-[12.5px] text-slate hover:text-charcoal bg-transparent border-0 cursor-pointer p-0">
-                    {showPw ? <EyeOff size={14} /> : <Eye size={14} />} {showPw ? 'Hide passwords' : 'Show passwords'}
-                  </button>
+                <div className="flex justify-end">
                   <Button type="submit" size="sm" loading={savingPw} disabled={!pwReady}>Update password</Button>
                 </div>
               </form>

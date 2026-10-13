@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle2, KeyRound } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { apiStaffResetPassword } from '@/api/services/staff';
 
 /** Public page reached from the emailed reset link — sets a new password. */
@@ -48,12 +49,12 @@ export default function StaffResetPasswordPage() {
             <>
               <div>
                 <label htmlFor="staff-reset-pw" className="text-[12px] font-medium text-graphite mb-1 block">New password</label>
-                <input id="staff-reset-pw" type="password" autoComplete="new-password" placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)}
+                <PasswordField id="staff-reset-pw" autoComplete="new-password" placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)}
                   className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
               </div>
               <div>
                 <label htmlFor="staff-reset-conf" className="text-[12px] font-medium text-graphite mb-1 block">Confirm password</label>
-                <input id="staff-reset-conf" type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)}
+                <PasswordField id="staff-reset-conf" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && submit()}
                   className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
               </div>

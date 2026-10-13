@@ -70,14 +70,20 @@ export function CustomerAuthenticationPage() {
                     <div className="min-w-0 flex-1">
                       <p className="text-[13.5px] font-semibold text-charcoal">{SOCIAL_PROVIDER_LABEL[p.provider]}</p>
                       <p className="text-[11.5px] text-slate">
-                        {connected ? `Customers can sign in with ${SOCIAL_PROVIDER_LABEL[p.provider]} on your store.` : 'Not connected'}
+                        {connected && p.lastError
+                          ? 'The last connection test failed. Open to fix it.'
+                          : connected ? `Customers can sign in with ${SOCIAL_PROVIDER_LABEL[p.provider]} on your store.` : 'Not connected'}
                       </p>
                     </div>
                     <span
                       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: connected ? '#DCFCE7' : '#F1EFE7', color: connected ? '#166534' : '#6B6960' }}
+                      style={
+                        connected && p.lastError
+                          ? { background: '#FEE2E2', color: '#991B1B' }
+                          : { background: connected ? '#DCFCE7' : '#F1EFE7', color: connected ? '#166534' : '#6B6960' }
+                      }
                     >
-                      {connected ? 'Connected' : 'Not connected'}
+                      {connected && p.lastError ? 'Needs attention' : connected ? 'Connected' : 'Not connected'}
                     </span>
                     <span className="flex items-center gap-1 text-[12.5px] font-semibold text-brand-orange">
                       {connected ? 'Manage' : 'Connect'} <ChevronRight size={14} />

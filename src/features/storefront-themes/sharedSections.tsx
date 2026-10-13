@@ -1,7 +1,12 @@
-import { useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
+import { apiSubmitContactMessage } from '@/api/services/storeContact';
+import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { useProductPage } from './productContext';
 import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { PreviewBlock } from './previewInspector';
@@ -18,6 +23,8 @@ export interface SharedThemeTokens {
   layout: { maxWidth: string; sectionPadY: string; containerPadX: string };
   imageRadiusPx: string;
   Button: ComponentType<{ variant?: 'primary' | 'outline'; children?: ReactNode }>;
+  /** The theme's own product card — used by sections that list products. */
+  ProductCard?: ComponentType<{ product: PublicStoreProduct; currency: string }>;
 }
 export interface SharedColors { bg: string; bgAlt: string; ink: string; inkMuted: string; border: string; accent: string }
 
@@ -180,6 +187,221 @@ export function ImageBannerSection({ section, colors, theme }: Props) {
           {s.heading && <h2 style={{ fontFamily: theme.fonts.display, fontSize: 'clamp(28px, 4.5vw, 52px)', fontWeight: 600, lineHeight: 1.1, maxWidth: '720px' }}>{s.heading}</h2>}
           {s.subheading && <p style={{ fontFamily: theme.fonts.body, fontSize: '16px', lineHeight: 1.6, maxWidth: '560px', opacity: 0.92 }}>{s.subheading}</p>}
           <CtaButton text={s.ctaText} link={s.ctaLink} theme={theme} variant="primary" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Collection list ("shop by collection") ──────────────────────────────────
+function CollectionTile({ c, colors, theme, ratio, showDescription }: {
+  c: PublicCollectionSummary; colors: SharedColors; theme: SharedThemeTokens; ratio: unknown; showDescription: boolean;
+}) {
+  const [errored, setErrored] = useState(false);
+  const fit = imageFit(ratio, '4 / 3');
+  return (
+    <Link to={`/collections/${c.slug}`} className="no-underline block" style={{ color: colors.ink }}>
+      <div style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', marginBottom: '14px', display: c.image && !errored ? undefined : 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {c.image && !errored
+          ? <img src={c.image} alt={c.name} loading="lazy" onError={() => setErrored(true)} style={fit.img} />
+          : <span style={{ fontFamily: theme.fonts.display, fontSize: '20px', color: colors.inkMuted, padding: '12px', textAlign: 'center' }}>{c.name}</span>}
+      </div>
+      <h3 style={{ fontFamily: theme.fonts.display, fontSize: '18px', fontWeight: 600, color: colors.ink, margin: 0 }}>{c.name}</h3>
+      {showDescription && c.description && (
+        <p className="line-clamp-2" style={{ fontFamily: theme.fonts.body, fontSize: '13.5px', color: colors.inkMuted, lineHeight: 1.6, margin: '6px 0 0' }}>{c.description}</p>
+      )}
+    </Link>
+  );
+}
+
+export function CollectionListSection({ section, colors, theme }: Props) {
+  const { store } = useStorefront();
+  const [items, setItems] = useState<PublicCollectionSummary[] | null>(null);
+  useEffect(() => {
+    let off = false;
+    apiGetPublicCollections(store.storeId).then(r => { if (!off) setItems(r.data ?? []); }).catch(() => { if (!off) setItems([]); });
+    return () => { off = true; };
+  }, [store.storeId]);
+  if (!items || items.length === 0) return null;
+  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 3;
+  const limit = Math.min(24, Math.max(1, Number(section.settings.limit) || 6));
+  return (
+    <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
+      <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
+        <Heading text={section.settings.heading} theme={theme} colors={colors} />
+        <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
+          {items.slice(0, limit).map(c => (
+            <CollectionTile key={c._id} c={c} colors={colors} theme={theme} ratio={section.settings.imageRatio} showDescription={section.settings.showDescription === true} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Image gallery ───────────────────────────────────────────────────────────
+function GalleryPhoto({ block, theme, colors, ratio }: { block: Block; theme: SharedThemeTokens; colors: SharedColors; ratio: unknown }) {
+  const resolveLink = useCta();
+  const [errored, setErrored] = useState(false);
+  const s = block.settings;
+  if (!s.imageUrl || errored) return null;
+  const fit = imageFit(ratio, '1 / 1');
+  const img = (
+    <div style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden' }}>
+      <img src={s.imageUrl} alt={s.alt ?? ''} loading="lazy" onError={() => setErrored(true)} style={fit.img} />
+    </div>
+  );
+  if (!s.link) return img;
+  const target = resolveLink(s.link);
+  return target.to ? <Link to={target.to} className="block">{img}</Link> : <a href={target.href} className="block" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
+}
+
+export function GalleryGridSection({ section, blocks, colors, theme }: Props) {
+  if (blocks.length === 0) return null;
+  const cols = [2, 3, 4, 5].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 3;
+  return (
+    <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
+      <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
+        <Heading text={section.settings.heading} theme={theme} colors={colors} />
+        <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
+          {blocks.map((b, i) => (
+            <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
+              <GalleryPhoto block={b} theme={theme} colors={colors} ratio={section.settings.imageRatio} />
+            </PreviewBlock>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Store locations ─────────────────────────────────────────────────────────
+export function StoreLocationsSection({ section, blocks, colors, theme }: Props) {
+  if (blocks.length === 0) return null;
+  const text: CSSProperties = { fontFamily: theme.fonts.body, fontSize: '14px', color: colors.inkMuted, lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' };
+  return (
+    <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
+      <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
+        <Heading text={section.settings.heading} theme={theme} colors={colors} />
+        <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))' }}>
+          {blocks.map((b, i) => {
+            const s = b.settings;
+            return (
+              <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
+                <article style={{ border: `1px solid ${colors.border}`, borderRadius: theme.imageRadiusPx, padding: '22px', display: 'flex', flexDirection: 'column', gap: '10px', background: colors.bg }}>
+                  <h3 style={{ fontFamily: theme.fonts.display, fontSize: '19px', fontWeight: 600, color: colors.ink, margin: 0 }}>{s.name}</h3>
+                  {s.address && <p style={text}>{s.address}</p>}
+                  {s.phone && <a href={`tel:${String(s.phone).replace(/[^\d+]/g, '')}`} className="no-underline" style={{ ...text, color: colors.ink }}>{s.phone}</a>}
+                  {s.email && <a href={`mailto:${s.email}`} className="no-underline" style={{ ...text, color: colors.ink }}>{s.email}</a>}
+                  {s.hours && <p style={text}>{s.hours}</p>}
+                  {s.mapUrl && (
+                    <a href={s.mapUrl} target="_blank" rel="noopener noreferrer" className="no-underline" style={{ fontFamily: theme.fonts.body, fontSize: '13px', fontWeight: 600, color: colors.accent, marginTop: '4px' }}>
+                      Get directions →
+                    </a>
+                  )}
+                </article>
+              </PreviewBlock>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Contact form ────────────────────────────────────────────────────────────
+export function ContactFormSection({ section, colors, theme }: Props) {
+  const { store } = useStorefront();
+  const s = section.settings;
+  const [values, setValues] = useState({ name: '', email: '', phone: '', message: '', website: '' });
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [error, setError] = useState('');
+  const set = (key: keyof typeof values) => (e: { target: { value: string } }) => setValues(v => ({ ...v, [key]: e.target.value }));
+  const field: CSSProperties = { width: '100%', fontFamily: theme.fonts.body, fontSize: '14px', color: colors.ink, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: theme.imageRadiusPx === '0px' ? '0' : '6px', padding: '11px 14px', outline: 'none' };
+  const label: CSSProperties = { fontFamily: theme.fonts.body, fontSize: '12.5px', fontWeight: 600, color: colors.ink, display: 'block', marginBottom: '6px' };
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (status === 'sending') return;
+    setStatus('sending');
+    setError('');
+    try {
+      await apiSubmitContactMessage(store.storeId, {
+        name: values.name.trim(), email: values.email.trim(), message: values.message.trim(),
+        ...(values.phone.trim() ? { phone: values.phone.trim() } : {}), website: values.website,
+      });
+      setStatus('done');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'We could not send your message. Please try again.');
+      setStatus('error');
+    }
+  }
+
+  return (
+    <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
+      <div className="mx-auto" style={{ maxWidth: '640px' }}>
+        <Heading text={s.heading} theme={theme} colors={colors} align="center" />
+        {s.intro && <p style={{ fontFamily: theme.fonts.body, fontSize: '14.5px', color: colors.inkMuted, textAlign: 'center', lineHeight: 1.7, margin: '-12px 0 24px' }}>{s.intro}</p>}
+        {status === 'done' ? (
+          <p role="status" style={{ fontFamily: theme.fonts.body, fontSize: '15px', color: colors.ink, textAlign: 'center', padding: '28px', border: `1px solid ${colors.border}`, borderRadius: theme.imageRadiusPx }}>
+            {s.successMessage || 'Thanks — we got your message and will reply soon.'}
+          </p>
+        ) : (
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}>
+              <div><label htmlFor="cf-name" style={label}>Name</label><input id="cf-name" required maxLength={80} value={values.name} onChange={set('name')} autoComplete="name" style={field} /></div>
+              <div><label htmlFor="cf-email" style={label}>Email</label><input id="cf-email" type="email" required maxLength={120} value={values.email} onChange={set('email')} autoComplete="email" style={field} /></div>
+            </div>
+            {s.showPhone !== false && (
+              <div><label htmlFor="cf-phone" style={label}>Phone (optional)</label><input id="cf-phone" type="tel" maxLength={25} value={values.phone} onChange={set('phone')} autoComplete="tel" style={field} /></div>
+            )}
+            <div><label htmlFor="cf-message" style={label}>Message</label><textarea id="cf-message" required rows={6} maxLength={3000} value={values.message} onChange={set('message')} style={{ ...field, resize: 'vertical' }} /></div>
+            {/* Bot trap: invisible to people, so only automated fills reach it. */}
+            <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
+              <label htmlFor="cf-website">Website</label>
+              <input id="cf-website" tabIndex={-1} autoComplete="off" value={values.website} onChange={set('website')} />
+            </div>
+            {status === 'error' && <p role="alert" style={{ fontFamily: theme.fonts.body, fontSize: '13px', color: '#B3413A', margin: 0 }}>{error}</p>}
+            <button type="submit" disabled={status === 'sending'} className="cursor-pointer border-0 disabled:opacity-60"
+              style={{ alignSelf: 'center', fontFamily: theme.fonts.body, fontSize: '13px', fontWeight: 600, letterSpacing: '0.04em', color: colors.bg, background: colors.ink, padding: '13px 36px', borderRadius: theme.imageRadiusPx === '0px' ? '0' : '9999px' }}>
+              {status === 'sending' ? 'Sending…' : (s.buttonLabel || 'Send message')}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Related products (other products of the viewed product's category) ─────
+export function RelatedProductsSection({ section, colors, theme }: Props) {
+  const { store } = useStorefront();
+  const product = useProductPage();
+  const { currency } = useCurrencyPreference();
+  const [items, setItems] = useState<PublicStoreProduct[] | null>(null);
+  const limit = Math.min(12, Math.max(2, Number(section.settings.limit) || 4));
+  const Card = theme.ProductCard;
+  const productId = product?.productId;
+  const categoryId = product?.categoryId ?? undefined;
+
+  useEffect(() => {
+    if (!productId) return;
+    let off = false;
+    apiGetPublicStoreProducts(store.storeId, { categoryId, limit: limit + 1, sort: 'best_selling' })
+      .then(res => { if (!off) setItems((res.data?.products ?? []).filter(p => p._id !== productId).slice(0, limit)); })
+      .catch(() => { if (!off) setItems([]); });
+    return () => { off = true; };
+  }, [store.storeId, productId, categoryId, limit]);
+
+  // Only meaningful on a product page; elsewhere (or with nothing to show) it simply does not render.
+  if (!Card || !productId || !items || items.length === 0) return null;
+  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 4;
+  return (
+    <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
+      <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
+        <Heading text={section.settings.heading} theme={theme} colors={colors} />
+        <div className="grid gap-x-6 gap-y-10" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
+          {items.map(p => <Card key={p._id} product={p} currency={currency} />)}
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { ThemeThumbnail } from './AtelierThemeDemoPreview';
 import { apiApplyThemeDefinition, apiListThemeCatalog, type ThemeDefinition } from '@/api/services/themeCatalog';
+import { ThemeSourcePackageDialog } from './ThemeSourcePackageDialog';
 
 /**
  * The Theme Library (route: `online-store/themes`) — browse every
@@ -126,6 +127,10 @@ export function ThemeLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<StoreThemeData | null>(null);
+  // Catalog presets overwrite the target theme's draft, so they are confirmed first.
+  const [pendingCatalogTheme, setPendingCatalogTheme] = useState<ThemeDefinition | null>(null);
+  // The Shopify-style theme ZIP workspace, opened for one installed theme.
+  const [zipForThemeId, setZipForThemeId] = useState<string | null>(null);
   const [pendingUninstall, setPendingUninstall] = useState<StoreThemeData | null>(null);
   const [busyRowId, setBusyRowId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -279,6 +284,12 @@ export function ThemeLibraryPage() {
   return (
     <div className="bg-[#FAF9F5] min-h-full">
       <StorePageHeader
+        actions={
+          <button type="button" onClick={() => { const target = installed.find(r => r.status === 'active') ?? installed[0]; if (target) setZipForThemeId(target._id); else toast.error('Install a theme first, then you can upload your own theme files onto it.'); }}
+            className="px-3.5 py-2 rounded-lg text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer hover:bg-cream">
+            Upload theme (ZIP)
+          </button>
+        }
         title="Themes"
         subtitle={activeThemeName ? `Active theme: ${activeThemeName} — browse, install, and switch between complete storefront themes.` : 'Browse, install, and switch between complete storefront themes.'}
       />
@@ -451,7 +462,7 @@ export function ThemeLibraryPage() {
                     {theme.featured && <span className="text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange">Featured</span>}
                   </div>
                   <p className="text-[11.5px] text-slate leading-snug line-clamp-3">{theme.description || 'A curated storefront design.'}</p>
-                  <button type="button" onClick={() => handleApplyCatalogTheme(theme)} disabled={!catalogTargetId || applyingCatalogId === theme._id} className="mt-auto px-3 py-2 rounded-lg border-none bg-brand-orange text-white text-[11.5px] font-semibold cursor-pointer disabled:opacity-60">
+                  <button type="button" onClick={() => setPendingCatalogTheme(theme)} disabled={!catalogTargetId || applyingCatalogId === theme._id} className="mt-auto px-3 py-2 rounded-lg border-none bg-brand-orange text-white text-[11.5px] font-semibold cursor-pointer disabled:opacity-60">
                     {applyingCatalogId === theme._id ? 'Applying…' : 'Apply to selected theme'}
                   </button>
                 </article>
@@ -484,6 +495,9 @@ export function ThemeLibraryPage() {
                     <span className="text-[13px] font-semibold text-charcoal flex-1 truncate">{displayName}</span>
                   )}
                   {row.status === 'active' && <span className="px-2 py-[3px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[10px] font-bold shrink-0">ACTIVE</span>}
+                  {row.status === 'active' && row.sourcePackageVersion != null && (
+                    <span title="Your storefront is rendering uploaded theme files. Customize / Header & Footer edits do not change those pages — edit them in Edit Code → Theme source." className="px-2 py-[3px] rounded-full bg-[#E0F2FE] text-[#075985] text-[10px] font-bold shrink-0">CUSTOM FILES LIVE · r{row.sourcePackageVersion}</span>
+                  )}
                   <Link to={`${row._id}/customize`} title="Customize this installed theme" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><Settings2 size={13} /></Link>
                   <Link to={`${row._id}/header-footer`} title="Edit header and footer" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><PanelTop size={13} /></Link>
                   <Link to={`${row._id}/edit-code`} title="Edit theme files" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><Code2 size={13} /></Link>
@@ -496,6 +510,12 @@ export function ThemeLibraryPage() {
                     <button type="button" onClick={() => handleStartRename(row)} title="Rename"
                       className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0">
                       <Pencil size={13} />
+                    </button>
+                  )}
+                  {row.status !== 'active' && (
+                    <button type="button" onClick={() => setPendingActivate(row)} disabled={busyRowId === row._id} title="Make this theme live"
+                      className="px-2.5 py-1 rounded-lg text-[11.5px] font-semibold border-none bg-brand-orange text-white cursor-pointer shrink-0 disabled:opacity-60">
+                      Activate
                     </button>
                   )}
                   <button type="button" onClick={() => handleDuplicate(row)} disabled={busyRowId === row._id} title="Duplicate"
@@ -523,6 +543,18 @@ export function ThemeLibraryPage() {
         <SharePreviewModal storeId={storeId} row={sharePreviewRow} onClose={() => setSharePreviewRow(null)} />
       )}
 
+      {zipForThemeId && <ThemeSourcePackageDialog storeId={storeId} installedThemeId={zipForThemeId} onClose={() => { setZipForThemeId(null); load(); }} />}
+      {pendingCatalogTheme && (
+        <ConfirmDialog
+          title={`Apply "${pendingCatalogTheme.name}"?`}
+          message="This replaces the colours, header, footer and home page layout in the selected theme's DRAFT with this preset. Unpublished edits in that draft are overwritten. Nothing goes live until you publish."
+          confirmLabel="Apply to draft"
+          confirmVariant="primary"
+          loading={applyingCatalogId === pendingCatalogTheme._id}
+          onCancel={() => setPendingCatalogTheme(null)}
+          onConfirm={async () => { const t = pendingCatalogTheme; await handleApplyCatalogTheme(t); setPendingCatalogTheme(null); }}
+        />
+      )}
       {pendingActivate && (
         <ConfirmDialog
           title={`Activate ${newThemeEntries.find((t) => t.id === pendingActivate.themeDefinitionId)?.name ?? 'this theme'}?`}

@@ -442,7 +442,8 @@ export function SchemaForm({ schema, settings, onChange, storeId, pageOptions, o
   ownerResource?: MetafieldOwnerResource | null;
 }) {
   const set = (patch: Record<string, any>) => onChange({ ...settings, ...patch });
-  const visible = schema.filter(f => !f.showIf || f.showIf(settings));
+  // A custom-field picker with no real item to bind to is just a dead box, so hide it.
+  const visible = schema.filter(f => (!f.showIf || f.showIf(settings)) && !(f.kind === 'metafieldKeyPicker' && !ownerResource && !settings[f.key]));
   // Phase 9 — a field currently overridden by a connected dynamic source
   // (see `FieldSchema.pairsWith`) — dimmed below so it's always visually
   // clear which value (the static one, or the connected custom field) is

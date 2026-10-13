@@ -22,6 +22,13 @@ export interface ContentBlock {
  *  `AtelierProductPage.tsx`) — `AtelierCustomPage`/blog callers pass nothing,
  *  which is correct, since a custom page/blog post has no single "current
  *  resource" a paragraph could bind to. */
+/** A real h2 / h3 / h4 (default h3 — the size these headings always had), so posts have a proper outline. */
+function ContentHeading({ level, baseSize, weight, text }: { level?: string; baseSize: number; weight: number; text: string }) {
+  const Tag = level === 'h2' ? 'h2' : level === 'h4' ? 'h4' : 'h3';
+  const size = Tag === 'h2' ? baseSize + 6 : Tag === 'h4' ? baseSize - 3 : baseSize;
+  return <Tag style={{ fontFamily: t.fonts.display, fontSize: size + 'px', fontWeight: weight, color: t.colors.ink, margin: 0 }}>{text}</Tag>;
+}
+
 export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: ContentBlock[]; dynamicSourceValues?: Record<string, string> }) {
   return (
     <>
@@ -35,9 +42,7 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
             const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
-              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><p style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 600, color: t.colors.ink }}>
-                {text}
-              </p></PreviewBlock>
+              <PreviewBlock key={block.id ?? i} blockId={String(block.id ?? i)}><ContentHeading level={block.settings.level} baseSize={19} weight={600} text={text} /></PreviewBlock>
             );
           }
           case 'paragraph': {

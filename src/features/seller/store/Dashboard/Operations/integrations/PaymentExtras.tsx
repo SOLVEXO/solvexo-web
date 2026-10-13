@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ComponentProps } from 'react';
+import { PasswordToggleButton } from '@/components/comman/ui/PasswordField';
 import { Banknote, Pencil, Plus, Trash2, RefreshCw, FlaskConical, HandCoins } from 'lucide-react';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input, Textarea, Select } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
@@ -16,6 +17,18 @@ import { apiUpdateStore } from '@/api/services/store';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 
 // ── Cash on Delivery (Shopify "Manual payment methods > Cash on Delivery (COD)") — saves instantly, like the other cards here ──
+/** Gateway credential input — secret fields get their own show/hide eye. */
+function ConnectFieldInput({ secret, ...props }: { secret: boolean } & Omit<ComponentProps<typeof Input>, 'type' | 'rightIcon'>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Input
+      {...props}
+      type={secret && !visible ? 'password' : 'text'}
+      rightIcon={secret ? <PasswordToggleButton visible={visible} onToggle={() => setVisible(v => !v)} /> : undefined}
+    />
+  );
+}
+
 export function CashOnDeliveryCard() {
   const { store, storeId, refetch } = useStoreWorkspace();
   const toast = useToast();
@@ -235,8 +248,8 @@ export function PkGatewayConnectModal({ storeId, provider, onClose, onSaved }: {
       <p className="text-[11.5px] leading-[1.5] text-slate mb-4">{spec.help}</p>
       {spec.fields.map(f => (
         <Field key={f.key} label={f.label} required={!f.optional}>
-          <Input
-            type={f.secret ? 'password' : 'text'}
+          <ConnectFieldInput
+            secret={!!f.secret}
             autoComplete="off"
             value={values[f.key] ?? ''}
             onChange={e => setValues(v => ({ ...v, [f.key]: e.target.value }))}

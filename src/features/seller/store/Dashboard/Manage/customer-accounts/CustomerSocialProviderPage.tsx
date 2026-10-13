@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, CheckCircle, Copy, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle, Copy, Info, Loader2, RefreshCw } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { PageHeader } from '@/components/comman/ui/PageHeader';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { Modal } from '@/components/comman/ui/Modal';
 import { TokenStorage } from '@/api/services/auth';
 import {
-  apiConnectCustomerSocial, apiDisconnectCustomerSocial, apiGetCustomerSocialSetup, SOCIAL_PROVIDER_LABEL,
+  apiConnectCustomerSocial, apiDisconnectCustomerSocial, apiGetCustomerSocialSetup, apiTestCustomerSocial, SOCIAL_PROVIDER_LABEL,
   type CustomerSocialProviderSetup, type CustomerSocialSetup, type SocialProviderKey,
 } from '@/api/services/customerSocialLogin';
 
@@ -32,22 +34,44 @@ function CopyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-const inputCls = 'w-full rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange';
+const inputCls = 'w-full rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange disabled:bg-cream disabled:cursor-not-allowed';
+
+/** "solvexo.store" from "https://api.solvexo.store/..." — the root domain Google/Facebook ask for as an authorized domain. */
+function rootDomain(url: string): string {
+  try {
+    return new URL(url).hostname.split('.').slice(-2).join('.');
+  } catch {
+    return '';
+  }
+}
+
+function hostOf(origin: string): string {
+  try { return new URL(origin).hostname; } catch { return origin; }
+}
+
+function formatWhen(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
 
 /** Shopify's "Sign in with Google / Facebook" page: setup instructions to copy from, the two credentials to paste back,
- *  and Save / Disconnect. The secret is write-only — it is never read back, only a last-4 hint. */
+ *  Test connection, and Save / Disconnect. The secret is write-only — it is never read back, only a last-4 hint. */
 export function CustomerSocialProviderPage() {
   const { provider: raw } = useParams();
   const { storeId } = useStoreWorkspace();
   const canEdit = hasNavPermission(TokenStorage.getUser(), 'settings.general.manage');
   const provider = raw === 'google' || raw === 'facebook' ? (raw as SocialProviderKey) : null;
+  const idFieldId = useId();
+  const secretFieldId = useId();
 
   const [setup, setSetup] = useState<CustomerSocialSetup | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState<'save' | 'test' | 'disconnect' | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -75,42 +99,61 @@ export function CustomerSocialProviderPage() {
   const idLabel = provider === 'google' ? 'Client ID' : 'App ID';
   const secretLabel = provider === 'google' ? 'Client secret' : 'App secret';
   const connected = current?.status === 'connected';
+  const working = busy !== null;
+  const canSave = !working && canEdit && !!clientId.trim() && !!clientSecret.trim();
+  const verifiedAt = formatWhen(current?.lastVerifiedAt ?? null);
 
   const save = async () => {
-    if (!storeId || saving || !canEdit) return;
-    setSaving(true);
+    if (!storeId || !canSave) return;
+    setBusy('save');
     setMsg(null);
     try {
       const res = await apiConnectCustomerSocial(storeId, provider, { clientId: clientId.trim(), clientSecret: clientSecret.trim() });
       setSetup(res.data);
       setClientSecret('');
-      setMsg({ ok: true, text: `${label} sign-in saved. It now appears on your store's sign-in page.` });
+      setMsg({ ok: true, text: `${label} accepted your credentials. The ${label} button now appears on your store's sign-in page.` });
     } catch (err) {
       setMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to save.' });
     } finally {
-      setSaving(false);
+      setBusy(null);
+    }
+  };
+
+  const test = async () => {
+    if (!storeId || working || !canEdit) return;
+    setBusy('test');
+    setMsg(null);
+    try {
+      const res = await apiTestCustomerSocial(storeId, provider);
+      setSetup(res.data);
+      setMsg({ ok: res.ok, text: res.message ?? (res.ok ? `${label} accepted your credentials.` : `${label} rejected your credentials.`) });
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : 'Test failed. Try again.' });
+    } finally {
+      setBusy(null);
     }
   };
 
   const disconnect = async () => {
-    if (!storeId || saving || !canEdit) return;
-    if (!window.confirm(`Disconnect ${label} sign-in? Customers will no longer see the ${label} button on your store.`)) return;
-    setSaving(true);
+    if (!storeId || working || !canEdit) return;
+    setBusy('disconnect');
     setMsg(null);
     try {
       const res = await apiDisconnectCustomerSocial(storeId, provider);
       setSetup(res.data);
+      setConfirmDisconnect(false);
       setMsg({ ok: true, text: `${label} sign-in disconnected.` });
     } catch (err) {
+      setConfirmDisconnect(false);
       setMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to disconnect.' });
     } finally {
-      setSaving(false);
+      setBusy(null);
     }
   };
 
   const steps = provider === 'google'
     ? [
-        <>In <b>Google Cloud Console</b>, create a project and configure the <b>OAuth consent screen</b> (app name, support email).</>,
+        <>In <b>Google Cloud Console</b>, create a project and open <b>OAuth consent screen</b>. Add your app name, support email, your store&apos;s <b>Privacy Policy link</b> and the <b>Authorized domain</b> shown below.</>,
         <>Go to <b>Credentials → Create credentials → OAuth client ID</b> and choose <b>Web application</b>.</>,
         <>Under <b>Authorized JavaScript origins</b>, add each store address below.</>,
         <>Under <b>Authorized redirect URIs</b>, add the redirect URI below.</>,
@@ -119,12 +162,18 @@ export function CustomerSocialProviderPage() {
       ]
     : [
         <>In <b>Meta for Developers</b>, create an app and choose <b>Authenticate and request data from users with Facebook Login</b>.</>,
-        <>Add the <b>email</b> permission to the app.</>,
+        <>In <b>App settings → Basic</b>, add your store&apos;s <b>Privacy Policy URL</b> and the <b>App Domains</b> shown below.</>,
         <>In <b>Facebook Login → Settings</b>, add the redirect URI below under <b>Valid OAuth Redirect URIs</b>.</>,
-        <>Add each store address below under the app's <b>Domains / Website</b> settings.</>,
-        <>Copy the <b>App ID</b> and <b>App secret</b> and paste them in the Credentials section, then Save.</>,
-        <>Switch the app to <b>Live</b> mode. Until it is live, only app roles can sign in.</>,
+        <>Make sure the <b>email</b> permission is available for the app (it is by default).</>,
+        <>Copy the <b>App ID</b> and <b>App secret</b> from <b>App settings → Basic</b> and paste them in the Credentials section, then Save.</>,
+        <>Switch the app to <b>Live</b> mode. Until it is live, only people with a role on the app can sign in.</>,
       ];
+
+  const domains = current && setup
+    ? provider === 'google'
+      ? [rootDomain(current.redirectUri)]
+      : Array.from(new Set([rootDomain(current.redirectUri), ...setup.storeOrigins.map(hostOf)]))
+    : [];
 
   return (
     <div className="max-w-[720px]">
@@ -156,62 +205,119 @@ export function CustomerSocialProviderPage() {
 
       {!loading && !loadError && current && setup && (
         <>
+          {connected && current.lastError && (
+            <div role="alert" className="mt-5 flex items-start gap-2.5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-3.5 text-[12.5px] text-[#991B1B]">
+              <AlertCircle size={15} className="shrink-0 mt-px" />
+              <span>The last check failed: {current.lastError} Customers may not be able to sign in with {label} until this is fixed.</span>
+            </div>
+          )}
+
           <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
             <p className="text-[14px] font-semibold text-charcoal mb-1">Setup instructions</p>
             <ol className="text-[12.5px] text-charcoal pl-5 mb-4 leading-relaxed list-decimal">
               {steps.map((s, i) => <li key={i} className="mb-1">{s}</li>)}
             </ol>
+            {domains.filter(Boolean).map((d, i) => (
+              <CopyField key={d} label={provider === 'google' ? 'Authorized domain (OAuth consent screen)' : `App domain${domains.length > 1 ? ` ${i + 1}` : ''}`} value={d} />
+            ))}
             {setup.storeOrigins.map((o, i) => (
-              <CopyField key={o} label={i === 0 ? 'Store address (Authorized JavaScript origin)' : 'Store address (another domain)'} value={o} />
+              <CopyField
+                key={o}
+                label={provider === 'google'
+                  ? (i === 0 ? 'Store address (Authorized JavaScript origin)' : 'Store address (another domain)')
+                  : (i === 0 ? 'Store address (website)' : 'Store address (another domain)')}
+                value={o}
+              />
             ))}
             <CopyField label="Redirect URI" value={current.redirectUri} />
+            <p className="flex items-start gap-1.5 text-[11.5px] text-slate mt-3 leading-relaxed">
+              <Info size={13} className="shrink-0 mt-px" />
+              <span>Add a new domain to your store later? Come back here and add its address to your {label} app too, or customers on that domain won&apos;t be able to sign in.</span>
+            </p>
           </div>
 
           <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
-            <p className="text-[14px] font-semibold text-charcoal mb-3">Credentials</p>
-            <label className="block mb-3">
-              <span className="block text-[11.5px] font-semibold text-slate mb-1">{idLabel}</span>
-              <input className={inputCls} value={clientId} onChange={e => { setClientId(e.target.value); setMsg(null); }} disabled={!canEdit || saving} autoComplete="off" spellCheck={false} />
-            </label>
-            <label className="block">
-              <span className="block text-[11.5px] font-semibold text-slate mb-1">{secretLabel}</span>
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+              <p className="text-[14px] font-semibold text-charcoal">Credentials</p>
+              {connected && verifiedAt && !current.lastError && (
+                <span className="flex items-center gap-1 text-[11.5px] text-[#166534]"><CheckCircle size={13} /> Verified {verifiedAt}</span>
+              )}
+            </div>
+            <div className="mb-3">
+              <label htmlFor={idFieldId} className="block text-[11.5px] font-semibold text-slate mb-1">{idLabel}</label>
               <input
-                className={inputCls} type="password" value={clientSecret} onChange={e => { setClientSecret(e.target.value); setMsg(null); }}
-                disabled={!canEdit || saving} autoComplete="new-password" spellCheck={false}
+                id={idFieldId} className={inputCls} value={clientId} onChange={e => { setClientId(e.target.value); setMsg(null); }}
+                disabled={!canEdit || working} autoComplete="off" spellCheck={false}
+                placeholder={provider === 'google' ? '1234567890-abc123.apps.googleusercontent.com' : '1234567890123456'}
+              />
+            </div>
+            <div>
+              <label htmlFor={secretFieldId} className="block text-[11.5px] font-semibold text-slate mb-1">{secretLabel}</label>
+              <PasswordField
+                id={secretFieldId} className={inputCls} value={clientSecret} onChange={e => { setClientSecret(e.target.value); setMsg(null); }}
+                disabled={!canEdit || working} autoComplete="new-password" spellCheck={false}
                 placeholder={connected && current.maskedSecret ? `${current.maskedSecret} — enter a new secret to replace it` : ''}
               />
-            </label>
+              <p className="text-[11px] text-slate mt-1">We check these with {label} when you save. The secret is stored encrypted and never shown again.</p>
+            </div>
 
-            {!canEdit && <p className="text-[11px] text-slate mt-3">You need the "Manage general settings" permission to change this.</p>}
+            {!canEdit && <p className="text-[11px] text-slate mt-3">You need the &quot;Manage general settings&quot; permission to change this.</p>}
 
             <div className="flex items-center gap-3 mt-4 flex-wrap">
               <button
-                type="button" onClick={save}
-                disabled={saving || !canEdit || !clientId.trim() || !clientSecret.trim()}
+                type="button" onClick={save} disabled={!canSave}
                 className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold"
-                style={{
-                  background: !saving && canEdit && clientId.trim() && clientSecret.trim() ? '#D97757' : '#E8E6DC',
-                  color: !saving && canEdit && clientId.trim() && clientSecret.trim() ? '#fff' : '#8C8A82',
-                  cursor: !saving && canEdit && clientId.trim() && clientSecret.trim() ? 'pointer' : 'not-allowed',
-                }}
+                style={{ background: canSave ? '#D97757' : '#E8E6DC', color: canSave ? '#fff' : '#8C8A82', cursor: canSave ? 'pointer' : 'not-allowed' }}
               >
-                {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? 'Saving...' : 'Save'}
+                {busy === 'save' && <Loader2 size={14} className="animate-spin" />}
+                {busy === 'save' ? `Checking with ${label}...` : 'Save'}
               </button>
               {connected && canEdit && (
-                <button type="button" onClick={disconnect} disabled={saving} className="px-[18px] py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-error cursor-pointer">
-                  Disconnect
-                </button>
+                <>
+                  <button type="button" onClick={test} disabled={working} className="flex items-center gap-1.5 px-[18px] py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-charcoal cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                    {busy === 'test' && <Loader2 size={14} className="animate-spin" />}
+                    {busy === 'test' ? 'Testing...' : 'Test connection'}
+                  </button>
+                  <button type="button" onClick={() => setConfirmDisconnect(true)} disabled={working} className="px-[18px] py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-error cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                    Disconnect
+                  </button>
+                </>
               )}
+            </div>
+            <div role="status" aria-live="polite" className="min-h-[20px] mt-3">
               {msg && (
-                <span role="status" className="flex items-center gap-1.5 text-[12px]" style={{ color: msg.ok ? '#166534' : '#991B1B' }}>
-                  {msg.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                <span className="flex items-start gap-1.5 text-[12.5px]" style={{ color: msg.ok ? '#166534' : '#991B1B' }}>
+                  {msg.ok ? <CheckCircle size={14} className="shrink-0 mt-px" /> : <AlertCircle size={14} className="shrink-0 mt-px" />}
                   {msg.text}
                 </span>
               )}
             </div>
           </div>
         </>
+      )}
+
+      {confirmDisconnect && (
+        <Modal
+          title={`Disconnect ${label} sign-in?`}
+          onClose={() => { if (busy !== 'disconnect') setConfirmDisconnect(false); }}
+          width={420}
+          mobileSheet
+          footer={
+            <>
+              <button type="button" onClick={() => setConfirmDisconnect(false)} disabled={busy === 'disconnect'} className="px-4 py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-charcoal cursor-pointer disabled:opacity-60">
+                Cancel
+              </button>
+              <button type="button" onClick={disconnect} disabled={busy === 'disconnect'} className="flex items-center gap-1.5 px-4 py-2 rounded-lg border-none text-[13px] font-semibold text-white cursor-pointer disabled:opacity-60" style={{ background: '#B91C1C' }}>
+                {busy === 'disconnect' && <Loader2 size={14} className="animate-spin" />}
+                Disconnect
+              </button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-relaxed">
+            Customers will no longer see the {label} button on your store, and customers who signed up with {label} won&apos;t be able to use it to sign in. You can connect it again at any time.
+          </p>
+        </Modal>
       )}
     </div>
   );

@@ -124,6 +124,11 @@ export function apiRestoreStorePageVersion(storeId: string, pageId: string, vers
   return client.post<never, ApiResponse<StorePageData>>(withInstance(ENDPOINTS.STORE_PAGES.RESTORE_VERSION(storeId, pageId, versionId), installedThemeId));
 }
 
+/** A draft copy of a custom page (new link, hidden from navigation). */
+export function apiDuplicateStorePage(storeId: string, pageId: string) {
+  return client.post<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.DUPLICATE(storeId, pageId));
+}
+
 export function apiDeleteStorePage(storeId: string, pageId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.STORE_PAGES.DELETE(storeId, pageId));
 }

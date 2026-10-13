@@ -63,6 +63,12 @@ export interface ActiveCampaignBadge {
 
 export interface MarketplaceProduct {
   _id:               string;
+  /** Brand / vendor label and seller-set selling options. */
+  vendor?:           string;
+  orderMinQuantity?: number;
+  orderMaxQuantity?: number | null;
+  orderQuantityStep?: number;
+  preorder?:         { enabled: boolean; availableOn: string | null };
   name:              string;
   sellerId:          string;
   storeId?:          string;

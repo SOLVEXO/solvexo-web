@@ -9,6 +9,8 @@ import { NovaSectionRenderer } from '../sections';
 import { NovaCollectionScopeProvider } from '../sections/collectionScope';
 import { NovaProductGrid } from '../components/NovaProductGrid';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
+import { CollectionDefaultSortContext, gridSortFor } from '../../collectionSortScope';
+import { cloudinaryUrl } from '@/utils/cloudinaryImage';
 import { novaTheme as t } from '../theme.config';
 
 /** `/collections/:slugOrId` — genuinely template-driven, same real
@@ -46,8 +48,8 @@ export function NovaCollectionPage() {
   }, [store.storeId, collection]);
 
   useStorefrontSeo({
-    title: collection ? collection.name : undefined,
-    description: collection?.description || undefined,
+    title: collection ? (collection.seo?.metaTitle || collection.name) : undefined,
+    description: collection?.seo?.metaDescription || collection?.description || undefined,
     image: collection?.image || undefined,
   });
 
@@ -68,6 +70,9 @@ export function NovaCollectionPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
+      {collection.image && (
+        <img src={cloudinaryUrl(collection.image, 1600)} alt="" style={{ display: 'block', width: '100%', maxHeight: '360px', objectFit: 'cover', borderRadius: t.imageRadiusPx, marginBottom: '24px' }} />
+      )}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink }}>{collection.name}</h1>
         {collection.description && (
@@ -76,10 +81,12 @@ export function NovaCollectionPage() {
           </p>
         )}
       </div>
+      <CollectionDefaultSortContext.Provider value={collection.defaultSort}>
       <NovaCollectionScopeProvider value={collection._id}>
         <NovaSectionRenderer sections={sections} dynamicSourceValues={dynamicSourceValues} />
       </NovaCollectionScopeProvider>
-      {!hasGridAnchor && <NovaProductGrid collectionId={collection._id} syncUrl />}
+      </CollectionDefaultSortContext.Provider>
+      {!hasGridAnchor && <NovaProductGrid collectionId={collection._id} syncUrl defaultSort={gridSortFor(collection.defaultSort)} />}
     </main>
   );
 }

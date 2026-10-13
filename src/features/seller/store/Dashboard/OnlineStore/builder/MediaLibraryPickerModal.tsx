@@ -40,11 +40,26 @@ export function MediaLibraryPickerModal({
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastSearch, setLastSearch] = useState<string | undefined>(undefined);
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    apiBrowseMediaLibrary(storeId, { search: lastSearch, type: mediaType, limit: 60, page: page + 1 })
+      .then(res => { setItems(prev => [...prev, ...res.data.items.filter(n => !prev.some(p => p._id === n._id))]); setTotal(res.data.total); setPage(page + 1); })
+      .catch(() => setError('Failed to load more files.'))
+      .finally(() => setLoadingMore(false));
+  };
+
   const load = (search?: string) => {
     setLoading(true);
     setError('');
-    apiBrowseMediaLibrary(storeId, { search, type: mediaType, limit: 60 })
-      .then(res => setItems(res.data.items))
+    setPage(1);
+    setLastSearch(search);
+    apiBrowseMediaLibrary(storeId, { search, type: mediaType, limit: 60, page: 1 })
+      .then(res => { setItems(res.data.items); setTotal(res.data.total); })
       .catch(() => setError('Failed to load your Files Library.'))
       .finally(() => setLoading(false));
   };
@@ -151,6 +166,13 @@ export function MediaLibraryPickerModal({
             })
           )}
         </div>
+        {!loading && items.length > 0 && items.length < total && (
+          <div className="flex justify-center">
+            <button type="button" onClick={loadMore} disabled={loadingMore} className="px-4 py-1.5 rounded-lg text-[12.5px] font-semibold border border-bone bg-white cursor-pointer disabled:opacity-60">
+              {loadingMore ? 'Loading…' : `Load more (${items.length} of ${total})`}
+            </button>
+          </div>
+        )}
         {multi && (
           <div className="flex items-center justify-between gap-3 pt-1">
             <span className="text-[12px] text-slate">{selected.length} of {maxSelect} selected</span>

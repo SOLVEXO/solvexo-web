@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PasswordToggleButton } from './PasswordField';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Info, Lock } from 'lucide-react';
 import { apiLogin, TokenStorage, LastRolePreference, type AppRole } from '@/api/services/auth';
@@ -31,6 +32,7 @@ export function AuthGateModal() {
   // this modal exists to avoid, so the submit here is handled by hand instead.
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [showPass, setShowPass] = useState(false);
 
   const { values, errors, set, blur, handleSubmit, reset } = useForm<LoginFormData>(
     loginSchema,
@@ -86,7 +88,8 @@ export function AuthGateModal() {
             autoFocus
           />
           <Input
-            type="password"
+            type={showPass ? 'text' : 'password'}
+            rightIcon={<PasswordToggleButton visible={showPass} onToggle={() => setShowPass(v => !v)} />}
             placeholder="Password"
             value={values.password}
             onChange={set('password')}

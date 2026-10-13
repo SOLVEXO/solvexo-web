@@ -54,7 +54,7 @@ export interface ThemePreviewComponents {
    *  the embedded chrome are typed here; each theme's real object has more
    *  fields than this, which is fine, this is a structural (not exact)
    *  match. */
-  theme: { colors: { bg: string }; fonts: { body: string } };
+  theme: { colors: { bg: string; bgAlt: string; ink: string; border: string }; fonts: { body: string } };
   /** The theme's own `applyMerchantThemeOverrides` — mutates `theme` above
    *  in place from a real, published-or-draft `StorefrontColors` subset,
    *  exactly like the real storefront layout calls it before rendering. */

@@ -11,11 +11,14 @@ export const PRODUCT_MAIN_BLOCKS = [
   'product_buy_buttons',
   'product_description',
 ] as const;
-export type ProductMainBlock = (typeof PRODUCT_MAIN_BLOCKS)[number];
+/** Extra blocks a seller can switch on (the rating was always shown, the rest start off). */
+export const PRODUCT_OPTIONAL_BLOCKS = ['product_rating', 'product_sku', 'product_wishlist', 'product_share', 'product_specs'] as const;
+
+export type ProductMainBlock = (typeof PRODUCT_MAIN_BLOCKS)[number] | (typeof PRODUCT_OPTIONAL_BLOCKS)[number];
 /** Everything except the gallery, which always owns the left column. */
 export type ProductInfoBlock = Exclude<ProductMainBlock, 'product_media'>;
 
-const KNOWN = new Set<string>(PRODUCT_MAIN_BLOCKS);
+const KNOWN = new Set<string>([...PRODUCT_MAIN_BLOCKS, ...PRODUCT_OPTIONAL_BLOCKS]);
 
 interface BlockLike { type: string; enabled?: boolean }
 
@@ -24,9 +27,10 @@ interface BlockLike { type: string; enabled?: boolean }
  * which blocks are on and in what order. The gallery is its own column, so
  * only the order of the info-column blocks matters.
  *
- * A template with no `product_main` yet (older stores), or a block missing
- * from it, resolves to "on" at its default position — identical to the page
- * before blocks could be reordered.
+ * A template with no `product_main` yet (older stores), or a required block
+ * missing from it, resolves to "on" at its default position — identical to the
+ * page before blocks could be reordered. Optional blocks that are absent stay
+ * off, except the rating, which always showed under the title and so keeps doing so.
  */
 export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null): { mediaOn: boolean; infoOrder: ProductInfoBlock[] } {
   const seen = new Set<string>();
@@ -38,6 +42,10 @@ export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null)
   }
   for (const type of PRODUCT_MAIN_BLOCKS) {
     if (!seen.has(type)) ordered.push({ type, on: true });
+  }
+  if (!seen.has('product_rating')) {
+    const titleAt = ordered.findIndex(o => o.type === 'product_title');
+    ordered.splice(titleAt >= 0 ? titleAt + 1 : 0, 0, { type: 'product_rating', on: true });
   }
   return {
     mediaOn: ordered.find(o => o.type === 'product_media')?.on ?? true,

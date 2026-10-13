@@ -437,6 +437,14 @@ export interface StoreAnnouncementBar {
   isActive: boolean;
   startAt:  string | null;
   endAt:    string | null;
+  /** Up to 4 extra rotating messages. Optional: a bar saved before these existed omits them. */
+  moreMessages?:  { message: string; ctaLabel?: string | null; ctaLink?: string | null }[];
+  rotateSeconds?: number;
+  closable?:      boolean;
+  bgColor?:       string | null;
+  textColor?:     string | null;
+  placement?:     'above' | 'below';
+  align?:         'left' | 'center';
 }
 
 /** PATCH /api/store/:storeId/pinned-products */
@@ -511,7 +519,7 @@ export interface PublicStoreData {
   badges:         string[];
   createdAt:      string;
   activeCampaign: ActiveCampaignBadge | null;
-  announcementBar: { message: string | null; type: StoreAnnouncementType; ctaLabel: string | null; ctaLink: string | null } | null;
+  announcementBar: (Pick<StoreAnnouncementBar, 'message' | 'type' | 'ctaLabel' | 'ctaLink' | 'moreMessages' | 'rotateSeconds' | 'closable' | 'bgColor' | 'textColor' | 'placement' | 'align'>) | null;
   /** Real storefront access gate — 'public' (default) means every visitor
    *  sees the real site, same as before this field existed. See
    *  `StorefrontLayout.tsx` for where this is enforced. */
@@ -537,7 +545,7 @@ export interface PublicStoreData {
 export interface PublicStoreProductsParams {
   page?:         number;
   limit?:        number;
-  sort?:         'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'price_asc' | 'price_desc' | 'best_rated';
+  sort?:         'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'price_asc' | 'price_desc' | 'best_rated' | 'best_selling' | 'trending';
   availability?: 'in_stock' | 'out_of_stock';
   minPrice?:     number;
   maxPrice?:     number;
