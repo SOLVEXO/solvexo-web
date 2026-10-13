@@ -357,7 +357,8 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
 
   const openNew = () => { setForm(EMPTY_ROLE_FORM); setError(''); setFormOpen('new'); };
   const openEdit = (role: Role) => {
-    setForm({ name: role.name, description: role.description ?? '', permissions: role.permissions });
+    // Ignore keys the app no longer has — sending them back would fail validation.
+    setForm({ name: role.name, description: role.description ?? '', permissions: role.permissions.filter((p): p is StaffPermission => (STAFF_PERMISSIONS as readonly string[]).includes(p)) });
     setError('');
     setFormOpen(role);
   };
