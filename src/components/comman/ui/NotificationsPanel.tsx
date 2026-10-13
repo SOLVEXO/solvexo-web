@@ -57,6 +57,8 @@ export function NotificationsPanel() {
       ];
 
   const [unreadOnly, setUnreadOnly] = useState(false);
+  // History starts short (the page used to be an endless scroll) — "Show all" expands it.
+  const [showAll, setShowAll] = useState(false);
   const [prefError, setPrefError] = useState('');
   const [prefSuccess, setPrefSuccess] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
@@ -82,6 +84,8 @@ export function NotificationsPanel() {
   };
 
   const showPrefsLoading = !prefsLoaded && preferences === null;
+  const HISTORY_PREVIEW = 5;
+  const visibleNotifications = showAll ? notifications : notifications.slice(0, HISTORY_PREVIEW);
 
   return (
     <div className="flex flex-col gap-6">
@@ -89,8 +93,8 @@ export function NotificationsPanel() {
       <Card padding="none">
         <div className="px-5 pt-5 pb-4 border-b border-bone flex justify-between items-center">
           <div>
-            <h2 className="text-[16px] font-bold text-carbon">Notification Preferences</h2>
-            <p className="text-[12px] text-slate mt-0.5">Control how and when you want to receive alerts.</p>
+            <h2 className="text-[15px] font-bold text-carbon">My alert preferences</h2>
+            <p className="text-[12px] text-slate mt-0.5">How and when <i>you</i> are alerted (these don't change what your customers receive).</p>
           </div>
           {prefSuccess && (
             <span className="text-[11px] font-medium text-success bg-success-bg px-2.5 py-1 rounded-md animate-fade-in">
@@ -192,8 +196,8 @@ export function NotificationsPanel() {
       <Card padding="none">
         <div className="px-5 pt-5 pb-4 border-b border-bone flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-[16px] font-bold text-carbon">Notification History</h2>
-            <p className="text-[12px] text-slate mt-0.5">Browse your notification feed history.</p>
+            <h2 className="text-[15px] font-bold text-carbon">Recent alerts</h2>
+            <p className="text-[12px] text-slate mt-0.5">Your latest notifications.</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {/* Unread-only filter */}
@@ -232,7 +236,7 @@ export function NotificationsPanel() {
               ))}
             </div>
           ) : notifications.length > 0 ? (
-            notifications.map((notif) => (
+            visibleNotifications.map((notif) => (
               <div
                 key={notif._id}
                 className={clsx(
@@ -289,6 +293,7 @@ export function NotificationsPanel() {
             ))
           ) : (
             <EmptyState
+              className="py-8!"
               icon={<Bell size={28} className="text-slate/40" />}
               title={unreadOnly ? 'No unread notifications' : 'No notifications yet'}
               description={
@@ -299,6 +304,17 @@ export function NotificationsPanel() {
             />
           )}
         </div>
+        {notifications.length > HISTORY_PREVIEW && (
+          <div className="px-5 py-2.5 border-t border-bone text-center">
+            <button
+              type="button"
+              onClick={() => setShowAll(v => !v)}
+              className="text-[12px] font-medium text-brand-orange hover:underline bg-transparent border-0 cursor-pointer"
+            >
+              {showAll ? 'Show fewer' : `Show all ${notifications.length}`}
+            </button>
+          </div>
+        )}
       </Card>
     </div>
   );

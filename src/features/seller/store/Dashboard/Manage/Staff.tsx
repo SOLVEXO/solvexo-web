@@ -4,14 +4,26 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { SkeletonBox, EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import {
-  apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff, apiResendStaffInvite,
+  apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff, apiReactivateStaff, apiDeleteStaff, apiResendStaffInvite,
   apiListRoles, apiCreateRole, apiUpdateRole, apiDeleteRole,
   apiListApprovals, apiApproveRequest, apiRejectRequest,
   STAFF_PERMISSIONS, PERMISSION_LABELS,
-  type StaffMember, type Role, type StaffPermission, type ApprovalRequestItem,
+  type StaffMember, type Role, type StaffPermission, type ApprovalRequestItem, type StaffInviteResult,
 } from '@/api/services/staff';
 
 const EMPTY_STAFF_FORM = { name: '', email: '', role: 'staff' as 'staff' | 'manager', roleId: '' };
+/** "2 hours ago" / "3 days ago" — short, dependency-free. */
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.round(hrs / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
 const EMPTY_ROLE_FORM = { name: '', description: '', permissions: [] as StaffPermission[] };
 
 /** Real, store-wide Staff RBAC management — Shopify-parity Roles (a named,
@@ -44,8 +56,8 @@ export default function StaffPage({ embedded = false }: { embedded?: boolean } =
   // `Promise.all`, so e.g. a successful "Create Role" would close its modal
   // (optimistic) but the new role would never actually show up in the list
   // — no visible error, just "nothing happened" — exactly the reported bug.
-  const load = useCallback(() => {
-    setLoading(true);
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
     setLoadError('');
     Promise.allSettled([apiListStaff(storeId), apiListRoles(storeId), apiListApprovals(storeId, 'pending')])
       .then(([s, r, a]) => {
@@ -59,6 +71,14 @@ export default function StaffPage({ embedded = false }: { embedded?: boolean } =
   }, [storeId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Pick up changes made elsewhere (e.g. a staff member accepting their invite)
+  // whenever the owner comes back to this tab.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') load(true); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [load]);
 
   const roleName = (roleId: string | null) => roles.find(r => r._id === roleId)?.name ?? 'No role assigned';
 
@@ -154,7 +174,8 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
     setSaving(true);
     try {
       if (formOpen === 'new') {
-        await apiCreateStaff(storeId, { name: form.name, email: form.email, role: form.role, roleId: form.roleId || undefined });
+        const res = await apiCreateStaff(storeId, { name: form.name, email: form.email, role: form.role, roleId: form.roleId || undefined });
+        showInviteResult(form.email, res);
       } else {
         await apiUpdateStaff(storeId, formOpen._id, { name: form.name, role: form.role, roleId: form.roleId || undefined });
       }
@@ -167,15 +188,43 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
     }
   };
 
-  const handleDeactivate = async (member: StaffMember) => {
-    await apiDeactivateStaff(storeId, member._id);
-    onChanged();
+  const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState<{ ok: boolean; text: string; inviteUrl?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const showInviteResult = (email: string, res: StaffInviteResult) => {
+    setCopied(false);
+    setNotice(res.emailSent
+      ? { ok: true, text: `Invite emailed to ${email}. If they can't find it, ask them to check their spam/junk folder.`, inviteUrl: res.inviteUrl }
+      : { ok: false, text: `We couldn't send the invite email to ${email}. Share the invite link with them directly, or try Resend Invite.`, inviteUrl: res.inviteUrl });
+  };
+  const copyInviteLink = async (url: string) => {
+    try { await navigator.clipboard.writeText(url); setCopied(true); } catch { setActionError('Could not copy — select the link and copy it manually.'); }
+  };
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<StaffMember | null>(null);
+
+  const runAction = async (id: string, fn: () => Promise<unknown>) => {
+    setActionError('');
+    setBusyId(id);
+    try { await fn(); onChanged(); }
+    catch (err: unknown) { setActionError(err instanceof Error ? err.message : 'Something went wrong. Please try again.'); }
+    finally { setBusyId(null); }
+  };
+  const handleDeactivate = (member: StaffMember) => runAction(member._id, () => apiDeactivateStaff(storeId, member._id));
+  const handleReactivate = (member: StaffMember) => runAction(member._id, () => apiReactivateStaff(storeId, member._id));
+  const handleDelete = async (member: StaffMember) => {
+    await runAction(member._id, () => apiDeleteStaff(storeId, member._id));
+    setConfirmDelete(null);
   };
 
   const [resendingId, setResendingId] = useState<string | null>(null);
   const handleResendInvite = async (member: StaffMember) => {
     setResendingId(member._id);
-    try { await apiResendStaffInvite(storeId, member._id); } finally { setResendingId(null); }
+    setActionError('');
+    try { const res = await apiResendStaffInvite(storeId, member._id); showInviteResult(member.email, res); onChanged(); }
+    catch (err: unknown) { setActionError(err instanceof Error ? err.message : 'Could not resend the invite.'); }
+    finally { setResendingId(null); }
   };
 
   return (
@@ -190,6 +239,17 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
         <p className="text-[12px] text-slate bg-cream rounded-lg px-3 py-2">Create a Role first (see the Roles tab above) before inviting staff.</p>
       )}
 
+      {notice && (
+        <div role="status" className={`rounded-lg border px-3.5 py-2.5 text-[12px] flex flex-wrap items-center justify-between gap-2 ${notice.ok ? 'bg-success-bg border-success/30 text-charcoal' : 'bg-error-bg border-error/30 text-error'}`}>
+          <span className="min-w-0">{notice.text}</span>
+          <span className="flex items-center gap-2 shrink-0">
+            {notice.inviteUrl && <Button size="xs" variant="outline" onClick={() => copyInviteLink(notice.inviteUrl!)}>{copied ? 'Link copied' : 'Copy invite link'}</Button>}
+            <Button size="xs" variant="ghost" onClick={() => setNotice(null)}>Dismiss</Button>
+          </span>
+        </div>
+      )}
+      {actionError && <div role="alert" className="bg-error-bg border border-error/30 rounded-lg px-3.5 py-2.5 text-[12px] text-error">{actionError}</div>}
+
       {loading ? (
         <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={56} rounded="10px" />)}</div>
       ) : staff.length === 0 ? (
@@ -198,27 +258,46 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
           {staff.map(member => {
             const pending = !member.inviteAcceptedAt;
+            const expired = pending && !!member.inviteTokenExpiresAt && new Date(member.inviteTokenExpiresAt).getTime() < Date.now();
+            const invitedLine = !pending
+              ? `Joined ${timeAgo(member.inviteAcceptedAt)}`
+              : expired ? 'Invite link expired — resend it' : member.inviteSentAt ? `Invite sent ${timeAgo(member.inviteSentAt)} · waiting for them to accept` : 'Waiting for them to accept';
             return (
               <div key={member._id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <button type="button" onClick={() => openEdit(member)} className="min-w-0 text-left bg-transparent border-none cursor-pointer flex-1">
                   <p className="text-[13px] font-semibold text-charcoal truncate">{member.name} <span className="text-slate font-normal">· {member.email}</span></p>
-                  <p className="text-[11px] text-slate">{roleName(member.roleId)}</p>
+                  <p className="text-[11px] text-slate">{roleName(member.roleId)} · {invitedLine}</p>
                 </button>
                 <div className="flex items-center gap-2 shrink-0">
                   {pending
-                    ? <Badge color="orange" size="sm">Invite pending</Badge>
+                    ? <Badge color={expired ? 'gray' : 'orange'} size="sm">{expired ? 'Invite expired' : 'Invite pending'}</Badge>
                     : <Badge color={member.status === 'active' ? 'green' : 'gray'} size="sm">{member.status === 'active' ? 'Active' : 'Inactive'}</Badge>}
                   {pending && member.status === 'active' && (
                     <Button size="xs" variant="ghost" loading={resendingId === member._id} onClick={() => handleResendInvite(member)}>Resend Invite</Button>
                   )}
                   {!pending && member.status === 'active' && (
-                    <Button size="xs" variant="ghost" onClick={() => handleDeactivate(member)}>Deactivate</Button>
+                    <Button size="xs" variant="ghost" loading={busyId === member._id} onClick={() => handleDeactivate(member)}>Deactivate</Button>
                   )}
+                  {member.status !== 'active' && (
+                    <Button size="xs" variant="outline" loading={busyId === member._id} onClick={() => handleReactivate(member)}>Reactivate</Button>
+                  )}
+                  <Button size="xs" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(member)}>Delete</Button>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {confirmDelete && (
+        <Modal title={`Delete ${confirmDelete.name}?`} onClose={() => setConfirmDelete(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+            <Button variant="primary" loading={busyId === confirmDelete._id} onClick={() => handleDelete(confirmDelete)}>Delete staff account</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal">This permanently removes <strong>{confirmDelete.email}</strong> and signs them out immediately. You can invite the same email again later.</p>
+        </Modal>
       )}
 
       {formOpen && (
@@ -230,19 +309,19 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
         }>
           <div className="flex flex-col gap-4">
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Name</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              <label htmlFor="staff-form-name" className="text-[12px] font-medium text-graphite mb-1 block">Name</label>
+              <input id="staff-form-name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
             </div>
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Email</label>
-              <input type="email" value={form.email} disabled={formOpen !== 'new'} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              <label htmlFor="staff-form-email" className="text-[12px] font-medium text-graphite mb-1 block">Email</label>
+              <input id="staff-form-email" type="email" value={form.email} disabled={formOpen !== 'new'} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40 disabled:bg-cream disabled:text-slate" />
               {formOpen === 'new' && <p className="text-[11px] text-slate mt-1">They'll get an email at this address to set their own password.</p>}
             </div>
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Role</label>
-              <select value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}
+              <label htmlFor="staff-form-role" className="text-[12px] font-medium text-graphite mb-1 block">Role</label>
+              <select id="staff-form-role" value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white">
                 <option value="">— Select a Role —</option>
                 {roles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
@@ -250,7 +329,7 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
               <p className="text-[11px] text-slate mt-1">Manage what each Role can do from the Roles tab.</p>
             </div>
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Label</label>
+              <span className="text-[12px] font-medium text-graphite mb-1 block">Label</span>
               <div className="flex gap-2">
                 {(['staff', 'manager'] as const).map(r => (
                   <button key={r} type="button" onClick={() => setForm(f => ({ ...f, role: r }))}
@@ -351,18 +430,18 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
         }>
           <div className="flex flex-col gap-4">
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Role name</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              <label htmlFor="role-form-name" className="text-[12px] font-medium text-graphite mb-1 block">Role name</label>
+              <input id="role-form-name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. Warehouse Staff"
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
             </div>
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1 block">Description (optional)</label>
-              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              <label htmlFor="role-form-desc" className="text-[12px] font-medium text-graphite mb-1 block">Description (optional)</label>
+              <input id="role-form-desc" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
             </div>
             <div>
-              <label className="text-[12px] font-medium text-graphite mb-1.5 block">Permissions</label>
+              <span className="text-[12px] font-medium text-graphite mb-1.5 block">Permissions</span>
               <div className="flex flex-col gap-2 border border-bone rounded-lg p-3 max-h-[340px] overflow-y-auto">
                 {STAFF_PERMISSIONS.map(p => (
                   <div key={p} className="flex items-center justify-between gap-3">

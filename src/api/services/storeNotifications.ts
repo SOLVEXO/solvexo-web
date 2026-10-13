@@ -1,8 +1,12 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 
+export type CustomerEmailGroup = 'orders' | 'returns' | 'invoices';
+
 export interface CustomerEmailSetting {
   key: string;
+  /** Where this email is listed on the Customer emails page. */
+  group: CustomerEmailGroup;
   label: string;
   description: string;
   /** Merge tags this email can use, e.g. "orderNumber" → {{orderNumber}}. */
@@ -66,4 +70,9 @@ export function apiUpdateStoreNotificationSettings(storeId: string, payload: Upd
 /** POST /api/store-notifications/:storeId/preview — renders one email with sample values (unsaved draft supported). */
 export function apiPreviewCustomerEmail(storeId: string, payload: { event: string; subject?: string | null; body?: string | null }) {
   return client.post<never, ApiResponse<CustomerEmailPreview>>(ENDPOINTS.STORE_NOTIFICATIONS.PREVIEW(storeId), payload);
+}
+
+/** POST /api/store-notifications/:storeId/test-email — mails the sample email (unsaved draft supported) to the person who clicked. */
+export function apiSendTestCustomerEmail(storeId: string, payload: { event: string; subject?: string | null; body?: string | null }) {
+  return client.post<never, { success: boolean; message: string; data: { to: string } }>(ENDPOINTS.STORE_NOTIFICATIONS.TEST_EMAIL(storeId), payload);
 }

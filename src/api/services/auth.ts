@@ -363,6 +363,11 @@ export interface ProfileData {
   profileImage: string | null;
   status:       string;
   role:         AppRole;
+  /** Staff sessions only — their one store, role name and current permissions. */
+  storeId?:        string;
+  storeName?:      string | null;
+  staffRoleName?:  string | null;
+  permissions?:    string[];
   /** Explicit buyer currency choice — null until the buyer picks one, in
    *  which case it's the cross-device source of truth for checkout/display
    *  currency (see CurrencyPreferenceContext). Real, dynamic currency code —

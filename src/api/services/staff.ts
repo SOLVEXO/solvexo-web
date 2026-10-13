@@ -149,8 +149,15 @@ export interface StaffMember {
   /** Null until this staff member accepts their invite and sets their own
    *  password — see `apiResendStaffInvite`/the "Accept Invite" page. */
   inviteAcceptedAt: string | null;
+  /** When the latest invite email was sent, and when its link stops working. */
+  inviteSentAt?: string | null;
+  inviteTokenExpiresAt?: string | null;
   createdAt: string;
 }
+
+/** Result of inviting / re-inviting: whether the email actually left our
+ *  server, plus (owner/admin only) the invite link to share by hand. */
+export interface StaffInviteResult { emailSent: boolean; inviteUrl?: string }
 
 // No `password` field — the seller never sets a staff member's password
 // (see StaffAcceptInvitePage.tsx / apiAcceptStaffInvite).
@@ -182,7 +189,7 @@ export function apiListStaff(storeId: string) {
 }
 
 export function apiCreateStaff(storeId: string, payload: CreateStaffPayload) {
-  return client.post<never, ApiResponse<StaffMember>>(ENDPOINTS.STAFF.CREATE(storeId), payload);
+  return client.post<never, ApiResponse<StaffMember> & StaffInviteResult>(ENDPOINTS.STAFF.CREATE(storeId), payload);
 }
 
 export function apiUpdateStaff(storeId: string, staffId: string, payload: UpdateStaffPayload) {
@@ -193,8 +200,36 @@ export function apiDeactivateStaff(storeId: string, staffId: string) {
   return client.patch<never, ApiResponse<StaffMember>>(ENDPOINTS.STAFF.DEACTIVATE(storeId, staffId), {});
 }
 
+export function apiDeleteStaff(storeId: string, staffId: string) {
+  return client.delete<never, ApiResponse<null>>(ENDPOINTS.STAFF.DELETE(storeId, staffId));
+}
+
+/** Re-activates a deactivated staff member (takes a plan seat again). */
+export function apiReactivateStaff(storeId: string, staffId: string) {
+  return client.patch<never, ApiResponse<StaffMember>>(ENDPOINTS.STAFF.UPDATE(storeId, staffId), { status: 'active' });
+}
+
+// ── The signed-in staff member's own account ─────────────────────────────
+
+export function apiUpdateOwnStaffProfile(name: string) {
+  return client.patch<never, ApiResponse<null>>(ENDPOINTS.STAFF.ME(), { name });
+}
+
+/** Returns a fresh access token — the old one is revoked by the password change. */
+export function apiChangeOwnStaffPassword(currentPassword: string, newPassword: string) {
+  return client.put<never, ApiResponse<{ accessToken: string }>>(ENDPOINTS.STAFF.ME_PASSWORD(), { currentPassword, newPassword });
+}
+
+export function apiStaffForgotPassword(storeId: string, email: string) {
+  return client.post<never, ApiResponse<null>>(ENDPOINTS.STAFF.FORGOT_PASSWORD(storeId), { email });
+}
+
+export function apiStaffResetPassword(token: string, password: string) {
+  return client.post<never, ApiResponse<{ storeId: string }>>(ENDPOINTS.STAFF.RESET_PASSWORD(token), { password });
+}
+
 export function apiResendStaffInvite(storeId: string, staffId: string) {
-  return client.post<never, ApiResponse<null>>(ENDPOINTS.STAFF.RESEND_INVITE(storeId, staffId), {});
+  return client.post<never, ApiResponse<null> & StaffInviteResult>(ENDPOINTS.STAFF.RESEND_INVITE(storeId, staffId), {});
 }
 
 // ── Invite acceptance (public — no seller/staff session yet) ─────────────

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
@@ -9,6 +9,8 @@ import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { apiStaffLogin } from '@/api/services/staff';
 import { TokenStorage } from '@/api/services/auth';
+import { invalidateProfileCache } from '@/hooks/auth/useGetProfile';
+import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 
 const HIGHLIGHTS = [
@@ -61,6 +63,11 @@ export function StaffLoginPage() {
         try {
           const res = await apiStaffLogin(storeId, data.email, data.password);
           const { accessToken, staff } = res.data;
+          // A previous seller/staff session in this browser must never leak its
+          // cached name/email/store into this staff session.
+          invalidateProfileCache();
+          invalidateMyStoresCache();
+          try { Object.keys(window.localStorage).filter(k => k.startsWith('solvexo:store:')).forEach(k => window.localStorage.removeItem(k)); } catch { /* non-critical */ }
           TokenStorage.save(accessToken, accessToken);
           TokenStorage.saveUser({ id: staff.id, name: staff.name, email: staff.email, role: 'staff', image: null, storeId: staff.storeId });
           navigate(redirectTo || `/store/${storeId}/dashboard`, { replace: true });
@@ -127,7 +134,11 @@ export function StaffLoginPage() {
         />
       </div>
 
-      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={loading} className="mt-6">
+      <div className="flex justify-end mt-2">
+        <Link to={`/staff-forgot-password/${storeId ?? ''}`} className="text-[12.5px] font-medium text-brand-orange hover:underline">Forgot password?</Link>
+      </div>
+
+      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={loading} className="mt-4">
         Sign In
       </Button>
 

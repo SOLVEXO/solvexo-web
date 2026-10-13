@@ -38,6 +38,9 @@ const OnboardingEntry = lazy(() => import('@/features/auth/pages/onboard/Onboard
 const AdminLoginPage     = lazy(() => import('@/features/auth/pages/admin/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
 const StaffLoginPage     = lazy(() => import('@/features/auth/pages/StaffLoginPage').then(m => ({ default: m.StaffLoginPage })));
 const StaffAcceptInvitePage = lazy(() => import('@/features/auth/pages/StaffAcceptInvitePage'));
+const StaffForgotPasswordPage = lazy(() => import('@/features/auth/pages/StaffForgotPasswordPage'));
+const StaffResetPasswordPage = lazy(() => import('@/features/auth/pages/StaffResetPasswordPage'));
+const StoreAccountRoute = lazy(() => import('@/features/seller/store/Dashboard/Manage/StaffAccount'));
 const PayInvoicePage     = lazy(() => import('@/features/buyer/pages/PayInvoicePage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const VerifyOTPPage      = lazy(() => import('@/features/auth/pages/VerifyOTPPage').then(m => ({ default: m.VerifyOTPPage })));
@@ -86,7 +89,6 @@ const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/On
 const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeSharePreviewPage').then(m => ({ default: m.ThemeSharePreviewPage })));
 const CustomerAuthenticationPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerAuthenticationPage').then(m => ({ default: m.CustomerAuthenticationPage })));
 const CustomerSocialProviderPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerSocialProviderPage').then(m => ({ default: m.CustomerSocialProviderPage })));
-const SellerSettings = lazy(() => import('@/features/seller/dashboard/settings/SellerSettings').then(m => ({ default: m.SellerSettings })));
 const SellerShipping = lazy(() => import('@/features/seller/dashboard/SellerShipping').then(m => ({ default: m.SellerShipping })));
 const SellerMessages = lazy(() => import('@/features/seller/dashboard/SellerMessages').then(m => ({ default: m.SellerMessages })));
 
@@ -311,6 +313,8 @@ const mainRouter = createBrowserRouter([
       { path: '/admin/login',     element: <AdminLoginPage /> },
       { path: '/staff-login/:storeId', element: <StaffLoginPage /> },
       { path: '/staff-invite/:token', element: <StaffAcceptInvitePage /> },
+      { path: '/staff-forgot-password/:storeId', element: <StaffForgotPasswordPage /> },
+      { path: '/staff-reset-password/:token', element: <StaffResetPasswordPage /> },
       { path: '/register',        element: <RegisterPage /> },
       // Alias — visitors/marketing links typing/using the equally-common
       // "/signup" spelling used to silently fall through to the catch-all
@@ -362,7 +366,7 @@ const mainRouter = createBrowserRouter([
           { path: 'settings/customer-accounts/authentication',            element: <CustomerAuthenticationPage /> },
           { path: 'settings/customer-accounts/authentication/:provider', element: <CustomerSocialProviderPage /> },
           { path: 'staff',                           element: <StoreStaff /> },
-          { path: 'account',                          element: <SellerSettings /> },
+          { path: 'account',                          element: <StoreAccountRoute /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },
           { path: 'files',                            element: <FilesLibrary /> },

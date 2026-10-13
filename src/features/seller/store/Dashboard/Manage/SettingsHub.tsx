@@ -7,7 +7,6 @@ import {
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
-import { NotificationsPanel } from '@/components/comman/ui';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiSellerAnalyticsOverview } from '@/api/services/analytics/analytics';
@@ -19,7 +18,7 @@ import StaffPage from './Staff';
 import { MetafieldDefinitionsPage } from './MetafieldDefinitionsPage';
 import { MetaobjectTypesPage } from './Metaobjects/MetaobjectTypesPage';
 import { ActivityLogTab } from './tabs/ActivityLogTab';
-import { CustomerNotificationsSection } from './tabs/CustomerNotificationsSection';
+import { NotificationsHub } from './notifications/NotificationsHub';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
@@ -273,9 +272,8 @@ export default function SettingsHub() {
         {isVisited('domains')          && <div className={paneClassName('domains')}><DomainSettingsTab /></div>}
         {isVisited('privacy')          && <div className={paneClassName('privacy')}><PrivacyTab /></div>}
         {isVisited('notifications') && (
-          <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6 flex flex-col gap-6'}>
-            {hasNavPermission(user, ['settings.general.manage']) && <CustomerNotificationsSection key={storeId} />}
-            <NotificationsPanel />
+          <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6'}>
+            <NotificationsHub key={storeId} storeId={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />
           </div>
         )}
         {isVisited('billing')       && <div className={paneClassName('billing')}><StorePlanBilling embedded /></div>}

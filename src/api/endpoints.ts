@@ -497,6 +497,7 @@ export const ENDPOINTS = {
   STORE_NOTIFICATIONS: {
     SETTINGS: (storeId: string) => `/api/store-notifications/${storeId}`,
     PREVIEW:  (storeId: string) => `/api/store-notifications/${storeId}/preview`,
+    TEST_EMAIL: (storeId: string) => `/api/store-notifications/${storeId}/test-email`,
   },
 
   // ── ABANDONED CART RECOVERY ───────────────────────────────────────────────
@@ -747,6 +748,11 @@ export const ENDPOINTS = {
     UPDATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}`,
     DEACTIVATE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}/deactivate`,
     RESEND_INVITE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}/resend-invite`,
+    DELETE: (storeId: string, staffId: string) => `/api/staff/${storeId}/${staffId}`,
+    ME: () => `/api/staff/me`,
+    ME_PASSWORD: () => `/api/staff/me/password`,
+    FORGOT_PASSWORD: (storeId: string) => `/api/staff/${storeId}/forgot-password`,
+    RESET_PASSWORD: (token: string) => `/api/staff/reset-password/${token}`,
     GET_INVITE: (token: string) => `/api/staff/invite/${token}`,
     ACCEPT_INVITE: (token: string) => `/api/staff/invite/${token}/accept`,
     LIST_ROLES: (storeId: string) => `/api/staff/${storeId}/roles`,
