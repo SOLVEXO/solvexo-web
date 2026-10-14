@@ -1,3 +1,4 @@
+import { can } from '@/hooks/auth/useCan';
 import { useState } from 'react';
 import {
   PenLine, TrendingUp, BookOpen, Search, Mail, ImagePlus, type LucideIcon,
@@ -26,6 +27,7 @@ export function StoreAIStudio() {
   const { storeId } = useStoreWorkspace();
   const [activeTool, setActiveTool] = useState<AiToolType>('listing_writer');
   const { data: credits, loading: creditsLoading, refetch: refetchCredits } = useAiStudioCredits(storeId);
+  const canUse = can('aistudio.use'); // a view-only role sees credits/history but cannot generate
 
   return (
     <>
@@ -37,8 +39,14 @@ export function StoreAIStudio() {
       <div className="px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5">
         <CreditsHeader storeId={storeId} credits={credits} loading={creditsLoading} onCreditsChanged={refetchCredits} />
 
+        {!canUse && (
+          <div className="bg-white rounded-xl border border-bone px-5 py-4 text-[13px] text-slate">
+            Your role can see AI credit usage but cannot generate content. Ask the store owner for the “Use AI Studio generation tools” permission.
+          </div>
+        )}
+
         {/* ── Tool selector ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {canUse && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {TOOLS.map(tool => {
             const active = activeTool === tool.id;
             return (
@@ -63,15 +71,15 @@ export function StoreAIStudio() {
               </button>
             );
           })}
-        </div>
+        </div>}
 
         {/* ── Active tool workspace ── */}
-        {activeTool === 'listing_writer'    && <ListingWriterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {activeTool === 'seo_booster'       && <SeoBoosterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {activeTool === 'email_campaigns'   && <EmailCampaignsTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {activeTool === 'worksheet_builder' && <WorksheetBuilderTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {activeTool === 'price_optimizer'   && <PriceOptimizerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {activeTool === 'image_enhancer'    && <ImageEnhancerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'listing_writer'    && <ListingWriterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'seo_booster'       && <SeoBoosterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'email_campaigns'   && <EmailCampaignsTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'worksheet_builder' && <WorksheetBuilderTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'price_optimizer'   && <PriceOptimizerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'image_enhancer'    && <ImageEnhancerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
       </div>
     </>
   );

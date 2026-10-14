@@ -17,12 +17,15 @@ export const STAFF_PERMISSIONS = [
   'orders.view', 'orders.export', 'orders.fulfill', 'orders.capture_payment',
   'orders.buy_shipping_label', 'orders.return', 'orders.abandoned_checkouts', 'orders.cancel', 'orders.edit',
   'orders.refund', 'orders.record_payment', 'orders.disputes_manage',
-  'draft_orders.view', 'draft_orders.mark_paid',
-  'products.view', 'products.view_cost', 'products.export', 'products.delete', 'products.edit', 'products.edit_price', 'products.edit_cost',
+  'draft_orders.view', 'draft_orders.manage', 'draft_orders.mark_paid',
+  'products.view', 'products.create', 'products.view_cost', 'products.export', 'products.delete', 'products.edit', 'products.edit_price', 'products.edit_cost',
   'inventory.view', 'inventory.adjust', 'inventory.receive', 'inventory.transfer',
   'inventory.count', 'inventory.approve', 'purchase_orders.manage',
   'giftcards.view', 'giftcards.deactivate', 'giftcards.manage',
   'customers.view', 'customers.export', 'customers.edit',
+  'reviews.manage',
+  'collections.manage', 'categories.manage',
+  'activity_log.view',
   'analytics.view',
   'marketing.manage', 'discounts.manage',
   'content.menus.manage', 'content.metaobjects.manage', 'files.manage',
@@ -54,8 +57,10 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'orders.record_payment': 'Record manual payments on orders',
   'orders.disputes_manage': 'View & respond to payment disputes',
   'draft_orders.view': 'View draft orders',
+  'draft_orders.manage': 'Create, edit, send & delete draft orders',
   'draft_orders.mark_paid': 'Mark draft orders as paid',
   'products.view': 'View products',
+  'products.create': 'Create & duplicate products (incl. CSV import)',
   'products.view_cost': 'View product cost prices',
   'products.export': 'Export products',
   'products.delete': 'Delete products',
@@ -73,6 +78,10 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'giftcards.deactivate': 'Deactivate gift cards',
   'giftcards.manage': 'Issue gift cards & adjust balances',
   'customers.view': 'View customers',
+  'reviews.manage': 'Reply to, approve & hide product reviews',
+  'collections.manage': 'Create & manage collections',
+  'categories.manage': 'Create & manage categories',
+  'activity_log.view': 'View the store activity log',
   'customers.export': 'Export customers',
   'customers.edit': 'Create & edit customers',
   'analytics.view': 'View analytics & reports',
@@ -106,6 +115,35 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'aistudio.use': 'Use AI Studio generation tools',
   'staff.manage': 'Manage staff & roles',
 };
+
+/** The area a permission belongs to (first segment of its key) -> the heading owners see. Order = display order. */
+export const PERMISSION_AREAS: { title: string; prefixes: string[] }[] = [
+  { title: 'Dashboard & analytics', prefixes: ['home', 'analytics'] },
+  { title: 'Orders', prefixes: ['orders', 'draft_orders'] },
+  { title: 'Products', prefixes: ['products'] },
+  { title: 'Collections & categories', prefixes: ['collections', 'categories'] },
+  { title: 'Inventory & purchasing', prefixes: ['inventory', 'purchase_orders'] },
+  { title: 'Customers, reviews & messages', prefixes: ['customers', 'reviews', 'messaging', 'loyalty'] },
+  { title: 'Marketing, gift cards & growth', prefixes: ['marketing', 'discounts', 'giftcards', 'seo', 'aistudio'] },
+  { title: 'Online store', prefixes: ['onlinestore', 'content', 'files'] },
+  { title: 'Finance', prefixes: ['finance'] },
+  { title: 'Settings, activity & team', prefixes: ['settings', 'activity_log', 'staff'] },
+];
+
+/** Groups a permission list by area (only known permissions; anything unmatched lands in "Other"). */
+export function groupPermissions(perms: readonly string[]): { title: string; items: StaffPermission[] }[] {
+  const known = perms.filter((p): p is StaffPermission => p in PERMISSION_LABELS);
+  const used = new Set<string>();
+  const groups = PERMISSION_AREAS.map(area => {
+    const items = known.filter(p => area.prefixes.includes(p.split('.')[0]));
+    items.forEach(p => used.add(p));
+    return { title: area.title, items };
+  }).filter(g => g.items.length > 0);
+  const rest = known.filter(p => !used.has(p));
+  if (rest.length > 0) groups.push({ title: 'Other', items: rest });
+  return groups;
+}
+
 
 // ── Roles (Shopify-parity: a named, reusable permission bundle) ──────────
 

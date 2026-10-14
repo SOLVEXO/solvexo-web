@@ -87,9 +87,12 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
     setBusy(true); setError('');
     try {
       await apiUploadThemePackage(storeId, installedThemeId, file);
-      toast.success('Theme source ZIP saved as a new revision.');
+      toast.success('Theme imported. Check the preview, then press Publish to make it live.');
       await reload();
-    } catch (e) { setError(e instanceof Error ? e.message : 'Theme ZIP could not be uploaded.'); }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      setError(/timeout|network/i.test(msg) ? 'The upload took too long or the connection dropped. Check your internet and try again — if the theme is very large, remove unused files from the ZIP.' : msg || 'Theme ZIP could not be uploaded.');
+    }
     finally { setBusy(false); if (inputRef.current) inputRef.current.value = ''; }
   };
 
@@ -216,10 +219,11 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
           <input ref={assetRef} type="file" accept="image/*,font/*,.woff,.woff2,.ttf,.otf,.mp4,.webm,.css,.js,.svg" className="hidden" onChange={(e) => uploadAsset(e.target.files?.[0])} />
           <button type="button" onClick={exportZip} disabled={busy || !selected} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-bone bg-white text-[12px] font-semibold cursor-pointer disabled:opacity-50"><Download size={14} /> Export ZIP</button>
           <button type="button" onClick={unpublish} disabled={busy || !selected} title="Stop using this Liquid theme; go back to the native theme" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-bone bg-white text-[12px] font-semibold cursor-pointer disabled:opacity-50">Unpublish</button>
-          <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-charcoal text-white text-[12px] font-semibold border-0 cursor-pointer disabled:opacity-50"><UploadCloud size={14} /> Import ZIP</button>
+          <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-charcoal text-white text-[12px] font-semibold border-0 cursor-pointer disabled:opacity-50">{busy ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />} {busy ? 'Working…' : 'Import ZIP'}</button>
           <button type="button" onClick={() => { if (!dirty || window.confirm('Discard unsaved source edits and close?')) onClose(); }} className="p-2 rounded-lg border border-bone bg-white cursor-pointer" aria-label="Close"><X size={16} /></button>
         </div>
       </div>
+      {busy && <p role="status" className="m-0 px-4 py-2 text-[12px] text-slate bg-[#F1EDE5]">Working on your theme… large themes can take up to a minute. Please keep this window open.</p>}
       <div className="grid grid-cols-1 md:grid-cols-[210px_260px_1fr] flex-1 min-h-0">
         <aside className="border-r border-bone p-3 overflow-y-auto">
           <p className="px-2 text-[10px] font-bold uppercase tracking-wide text-slate">Source revisions</p>

@@ -1,3 +1,4 @@
+import { can } from '@/hooks/auth/useCan';
 import { useEffect, useState } from 'react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -30,6 +31,7 @@ export function StoreReviews() {
   const [page, setPage]       = useState(1);
   const [total, setTotal]     = useState(0);
   const [ratingFilter, setRatingFilter] = useState('');
+  const canManage = can('reviews.manage');
   const [replyStatusFilter, setReplyStatusFilter] = useState('');
   const [productIdFilter, setProductIdFilter] = useState('');
   const [statusTab, setStatusTab] = useState<'all' | 'pending'>('all');
@@ -193,6 +195,8 @@ export function StoreReviews() {
     {
       key: 'actions', header: '', align: 'right', width: '60px',
       render: r => {
+        // Seeing reviews needs customers.view; replying / approving / hiding / removing needs reviews.manage.
+        if (!canManage) return null;
         const moderationItems: ActionMenuItem[] = r.status === 'pending'
           ? [
               { label: 'Approve', icon: <Check size={13} />, onClick: () => handleApprove(r) },
@@ -356,7 +360,7 @@ export function StoreReviews() {
               data={reviews}
               keyExtractor={r => r.reviewId}
               pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'reviews' }}
-              selectable={moderationEnabled}
+              selectable={moderationEnabled && canManage}
               selectedKeys={selectedKeys}
               onSelectionChange={setSelectedKeys}
               bulkActions={keys => (

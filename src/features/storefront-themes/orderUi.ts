@@ -14,6 +14,38 @@ export const BADGE_TONE_COLOR: Record<BadgeTone, string> = {
 
 export interface OrderBadgeInfo { label: string; tone: BadgeTone }
 
+export interface OrderSummaryDiscountRow { label: string; amount: number }
+
+type SubtotalSource = Pick<OrderDetail, 'subtotal' | 'couponDiscountTotal' | 'giftCardDiscountTotal' | 'storeCreditDiscountTotal'>;
+type DiscountRowSource = Pick<OrderDetail, 'couponCode' | 'couponDiscountTotal' | 'giftCardDiscountTotal' | 'storeCreditDiscountTotal'>;
+
+/** `order.subtotal` is stored POST coupon/gift-card/store-credit (those
+ *  mutate each item's totalPrice in place at checkout time, same as
+ *  `Checkout.subtotal` — see checkout.schema.ts), so a Shopify-style receipt
+ *  that shows "Subtotal" then subtracts those same discounts below it must
+ *  reconstruct the PRE-discount figure here, or the rows don't add up to
+ *  Total (this is literally what they already reduced). Automatic/product-
+ *  level discounts (campaign, auto-discount) are NOT added back — those are
+ *  baked into the item's sale price from the very start (Shopify shows them
+ *  as a struck-through compare price on the line, never as a subtotal row)
+ *  — see `orderSummaryDiscountRows` below for the matching set of rows. */
+export function orderDisplaySubtotal(order: SubtotalSource): number {
+  return (order.subtotal ?? 0)
+    + (order.couponDiscountTotal ?? 0)
+    + (order.giftCardDiscountTotal ?? 0)
+    + (order.storeCreditDiscountTotal ?? 0);
+}
+
+/** The discount rows that reconcile against `orderDisplaySubtotal` above —
+ *  deliberately excludes campaign/auto-discount (see that function's doc). */
+export function orderSummaryDiscountRows(order: DiscountRowSource): OrderSummaryDiscountRow[] {
+  return [
+    { label: order.couponCode ? `Coupon (${order.couponCode})` : 'Coupon', amount: order.couponDiscountTotal ?? 0 },
+    { label: 'Gift card', amount: order.giftCardDiscountTotal ?? 0 },
+    { label: 'Store credit', amount: order.storeCreditDiscountTotal ?? 0 },
+  ].filter(d => d.amount > 0);
+}
+
 type ItemGroups = { stores?: { items?: { status?: string }[] }[]; sellerOrders?: { items?: { status?: string }[] }[] };
 type PaymentSource = Pick<OrderSummary, 'paymentStatus' | 'isPaid'> & ItemGroups;
 type FulfillmentSource = { orderStatus: OrderStatus; fulfillmentMethod?: 'ship' | 'pickup' } & ItemGroups;

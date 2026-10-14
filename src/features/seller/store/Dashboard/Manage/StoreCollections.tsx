@@ -1,3 +1,4 @@
+import { can } from '@/hooks/auth/useCan';
 import { useState, useCallback, useEffect } from 'react';
 import { Layers, Plus } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
@@ -58,13 +59,15 @@ export default function StoreCollections() {
     }
   };
 
+  const canManage = can('collections.manage'); // viewing needs only products.view
+
   return (
     <>
       <StorePageHeader
         title="Collections"
         subtitle="Named, curated product groupings — New Arrivals, Sale, Best Sellers — usable in your homepage sections and navigation."
         actions={(
-          <div className="flex items-center gap-2">
+          canManage ? <div className="flex items-center gap-2">
             <BulkImportButton
               entityLabel="collections"
               basePath={`/api/collections/${storeId}`}
@@ -75,7 +78,7 @@ export default function StoreCollections() {
               ]}
             />
             <Button icon={<Plus size={13} />} size="sm" onClick={() => { setEditing(null); setShowForm(true); }}>New Collection</Button>
-          </div>
+          </div> : undefined
         )}
       />
 
@@ -94,7 +97,7 @@ export default function StoreCollections() {
             icon={<Layers size={28} />}
             title="No collections yet"
             description="Create a collection to group products — New Arrivals, Sale, Best Sellers — then feature it on your homepage or link it from your navigation."
-            action={{ label: 'New Collection', onClick: () => { setEditing(null); setShowForm(true); } }}
+            action={canManage ? { label: 'New Collection', onClick: () => { setEditing(null); setShowForm(true); } } : undefined}
           />
         ) : (
           <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
@@ -106,11 +109,11 @@ export default function StoreCollections() {
               return (
                 <div
                   key={c._id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => { setEditing(c); setShowForm(true); }}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(c); setShowForm(true); } }}
-                  className="flex items-center gap-3 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 hover:bg-cream transition-colors cursor-pointer"
+                  role={canManage ? 'button' : undefined}
+                  tabIndex={canManage ? 0 : undefined}
+                  onClick={canManage ? () => { setEditing(c); setShowForm(true); } : undefined}
+                  onKeyDown={canManage ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(c); setShowForm(true); } } : undefined}
+                  className={`flex items-center gap-3 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 transition-colors ${canManage ? 'hover:bg-cream cursor-pointer' : ''}`}
                 >
                   <div className="w-10 h-10 rounded-lg bg-cream border border-bone shrink-0 overflow-hidden flex items-center justify-center">
                     {c.image ? <img src={c.image} alt="" className="w-full h-full object-cover" /> : <Layers size={16} className="text-slate" />}
@@ -124,9 +127,11 @@ export default function StoreCollections() {
                       {c.type === 'automatic' ? 'Automatic' : `${c.productIds.length} products`} · /{c.slug}
                     </p>
                   </div>
-                  <div onClick={e => e.stopPropagation()}>
-                    <ActionMenu items={items} />
-                  </div>
+                  {canManage && (
+                    <div onClick={e => e.stopPropagation()}>
+                      <ActionMenu items={items} />
+                    </div>
+                  )}
                 </div>
               );
             })}

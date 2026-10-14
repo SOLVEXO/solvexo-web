@@ -59,7 +59,10 @@ interface CartContextValue {
   updateQty:     (productId: string, productVariantId: string, action: 'increase' | 'decrease') => Promise<boolean>;
   setQty:        (productId: string, productVariantId: string, quantity: number) => Promise<boolean>;
   removeItem:    (productId: string, productVariantId: string) => Promise<boolean>;
-  clearCart:     () => Promise<void>;
+  /** `silent: true` skips the success/error toast — for an automatic clear
+   *  (checkout success, gateway return) rather than the buyer explicitly
+   *  clicking "Clear cart". */
+  clearCart:     (opts?: { silent?: boolean }) => Promise<void>;
   refetch:       () => void;
 }
 
@@ -326,25 +329,34 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     }
   }, [refreshGuestCartDisplay, toast, storeId]);
 
-  const clearCart = useCallback(async () => {
+  const clearCart = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
     if (!TokenStorage.isLoggedIn()) {
       clearGuestCart();
       clearTypes();
       setCart(null);
-      toast.success('Cart cleared');
+      if (!silent) toast.success('Cart cleared');
       return;
     }
-    if (!cart?._id || !storeId) return;
+    // Was `!cart?._id` — the backend's getCart response never included `_id`
+    // (fixed separately), so this guard always fired on a real account: every
+    // page mount re-fetches the cart, silently overwriting any `_id` a
+    // previous addToCart response had set, before this ever ran. That made
+    // every post-order `clearCart()` call (checkout success, gateway return)
+    // a no-op — the header badge stayed stale until something else
+    // refetched the cart. `storeId` alone is enough to clear; the backend
+    // route doesn't even read the cart id (see cart.controller.ts clear-cart).
+    if (!storeId) return;
     clearTypes();
     setCart(null);
     setError(null);
     try {
-      await apiClearCart(cart._id, storeId);
-      toast.success('Cart cleared');
+      await apiClearCart(cart?._id ?? '', storeId);
+      if (!silent) toast.success('Cart cleared');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to clear cart.';
       setError(message);
-      toast.error(message);
+      if (!silent) toast.error(message);
       syncCart(storeId, c => setCart(c));
     }
   }, [cart, toast, storeId]);

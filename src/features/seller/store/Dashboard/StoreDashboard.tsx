@@ -25,6 +25,7 @@ import { apiGetActivityLog, type ActivityLogEntry, type ActivityCategory } from 
 import { timeAgo } from '@/utils/timeAgo';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { DASHBOARD_METRIC_CATALOG, DEFAULT_DASHBOARD_METRICS } from './dashboardMetrics.const';
+import { can, isStaffSession } from '@/hooks/auth/useCan';
 import { Sliders, Check as CheckIcon, ChevronUp, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
@@ -73,27 +74,27 @@ function useStoreDashboardMetrics(storeId: string) {
     setLoading(true);
     setError('');
     Promise.all([
-      apiSellerAnalyticsOverview({ storeId, range: '30d' }).catch(() => null),
-      apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }).catch(() => null),
+      can('analytics.view') ? apiSellerAnalyticsOverview({ storeId, range: '30d' }).catch(() => null) : Promise.resolve(null),
+      can('analytics.view') ? apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }).catch(() => null) : Promise.resolve(null),
       // The inventory/order/return/dispute/risk/capture cards are each permission-gated on the backend — a staff
       // member without one of those permissions must still get the dashboard (that card just shows 0).
-      apiGetStoreInventory(storeId, 1, 1).catch(() => null),
-      apiSellerAnalyticsToday(storeId).catch(() => null),
-      apiGetLowStockSummary(storeId).catch(() => null),
-      apiGetSellerOrders(storeId, 1, 1).catch(() => null),
-      apiGetSellerReturns({ storeId }).catch(() => null),
-      apiGetOpenDisputeCount(storeId).catch(() => null),
-      apiGetHighRiskOrderCount(storeId).catch(() => null),
-      apiGetAwaitingCaptureCount(storeId).catch(() => null),
+      can('inventory.view') ? apiGetStoreInventory(storeId, 1, 1).catch(() => null) : Promise.resolve(null),
+      can('analytics.view') ? apiSellerAnalyticsToday(storeId).catch(() => null) : Promise.resolve(null),
+      can('inventory.view') ? apiGetLowStockSummary(storeId).catch(() => null) : Promise.resolve(null),
+      can('orders.view') ? apiGetSellerOrders(storeId, 1, 1).catch(() => null) : Promise.resolve(null),
+      can('orders.return') ? apiGetSellerReturns({ storeId }).catch(() => null) : Promise.resolve(null),
+      can('orders.disputes_manage') ? apiGetOpenDisputeCount(storeId).catch(() => null) : Promise.resolve(null),
+      can('orders.view') ? apiGetHighRiskOrderCount(storeId).catch(() => null) : Promise.resolve(null),
+      can('orders.capture_payment') ? apiGetAwaitingCaptureCount(storeId).catch(() => null) : Promise.resolve(null),
       // Real plan-usage data — same entitlements Billing Center already
       // shows. Only ever surfaced here as a contextual warning when a limit
       // is genuinely close, never as a permanent card (see getUsageWarning).
-      apiGetStoreEntitlements(storeId).catch(() => null),
+      isStaffSession() ? Promise.resolve(null) : apiGetStoreEntitlements(storeId).catch(() => null),
       // Both best-effort — a fresh store with no sales history yet, or a
       // seller who hasn't touched Finance, should never block the rest of
       // the dashboard from loading over these two.
-      apiSellerAnalyticsSalesForecast({ storeId }).catch(() => null),
-      apiGetFinanceDashboard(storeId).catch(() => null),
+      can('analytics.view') ? apiSellerAnalyticsSalesForecast({ storeId }).catch(() => null) : Promise.resolve(null),
+      can('finance.payouts.view') ? apiGetFinanceDashboard(storeId).catch(() => null) : Promise.resolve(null),
     ])
       .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes, forecastRes, financeRes]) => {
         if (cancelled) return;
@@ -129,7 +130,7 @@ function useStoreDashboardMetrics(storeId: string) {
 // gives a genuine full status picture (not just problems) and fills the
 // card naturally, instead of either one lonely row floating in a mostly
 // empty box, or a single vague "all caught up" placeholder.
-interface AttentionItem { label: string; okLabel: string; count: number; path: string; Icon: LucideIcon; color: string }
+interface AttentionItem { label: string; okLabel: string; count: number; path: string; Icon: LucideIcon; color: string; perm: string }
 
 function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount, awaitingCaptureCount }: {
   storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number; awaitingCaptureCount: number;
@@ -140,13 +141,14 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
   // Seller-friendly phrasing — "N need X", not "Order(s) with an open Y" —
   // same real signals, easier to scan at a glance.
   const allItems: AttentionItem[] = [
-    { label: 'order(s) need payment capture', okLabel: 'No payments awaiting capture', count: awaitingCaptureCount, path: 'orders', Icon: AlertTriangle, color: '#B45309' },
-    { label: 'order(s) need fulfillment', okLabel: 'No orders awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6' },
-    { label: 'order(s) flagged high-risk — review before shipping', okLabel: 'No high-risk orders', count: highRiskOrderCount, path: 'orders', Icon: AlertTriangle, color: '#B91C1C' },
-    { label: 'payment dispute(s) need a response', okLabel: 'No open disputes', count: openDisputeCount, path: 'disputes', Icon: AlertTriangle, color: '#DC2626' },
-    { label: 'product(s) low on stock', okLabel: 'Stock levels look healthy', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B' },
-    { label: 'return(s) need review', okLabel: 'No returns awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444' },
-  ];
+    { label: 'order(s) need payment capture', okLabel: 'No payments awaiting capture', count: awaitingCaptureCount, path: 'orders', Icon: AlertTriangle, color: '#B45309', perm: 'orders.capture_payment' },
+    { label: 'order(s) need fulfillment', okLabel: 'No orders awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6', perm: 'orders.view' },
+    { label: 'order(s) flagged high-risk — review before shipping', okLabel: 'No high-risk orders', count: highRiskOrderCount, path: 'orders', Icon: AlertTriangle, color: '#B91C1C' , perm: 'orders.view' },
+    { label: 'payment dispute(s) need a response', okLabel: 'No open disputes', count: openDisputeCount, path: 'disputes', Icon: AlertTriangle, color: '#DC2626', perm: 'orders.disputes_manage' },
+    { label: 'product(s) low on stock', okLabel: 'Stock levels look healthy', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B', perm: 'inventory.view' },
+    { label: 'return(s) need review', okLabel: 'No returns awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444', perm: 'orders.return' },
+  ].filter(i => can(i.perm));
+  if (allItems.length === 0) return null; // nothing here this staff role may act on
   const flagged = allItems.filter(i => i.count > 0);
   const clear = allItems.filter(i => i.count === 0);
   const totalCount = flagged.reduce((s, i) => s + i.count, 0);
@@ -837,6 +839,7 @@ function useRevenueOverviewAll(storeId: string) {
 
   useEffect(() => {
     if (!storeId) return;
+    if (!can('analytics.view')) { setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
     setError('');
@@ -998,9 +1001,14 @@ export default function StoreDashboard() {
   const [revenueRange, setRevenueRange] = useState<AnalyticsRangePreset>('30d');
   const { seriesByRange, loading: revenueOverviewLoading, error: revenueOverviewError, refetch: refetchRevenueOverview } = useRevenueOverviewAll(storeId);
   const revenueOverviewSeries = seriesByRange[revenueRange] ?? [];
-  const activeMetricIds = (store?.dashboardMetrics && store.dashboardMetrics.length > 0)
+  // Which metric cards this session may see (a staff role without the permission gets no card, not an error).
+  const metricPermission = (id: string) => (id === 'active_products' ? 'inventory.view' : 'analytics.view');
+  const activeMetricIds = ((store?.dashboardMetrics && store.dashboardMetrics.length > 0)
     ? store.dashboardMetrics
-    : DEFAULT_DASHBOARD_METRICS;
+    : DEFAULT_DASHBOARD_METRICS).filter(id => can(metricPermission(id)));
+  const showAnalytics = can('analytics.view');
+  const showNeedsAttention = can(['orders.capture_payment', 'orders.view', 'orders.disputes_manage', 'inventory.view', 'orders.return']);
+  const staff = isStaffSession();
 
   const revenueGranularity = REVENUE_RANGE_GRANULARITY[revenueRange];
   const chartData = revenueOverviewSeries.map(p => ({
@@ -1020,7 +1028,7 @@ export default function StoreDashboard() {
       {/* One-time nudge on first dashboard landing — see useTestimonialPrompt's
          own doc comment for exactly when this can and can't show. Always also
          reachable from Settings' "Share Your Story" tab regardless. */}
-      {testimonialPrompt.show && (
+      {testimonialPrompt.show && !staff && (
         <TestimonialPromptCard onClose={testimonialPrompt.dismiss} onSubmitted={testimonialPrompt.dismiss} />
       )}
 
@@ -1029,7 +1037,7 @@ export default function StoreDashboard() {
 
           {/* Shopify-style trial pill — Dashboard-only (not shown on any
              other page's header). */}
-          <TrialBillingPill />
+          {!staff && <TrialBillingPill />}
 
           <DashboardHero store={store} storeId={storeId} />
 
@@ -1044,7 +1052,7 @@ export default function StoreDashboard() {
 
           {/* Contextual plan-usage warning — only ever appears when a real
              limit is genuinely close; otherwise this row doesn't exist. */}
-          {usageWarning && (
+          {usageWarning && !staff && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-brand-pale-orange text-brand-deep-orange text-[12.5px] border border-brand-orange/20">
               <span className="flex items-center gap-2">
                 <AlertTriangle size={14} className="shrink-0" />
@@ -1060,15 +1068,19 @@ export default function StoreDashboard() {
           )}
 
           {/* Metric Cards — customizable, see MetricsCustomizeModal above. */}
+          {activeMetricIds.length > 0 && (
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">Metrics</p>
+            {can('settings.general.manage') && (
             <button
               onClick={() => setShowCustomize(true)}
               className="flex items-center gap-1.5 text-[11.5px] font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer"
             >
               <Sliders size={12} /> Customize
             </button>
+            )}
           </div>
+          )}
           {/* auto-fit, not a fixed 4-column grid — the card count here is
              seller-customizable (see MetricsCustomizeModal), and a fixed
              column count leaves a leftover row's 1-2 cards small and
@@ -1083,8 +1095,9 @@ export default function StoreDashboard() {
              items-stretch — Needs Attention matches the chart's height (it
              opts out via self-start while collapsed, so a collapsed card
              never gets force-stretched into empty white space). */}
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-stretch">
-            {revenueOverviewError ? (
+          {(showAnalytics || showNeedsAttention) && (
+          <div className={`grid grid-cols-1 ${showAnalytics && showNeedsAttention ? 'lg:grid-cols-[2fr_1fr]' : ''} gap-4 items-stretch`}>
+            {!showAnalytics ? null : revenueOverviewError ? (
               <div className="surface-panel rounded-2xl px-5 py-5 flex items-center justify-center min-h-[300px]">
                 <AnalyticsErrorState message={revenueOverviewError} onRetry={refetchRevenueOverview} />
               </div>
@@ -1108,7 +1121,7 @@ export default function StoreDashboard() {
                 yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
               />
             )}
-            {metrics && (
+            {metrics && showNeedsAttention && (
               <NeedsAttentionCard
                 storeId={storeId}
                 lowStockCount={metrics.lowStockCount}
@@ -1120,12 +1133,13 @@ export default function StoreDashboard() {
               />
             )}
           </div>
+          )}
 
           {/* Payout — a slim, contextual strip, only when there's a real
              balance to mention. */}
-          {showBalanceBanner && wallet && <AvailableBalanceBanner wallet={wallet} storeId={storeId} />}
+          {can('finance.payouts.view') && showBalanceBanner && wallet && <AvailableBalanceBanner wallet={wallet} storeId={storeId} />}
 
-          {metrics?.overview && <InsightsStrip overview={metrics.overview} forecast={metrics.salesForecast} currency={store?.baseCurrency} />}
+          {showAnalytics && metrics?.overview && <InsightsStrip overview={metrics.overview} forecast={metrics.salesForecast} currency={store?.baseCurrency} />}
 
           {/* Setup Guide + Recent Activity, side by side. Both are
              self-hiding (Setup Guide once every task is done; Activity once
@@ -1134,17 +1148,19 @@ export default function StoreDashboard() {
              match the taller one's height (each card opts out via
              self-start while collapsed, so a collapsed card never gets
              force-stretched into empty white space). */}
+          {!staff && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
             {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />}
             <RecentActivityCard storeId={storeId} />
           </div>
+          )}
 
           {/* Recent Orders + Top Products, side by side — both self-hiding,
              so a brand-new store with no sales yet loses this row entirely
              rather than showing two empty cards. */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-            <RecentOrdersCard storeId={storeId} currency={store?.baseCurrency} />
-            <TopProductsCard storeId={storeId} currency={store?.baseCurrency} />
+            {can('orders.view') && <RecentOrdersCard storeId={storeId} currency={store?.baseCurrency} />}
+            {can('inventory.view') && <TopProductsCard storeId={storeId} currency={store?.baseCurrency} />}
           </div>
 
         </div>

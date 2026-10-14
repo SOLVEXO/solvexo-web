@@ -60,6 +60,12 @@ export const TokenStorage = {
   saveUser(user: object) {
     deleteAuthCookie('user', 'shared');
     setAuthCookie('user', JSON.stringify(user));
+    // Remember which store a staff member signs in to, so an expired/closed session sends them back to THEIR login page (never the owner's).
+    try {
+      const u = user as { role?: string; storeId?: string };
+      if (u.role === 'staff' && u.storeId) window.localStorage.setItem('solvexo:staff-store', u.storeId);
+      else window.localStorage.removeItem('solvexo:staff-store');
+    } catch { /* storage unavailable */ }
   },
   // Clears this host's cookies; on the apex also any legacy domain-wide copy.
   clear() {

@@ -5,7 +5,7 @@ import { apiGetOrderByStatusToken, type OrderDetail } from '@/api/services/order
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import {
   derivePaymentBadge, deriveFulfillmentBadge, formatOrderDate, buildOrderTimeline, paymentMethodLabel,
-  isPickupOrder, formatShippingAddress, BADGE_TONE_COLOR,
+  isPickupOrder, formatShippingAddress, BADGE_TONE_COLOR, orderDisplaySubtotal, orderSummaryDiscountRows,
 } from './orderUi';
 import { OrderBadge } from './OrderUiParts';
 import { OrderShipments, OrderPickupLocation, type FulfilmentLook } from './OrderFulfilmentParts';
@@ -88,12 +88,11 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
     const timeline = buildOrderTimeline(order);
     const subs = order.sellerOrders ?? [];
     const addr = formatShippingAddress(order.shippingAddress);
-    const discounts = [
-      { label: order.couponCode ? `Coupon (${order.couponCode})` : 'Coupon', amount: order.couponDiscountTotal ?? 0 },
-      { label: 'Gift card', amount: order.giftCardDiscountTotal ?? 0 },
-      { label: 'Store credit', amount: order.storeCreditDiscountTotal ?? 0 },
-      { label: 'Promotion', amount: (order.campaignDiscountTotal ?? 0) + (order.autoDiscountTotal ?? 0) },
-    ].filter(d => d.amount > 0);
+    const discounts = orderSummaryDiscountRows(order);
+    // Informational only — campaign/auto-discount savings are already baked
+    // into `order.subtotal` from the start (never subtracted again here),
+    // so this is shown as a note, not a row the Subtotal/Total math uses.
+    const promotionSavings = (order.campaignDiscountTotal ?? 0) + (order.autoDiscountTotal ?? 0);
     const method = paymentMethodLabel(order.paymentType);
     const look: FulfilmentLook = { card, h2, body, muted, accent: t.colors.accent, strong: t.headingWeight };
     const row = (label: string, value: string, strong = false) => (
@@ -158,7 +157,10 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
 
         <section style={card}>
           <p style={h2}>Order summary</p>
-          {row('Subtotal', money(order.subtotal))}
+          {row('Subtotal', money(orderDisplaySubtotal(order)))}
+          {promotionSavings > 0 && (
+            <p style={{ ...muted, fontSize: '11.5px', padding: '2px 0 3px' }}>Includes {money(promotionSavings)} in promotional savings</p>
+          )}
           {discounts.map(d => row(d.label, `-${money(d.amount)}`))}
           {row('Shipping', money(order.shippingFee))}
           {row('Tax', money(order.taxAmount))}

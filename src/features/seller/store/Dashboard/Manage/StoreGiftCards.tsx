@@ -1,3 +1,4 @@
+import { can } from '@/hooks/auth/useCan';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { Plus, Gift, Ban, SlidersHorizontal } from 'lucide-react';
@@ -28,6 +29,7 @@ function statusColor(status: GiftCard['status']): 'green' | 'gray' | 'red' {
 
 // ── Storefront settings card ──────────────────────────────────────────────────
 function GiftCardSettingsCard({ storeId, storeCurrency }: { storeId: string; storeCurrency: string }) {
+  const canManage = can('giftcards.manage'); // view-only roles see the settings but cannot change them
   const [settings, setSettings] = useState<GiftCardSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,6 +89,7 @@ function GiftCardSettingsCard({ storeId, storeCurrency }: { storeId: string; sto
 
   return (
     <Card className="mb-5">
+      <fieldset disabled={!canManage} className="border-0 p-0 m-0 min-w-0">
       <div className="flex items-center justify-between mb-4 gap-3">
         <div>
           <p className="text-[14px] font-bold text-carbon">Storefront gift card sales</p>
@@ -118,7 +121,8 @@ function GiftCardSettingsCard({ storeId, storeCurrency }: { storeId: string; sto
         <p className={clsx('text-[12.5px] mb-3', saveMsg.ok ? 'text-success' : 'text-error')}>{saveMsg.text}</p>
       )}
 
-      <Button variant="primary" onClick={handleSave} disabled={!isDirty || saving} loading={saving}>Save settings</Button>
+      {canManage && <Button variant="primary" onClick={handleSave} disabled={!isDirty || saving} loading={saving}>Save settings</Button>}
+      </fieldset>
     </Card>
   );
 }
@@ -251,6 +255,8 @@ export default function StoreGiftCards() {
   const [loading, setLoading] = useState(true);
   const [issueOpen, setIssueOpen] = useState(false);
   const [adjustingCard, setAdjustingCard] = useState<GiftCard | null>(null);
+  const canManage = can('giftcards.manage');       // issue + adjust balance
+  const canDeactivate = can('giftcards.deactivate'); // disable a card
 
   // Debounce the free-text code search before it drives a fetch.
   useEffect(() => {
@@ -304,11 +310,11 @@ export default function StoreGiftCards() {
     { key: 'expiresAt', header: 'Expires', render: gc => (gc.expiresAt ? new Date(gc.expiresAt).toLocaleDateString() : 'Never') },
     {
       key: 'actions', header: '', align: 'right', render: gc => (
-        gc.status === 'active'
+        gc.status === 'active' && (canManage || canDeactivate)
           ? (
             <div className="flex items-center gap-1.5 justify-end">
-              <Button variant="outline" size="xs" icon={<SlidersHorizontal size={12} />} onClick={() => setAdjustingCard(gc)}>Adjust</Button>
-              <Button variant="outline" size="xs" icon={<Ban size={12} />} onClick={() => handleDisable(gc)}>Disable</Button>
+              {canManage && <Button variant="outline" size="xs" icon={<SlidersHorizontal size={12} />} onClick={() => setAdjustingCard(gc)}>Adjust</Button>}
+              {canDeactivate && <Button variant="outline" size="xs" icon={<Ban size={12} />} onClick={() => handleDisable(gc)}>Disable</Button>}
             </div>
           )
           : null
@@ -321,9 +327,9 @@ export default function StoreGiftCards() {
       <StorePageHeader
         title="Gift Cards"
         subtitle="Issue store credit and manage gift card sales"
-        actions={(
+        actions={canManage ? (
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setIssueOpen(true)}>Issue gift card</Button>
-        )}
+        ) : undefined}
       />
 
       <div className="p-4 md:p-7">

@@ -22,6 +22,11 @@ export interface CheckoutItem {
   options:      VariantOption[];
   licenseType:  string | null;
   quantity:     number;
+  /** Denominated in this field, NOT `Checkout.currency` — this item's owning
+   *  seller's Store.baseCurrency at the moment it was added (see the
+   *  backend schema's own doc comment on CheckoutItem.currency). A page
+   *  showing `price`/`totalPrice` must convert via this, same as a cart item. */
+  currency?:    string | null;
   price:        number;
   totalPrice:   number;
   originalPrice?:          number | null;

@@ -22,3 +22,34 @@ describe('staff route guard helpers', () => {
     expect(Array.isArray(owner)).toBe(true);
   });
 });
+
+import { firstAllowedPath } from './StoreLayout';
+import { can } from '@/hooks/auth/useCan';
+import { TokenStorage } from '@/api/services/auth';
+
+describe('staff landing page', () => {
+  it('sends a role without dashboard access to the first page it can use', () => {
+    expect(firstAllowedPath({ role: 'staff', permissions: ['inventory.view'] }, 'S1')).toBe('/store/S1/inventory');
+    expect(firstAllowedPath({ role: 'staff', permissions: ['orders.view', 'home.view'] }, 'S1')).toBe('/store/S1/dashboard');
+    expect(firstAllowedPath({ role: 'staff', permissions: [] }, 'S1')).toBe('/store/S1/account');
+  });
+});
+
+describe('can() hides what a staff role cannot use', () => {
+  const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  it('owner always can; staff only with the permission', () => {
+    TokenStorage.clear();
+    TokenStorage.save(`${b64({ a: 1 })}.${b64({ role: 'seller' })}.s`, 'r');
+    TokenStorage.saveUser({ id: '1', role: 'seller' });
+    expect(can('analytics.view')).toBe(true);
+    TokenStorage.clear();
+    TokenStorage.save(`${b64({ a: 1 })}.${b64({ role: 'staff', permissions: ['orders.view'] })}.s`, 'r');
+    TokenStorage.saveUser({ id: '2', role: 'staff', storeId: 'S1' });
+    expect(can('orders.view')).toBe(true);
+    expect(can('analytics.view')).toBe(false);
+    expect(can(['analytics.view', 'orders.view'])).toBe(true);
+    expect(window.localStorage.getItem('solvexo:staff-store')).toBe('S1');
+    TokenStorage.saveUser({ id: '1', role: 'seller' });
+    expect(window.localStorage.getItem('solvexo:staff-store')).toBeNull();
+  });
+});

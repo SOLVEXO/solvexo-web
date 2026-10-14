@@ -1,3 +1,4 @@
+import { can } from '@/hooks/auth/useCan';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, Search, User, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -135,7 +136,10 @@ export default function DraftOrderForm() {
   const [sendingInvoice, setSendingInvoice] = useState(false);
   const currency = draft?.currency ?? store?.baseCurrency ?? 'USD';
   const symbol = currencySymbol(currency);
-  const isEditable = isNew || draft?.status === 'open';
+  // Staff: viewing needs draft_orders.view; creating/editing/sending/completing needs draft_orders.manage; marking paid has its own permission.
+  const canManage = can('draft_orders.manage');
+  const canMarkPaid = can('draft_orders.mark_paid');
+  const isEditable = canManage && (isNew || draft?.status === 'open');
   const loadedOnce = useRef(false);
 
   const loadDraft = useCallback(() => {
@@ -320,25 +324,25 @@ export default function DraftOrderForm() {
         subtitle={!isNew && draft ? `Status: ${draft.status}${draft.status === 'open' ? ` · ${draft.isPaid ? 'Paid' : 'Unpaid'}` : ''}` : 'Build a manually-priced order for a phone, in-person, or wholesale sale.'}
         actions={
           <div className="flex flex-wrap gap-2 justify-end">
-            {!isNew && (
+            {!isNew && canManage && (
               <Button variant="outline" size="sm" loading={duplicating} onClick={handleDuplicate}>Duplicate</Button>
             )}
-            {!isNew && draft?.status !== 'completed' && (
+            {!isNew && canManage && draft?.status !== 'completed' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(true)} className="!text-error !border-error/30 hover:!bg-error-bg">Delete</Button>
             )}
-            {!isNew && draft?.status === 'open' && customerId && customerEmail && (
+            {!isNew && canManage && draft?.status === 'open' && customerId && customerEmail && (
               <Button variant="outline" size="sm" loading={sendingInvoice} onClick={handleSendInvoice}>
                 {draft.invoiceSentAt ? 'Resend Invoice' : 'Send Invoice'}
               </Button>
             )}
-            {!isNew && draft?.status === 'open' && (
+            {!isNew && canManage && draft?.status === 'open' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingCancel(true)}>Cancel Draft</Button>
             )}
             {isEditable && <Button size="sm" loading={saving} onClick={handleSave}>{isNew ? 'Create' : 'Save'}</Button>}
-            {!isNew && draft?.status === 'open' && !draft.isPaid && (
+            {!isNew && canMarkPaid && draft?.status === 'open' && !draft.isPaid && (
               <Button size="sm" variant="outline" loading={markingPaid} onClick={handleMarkPaid}>Mark as Paid</Button>
             )}
-            {!isNew && draft?.status === 'open' && (
+            {!isNew && canManage && draft?.status === 'open' && (
               <Button size="sm" variant="primary" icon={<CheckCircle2 size={13} />} onClick={() => setConfirmingComplete(true)}>Complete Order</Button>
             )}
           </div>

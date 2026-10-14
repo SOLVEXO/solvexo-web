@@ -1,3 +1,4 @@
+import { can } from '@/hooks/auth/useCan';
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Plus } from 'lucide-react';
@@ -18,6 +19,7 @@ const STATUS_COLOR: Record<DraftOrder['status'], 'gray' | 'green' | 'red'> = {
 export default function DraftOrdersList() {
   const { storeId, store } = useStoreWorkspace();
   const navigate = useNavigate();
+  const canCreate = can('draft_orders.manage');
   const [items, setItems] = useState<DraftOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -36,7 +38,7 @@ export default function DraftOrdersList() {
       <StorePageHeader
         title="Draft Orders"
         subtitle="Create an order manually for a phone, in-person, or wholesale sale."
-        actions={<Button icon={<Plus size={13} />} size="sm" onClick={() => navigate(`/store/${storeId}/draft-orders/new`)}>Create Draft Order</Button>}
+        actions={canCreate ? <Button icon={<Plus size={13} />} size="sm" onClick={() => navigate(`/store/${storeId}/draft-orders/new`)}>Create Draft Order</Button> : undefined}
       />
 
       <div className="px-4 lg:px-7 pt-5 pb-8">
@@ -56,7 +58,7 @@ export default function DraftOrdersList() {
             icon={<FileText size={28} className="text-brand-orange opacity-55" />}
             title="No draft orders yet"
             description="Create one to record a sale made outside the normal checkout flow."
-            action={{ label: 'Create Draft Order', onClick: () => navigate(`/store/${storeId}/draft-orders/new`), icon: <Plus size={14} /> }}
+            action={canCreate ? { label: 'Create Draft Order', onClick: () => navigate(`/store/${storeId}/draft-orders/new`), icon: <Plus size={14} /> } : undefined}
           />
         ) : (
           <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">

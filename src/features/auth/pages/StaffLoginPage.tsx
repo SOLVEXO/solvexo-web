@@ -70,7 +70,9 @@ export function StaffLoginPage() {
           try { Object.keys(window.localStorage).filter(k => k.startsWith('solvexo:store:')).forEach(k => window.localStorage.removeItem(k)); } catch { /* non-critical */ }
           TokenStorage.save(accessToken, accessToken);
           TokenStorage.saveUser({ id: staff.id, name: staff.name, email: staff.email, role: 'staff', image: null, storeId: staff.storeId, permissions: staff.permissions });
-          navigate(redirectTo || `/store/${storeId}/dashboard`, { replace: true });
+          // Land on the first page this role can use (not the dashboard when the role has no dashboard access).
+          const { firstAllowedPath } = await import('@/components/layouts/StoreLayout');
+          navigate(redirectTo || firstAllowedPath({ role: 'staff', permissions: staff.permissions }, storeId), { replace: true });
         } catch (err: unknown) {
           setApiError(err instanceof Error ? err.message : 'Invalid email or password.');
         } finally {

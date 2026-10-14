@@ -28,6 +28,7 @@ import {
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
+import { can } from '@/hooks/auth/useCan';
 import { BulkActionsBar } from './BulkActionsBar';
 import { BulkEditModal } from './BulkEditModal';
 import { BULK_EDIT_MAX_PRODUCTS, type BulkTarget } from '@/api/services/productsBulk';
@@ -73,8 +74,9 @@ export default function StoreProductList() {
   const canEdit      = hasNavPermission(user, 'products.edit');
   const canEditPrice = hasNavPermission(user, 'products.edit_price');
   const canDelete    = hasNavPermission(user, 'products.delete');
-  // Product creation is a seller-only route on the backend, so is import.
-  const canImport    = user?.role !== 'staff';
+  const canCreate    = can('products.create'); // add, duplicate, CSV import
+  const canImport    = canCreate;
+  const canExport    = can('products.export');
 
   const handleSortChange = (key: string) => {
     clearSelection();
@@ -268,9 +270,9 @@ export default function StoreProductList() {
           align="right"
           items={[
             { label: 'View Detail',    onClick: () => goDetail(p),                icon: <Eye    size={13} /> },
-            { label: 'Edit Product',   onClick: () => goEdit(p),                  icon: <Pencil size={13} /> },
-            { label: duplicatingId === p.productId ? 'Duplicating…' : 'Duplicate', onClick: () => handleDuplicate(p), icon: <Copy size={13} />, disabled: duplicatingId === p.productId },
-            { label: 'Delete Product', onClick: () => { setDeleteError(''); setDeleteTarget(p); }, icon: <Trash2 size={13} />, danger: true },
+            ...(canEdit ? [{ label: 'Edit Product',   onClick: () => goEdit(p),                  icon: <Pencil size={13} /> }] : []),
+            ...(canCreate ? [{ label: duplicatingId === p.productId ? 'Duplicating…' : 'Duplicate', onClick: () => handleDuplicate(p), icon: <Copy size={13} />, disabled: duplicatingId === p.productId }] : []),
+            ...(canDelete ? [{ label: 'Delete Product', onClick: () => { setDeleteError(''); setDeleteTarget(p); }, icon: <Trash2 size={13} />, danger: true }] : []),
           ]}
         />
       ),
@@ -309,20 +311,20 @@ export default function StoreProductList() {
                 />
               </>
             )}
-            <button
+            {canExport && <button
               onClick={handleExportCsv}
               disabled={exporting}
               className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
             >
               <Download size={14} />
               <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
-            </button>
-            <button
+            </button>}
+            {canCreate && <button
               onClick={goAdd}
               className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
             >
               <Plus size={15} /> Add Product
-            </button>
+            </button>}
           </div>
         }
       />
@@ -401,7 +403,7 @@ export default function StoreProductList() {
                 icon={<ShoppingBag size={30} className="text-brand-orange opacity-55" />}
                 title={search || statusFilter ? 'No products match your search' : 'No products yet'}
                 description={search || statusFilter ? 'Try a different search or filter.' : 'Add physical items, digital downloads, or services to start selling.'}
-                action={search || statusFilter ? undefined : { label: 'Add Your First Product', onClick: goAdd, icon: <Plus size={15} /> }}
+                action={search || statusFilter || !canCreate ? undefined : { label: 'Add Your First Product', onClick: goAdd, icon: <Plus size={15} /> }}
               />
             ) : (
               <>

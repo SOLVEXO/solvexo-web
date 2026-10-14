@@ -46,7 +46,7 @@ export function NovaCheckoutReturnPage() {
         if (res.data.status === 'completed') {
           setStatus('completed');
           setPlacedOrders(res.data.orders);
-          if (!cartCleared.current) { cartCleared.current = true; clearCart().catch(() => {}); }
+          if (!cartCleared.current) { cartCleared.current = true; clearCart({ silent: true }).catch(() => {}); }
           if (!pixelFired.current) {
             pixelFired.current = true;
             trackPixelEvent('Purchase', {

@@ -24,6 +24,7 @@ import { apiGetCheckoutPaymentMethods, apiInitiateCheckoutPaymentMethod, apiPlac
 import { goToGateway } from '@/utils/gatewayRedirect';
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeMeToStore } from '@/api/services/newsletter';
@@ -74,6 +75,7 @@ export function AtelierCheckoutPage() {
 
   const { store } = useStorefront();
   const { cart, cartCount, clearCart } = useCartContext();
+  const { convertTo } = useCurrencyPreference();
   const cartItems = cart?.items ?? [];
 
   // Same previously-unwired `policyType` data AtelierFooter.tsx now consumes
@@ -249,7 +251,15 @@ export function AtelierCheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveZones.length, selectedAddrId]);
 
-  const readyToCreateCheckout = (!guest || guestContact.valid) && (isDigital || (shippingChosen && (pickupSelected || !!selectedAddrId)));
+  // `!!cart` guards against firing before the real per-store cart has
+  // loaded: for a physical cart, `selectedZoneId`/`selectedAddrId` can both
+  // become truthy independently of `cart` (shipping zones fall back to a
+  // platform-wide default set even with `storeId: undefined` — see
+  // useShippingZones; saved addresses load from the buyer's account, not
+  // the cart) — without this, createCheckout could fire with `cart` still
+  // null (storeId undefined), which is what produced a stray "Cart is
+  // empty"/wrong-store checkout on initial page load.
+  const readyToCreateCheckout = !!cart && (!guest || guestContact.valid) && (isDigital || (shippingChosen && (pickupSelected || !!selectedAddrId)));
 
   useEffect(() => {
     if (!loggedIn || !readyToCreateCheckout || checkout || creatingCheckout) return;
@@ -297,7 +307,7 @@ export function AtelierCheckoutPage() {
       .catch(err => setCheckoutError(err instanceof Error ? err.message : 'Failed to initialize checkout.'))
       .finally(() => setCreatingCheckout(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readyToCreateCheckout, selectedAddrId, selectedZoneId, gp.picksKey]);
+  }, [readyToCreateCheckout, selectedAddrId, selectedZoneId, gp.picksKey, cart]);
 
   useEffect(() => {
     if (checkout) { setCheckout(null); setSummary(null); setSelectedMethod(null); setClientSecret(null); setExtraMethods([]); }
@@ -415,7 +425,7 @@ export function AtelierCheckoutPage() {
         if (stopped) return;
         if (res.data.status === 'completed') {
           setPolling(false);
-          await clearCart();
+          await clearCart({ silent: true });
           setPlacedOrders(res.data.orders);
           return;
         }
@@ -438,7 +448,7 @@ export function AtelierCheckoutPage() {
     const orders = await credit.place();
     if (!orders) return;
     recordMarketingConsent();
-    await clearCart();
+    await clearCart({ silent: true });
     setPlacedOrders(orders);
   };
 
@@ -448,7 +458,7 @@ export function AtelierCheckoutPage() {
     try {
       const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
       recordMarketingConsent();
-      await clearCart();
+      await clearCart({ silent: true });
       setPlacedOrders(res.data.orders);
     } catch (err) {
       setPlaceError(err instanceof Error ? err.message : 'Failed to place order.');
@@ -489,7 +499,7 @@ export function AtelierCheckoutPage() {
     try {
       const res = await apiPlaceManualMethodOrder(checkout._id, methodId);
       recordMarketingConsent();
-      await clearCart();
+      await clearCart({ silent: true });
       setPlacedOrders(res.data.orders as any);
     } catch (err) {
       setExtraInitiateErr(err instanceof Error ? err.message : 'Failed to place order.');
@@ -501,25 +511,48 @@ export function AtelierCheckoutPage() {
   const handleExtraMethodClick = (method: PublicPaymentMethod) =>
     method.provider === 'manual' && method.methodId ? placeManualOrder(method.methodId) : handleInitiateExtraMethod(method.provider);
 
-  const orderSubtotal = checkout ? checkout.items.reduce((s, i) => s + i.totalPrice, 0) : cartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
+  const currency = checkout?.currency ?? store.baseCurrency ?? 'USD';
+  const symbol = currencySymbol(currency);
   const shipping = summary?.shippingFee ?? 0;
   const tax = summary?.taxAmount ?? 0;
   const incTax = summary?.includedTaxAmount ?? 0;
+  // `couponDiscountUSD`/`giftCardDiscountUSD`/`storeCreditDiscountTotalUSD`
+  // are patched into `checkout` from the apply/remove-* responses, already
+  // converted into `checkout.currency` server-side (CheckoutService
+  // .toCheckoutCurrency) — never a store-native figure mixed in here.
   const couponDiscount = checkout?.couponDiscountUSD ?? 0;
   const giftCardDiscount = checkout?.giftCardDiscountUSD ?? 0;
   const storeCreditDiscount = checkout?.storeCreditDiscountTotalUSD ?? 0;
-  const total = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount - giftCardDiscount - storeCreditDiscount);
-  const currency = checkout?.currency ?? store.baseCurrency ?? 'USD';
-  const symbol = currencySymbol(currency);
-  // Same fix as NovaCheckoutPage.tsx: Order Summary's line items must read
-  // from the SAME source/currency as Subtotal/Shipping/Total (`symbol`) —
-  // `CartItem.currency` is only a pre-checkout "display snapshot", per its
-  // own doc comment, so rendering line items from `cartItems` after a real
-  // Checkout (with its own authoritative, converted `checkout.currency`)
-  // exists is what produced the "$" line item next to a "Rs" Subtotal.
+  // Pre-checkout (cart-only) estimate — each item converted from its OWN
+  // native seller currency (`CartItem.currency`) into the resolved
+  // checkout/store currency above, same convention the cart pages use.
+  const cartSubtotalEstimate = cartItems.reduce((s, i) => s + convertTo(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency, currency), 0);
+  // `checkout.subtotal` is stored POST coupon/gift-card/store-credit (those
+  // mutate each item's `totalPrice` server-side — see checkout.schema.ts),
+  // so the Subtotal row below must add those discounts back to reconstruct
+  // the PRE-discount figure — the same reconciliation the Order receipt
+  // uses (orderUi.ts#orderDisplaySubtotal) — otherwise Subtotal − Coupon
+  // doesn't land on Total. Previously this just summed raw
+  // `checkout.items[].totalPrice`, which is each item's OWN native seller
+  // currency (NOT `checkout.currency` — see CheckoutItem.currency's own doc
+  // comment), mislabeled with the checkout-currency symbol.
+  const orderSubtotal = checkout ? checkout.subtotal + couponDiscount + giftCardDiscount + storeCreditDiscount : cartSubtotalEstimate;
+  // `checkout.totalAmount` is the backend-authoritative figure, kept in sync
+  // on every coupon/gift-card/store-credit/shipping mutation — reconciles
+  // exactly with `orderSubtotal` above. Recomputing it client-side from the
+  // (possibly stale) pieces risked drifting from what's actually charged;
+  // only the pre-checkout loading estimate still does that.
+  const total = checkout ? checkout.totalAmount : Math.max(0, cartSubtotalEstimate + (isDigital ? 0 : shipping) + tax);
+  // Order Summary's line items: `checkout.items[].totalPrice` is frozen at
+  // checkout-CREATION time (coupon/gift-card/store-credit calls only patch
+  // the top-level fields above, never `items`), so this always shows the
+  // ORIGINAL pre-discount per-item price, matching `orderSubtotal`'s
+  // reconstruction and a real Shopify receipt (discounts as separate rows
+  // below, never baked into the line). Converted per-item from each item's
+  // own native seller currency — previously rendered raw.
   const summaryLineItems = checkout
-    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: i.totalPrice }))
-    : cartItems.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity }));
+    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency) }))
+    : cartItems.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: convertTo(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency, currency) }));
 
   if (preparing) {
     return <div className="flex justify-center" style={{ padding: '96px 0' }}><Loader2 size={20} className="animate-spin" style={{ color: t.colors.inkMuted }} /></div>;

@@ -11,39 +11,13 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { useToast } from '@/contexts/ToastContext';
 import {
   apiUpdateOwnStaffProfile, apiChangeOwnStaffPassword,
-  PERMISSION_LABELS, type StaffPermission,
+  PERMISSION_LABELS, groupPermissions,
 } from '@/api/services/staff';
 
 const SellerSettings = lazy(() => import('@/features/seller/dashboard/settings/SellerSettings').then(m => ({ default: m.SellerSettings })));
 
 const inputCls = 'w-full h-10 border border-bone rounded-lg px-3 text-[13.5px] text-charcoal bg-white placeholder:text-slate/70 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange disabled:bg-cream disabled:text-slate';
 const labelCls = 'text-[12.5px] font-medium text-graphite mb-1.5 block';
-
-/** Permission key prefix → the area a store owner thinks of it under. */
-const AREAS: { title: string; prefixes: string[] }[] = [
-  { title: 'Dashboard & analytics', prefixes: ['home', 'analytics'] },
-  { title: 'Orders', prefixes: ['orders', 'draft_orders'] },
-  { title: 'Products', prefixes: ['products'] },
-  { title: 'Inventory & purchasing', prefixes: ['inventory', 'purchase_orders'] },
-  { title: 'Customers & messages', prefixes: ['customers', 'messaging', 'loyalty'] },
-  { title: 'Marketing & gift cards', prefixes: ['marketing', 'discounts', 'giftcards', 'seo', 'aistudio'] },
-  { title: 'Online store', prefixes: ['onlinestore', 'content', 'files'] },
-  { title: 'Finance', prefixes: ['finance'] },
-  { title: 'Settings & team', prefixes: ['settings', 'staff'] },
-];
-
-function groupPermissions(perms: string[]) {
-  const known = perms.filter(p => p in PERMISSION_LABELS);
-  const used = new Set<string>();
-  const groups = AREAS.map(area => {
-    const items = known.filter(p => area.prefixes.includes(p.split('.')[0]));
-    items.forEach(p => used.add(p));
-    return { title: area.title, items };
-  }).filter(g => g.items.length > 0);
-  const rest = known.filter(p => !used.has(p));
-  if (rest.length > 0) groups.push({ title: 'Other', items: rest });
-  return groups;
-}
 
 /** `/store/:storeId/account` — a staff session gets its OWN account page
  *  (profile, access, password); the owner keeps the full seller Account page. */
@@ -294,7 +268,7 @@ function StaffAccountPage() {
                       {g.items.map(p => (
                         <li key={p} className="flex items-start gap-2 text-[12.5px] text-charcoal leading-snug">
                           <Check size={13} className="text-success shrink-0 mt-[2px]" strokeWidth={3} />
-                          <span>{PERMISSION_LABELS[p as StaffPermission]}</span>
+                          <span>{PERMISSION_LABELS[p]}</span>
                         </li>
                       ))}
                     </ul>

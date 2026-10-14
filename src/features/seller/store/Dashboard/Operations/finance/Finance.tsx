@@ -1,3 +1,4 @@
+import { isStaffSession } from '@/hooks/auth/useCan';
 import { useCallback, useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { Link } from 'react-router-dom';
@@ -379,6 +380,7 @@ export function StoreFinance() {
     },
   ];
 
+  const ownerOnly = !isStaffSession(); // payout requests / methods / schedule are owner-only
   const [methodModal, setMethodModal] = useState(false);
   const [editingMethod, setEditingMethod] = useState<PayoutMethod | null>(null);
   const [payoutModal, setPayoutModal] = useState(false);
@@ -554,7 +556,7 @@ export function StoreFinance() {
       <StorePageHeader
         title={legacyBalance ? 'Finance & Payouts' : 'Finance'}
         subtitle={legacyBalance ? 'Track earnings, payouts, fees, and tax reports.' : 'Track sales, refunds, fees, and tax reports. Card payouts are managed in your Stripe account.'}
-        actions={legacyBalance ? (
+        actions={legacyBalance && ownerOnly ? (
           <>
             <Button size="sm" variant="outline" icon={<Plus size={13} />} onClick={() => setMethodModal(true)}>
               Add Payout Method
@@ -738,9 +740,9 @@ export function StoreFinance() {
             <div className={legacyBalance ? 'bg-white border border-bone rounded-[10px] px-[18px] py-4' : 'hidden'}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[13px] font-semibold text-carbon">Payout Methods</p>
-                <button onClick={() => setMethodModal(true)} className="text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
+                {ownerOnly && <button onClick={() => setMethodModal(true)} className="text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
                   <Plus size={14} />
-                </button>
+                </button>}
               </div>
               {methods.length === 0 ? (
                 <p className="text-xs text-slate">No payout methods yet.</p>
@@ -768,7 +770,7 @@ export function StoreFinance() {
                             Set default
                           </button>
                         )}
-                        {!m.autoManaged && (
+                        {!m.autoManaged && ownerOnly && (
                           <>
                             <button onClick={() => setEditingMethod(m)} className="text-[10px] text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
                               Edit
@@ -802,12 +804,12 @@ export function StoreFinance() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 pt-3 border-t border-bone">
+                {ownerOnly && <div className="mt-3 pt-3 border-t border-bone">
                   <button onClick={() => setScheduleModal(true)}
                     className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer hover:border-brand-orange/40">
                     Update Schedule
                   </button>
-                </div>
+                </div>}
               </div>
             )}
 

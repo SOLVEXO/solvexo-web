@@ -273,14 +273,17 @@ export function apiListThemePackageRevisions(storeId: string, installedThemeId: 
   return client.get<never, ApiResponse<ThemePackageRevision[]>>(themePackagePath(storeId, installedThemeId));
 }
 
+/** Theme ZIP import/preview/export/publish parse and re-write many files; the default 15 s is too short. */
+const THEME_PACKAGE_TIMEOUT = 180_000;
+
 export function apiUploadThemePackage(storeId: string, installedThemeId: string, file: File) {
   const body = new FormData();
   body.append('file', file);
-  return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body);
+  return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body, { timeout: THEME_PACKAGE_TIMEOUT });
 }
 
 export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number, path = '/', draft?: { path: string; content: string }) {
-  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, { version, path, draft });
+  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, { version, path, draft }, { timeout: THEME_PACKAGE_TIMEOUT });
 }
 
 export function apiGetThemePackageRevision(storeId: string, installedThemeId: string, version: number) {
@@ -313,15 +316,15 @@ export function apiUnpublishThemePackage(storeId: string, installedThemeId: stri
 
 /** Downloads a revision as a standard Shopify theme ZIP (the axios interceptor unwraps `res.data`, so this resolves to the Blob). */
 export function apiExportThemePackage(storeId: string, installedThemeId: string, version?: number) {
-  return client.get<never, Blob>(`${themePackagePath(storeId, installedThemeId)}/export/zip`, { params: version === undefined ? undefined : { version }, responseType: 'blob' });
+  return client.get<never, Blob>(`${themePackagePath(storeId, installedThemeId)}/export/zip`, { params: version === undefined ? undefined : { version }, responseType: 'blob', timeout: THEME_PACKAGE_TIMEOUT });
 }
 
 export function apiRollbackThemePackage(storeId: string, installedThemeId: string, version: number) {
-  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/rollback`);
+  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/rollback`, undefined, { timeout: THEME_PACKAGE_TIMEOUT });
 }
 
 export function apiPublishThemePackage(storeId: string, installedThemeId: string, version: number) {
-  return client.post<never, ApiResponse<{ installedThemeId: string; version: number; status: string }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/publish`);
+  return client.post<never, ApiResponse<{ installedThemeId: string; version: number; status: string }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/publish`, undefined, { timeout: THEME_PACKAGE_TIMEOUT });
 }
 
 export function apiGetPublishedLiquidThemeHtml(

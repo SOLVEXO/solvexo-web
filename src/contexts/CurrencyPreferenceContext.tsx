@@ -56,6 +56,12 @@ interface CurrencyPreferenceContextValue {
    *  navbar toggle change visible prices — every price display must call
    *  this instead of showing a product/cart item's raw stored amount. */
   convert: (amount: number, fromCurrency?: string | null) => number;
+  /** Same conversion, but to an EXPLICIT target currency rather than the
+   *  buyer's display preference — for a page that must match a specific
+   *  already-resolved currency (e.g. a live Checkout's `checkout.currency`,
+   *  which can differ from the raw preference when a store restricts its
+   *  enabled Markets — see CheckoutService.resolveStoreCurrency). */
+  convertTo: (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => number;
   ratesLoaded: boolean;
   /** The platform's real, dynamic Markets currency list — the navbar
    *  switcher renders from this, never a hardcoded 2-entry array. */
@@ -125,9 +131,14 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
     [currency, rates],
   );
 
+  const convertTo = useCallback(
+    (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => convertAmount(amount, fromCurrency ?? toCurrency, toCurrency, rates),
+    [rates],
+  );
+
   const value = useMemo<CurrencyPreferenceContextValue>(
-    () => ({ currency, setCurrency, convert, ratesLoaded, enabledCurrencies }),
-    [currency, setCurrency, convert, ratesLoaded, enabledCurrencies],
+    () => ({ currency, setCurrency, convert, convertTo, ratesLoaded, enabledCurrencies }),
+    [currency, setCurrency, convert, convertTo, ratesLoaded, enabledCurrencies],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

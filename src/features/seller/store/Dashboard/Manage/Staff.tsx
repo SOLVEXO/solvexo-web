@@ -7,7 +7,7 @@ import {
   apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff, apiReactivateStaff, apiDeleteStaff, apiResendStaffInvite,
   apiListRoles, apiCreateRole, apiUpdateRole, apiDeleteRole,
   apiListApprovals, apiApproveRequest, apiRejectRequest,
-  STAFF_PERMISSIONS, PERMISSION_LABELS,
+  STAFF_PERMISSIONS, PERMISSION_LABELS, groupPermissions,
   type StaffMember, type Role, type StaffPermission, type ApprovalRequestItem, type StaffInviteResult,
 } from '@/api/services/staff';
 
@@ -363,6 +363,9 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
     setFormOpen(role);
   };
 
+  const setGroup = (items: StaffPermission[], on: boolean) => {
+    setForm(f => ({ ...f, permissions: on ? Array.from(new Set([...f.permissions, ...items])) : f.permissions.filter(x => !items.includes(x as StaffPermission)) }));
+  };
   const togglePermission = (p: StaffPermission) => {
     setForm(f => ({ ...f, permissions: f.permissions.includes(p) ? f.permissions.filter(x => x !== p) : [...f.permissions, p] }));
   };
@@ -442,14 +445,34 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
                 className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40" />
             </div>
             <div>
-              <span className="text-[12px] font-medium text-graphite mb-1.5 block">Permissions</span>
-              <div className="flex flex-col gap-2 border border-bone rounded-lg p-3 max-h-[340px] overflow-y-auto">
-                {STAFF_PERMISSIONS.map(p => (
-                  <div key={p} className="flex items-center justify-between gap-3">
-                    <span className="text-[12.5px] text-charcoal">{PERMISSION_LABELS[p]}</span>
-                    <Toggle checked={form.permissions.includes(p)} onChange={() => togglePermission(p)} size="sm" ariaLabel={PERMISSION_LABELS[p]} />
-                  </div>
-                ))}
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="text-[12px] font-medium text-graphite">Permissions <span className="text-slate font-normal">· {form.permissions.length} of {STAFF_PERMISSIONS.length} selected</span></span>
+                <span className="flex items-center gap-3 text-[12px]">
+                  <button type="button" className="text-brand-orange hover:underline bg-transparent border-0 cursor-pointer p-0" onClick={() => setGroup([...STAFF_PERMISSIONS], true)}>Select all</button>
+                  <button type="button" className="text-slate hover:underline bg-transparent border-0 cursor-pointer p-0" onClick={() => setGroup([...STAFF_PERMISSIONS], false)}>Clear</button>
+                </span>
+              </div>
+              <div className="flex flex-col gap-4 border border-bone rounded-lg p-3 max-h-[380px] overflow-y-auto">
+                {groupPermissions(STAFF_PERMISSIONS).map(g => {
+                  const allOn = g.items.every(p => form.permissions.includes(p));
+                  const some = g.items.some(p => form.permissions.includes(p));
+                  return (
+                    <div key={g.title} className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3 border-b border-bone pb-1.5">
+                        <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate">{g.title}</span>
+                        <button type="button" className="text-[11.5px] text-brand-orange hover:underline bg-transparent border-0 cursor-pointer p-0" onClick={() => setGroup(g.items, !allOn)}>
+                          {allOn ? 'Clear group' : some ? 'Select rest' : 'Select group'}
+                        </button>
+                      </div>
+                      {g.items.map(p => (
+                        <div key={p} className="flex items-center justify-between gap-3">
+                          <span className="text-[12.5px] text-charcoal">{PERMISSION_LABELS[p]}</span>
+                          <Toggle checked={form.permissions.includes(p)} onChange={() => togglePermission(p)} size="sm" ariaLabel={PERMISSION_LABELS[p]} />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             {error && <p className="text-[12px] text-error">{error}</p>}

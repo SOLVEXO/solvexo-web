@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, CheckCircle, Copy, Info, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowLeft, CheckCircle, Copy, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { PageHeader } from '@/components/comman/ui/PageHeader';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
@@ -11,6 +11,8 @@ import {
   apiConnectCustomerSocial, apiDisconnectCustomerSocial, apiGetCustomerSocialSetup, apiTestCustomerSocial, SOCIAL_PROVIDER_LABEL,
   type CustomerSocialProviderSetup, type CustomerSocialSetup, type SocialProviderKey,
 } from '@/api/services/customerSocialLogin';
+import { PreviewButton, ProviderLogo, StatusBadge } from './socialProviderUi';
+import { formatWhen, providerState } from './socialProviderUtils';
 
 function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
@@ -22,7 +24,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
     } catch { /* clipboard blocked — the value is still selectable */ }
   };
   return (
-    <div className="mb-2.5">
+    <div className="mt-2.5">
       <p className="text-[11px] font-semibold text-slate mb-1">{label}</p>
       <div className="flex items-center gap-2 rounded-lg border border-bone bg-cream px-3 py-2">
         <code className="flex-1 min-w-0 text-[12px] text-charcoal break-all select-all">{value}</code>
@@ -34,7 +36,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-const inputCls = 'w-full rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange disabled:bg-cream disabled:cursor-not-allowed';
+const inputCls = 'w-full rounded-lg border border-bone bg-white px-3 py-2.5 text-[13px] text-charcoal outline-none focus:border-brand-orange disabled:bg-cream disabled:cursor-not-allowed';
 
 /** "solvexo.store" from "https://api.solvexo.store/..." — the root domain Google/Facebook ask for as an authorized domain. */
 function rootDomain(url: string): string {
@@ -49,14 +51,10 @@ function hostOf(origin: string): string {
   try { return new URL(origin).hostname; } catch { return origin; }
 }
 
-function formatWhen(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
+interface Step { body: ReactNode; fields?: { label: string; value: string }[] }
 
-/** Shopify's "Sign in with Google / Facebook" page: setup instructions to copy from, the two credentials to paste back,
- *  Test connection, and Save / Disconnect. The secret is write-only — it is never read back, only a last-4 hint. */
+/** Shopify's "Sign in with Google / Facebook" page: a step-by-step guide on the left, the credentials form (with Test
+ *  connection and Disconnect) and a preview on the right. The secret is write-only — only a last-4 hint ever comes back. */
 export function CustomerSocialProviderPage() {
   const { provider: raw } = useParams();
   const { storeId } = useStoreWorkspace();
@@ -99,9 +97,10 @@ export function CustomerSocialProviderPage() {
   const idLabel = provider === 'google' ? 'Client ID' : 'App ID';
   const secretLabel = provider === 'google' ? 'Client secret' : 'App secret';
   const connected = current?.status === 'connected';
+  const state = providerState(current?.status ?? 'not_connected', current?.lastError ?? null);
   const working = busy !== null;
   const canSave = !working && canEdit && !!clientId.trim() && !!clientSecret.trim();
-  const verifiedAt = formatWhen(current?.lastVerifiedAt ?? null);
+  const verifiedAt = formatWhen(current?.lastVerifiedAt);
 
   const save = async () => {
     if (!storeId || !canSave) return;
@@ -151,45 +150,55 @@ export function CustomerSocialProviderPage() {
     }
   };
 
-  const steps = provider === 'google'
+  const redirectUri = current?.redirectUri ?? '';
+  const origins = setup?.storeOrigins ?? [];
+  const originFields = origins.map((o, i) => ({
+    label: provider === 'google'
+      ? (i === 0 ? 'Store address (Authorized JavaScript origin)' : 'Store address — another domain')
+      : (i === 0 ? 'Store address (Site URL)' : 'Store address — another domain'),
+    value: o,
+  }));
+  const domainValues = provider === 'google'
+    ? [rootDomain(redirectUri)]
+    : Array.from(new Set([rootDomain(redirectUri), ...origins.map(hostOf)]));
+  const domainFields = domainValues.filter(Boolean).map((d, i) => ({
+    label: provider === 'google' ? 'Authorized domain' : `App domain${domainValues.length > 1 ? ` ${i + 1}` : ''}`,
+    value: d,
+  }));
+
+  const steps: Step[] = provider === 'google'
     ? [
-        <>In <b>Google Cloud Console</b>, create a project and open <b>OAuth consent screen</b>. Add your app name, support email, your store&apos;s <b>Privacy Policy link</b> and the <b>Authorized domain</b> shown below.</>,
-        <>Go to <b>Credentials → Create credentials → OAuth client ID</b> and choose <b>Web application</b>.</>,
-        <>Under <b>Authorized JavaScript origins</b>, add each store address below.</>,
-        <>Under <b>Authorized redirect URIs</b>, add the redirect URI below.</>,
-        <>Copy the <b>Client ID</b> and <b>Client secret</b> and paste them in the Credentials section, then Save.</>,
-        <>Back in Google Cloud, click <b>Publish app</b>. Until it is published, only test users can sign in.</>,
+        { body: <>In <b>Google Cloud Console</b>, create a project and open <b>OAuth consent screen</b>. Add your app name, support email and your store&apos;s <b>Privacy Policy link</b>, and add this <b>Authorized domain</b>.</>, fields: domainFields },
+        { body: <>Go to <b>Credentials → Create credentials → OAuth client ID</b> and choose <b>Web application</b>.</> },
+        { body: <>Under <b>Authorized JavaScript origins</b>, add each store address.</>, fields: originFields },
+        { body: <>Under <b>Authorized redirect URIs</b>, add this redirect URI.</>, fields: [{ label: 'Redirect URI', value: redirectUri }] },
+        { body: <>Copy the <b>Client ID</b> and <b>Client secret</b> and paste them into the Credentials box, then <b>Save</b>.</> },
+        { body: <>Back in Google Cloud, click <b>Publish app</b>. Until it is published, only test users can sign in.</> },
       ]
     : [
-        <>In <b>Meta for Developers</b>, create an app and choose <b>Authenticate and request data from users with Facebook Login</b>.</>,
-        <>In <b>App settings → Basic</b>, add your store&apos;s <b>Privacy Policy URL</b> and the <b>App Domains</b> shown below.</>,
-        <>In <b>Facebook Login → Settings</b>, add the redirect URI below under <b>Valid OAuth Redirect URIs</b>.</>,
-        <>Make sure the <b>email</b> permission is available for the app (it is by default).</>,
-        <>Copy the <b>App ID</b> and <b>App secret</b> from <b>App settings → Basic</b> and paste them in the Credentials section, then Save.</>,
-        <>Switch the app to <b>Live</b> mode. Until it is live, only people with a role on the app can sign in.</>,
+        { body: <>In <b>Meta for Developers</b>, create an app and choose <b>Authenticate and request data from users with Facebook Login</b>.</> },
+        { body: <>In <b>App settings → Basic</b>, add your store&apos;s <b>Privacy Policy URL</b>, these <b>App Domains</b> and your store address as the <b>Site URL</b>.</>, fields: [...domainFields, ...originFields] },
+        { body: <>In <b>Facebook Login → Settings</b>, add this redirect URI under <b>Valid OAuth Redirect URIs</b>.</>, fields: [{ label: 'Redirect URI', value: redirectUri }] },
+        { body: <>Make sure the <b>email</b> permission is available for the app (it is by default).</> },
+        { body: <>Copy the <b>App ID</b> and <b>App secret</b> from <b>App settings → Basic</b>, paste them into the Credentials box, then <b>Save</b>.</> },
+        { body: <>Switch the app to <b>Live</b> mode. Until it is live, only people with a role on the app can sign in.</> },
       ];
 
-  const domains = current && setup
-    ? provider === 'google'
-      ? [rootDomain(current.redirectUri)]
-      : Array.from(new Set([rootDomain(current.redirectUri), ...setup.storeOrigins.map(hostOf)]))
-    : [];
-
   return (
-    <div className="max-w-[720px]">
+    <div className="w-full px-4 lg:px-7 pt-5 pb-10">
       <Link to={`/store/${storeId}/settings/customer-accounts/authentication`} className="inline-flex items-center gap-1.5 text-[12px] text-slate no-underline hover:text-charcoal mb-3">
         <ArrowLeft size={13} /> Authentication
       </Link>
       <PageHeader
         title={`Sign in with ${label}`}
         description={`Let customers sign in to your store with their ${label} account. You create the ${label} app yourself, then paste its credentials here.`}
-        actions={connected ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#DCFCE7', color: '#166534' }}>Connected</span> : undefined}
+        actions={current ? <StatusBadge state={state} /> : undefined}
       />
 
       {loading && (
-        <div className="mt-5 flex flex-col gap-3" aria-busy="true" aria-label="Loading">
-          <SkeletonBox height={220} rounded="12px" />
-          <SkeletonBox height={160} rounded="12px" />
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]" aria-busy="true" aria-label="Loading">
+          <SkeletonBox height={420} rounded="12px" />
+          <SkeletonBox height={320} rounded="12px" />
         </div>
       )}
 
@@ -204,96 +213,120 @@ export function CustomerSocialProviderPage() {
       )}
 
       {!loading && !loadError && current && setup && (
-        <>
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px] items-start">
           {connected && current.lastError && (
-            <div role="alert" className="mt-5 flex items-start gap-2.5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-3.5 text-[12.5px] text-[#991B1B]">
+            <div role="alert" className="lg:col-span-2 flex items-start gap-2.5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-3.5 text-[12.5px] text-[#991B1B]">
               <AlertCircle size={15} className="shrink-0 mt-px" />
               <span>The last check failed: {current.lastError} Customers may not be able to sign in with {label} until this is fixed.</span>
             </div>
           )}
 
-          <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
-            <p className="text-[14px] font-semibold text-charcoal mb-1">Setup instructions</p>
-            <ol className="text-[12.5px] text-charcoal pl-5 mb-4 leading-relaxed list-decimal">
-              {steps.map((s, i) => <li key={i} className="mb-1">{s}</li>)}
+          <section className="rounded-xl border border-bone bg-white p-5 sm:p-6" aria-labelledby="guide-title">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <h2 id="guide-title" className="text-[15px] font-semibold text-charcoal">Set up your {label} app</h2>
+                <p className="text-[12px] text-slate mt-0.5">Follow these {steps.length} steps. It takes about 5 minutes.</p>
+              </div>
+              <a href="#credentials" className="lg:hidden inline-flex items-center gap-1 text-[12px] font-semibold text-brand-orange no-underline">
+                Already have your keys? <ArrowDown size={13} />
+              </a>
+            </div>
+            <ol className="m-0 mt-5 p-0 list-none flex flex-col">
+              {steps.map((s, i) => (
+                <li key={i} className="flex gap-3.5">
+                  <div className="flex flex-col items-center shrink-0">
+                    <span className="w-7 h-7 rounded-full bg-brand-pale-orange text-brand-orange text-[12px] font-bold flex items-center justify-center">{i + 1}</span>
+                    {i < steps.length - 1 && <span className="flex-1 w-px bg-bone my-1" aria-hidden="true" />}
+                  </div>
+                  <div className={`min-w-0 flex-1 ${i < steps.length - 1 ? 'pb-5' : ''}`}>
+                    <p className="text-[13px] text-charcoal leading-relaxed pt-[3px]">{s.body}</p>
+                    {s.fields?.filter(f => f.value).map(f => <CopyField key={f.label + f.value} label={f.label} value={f.value} />)}
+                  </div>
+                </li>
+              ))}
             </ol>
-            {domains.filter(Boolean).map((d, i) => (
-              <CopyField key={d} label={provider === 'google' ? 'Authorized domain (OAuth consent screen)' : `App domain${domains.length > 1 ? ` ${i + 1}` : ''}`} value={d} />
-            ))}
-            {setup.storeOrigins.map((o, i) => (
-              <CopyField
-                key={o}
-                label={provider === 'google'
-                  ? (i === 0 ? 'Store address (Authorized JavaScript origin)' : 'Store address (another domain)')
-                  : (i === 0 ? 'Store address (website)' : 'Store address (another domain)')}
-                value={o}
-              />
-            ))}
-            <CopyField label="Redirect URI" value={current.redirectUri} />
-            <p className="flex items-start gap-1.5 text-[11.5px] text-slate mt-3 leading-relaxed">
-              <Info size={13} className="shrink-0 mt-px" />
-              <span>Add a new domain to your store later? Come back here and add its address to your {label} app too, or customers on that domain won&apos;t be able to sign in.</span>
+            <p className="mt-5 pt-4 border-t border-bone text-[11.5px] text-slate leading-relaxed">
+              Add a new domain to your store later? Come back here and add its address to your {label} app too, or customers on that domain won&apos;t be able to sign in.
             </p>
+          </section>
+
+          <div className="flex flex-col gap-5 lg:sticky lg:top-4">
+            <section id="credentials" className="rounded-xl border border-bone bg-white p-5 sm:p-6 scroll-mt-4" aria-labelledby="cred-title">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                <h2 id="cred-title" className="text-[15px] font-semibold text-charcoal flex items-center gap-2.5">
+                  <ProviderLogo provider={provider} size={20} /> Credentials
+                </h2>
+                {connected && verifiedAt && !current.lastError && (
+                  <span className="flex items-center gap-1 text-[11.5px] text-[#166534]"><CheckCircle size={13} /> Verified {verifiedAt}</span>
+                )}
+              </div>
+
+              <div className="mb-3.5">
+                <label htmlFor={idFieldId} className="block text-[11.5px] font-semibold text-slate mb-1">{idLabel}</label>
+                <input
+                  id={idFieldId} className={inputCls} value={clientId} onChange={e => { setClientId(e.target.value); setMsg(null); }}
+                  disabled={!canEdit || working} autoComplete="off" spellCheck={false}
+                  placeholder={provider === 'google' ? '1234567890-abc123.apps.googleusercontent.com' : '1234567890123456'}
+                />
+              </div>
+              <div>
+                <label htmlFor={secretFieldId} className="block text-[11.5px] font-semibold text-slate mb-1">{secretLabel}</label>
+                <PasswordField
+                  id={secretFieldId} className={inputCls} value={clientSecret} onChange={e => { setClientSecret(e.target.value); setMsg(null); }}
+                  disabled={!canEdit || working} autoComplete="new-password" spellCheck={false}
+                  placeholder={connected && current.maskedSecret ? `${current.maskedSecret} — enter a new one to replace` : ''}
+                />
+                <p className="flex items-start gap-1.5 text-[11px] text-slate mt-2 leading-relaxed">
+                  <ShieldCheck size={13} className="shrink-0 mt-px text-[#16A34A]" />
+                  We check these with {label} when you save. The secret is stored encrypted and never shown again.
+                </p>
+              </div>
+
+              {!canEdit && <p className="text-[11.5px] text-slate mt-3">You need the &quot;Manage general settings&quot; permission to change this.</p>}
+
+              <div className="flex flex-col gap-2.5 mt-5">
+                <button
+                  type="button" onClick={save} disabled={!canSave}
+                  className="flex items-center justify-center gap-[7px] w-full px-[18px] py-2.5 rounded-lg border-none text-[13px] font-semibold"
+                  style={{ background: canSave ? '#D97757' : '#E8E6DC', color: canSave ? '#fff' : '#8C8A82', cursor: canSave ? 'pointer' : 'not-allowed' }}
+                >
+                  {busy === 'save' && <Loader2 size={14} className="animate-spin" />}
+                  {busy === 'save' ? `Checking with ${label}...` : connected ? 'Save new credentials' : `Connect ${label}`}
+                </button>
+                {connected && canEdit && (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button type="button" onClick={test} disabled={working} className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-bone bg-white text-[13px] font-semibold text-charcoal cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                      {busy === 'test' && <Loader2 size={14} className="animate-spin" />}
+                      {busy === 'test' ? 'Testing...' : 'Test connection'}
+                    </button>
+                    <button type="button" onClick={() => setConfirmDisconnect(true)} disabled={working} className="px-3 py-2.5 rounded-lg border border-bone bg-white text-[13px] font-semibold text-error cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                      Disconnect
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div role="status" aria-live="polite" className="min-h-[20px] mt-3">
+                {msg && (
+                  <span className="flex items-start gap-1.5 text-[12.5px] leading-relaxed" style={{ color: msg.ok ? '#166534' : '#991B1B' }}>
+                    {msg.ok ? <CheckCircle size={14} className="shrink-0 mt-px" /> : <AlertCircle size={14} className="shrink-0 mt-px" />}
+                    {msg.text}
+                  </span>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-bone bg-white p-5" aria-label="Preview">
+              <p className="text-[13px] font-semibold text-charcoal">What customers will see</p>
+              <div className="mt-3 rounded-lg border border-bone bg-cream p-4">
+                <PreviewButton provider={provider} label={label} />
+              </div>
+              <p className="text-[11.5px] text-slate mt-2.5 leading-relaxed">
+                {connected ? 'This button is live on your store\'s sign-in page.' : 'This button appears once the method is connected.'}
+              </p>
+            </section>
           </div>
-
-          <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
-            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-              <p className="text-[14px] font-semibold text-charcoal">Credentials</p>
-              {connected && verifiedAt && !current.lastError && (
-                <span className="flex items-center gap-1 text-[11.5px] text-[#166534]"><CheckCircle size={13} /> Verified {verifiedAt}</span>
-              )}
-            </div>
-            <div className="mb-3">
-              <label htmlFor={idFieldId} className="block text-[11.5px] font-semibold text-slate mb-1">{idLabel}</label>
-              <input
-                id={idFieldId} className={inputCls} value={clientId} onChange={e => { setClientId(e.target.value); setMsg(null); }}
-                disabled={!canEdit || working} autoComplete="off" spellCheck={false}
-                placeholder={provider === 'google' ? '1234567890-abc123.apps.googleusercontent.com' : '1234567890123456'}
-              />
-            </div>
-            <div>
-              <label htmlFor={secretFieldId} className="block text-[11.5px] font-semibold text-slate mb-1">{secretLabel}</label>
-              <PasswordField
-                id={secretFieldId} className={inputCls} value={clientSecret} onChange={e => { setClientSecret(e.target.value); setMsg(null); }}
-                disabled={!canEdit || working} autoComplete="new-password" spellCheck={false}
-                placeholder={connected && current.maskedSecret ? `${current.maskedSecret} — enter a new secret to replace it` : ''}
-              />
-              <p className="text-[11px] text-slate mt-1">We check these with {label} when you save. The secret is stored encrypted and never shown again.</p>
-            </div>
-
-            {!canEdit && <p className="text-[11px] text-slate mt-3">You need the &quot;Manage general settings&quot; permission to change this.</p>}
-
-            <div className="flex items-center gap-3 mt-4 flex-wrap">
-              <button
-                type="button" onClick={save} disabled={!canSave}
-                className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold"
-                style={{ background: canSave ? '#D97757' : '#E8E6DC', color: canSave ? '#fff' : '#8C8A82', cursor: canSave ? 'pointer' : 'not-allowed' }}
-              >
-                {busy === 'save' && <Loader2 size={14} className="animate-spin" />}
-                {busy === 'save' ? `Checking with ${label}...` : 'Save'}
-              </button>
-              {connected && canEdit && (
-                <>
-                  <button type="button" onClick={test} disabled={working} className="flex items-center gap-1.5 px-[18px] py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-charcoal cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-                    {busy === 'test' && <Loader2 size={14} className="animate-spin" />}
-                    {busy === 'test' ? 'Testing...' : 'Test connection'}
-                  </button>
-                  <button type="button" onClick={() => setConfirmDisconnect(true)} disabled={working} className="px-[18px] py-2 rounded-lg border border-bone bg-white text-[13px] font-semibold text-error cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-                    Disconnect
-                  </button>
-                </>
-              )}
-            </div>
-            <div role="status" aria-live="polite" className="min-h-[20px] mt-3">
-              {msg && (
-                <span className="flex items-start gap-1.5 text-[12.5px]" style={{ color: msg.ok ? '#166534' : '#991B1B' }}>
-                  {msg.ok ? <CheckCircle size={14} className="shrink-0 mt-px" /> : <AlertCircle size={14} className="shrink-0 mt-px" />}
-                  {msg.text}
-                </span>
-              )}
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {confirmDisconnect && (
