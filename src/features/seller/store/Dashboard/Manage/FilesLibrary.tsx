@@ -4,6 +4,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { SkeletonBox, EmptyState, Modal, PasteImageUrl } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
+import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import {
   apiBrowseMediaLibrary, apiUploadMediaAsset, apiUploadMediaAssetFromUrl, apiUpdateMediaAsset, apiDeleteMediaAsset, apiGetMediaAssetUsage,
   type MediaAsset, type MediaAssetUsage,
@@ -157,6 +158,27 @@ export default function FilesLibrary() {
   const toast = useToast();
   const [items, setItems] = useState<MediaAsset[]>([]);
   const [total, setTotal] = useState(0);
+  // Bulk select + delete (Shopify Files). Files still used somewhere are kept.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const togglePick = (id: string) => setPicked(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const bulkDelete = async () => {
+    setBulkBusy(true);
+    const ids = [...picked];
+    const done: string[] = [];
+    let kept = 0;
+    for (const id of ids) {
+      try { await apiDeleteMediaAsset(storeId, id, false); done.push(id); } catch { kept += 1; }
+    }
+    setItems(prev => prev.filter(i => !done.includes(i._id)));
+    setTotal(t => Math.max(0, t - done.length));
+    setPicked(new Set());
+    setConfirmBulk(false);
+    setBulkBusy(false);
+    if (done.length) toast.success(`${done.length} file${done.length === 1 ? '' : 's'} deleted.`);
+    if (kept) toast.error(`${kept} file${kept === 1 ? ' is' : 's are'} still used on your store and ${kept === 1 ? 'was' : 'were'} kept. Open a file to see where it is used.`);
+  };
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'image' | 'video' | 'raw' | undefined>(undefined);
@@ -252,6 +274,18 @@ export default function FilesLibrary() {
           </div>
         </div>
 
+        {picked.size > 0 && (
+          <div className="flex items-center gap-3 mb-3 px-3 py-2 rounded-lg border border-bone bg-white" role="status">
+            <span className="text-[12.5px] font-semibold text-charcoal">{picked.size} selected</span>
+            <button type="button" onClick={() => setPicked(new Set(items.map(i => i._id)))} className="text-[12px] font-semibold text-charcoal bg-transparent border-none cursor-pointer p-0 hover:underline">Select all shown</button>
+            <button type="button" onClick={() => setPicked(new Set())} className="text-[12px] font-semibold text-slate bg-transparent border-none cursor-pointer p-0 hover:underline">Clear</button>
+            <button type="button" onClick={() => setConfirmBulk(true)} className="ml-auto text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-error/40 text-error bg-white cursor-pointer">Delete</button>
+          </div>
+        )}
+        {confirmBulk && (
+          <ConfirmDialog title={`Delete ${picked.size} file${picked.size === 1 ? '' : 's'}?`} message="Files that are still used on your store (theme, products, pages) are kept. This cannot be undone." loading={bulkBusy}
+            onCancel={() => setConfirmBulk(false)} onConfirm={() => { void bulkDelete(); }} />
+        )}
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => <SkeletonBox key={i} height={120} rounded="10px" />)}
@@ -271,8 +305,11 @@ export default function FilesLibrary() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {items.map(item => (
-              <button key={item._id} type="button" onClick={() => setSelected(item)}
-                className="group relative aspect-square rounded-lg overflow-hidden border border-bone hover:border-brand-orange transition-colors bg-cream text-left">
+              <div key={item._id} className="relative">
+              <input type="checkbox" checked={picked.has(item._id)} onChange={() => togglePick(item._id)} aria-label={`Select ${item.filename || 'file'}`}
+                className="absolute top-2 left-2 z-10 w-4 h-4 cursor-pointer accent-[#D97757]" />
+              <button type="button" onClick={() => setSelected(item)}
+                className={`group relative w-full aspect-square rounded-lg overflow-hidden border ${picked.has(item._id) ? 'border-brand-orange ring-2 ring-brand-orange/30' : 'border-bone'} hover:border-brand-orange transition-colors bg-cream text-left`}>
                 {item.resourceType === 'video' ? (
                   <div className="w-full h-full flex items-center justify-center"><Video size={24} className="text-slate" /></div>
                 ) : item.resourceType === 'image' ? (
@@ -284,6 +321,7 @@ export default function FilesLibrary() {
                   {item.filename || 'Untitled'}
                 </span>
               </button>
+              </div>
             ))}
           </div>
         )}

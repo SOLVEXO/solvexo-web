@@ -48,6 +48,8 @@ export interface StorePageData {
   /** The seller's working copy — this is what the Page Sections editor should read from and write to. */
   draft:           StorePageDraft;
   lastPublishedAt: string | null;
+  /** Scheduled go-live time (ISO), or null. */
+  publishAt?: string | null;
   seo:             StorePageSeo;
   status:          StorePageStatus;
   showInNav:       boolean;
@@ -84,7 +86,7 @@ export function apiCreateStorePage(storeId: string, payload: { title: string; sl
   return client.post<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.CREATE(storeId), payload);
 }
 
-export function apiUpdateStorePage(storeId: string, pageId: string, payload: Partial<{ title: string; slug: string; seo: Partial<StorePageSeo>; showInNav: boolean; showInFooter: boolean; policyType: StorePagePolicyType | null }>) {
+export function apiUpdateStorePage(storeId: string, pageId: string, payload: Partial<{ title: string; slug: string; seo: Partial<StorePageSeo>; showInNav: boolean; showInFooter: boolean; policyType: StorePagePolicyType | null; publishAt: string | null }>) {
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UPDATE(storeId, pageId), payload);
 }
 

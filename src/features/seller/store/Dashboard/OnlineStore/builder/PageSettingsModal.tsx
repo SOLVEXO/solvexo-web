@@ -43,6 +43,13 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
   const [showInNav, setShowInNav] = useState(page.showInNav);
   const [showInFooter, setShowInFooter] = useState(page.showInFooter);
   const [policyType, setPolicyType] = useState<StorePagePolicyType | ''>(page.policyType ?? '');
+  // Shopify "Visibility → set visible date": local datetime string for the input.
+  const toLocalInput = (iso?: string | null) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
+  const [publishAt, setPublishAt] = useState(toLocalInput(page.publishAt));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -64,7 +71,7 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
         },
         showInNav,
         showInFooter,
-        ...(isHome ? {} : { policyType: policyType || null }),
+        ...(isHome ? {} : { policyType: policyType || null, publishAt: publishAt ? new Date(publishAt).toISOString() : null }),
       });
       onSaved(res.data);
       onClose();
@@ -129,6 +136,17 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
                 <Toggle checked={showInFooter} onChange={setShowInFooter} ariaLabel="Show in footer" />
               </label>
             </div>
+          </div>
+        )}
+
+        {!isHome && (
+          <div className="border-t border-bone pt-3">
+            <Field label="Publish on (optional)" hint="The page goes live by itself at this time. Leave empty to publish manually.">
+              <div className="flex gap-2">
+                <input type="datetime-local" className={inp} value={publishAt} min={toLocalInput(new Date().toISOString())} onChange={e => setPublishAt(e.target.value)} />
+                {publishAt && <button type="button" onClick={() => setPublishAt('')} className="shrink-0 px-3 rounded-lg border border-bone bg-white text-[12px] font-semibold cursor-pointer">Clear</button>}
+              </div>
+            </Field>
           </div>
         )}
 
