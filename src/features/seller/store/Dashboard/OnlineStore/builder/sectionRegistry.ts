@@ -16,6 +16,9 @@ export interface SectionMeta {
   hidden?: boolean;
   /** Core/locked section (Phase 4, see `CORE_SECTION_TYPES`) — `PageSectionsEditor` renders it without a Remove/Duplicate/Hide/Drag control, and never offers it as an addable block-donor either (implies `hidden: true`, which every entry below still sets explicitly for clarity). */
   locked?: boolean;
+  /** Blocks a seller may ADD to this (otherwise locked) section, e.g. Main Product's
+   *  Buy it now / Collapsible tab / Size chart. These stay removable and duplicable. */
+  addableBlockTypes?: string[];
   /** Drives `SchemaForm` — this section's own settings form. Replaces what used to be a hand-written `{type === '…' && …}` branch in `SectionFields.tsx`; see that file's own comment for why this exists. */
   settingsSchema: FieldSchema[];
 }
@@ -410,6 +413,7 @@ export const SECTION_META: SectionMeta[] = [
     Icon: ShoppingBag, color: '#D97757',
     defaultSettings: {}, allowedBlockTypes: ['product_media', 'product_title', 'product_price', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description'], blockLabel: 'Item',
     defaultBlockSettings: {}, hidden: true, locked: true,
+    addableBlockTypes: ['product_buy_now', 'product_collapsible_tab', 'product_size_chart'],
     settingsSchema: [],
   },
   {
@@ -471,6 +475,26 @@ export const SECTION_META_BY_TYPE: Record<SectionType, SectionMeta> = Object.fro
 // `storefrontTypes.ts`). They were dead, unreachable editor code left over
 // from the deleted legacy 12-theme engine; not migrated.
 export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
+  // ── Main Product blocks with settings ──
+  product_variant_picker: [
+    { key: 'pickerStyle', kind: 'select', label: 'Style', options: [
+      { value: 'pills', label: 'Buttons (pills)' }, { value: 'dropdown', label: 'Dropdown' },
+    ] },
+  ],
+  product_buy_now: [
+    { key: 'label', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'Buy it now', hint: 'Adds the item and goes straight to checkout. Shown only when Buy buttons are on.' },
+  ],
+  product_collapsible_tab: [
+    { key: 'title', kind: 'text', label: 'Heading', required: true, maxLength: 80, placeholder: 'Materials & care' },
+    { key: 'content', kind: 'textarea', label: 'Content', rows: 5, maxLength: 5000 },
+    { key: 'openByDefault', kind: 'checkbox', label: 'Open by default', defaultOff: true },
+  ],
+  product_size_chart: [
+    { key: 'label', kind: 'text', label: 'Link text', maxLength: 40, placeholder: 'Size chart' },
+    { key: 'title', kind: 'text', label: 'Popup heading', maxLength: 80 },
+    { key: 'imageUrl', kind: 'image', label: 'Chart image' },
+    { key: 'content', kind: 'textarea', label: 'Chart text', rows: 5, maxLength: 5000, hint: 'Add an image, text, or both.' },
+  ],
   social_link: [
     { key: 'platform', kind: 'select', label: 'Platform', half: true, options:
       ['facebook', 'instagram', 'x', 'tiktok', 'youtube', 'linkedin', 'whatsapp'].map(p => ({ value: p, label: p })) },
@@ -609,7 +633,6 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   product_media: [],
   product_title: [],
   product_price: [],
-  product_variant_picker: [],
   product_quantity: [],
   product_buy_buttons: [],
   product_description: [],

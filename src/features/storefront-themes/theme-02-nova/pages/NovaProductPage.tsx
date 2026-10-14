@@ -15,6 +15,7 @@ import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import type { Section } from '@/api/services/storefrontTypes';
 import { resolveProductMainLayout, splitProductTemplateSections, type ProductInfoBlock } from '../../productPageLayout';
+import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart } from '../../ProductExtraBlocks';
 import { ProductPageContext } from '../../productContext';
 import { ImageLightbox } from '../../ImageLightbox';
 import { ProductWishlistButton, ProductShareButton, ProductSku, ProductSpecs, type PartTokens } from '../../ProductPageParts';
@@ -86,8 +87,10 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
   );
 }
 
-function VariantSelector({ variants, selected, onSelect, isDigital }: {
+function VariantSelector({ variants, selected, onSelect, isDigital, pickerStyle = 'pills' }: {
   variants: ProductVariant[]; selected: ProductVariant | null; onSelect: (v: ProductVariant) => void; isDigital: boolean;
+  /** Seller's choice on the Variant picker block: buttons (pills) or a dropdown. */
+  pickerStyle?: 'pills' | 'dropdown';
 }) {
   const attributeNames = Array.from(new Set(variants.flatMap(v => (v.options ?? []).map(o => o.name))));
   if (!attributeNames.length) return null;
@@ -104,6 +107,21 @@ function VariantSelector({ variants, selected, onSelect, isDigital }: {
     <div className="flex flex-col gap-4">
       {attributeNames.map(name => {
         const values = Array.from(new Set(variants.map(v => valueOf(v, name)).filter((x): x is string => !!x)));
+        if (pickerStyle === 'dropdown') {
+          const selectId = `variant-${name.replace(/\W+/g, '-')}`;
+          return (
+            <div key={name} className="flex flex-col gap-2">
+              <label htmlFor={selectId} style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted }}>{name}</label>
+              <select id={selectId} value={valueOf(selected, name) ?? ''} onChange={e => pickVariant(name, e.target.value)}
+                className="cursor-pointer"
+                style={{ fontFamily: t.fonts.body, fontSize: '13px', padding: '10px 12px', border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, borderRadius: t.radius?.sm ?? 0 }}>
+                {values.map(val => (
+                  <option key={val} value={val}>{val}{optionValueAvailable(variants, selected, name, val, isDigital) ? '' : ' — sold out'}</option>
+                ))}
+              </select>
+            </div>
+          );
+        }
         return (
           <div key={name}>
             <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '8px' }}>
@@ -276,6 +294,14 @@ export function NovaProductPage() {
   }
 
   const layout = resolveProductMainLayout(productMainSection);
+  const pickerStyle = layout.infoItems.find(i => i.type === 'product_variant_picker')?.settings.pickerStyle === 'dropdown' ? 'dropdown' : 'pills';
+  // "Buy it now": add the chosen variant/quantity, then straight to checkout.
+  const handleBuyNow = async () => {
+    if (!product || !activeVariant || !canBuy) return;
+    await addToCart(product._id, activeVariant._id, isDigital ? 'digital' : 'physical');
+    for (let i = 1; i < qty; i++) await updateQty(product._id, activeVariant._id, 'increase');
+    navigate('/checkout');
+  };
   const { before: sectionsBefore, after: sectionsAfter } = splitProductTemplateSections(templateSections);
 
   const buyOn = layout.infoOrder.includes('product_buy_buttons');
@@ -367,7 +393,7 @@ export function NovaProductPage() {
         )}
       </div>
     ),
-    product_variant_picker: <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} isDigital={isDigital} />,
+    product_variant_picker: <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} isDigital={isDigital} pickerStyle={pickerStyle} />,
     product_quantity: !isDigital && (
       <div className="flex items-center gap-4">
         <div className="flex items-center" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: '9999px' }}>
@@ -408,9 +434,18 @@ export function NovaProductPage() {
   };
   // Title + rating are one tight group; wishlist + share sit on one row; everything else stacks.
   const renderedInfo: ReactNode[] = [];
-  for (let i = 0; i < layout.infoOrder.length; i++) {
-    const type = layout.infoOrder[i];
-    const next = layout.infoOrder[i + 1];
+  const items = layout.infoItems;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type === 'product_buy_now') {
+      if (buyOn && !isDigital) renderedInfo.push(<ProductBuyNowButton key={item.key} settings={item.settings} tokens={partTokens} disabled={!canBuy} loading={adding === activeVariant?._id} onBuy={handleBuyNow} />);
+      continue;
+    }
+    if (item.type === 'product_collapsible_tab') { renderedInfo.push(<ProductCollapsibleTab key={item.key} settings={item.settings} tokens={partTokens} />); continue; }
+    if (item.type === 'product_size_chart') { renderedInfo.push(<ProductSizeChart key={item.key} settings={item.settings} tokens={partTokens} />); continue; }
+    const type = item.type;
+    const nextType = items[i + 1]?.type;
+    const next = nextType && nextType in infoBlocks ? (nextType as ProductInfoBlock) : undefined;
     if (type === 'product_title' && next === 'product_rating') {
       renderedInfo.push(<div key="title-rating" className="flex flex-col">{infoBlocks.product_title}{infoBlocks.product_rating}</div>);
       i++;

@@ -14,13 +14,26 @@ export const PRODUCT_MAIN_BLOCKS = [
 /** Extra blocks a seller can switch on (the rating was always shown, the rest start off). */
 export const PRODUCT_OPTIONAL_BLOCKS = ['product_rating', 'product_sku', 'product_wishlist', 'product_share', 'product_specs'] as const;
 
+/** Blocks a seller ADDS to the main product (Shopify Dawn): "Buy it now" once,
+ *  collapsible tabs and size charts as many times as needed. They carry settings. */
+export const PRODUCT_EXTRA_BLOCKS = ['product_buy_now', 'product_collapsible_tab', 'product_size_chart'] as const;
+export type ProductExtraBlock = (typeof PRODUCT_EXTRA_BLOCKS)[number];
+const REPEATABLE = new Set<string>(['product_collapsible_tab', 'product_size_chart']);
+
 export type ProductMainBlock = (typeof PRODUCT_MAIN_BLOCKS)[number] | (typeof PRODUCT_OPTIONAL_BLOCKS)[number];
 /** Everything except the gallery, which always owns the left column. */
 export type ProductInfoBlock = Exclude<ProductMainBlock, 'product_media'>;
 
-const KNOWN = new Set<string>([...PRODUCT_MAIN_BLOCKS, ...PRODUCT_OPTIONAL_BLOCKS]);
+/** One entry of the info column, in order: a fixed block or an added one (with its settings). */
+export interface ProductInfoItem {
+  type: ProductInfoBlock | ProductExtraBlock;
+  settings: Record<string, unknown>;
+  key: string;
+}
 
-interface BlockLike { type: string; enabled?: boolean }
+const KNOWN = new Set<string>([...PRODUCT_MAIN_BLOCKS, ...PRODUCT_OPTIONAL_BLOCKS, ...PRODUCT_EXTRA_BLOCKS]);
+
+interface BlockLike { type: string; enabled?: boolean; settings?: Record<string, unknown>; _id?: string }
 
 /**
  * What the product page renders, from the seller's `product_main` section:
@@ -32,24 +45,26 @@ interface BlockLike { type: string; enabled?: boolean }
  * page before blocks could be reordered. Optional blocks that are absent stay
  * off, except the rating, which always showed under the title and so keeps doing so.
  */
-export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null): { mediaOn: boolean; infoOrder: ProductInfoBlock[] } {
+export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null): { mediaOn: boolean; infoOrder: ProductInfoBlock[]; infoItems: ProductInfoItem[] } {
   const seen = new Set<string>();
-  const ordered: { type: ProductMainBlock; on: boolean }[] = [];
-  for (const b of main?.blocks ?? []) {
-    if (!KNOWN.has(b.type) || seen.has(b.type)) continue;
+  const ordered: { type: ProductMainBlock | ProductExtraBlock; on: boolean; settings: Record<string, unknown>; key: string }[] = [];
+  (main?.blocks ?? []).forEach((b, i) => {
+    if (!KNOWN.has(b.type) || (seen.has(b.type) && !REPEATABLE.has(b.type))) return;
     seen.add(b.type);
-    ordered.push({ type: b.type as ProductMainBlock, on: b.enabled !== false });
-  }
+    ordered.push({ type: b.type as ProductMainBlock, on: b.enabled !== false, settings: b.settings ?? {}, key: b._id ? String(b._id) : `${b.type}-${i}` });
+  });
   for (const type of PRODUCT_MAIN_BLOCKS) {
-    if (!seen.has(type)) ordered.push({ type, on: true });
+    if (!seen.has(type)) ordered.push({ type, on: true, settings: {}, key: type });
   }
   if (!seen.has('product_rating')) {
     const titleAt = ordered.findIndex(o => o.type === 'product_title');
-    ordered.splice(titleAt >= 0 ? titleAt + 1 : 0, 0, { type: 'product_rating', on: true });
+    ordered.splice(titleAt >= 0 ? titleAt + 1 : 0, 0, { type: 'product_rating', on: true, settings: {}, key: 'product_rating' });
   }
+  const visible = ordered.filter(o => o.on && o.type !== 'product_media');
   return {
     mediaOn: ordered.find(o => o.type === 'product_media')?.on ?? true,
-    infoOrder: ordered.filter(o => o.on && o.type !== 'product_media').map(o => o.type as ProductInfoBlock),
+    infoOrder: visible.filter(o => !(PRODUCT_EXTRA_BLOCKS as readonly string[]).includes(o.type)).map(o => o.type as ProductInfoBlock),
+    infoItems: visible.map(o => ({ type: o.type as ProductInfoItem['type'], settings: o.settings, key: o.key })),
   };
 }
 

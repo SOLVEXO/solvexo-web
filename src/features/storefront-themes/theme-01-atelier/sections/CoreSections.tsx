@@ -83,7 +83,17 @@ registerAtelierSection('product_main', (_section: Section, blocks: Block[], colo
             </div>)
         )}
         <div className="flex flex-col gap-3">
-          {layout.infoOrder.map(type => <Fragment key={type}>{target(type, info[type])}</Fragment>)}
+          {layout.infoItems.map(item => {
+            if (item.type in info) return <Fragment key={item.key}>{target(item.type, info[item.type as ProductInfoBlock])}</Fragment>;
+            // Added blocks (Buy it now / Collapsible tab / Size chart) — the seller's own text.
+            const st = item.settings as Record<string, string | undefined>;
+            const node = item.type === 'product_buy_now'
+              ? <div style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: colors.ink, border: `1px solid ${colors.ink}`, padding: '11px 0', textAlign: 'center' }}>{st.label || 'Buy it now'}</div>
+              : item.type === 'product_collapsible_tab'
+                ? <div style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: colors.ink, borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}`, padding: '12px 0', display: 'flex', justifyContent: 'space-between' }}><span>{st.title || 'Collapsible tab'}</span><span aria-hidden>⌄</span></div>
+                : <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: colors.ink, textDecoration: 'underline' }}>{st.label || 'Size chart'}</div>;
+            return <PreviewBlock key={item.key} blockId={item.key}>{node}</PreviewBlock>;
+          })}
         </div>
       </div>
     </PlaceholderShell>

@@ -19,6 +19,17 @@ function cloneWithoutId<T extends { _id?: string }>(item: T): T {
   return { ...rest } as T;
 }
 
+const ADDABLE_BLOCK_LABELS: Record<string, string> = {
+  product_buy_now: 'Buy it now button',
+  product_collapsible_tab: 'Collapsible tab',
+  product_size_chart: 'Size chart',
+};
+const ADDABLE_BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
+  product_buy_now: { label: 'Buy it now' },
+  product_collapsible_tab: { title: 'Materials & care', content: '' },
+  product_size_chart: { label: 'Size chart' },
+};
+
 function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {
   block: Block;
   blockId: string;
@@ -51,7 +62,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   // "show block name" requirement for a freshly-added, not-yet-configured
   // app block.
   const appBlockDef = installedApps ? findInstalledAppBlock(installedApps, block.type)?.block : undefined;
-  const label = block.settings.label || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
+  const label = block.settings.label || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
   const hidden = block.enabled === false;
 
   useEffect(() => {
@@ -254,7 +265,7 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
                     }}
                     pageOptions={pageOptions}
                     storeId={storeId}
-                    locked={locked}
+                    locked={locked && !meta.addableBlockTypes?.includes(block.type)}
                     installedApps={installedApps}
                     ownerResource={ownerResource}
                   />
@@ -265,6 +276,20 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
                  only, never add another (app blocks never apply to a
                  locked core section either — none of `APP_BLOCK_CAPABLE_
                  SECTION_TYPES` overlaps with `CORE_SECTION_TYPES`). */}
+              {locked && (meta.addableBlockTypes?.length ?? 0) > 0 && (
+                <ActionMenu
+                  align="left"
+                  trigger={<span className="text-[12px] font-semibold text-brand-orange cursor-pointer flex items-center gap-1"><Plus size={13} /> Add block</span>}
+                  triggerClassName="self-start px-1 py-0.5 bg-transparent border-none cursor-pointer"
+                  items={(meta.addableBlockTypes ?? [])
+                    // "Buy it now" once; tabs and size charts as often as needed.
+                    .filter(bt => bt !== 'product_buy_now' || !section.blocks.some(b => b.type === bt))
+                    .map(bt => ({
+                      label: ADDABLE_BLOCK_LABELS[bt] ?? bt.replace(/_/g, ' '),
+                      onClick: () => onChange({ ...section, blocks: [...section.blocks, { type: bt, settings: { ...(ADDABLE_BLOCK_DEFAULTS[bt] ?? {}) } }] }),
+                    }))}
+                />
+              )}
               {!locked && (meta.allowedBlockTypes.length === 1 && appBlockOptions.length === 0 ? (
                 <button type="button" onClick={() => onChange({ ...section, blocks: [...section.blocks, { type: meta.allowedBlockTypes[0], settings: { ...meta.defaultBlockSettings } }] })}
                   className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left flex items-center gap-1 px-1 hover:underline">
