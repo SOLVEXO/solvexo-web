@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 
@@ -333,6 +333,73 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
+    type: 'divider', label: 'Divider', description: 'A line or empty space between sections.',
+    Icon: Minus, color: '#8C8A82',
+    defaultSettings: { style: 'line', height: 32 },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: [
+      { key: 'style', kind: 'select', label: 'Style', options: [{ value: 'line', label: 'Line' }, { value: 'space', label: 'Empty space' }] },
+      { key: 'height', kind: 'number', label: 'Height (px)', min: 0, max: 160, step: 4 },
+    ],
+  },
+  {
+    type: 'multirow', label: 'Multirow', description: 'Rows of image + text, alternating sides — great for features or a brand story.',
+    Icon: Rows3, color: '#0D9488',
+    defaultSettings: { heading: '', imageRatio: 'default', alternate: true },
+    allowedBlockTypes: ['multirow_row'], blockLabel: 'Row',
+    defaultBlockSettings: { heading: 'Row heading', body: '' },
+    settingsSchema: withHeading([
+      { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: IMAGE_RATIO_OPTIONS },
+      { key: 'alternate', kind: 'checkbox', label: 'Alternate image side on each row' },
+    ]),
+  },
+  {
+    type: 'collage', label: 'Collage', description: 'One large tile next to smaller ones (up to 5 images), each with an optional link.',
+    Icon: LayoutDashboard, color: '#9333EA',
+    defaultSettings: { heading: '', layout: 'left' },
+    allowedBlockTypes: ['collage_item'], blockLabel: 'Tile',
+    defaultBlockSettings: { heading: '' },
+    settingsSchema: withHeading([
+      { key: 'layout', kind: 'select', label: 'Large tile', options: [{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }] },
+    ]),
+  },
+  {
+    type: 'featured_product', label: 'Featured Product', description: 'One product shown large, with its price and a button to its page.',
+    Icon: Package, color: '#F59E0B',
+    defaultSettings: { heading: 'Featured', productIds: [] },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: [
+      { key: 'productIds', kind: 'productMultiPicker', label: 'Product', hint: 'Pick one product (only the first is shown).' },
+      { key: 'heading', kind: 'text', label: 'Small label above the name', maxLength: 60 },
+      { key: 'buttonLabel', kind: 'text', label: 'Button text', maxLength: 30, placeholder: 'View product' },
+    ],
+  },
+  {
+    type: 'collection_banner', label: 'Collection Banner', description: 'A collection\'s title, description and image. On the Collection template it shows the collection being viewed.',
+    Icon: PanelTop, color: '#0EA5E9',
+    defaultSettings: { showImage: true, showDescription: true },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: [
+      { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', hint: 'Leave empty on the Collection template to use the collection being viewed.' },
+      { key: 'showImage', kind: 'checkbox', label: 'Show the collection image' },
+      { key: 'showDescription', kind: 'checkbox', label: 'Show the description' },
+    ],
+  },
+  {
+    type: 'recently_viewed', label: 'Recently Viewed', description: 'Products this shopper looked at recently (remembered in their own browser).',
+    Icon: History, color: '#E11D48',
+    defaultSettings: { heading: 'Recently viewed', limit: 4, columns: 4 },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'limit', kind: 'number', label: 'How many products', min: 2, max: 12, step: 1 },
+      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+    ]),
+  },
+  {
     type: 'contact_form', label: 'Contact Form', description: 'A form visitors use to message you. Messages arrive under Online Store → Contact Messages (and by email).',
     Icon: MailIcon, color: '#0D9488',
     defaultSettings: { heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.', showPhone: true },
@@ -475,6 +542,19 @@ export const SECTION_META_BY_TYPE: Record<SectionType, SectionMeta> = Object.fro
 // `storefrontTypes.ts`). They were dead, unreachable editor code left over
 // from the deleted legacy 12-theme engine; not migrated.
 export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
+  multirow_row: [
+    { key: 'imageUrl', kind: 'image', label: 'Image' },
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+    { key: 'body', kind: 'textarea', label: 'Text', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+    { key: 'ctaText', kind: 'text', label: 'Button text', maxLength: 40 },
+    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+    { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point' },
+  ],
+  collage_item: [
+    { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
+    { key: 'heading', kind: 'text', label: 'Caption', maxLength: 80 },
+    { key: 'link', kind: 'link', label: 'Link (optional)' },
+  ],
   // ── Main Product blocks with settings ──
   product_variant_picker: [
     { key: 'pickerStyle', kind: 'select', label: 'Style', options: [

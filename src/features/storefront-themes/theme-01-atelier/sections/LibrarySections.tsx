@@ -4,6 +4,7 @@ import { AtelierButton } from '../components/AtelierButton';
 import { AtelierProductCard } from '../components/AtelierProductCard';
 import { registerAtelierSection } from './atelierSectionRenderer';
 import { MulticolumnSection, LogoListSection, MarqueeSection, CustomHtmlSection, ImageBannerSection, CollectionListSection, GalleryGridSection, StoreLocationsSection, ContactFormSection, RelatedProductsSection, type SharedThemeTokens } from '../../sharedSections';
+import { DividerSection, MultirowSection, CollageSection, FeaturedProductSection, CollectionBannerSection, RecentlyViewedSection } from '../../moreSections';
 
 // Shopify-parity section library (multicolumn, logo list, marquee, custom HTML,
 // image banner) — one shared implementation, styled by this theme's tokens.
@@ -24,3 +25,9 @@ registerAtelierSection('gallery_grid', lib(GalleryGridSection));
 registerAtelierSection('store_locations', lib(StoreLocationsSection));
 registerAtelierSection('contact_form', lib(ContactFormSection));
 registerAtelierSection('related_products', lib(RelatedProductsSection));
+registerAtelierSection('divider', lib(DividerSection));
+registerAtelierSection('multirow', lib(MultirowSection));
+registerAtelierSection('collage', lib(CollageSection));
+registerAtelierSection('featured_product', lib(FeaturedProductSection));
+registerAtelierSection('collection_banner', lib(CollectionBannerSection));
+registerAtelierSection('recently_viewed', lib(RecentlyViewedSection));

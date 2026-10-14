@@ -16,6 +16,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import type { Section } from '@/api/services/storefrontTypes';
 import { resolveProductMainLayout, splitProductTemplateSections, type ProductInfoBlock } from '../../productPageLayout';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart } from '../../ProductExtraBlocks';
+import { recordRecentlyViewed } from '../../moreSections';
 import { ProductPageContext } from '../../productContext';
 import { ImageLightbox } from '../../ImageLightbox';
 import { ProductWishlistButton, ProductShareButton, ProductSku, ProductSpecs, type PartTokens } from '../../ProductPageParts';
@@ -268,6 +269,8 @@ export function NovaProductPage() {
 
   useEffect(() => { setQty(rules.min); }, [activeVariant?._id, rules.min]);
   // "Notify me when available" — only for a physical variant that's sold out.
+  // Feeds the "Recently viewed" section (this browser only).
+  useEffect(() => { if (product?._id) recordRecentlyViewed(store.storeId, product._id); }, [store.storeId, product?._id]);
   const backInStock = useBackInStock(store.storeId, product?._id, activeVariant?._id, !isDigital && !canBuy);
 
   const handleAddToCart = async () => {

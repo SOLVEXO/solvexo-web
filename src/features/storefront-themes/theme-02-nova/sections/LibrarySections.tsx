@@ -4,6 +4,7 @@ import { NovaButton } from '../components/NovaButton';
 import { NovaProductCard } from '../components/NovaProductCard';
 import { registerNovaSection } from './novaSectionRenderer';
 import { MulticolumnSection, LogoListSection, MarqueeSection, CustomHtmlSection, ImageBannerSection, CollectionListSection, GalleryGridSection, StoreLocationsSection, ContactFormSection, RelatedProductsSection, type SharedThemeTokens } from '../../sharedSections';
+import { DividerSection, MultirowSection, CollageSection, FeaturedProductSection, CollectionBannerSection, RecentlyViewedSection } from '../../moreSections';
 
 // Shopify-parity section library (multicolumn, logo list, marquee, custom HTML,
 // image banner) — one shared implementation, styled by this theme's tokens.
@@ -24,3 +25,9 @@ registerNovaSection('gallery_grid', lib(GalleryGridSection));
 registerNovaSection('store_locations', lib(StoreLocationsSection));
 registerNovaSection('contact_form', lib(ContactFormSection));
 registerNovaSection('related_products', lib(RelatedProductsSection));
+registerNovaSection('divider', lib(DividerSection));
+registerNovaSection('multirow', lib(MultirowSection));
+registerNovaSection('collage', lib(CollageSection));
+registerNovaSection('featured_product', lib(FeaturedProductSection));
+registerNovaSection('collection_banner', lib(CollectionBannerSection));
+registerNovaSection('recently_viewed', lib(RecentlyViewedSection));

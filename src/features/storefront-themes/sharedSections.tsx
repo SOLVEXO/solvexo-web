@@ -36,7 +36,7 @@ function useCta() {
   return resolveLink;
 }
 
-function CtaButton({ text, link, theme, variant = 'outline' }: { text?: string; link?: any; theme: SharedThemeTokens; variant?: 'primary' | 'outline' }) {
+export function CtaButton({ text, link, theme, variant = 'outline' }: { text?: string; link?: any; theme: SharedThemeTokens; variant?: 'primary' | 'outline' }) {
   const resolveLink = useCta();
   if (!text || !link) return null;
   const target = resolveLink(link);
@@ -46,7 +46,7 @@ function CtaButton({ text, link, theme, variant = 'outline' }: { text?: string; 
     : <a href={target.href} className="no-underline"><B variant={variant}>{text}</B></a>;
 }
 
-function Heading({ text, theme, colors, align }: { text?: string; theme: SharedThemeTokens; colors: SharedColors; align?: CSSProperties['textAlign'] }) {
+export function Heading({ text, theme, colors, align }: { text?: string; theme: SharedThemeTokens; colors: SharedColors; align?: CSSProperties['textAlign'] }) {
   if (!text) return null;
   return <h2 style={{ fontFamily: theme.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: colors.ink, textAlign: align, marginBottom: '28px' }}>{text}</h2>;
 }
