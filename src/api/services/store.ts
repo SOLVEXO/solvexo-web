@@ -562,6 +562,8 @@ export interface PublicStoreProductsParams {
   options?:      Record<string, string[]>;
   /** Ask for facet counts (disjunctive) alongside the page. */
   facets?:       boolean;
+  /** Hand-picked product ids; results keep this order. */
+  ids?:          string[];
 }
 
 export interface PublicStoreFacets {
@@ -625,6 +627,7 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
     if (values.length) query.set('option.' + name, values.join(','));
   }
   if (params?.facets)       query.set('facets',       'true');
+  if (params?.ids?.length)  query.set('ids',          params.ids.join(','));
   const qs = query.toString();
   return client.get<never, ApiResponse<PublicStoreProductsData>>(
     `${ENDPOINTS.STORE.PUBLIC_PRODUCTS(storeId)}${qs ? `?${qs}` : ''}`,

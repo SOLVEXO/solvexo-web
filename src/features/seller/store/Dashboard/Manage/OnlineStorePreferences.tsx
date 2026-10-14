@@ -53,6 +53,13 @@ export default function OnlineStorePreferences() {
       <div className="p-4 md:p-7 max-w-[640px] flex flex-col gap-5">
         {!loaded && !error ? (
           <SkeletonBox height={240} rounded="10px" />
+        ) : !loaded ? (
+          // Never show the form after a failed load: saving it would wipe
+          // the real SEO values with blanks.
+          <div role="alert" className="bg-white border border-bone rounded-[10px] p-5 flex flex-col items-start gap-3">
+            <p className="text-[13px] text-error m-0">{error}</p>
+            <Button onClick={load}>Try again</Button>
+          </div>
         ) : (
           <>
             <section className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">

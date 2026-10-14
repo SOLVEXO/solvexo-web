@@ -141,9 +141,14 @@ export function ThemeLibraryPage() {
   const [catalogTargetId, setCatalogTargetId] = useState('');
   const [applyingCatalogId, setApplyingCatalogId] = useState<string | null>(null);
 
+  const [loadError, setLoadError] = useState('');
   const load = useCallback(() => {
     setLoading(true);
-    apiListInstalledThemes(storeId).then((res) => setInstalled(res.data)).finally(() => setLoading(false));
+    setLoadError('');
+    apiListInstalledThemes(storeId)
+      .then((res) => setInstalled(res.data))
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Could not load your themes.'))
+      .finally(() => setLoading(false));
   }, [storeId]);
 
   useEffect(() => { load(); }, [load]);
@@ -277,6 +282,16 @@ export function ThemeLibraryPage() {
       <div className="p-7 flex flex-col gap-4">
         <SkeletonBox width={240} height={22} rounded="6px" />
         <SkeletonBox height={200} rounded="16px" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div role="alert" className="flex flex-col items-center gap-3 py-24 px-6 text-center">
+        <p className="text-[14px] font-bold text-charcoal">Couldn't load your themes.</p>
+        <p className="text-[13px] text-slate">{loadError}</p>
+        <Button onClick={load}>Try again</Button>
       </div>
     );
   }

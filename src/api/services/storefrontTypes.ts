@@ -89,6 +89,18 @@ export interface CoreSectionPreviewContext {
   recentPostTitles?: string[];
   articleTitle?: string;
   articleExcerpt?: string;
+  /** Product template: the product picked in the editor top bar (formatted prices). */
+  product?: {
+    name: string;
+    price?: string;
+    compareAtPrice?: string;
+    image?: string;
+    description?: string;
+    sku?: string;
+    optionValues?: string[];
+    rating?: number;
+    reviewCount?: number;
+  };
 }
 
 /** Every core/locked section type — see the comment above. Shared by the

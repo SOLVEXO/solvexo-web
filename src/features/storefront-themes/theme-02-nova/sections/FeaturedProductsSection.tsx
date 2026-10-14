@@ -8,6 +8,7 @@ import { NovaProductCard } from '../components/NovaProductCard';
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { copyText, showEyebrow } from '../../sectionCopy';
 
 /** Same helper as `AtelierFeaturedProductsSection`'s equivalent — `pinned`/
  *  `manual` (the section editor's two names for the same seller-curated
@@ -40,7 +41,12 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
     if (demoProducts) return;
     const { source, limit: limitSetting } = section.settings;
     const limit = Math.min(24, Math.max(1, limitSetting ?? 8));
-    const request = source === 'pinned' || source === 'manual'
+    const pickedIds: string[] = Array.isArray(section.settings.productIds) ? section.settings.productIds : [];
+    const request = (source === 'manual' || source === 'pinned') && pickedIds.length > 0
+      // Hand-picked in this section: exactly these products, in this order.
+      ? apiGetPublicStoreProducts(store.storeId, { ids: pickedIds.slice(0, 50), limit: Math.min(50, pickedIds.length) })
+          .then(res => (res.data?.products ?? []).slice(0, limit))
+      : source === 'pinned' || source === 'manual'
       ? apiGetPinnedProducts(store.storeId).then(res => (res.data?.products ?? []).slice(0, limit))
       : apiGetPublicStoreProducts(store.storeId, paramsForSource(section.settings)).then(res => res.data?.products ?? []);
     request.then(setProducts).catch(() => setProducts([]));
@@ -54,7 +60,7 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
         {section.settings.heading && (
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
             <div>
-              <span style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '6px 12px', marginBottom: '12px' }}>Picked for you</span>
+              {showEyebrow(section.settings) && (<span style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '6px 12px', marginBottom: '12px' }}>{copyText(section.settings, 'eyebrow', 'Picked for you')}</span>)}
               <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 700, color: colors.ink, lineHeight: 1.05 }}>
                 {section.settings.heading}
               </h2>

@@ -11,6 +11,7 @@ import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { PreviewBlock } from './previewInspector';
 import { imageFit, focalOf } from './imageFit';
+import { copyText } from './sectionCopy';
 
 // Theme-agnostic implementations of the Shopify-parity section library
 // (multicolumn, logo_list, marquee, custom_html, image_banner). Each theme
@@ -296,7 +297,7 @@ export function StoreLocationsSection({ section, blocks, colors, theme }: Props)
                   {s.hours && <p style={text}>{s.hours}</p>}
                   {s.mapUrl && (
                     <a href={s.mapUrl} target="_blank" rel="noopener noreferrer" className="no-underline" style={{ fontFamily: theme.fonts.body, fontSize: '13px', fontWeight: 600, color: colors.accent, marginTop: '4px' }}>
-                      Get directions →
+                      {copyText(s, 'directionsLabel', 'Get directions →')}
                     </a>
                   )}
                 </article>
@@ -349,13 +350,13 @@ export function ContactFormSection({ section, colors, theme }: Props) {
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}>
-              <div><label htmlFor="cf-name" style={label}>Name</label><input id="cf-name" required maxLength={80} value={values.name} onChange={set('name')} autoComplete="name" style={field} /></div>
-              <div><label htmlFor="cf-email" style={label}>Email</label><input id="cf-email" type="email" required maxLength={120} value={values.email} onChange={set('email')} autoComplete="email" style={field} /></div>
+              <div><label htmlFor="cf-name" style={label}>{copyText(s, 'nameLabel', 'Name')}</label><input id="cf-name" required maxLength={80} value={values.name} onChange={set('name')} autoComplete="name" style={field} /></div>
+              <div><label htmlFor="cf-email" style={label}>{copyText(s, 'emailLabel', 'Email')}</label><input id="cf-email" type="email" required maxLength={120} value={values.email} onChange={set('email')} autoComplete="email" style={field} /></div>
             </div>
             {s.showPhone !== false && (
-              <div><label htmlFor="cf-phone" style={label}>Phone (optional)</label><input id="cf-phone" type="tel" maxLength={25} value={values.phone} onChange={set('phone')} autoComplete="tel" style={field} /></div>
+              <div><label htmlFor="cf-phone" style={label}>{copyText(s, 'phoneLabel', 'Phone (optional)')}</label><input id="cf-phone" type="tel" maxLength={25} value={values.phone} onChange={set('phone')} autoComplete="tel" style={field} /></div>
             )}
-            <div><label htmlFor="cf-message" style={label}>Message</label><textarea id="cf-message" required rows={6} maxLength={3000} value={values.message} onChange={set('message')} style={{ ...field, resize: 'vertical' }} /></div>
+            <div><label htmlFor="cf-message" style={label}>{copyText(s, 'messageLabel', 'Message')}</label><textarea id="cf-message" required rows={6} maxLength={3000} value={values.message} onChange={set('message')} style={{ ...field, resize: 'vertical' }} /></div>
             {/* Bot trap: invisible to people, so only automated fills reach it. */}
             <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
               <label htmlFor="cf-website">Website</label>

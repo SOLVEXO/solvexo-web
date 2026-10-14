@@ -83,7 +83,9 @@ export function PagesPage() {
         const home = res.data.find(p => p.type === 'home');
         setSelectedPageId(prev => prev ?? home?._id ?? res.data[0]?._id ?? null);
       })
+      .catch(err => flash(false, err instanceof Error ? err.message : 'Could not load your pages. Refresh to try again.'))
       .finally(() => setPagesLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   useEffect(() => { loadPages(); }, [loadPages]);
@@ -255,15 +257,21 @@ export function PagesPage() {
     if (!selectedPage) return;
     setShowPageVersionHistory(true);
     setPageVersionsLoading(true);
-    apiListStorePageVersions(storeId, selectedPage._id).then(res => setPageVersions(res.data)).finally(() => setPageVersionsLoading(false));
+    apiListStorePageVersions(storeId, selectedPage._id)
+      .then(res => setPageVersions(res.data))
+      .catch(err => { setPageVersions([]); flash(false, err instanceof Error ? err.message : 'Could not load version history.'); })
+      .finally(() => setPageVersionsLoading(false));
   };
 
   const handleRestorePageVersion = async (versionId: string) => {
     if (!selectedPage) return;
     setRestoringPageVersionId(versionId);
     try {
-      await apiRestoreStorePageVersion(storeId, selectedPage._id, versionId);
-      loadPagesEditor(selectedPage.sections, selectedPage.draft?.sections ?? selectedPage.sections);
+      // Load the RESTORED draft from the response — `selectedPage` still holds
+      // the pre-restore draft, and saving that would undo the restore.
+      const res = await apiRestoreStorePageVersion(storeId, selectedPage._id, versionId);
+      const restored = res.data ?? selectedPage;
+      loadPagesEditor(restored.sections, restored.draft?.sections ?? restored.sections);
       loadPages();
       setShowPageVersionHistory(false);
       flash(true, 'Version restored to your draft — review it, then Publish to make it live.');

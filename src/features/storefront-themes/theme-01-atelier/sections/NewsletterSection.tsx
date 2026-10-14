@@ -6,6 +6,7 @@ import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput } from '../components/atelierFormStyles';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { copyText, showEyebrow } from '../../sectionCopy';
 
 function NewsletterSection({ section, colors }: { section: Section; colors: AtelierSectionColors }) {
   const { store } = useStorefront();
@@ -29,7 +30,7 @@ function NewsletterSection({ section, colors }: { section: Section; colors: Atel
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center" style={{ maxWidth: t.layout.maxWidth, borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}`, padding: 'clamp(28px, 5vw, 56px) 0' }}>
         <div>
-          <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '12px' }}>Private notes</p>
+          {showEyebrow(section.settings) && (<p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '12px' }}>{copyText(section.settings, 'eyebrow', 'Private notes')}</p>)}
           <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 500, color: colors.ink, lineHeight: 1.08 }}>
             {section.settings.heading || 'Stay in the loop'}
           </h2>
@@ -37,11 +38,11 @@ function NewsletterSection({ section, colors }: { section: Section; colors: Atel
         </div>
         <div className="flex flex-col gap-3">
         {status === 'done' ? (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.success }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.success }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : copyText(section.settings, 'successMessage', "Thank you — you're subscribed.")}</p>
         ) : (
           <form onSubmit={submit} className="flex flex-col sm:flex-row gap-2 w-full atelier-form">
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email" style={atelierInput} />
-            <AtelierButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0 }}>Subscribe</AtelierButton>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(section.settings, 'placeholder', 'Your email')} style={atelierInput} />
+            <AtelierButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0 }}>{copyText(section.settings, 'buttonLabel', 'Subscribe')}</AtelierButton>
           </form>
         )}
         {status === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.danger }}>Something went wrong — try again.</p>}

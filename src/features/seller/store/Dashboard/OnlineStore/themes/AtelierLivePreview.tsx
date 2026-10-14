@@ -70,6 +70,32 @@ function ThemePreviewFrame({ children }: { children: ReactNode }) {
 /** Shape of `PublicStoreData['announcementBar']` — repeated here (not
  *  imported) because that field is inline-typed on `PublicStoreData` rather
  *  than named, and this is the shape `announcementOverride` below accepts. */
+/** Header-group / footer-group parts the editor can select in the preview. */
+export type PreviewChromePart = 'announcement' | 'header' | 'footer';
+
+const CHROME_LABEL: Record<PreviewChromePart, string> = { announcement: 'Announcement bar', header: 'Header', footer: 'Footer' };
+
+/** Clickable wrapper for header/footer/announcement in the editor preview
+ *  (capture phase, so links inside never navigate). */
+function ChromeTarget({ part, selected, onSelect, children }: { part: PreviewChromePart; selected: boolean; onSelect: (part: PreviewChromePart) => void; children: ReactNode }) {
+  return (
+    <div
+      data-editor-chrome={part}
+      aria-label={`Edit ${CHROME_LABEL[part]}`}
+      className={selected ? 'editor-chrome-target editor-chrome-selected' : 'editor-chrome-target'}
+      style={{ pointerEvents: 'auto', position: 'relative' }}
+      onClickCapture={e => { e.preventDefault(); e.stopPropagation(); onSelect(part); }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const CHROME_CSS = '.editor-chrome-target{outline:2px solid transparent;outline-offset:-2px;cursor:pointer;transition:outline-color 120ms ease}'
+  + '.editor-chrome-target:hover{outline-color:rgba(217,119,87,0.45)}'
+  + '.editor-chrome-selected,.editor-chrome-selected:hover{outline-color:#D97757}'
+  + '[data-editor-hover="1"]{outline:2px dashed rgba(217,119,87,0.8)!important;outline-offset:-2px}';
+
 export type AnnouncementBarPreviewValue = Pick<StoreAnnouncementBarValue,
   'message' | 'type' | 'ctaLabel' | 'ctaLink' | 'moreMessages' | 'rotateSeconds' | 'closable' | 'bgColor' | 'textColor' | 'placement' | 'align'>;
 
@@ -134,8 +160,14 @@ export type AnnouncementBarPreviewValue = Pick<StoreAnnouncementBarValue,
  *  in that section's markup can fire, and reports the section id instead. */
 export function AtelierLivePreview({
   sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
-  selectedBlockId, onSelectBlock, previewCollectionId,
+  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId,
 }: {
+  /** Which header/footer part is selected (editor only). */
+  selectedChrome?: PreviewChromePart | null;
+  /** Makes the header, footer and announcement bar clickable (editor only). */
+  onSelectChrome?: (part: PreviewChromePart) => void;
+  /** A section the seller is hovering in the sidebar — outlined in the preview. */
+  hoverSectionId?: string | null;
   sections: Section[];
   showChrome: boolean;
   draftTheme?: StoreThemeData | null;
@@ -175,6 +207,28 @@ export function AtelierLivePreview({
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [menus, setMenus] = useState<Menu[]>([]);
   const { store: workspaceStore } = useStoreWorkspace();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Sidebar → preview: bring the selected section / header / footer into view.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const target = selectedChrome
+      ? root.querySelector<HTMLElement>(`[data-editor-chrome="${selectedChrome}"]`)
+      : selectedSectionId
+        ? root.querySelector<HTMLElement>(`[data-atelier-section-id="${CSS.escape(selectedSectionId)}"],[data-nova-section-id="${CSS.escape(selectedSectionId)}"]`)
+        : null;
+    target?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedSectionId, selectedChrome]);
+
+  // Sidebar hover → dashed outline on that section in the preview.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !hoverSectionId) return;
+    const el = root.querySelector<HTMLElement>(`[data-atelier-section-id="${CSS.escape(hoverSectionId)}"],[data-nova-section-id="${CSS.escape(hoverSectionId)}"]`);
+    el?.setAttribute('data-editor-hover', '1');
+    return () => { el?.removeAttribute('data-editor-hover'); };
+  }, [hoverSectionId]);
 
   useEffect(() => {
     if (!workspaceStore?.slug) return;
@@ -297,13 +351,21 @@ export function AtelierLivePreview({
     />
   ) : null;
 
+  const chromeSelectable = !!(interactive && onSelectChrome);
+  const chrome = (part: PreviewChromePart, node: ReactNode) => (
+    !node ? null : chromeSelectable
+      ? <ChromeTarget part={part} selected={selectedChrome === part} onSelect={onSelectChrome!}>{node}</ChromeTarget>
+      : node
+  );
+
   const body = (
     <StorefrontProvider value={contextValue}>
-      <div style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: 'none' }}>
+      <div ref={rootRef} style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: 'none' }}>
         {previewCustomCss && <style>{previewCustomCss}</style>}
-        {showChrome && announcementBar?.placement === 'above' && previewAnnouncement}
-        {showChrome && <Navbar />}
-        {showChrome && announcementBar?.placement !== 'above' && previewAnnouncement}
+        {chromeSelectable && <style>{CHROME_CSS}</style>}
+        {showChrome && announcementBar?.placement === 'above' && chrome('announcement', previewAnnouncement)}
+        {showChrome && chrome('header', <Navbar />)}
+        {showChrome && announcementBar?.placement !== 'above' && chrome('announcement', previewAnnouncement)}
         <div style={{ pointerEvents: interactive ? 'auto' : 'none' }}>
           <SectionRenderer
             sections={sections}
@@ -316,7 +378,7 @@ export function AtelierLivePreview({
             dynamicSourceValues={dynamicSourceValues}
           />
         </div>
-        {showChrome && <Footer />}
+        {showChrome && chrome('footer', <Footer />)}
       </div>
     </StorefrontProvider>
   );

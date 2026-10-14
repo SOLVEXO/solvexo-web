@@ -28,6 +28,14 @@ export interface SectionMeta {
 const HEADING_FIELD: FieldSchema = { key: 'heading', kind: 'text', label: 'Heading (optional)' };
 function withHeading(fields: FieldSchema[]): FieldSchema[] { return [HEADING_FIELD, ...fields]; }
 
+/** The small label above a heading — on/off + own text (blank = the theme's own words). */
+function eyebrowFields(themeDefaultHint: string): FieldSchema[] {
+  return [
+    { key: 'showEyebrow', kind: 'checkbox', label: 'Show small label above the heading' },
+    { key: 'eyebrow', kind: 'text', label: 'Label text', maxLength: 60, placeholder: 'Theme default', hint: themeDefaultHint, showIf: s => s.showEyebrow !== false },
+  ];
+}
+
 // Shared by `product_catalog` and `collection_product_grid` — identical sort/columns controls on both product-grid section types.
 const SORT_COLUMNS_FIELDS: FieldSchema[] = [
   { key: 'defaultSort', kind: 'select', label: 'Default sort', options: [
@@ -98,12 +106,12 @@ export const SECTION_META: SectionMeta[] = [
   {
     type: 'featured_products', label: 'Featured Products', description: 'A curated strip of products — pinned, best sellers, trending, new arrivals, a category, or hand-picked.',
     Icon: Star, color: '#F59E0B',
-    defaultSettings: { heading: 'Featured', source: 'pinned', limit: 8, columns: 4 },
+    defaultSettings: { heading: 'Featured', source: 'newArrivals', limit: 8, columns: 4 },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'source', kind: 'select', label: 'Source', clears: ['categoryId', 'collectionId'], options: [
-        { value: 'pinned', label: 'Pinned / Featured' }, { value: 'bestsellers', label: 'Best Sellers' },
+        { value: 'pinned', label: 'Store pins (older list)' }, { value: 'bestsellers', label: 'Best Sellers' },
         { value: 'newArrivals', label: 'New Arrivals' }, { value: 'trending', label: 'Trending' },
         { value: 'onSale', label: 'On Sale' }, { value: 'category', label: 'A specific category' },
         { value: 'collection', label: 'A collection' }, { value: 'manual', label: 'Hand-picked products' },
@@ -112,11 +120,13 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' },
       // Real product picker, not a raw comma-separated ID paste field — the
       // last surviving one of those in the whole builder, closed here.
-      { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual' },
+      { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual' || s.source === 'pinned',
+        hint: 'Shown in this order. With none picked, your older store pin list is used.' },
       { key: 'limit', kind: 'number', label: 'How many to show', min: 1, max: 24 },
       { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
         { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
       ] },
+      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "The considered edit").'),
     ]),
   },
   {
@@ -153,7 +163,13 @@ export const SECTION_META: SectionMeta[] = [
     defaultSettings: { heading: 'Frequently Asked Questions' },
     allowedBlockTypes: ['faq_item'], blockLabel: 'Question',
     defaultBlockSettings: { question: '', answer: '' },
-    settingsSchema: withHeading([]),
+    settingsSchema: withHeading([
+      { key: 'source', kind: 'select', label: 'Questions', options: [
+        { value: 'blocks', label: 'Added here (blocks below)' },
+        { value: 'store', label: 'My store FAQs (Online Store → FAQs)' },
+      ], hint: 'Store FAQs keep this section and your /faqs page in sync.' },
+      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "Good to know").'),
+    ]),
   },
   {
     type: 'video', label: 'Video', description: 'A video link (YouTube, Vimeo, any .mp4 link) or an uploaded video file.',
@@ -202,6 +218,7 @@ export const SECTION_META: SectionMeta[] = [
         { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '6', label: '6' }, { value: '9', label: '9' }, { value: '12', label: '12' },
       ] },
       { key: 'imageRatio', kind: 'select', label: 'Image ratio', hint: 'Default is 4:3.', options: IMAGE_RATIO_OPTIONS },
+      { key: 'viewAllLabel', kind: 'text', label: '"View all" link text', maxLength: 30, placeholder: 'View all' },
     ]),
   },
   {
@@ -212,6 +229,10 @@ export const SECTION_META: SectionMeta[] = [
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'subtext', kind: 'text', label: 'Subtext (optional)' },
+      { key: 'placeholder', kind: 'text', label: 'Email box placeholder', maxLength: 60, placeholder: 'Your email', half: true },
+      { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30, placeholder: 'Subscribe', half: true },
+      { key: 'successMessage', kind: 'text', label: 'Message after signing up', maxLength: 160, placeholder: "Thank you — you're subscribed." },
+      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "Private notes").'),
     ]),
   },
   {
@@ -244,6 +265,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'targetDate', kind: 'datetime', label: 'Target date & time', required: true, hint: 'The countdown runs live until this moment.' },
       { key: 'ctaText', kind: 'text', label: 'Button text (optional)' },
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+      { key: 'endedText', kind: 'text', label: 'Text when the countdown ends', maxLength: 60, placeholder: 'Dropped!' },
     ]),
   },
   // ── Shopify-parity section library ───────────────────────────────────────
@@ -318,6 +340,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30 },
       { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
       { key: 'showPhone', kind: 'checkbox', label: 'Ask for a phone number' },
+      { key: 'nameLabel', kind: 'text', label: 'Name field label', maxLength: 40, placeholder: 'Name', half: true },
+      { key: 'emailLabel', kind: 'text', label: 'Email field label', maxLength: 40, placeholder: 'Email', half: true },
+      { key: 'phoneLabel', kind: 'text', label: 'Phone field label', maxLength: 40, placeholder: 'Phone (optional)', half: true, showIf: s => s.showPhone !== false },
+      { key: 'messageLabel', kind: 'text', label: 'Message field label', maxLength: 40, placeholder: 'Message', half: true },
     ]),
   },
   {
@@ -536,6 +562,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'email', kind: 'text', label: 'Email', maxLength: 120, half: true },
     { key: 'hours', kind: 'textarea', label: 'Opening hours', rows: 2, maxLength: 160, placeholder: 'Mon–Sat, 10am–8pm' },
     { key: 'mapUrl', kind: 'url', label: 'Directions link', placeholder: 'https://maps.google.com/…', hint: 'A Google / Apple Maps link.' },
+    { key: 'directionsLabel', kind: 'text', label: 'Directions link text', maxLength: 40, placeholder: 'Get directions →', showIf: s => !!s.mapUrl },
   ],
   logo_item: [
     { key: 'imageUrl', kind: 'image', label: 'Logo', required: true },
@@ -548,6 +575,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   image_text_pair: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
+    ...eyebrowFields('Blank keeps the theme\'s label (e.g. "A closer look").'),
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'body', kind: 'textarea', label: 'Body', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },

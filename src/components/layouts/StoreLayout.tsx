@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, GalleryHorizontal, Bell as BellIcon, Pin, MailCheck, Landmark, ShieldOff,
+  Store, TrendingUp, GalleryHorizontal, MailCheck, Landmark, ShieldOff,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -113,8 +113,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // "Manage Locations" modal this same page hosts) still has a nav path
       // in, not just backend routes with no way to reach them.
       { id: 'inventory',       Icon: ClipboardList, label: 'Inventory',       path: 'inventory',       requiredPermission: ['inventory.view', 'inventory.adjust', 'inventory.receive', 'inventory.transfer', 'inventory.count', 'inventory.approve', 'purchase_orders.manage', 'settings.locations.manage'] },
-      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories',      requiredPermission: 'products.view' },
-      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections',     requiredPermission: 'products.view' },
+      { id: 'categories',      Icon: FolderTree,    label: 'Categories',      path: 'categories',      requiredPermission: ['products.view', 'categories.manage'] },
+      { id: 'collections',     Icon: Layers,        label: 'Collections',     path: 'collections',     requiredPermission: ['products.view', 'collections.manage'] },
     ],
   },
   {
@@ -127,7 +127,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     groupIcon: Package,
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
-      { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: 'draft_orders.view' },
+      { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
       // Only shows up once this store connects its own "Bank Transfer" in
       // Integrations — buyers who pay that way upload a proof here for the
       // seller to review/approve (money lands in the seller's own bank
@@ -148,8 +148,10 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // path to the list that create/edit actually happens from.
       { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
       { id: 'subscribers', Icon: MailCheck,    label: 'Subscribers', path: 'customer/subscribers', requiredPermission: ['customers.view', 'customers.edit'] },
-      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: 'customers.view' },
+      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: ['customers.view', 'reviews.manage'] },
       { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
+      // Storefront contact-form inbox (Shopify sends these to the store's inbox, not Online Store).
+      { id: 'online-store-contact', Icon: Inbox,    label: 'Contact Messages', path: 'online-store/contact-messages', requiredPermission: 'onlinestore.content.manage' },
     ],
   },
   {
@@ -159,7 +161,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     items: [
       { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes',    requiredPermission: 'onlinestore.themes.manage' },
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages',     requiredPermission: 'onlinestore.content.manage' },
-      { id: 'online-store-menus',     Icon: ListTree,   label: 'Menus',     path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
+      { id: 'online-store-menus',     Icon: ListTree,   label: 'Navigation', path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog',      requiredPermission: 'onlinestore.content.manage' },
       // { id: 'online-store-apps',      Icon: Blocks,     label: 'Apps',      path: 'online-store/apps',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
@@ -168,12 +170,9 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // Marketing), matching where Shopify itself puts banners/announcement
       // content: under the storefront's own customization area, not
       // Marketing. Same APIs/data as before, just relocated.
-      { id: 'online-store-preferences', Icon: SlidersHorizontal, label: 'Preferences', path: 'online-store/preferences', requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-preferences', Icon: SlidersHorizontal, label: 'Preferences', path: 'online-store/preferences', requiredPermission: 'seo.manage' },
       { id: 'online-store-faqs',        Icon: HelpCircle, label: 'FAQs',      path: 'faqs',                   requiredPermission: 'onlinestore.content.manage' },
-      { id: 'online-store-contact',       Icon: Inbox,      label: 'Contact Messages', path: 'online-store/contact-messages', requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-banners',      Icon: GalleryHorizontal, label: 'Banners',      path: 'online-store/banners',      requiredPermission: 'onlinestore.content.manage' },
-      { id: 'online-store-announcement', Icon: BellIcon,          label: 'Announcement Bar', path: 'online-store/announcement-bar', requiredPermission: 'onlinestore.content.manage' },
-      { id: 'online-store-featured',     Icon: Pin,               label: 'Featured Products', path: 'online-store/featured', requiredPermission: 'onlinestore.content.manage' },
     ],
   },
   {
@@ -251,7 +250,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
           'settings.domains.manage', 'settings.general.manage', 'settings.taxes.manage',
           'settings.billing.manage', 'settings.billing.view',
           'settings.payments.manage', 'finance.payments.manage',
-          'staff.manage', 'content.metaobjects.manage',
+          'staff.manage', 'content.metaobjects.manage', 'activity_log.view',
         ],
       },
     ],
@@ -1400,6 +1399,38 @@ function StoreWorkspaceError({ error, onRetry }: { error: string; onRetry: () =>
 // Swaps in for `<Outlet/>` — renders the real nested route, or a shared
 // retry state if the store fetch itself failed, instead of each page
 // needing its own error handling.
+/** Where a staff member should land: the first sidebar page their role covers (their account page when none). */
+export function firstAllowedPath(user: { role?: AppRole; permissions?: string[] } | null, storeId: string): string {
+  for (const section of NAV) {
+    const item = section.items.find(i => hasNavPermission(user, i.requiredPermission));
+    if (item) return `/store/${storeId}/${item.path}`;
+  }
+  return `/store/${storeId}/account`;
+}
+
+/** Pages reached by URL that are not a sidebar item of their own but need a permission stricter than their parent page. */
+export const ROUTE_RULES: { test: RegExp; permission: string | string[] }[] = [
+  { test: /^products\/add/, permission: 'products.create' },
+  { test: /^products\/edit\//, permission: 'products.edit' },
+  { test: /^draft-orders\/new/, permission: 'draft_orders.manage' },
+  { test: /^purchase-orders/, permission: ['purchase_orders.manage', 'inventory.view'] },
+  { test: /^reorder-suggestions/, permission: ['inventory.view', 'purchase_orders.manage'] },
+  { test: /^inventory\/count\//, permission: 'inventory.count' },
+  { test: /^plan-billing/, permission: ['settings.billing.view', 'settings.billing.manage'] },
+  { test: /^staff(\/|$)/, permission: 'staff.manage' },
+  { test: /^online-store\/contact-messages/, permission: 'onlinestore.content.manage' },
+  { test: /^online-store\/preferences/, permission: ['onlinestore.content.manage', 'settings.general.manage'] },
+];
+
+/** What a staff member needs to open this page: a ROUTE_RULES match wins, then the sidebar item that owns the URL.
+ *  `undefined` = nothing special required (not a gated page); a sidebar item with no permission is owner-only. */
+export function permissionForPath(relPath: string): { required: string | string[] | null } | null {
+  const rule = ROUTE_RULES.find(r => r.test.test(relPath));
+  if (rule) return { required: rule.permission };
+  const item = navItemForPath(relPath);
+  return item ? { required: item.requiredPermission ?? null } : null;
+}
+
 /** The nav item whose page contains this URL (longest path match), or null for pages that are not a nav destination. */
 export function navItemForPath(relPath: string): NavItem | null {
   let best: NavItem | null = null;
@@ -1414,12 +1445,13 @@ export function navItemForPath(relPath: string): NavItem | null {
 /** Staff opened a page by URL that their role doesn't cover — the sidebar hides it, this stops the page itself. */
 function NoAccess({ storeId }: { storeId: string }) {
   const navigate = useNavigate();
+  const target = firstAllowedPath(TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>(), storeId);
   return (
     <div role="alert" className="px-4 lg:px-7 py-16 flex flex-col items-center text-center gap-3">
       <div className="size-12 rounded-full bg-brand-pale-orange flex items-center justify-center"><ShieldOff size={22} className="text-brand-orange" /></div>
       <h2 className="text-[17px] font-bold text-charcoal">You don't have access to this page</h2>
       <p className="text-[13px] text-slate max-w-[420px]">Your role doesn't include it. If you need it, ask the store owner to update your role.</p>
-      <Button variant="outline" size="sm" onClick={() => navigate(`/store/${storeId}/account`)}>Go to my account</Button>
+      <Button variant="outline" size="sm" onClick={() => navigate(target)}>{target.endsWith('/account') ? 'Go to my account' : 'Go to a page you can use'}</Button>
     </div>
   );
 }
@@ -1430,8 +1462,11 @@ function GatedOutlet() {
   if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
   if (isStaffSession()) {
     const rel = pathname.replace(new RegExp(`^/store/${storeId}/?`), '');
-    const item = navItemForPath(rel);
-    if (item && !hasNavPermission(TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>(), item.requiredPermission)) {
+    const gate = permissionForPath(rel);
+    const me = TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>();
+    if (gate && !hasNavPermission(me, gate.required ?? undefined)) {
+      // The landing page (/store/:id or /dashboard) is where everyone arrives: send staff on to the first page they CAN use.
+      if (rel === '' || rel === 'dashboard') return <Navigate to={firstAllowedPath(me, storeId)} replace />;
       return <NoAccess storeId={storeId} />;
     }
   }
@@ -1467,7 +1502,12 @@ export function resolveStoreAccessRedirect(routeStoreId: string | undefined, cur
     // here (wrong store), not silently — since staff-login is per-store, no
     // generic redirect can guess the right login URL, so this falls back to
     // the seller login.
-    const loginPath = user?.role === 'staff' ? `/staff-login/${user.storeId}` : '/login';
+    // A staff session that expired or logged out has no user cookie any more: the marker saved at staff login tells us this store's team signs in at its own page.
+    let staffStoreMarker: string | null = null;
+    try { staffStoreMarker = window.localStorage.getItem('solvexo:staff-store'); } catch { /* storage unavailable */ }
+    const loginPath = user?.role === 'staff'
+      ? `/staff-login/${user.storeId}`
+      : (!user && routeStoreId && staffStoreMarker === routeStoreId ? `/staff-login/${routeStoreId}` : '/login');
     return `${loginPath}?redirect=${encodeURIComponent(currentPath)}`;
   }
   return null;

@@ -8,6 +8,7 @@ import { registerNovaSection } from './novaSectionRenderer';
 import { renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
 import { imageFit } from '../../imageFit';
+import { copyText, showEyebrow } from '../../sectionCopy';
 
 function Pair({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   const { resolveLink } = useStorefront();
@@ -23,7 +24,7 @@ function Pair({ block, colors }: { block: Block; colors: NovaSectionColors }) {
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} onError={() => setErrored(true)} style={fit.img} />}
       </div>
       <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'} style={{ background: colors.bgAlt, borderRadius: t.radius.md, padding: 'clamp(24px, 4vw, 48px)' }}>
-        <p style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '7px 12px', marginBottom: '16px' }}>Why it matters</p>
+        {showEyebrow(s) && (<p style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '7px 12px', marginBottom: '16px' }}>{copyText(s, 'eyebrow', 'Why it matters')}</p>)}
         {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 46px)', fontWeight: 700, color: colors.ink, lineHeight: 1.05, marginBottom: '18px' }}>{s.heading}</h2>}
         {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '15px', color: colors.inkMuted, lineHeight: 1.8, marginBottom: '26px' }}>{renderRichText(s.body)}</p>}
         {s.ctaText && link && (
@@ -35,6 +36,8 @@ function Pair({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   );
 }
 
-registerNovaSection('image_with_text', (_section: Section, blocks: Block[], colors: NovaSectionColors) => (
-  <>{blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><Pair block={b} colors={colors} /></PreviewBlock>)}</>
+registerNovaSection('image_with_text', (section: Section, blocks: Block[], colors: NovaSectionColors) => (
+  <>{section.settings.heading && (
+    <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: colors.ink, textAlign: 'center', padding: `${t.layout.sectionPadY} ${t.layout.containerPadX} 0` }}>{section.settings.heading}</h2>
+  )}{blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><Pair block={b} colors={colors} /></PreviewBlock>)}</>
 ));

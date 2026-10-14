@@ -4,6 +4,7 @@ import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/s
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 import { resolveProductMainLayout, type ProductInfoBlock } from '../../productPageLayout';
+import { PreviewBlock } from '../../previewInspector';
 
 /**
  * Core/locked sections — Nova's own registration, mirroring
@@ -18,49 +19,58 @@ import { resolveProductMainLayout, type ProductInfoBlock } from '../../productPa
  * on the live page too — see `NovaProductPage.tsx`'s own comment.
  */
 
-function PlaceholderShell({ label, colors, children }: { label: string; colors: NovaSectionColors; children: React.ReactNode }) {
+function PlaceholderShell({ label, colors, children, sample = true }: { label: string; colors: NovaSectionColors; children: React.ReactNode; sample?: boolean }) {
   return (
     <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `32px ${t.layout.containerPadX}` }}>
       <p style={{ fontFamily: t.fonts.body, fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', color: colors.accent, marginBottom: '14px' }}>
-        {label} — sample preview
+        {sample ? `${label} — sample preview` : label}
       </p>
       {children}
     </div>
   );
 }
 
-registerNovaSection('product_main', (_section: Section, blocks: Block[], colors: NovaSectionColors) => {
+registerNovaSection('product_main', (_section: Section, blocks: Block[], colors: NovaSectionColors, _dynamic?: Record<string, string>, previewContext?: CoreSectionPreviewContext) => {
+  // The product picked in the editor's top bar (real name/price/image), or sample copy.
+  const p = previewContext?.product;
   // Same order + visibility the real product page uses (see `productPageLayout`).
   const layout = resolveProductMainLayout({ blocks });
+  const blockIdOf = (type: string) => { const b = blocks.find(x => x.type === type); return b?._id ? String(b._id) : null; };
+  const target = (type: string, node: React.ReactNode) => {
+    const id = blockIdOf(type);
+    return id ? <PreviewBlock blockId={id}>{node}</PreviewBlock> : node;
+  };
   const info: Record<ProductInfoBlock, React.ReactNode> = {
-    product_title: <div style={{ fontFamily: t.fonts.display, fontSize: '26px', fontWeight: 700, color: colors.ink }}>Sample Product Name</div>,
-    product_price: <div style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: colors.ink }}>$49.99</div>,
+    product_title: <div style={{ fontFamily: t.fonts.display, fontSize: '26px', fontWeight: 700, color: colors.ink }}>{p?.name ?? 'Sample Product Name'}</div>,
+    product_price: <div style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: colors.ink }}>{p?.price ?? '$49.99'}{p?.compareAtPrice && <s style={{ marginLeft: '10px', opacity: 0.55, fontSize: '0.8em' }}>{p.compareAtPrice}</s>}</div>,
     product_variant_picker: (
       <div className="flex gap-2 mt-2">
-        {['S', 'M', 'L'].map(s => <span key={s} style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '7px 14px', borderRadius: '9999px', border: `1.5px solid ${colors.border}`, color: colors.ink }}>{s}</span>)}
+        {(p ? (p.optionValues?.length ? p.optionValues : []) : ['S', 'M', 'L']).map(s => <span key={s} style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '7px 14px', borderRadius: '9999px', border: `1.5px solid ${colors.border}`, color: colors.ink }}>{s}</span>)}
       </div>
     ),
     product_quantity: <div style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted, marginTop: '8px' }}>Qty: 1</div>,
     product_buy_buttons: (
       <div style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: colors.accentInk, background: colors.accent, borderRadius: '9999px', padding: '11px 0', textAlign: 'center', marginTop: '8px' }}>Add to Cart</div>
     ),
-    product_rating: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.inkMuted }}>★ 4.8 (24 reviews)</div>,
-    product_sku: <div style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted }}>SKU: SAMPLE-001</div>,
+    product_rating: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.inkMuted }}>{p ? (p.reviewCount ? `★ ${(p.rating ?? 0).toFixed(1)} (${p.reviewCount} review${p.reviewCount === 1 ? '' : 's'})` : 'No reviews yet') : '★ 4.8 (24 reviews)'}</div>,
+    product_sku: <div style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted }}>SKU: {p ? (p.sku || '—') : 'SAMPLE-001'}</div>,
     product_wishlist: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: colors.ink, border: `1px solid ${colors.border}`, borderRadius: '9999px', padding: '9px 14px', alignSelf: 'flex-start' }}>♡ Add to wishlist</div>,
     product_share: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: colors.ink, border: `1px solid ${colors.border}`, borderRadius: '9999px', padding: '9px 14px', alignSelf: 'flex-start' }}>Share</div>,
     product_specs: <div style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.inkMuted, borderTop: `1px solid ${colors.border}`, paddingTop: '8px' }}>Specifications — your product's custom fields</div>,
-    product_description: <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.inkMuted, marginTop: '10px' }}>A short sample description of this product would appear here.</p>,
+    product_description: <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.inkMuted, marginTop: '10px' }}>{p ? (p.description || 'No description yet.') : 'A short sample description of this product would appear here.'}</p>,
   };
   return (
-    <PlaceholderShell label="Main Product" colors={colors}>
+    <PlaceholderShell label="Main Product" sample={!p} colors={colors}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {layout.mediaOn && (
-          <div className="flex items-center justify-center" style={{ aspectRatio: '1/1', background: colors.bgAlt, borderRadius: t.radius.md }}>
-            <ImageOff size={32} style={{ color: colors.inkMuted }} />
-          </div>
+          target('product_media', p?.image
+            ? <img src={p.image} alt={p.name} style={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', background: colors.bgAlt }} />
+            : <div className="flex items-center justify-center" style={{ aspectRatio: '1/1', background: colors.bgAlt, borderRadius: t.radius.md }}>
+              <ImageOff size={32} style={{ color: colors.inkMuted }} />
+            </div>)
         )}
         <div className="flex flex-col gap-3">
-          {layout.infoOrder.map(type => <Fragment key={type}>{info[type]}</Fragment>)}
+          {layout.infoOrder.map(type => <Fragment key={type}>{target(type, info[type])}</Fragment>)}
         </div>
       </div>
     </PlaceholderShell>

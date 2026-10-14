@@ -8,6 +8,7 @@ import { AtelierProductCard } from '../components/AtelierProductCard';
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { copyText, showEyebrow } from '../../sectionCopy';
 
 /** Maps the section's merchant-facing `source` to the real public products
  *  query. `pinned`/`manual` (the section editor's two names for the same
@@ -46,7 +47,12 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
     if (demoProducts) return;
     const { source, limit: limitSetting } = section.settings;
     const limit = Math.min(24, Math.max(1, limitSetting ?? 8));
-    const request = source === 'pinned' || source === 'manual'
+    const pickedIds: string[] = Array.isArray(section.settings.productIds) ? section.settings.productIds : [];
+    const request = (source === 'manual' || source === 'pinned') && pickedIds.length > 0
+      // Hand-picked in this section: exactly these products, in this order.
+      ? apiGetPublicStoreProducts(store.storeId, { ids: pickedIds.slice(0, 50), limit: Math.min(50, pickedIds.length) })
+          .then(res => (res.data?.products ?? []).slice(0, limit))
+      : source === 'pinned' || source === 'manual'
       // The seller's real pin list, in the seller's chosen order — this
       // endpoint has no `limit` param of its own (a pin list is already
       // small/deliberate), so the section's own limit is applied here.
@@ -63,7 +69,7 @@ function FeaturedProductsSection({ section, colors }: { section: Section; colors
         {section.settings.heading && (
           <div className="flex items-end gap-5 mb-9">
             <div className="shrink-0">
-              <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: colors.accent, marginBottom: '8px' }}>The considered edit</p>
+              {showEyebrow(section.settings) && (<p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: colors.accent, marginBottom: '8px' }}>{copyText(section.settings, 'eyebrow', 'The considered edit')}</p>)}
               <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 500, color: colors.ink, lineHeight: 1.05 }}>
                 {section.settings.heading}
               </h2>

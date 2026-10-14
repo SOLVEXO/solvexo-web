@@ -5,6 +5,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { NovaButton } from '../components/NovaButton';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
+import { copyText } from '../../sectionCopy';
 
 function timeLeft(targetIso?: string) {
   if (!targetIso) return null;
@@ -60,7 +61,7 @@ function DropCountdownSection({ section, colors }: { section: Section; colors: N
           </p>
         )}
         {now.done ? (
-          <p style={{ fontFamily: t.fonts.display, fontSize: '22px', color: '#FFFFFF' }}>Dropped!</p>
+          <p style={{ fontFamily: t.fonts.display, fontSize: '22px', color: '#FFFFFF' }}>{copyText(section.settings, 'endedText', 'Dropped!')}</p>
         ) : (
           <div className="flex items-center gap-6 sm:gap-10">
             <CountdownUnit value={now.days} label="Days" />

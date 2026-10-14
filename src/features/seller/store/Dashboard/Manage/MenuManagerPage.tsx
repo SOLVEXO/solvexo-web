@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Menu as MenuIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { Button, Modal, Field, Toggle, EmptyState } from '@/components/comman/ui';
+import { Button, Modal, Field, Toggle, EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { useToast } from '@/contexts/ToastContext';
 import { LinkTargetFields, type LinkTarget } from '@/features/seller/store/Dashboard/OnlineStore/builder/LinkTargetFields';
 import { SortableList } from '@/features/seller/store/Dashboard/OnlineStore/builder/Sortable';
 import { MenuStyleField, MenuImageField } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtraFields';
@@ -183,9 +184,15 @@ export function MenuManagerPage() {
   const [pageOptions, setPageOptions] = useState<{ slug: string; title: string }[]>([]);
   const [editing, setEditing] = useState<Menu | null | 'new'>(null);
   const [deleting, setDeleting] = useState<Menu | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const toast = useToast();
 
   const load = useCallback(() => {
-    apiListMenus(storeId).then(res => setMenus(res.data)).catch(() => setMenus([]));
+    setLoadError('');
+    apiListMenus(storeId)
+      .then(res => setMenus(res.data))
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Could not load your menus.'));
   }, [storeId]);
 
   useEffect(() => { load(); }, [load]);
@@ -195,16 +202,24 @@ export function MenuManagerPage() {
 
   const handleDelete = async () => {
     if (!deleting) return;
-    await apiDeleteMenu(storeId, deleting._id);
-    setDeleting(null);
-    load();
+    setDeletingBusy(true);
+    try {
+      await apiDeleteMenu(storeId, deleting._id);
+      setDeleting(null);
+      toast.success('Menu deleted.');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete this menu.');
+    } finally {
+      setDeletingBusy(false);
+    }
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <>
       <StorePageHeader
         title="Menus"
-        subtitle="Build reusable navigation menus, then attach one to your storefront's header."
+        subtitle="Build reusable navigation menus, then attach one to your storefront's header or footer."
         actions={(
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setEditing('new')}>
             New Menu
@@ -212,11 +227,19 @@ export function MenuManagerPage() {
         )}
       />
 
-      {menus === null ? null : menus.length === 0 ? (
+      <div className="px-4 md:px-7 py-5">
+      {loadError ? (
+        <div role="alert" className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="text-[13px] text-slate">{loadError}</p>
+          <Button onClick={load}>Retry</Button>
+        </div>
+      ) : menus === null ? (
+        <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={52} rounded="10px" />)}</div>
+      ) : menus.length === 0 ? (
         <EmptyState
           icon={<MenuIcon size={28} />}
           title="No menus yet"
-          description="Create one, then attach it to your header from the Header tab in Themes → Customize."
+          description="Create one, then attach it to your header or footer in Themes → Header & Footer."
           action={{ label: 'New Menu', icon: <Plus size={14} />, onClick: () => setEditing('new') }}
         />
       ) : (
@@ -237,6 +260,7 @@ export function MenuManagerPage() {
           ))}
         </div>
       )}
+      </div>
 
       {editing && (
         <MenuEditorModal
@@ -255,10 +279,10 @@ export function MenuManagerPage() {
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            <Button variant="danger" onClick={handleDelete} loading={deletingBusy}>Delete</Button>
           </div>
         </Modal>
       )}
-    </div>
+    </>
   );
 }

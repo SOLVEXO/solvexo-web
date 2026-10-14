@@ -4,6 +4,8 @@ import type { Section, Block } from '@/api/services/storefrontTypes';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 import { PreviewBlock } from '../../previewInspector';
+import { copyText, showEyebrow } from '../../sectionCopy';
+import { useStoreFaqBlocks } from '../../useStoreFaqBlocks';
 
 function FaqRow({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   const [open, setOpen] = useState(false);
@@ -28,13 +30,18 @@ function FaqRow({ block, colors }: { block: Block; colors: NovaSectionColors }) 
   );
 }
 
-registerNovaSection('faq', (section: Section, blocks: Block[], colors: NovaSectionColors) => {
+/** Questions come from the section's own blocks, or (source "store") from
+ *  Online Store → FAQs — the same list the /faqs page shows. */
+function FaqSection({ section, blocks: sectionBlocks, colors }: { section: Section; blocks: Block[]; colors: NovaSectionColors }) {
+  const fromStore = section.settings.source === 'store';
+  const storeBlocks = useStoreFaqBlocks(fromStore);
+  const blocks = fromStore ? storeBlocks : sectionBlocks;
   if (blocks.length === 0) return null;
   return (
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}`, background: colors.bgAlt }}>
       <div className="mx-auto" style={{ maxWidth: '900px' }}>
         <div className="text-center mb-8">
-          <span style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '7px 13px', marginBottom: '14px' }}>Quick answers</span>
+          {showEyebrow(section.settings) && (<span style={{ display: 'inline-block', fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.colors.accent, background: colors.bg, borderRadius: '9999px', padding: '7px 13px', marginBottom: '14px' }}>{copyText(section.settings, 'eyebrow', 'Quick answers')}</span>)}
           {section.settings.heading && (
             <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 44px)', fontWeight: 700, color: colors.ink, lineHeight: 1.05 }}>
               {section.settings.heading}
@@ -42,9 +49,13 @@ registerNovaSection('faq', (section: Section, blocks: Block[], colors: NovaSecti
           )}
         </div>
         <div style={{ background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: t.radius.md, padding: '8px clamp(18px, 4vw, 36px)' }}>
-          {blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
+          {blocks.map((b, i) => fromStore
+            ? <FaqRow key={b._id ?? i} block={b} colors={colors} />
+            : <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><FaqRow block={b} colors={colors} /></PreviewBlock>)}
         </div>
       </div>
     </div>
   );
-});
+}
+
+registerNovaSection('faq', (section: Section, blocks: Block[], colors: NovaSectionColors) => <FaqSection section={section} blocks={blocks} colors={colors} />);

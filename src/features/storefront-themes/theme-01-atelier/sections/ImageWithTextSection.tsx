@@ -8,6 +8,7 @@ import { registerAtelierSection } from './atelierSectionRenderer';
 import { renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
 import { imageFit } from '../../imageFit';
+import { copyText, showEyebrow } from '../../sectionCopy';
 
 function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors }) {
   const { resolveLink } = useStorefront();
@@ -23,7 +24,7 @@ function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors })
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} onError={() => setErrored(true)} style={fit.img} />}
       </div>
       <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'} style={{ borderLeft: `1px solid ${colors.accent}`, paddingLeft: 'clamp(20px, 4vw, 48px)' }}>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '14px' }}>A closer look</p>
+        {showEyebrow(s) && (<p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.accent, marginBottom: '14px' }}>{copyText(s, 'eyebrow', 'A closer look')}</p>)}
         {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 500, color: colors.ink, lineHeight: 1.08, marginBottom: '20px' }}>{s.heading}</h2>}
         {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: colors.inkMuted, lineHeight: 1.85, maxWidth: '520px', marginBottom: '28px' }}>{renderRichText(s.body)}</p>}
         {s.ctaText && link && (
@@ -35,6 +36,8 @@ function Pair({ block, colors }: { block: Block; colors: AtelierSectionColors })
   );
 }
 
-registerAtelierSection('image_with_text', (_section: Section, blocks: Block[], colors: AtelierSectionColors) => (
-  <>{blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><Pair block={b} colors={colors} /></PreviewBlock>)}</>
+registerAtelierSection('image_with_text', (section: Section, blocks: Block[], colors: AtelierSectionColors) => (
+  <>{section.settings.heading && (
+    <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: colors.ink, textAlign: 'center', padding: `${t.layout.sectionPadY} ${t.layout.containerPadX} 0` }}>{section.settings.heading}</h2>
+  )}{blocks.map((b, i) => <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><Pair block={b} colors={colors} /></PreviewBlock>)}</>
 ));

@@ -7,6 +7,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 import { imageFit } from '../../imageFit';
+import { copyText } from '../../sectionCopy';
 
 /** Latest posts from the store's default blog — same card look as the Journal index. */
 function BlogPostsSection({ section, colors }: { section: Section; colors: AtelierSectionColors }) {
@@ -32,7 +33,7 @@ function BlogPostsSection({ section, colors }: { section: Section; colors: Ateli
           {section.settings.heading && (
             <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: colors.ink }}>{section.settings.heading}</h2>
           )}
-          <Link to="/blog" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.ink, textDecoration: 'underline' }}>View all</Link>
+          <Link to="/blog" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: colors.ink, textDecoration: 'underline' }}>{copyText(section.settings, 'viewAllLabel', 'View all')}</Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
           {posts.map(post => (

@@ -23,7 +23,8 @@ import {
 } from '@/api/services/storeBlog';
 import { apiListAppCatalog, type AppCatalogEntry } from '@/api/services/apps';
 import { apiGetPublicMetafieldValues, type MetafieldOwnerResource } from '@/api/services/metafields';
-import { apiGetStoreInventory } from '@/api/services/product';
+import { apiGetStoreInventory, apiGetMyProductById } from '@/api/services/product';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 import { apiListCollections } from '@/api/services/collections';
 import type { Section, SectionType, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import type { VersionRow } from '../builder/VersionHistoryModal';
@@ -33,6 +34,13 @@ import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { AtelierLivePreview } from './AtelierLivePreview';
 import { AtelierThemeSettingsPanel } from './AtelierThemeSettingsPanel';
+import { useHeaderFooterDraft } from './useHeaderFooterDraft';
+import { HeaderEditor, FooterEditor } from './HeaderFooterEditors';
+import { AnnouncementForm } from './AnnouncementForm';
+import { DEFAULT_ANNOUNCEMENT } from './announcementDefaults';
+import { ChromeGroupCard } from './ChromeGroupCard';
+import type { PreviewChromePart } from './AtelierLivePreview';
+import { PanelTop, PanelBottom, Megaphone } from 'lucide-react';
 import { apiGetStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
@@ -112,7 +120,7 @@ function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: b
 const isDraftConflict = (err: unknown) => (err as { status?: number; apiCode?: string })?.status === 409 && (err as { apiCode?: string }).apiCode === 'DRAFT_CONFLICT';
 
 export function AtelierCustomizePage() {
-  const { storeId, loading: storeLoading } = useStoreWorkspace();
+  const { storeId, loading: storeLoading, store: workspaceStore, refetch: refetchStore } = useStoreWorkspace();
   const toast = useToast();
   const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
   const [draftConflict, setDraftConflict] = useState(false);
@@ -122,6 +130,14 @@ export function AtelierCustomizePage() {
   // on the selected theme, never silently on whatever's currently active.
   const themeInstance = useResolvedThemeInstance(storeId);
   const installedThemeId = themeInstance.status === 'ready' ? themeInstance.installedThemeId : undefined;
+
+  // Header group (announcement bar + header) and Footer group — edited right
+  // here, Shopify-style, on every template. Their draft is the theme's own.
+  const hf = useHeaderFooterDraft({ storeId, installedThemeId, ready: themeInstance.status === 'ready', store: workspaceStore, refetchStore });
+  const [selectedChrome, setSelectedChrome] = useState<PreviewChromePart | null>(null);
+  const [hoverSectionId, setHoverSectionId] = useState<string | null>(null);
+  // Phones/tablets: one pane at a time (settings or preview), like Shopify's mobile editor.
+  const [mobilePane, setMobilePane] = useState<'edit' | 'preview'>('edit');
 
   const [scope, setScope] = useState<string>('home');
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -179,8 +195,13 @@ export function AtelierCustomizePage() {
   const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   const editor = useEditorState<Section[]>();
-  useThemeEditorUnsavedChanges(scope === 'theme' ? themeSettingsDirty : editor.dirty);
-  useUndoRedoShortcuts(editor.undo, editor.redo, true);
+  const chromeDirty = hf.editor.dirty || hf.announcementDirty;
+  useThemeEditorUnsavedChanges(scope === 'theme' ? themeSettingsDirty || chromeDirty : editor.dirty || chromeDirty);
+  // Undo/redo follow whichever group is open: header/footer or the template.
+  const chromeEditing = selectedChrome === 'header' || selectedChrome === 'footer';
+  const undoActive = chromeEditing ? hf.editor.undo : editor.undo;
+  const redoActive = chromeEditing ? hf.editor.redo : editor.redo;
+  useUndoRedoShortcuts(undoActive, redoActive, true);
 
   // `draftTheme` (fetched below) carries the store's real `themeDefinitionId`
   // once loaded; before that (or if it's ever null) `getThemeManifest` falls
@@ -213,6 +234,36 @@ export function AtelierCustomizePage() {
   // enough to tell these two scopes apart from every other one.
   const needsProductPicker = config?.resourceType === 'product';
   const needsCollectionPicker = config?.resourceType === 'collection';
+
+  // Product template preview: the picked product's real name, price, image
+  // and description instead of sample copy (Shopify previews a real product).
+  const [previewProduct, setPreviewProduct] = useState<CoreSectionPreviewContext['product'] | null>(null);
+  useEffect(() => {
+    if (!needsProductPicker || !selectedProductId) { setPreviewProduct(null); return; }
+    let cancelled = false;
+    apiGetMyProductById(selectedProductId)
+      .then(res => {
+        if (cancelled) return;
+        const { product, variants, defaultVariant } = res.data;
+        const v = defaultVariant ?? variants?.[0] ?? null;
+        // Same formatter the storefront's product cards use.
+        const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)}${fmt2(n)}`);
+        const optionValues = Array.from(new Set((variants ?? []).flatMap(x => (x.options ?? []).map(o => String(o.value))))).slice(0, 8);
+        setPreviewProduct({
+          name: product.name,
+          price: fmt(v?.price),
+          compareAtPrice: v?.compareAtPrice && v.price != null && v.compareAtPrice > v.price ? fmt(v.compareAtPrice) : undefined,
+          image: product.images?.[0] ?? v?.images?.[0],
+          description: product.description,
+          sku: v?.sku,
+          optionValues,
+          rating: (product as { averageRating?: number }).averageRating,
+          reviewCount: (product as { totalRatings?: number }).totalRatings,
+        });
+      })
+      .catch(() => { if (!cancelled) setPreviewProduct(null); });
+    return () => { cancelled = true; };
+  }, [needsProductPicker, selectedProductId]);
   const pagesEmpty = isCustomPageScope && customPages.length === 0;
   const blogsEmpty = needsBlogPicker && blogs.length === 0;
   const articlesEmpty = needsArticlePicker && posts.length === 0;
@@ -238,21 +289,35 @@ export function AtelierCustomizePage() {
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const selectPreviewSection = (sectionId: string) => {
+    setMobilePane('edit');
+    setSelectedChrome(null);
     setSelectedSectionId(sectionId);
     setSelectedBlockId(null);
   };
   const selectPreviewBlock = (sectionId: string, blockId: string) => {
+    setMobilePane('edit');
+    setSelectedChrome(null);
     setSelectedSectionId(sectionId);
     setSelectedBlockId(blockId);
   };
+  const selectChrome = (part: PreviewChromePart | null) => {
+    if (part) setMobilePane('edit');
+    setSelectedChrome(part);
+    setSelectedSectionId(null);
+    setSelectedBlockId(null);
+  };
   useEffect(() => { setSelectedSectionId(null); setSelectedBlockId(null); }, [scope, templateKey]);
 
+  const onThemeScope = scope === 'theme';
   useEffect(() => {
     if (themeInstance.status !== 'ready') return;
     let cancelled = false;
+    // Re-read after leaving Theme settings so palettes/colours saved there
+    // show up in the section Color scheme selects right away.
+    if (onThemeScope) return;
     apiGetStoreTheme(storeId, themeInstance.installedThemeId).then(res => { if (!cancelled) setDraftTheme(res.data); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [storeId, themeInstance.status, installedThemeId]);
+  }, [storeId, themeInstance.status, installedThemeId, onThemeScope]);
 
   // Phase 8 — this store's real installed apps (+ every catalog app's
   // block definitions, needed to render an installed one's settings form),
@@ -412,7 +477,8 @@ export function AtelierCustomizePage() {
     }
   }, [scope, currentStorePage?._id, activeTemplate?._id, activeTemplate?.templateKey, loadEditor]);
 
-  const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding;
+  const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding
+    || hf.editor.phase === 'saving' || hf.editor.phase === 'publishing' || hf.discarding;
 
   // After switching the alternate template, the editor still holds the OLD
   // template's sections until the new one is fetched — saving in that window
@@ -441,6 +507,15 @@ export function AtelierCustomizePage() {
   const handleSave = async () => {
     if (!editor.workingCopy) return;
     if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
+    // Header/footer are their own (theme) draft — saved on their own so a
+    // template save problem never loses them.
+    if (hf.editor.dirty) {
+      try { await hf.save(); } catch (err) { flash(false, err instanceof Error ? err.message : 'Failed to save the header/footer.'); return; }
+    }
+    if (!editor.dirty) {
+      flash(true, hf.announcementDirty ? 'Draft saved. Your announcement bar changes go live when you Publish.' : 'Draft saved — Publish to make it live.');
+      return;
+    }
     editor.markSaving();
     try {
       if (isStorePage) {
@@ -453,7 +528,9 @@ export function AtelierCustomizePage() {
         setActiveTemplate(res.data);
         editor.markSaved(res.data.draft.sections);
       }
-      flash(true, 'Draft saved — Publish to make it live.');
+      flash(true, hf.announcementDirty
+        ? 'Draft saved. Your announcement bar changes go live when you Publish.'
+        : 'Draft saved — Publish to make it live.');
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
       if (isDraftConflict(err)) { setDraftConflict(true); return; }
@@ -518,6 +595,10 @@ export function AtelierCustomizePage() {
         setActiveTemplate(res.data);
         editor.markPublished(res.data.sections);
       }
+      // One Publish, like Shopify: header/footer (theme draft) and the
+      // announcement bar go live together with the template.
+      if (hf.editor.dirty || hf.editor.hasUnpublishedChanges) await hf.publish();
+      if (hf.announcementDirty) await hf.saveAnnouncement();
       flash(true, 'Published — your storefront is now live with these changes.');
     } catch (err) {
       editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
@@ -539,6 +620,8 @@ export function AtelierCustomizePage() {
         setActiveTemplate(res.data);
         editor.discardDraft(res.data.draft.sections);
       }
+      if (hf.editor.hasUnpublishedChanges || hf.editor.dirty) await hf.discard();
+      hf.resetAnnouncement();
       flash(true, 'Draft discarded — reverted to your published version.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to discard draft.');
@@ -619,7 +702,16 @@ export function AtelierCustomizePage() {
     }
   };
 
-  const pageOptions = useMemo(() => [{ slug: '', title: 'Home' }], []);
+  // Link pickers ("A page…") list Home + every custom page, whatever scope is
+  // open — `pages` above is only loaded on the Pages scope.
+  const [linkPages, setLinkPages] = useState<StorePageData[]>([]);
+  useEffect(() => {
+    apiListStorePages(storeId, installedThemeId).then(res => setLinkPages(res.data)).catch(() => setLinkPages([]));
+  }, [storeId, installedThemeId]);
+  const pageOptions = useMemo(() => [
+    { slug: '', title: 'Home' },
+    ...(pages.length ? pages : linkPages).filter(p => p.type === 'custom').map(p => ({ slug: p.slug, title: p.title })),
+  ], [pages, linkPages]);
 
   if (storeLoading || themeInstance.status === 'loading' || loading) {
     return (
@@ -657,7 +749,43 @@ export function AtelierCustomizePage() {
     if (config?.previewPicker) loadBlogsAndPosts();
     if (config) loadResourceTemplates(config.resourceType, templateKey, config.allowAltTemplates);
   };
-  const effectiveDraftTheme = scope === 'theme' && themeScopePreview ? themeScopePreview : draftTheme;
+  const baseDraftTheme = scope === 'theme' && themeScopePreview ? themeScopePreview : draftTheme;
+  // The preview always shows the CURRENT header/footer edits too.
+  const effectiveDraftTheme: StoreThemeData | null = baseDraftTheme && hf.headerDraft && hf.footerDraft
+    ? { ...baseDraftTheme, draft: { ...baseDraftTheme.draft, header: hf.headerDraft, footer: hf.footerDraft } }
+    : baseDraftTheme;
+  // Theme settings preview shows the real home page, not an empty body.
+  const homeSource = (pages.length ? pages : linkPages).find(p => p.type === 'home');
+  const homeDraftSections: Section[] = homeSource?.draft?.sections ?? homeSource?.sections ?? [];
+  const chromeError = (msg: string) => flash(false, msg);
+  const anyDirty = editor.dirty || chromeDirty;
+  const anyUnpublished = editor.hasUnpublishedChanges || hf.editor.hasUnpublishedChanges || hf.announcementDirty;
+  const toggleChrome = (part: PreviewChromePart) => selectChrome(selectedChrome === part ? null : part);
+  const chromeGroup = (part: PreviewChromePart) => {
+    if (part === 'announcement') {
+      if (!manifest.supportsAnnouncementBar) return null;
+      return (
+        <ChromeGroupCard title="Announcement bar" subtitle={hf.announcementForm?.isActive ? (hf.announcementForm.message || 'On') : 'Off'}
+          icon={<Megaphone size={15} />} open={selectedChrome === 'announcement'} onToggle={() => toggleChrome('announcement')}>
+          <p className="text-[11.5px] text-slate mb-3">Shown on every page. Changes go live when you Publish.</p>
+          <AnnouncementForm value={hf.announcementForm ?? DEFAULT_ANNOUNCEMENT} onChange={hf.setAnnouncementForm} />
+        </ChromeGroupCard>
+      );
+    }
+    const isHeader = part === 'header';
+    return (
+      <ChromeGroupCard title={isHeader ? 'Header' : 'Footer'}
+        subtitle={isHeader ? 'Logo, menu, icons and layout' : 'Columns, newsletter, social and copyright'}
+        icon={isHeader ? <PanelTop size={15} /> : <PanelBottom size={15} />}
+        open={selectedChrome === part} onToggle={() => toggleChrome(part)}>
+        {hf.loadError
+          ? <ChromeLoadError message={hf.loadError} onRetry={hf.reload} />
+          : hf.loading || !hf.headerDraft
+            ? <SkeletonBox height={120} rounded="10px" />
+            : isHeader ? <HeaderEditor hf={hf} storeId={storeId} onError={chromeError} /> : <FooterEditor hf={hf} storeId={storeId} onError={chromeError} />}
+      </ChromeGroupCard>
+    );
+  };
   // The preview PANEL's own background — resolved against the real active
   // theme (not hardcoded to Atelier) so the frame around the embedded
   // storefront preview matches whichever theme is actually being edited,
@@ -686,7 +814,9 @@ export function AtelierCustomizePage() {
       })()
     : needsArticlePicker && selectedArticleDetail
       ? { articleTitle: selectedArticleDetail.title, articleExcerpt: selectedArticleDetail.excerpt }
-      : undefined;
+      : needsProductPicker && previewProduct
+        ? { product: previewProduct }
+        : undefined;
 
   return (
     <div className="bg-[#FAF9F5] min-h-full">
@@ -794,8 +924,8 @@ export function AtelierCustomizePage() {
                  the `editor` instance below. */}
               {scope !== 'theme' && (
                 <>
-                  <button onClick={editor.undo} disabled={!editor.canUndo} title="Undo" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Undo2 size={15} /></button>
-                  <button onClick={editor.redo} disabled={!editor.canRedo} title="Redo" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Redo2 size={15} /></button>
+                  <button onClick={undoActive} disabled={!(chromeEditing ? hf.editor.canUndo : editor.canUndo)} title="Undo" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Undo2 size={15} /></button>
+                  <button onClick={redoActive} disabled={!(chromeEditing ? hf.editor.canRedo : editor.canRedo)} title="Redo" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Redo2 size={15} /></button>
                   <button onClick={openVersions} title="Version History" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal cursor-pointer"><History size={15} /></button>
                 </>
               )}
@@ -806,14 +936,14 @@ export function AtelierCustomizePage() {
                 <span
                   role="status"
                   aria-live="polite"
-                  className={`hidden sm:inline text-[11.5px] ${editor.phase === 'error' ? 'text-error' : editor.dirty ? 'text-amber-700' : 'text-slate'}`}
+                  className={`hidden sm:inline text-[11.5px] ${editor.phase === 'error' ? 'text-error' : anyDirty ? 'text-amber-700' : 'text-slate'}`}
                 >
-                  {editor.phase === 'dirty' ? 'Unsaved changes' :
+                  {editor.phase === 'dirty' || (anyDirty && editor.phase !== 'saving' && editor.phase !== 'error') ? 'Unsaved changes' :
                     editor.phase === 'saving' ? 'Saving draft…' :
                       editor.phase === 'error' ? (editor.errorMessage ?? 'Save failed') :
                         editor.phase === 'published' ? 'Published' : 'Draft saved'}
                 </span>
-                {editor.hasUnpublishedChanges && (
+                {anyUnpublished && (
                   <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
                     <RotateCcw size={13} /> Discard Draft
                   </button>
@@ -826,13 +956,26 @@ export function AtelierCustomizePage() {
         }
       </EditorTopBar>
 
+      {!resourceLoadError && !emptyResourceState && !docMissing && (
+        <div className="lg:hidden sticky top-0 z-10 flex gap-1 px-4 pt-3 pb-2 bg-[#FAF9F5]" role="tablist" aria-label="Editor panes">
+          {(['edit', 'preview'] as const).map(p => (
+            <button key={p} type="button" role="tab" aria-selected={mobilePane === p} onClick={() => setMobilePane(p)}
+              className="flex-1 py-2 rounded-lg text-[13px] font-semibold border cursor-pointer"
+              style={{ background: mobilePane === p ? '#161412' : '#fff', color: mobilePane === p ? '#fff' : '#161412', borderColor: mobilePane === p ? '#161412' : '#E4DFD3' }}>
+              {p === 'edit' ? (scope === 'theme' ? 'Settings' : 'Sections') : 'Preview'}
+            </button>
+          ))}
+        </div>
+      )}
       {scope === 'theme' ? (
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5 px-4 lg:px-7 py-5 items-start">
+          <div className={mobilePane === 'preview' ? 'hidden lg:block' : ''}>
           <AtelierThemeSettingsPanel storeId={storeId} installedThemeId={installedThemeId} onDraftChange={setThemeScopePreview} onDirtyChange={setThemeSettingsDirty} />
-          <div className="border border-bone rounded-2xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 220px)' }}>
+          </div>
+          <div className={`border border-bone rounded-2xl bg-white overflow-hidden ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
               <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
-                <AtelierLivePreview sections={[]} showChrome draftTheme={effectiveDraftTheme} />
+                <AtelierLivePreview sections={homeDraftSections} showChrome draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
               </div>
             </div>
           </div>
@@ -876,9 +1019,13 @@ export function AtelierCustomizePage() {
         <div className="p-10 text-center"><p className="text-[14px] text-slate">Couldn't load this template.</p></div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 px-4 lg:px-7 py-5">
-          <div className="flex flex-col gap-3">
-            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1">Sections</p>
+          <div className={`flex flex-col gap-3 ${mobilePane === 'preview' ? 'hidden lg:flex' : ''}`}>
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1">Header</p>
+            {chromeGroup('announcement')}
+            {chromeGroup('header')}
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1 mt-2">Template — {scopeLabel(scope)}</p>
             <PageSectionsEditor
+              onHoverSection={setHoverSectionId}
               sections={editor.workingCopy ?? []}
               onChange={editor.edit}
               onPersist={handlePersist}
@@ -889,14 +1036,16 @@ export function AtelierCustomizePage() {
               onSelectSection={selectPreviewSection}
               onSelectBlock={selectPreviewBlock}
               supportedSectionTypes={effectiveSupportedSectionTypes}
-              colorSchemes={draftTheme?.theme.colorSchemes ?? []}
+              colorSchemes={draftTheme?.draft?.theme?.colorSchemes ?? draftTheme?.theme.colorSchemes ?? []}
               helperText={SCOPE_HELPER_TEXT[scope]}
               installedApps={installedApps}
               ownerResource={dynamicSourceOwnerResource}
             />
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1 mt-2">Footer</p>
+            {chromeGroup('footer')}
           </div>
 
-          <div className="border border-bone rounded-2xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 220px)' }}>
+          <div className={`border border-bone rounded-2xl bg-white overflow-hidden ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
               <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                 <AtelierLivePreview
@@ -911,6 +1060,10 @@ export function AtelierCustomizePage() {
                   previewContext={previewContext}
                   dynamicSourceValues={dynamicSourceValues}
                   previewCollectionId={needsCollectionPicker ? selectedCollectionId : null}
+                  announcementOverride={hf.announcementForm ?? undefined}
+                  selectedChrome={selectedChrome}
+                  onSelectChrome={selectChrome}
+                  hoverSectionId={hoverSectionId}
                 />
               </div>
             </div>
@@ -945,6 +1098,15 @@ export function AtelierCustomizePage() {
         onClose={() => setVersionsOpen(false)}
         onRestore={restoreVersion}
       />
+    </div>
+  );
+}
+
+function ChromeLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="flex flex-col items-start gap-2 py-2">
+      <p className="text-[12.5px] text-error m-0">{message}</p>
+      <button type="button" onClick={onRetry} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">Try again</button>
     </div>
   );
 }

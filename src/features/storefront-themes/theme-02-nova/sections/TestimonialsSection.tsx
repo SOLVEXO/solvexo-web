@@ -15,9 +15,12 @@ function TestimonialCard({ block, colors }: { block: Block; colors: NovaSectionC
         ))}
       </div>
       <p style={{ fontFamily: t.fonts.display, fontSize: '15.5px', color: colors.ink, lineHeight: 1.6, fontWeight: 600 }}>“{s.quote}”</p>
-      <div>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: colors.ink }}>{s.authorName}</p>
-        {s.authorRole && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted }}>{s.authorRole}</p>}
+      <div className="flex items-center gap-3">
+        {s.avatarUrl && <img src={s.avatarUrl} alt={s.authorName ?? ''} loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '9999px', objectFit: 'cover', flexShrink: 0 }} />}
+        <div>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: colors.ink }}>{s.authorName}</p>
+          {s.authorRole && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.inkMuted }}>{s.authorRole}</p>}
+        </div>
       </div>
     </div>
   );

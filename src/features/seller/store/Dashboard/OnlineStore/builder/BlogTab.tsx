@@ -13,6 +13,7 @@ import {
 import type { Block } from '@/api/services/storefrontTypes';
 import { BlogBlockEditor } from './BlogBlockEditor';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useToast } from '@/contexts/ToastContext';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[70px]`;
@@ -22,6 +23,7 @@ function slugify(title: string) {
 }
 
 export function BlogTab({ storeId }: { storeId: string }) {
+  const toast = useToast();
   const [blogs, setBlogs] = useState<BlogData[]>([]);
   const [activeBlogId, setActiveBlogId] = useState<string | null>(null);
   const [showBlogPicker, setShowBlogPicker] = useState(false);
@@ -49,13 +51,18 @@ export function BlogTab({ storeId }: { storeId: string }) {
     apiListBlogs(storeId).then(res => {
       setBlogs(res.data);
       setActiveBlogId(prev => prev ?? res.data[0]?._id ?? null);
-    });
+    }).catch(err => toast.error(err instanceof Error ? err.message : 'Could not load your blogs. Refresh to try again.'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const load = useCallback(() => {
     if (!activeBlogId) { setLoading(false); return; }
     setLoading(true);
-    apiListBlogPosts(storeId, activeBlogId).then(res => setPosts(res.data)).finally(() => setLoading(false));
+    apiListBlogPosts(storeId, activeBlogId)
+      .then(res => setPosts(res.data))
+      .catch(err => toast.error(err instanceof Error ? err.message : 'Could not load posts. Refresh to try again.'))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, activeBlogId]);
 
   useEffect(() => { load(); }, [load]);
@@ -71,6 +78,8 @@ export function BlogTab({ storeId }: { storeId: string }) {
       setActiveBlogId(res.data._id);
       setShowNewBlog(false);
       setNewBlogTitle('');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not create the blog.');
     } finally {
       setCreatingBlog(false);
     }
@@ -109,6 +118,9 @@ export function BlogTab({ storeId }: { storeId: string }) {
       setPosts(prev => prev.filter(p => p._id !== pendingDeleteId));
       if (selectedId === pendingDeleteId) setSelectedId(null);
       setPendingDeleteId(null);
+      toast.success('Post deleted.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete this post.');
     } finally {
       setDeletingPost(false);
     }
@@ -190,7 +202,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
           <div className="flex items-center justify-between gap-2 px-3 py-2 mb-1 rounded-lg border border-bone bg-cream/60">
             <span className="text-[11.5px] text-charcoal">Allow comments</span>
             <Toggle checked={activeBlog.commentsEnabled} ariaLabel="Allow comments on this blog" onChange={v => {
-              apiUpdateBlog(storeId, activeBlog._id, { commentsEnabled: v }).then(res => setBlogs(prev => prev.map(b => b._id === res.data._id ? res.data : b)));
+              apiUpdateBlog(storeId, activeBlog._id, { commentsEnabled: v }).then(res => setBlogs(prev => prev.map(b => b._id === res.data._id ? res.data : b))).catch(err => toast.error(err instanceof Error ? err.message : 'Could not update comments setting.'));
             }} />
           </div>
         )}
@@ -347,21 +359,42 @@ function CommentsModal({ storeId, onClose }: { storeId: string; onClose: () => v
   const [comments, setComments] = useState<BlogCommentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<BlogCommentStatus | 'all'>('pending');
+  const toast = useToast();
 
   const load = useCallback(() => {
     setLoading(true);
-    apiListBlogComments(storeId, statusFilter === 'all' ? undefined : statusFilter).then(res => setComments(res.data)).finally(() => setLoading(false));
+    apiListBlogComments(storeId, statusFilter === 'all' ? undefined : statusFilter)
+      .then(res => setComments(res.data))
+      .catch(err => toast.error(err instanceof Error ? err.message : 'Could not load comments.'))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, statusFilter]);
 
   useEffect(() => { load(); }, [load]);
 
   const moderate = async (id: string, status: BlogCommentStatus) => {
-    await apiModerateBlogComment(storeId, id, status);
-    load();
+    try {
+      await apiModerateBlogComment(storeId, id, status);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update this comment.');
+    }
   };
-  const remove = async (id: string) => {
-    await apiDeleteBlogComment(storeId, id);
-    load();
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const remove = (id: string) => setPendingRemoveId(id);
+  const confirmRemove = async () => {
+    if (!pendingRemoveId) return;
+    setRemoving(true);
+    try {
+      await apiDeleteBlogComment(storeId, pendingRemoveId);
+      setPendingRemoveId(null);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete this comment.');
+    } finally {
+      setRemoving(false);
+    }
   };
 
   return (
@@ -398,6 +431,9 @@ function CommentsModal({ storeId, onClose }: { storeId: string; onClose: () => v
           </div>
         ))}
       </div>
+      {pendingRemoveId && (
+        <ConfirmDialog title="Delete this comment?" message="The comment is removed from your blog. This cannot be undone." onConfirm={confirmRemove} onCancel={() => setPendingRemoveId(null)} loading={removing} />
+      )}
     </Modal>
   );
 }

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Section, Block, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { resolveSectionColors, type NovaSectionColors } from '../theme.config';
+import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 
 /** Third argument is this section's resolved color palette; fourth is the
@@ -69,13 +70,22 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
   if (!selectable) {
     return (
       <>
+        <style>{SECTION_SPACING_CSS}</style>
         {sections.map((section, i) => {
           if (section.enabled === false) return null;
           const render = getNovaSectionRender(section.type);
           if (!render) return null;
           const blocks = (section.blocks ?? []).map((block, index) => block._id ? block : { ...block, _id: String(index) }).filter(b => b.enabled !== false);
           const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
-          return <div key={section._id ?? i} style={{ background: colors.bg, paddingTop: section.settings?.spacingTop, paddingBottom: section.settings?.spacingBottom }}>{render(section, blocks, colors, dynamicValues, previewContext)}</div>;
+          const spacing = sectionSpacing(section.settings);
+          const scopeKey = String(section._id ?? i);
+          const scopedCss = sectionScopedCss(section.settings, scopeKey);
+          return (
+            <div key={section._id ?? i} id={sectionAnchorId(section.settings)} data-sx={scopeKey} className={spacing.className || undefined} style={{ backgroundColor: colors.bg, ...spacing.style }}>
+              {scopedCss && <style>{scopedCss}</style>}
+              {render(section, blocks, colors, dynamicValues, previewContext)}
+            </div>
+          );
         })}
       </>
     );
@@ -90,6 +100,7 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
         .theme-editor-block-target{outline:1px dashed transparent;outline-offset:2px;cursor:pointer;}
         .theme-editor-block-target:hover{outline-color:rgba(75,59,255,0.72);}
         .theme-editor-block-selected{outline:2px solid #4B3BFF;outline-offset:2px;cursor:pointer;}
+        ${SECTION_SPACING_CSS}
       `}</style>
       {sections.map((section, i) => {
         if (section.enabled === false) return null;
@@ -103,8 +114,10 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
           <div
             key={section._id ?? i}
             data-nova-section-id={sectionId}
-            className={isSelected ? 'nova-section-selected' : 'nova-section-selectable'}
-            style={{ background: colors.bg, paddingTop: section.settings?.spacingTop, paddingBottom: section.settings?.spacingBottom }}
+            id={sectionAnchorId(section.settings)}
+            data-sx={sectionId}
+            className={`${isSelected ? 'nova-section-selected' : 'nova-section-selectable'} ${sectionSpacing(section.settings).className}`}
+            style={{ backgroundColor: colors.bg, ...sectionSpacing(section.settings).style }}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
@@ -113,6 +126,7 @@ export function NovaSectionRenderer({ sections, selectable, selectedSectionId, o
               else onSelectSection?.(sectionId);
             }}
           >
+            {sectionScopedCss(section.settings, sectionId) && <style>{sectionScopedCss(section.settings, sectionId)}</style>}
             <PreviewInspectorProvider value={{ sectionId, selectedBlockId: selectedSectionId === sectionId ? selectedBlockId : null, onSelectBlock }}>
               {render(section, blocks, colors, dynamicValues, previewContext)}
             </PreviewInspectorProvider>

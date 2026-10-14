@@ -308,8 +308,10 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, selectedBlockId, onSelectSection, onSelectBlock, supportedSectionTypes, colorSchemes = [], helperText, installedApps, ownerResource }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, selectedBlockId, onSelectSection, onSelectBlock, supportedSectionTypes, colorSchemes = [], helperText, installedApps, ownerResource, onHoverSection }: {
   sections: Section[];
+  /** Hovering a card outlines that section in the live preview (null on leave). */
+  onHoverSection?: (sectionId: string | null) => void;
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
    *  inside one is removed — saves immediately, so a confirmed removal can
@@ -375,7 +377,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
             <p className="text-[14px] font-bold text-charcoal">This page is empty</p>
             <p className="text-[12.5px] text-slate mt-1 max-w-[320px]">Add your first section — a hero banner, your products, or anything else — to start building this page.</p>
           </div>
-          <button onClick={() => setShowAdd(true)}
+          <button onClick={() => { setInsertAt(sections.length); setShowAdd(true); }}
             className="flex items-center gap-1.5 px-4 py-[9px] mt-1 text-[13px] font-bold rounded-[9px] border-none text-white cursor-pointer transition-colors"
             style={{ background: '#D97757' }}>
             <Plus size={14} /> Add Your First Section
@@ -389,6 +391,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
             items={sections}
             keyFor={(s, i) => s._id ?? `new-${i}`}
             onReorder={onChange}
+            isLocked={s => !!SECTION_META_BY_TYPE[s.type]?.locked}
             renderInsertion={index => index < sections.length ? (
               <button
                 type="button"
@@ -408,6 +411,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
               // click in the preview and a card here agree on "which section."
               const sectionId = String(section._id ?? i);
               return (
+                <div onMouseEnter={() => onHoverSection?.(sectionId)} onMouseLeave={() => onHoverSection?.(null)}>
                 <SectionCard
                   section={section}
                   sectionId={sectionId}
@@ -434,12 +438,13 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   installedApps={installedApps}
                   ownerResource={ownerResource}
                 />
+                </div>
               );
             }}
           </SortableList>
 
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => { setInsertAt(sections.length); setShowAdd(true); }}
             className="flex items-center justify-center gap-1.5 px-4 py-[10px] text-[13px] font-semibold rounded-[9px] border-2 border-dashed border-bone bg-transparent text-slate hover:border-brand-orange/40 hover:text-brand-orange cursor-pointer transition-colors"
           >
             <Plus size={14} /> Add Section
