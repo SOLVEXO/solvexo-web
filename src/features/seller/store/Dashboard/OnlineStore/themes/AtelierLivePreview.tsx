@@ -334,10 +334,11 @@ export function AtelierLivePreview({
   // preview never diverges from what a buyer actually sees.
   const announcementBar = announcementOverride !== undefined ? announcementOverride : store.announcementBar;
 
-  const previewAnnouncement = announcementBar?.message ? (
+  const firstMessage = announcementBar && !(announcementBar as { messageHidden?: boolean }).messageHidden ? announcementBar.message : null;
+  const previewAnnouncement = announcementBar && (firstMessage || announcementBar.moreMessages?.some(m => m.message && !m.hidden)) ? (
     <StoreAnnouncementBar
       storeId={store.storeId}
-      message={announcementBar.message}
+      message={firstMessage}
       type={announcementBar.type}
       ctaLabel={announcementBar.ctaLabel}
       ctaLink={announcementBar.ctaLink}

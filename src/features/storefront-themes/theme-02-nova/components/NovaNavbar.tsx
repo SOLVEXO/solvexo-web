@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, ChevronDown } from 'lucide-react';
 import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
@@ -15,7 +15,7 @@ import { novaTheme as t } from '../theme.config';
 import { buildNavImageLookup, isMegaItem, normalizeNavItems, useMegaNav } from '../../navigation/megaNav';
 import type { MobileNavTokens } from '../../navigation/MobileNavItem';
 import { MobileNavPanel } from '../../navigation/MobileNavPanel';
-import { readHeaderOptions, logoImageProps } from '../../navigation/headerOptions';
+import { mutedOf, readHeaderOptions, logoImageProps } from '../../navigation/headerOptions';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { NovaMegaPanel } from './NovaMegaPanel';
 
@@ -41,6 +41,7 @@ export function NovaNavbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const isLoggedIn = TokenStorage.isLoggedIn();
   const opts = readHeaderOptions(theme?.header, 'Stories');
+  const hc = { ink: opts.textColor ?? t.colors.ink, inkMuted: opts.textColor ? mutedOf(opts.textColor) : t.colors.inkMuted, bg: opts.bgColor ?? t.colors.bg };
   const centered = opts.headerStyle === 'centered';
   // A custom logo with nothing uploaded falls back to the store logo instead of showing only the name.
   const logoSrc = (theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : null) || store.logo;
@@ -86,7 +87,7 @@ export function NovaNavbar() {
   const megaNav = useMegaNav();
   const openMegaItem = visibleNavLinks.find(item => item.id === megaNav.openId && isMegaItem(item));
   const mobileNavTokens: MobileNavTokens = {
-    colors: { ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, bgAlt: t.colors.bgAlt, accent: t.colors.accent },
+    colors: { ink: hc.ink, inkMuted: hc.inkMuted, border: t.colors.border, bgAlt: t.colors.bgAlt, accent: t.colors.accent },
     fonts: { body: t.fonts.body },
     padX: t.layout.containerPadX,
     tileRadius: t.imageRadiusPx,
@@ -108,7 +109,7 @@ export function NovaNavbar() {
                   aria-haspopup={hasShopMenu ? 'true' : undefined}
                   aria-controls={hasShopMenu && shopOpen ? 'nova-shop-menu' : undefined}
                   className="no-underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
-                  style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: 0 }}
+                  style={{ color: hc.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600, padding: 0 }}
                 >
                   {opts.shopLabel} {hasShopMenu && <ChevronDown size={13} />}
                 </button>
@@ -122,14 +123,14 @@ export function NovaNavbar() {
                     style={{ top: '100%', background: '#FFFFFF', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px 26px', minWidth: '360px', boxShadow: '0 12px 32px rgba(20,18,31,0.10)' }}
                   >
                     <div className="flex flex-col gap-2.5">
-                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, fontWeight: 700 }}>Explore</p>
-                      <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink }}>All products</Link>
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: hc.inkMuted, fontWeight: 700 }}>Explore</p>
+                      <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: hc.ink }}>All products</Link>
                     </div>
                     {categories.length > 0 && (
                       <div className="flex flex-col gap-2.5">
-                        <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, fontWeight: 700 }}>Categories</p>
+                        <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: hc.inkMuted, fontWeight: 700 }}>Categories</p>
                         {categories.map(c => (
-                          <Link key={c._id} to={`/category/${c.slug || c._id}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink }}>
+                          <Link key={c._id} to={`/category/${c.slug || c._id}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: hc.ink }}>
                             {c.name}
                           </Link>
                         ))}
@@ -137,9 +138,9 @@ export function NovaNavbar() {
                     )}
                     {collections.length > 0 && (
                       <div className="flex flex-col gap-2.5">
-                        <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, fontWeight: 700 }}>Collections</p>
+                        <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: hc.inkMuted, fontWeight: 700 }}>Collections</p>
                         {collections.map(c => (
-                          <Link key={c._id} to={`/collections/${c.slug}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink }}>
+                          <Link key={c._id} to={`/collections/${c.slug}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: hc.ink }}>
                             {c.name}
                           </Link>
                         ))}
@@ -155,7 +156,7 @@ export function NovaNavbar() {
                   onMouseEnter={() => megaNav.open(item.id)}
                   onMouseLeave={megaNav.scheduleClose}
                 >
-                  <NavAnchor link={item.link} onClick={megaNav.closeNow} className="no-underline" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</NavAnchor>
+                  <NavAnchor link={item.link} onClick={megaNav.closeNow} className="no-underline" style={{ color: hc.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</NavAnchor>
                   <button
                     type="button"
                     onClick={() => megaNav.toggle(item.id)}
@@ -163,20 +164,20 @@ export function NovaNavbar() {
                     aria-expanded={megaNav.openId === item.id}
                     aria-controls={megaNav.openId === item.id ? `nova-mega-${item.id}` : undefined}
                     className="nova-focus-ring bg-transparent border-0 cursor-pointer p-0 flex items-center"
-                    style={{ color: t.colors.ink }}
+                    style={{ color: hc.ink }}
                   >
                     <ChevronDown size={13} style={{ transform: megaNav.openId === item.id ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s ease' }} />
                   </button>
                 </div>
               ) : (
                 <div key={item.id} className="relative group">
-                  <NavAnchor link={item.link} className="no-underline" style={{ color: t.colors.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</NavAnchor>
-                  {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: t.colors.bg, borderColor: t.colors.border }}>
+                  <NavAnchor link={item.link} className="no-underline" style={{ color: hc.ink, fontSize: '14px', fontFamily: t.fonts.body, fontWeight: 600 }}>{item.label}</NavAnchor>
+                  {item.children.length > 0 && <div className="absolute left-0 top-full z-30 hidden min-w-[190px] flex-col gap-3 border p-4 group-hover:flex group-focus-within:flex" style={{ background: hc.bg, borderColor: t.colors.border }}>
                     {item.children.map((child: { id: string; label: string; link: { to?: string; href?: string; newTab?: boolean }; children?: { id: string; label: string; link: { to?: string; href?: string; newTab?: boolean } }[] }) => (
                       <div key={child.id} className="relative group/sub">
-                        <NavAnchor link={child.link} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{child.label}</NavAnchor>
-                        {!!child.children?.length && <div className="absolute left-full top-0 z-40 hidden min-w-[180px] flex-col gap-3 border p-4 group-hover/sub:flex group-focus-within/sub:flex" style={{ background: t.colors.bg, borderColor: t.colors.border, borderRadius: t.radius.sm }}>
-                          {child.children.map(grandchild => <NavAnchor key={grandchild.id} link={grandchild.link} className="no-underline" style={{ color: t.colors.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{grandchild.label}</NavAnchor>)}
+                        <NavAnchor link={child.link} className="no-underline" style={{ color: hc.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{child.label}</NavAnchor>
+                        {!!child.children?.length && <div className="absolute left-full top-0 z-40 hidden min-w-[180px] flex-col gap-3 border p-4 group-hover/sub:flex group-focus-within/sub:flex" style={{ background: hc.bg, borderColor: t.colors.border, borderRadius: t.radius.sm }}>
+                          {child.children.map(grandchild => <NavAnchor key={grandchild.id} link={grandchild.link} className="no-underline" style={{ color: hc.ink, fontSize: '13px', fontFamily: t.fonts.body }}>{grandchild.label}</NavAnchor>)}
                         </div>}
                       </div>
                     ))}
@@ -189,16 +190,16 @@ export function NovaNavbar() {
             <Link to="/" className="no-underline flex items-center gap-2">
               {logoSrc
                 ? <img src={logoSrc} alt={store.name} {...logoImageProps(opts)} />
-                : <span style={{ fontFamily: t.fonts.display, fontSize: '21px', fontWeight: 700, color: t.colors.ink }}>{store.name}</span>}
+                : <span style={{ fontFamily: t.fonts.display, fontSize: '21px', fontWeight: 700, color: hc.ink }}>{store.name}</span>}
             </Link>
   );
 
   return (
-    <header {...megaNav.headerProps} style={{ borderBottom: `1.5px solid ${t.colors.border}`, background: t.colors.bg, ...(opts.sticky ? { position: 'sticky' as const, top: 0, zIndex: 40 } : {}) }}>
+    <header {...megaNav.headerProps} style={{ borderBottom: opts.showDivider ? `1.5px solid ${t.colors.border}` : 'none', background: hc.bg, color: hc.ink, ...(opts.sticky ? { position: 'sticky' as const, top: 0, zIndex: 40 } : {}) }}>
       <div className="relative">
       <div
         className={`mx-auto items-center ${centered ? 'grid grid-cols-[1fr_auto_1fr] gap-6' : 'flex justify-between gap-6'}`}
-        style={{ maxWidth: t.layout.maxWidth, padding: `16px ${t.layout.containerPadX}` }}
+        style={{ maxWidth: t.layout.maxWidth, padding: `${16 + opts.paddingDelta}px ${t.layout.containerPadX}` }}
       >
         <div className="flex items-center gap-8">
           <button
@@ -208,7 +209,7 @@ export function NovaNavbar() {
             aria-expanded={mobileOpen}
             aria-haspopup="dialog"
             className="lg:hidden bg-transparent border-0 cursor-pointer p-1"
-            style={{ color: t.colors.ink }}
+            style={{ color: hc.ink }}
           >
             <Menu size={20} />
           </button>
@@ -228,7 +229,7 @@ export function NovaNavbar() {
             aria-label="Search"
             aria-expanded={searchOpen}
             className="bg-transparent border-0 cursor-pointer flex items-center justify-center"
-            style={{ color: t.colors.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
+            style={{ color: hc.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
           >
             <Search size={17} />
           </button>
@@ -238,7 +239,7 @@ export function NovaNavbar() {
             to={isLoggedIn ? '/account' : '/login'}
             aria-label="Account"
             className="flex items-center justify-center"
-            style={{ color: t.colors.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
+            style={{ color: hc.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
           >
             <User size={17} />
           </Link>
@@ -248,14 +249,14 @@ export function NovaNavbar() {
               to="/wishlist"
               aria-label={`Wishlist, ${wishlistCount} item${wishlistCount !== 1 ? 's' : ''}`}
               className="relative flex items-center justify-center"
-              style={{ color: t.colors.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
+              style={{ color: hc.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
             >
               <Heart size={17} />
               {wishlistCount > 0 && (
                 <span
                   aria-hidden="true"
                   className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full"
-                  style={{ background: t.colors.ink, color: '#FFFFFF', fontSize: '10px', width: '17px', height: '17px' }}
+                  style={{ background: hc.ink, color: '#FFFFFF', fontSize: '10px', width: '17px', height: '17px' }}
                 >
                   {wishlistCount > 9 ? '9+' : wishlistCount}
                 </span>
@@ -274,7 +275,7 @@ export function NovaNavbar() {
               <span
                 aria-hidden="true"
                 className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full"
-                style={{ background: t.colors.ink, color: '#FFFFFF', fontSize: '10px', width: '17px', height: '17px' }}
+                style={{ background: hc.ink, color: '#FFFFFF', fontSize: '10px', width: '17px', height: '17px' }}
               >
                 {cartCount > 9 ? '9+' : cartCount}
               </span>
@@ -310,11 +311,11 @@ export function NovaNavbar() {
       <MobileNavPanel
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        tokens={{ ...mobileNavTokens, bg: t.colors.bg, displayFont: t.fonts.display }}
+        tokens={{ ...mobileNavTokens, bg: hc.bg, displayFont: t.fonts.display }}
         storeName={store.name}
         brand={logoSrc
           ? <img src={logoSrc} alt={store.name} style={{ maxHeight: 36, maxWidth: 160, objectFit: 'contain' }} />
-          : <span style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 700, color: t.colors.ink }}>{store.name}</span>}
+          : <span style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 700, color: hc.ink }}>{store.name}</span>}
         items={visibleNavLinks}
         shop={opts.showShopMenu ? {
           label: opts.shopLabel,

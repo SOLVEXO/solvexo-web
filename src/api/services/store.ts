@@ -437,8 +437,9 @@ export interface StoreAnnouncementBar {
   isActive: boolean;
   startAt:  string | null;
   endAt:    string | null;
-  /** Up to 4 extra rotating messages. Optional: a bar saved before these existed omits them. */
-  moreMessages?:  { message: string; ctaLabel?: string | null; ctaLink?: string | null }[];
+  messageHidden?: boolean;
+  /** Up to 9 extra rotating messages. Optional: a bar saved before these existed omits them. */
+  moreMessages?:  { message: string; ctaLabel?: string | null; ctaLink?: string | null; hidden?: boolean }[];
   rotateSeconds?: number;
   closable?:      boolean;
   bgColor?:       string | null;

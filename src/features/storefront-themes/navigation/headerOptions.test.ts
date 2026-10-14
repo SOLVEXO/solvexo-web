@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readHeaderOptions, logoImageProps, readFooterOptions, expandCopyright } from './headerOptions';
+import { readHeaderOptions, logoImageProps, readFooterOptions, expandCopyright, footerLayoutBlocks } from './headerOptions';
 import { resolveStorefrontLink } from '@/features/storefront/StorefrontContext';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
 
@@ -8,7 +8,7 @@ describe('readHeaderOptions', () => {
     expect(readHeaderOptions(undefined, 'Journal')).toEqual({
       logoWidth: null, mobileLogoWidth: null, sticky: false, showSearch: true, showAccount: true, showWishlist: true,
       showShopMenu: true, shopLabel: 'Shop', includePagesInNav: true, showDefaultBlogLink: true, blogLabel: 'Journal',
-      headerStyle: 'standard', navAlignment: 'left',
+      headerStyle: 'standard', navAlignment: 'left', bgColor: null, textColor: null, paddingDelta: 0, showDivider: true,
     });
     // a stored doc that only has the old fields behaves the same
     expect(readHeaderOptions({ logoSource: 'store', blocks: [], menuId: null } as Partial<StorefrontHeader>, 'Stories').sticky).toBe(false);
@@ -55,6 +55,7 @@ describe('readFooterOptions / expandCopyright', () => {
     expect(readFooterOptions(undefined, 'Stories')).toEqual({
       logoSource: 'none', logoUrl: null, logoWidth: 140, showNewsletter: true, newsletterHeading: null, newsletterText: null,
       showDefaultColumns: true, shopColumnHeading: 'Shop', accountColumnHeading: 'Account', blogLabel: 'Stories',
+      bgColor: null, textColor: null,
     });
   });
   it('reads retailer choices', () => {
@@ -63,6 +64,26 @@ describe('readFooterOptions / expandCopyright', () => {
       showDefaultColumns: false, shopColumnHeading: 'Browse', accountColumnHeading: 'Me', blogLinkLabel: 'News',
     } as Partial<StorefrontFooter>, 'Journal');
     expect(o).toMatchObject({ logoSource: 'custom', logoUrl: 'https://x/y.png', logoWidth: 400, showNewsletter: false, newsletterHeading: 'Join us', showDefaultColumns: false, shopColumnHeading: 'Browse', accountColumnHeading: 'Me', blogLabel: 'News' });
+  });
+  it('turns an older footer into the same-looking block list, and keeps a block-layout footer as saved', () => {
+    const legacy = footerLayoutBlocks({
+      blocks: [
+        { type: 'footer_contact', settings: { email: 'a@b.c' } },
+        { type: 'footer_text', settings: { text: 'About us' } },
+        { type: 'footer_column', settings: { heading: 'Help', links: [] } },
+      ],
+      newsletterHeading: 'Join',
+    } as Partial<StorefrontFooter>);
+    expect(legacy.map(b => b.type)).toEqual(['footer_brand', 'footer_column', 'footer_contact', 'footer_newsletter']);
+    expect(legacy[0].settings.text).toBe('About us');
+    expect(legacy[3].settings.heading).toBe('Join');
+    expect(footerLayoutBlocks({ showNewsletter: false, blocks: [] } as Partial<StorefrontFooter>).map(b => b.type)).toEqual(['footer_brand']);
+    const saved = [{ type: 'footer_newsletter', settings: {} }, { type: 'footer_column', settings: { heading: 'A', links: [] } }];
+    expect(footerLayoutBlocks({ blockLayout: true, blocks: saved } as Partial<StorefrontFooter>)).toBe(saved);
+  });
+  it('reads header colours and spacing, ignoring junk', () => {
+    expect(readHeaderOptions({ bgColor: '#112233', textColor: 'red', paddingY: 'spacious', showDivider: false }, 'Journal'))
+      .toMatchObject({ bgColor: '#112233', textColor: null, paddingDelta: 10, showDivider: false });
   });
   it('expands {year} in the copyright text', () => {
     expect(expandCopyright('© {year} Acme. {YEAR}', new Date('2031-05-01'))).toBe('© 2031 Acme. 2031');

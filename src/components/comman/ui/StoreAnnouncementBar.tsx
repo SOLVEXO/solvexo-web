@@ -47,7 +47,7 @@ export function StoreAnnouncementBar({
 }: StoreAnnouncementBarProps) {
   const messages: AnnouncementMessage[] = [
     ...(message ? [{ message, ctaLabel, ctaLink }] : []),
-    ...(moreMessages ?? []).filter(m => m.message),
+    ...(moreMessages ?? []).filter(m => m.message && !(m as { hidden?: boolean }).hidden),
   ];
   // Any change to the wording brings a dismissed bar back.
   const id = `store:${storeId}:${messages.map(m => m.message).join('|')}`;

@@ -584,7 +584,23 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'text', kind: 'text', label: 'Copyright text', hint: "Leave blank to show a default © line with your store name." },
   ],
   footer_text: [
-    { key: 'text', kind: 'textarea', label: 'About text', rows: 4, maxLength: 600, hint: 'A short description shown under your store name in the footer.' },
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'About us' },
+    { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 600 },
+  ],
+  footer_brand: [
+    { key: 'text', kind: 'textarea', label: 'About text', rows: 3, maxLength: 600, hint: 'Shown under your logo. The logo itself is set in Footer settings below.' },
+    { key: 'showTagline', kind: 'checkbox', label: 'Show store tagline' },
+    { key: 'showSocial', kind: 'checkbox', label: 'Show social icons', hint: 'Add Social link blocks to choose which icons appear.' },
+  ],
+  footer_newsletter: [
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Stay in the loop' },
+    { key: 'text', kind: 'textarea', label: 'Text', rows: 2, maxLength: 160 },
+  ],
+  footer_image: [
+    { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60 },
+    { key: 'alt', kind: 'text', label: 'Image description (alt text)', maxLength: 120 },
+    { key: 'width', kind: 'number', label: 'Width (px)', min: 40, max: 400, step: 10 },
   ],
   footer_contact: [
     { key: 'heading', kind: 'text', label: 'Column title', placeholder: 'Contact', maxLength: 60 },

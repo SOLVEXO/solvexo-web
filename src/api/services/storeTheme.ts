@@ -134,6 +134,10 @@ export interface StorefrontHeader {
   includePagesInNav?:   boolean;
   showDefaultBlogLink?: boolean;
   blogLinkLabel?:       string | null;
+  bgColor?:             string | null;
+  textColor?:           string | null;
+  paddingY?:            'compact' | 'normal' | 'spacious';
+  showDivider?:         boolean;
 }
 
 export interface StorefrontFooter {
@@ -154,12 +158,16 @@ export interface StorefrontFooter {
   shopColumnHeading?:    string | null;
   accountColumnHeading?: string | null;
   blogLinkLabel?:        string | null;
+  bgColor?:              string | null;
+  textColor?:            string | null;
+  /** true once saved as an ordered block list (brand + newsletter are blocks). */
+  blockLayout?:          boolean;
 }
 
 /** The footer settings the editor can save alongside its blocks. */
 export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
   'logoSource' | 'logoUrl' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
-  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel'>>;
+  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
 

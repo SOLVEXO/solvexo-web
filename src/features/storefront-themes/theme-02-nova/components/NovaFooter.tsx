@@ -1,10 +1,9 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useState, useEffect, type FormEvent } from 'react';
-import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
-import { NavAnchor } from '../../navigation/NavAnchor';
-import { SocialIcon, FooterContact, PaymentBadges } from '../../navigation/FooterParts';
-import { readFooterOptions, expandCopyright } from '../../navigation/headerOptions';
-import { apiSubscribeNewsletter } from '@/api/services/newsletter';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { PaymentBadges } from '../../navigation/FooterParts';
+import { readFooterOptions, expandCopyright, mutedOf } from '../../navigation/headerOptions';
+import { FooterColumns, SocialRow, visibleFooterBlocks } from '../../navigation/FooterColumns';
 import { apiSubmitPrivacyRequest } from '@/api/services/store';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { novaTheme as t } from '../theme.config';
@@ -23,10 +22,7 @@ const POLICY_LABELS: Record<string, string> = {
  *  `social_link`/`copyright_text` blocks, same shared vocabulary every
  *  theme's footer content uses (see `AtelierFooter`'s own doc comment). */
 export function NovaFooter() {
-  const { store, theme, resolveLink } = useStorefront();
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [pendingConfirm, setPendingConfirm] = useState(false);
+  const { store, theme } = useStorefront();
   // Real, previously-unwired data: `showInFooter`/`policyType` have existed
   // on StorePage (and been editable from Page Settings) with no consumer
   // anywhere — a seller could tag their Privacy Policy page and toggle "Show
@@ -59,145 +55,44 @@ export function NovaFooter() {
     }
   };
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || status === 'loading') return;
-    setStatus('loading');
-    try {
-      const res = await apiSubscribeNewsletter(email.trim(), { storeId: store.storeId, source: 'store_footer' });
-      // Double opt-in stores: nothing is subscribed until they confirm by email.
-      setPendingConfirm(!!res.data?.pendingConfirmation);
-      setStatus('done');
-    } catch {
-      setStatus('error');
-    }
-  };
-
-  const footerBlocks = (theme?.footer?.blocks ?? []).filter(b => b.enabled !== false);
-  const columnBlocks = footerBlocks.filter(b => b.type === 'footer_column');
+  const footerBlocks = visibleFooterBlocks(theme?.footer);
   const socialBlocks = footerBlocks.filter(b => b.type === 'social_link');
+  const brandShowsSocial = footerBlocks.some(b => b.type === 'footer_brand' && b.settings.showSocial !== false);
   const copyrightBlock = footerBlocks.find(b => b.type === 'copyright_text');
   const privacyPage = footerPages.find(p => p.policyType === 'privacy_policy');
   const opts = readFooterOptions(theme?.footer, 'Stories');
-  const textBlock = footerBlocks.find(b => b.type === 'footer_text');
-  const contactBlock = footerBlocks.find(b => b.type === 'footer_contact');
   const paymentBlock = footerBlocks.find(b => b.type === 'footer_payment_icons');
-  const footerLogo = opts.logoSource === 'store' ? store.logo : opts.logoSource === 'custom' ? opts.logoUrl : null;
-  const partTokens = { fontFamily: t.fonts.body, color: '#EDEBFF', muted: '#ABA6C9', fontSize: '13px' };
+  const fg = opts.textColor ?? '#EDEBFF';
+  const muted = opts.textColor ? mutedOf(opts.textColor) : '#ABA6C9';
+  const faint = opts.textColor ? mutedOf(opts.textColor, 52) : '#847EA8';
+  const line = opts.textColor ? mutedOf(opts.textColor, 22) : '#2E2A4F';
+  const inputLine = opts.textColor ? mutedOf(opts.textColor, 30) : '#3A3560';
+  const partTokens = { fontFamily: t.fonts.body, color: fg, muted, fontSize: '13px' };
 
   return (
     <>
-    <footer style={{ background: t.colors.ink, color: '#EDEBFF' }}>
+    <footer style={{ background: opts.bgColor ?? t.colors.ink, color: fg }}>
       <div
         className="mx-auto grid gap-10"
         style={{ maxWidth: t.layout.maxWidth, padding: `${theme?.footer?.footerStyle === 'minimal' ? '32px' : '56px'} ${t.layout.containerPadX}`, gap: theme?.footer?.footerStyle === 'minimal' ? '24px' : '40px', gridTemplateColumns: theme?.footer?.footerStyle === 'minimal' ? 'repeat(auto-fit, minmax(260px, 1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))' }}
       >
-        <div>
-          {footerLogo
-            ? <img src={footerLogo} alt={store.name} style={{ width: opts.logoWidth, maxWidth: '100%', height: 'auto', marginBottom: '10px' }} />
-            : <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, marginBottom: '10px' }}>{store.name}</p>}
-          {store.tagline && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#ABA6C9', lineHeight: 1.6 }}>{store.tagline}</p>}
-          {textBlock && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#ABA6C9', lineHeight: 1.6, marginTop: '10px', whiteSpace: 'pre-line' }}>{textBlock.settings.text}</p>}
-          {socialBlocks.length > 0 && (
-            <div className="flex items-center gap-3" style={{ marginTop: '16px' }}>
-              {socialBlocks.map((b, i) => (
-                <a
-                  key={b._id ?? i}
-                  href={b.settings.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={b.settings.platform}
-                  className="flex items-center justify-center"
-                  style={{ color: '#EDEBFF', width: '32px', height: '32px', borderRadius: '9999px', background: 'rgba(255,255,255,0.08)' }}
-                >
-                  <SocialIcon platform={b.settings.platform} size={15} />
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {columnBlocks.length > 0 ? (
-          columnBlocks.map((b, i) => (
-            <div key={b._id ?? i}>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{b.settings.heading}</p>
-              <div className="flex flex-col gap-2.5">
-                {(b.settings.links ?? []).map((link: StorefrontLinkSettings & { label: string }, j: number) => {
-                  const resolved = resolveLink(link);
-                  return <NavAnchor key={j} link={resolved} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{link.label}</NavAnchor>;
-                })}
-              </div>
-            </div>
-          ))
-        ) : opts.showDefaultColumns ? (
-          <>
-            <div>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{opts.shopColumnHeading}</p>
-              <div className="flex flex-col gap-2.5">
-                <Link to="/#shop" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>All Products</Link>
-                <Link to="/cart" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>Cart</Link>
-                <Link to="/blog" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{opts.blogLabel}</Link>
-              </div>
-            </div>
-            <div>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{opts.accountColumnHeading}</p>
-              <div className="flex flex-col gap-2.5">
-                <Link to="/account" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>My Account</Link>
-                <Link to="/login" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>Sign In</Link>
-                {store.contactEmail && <a href={`mailto:${store.contactEmail}`} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{store.contactEmail}</a>}
-                {store.contactPhone && <a href={`tel:${store.contactPhone}`} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF' }}>{store.contactPhone}</a>}
-              </div>
-            </div>
-          </>
-        ) : null}
-
-        {contactBlock && (
-          <div>
-            <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{contactBlock.settings.heading || 'Contact'}</p>
-            <FooterContact settings={contactBlock.settings} tokens={partTokens} />
-          </div>
-        )}
-        {opts.showNewsletter && (
-        <div>
-          <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ABA6C9', fontWeight: 700, marginBottom: '14px' }}>{opts.newsletterHeading ?? 'Stay in the loop'}</p>
-          {opts.newsletterText && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#ABA6C9', lineHeight: 1.6, marginBottom: '10px' }}>{opts.newsletterText}</p>}
-          {status === 'done' ? (
-            <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#8B7CFF' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : "Thank you — you're subscribed."}</p>
-          ) : (
-            <form onSubmit={submit} className="flex flex-col gap-2">
-              <label htmlFor="nova-footer-newsletter" className="sr-only">Your email</label>
-              <input
-                id="nova-footer-newsletter"
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Your email"
-                className="bg-transparent outline-none nova-newsletter-input"
-                style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: '#EDEBFF', border: '1.5px solid #3A3560', padding: '10px 13px', borderRadius: t.radius.sm }}
-              />
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className="cursor-pointer border-0 disabled:opacity-60"
-                style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '10px 13px', borderRadius: '9999px' }}
-              >
-                {status === 'loading' ? 'Submitting…' : 'Subscribe'}
-              </button>
-              {status === 'error' && <p style={{ fontSize: '11px', color: '#FF9B8F' }}>Something went wrong — try again.</p>}
-            </form>
-          )}
-        </div>
-        )}
+        <FooterColumns tokens={{
+          fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted, brandWeight: 700, socialPill: true, linkSize: '13.5px',
+          heading: { fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: muted, fontWeight: 700, marginBottom: '14px' },
+          input: { fontFamily: t.fonts.body, fontSize: '13.5px', color: fg, border: `1.5px solid ${inputLine}`, padding: '10px 13px', borderRadius: t.radius.sm },
+          button: { fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '10px 13px', borderRadius: '9999px' },
+          buttonUppercase: false, doneColor: '#8B7CFF', errorColor: '#FF9B8F', idPrefix: 'nova', newsletterHeading: 'Stay in the loop', blogLabel: 'Stories',
+        }} />
       </div>
 
-      <div style={{ borderTop: '1px solid #2E2A4F' }}>
+      <div style={{ borderTop: `1px solid ${line}` }}>
         <div
           className="mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center"
           style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
         >
-          {paymentBlock && <PaymentBadges icons={paymentBlock.settings.icons ?? []} tokens={partTokens} border="#3A3560" radius={t.radius.sm} />}
-          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#847EA8' }}>
+          {!brandShowsSocial && socialBlocks.length > 0 && <SocialRow socials={socialBlocks} k={{ fg, muted, socialPill: true }} />}
+          {paymentBlock && <PaymentBadges icons={paymentBlock.settings.icons ?? []} tokens={partTokens} border={inputLine} radius={t.radius.sm} />}
+          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: faint }}>
             {expandCopyright(copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`)}
           </p>
           {(footerPages.length > 0 || store.showDoNotSellLink) && (
@@ -207,7 +102,7 @@ export function NovaFooter() {
                   key={p._id}
                   to={`/${p.slug}`}
                   className="no-underline"
-                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#ABA6C9' }}
+                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: muted }}
                 >
                   {(p.policyType && POLICY_LABELS[p.policyType]) || p.title}
                 </Link>
@@ -216,7 +111,7 @@ export function NovaFooter() {
                 <button
                   type="button"
                   onClick={() => setShowDoNotSell(true)}
-                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#ABA6C9', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: muted, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
                 >
                   Do Not Sell My Personal Information
                 </button>

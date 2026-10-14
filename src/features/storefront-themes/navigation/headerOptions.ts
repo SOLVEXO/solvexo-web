@@ -1,5 +1,6 @@
-import type { CSSProperties } from 'react';
+﻿import type { CSSProperties } from 'react';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
+import type { Block } from '@/api/services/storefrontTypes';
 
 /**
  * The retailer-controlled header settings, with every missing value read as "today's look" — a store saved
@@ -19,9 +20,21 @@ export interface HeaderOptions {
   blogLabel: string;
   headerStyle: 'standard' | 'centered';
   navAlignment: 'left' | 'center' | 'right';
+  bgColor: string | null;
+  textColor: string | null;
+  /** px added to the theme's own header padding (compact < 0). */
+  paddingDelta: number;
+  showDivider: boolean;
 }
 
 const text = (v: unknown, fallback: string) => (typeof v === 'string' && v.trim() ? v.trim() : fallback);
+const hex = (v: unknown) => (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : null);
+const HEADER_PADDING = { compact: -6, normal: 0, spacious: 10 } as const;
+
+/** Muted shade of a retailer text colour, for secondary text on the same background. */
+export function mutedOf(color: string, percent = 68): string {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
 const width = (v: unknown, min: number, max: number): number | null =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : null;
 
@@ -42,6 +55,10 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     blogLabel: text(h.blogLinkLabel, defaultBlogLabel),
     headerStyle: h.headerStyle === 'centered' ? 'centered' : 'standard',
     navAlignment: h.navAlignment === 'center' || h.navAlignment === 'right' ? h.navAlignment : 'left',
+    bgColor: hex(h.bgColor),
+    textColor: hex(h.textColor),
+    paddingDelta: HEADER_PADDING[h.paddingY === 'compact' || h.paddingY === 'spacious' ? h.paddingY : 'normal'],
+    showDivider: h.showDivider !== false,
   };
 }
 
@@ -70,6 +87,8 @@ export interface FooterOptions {
   shopColumnHeading: string;
   accountColumnHeading: string;
   blogLabel: string;
+  bgColor: string | null;
+  textColor: string | null;
 }
 
 export function readFooterOptions(footer: Partial<StorefrontFooter> | null | undefined, defaultBlogLabel: string): FooterOptions {
@@ -86,7 +105,32 @@ export function readFooterOptions(footer: Partial<StorefrontFooter> | null | und
     shopColumnHeading: text(f.shopColumnHeading, 'Shop'),
     accountColumnHeading: text(f.accountColumnHeading, 'Account'),
     blogLabel: text(f.blogLinkLabel, defaultBlogLabel),
+    bgColor: hex(f.bgColor),
+    textColor: hex(f.textColor),
   };
+}
+
+/** Footer block types that each render as their own column, in the retailer's order. */
+export const FOOTER_COLUMN_TYPES = ['footer_brand', 'footer_column', 'footer_text', 'footer_contact', 'footer_newsletter', 'footer_image'];
+
+/**
+ * The footer's blocks in display order. A footer saved before brand/newsletter became blocks is converted on
+ * the fly to the exact look it always had (brand column with the about text, columns, contact, newsletter), so
+ * the editor and both themes read one list and the first edit saves it in the new shape.
+ */
+export function footerLayoutBlocks(footer: Partial<StorefrontFooter> | null | undefined): Block[] {
+  const blocks = footer?.blocks ?? [];
+  if (footer?.blockLayout) return blocks;
+  const about = blocks.find(b => b.type === 'footer_text' && b.enabled !== false);
+  const rest = blocks.filter(b => b.type !== 'footer_text');
+  const columns = rest.filter(b => b.type === 'footer_column');
+  const others = rest.filter(b => b.type !== 'footer_column');
+  return [
+    { type: 'footer_brand', settings: { text: about?.settings.text ?? '', showTagline: true, showSocial: true } },
+    ...columns,
+    ...others,
+    ...(footer?.showNewsletter === false ? [] : [{ type: 'footer_newsletter', settings: { heading: footer?.newsletterHeading ?? '', text: footer?.newsletterText ?? '' } }]),
+  ];
 }
 
 /** `{year}` in the copyright text becomes the current year. */

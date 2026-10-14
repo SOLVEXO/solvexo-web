@@ -1,11 +1,15 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, Trash2 } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import type { StoreAnnouncementBar as StoreAnnouncementBarValue, StoreAnnouncementType } from '@/api/services/store';
 import { ANNOUNCEMENT_TYPE_LABEL } from './announcementDefaults';
 
-const MAX_EXTRA_MESSAGES = 4;
+const MAX_BLOCKS = 10;
 const INPUT = 'text-[13px] px-3 py-2 rounded-lg border border-bone bg-white';
 const LABEL = 'text-[11px] font-semibold uppercase tracking-wide text-slate';
+const ACCENT = '#D97757';
+
+type Block = { message: string; ctaLabel: string | null; ctaLink: string | null; hidden: boolean };
 
 // `datetime-local` inputs need `YYYY-MM-DDTHH:mm` in the browser's own local time, with no trailing `Z`/offset.
 function toDatetimeLocal(iso: string | null): string {
@@ -21,83 +25,127 @@ function fromDatetimeLocal(value: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-/** The one announcement-bar editor (Header & Footer → Announcement, and Online Store → Announcement Bar).
- *  It edits `Store.announcementBar` directly and has no draft: Save takes effect on the live storefront
- *  straight away, subject to the on/off switch and the schedule. */
+function toBlocks(v: StoreAnnouncementBarValue): Block[] {
+  const first: Block[] = v.message !== null || v.ctaLabel || v.ctaLink
+    ? [{ message: v.message ?? '', ctaLabel: v.ctaLabel, ctaLink: v.ctaLink, hidden: !!v.messageHidden }]
+    : [];
+  return [...first, ...(v.moreMessages ?? []).map(m => ({ message: m.message, ctaLabel: m.ctaLabel ?? null, ctaLink: m.ctaLink ?? null, hidden: !!m.hidden }))];
+}
+function fromBlocks(v: StoreAnnouncementBarValue, blocks: Block[]): StoreAnnouncementBarValue {
+  const [first, ...rest] = blocks;
+  return {
+    ...v,
+    message: first ? first.message : null,
+    ctaLabel: first?.ctaLabel || null,
+    ctaLink: first?.ctaLink || null,
+    messageHidden: !!first?.hidden,
+    moreMessages: rest,
+  };
+}
+
+/** Shopify-style announcement bar section: a list of announcement blocks (drag to reorder, eye to hide,
+ *  click to edit) plus the section's own settings. Edits `Store.announcementBar`; Save goes live. */
 export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncementBarValue; onChange: (next: StoreAnnouncementBarValue) => void }) {
-  const extras = value.moreMessages ?? [];
-  const setExtra = (i: number, patch: Partial<NonNullable<StoreAnnouncementBarValue['moreMessages']>[number]>) =>
-    onChange({ ...value, moreMessages: extras.map((m, j) => (j === i ? { ...m, ...patch } : m)) });
+  const blocks = toBlocks(value);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const setBlocks = (next: Block[]) => onChange(fromBlocks(value, next));
+  const patchBlock = (i: number, patch: Partial<Block>) => setBlocks(blocks.map((b, j) => (j === i ? { ...b, ...patch } : b)));
+  const move = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= blocks.length) return;
+    const next = [...blocks];
+    const [b] = next.splice(from, 1);
+    next.splice(to, 0, b);
+    setBlocks(next);
+  };
+  const addBlock = () => {
+    setBlocks([...blocks, { message: '', ctaLabel: null, ctaLink: null, hidden: false }]);
+    setSelected(blocks.length);
+  };
+
+  if (selected !== null && blocks[selected]) {
+    const b = blocks[selected];
+    const n = selected + 1;
+    return (
+      <div className="flex flex-col gap-4">
+        <button type="button" onClick={() => setSelected(null)} className="flex items-center gap-1 text-[12.5px] font-semibold text-charcoal bg-transparent border-0 cursor-pointer p-0 self-start">
+          <ChevronLeft size={15} /> Announcement {n}
+        </button>
+        <label className="flex flex-col gap-1.5">
+          <span className={LABEL}>Text</span>
+          <textarea value={b.message} maxLength={200} rows={2} autoFocus placeholder="Free shipping on orders over $50"
+            onChange={e => patchBlock(selected, { message: e.target.value })}
+            className={`${INPUT} resize-none focus:outline-none focus:ring-1`} style={{ fontFamily: 'inherit' }} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={LABEL}>Link label</span>
+          <input value={b.ctaLabel ?? ''} maxLength={40} placeholder="Shop now" onChange={e => patchBlock(selected, { ctaLabel: e.target.value || null })} className={INPUT} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={LABEL}>Link</span>
+          <input value={b.ctaLink ?? ''} placeholder="/collections/sale" onChange={e => patchBlock(selected, { ctaLink: e.target.value || null })} className={INPUT} />
+          <span className="text-[11px] text-slate">Starts with https://, http:// or / (a page on your own store).</span>
+        </label>
+        <button type="button" onClick={() => { setBlocks(blocks.filter((_, j) => j !== selected)); setSelected(null); }}
+          className="flex items-center gap-1.5 text-[12.5px] font-semibold text-error bg-transparent border-0 cursor-pointer p-0 self-start">
+          <Trash2 size={14} /> Remove block
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between bg-white border border-bone rounded-lg px-3 py-2.5">
         <div>
           <p className="text-[12.5px] font-semibold text-charcoal">Show announcement bar</p>
-          <p className="text-[11px] text-slate">When off, nothing shows even if a message is set below.</p>
+          <p className="text-[11px] text-slate">Shown at the top of every page of your store.</p>
         </div>
         <Toggle checked={value.isActive} onChange={isActive => onChange({ ...value, isActive })} ariaLabel="Show announcement bar" />
       </div>
 
-      <label className="flex flex-col gap-1.5">
-        <span className={LABEL}>Message</span>
-        <textarea
-          value={value.message ?? ''}
-          onChange={e => onChange({ ...value, message: e.target.value || null })}
-          placeholder="Free shipping on orders over $50"
-          rows={2}
-          maxLength={200}
-          className={`${INPUT} resize-none focus:outline-none focus:ring-1`}
-          style={{ fontFamily: 'inherit' }}
-        />
-      </label>
-
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Button label</span>
-          <input value={value.ctaLabel ?? ''} maxLength={40} onChange={e => onChange({ ...value, ctaLabel: e.target.value || null })} placeholder="Shop now" className={INPUT} />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Button link</span>
-          <input value={value.ctaLink ?? ''} onChange={e => onChange({ ...value, ctaLink: e.target.value || null })} placeholder="/collections/sale" className={INPUT} />
-        </label>
-      </div>
-      <p className="text-[11px] text-slate -mt-2">The link must start with https://, http:// or / (a page on your own store).</p>
-
-      <div className="flex flex-col gap-2 border-t border-bone pt-3">
-        <span className={LABEL}>More messages (optional)</span>
-        <p className="text-[11px] text-slate -mt-1">Add up to {MAX_EXTRA_MESSAGES} more and the bar rotates through all of them.</p>
-        {extras.map((m, i) => (
-          <div key={i} className="flex flex-col gap-2 border border-bone rounded-lg p-2.5 bg-white">
-            <div className="flex items-start gap-2">
-              <input value={m.message} maxLength={200} onChange={e => setExtra(i, { message: e.target.value })} placeholder={`Message ${i + 2}`} aria-label={`Message ${i + 2}`} className={`${INPUT} flex-1`} />
-              <button type="button" aria-label={`Remove message ${i + 2}`} onClick={() => onChange({ ...value, moreMessages: extras.filter((_, j) => j !== i) })}
-                className="p-2 text-error bg-transparent border-0 cursor-pointer"><Trash2 size={14} /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input value={m.ctaLabel ?? ''} maxLength={40} onChange={e => setExtra(i, { ctaLabel: e.target.value || null })} placeholder="Button label" aria-label={`Message ${i + 2} button label`} className={INPUT} />
-              <input value={m.ctaLink ?? ''} onChange={e => setExtra(i, { ctaLink: e.target.value || null })} placeholder="Button link" aria-label={`Message ${i + 2} button link`} className={INPUT} />
-            </div>
-          </div>
-        ))}
-        {extras.length < MAX_EXTRA_MESSAGES && (
-          <button type="button" onClick={() => onChange({ ...value, moreMessages: [...extras, { message: '', ctaLabel: null, ctaLink: null }] })}
-            className="text-[12px] font-semibold bg-transparent border-0 cursor-pointer text-left flex items-center gap-1" style={{ color: '#D97757' }}>
-            <Plus size={13} /> Add a message
+      <div className="flex flex-col gap-1.5">
+        <span className={LABEL}>Announcements</span>
+        <ul className="flex flex-col gap-1 list-none m-0 p-0">
+          {blocks.map((b, i) => (
+            <li key={i} draggable
+              onDragStart={() => setDragFrom(i)}
+              onDragOver={e => e.preventDefault()}
+              onDrop={() => { if (dragFrom !== null) move(dragFrom, i); setDragFrom(null); }}
+              onDragEnd={() => setDragFrom(null)}
+              className={`group flex items-center gap-1.5 bg-white border rounded-lg pl-1.5 pr-1 py-1.5 ${dragFrom === i ? 'opacity-50' : ''} border-bone`}>
+              <span className="cursor-grab text-slate p-1" aria-hidden><GripVertical size={14} /></span>
+              <Megaphone size={14} className={b.hidden ? 'text-slate/50' : 'text-slate'} />
+              <button type="button" onClick={() => setSelected(i)}
+                className={`flex-1 min-w-0 text-left text-[12.5px] truncate bg-transparent border-0 cursor-pointer p-0 ${b.hidden ? 'text-slate/60 line-through' : 'text-charcoal'}`}>
+                {b.message || <span className="italic text-slate">Empty announcement</span>}
+              </button>
+              <button type="button" aria-label={`Move announcement ${i + 1} up`} disabled={i === 0} onClick={() => move(i, i - 1)}
+                className="p-1 text-slate bg-transparent border-0 cursor-pointer disabled:opacity-30 sm:hidden">↑</button>
+              <button type="button" aria-label={b.hidden ? `Show announcement ${i + 1}` : `Hide announcement ${i + 1}`} onClick={() => patchBlock(i, { hidden: !b.hidden })}
+                className="p-1 text-slate bg-transparent border-0 cursor-pointer">{b.hidden ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+              <button type="button" aria-label={`Edit announcement ${i + 1}`} onClick={() => setSelected(i)}
+                className="p-1 text-slate bg-transparent border-0 cursor-pointer"><ChevronRight size={14} /></button>
+            </li>
+          ))}
+        </ul>
+        {blocks.length < MAX_BLOCKS ? (
+          <button type="button" onClick={addBlock}
+            className="text-[12.5px] font-semibold bg-transparent border-0 cursor-pointer text-left flex items-center gap-1 mt-1" style={{ color: ACCENT }}>
+            <Plus size={14} /> Add announcement
           </button>
-        )}
-        {extras.length > 0 && (
-          <label className="flex items-center gap-2 text-[12px] text-charcoal">
-            Change message every
-            <select value={value.rotateSeconds ?? 5} onChange={e => onChange({ ...value, rotateSeconds: Number(e.target.value) })} className="text-[12.5px] px-2 py-1 rounded-lg border border-bone bg-white">
-              {[3, 4, 5, 6, 8, 10, 15].map(n => <option key={n} value={n}>{n} seconds</option>)}
-            </select>
-          </label>
-        )}
+        ) : <p className="text-[11px] text-slate">You can have up to {MAX_BLOCKS} announcements.</p>}
+        <p className="text-[11px] text-slate">Drag to reorder. With more than one, the bar rotates through them.</p>
       </div>
 
       <div className="flex flex-col gap-3 border-t border-bone pt-3">
-        <span className={LABEL}>Look</span>
+        <span className={LABEL}>Section settings</span>
+        <label className="flex items-center justify-between gap-2 text-[12.5px] text-charcoal">
+          Auto-rotate every
+          <select value={value.rotateSeconds ?? 5} onChange={e => onChange({ ...value, rotateSeconds: Number(e.target.value) })} className="text-[12.5px] px-2 py-1 rounded-lg border border-bone bg-white">
+            {[3, 4, 5, 6, 8, 10, 15].map(n => <option key={n} value={n}>{n} seconds</option>)}
+          </select>
+        </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[10.5px] text-slate">Position</span>
@@ -114,7 +162,7 @@ export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncement
             </select>
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] text-slate">Style (icon)</span>
+            <span className="text-[10.5px] text-slate">Icon</span>
             <select value={value.type} onChange={e => onChange({ ...value, type: e.target.value as StoreAnnouncementType })} className={INPUT}>
               {(Object.keys(ANNOUNCEMENT_TYPE_LABEL) as StoreAnnouncementType[]).map(k => <option key={k} value={k}>{ANNOUNCEMENT_TYPE_LABEL[k]}</option>)}
             </select>
@@ -139,7 +187,7 @@ export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncement
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 border-t border-bone pt-3">
         <span className={LABEL}>Schedule (optional)</span>
         <p className="text-[11px] text-slate -mt-1">Leave blank to show as soon as it's on, with no end date.</p>
         <div className="grid grid-cols-2 gap-3">
