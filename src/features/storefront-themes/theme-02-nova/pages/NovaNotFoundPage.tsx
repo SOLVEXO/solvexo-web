@@ -3,6 +3,9 @@ import { FileQuestion } from 'lucide-react';
 import { NovaButton } from '../components/NovaButton';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { novaTheme as t } from '../theme.config';
+import { usePageTemplateSections } from '../../usePageTemplateSections';
+import { NovaSectionRenderer } from '../sections';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
 
 /** Real themed 404 — same rationale as `AtelierNotFoundPage`'s doc comment
  *  (the storefront catch-all used to silently redirect a broken link to the
@@ -14,8 +17,11 @@ import { novaTheme as t } from '../theme.config';
 export function NovaNotFoundPage() {
   const navigate = useNavigate();
   useStorefrontSeo({ title: 'Page not found' });
+  const { store } = useStorefront();
+  const extra = usePageTemplateSections(store?.storeId, 'not-found');
 
   return (
+    <>
     <main
       className="mx-auto flex flex-col items-center justify-center gap-5 text-center"
       style={{ minHeight: '60vh', maxWidth: t.layout.maxWidth, padding: `80px ${t.layout.containerPadX}` }}
@@ -31,5 +37,8 @@ export function NovaNotFoundPage() {
       </div>
       <NovaButton onClick={() => navigate('/')}>Back to Home</NovaButton>
     </main>
+    {/* Sections the seller added to the 404 template in Customize. */}
+    {extra.length > 0 && <NovaSectionRenderer sections={extra} />}
+    </>
   );
 }

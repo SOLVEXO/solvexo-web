@@ -3,6 +3,9 @@ import { FileQuestion } from 'lucide-react';
 import { AtelierButton } from '../components/AtelierButton';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
+import { usePageTemplateSections } from '../../usePageTemplateSections';
+import { AtelierSectionRenderer } from '../sections';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
 
 /** Real themed 404 — the storefront router's catch-all (`path: '*'`) used to
  *  blind-redirect any genuinely unmatched URL straight to the homepage via
@@ -14,8 +17,11 @@ import { atelierTheme as t } from '../theme.config';
 export function AtelierNotFoundPage() {
   const navigate = useNavigate();
   useStorefrontSeo({ title: 'Page not found' });
+  const { store } = useStorefront();
+  const extra = usePageTemplateSections(store?.storeId, 'not-found');
 
   return (
+    <>
     <main
       className="mx-auto flex flex-col items-center justify-center gap-5 text-center"
       style={{ minHeight: '60vh', maxWidth: t.layout.maxWidth, padding: `80px ${t.layout.containerPadX}` }}
@@ -31,5 +37,8 @@ export function AtelierNotFoundPage() {
       </div>
       <AtelierButton onClick={() => navigate('/')}>Back to Home</AtelierButton>
     </main>
+    {/* Sections the seller added to the 404 template in Customize. */}
+    {extra.length > 0 && <AtelierSectionRenderer sections={extra} />}
+    </>
   );
 }

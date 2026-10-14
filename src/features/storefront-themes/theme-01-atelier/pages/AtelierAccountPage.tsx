@@ -14,6 +14,8 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput, atelierLabel } from '../components/atelierFormStyles';
 import { atelierTheme as t } from '../theme.config';
+import { usePageTemplateSections } from '../../usePageTemplateSections';
+import { AtelierSectionRenderer } from '../sections';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: 'Pending', processing: 'Processing', shipped: 'Shipped',
@@ -155,6 +157,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
 export function AtelierAccountPage() {
   useRequireRealAccount();
   useStorefrontSeo({ title: 'My Account', noindex: true });
+  const accountSections = usePageTemplateSections(useStorefront().store?.storeId, 'account');
   const { store } = useStorefront();
   const logout = useLogout();
   const { profile, loading: profileLoading } = useGetProfile();
@@ -281,6 +284,8 @@ export function AtelierAccountPage() {
           </div>
         )}
       </section>
+      {/* Sections the seller added to the Account template in Customize. */}
+      {accountSections.length > 0 && <div style={{ marginTop: '40px' }}><AtelierSectionRenderer sections={accountSections} /></div>}
     </main>
   );
 }

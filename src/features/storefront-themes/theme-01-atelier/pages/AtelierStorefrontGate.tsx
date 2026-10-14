@@ -8,6 +8,8 @@ import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput, atelierLabel } from '../components/atelierFormStyles';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
+import { usePageTemplateSections } from '../../usePageTemplateSections';
+import { AtelierSectionRenderer } from '../sections';
 
 /** Real Shopify-style storefront gate — rendered by `StorefrontLayout.tsx`
  *  INSTEAD of the theme's normal `<Layout><Outlet/></Layout>` tree whenever
@@ -19,6 +21,7 @@ import { atelierTheme as t } from '../theme.config';
 export function AtelierStorefrontGate({ store, onUnlocked }: { store: PublicStoreData; onUnlocked: () => void }) {
   const isComingSoon = store.privacyMode === 'coming_soon';
   useStorefrontSeo({ title: isComingSoon ? 'Coming Soon' : 'This store is password protected', noindex: true });
+  const gateSections = usePageTemplateSections(store.storeId, 'password');
 
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -44,6 +47,7 @@ export function AtelierStorefrontGate({ store, onUnlocked }: { store: PublicStor
   };
 
   return (
+    <>
     <div
       className="min-h-screen flex flex-col items-center justify-center text-center"
       style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, padding: '24px' }}
@@ -97,5 +101,8 @@ export function AtelierStorefrontGate({ store, onUnlocked }: { store: PublicStor
         </div>
       )}
     </div>
+    {/* Sections the seller added to the Password template in Customize. */}
+    {gateSections.length > 0 && <AtelierSectionRenderer sections={gateSections} />}
+    </>
   );
 }

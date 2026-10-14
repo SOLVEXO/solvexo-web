@@ -14,6 +14,8 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { NovaButton } from '../components/NovaButton';
 import { novaInput, novaLabel } from '../components/novaFormStyles';
 import { novaTheme as t } from '../theme.config';
+import { usePageTemplateSections } from '../../usePageTemplateSections';
+import { NovaSectionRenderer } from '../sections';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: 'Pending', processing: 'Processing', shipped: 'Shipped',
@@ -151,6 +153,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
 export function NovaAccountPage() {
   useRequireRealAccount();
   useStorefrontSeo({ title: 'My Account', noindex: true });
+  const accountSections = usePageTemplateSections(useStorefront().store?.storeId, 'account');
   const { store } = useStorefront();
   const logout = useLogout();
   const { profile, loading: profileLoading } = useGetProfile();
@@ -273,6 +276,8 @@ export function NovaAccountPage() {
           </div>
         )}
       </section>
+      {/* Sections the seller added to the Account template in Customize. */}
+      {accountSections.length > 0 && <div style={{ marginTop: '40px' }}><NovaSectionRenderer sections={accountSections} /></div>}
     </main>
   );
 }

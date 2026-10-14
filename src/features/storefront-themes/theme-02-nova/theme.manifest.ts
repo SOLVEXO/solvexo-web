@@ -43,6 +43,9 @@ export const novaThemeManifest: ThemeManifest = {
     { id: 'cart', label: 'Cart', group: 'cart', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
     { id: 'blogIndex', label: 'Blog (Stories) Index', group: 'blogs', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
     { id: 'blogArticle', label: 'Blog Article', group: 'articles', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
+    { id: 'notFound', label: '404 page', group: 'other', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'not-found', allowAltTemplates: false } },
+    { id: 'account', label: 'Customer account', group: 'other', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'account', allowAltTemplates: false } },
+    { id: 'password', label: 'Password page', group: 'other', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'password', allowAltTemplates: false } },
   ],
 
   themeSettingsFields: [

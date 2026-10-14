@@ -8,6 +8,8 @@ import { NovaButton } from '../components/NovaButton';
 import { novaInput, novaLabel } from '../components/novaFormStyles';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { novaTheme as t } from '../theme.config';
+import { usePageTemplateSections } from '../../usePageTemplateSections';
+import { NovaSectionRenderer } from '../sections';
 
 /** Real Shopify-style storefront gate — same rationale as
  *  `AtelierStorefrontGate`'s doc comment (rendered by `StorefrontLayout.tsx`
@@ -16,6 +18,7 @@ import { novaTheme as t } from '../theme.config';
 export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreData; onUnlocked: () => void }) {
   const isComingSoon = store.privacyMode === 'coming_soon';
   useStorefrontSeo({ title: isComingSoon ? 'Coming Soon' : 'This store is password protected', noindex: true });
+  const gateSections = usePageTemplateSections(store.storeId, 'password');
 
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,6 +44,7 @@ export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
   };
 
   return (
+    <>
     <div
       className="min-h-screen flex flex-col items-center justify-center text-center"
       style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, padding: '24px' }}
@@ -94,5 +98,8 @@ export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
         </div>
       )}
     </div>
+    {/* Sections the seller added to the Password template in Customize. */}
+    {gateSections.length > 0 && <NovaSectionRenderer sections={gateSections} />}
+    </>
   );
 }

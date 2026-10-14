@@ -1,4 +1,4 @@
-import { Palette, Home, ShoppingBag, LayoutGrid, FileText, Newspaper, Rss, ShoppingCart, Search, Ban, ChevronDown, Check } from 'lucide-react';
+import { Palette, Home, ShoppingBag, LayoutGrid, FileText, Newspaper, Rss, ShoppingCart, Search, ChevronDown, Check } from 'lucide-react';
 import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui';
 import type { ThemeTemplateScopeDef, ThemeTemplateScopeGroup } from '@/features/storefront-themes/themeManifest';
 
@@ -28,6 +28,7 @@ const GROUP_ORDER: { key: ThemeTemplateScopeGroup; label: string; Icon: typeof H
   { key: 'articles', label: 'Articles', Icon: Rss },
   { key: 'cart', label: 'Cart', Icon: ShoppingCart },
   { key: 'search', label: 'Search', Icon: Search },
+  { key: 'other', label: 'Other pages', Icon: FileText },
 ];
 
 const GROUP_ICON_BY_ID: Record<string, typeof Home> = Object.fromEntries(GROUP_ORDER.map(g => [g.key, g.Icon]));
@@ -77,26 +78,6 @@ export function ScopePicker({ scopeDefs, scope, onChange, currentLabel }: {
     }
   }
 
-  // Honest placeholder — there is no editable 404 template on either theme
-  // today (each theme's Not Found page is fixed markup, not section-driven)
-  // — shown so the grouped picker matches the merchant-facing taxonomy in
-  // full, rather than silently omitting a category a merchant might expect,
-  // but disabled so it never pretends to be a real, working scope.
-  items.push({
-    label: <span className="text-[10.5px] font-bold uppercase tracking-wide text-slate/70">404</span>,
-    onClick: () => {},
-    disabled: true,
-  });
-  items.push({
-    label: (
-      <span className="flex items-center gap-2 pl-1 text-slate">
-        <Ban size={13} className="shrink-0" /> Not Found — not yet customizable
-      </span>
-    ),
-    onClick: () => {},
-    disabled: true,
-    title: 'Both themes render a fixed Not Found page — no section template exists for it yet.',
-  });
 
   const ActiveGroupIcon = GROUP_ICON_BY_ID[scopeDefs.find(d => d.id === scope)?.group ?? ''] ?? Palette;
 

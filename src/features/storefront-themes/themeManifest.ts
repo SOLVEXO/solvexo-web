@@ -70,7 +70,7 @@ export interface ThemeSettingsFieldDef {
  *  groups whose scope also carries a `resourcePicker` (see below) letting a
  *  merchant pick WHICH real page/blog/article to work with, instead of
  *  editing one fixed document the way Home/Product/Search/Cart do. */
-export type ThemeTemplateScopeGroup = 'home' | 'products' | 'collections' | 'pages' | 'blogs' | 'articles' | 'cart' | 'search';
+export type ThemeTemplateScopeGroup = 'home' | 'products' | 'collections' | 'pages' | 'blogs' | 'articles' | 'cart' | 'search' | 'other';
 
 export interface ThemeTemplateScopeDef {
   id: string;
