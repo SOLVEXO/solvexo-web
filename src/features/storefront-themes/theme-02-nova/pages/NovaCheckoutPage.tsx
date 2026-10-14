@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import {
   MapPin, Truck, CreditCard, Banknote, Loader2, AlertCircle,
@@ -81,7 +81,13 @@ export function NovaCheckoutPage() {
   const termsPage = policyPages.find(p => p.policyType === 'terms_of_service');
   const { cart, cartCount, clearCart } = useCartContext();
   const { convertTo } = useCurrencyPreference();
-  const cartItems = cart?.items ?? [];
+  // "Buy it now" (?buyNow=productId:variantId): only that line is checked out.
+  const [searchParams] = useSearchParams();
+  const [buyNowProductId, buyNowVariantId] = (searchParams.get('buyNow') ?? '').split(':');
+  const buyNow = buyNowProductId && buyNowVariantId ? { productId: buyNowProductId, variantId: buyNowVariantId } : null;
+  const allCartItems = cart?.items ?? [];
+  const buyNowLines = buyNow ? allCartItems.filter(i => i.productId === buyNow.productId && i.productVariantId === buyNow.variantId) : [];
+  const cartItems = buyNowLines.length ? buyNowLines : allCartItems;
   const isDigital = cartItems.length > 0 && cartItems.every(i => i.type === 'digital');
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -245,6 +251,7 @@ export function NovaCheckoutPage() {
         ? { selections: gp.selections }
         : { shippingZoneId: isDigital ? undefined : (selectedZoneId ?? undefined) }),
       storeId: cart?.storeId,
+      ...(buyNowLines.length ? { items: [buyNow!] } : {}),
     }))
       .then(async res => {
         setCheckout(res.data.checkout);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { Navigate, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   MapPin, Truck, CreditCard, Banknote, Loader2, AlertCircle,
   CheckCircle2, PackageCheck, ChevronRight, Plus,
@@ -76,7 +76,13 @@ export function AtelierCheckoutPage() {
   const { store } = useStorefront();
   const { cart, cartCount, clearCart } = useCartContext();
   const { convertTo } = useCurrencyPreference();
-  const cartItems = cart?.items ?? [];
+  // "Buy it now" (?buyNow=productId:variantId): only that line is checked out.
+  const [searchParams] = useSearchParams();
+  const [buyNowProductId, buyNowVariantId] = (searchParams.get('buyNow') ?? '').split(':');
+  const buyNow = buyNowProductId && buyNowVariantId ? { productId: buyNowProductId, variantId: buyNowVariantId } : null;
+  const allCartItems = cart?.items ?? [];
+  const buyNowLines = buyNow ? allCartItems.filter(i => i.productId === buyNow.productId && i.productVariantId === buyNow.variantId) : [];
+  const cartItems = buyNowLines.length ? buyNowLines : allCartItems;
 
   // Same previously-unwired `policyType` data AtelierFooter.tsx now consumes
   // — link a tagged Privacy Policy/Terms of Service page from checkout too.
@@ -275,6 +281,7 @@ export function AtelierCheckoutPage() {
         ? { selections: gp.selections }
         : { shippingZoneId: isDigital ? undefined : (selectedZoneId ?? undefined) }),
       storeId: cart?.storeId,
+      ...(buyNowLines.length ? { items: [buyNow!] } : {}),
     }))
       .then(async res => {
         setCheckout(res.data.checkout);

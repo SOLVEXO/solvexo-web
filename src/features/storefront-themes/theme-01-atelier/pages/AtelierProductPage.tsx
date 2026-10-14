@@ -316,7 +316,7 @@ export function AtelierProductPage() {
     if (!product || !activeVariant || !canBuy) return;
     await addToCart(product._id, activeVariant._id, isDigital ? 'digital' : 'physical');
     for (let i = 1; i < qty; i++) await updateQty(product._id, activeVariant._id, 'increase');
-    navigate('/checkout');
+    navigate(`/checkout?buyNow=${product._id}:${activeVariant._id}`);
   };
   const { before: sectionsBefore, after: sectionsAfter } = splitProductTemplateSections(templateSections);
 

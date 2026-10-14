@@ -62,6 +62,11 @@ export function apiCreateResourceTemplate(storeId: string, resourceType: Resourc
   return client.post<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.LIST_TEMPLATES(storeId), resourceType, undefined, installedThemeId), payload);
 }
 
+/** Renames an alternate template (display name only). */
+export function apiRenameResourceTemplate(storeId: string, resourceType: ResourceTemplateType, templateKey: string, name: string, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DELETE_TEMPLATE(storeId, templateKey), resourceType, undefined, installedThemeId), { name });
+}
+
 export function apiDeleteResourceTemplate(storeId: string, resourceType: ResourceTemplateType, templateKey: string, installedThemeId?: string) {
   return client.delete<never, ApiResponse<null>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.DELETE_TEMPLATE(storeId, templateKey), resourceType, undefined, installedThemeId));
 }

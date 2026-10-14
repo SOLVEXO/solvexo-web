@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink, Trash2 } from 'lucide-react';
+import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink, Trash2, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -12,7 +12,7 @@ import {
   type StorePageData,
 } from '@/api/services/storePages';
 import {
-  apiListResourceTemplates, apiCreateResourceTemplate, apiDeleteResourceTemplate, apiGetCollectionTemplate,
+  apiListResourceTemplates, apiCreateResourceTemplate, apiDeleteResourceTemplate, apiRenameResourceTemplate, apiGetCollectionTemplate,
   apiUpdateCollectionTemplateSections, apiPublishCollectionTemplate, apiRevertCollectionTemplateDraft,
   apiListCollectionTemplateVersions, apiRestoreCollectionTemplateVersion,
   type CollectionTemplateData, type ResourceTemplateType,
@@ -700,6 +700,21 @@ export function AtelierCustomizePage() {
     }
   };
 
+  const handleRenameTemplate = async () => {
+    if (!config || templateKey === 'default') return;
+    const current = templateList.find(t => t.templateKey === templateKey)?.name ?? templateKey;
+    const name = window.prompt('Rename this template:', current);
+    if (!name?.trim() || name.trim() === current) return;
+    try {
+      await apiRenameResourceTemplate(storeId, config.resourceType, templateKey, name.trim(), installedThemeId);
+      const listRes = await apiListResourceTemplates(storeId, config.resourceType, installedThemeId);
+      setTemplateList(listRes.data);
+      flash(true, 'Template renamed.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to rename template.');
+    }
+  };
+
   const handleCreateTemplate = async () => {
     if (!config) return;
     const name = window.prompt(`Name your new ${scopeLabel(scope)} template (e.g. "Featured"):`);
@@ -919,6 +934,11 @@ export function AtelierCustomizePage() {
                   <button onClick={handleCreateTemplate} disabled={creatingTemplate} title="New Template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-60 cursor-pointer">
                     {creatingTemplate ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                   </button>
+                  {templateKey !== 'default' && (
+                    <button onClick={() => { void handleRenameTemplate(); }} title="Rename this template" aria-label="Rename this template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">
+                      <Pencil size={15} />
+                    </button>
+                  )}
                   {templateKey !== 'default' && (
                     <button onClick={() => setConfirmDeleteTemplate(true)} title="Delete this template" aria-label="Delete this template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-error cursor-pointer">
                       <Trash2 size={15} />
