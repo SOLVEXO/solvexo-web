@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink } from 'lucide-react';
+import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -12,7 +12,7 @@ import {
   type StorePageData,
 } from '@/api/services/storePages';
 import {
-  apiListResourceTemplates, apiCreateResourceTemplate, apiGetCollectionTemplate,
+  apiListResourceTemplates, apiCreateResourceTemplate, apiDeleteResourceTemplate, apiGetCollectionTemplate,
   apiUpdateCollectionTemplateSections, apiPublishCollectionTemplate, apiRevertCollectionTemplateDraft,
   apiListCollectionTemplateVersions, apiRestoreCollectionTemplateVersion,
   type CollectionTemplateData, type ResourceTemplateType,
@@ -683,6 +683,23 @@ export function AtelierCustomizePage() {
     }
   };
 
+  // Alternate templates can be deleted (never "Default"); products/collections
+  // using it fall back to Default.
+  const [confirmDeleteTemplate, setConfirmDeleteTemplate] = useState(false);
+  const handleDeleteTemplate = async () => {
+    if (!config || templateKey === 'default') return;
+    setConfirmDeleteTemplate(false);
+    try {
+      await apiDeleteResourceTemplate(storeId, config.resourceType, templateKey, installedThemeId);
+      const listRes = await apiListResourceTemplates(storeId, config.resourceType, installedThemeId);
+      setTemplateList(listRes.data);
+      setTemplateKey('default');
+      flash(true, 'Template deleted. Items that used it now use Default.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to delete template.');
+    }
+  };
+
   const handleCreateTemplate = async () => {
     if (!config) return;
     const name = window.prompt(`Name your new ${scopeLabel(scope)} template (e.g. "Featured"):`);
@@ -902,6 +919,11 @@ export function AtelierCustomizePage() {
                   <button onClick={handleCreateTemplate} disabled={creatingTemplate} title="New Template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-60 cursor-pointer">
                     {creatingTemplate ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                   </button>
+                  {templateKey !== 'default' && (
+                    <button onClick={() => setConfirmDeleteTemplate(true)} title="Delete this template" aria-label="Delete this template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-error cursor-pointer">
+                      <Trash2 size={15} />
+                    </button>
+                  )}
                 </>
               )}
 
@@ -1078,6 +1100,16 @@ export function AtelierCustomizePage() {
           confirmLabel="Reload"
           onCancel={() => setDraftConflict(false)}
           onConfirm={() => { void reloadDraftFromServer(); }}
+        />
+      )}
+
+      {confirmDeleteTemplate && (
+        <UnsavedChangesDialog
+          title="Delete this template?"
+          message="Products or collections using it will switch to the Default template. This cannot be undone."
+          confirmLabel="Delete"
+          onCancel={() => setConfirmDeleteTemplate(false)}
+          onConfirm={() => { void handleDeleteTemplate(); }}
         />
       )}
 

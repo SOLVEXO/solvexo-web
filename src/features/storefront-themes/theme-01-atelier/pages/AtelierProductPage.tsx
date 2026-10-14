@@ -17,6 +17,7 @@ import type { Section } from '@/api/services/storefrontTypes';
 import { resolveProductMainLayout, splitProductTemplateSections, type ProductInfoBlock } from '../../productPageLayout';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart } from '../../ProductExtraBlocks';
 import { recordRecentlyViewed } from '../../moreSections';
+import { copyText } from '../../sectionCopy';
 import { ProductPageContext } from '../../productContext';
 import { ImageLightbox } from '../../ImageLightbox';
 import { ProductWishlistButton, ProductShareButton, ProductSku, ProductSpecs, type PartTokens } from '../../ProductPageParts';
@@ -306,6 +307,9 @@ export function AtelierProductPage() {
   }
 
   const layout = resolveProductMainLayout(productMainSection);
+  // Seller's own button/heading text on the Buy buttons and Description blocks.
+  const buyCopy = layout.infoItems.find(i => i.type === 'product_buy_buttons')?.settings;
+  const descCopy = layout.infoItems.find(i => i.type === 'product_description')?.settings;
   const pickerStyle = layout.infoItems.find(i => i.type === 'product_variant_picker')?.settings.pickerStyle === 'dropdown' ? 'dropdown' : 'pills';
   // "Buy it now": add the chosen variant/quantity, then straight to checkout.
   const handleBuyNow = async () => {
@@ -432,14 +436,14 @@ export function AtelierProductPage() {
           onClick={handleAddToCart}
           style={{ width: '100%', justifyContent: 'center' }}
         >
-          {addedFeedback ? <><CheckCircle2 size={14} /> Added to Cart</> : !canBuy ? 'Sold out' : preorderText ? 'Pre-order' : 'Add to Cart'}
+          {addedFeedback ? <><CheckCircle2 size={14} /> {copyText(buyCopy, 'addedLabel', 'Added to Cart')}</> : !canBuy ? copyText(buyCopy, 'soldOutLabel', 'Sold out') : preorderText ? copyText(buyCopy, 'preorderLabel', 'Pre-order') : copyText(buyCopy, 'addToCartLabel', 'Add to Cart')}
         </AtelierButton>
         {backInStockBox}
       </div>
     ),
     product_description: product.description && (
       <div className={descLeads ? undefined : 'pt-6'} style={descLeads ? undefined : { borderTop: `1px solid ${t.colors.border}` }}>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '10px' }}>Description</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted, marginBottom: '10px' }}>{copyText(descCopy, 'heading', 'Description')}</p>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{product.description}</p>
       </div>
     ),

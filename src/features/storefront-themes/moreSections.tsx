@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
@@ -160,7 +160,9 @@ export function FeaturedProductSection({ section, colors, theme }: Props) {
 // ── Collection banner ───────────────────────────────────────────────────────
 export function CollectionBannerSection({ section, colors, theme }: Props) {
   const { store, previewCollectionId } = useStorefront() as ReturnType<typeof useStorefront> & { previewCollectionId?: string | null };
-  const ref = (section.settings.collectionId as string | undefined) || previewCollectionId || undefined;
+  // Picked collection, else (on the Collection template) the one being viewed.
+  const { slugOrId } = useParams();
+  const ref = (section.settings.collectionId as string | undefined) || previewCollectionId || slugOrId || undefined;
   const [c, setC] = useState<PublicCollectionSummary | null>(null);
   useEffect(() => {
     if (!ref) { setC(null); return; }

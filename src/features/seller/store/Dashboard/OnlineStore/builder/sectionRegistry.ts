@@ -730,6 +730,13 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   product_title: [],
   product_price: [],
   product_quantity: [],
-  product_buy_buttons: [],
-  product_description: [],
+  product_buy_buttons: [
+    { key: 'addToCartLabel', kind: 'text', label: '"Add to cart" text', maxLength: 30, placeholder: 'Add to Cart', half: true },
+    { key: 'soldOutLabel', kind: 'text', label: '"Sold out" text', maxLength: 30, placeholder: 'Sold out', half: true },
+    { key: 'preorderLabel', kind: 'text', label: '"Pre-order" text', maxLength: 30, placeholder: 'Pre-order', half: true },
+    { key: 'addedLabel', kind: 'text', label: 'Text after adding', maxLength: 30, placeholder: 'Added to Cart', half: true },
+  ],
+  product_description: [
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 40, placeholder: 'Description' },
+  ],
 };

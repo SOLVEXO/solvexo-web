@@ -7,7 +7,7 @@ import {
   apiListBlogPosts, apiCreateBlogPost, apiUpdateBlogPost, apiUpdateBlogContent,
   apiPublishBlogPost, apiUnpublishBlogPost, apiDeleteBlogPost,
   apiListBlogs, apiCreateBlog, apiUpdateBlog,
-  apiListBlogComments, apiModerateBlogComment, apiDeleteBlogComment,
+  apiListBlogComments, apiModerateBlogComment, apiDeleteBlogComment, apiDeleteBlog,
   type BlogPostData, type BlogData, type BlogCommentData, type BlogCommentStatus,
 } from '@/api/services/storeBlog';
 import type { Block } from '@/api/services/storefrontTypes';
@@ -27,6 +27,10 @@ export function BlogTab({ storeId }: { storeId: string }) {
   const [blogs, setBlogs] = useState<BlogData[]>([]);
   const [activeBlogId, setActiveBlogId] = useState<string | null>(null);
   const [showBlogPicker, setShowBlogPicker] = useState(false);
+  // Rename / delete the open blog (Shopify: Blog posts → Manage blogs).
+  const [renameBlogTitle, setRenameBlogTitle] = useState<string | null>(null);
+  const [confirmDeleteBlog, setConfirmDeleteBlog] = useState(false);
+  const [blogBusy, setBlogBusy] = useState(false);
   const [showNewBlog, setShowNewBlog] = useState(false);
   const [newBlogTitle, setNewBlogTitle] = useState('');
   const [creatingBlog, setCreatingBlog] = useState(false);
@@ -199,6 +203,12 @@ export function BlogTab({ storeId }: { storeId: string }) {
           <MessageSquare size={13} /> Comments
         </button>
         {activeBlog && (
+          <div className="flex items-center gap-3 px-1 mb-1">
+            <button type="button" onClick={() => setRenameBlogTitle(activeBlog.title)} className="text-[11.5px] font-semibold text-charcoal bg-transparent border-none cursor-pointer p-0 hover:underline">Rename blog</button>
+            <button type="button" onClick={() => setConfirmDeleteBlog(true)} className="text-[11.5px] font-semibold text-error bg-transparent border-none cursor-pointer p-0 hover:underline">Delete blog</button>
+          </div>
+        )}
+        {activeBlog && (
           <div className="flex items-center justify-between gap-2 px-3 py-2 mb-1 rounded-lg border border-bone bg-cream/60">
             <span className="text-[11.5px] text-charcoal">Allow comments</span>
             <Toggle checked={activeBlog.commentsEnabled} ariaLabel="Allow comments on this blog" onChange={v => {
@@ -299,6 +309,40 @@ export function BlogTab({ storeId }: { storeId: string }) {
         </Modal>
       )}
 
+      {renameBlogTitle !== null && activeBlog && (
+        <Modal title="Rename blog" onClose={() => setRenameBlogTitle(null)}>
+          <Field label="Blog title"><input value={renameBlogTitle} maxLength={80} onChange={e => setRenameBlogTitle(e.target.value)} className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg" /></Field>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="ghost" onClick={() => setRenameBlogTitle(null)}>Cancel</Button>
+            <Button loading={blogBusy} disabled={!renameBlogTitle.trim()} onClick={async () => {
+              setBlogBusy(true);
+              try {
+                const res = await apiUpdateBlog(storeId, activeBlog._id, { title: renameBlogTitle.trim() });
+                setBlogs(prev => prev.map(b => b._id === res.data._id ? res.data : b));
+                setRenameBlogTitle(null);
+                toast.success('Blog renamed.');
+              } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not rename the blog.'); }
+              finally { setBlogBusy(false); }
+            }}>Save</Button>
+          </div>
+        </Modal>
+      )}
+      {confirmDeleteBlog && activeBlog && (
+        <ConfirmDialog title="Delete this blog?" message={`"${activeBlog.title}" will be removed from your storefront. A blog can only be deleted once it has no posts — delete or move its posts first.`} loading={blogBusy}
+          onCancel={() => setConfirmDeleteBlog(false)}
+          onConfirm={async () => {
+            setBlogBusy(true);
+            try {
+              await apiDeleteBlog(storeId, activeBlog._id);
+              const rest = blogs.filter(b => b._id !== activeBlog._id);
+              setBlogs(rest);
+              setActiveBlogId(rest[0]?._id ?? null);
+              setConfirmDeleteBlog(false);
+              toast.success('Blog deleted.');
+            } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not delete the blog.'); }
+            finally { setBlogBusy(false); }
+          }} />
+      )}
       {showComments && <CommentsModal storeId={storeId} onClose={() => setShowComments(false)} />}
 
       {showCreate && (
