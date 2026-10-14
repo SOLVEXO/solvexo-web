@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, RotateCcw, Trash2, Copy } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import type { StoreAnnouncementBar as StoreAnnouncementBarValue, StoreAnnouncementType } from '@/api/services/store';
 import { ANNOUNCEMENT_TYPE_LABEL } from './announcementDefaults';
+import { ANNOUNCEMENT_PRESETS, applyAnnouncementPreset } from './announcementPresets';
+import { Group, ColorField } from './HeaderFooterSettingsPanels';
 
 const MAX_BLOCKS = 10;
-const INPUT = 'text-[13px] px-3 py-2 rounded-lg border border-bone bg-white';
-const LABEL = 'text-[11px] font-semibold uppercase tracking-wide text-slate';
+const INPUT = 'w-full text-[13px] px-3 py-2 rounded-lg border border-bone bg-white';
+const LABEL = 'text-[11.5px] text-charcoal';
 const ACCENT = '#D97757';
 
-type Block = { message: string; ctaLabel: string | null; ctaLink: string | null; hidden: boolean };
+type Value = StoreAnnouncementBarValue;
+type Block = { message: string; ctaLabel: string | null; ctaLink: string | null; couponCode: string | null; hidden: boolean };
 
 // `datetime-local` inputs need `YYYY-MM-DDTHH:mm` in the browser's own local time, with no trailing `Z`/offset.
-function toDatetimeLocal(iso: string | null): string {
+function toDatetimeLocal(iso: string | null | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
@@ -25,30 +28,89 @@ function fromDatetimeLocal(value: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-function toBlocks(v: StoreAnnouncementBarValue): Block[] {
+function toBlocks(v: Value): Block[] {
   const first: Block[] = v.message !== null || v.ctaLabel || v.ctaLink
-    ? [{ message: v.message ?? '', ctaLabel: v.ctaLabel, ctaLink: v.ctaLink, hidden: !!v.messageHidden }]
+    ? [{ message: v.message ?? '', ctaLabel: v.ctaLabel, ctaLink: v.ctaLink, couponCode: v.couponCode ?? null, hidden: !!v.messageHidden }]
     : [];
-  return [...first, ...(v.moreMessages ?? []).map(m => ({ message: m.message, ctaLabel: m.ctaLabel ?? null, ctaLink: m.ctaLink ?? null, hidden: !!m.hidden }))];
+  return [...first, ...(v.moreMessages ?? []).map(m => ({ message: m.message, ctaLabel: m.ctaLabel ?? null, ctaLink: m.ctaLink ?? null, couponCode: m.couponCode ?? null, hidden: !!m.hidden }))];
 }
-function fromBlocks(v: StoreAnnouncementBarValue, blocks: Block[]): StoreAnnouncementBarValue {
+function fromBlocks(v: Value, blocks: Block[]): Value {
   const [first, ...rest] = blocks;
   return {
     ...v,
     message: first ? first.message : null,
     ctaLabel: first?.ctaLabel || null,
     ctaLink: first?.ctaLink || null,
+    couponCode: first?.couponCode || null,
     messageHidden: !!first?.hidden,
     moreMessages: rest,
   };
 }
 
-/** Shopify-style announcement bar section: a list of announcement blocks (drag to reorder, eye to hide,
- *  click to edit) plus the section's own settings. Edits `Store.announcementBar`; Save goes live. */
-export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncementBarValue; onChange: (next: StoreAnnouncementBarValue) => void }) {
+function Select<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className={LABEL}>{label}</span>
+      <select value={value} onChange={e => onChange(e.target.value as T)} className={INPUT}>
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function SwitchRow({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-[12.5px] text-charcoal">{label}</p>
+        {hint && <p className="text-[10.5px] text-slate">{hint}</p>}
+      </div>
+      <Toggle checked={checked} onChange={onChange} ariaLabel={label} />
+    </div>
+  );
+}
+
+/** Ready-made looks, drawn as tiny bars so the merchant sees the result before choosing. */
+function DesignGallery({ value, onChange }: { value: Value; onChange: (v: Value) => void }) {
+  const active = ANNOUNCEMENT_PRESETS.find(p => p.id === value.preset);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        {ANNOUNCEMENT_PRESETS.map(p => {
+          const bg = p.look.bgColor2 ? `linear-gradient(90deg, ${p.look.bgColor}, ${p.look.bgColor2})` : (p.look.bgColor ?? '#f1ede5');
+          const selected = value.preset === p.id;
+          return (
+            <button key={p.id} type="button" onClick={() => onChange(applyAnnouncementPreset(value, p))} aria-pressed={selected}
+              className={`text-left bg-white rounded-lg p-1.5 cursor-pointer border-2 ${selected ? '' : 'border-bone hover:border-slate/40'}`}
+              style={selected ? { borderColor: ACCENT } : undefined}>
+              <span className="block rounded-md px-2 py-1.5 text-[9.5px] truncate"
+                style={{ background: bg, color: p.look.textColor ?? '#161412', fontWeight: p.look.bold ? 700 : 500, textTransform: p.look.uppercase ? 'uppercase' : undefined, textAlign: p.look.align === 'center' ? 'center' : 'left', border: p.look.bgColor === '#ffffff' ? '1px solid #e9e5dc' : undefined }}>
+                {p.sample.message}
+              </span>
+              <span className="block text-[12px] font-semibold text-charcoal mt-1.5 px-0.5">{p.name}</span>
+              <span className="block text-[10.5px] text-slate px-0.5 leading-tight">{p.description}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[10.5px] text-slate">A design only sets the look — your messages stay. Change anything below afterwards.</p>
+      {active && (
+        <button type="button" onClick={() => onChange(applyAnnouncementPreset(value, active))}
+          className="flex items-center gap-1.5 text-[11.5px] font-semibold text-slate bg-transparent border-0 cursor-pointer p-0 self-start">
+          <RotateCcw size={12} /> Reset to “{active.name}”
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Shopify-style announcement bar section: ready-made designs, a list of announcement blocks (drag, hide,
+ *  duplicate, click to edit) and grouped section settings. Edits `Store.announcementBar`. */
+export function AnnouncementForm({ value, onChange }: { value: Value; onChange: (next: Value) => void }) {
   const blocks = toBlocks(value);
   const [selected, setSelected] = useState<number | null>(null);
   const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const set = (patch: Partial<Value>) => onChange({ ...value, ...patch });
   const setBlocks = (next: Block[]) => onChange(fromBlocks(value, next));
   const patchBlock = (i: number, patch: Partial<Block>) => setBlocks(blocks.map((b, j) => (j === i ? { ...b, ...patch } : b)));
   const move = (from: number, to: number) => {
@@ -59,53 +121,69 @@ export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncement
     setBlocks(next);
   };
   const addBlock = () => {
-    setBlocks([...blocks, { message: '', ctaLabel: null, ctaLink: null, hidden: false }]);
+    setBlocks([...blocks, { message: '', ctaLabel: null, ctaLink: null, couponCode: null, hidden: false }]);
     setSelected(blocks.length);
   };
 
   if (selected !== null && blocks[selected]) {
     const b = blocks[selected];
-    const n = selected + 1;
     return (
       <div className="flex flex-col gap-4">
         <button type="button" onClick={() => setSelected(null)} className="flex items-center gap-1 text-[12.5px] font-semibold text-charcoal bg-transparent border-0 cursor-pointer p-0 self-start">
-          <ChevronLeft size={15} /> Announcement {n}
+          <ChevronLeft size={15} /> Announcement {selected + 1}
         </button>
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>Text</span>
-          <textarea value={b.message} maxLength={200} rows={2} autoFocus placeholder="Free shipping on orders over $50"
+          <textarea value={b.message} maxLength={200} rows={2} placeholder="Free shipping on orders over Rs. 3,000"
             onChange={e => patchBlock(selected, { message: e.target.value })}
             className={`${INPUT} resize-none focus:outline-none focus:ring-1`} style={{ fontFamily: 'inherit' }} />
         </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>Link label</span>
+            <input value={b.ctaLabel ?? ''} maxLength={40} placeholder="Shop now" onChange={e => patchBlock(selected, { ctaLabel: e.target.value || null })} className={INPUT} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>Link</span>
+            <input value={b.ctaLink ?? ''} placeholder="/collections/sale" onChange={e => patchBlock(selected, { ctaLink: e.target.value || null })} className={INPUT} />
+          </label>
+        </div>
+        <p className="text-[10.5px] text-slate -mt-2">Links start with https://, http:// or / (a page on your store).</p>
         <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Link label</span>
-          <input value={b.ctaLabel ?? ''} maxLength={40} placeholder="Shop now" onChange={e => patchBlock(selected, { ctaLabel: e.target.value || null })} className={INPUT} />
+          <span className={LABEL}>Discount code (optional)</span>
+          <input value={b.couponCode ?? ''} maxLength={40} placeholder="WELCOME10" onChange={e => patchBlock(selected, { couponCode: e.target.value.toUpperCase().replace(/\s/g, '') || null })} className={INPUT} />
+          <span className="text-[10.5px] text-slate">Shoppers see the code with a Copy button. Create the code itself under Marketing → Discounts.</span>
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Link</span>
-          <input value={b.ctaLink ?? ''} placeholder="/collections/sale" onChange={e => patchBlock(selected, { ctaLink: e.target.value || null })} className={INPUT} />
-          <span className="text-[11px] text-slate">Starts with https://, http:// or / (a page on your own store).</span>
-        </label>
-        <button type="button" onClick={() => { setBlocks(blocks.filter((_, j) => j !== selected)); setSelected(null); }}
-          className="flex items-center gap-1.5 text-[12.5px] font-semibold text-error bg-transparent border-0 cursor-pointer p-0 self-start">
-          <Trash2 size={14} /> Remove block
-        </button>
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={() => { const next = [...blocks]; next.splice(selected + 1, 0, { ...b }); setBlocks(next); setSelected(selected + 1); }}
+            className="flex items-center gap-1.5 text-[12.5px] font-semibold text-slate bg-transparent border-0 cursor-pointer p-0">
+            <Copy size={13} /> Duplicate
+          </button>
+          <button type="button" onClick={() => { setBlocks(blocks.filter((_, j) => j !== selected)); setSelected(null); }}
+            className="flex items-center gap-1.5 text-[12.5px] font-semibold text-error bg-transparent border-0 cursor-pointer p-0">
+            <Trash2 size={13} /> Remove
+          </button>
+        </div>
       </div>
     );
   }
 
+  const marquee = value.animation === 'marquee';
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between bg-white border border-bone rounded-lg px-3 py-2.5">
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between bg-white border border-bone rounded-lg px-3 py-2.5 mb-2">
         <div>
           <p className="text-[12.5px] font-semibold text-charcoal">Show announcement bar</p>
           <p className="text-[11px] text-slate">Shown at the top of every page of your store.</p>
         </div>
-        <Toggle checked={value.isActive} onChange={isActive => onChange({ ...value, isActive })} ariaLabel="Show announcement bar" />
+        <Toggle checked={value.isActive} onChange={isActive => set({ isActive })} ariaLabel="Show announcement bar" />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <span className={LABEL}>Announcements</span>
+      <Group title="Design" defaultOpen={!value.preset}>
+        <DesignGallery value={value} onChange={onChange} />
+      </Group>
+
+      <Group title={`Announcements (${blocks.length})`} defaultOpen>
         <ul className="flex flex-col gap-1 list-none m-0 p-0">
           {blocks.map((b, i) => (
             <li key={i} draggable
@@ -113,7 +191,7 @@ export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncement
               onDragOver={e => e.preventDefault()}
               onDrop={() => { if (dragFrom !== null) move(dragFrom, i); setDragFrom(null); }}
               onDragEnd={() => setDragFrom(null)}
-              className={`group flex items-center gap-1.5 bg-white border rounded-lg pl-1.5 pr-1 py-1.5 ${dragFrom === i ? 'opacity-50' : ''} border-bone`}>
+              className={`flex items-center gap-1.5 bg-white border border-bone rounded-lg pl-1.5 pr-1 py-1.5 ${dragFrom === i ? 'opacity-50' : ''}`}>
               <span className="cursor-grab text-slate p-1" aria-hidden><GripVertical size={14} /></span>
               <Megaphone size={14} className={b.hidden ? 'text-slate/50' : 'text-slate'} />
               <button type="button" onClick={() => setSelected(i)}
@@ -121,7 +199,7 @@ export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncement
                 {b.message || <span className="italic text-slate">Empty announcement</span>}
               </button>
               <button type="button" aria-label={`Move announcement ${i + 1} up`} disabled={i === 0} onClick={() => move(i, i - 1)}
-                className="p-1 text-slate bg-transparent border-0 cursor-pointer disabled:opacity-30 sm:hidden">↑</button>
+                className="p-1 text-slate bg-transparent border-0 cursor-pointer disabled:opacity-30 lg:hidden">↑</button>
               <button type="button" aria-label={b.hidden ? `Show announcement ${i + 1}` : `Hide announcement ${i + 1}`} onClick={() => patchBlock(i, { hidden: !b.hidden })}
                 className="p-1 text-slate bg-transparent border-0 cursor-pointer">{b.hidden ? <EyeOff size={14} /> : <Eye size={14} />}</button>
               <button type="button" aria-label={`Edit announcement ${i + 1}`} onClick={() => setSelected(i)}
@@ -131,76 +209,81 @@ export function AnnouncementForm({ value, onChange }: { value: StoreAnnouncement
         </ul>
         {blocks.length < MAX_BLOCKS ? (
           <button type="button" onClick={addBlock}
-            className="text-[12.5px] font-semibold bg-transparent border-0 cursor-pointer text-left flex items-center gap-1 mt-1" style={{ color: ACCENT }}>
+            className="text-[12.5px] font-semibold bg-transparent border-0 cursor-pointer text-left flex items-center gap-1" style={{ color: ACCENT }}>
             <Plus size={14} /> Add announcement
           </button>
         ) : <p className="text-[11px] text-slate">You can have up to {MAX_BLOCKS} announcements.</p>}
-        <p className="text-[11px] text-slate">Drag to reorder. With more than one, the bar rotates through them.</p>
-      </div>
+        <p className="text-[10.5px] text-slate">Drag to reorder. Each one can have its own link and discount code.</p>
+      </Group>
 
-      <div className="flex flex-col gap-3 border-t border-bone pt-3">
-        <span className={LABEL}>Section settings</span>
-        <label className="flex items-center justify-between gap-2 text-[12.5px] text-charcoal">
-          Auto-rotate every
-          <select value={value.rotateSeconds ?? 5} onChange={e => onChange({ ...value, rotateSeconds: Number(e.target.value) })} className="text-[12.5px] px-2 py-1 rounded-lg border border-bone bg-white">
-            {[3, 4, 5, 6, 8, 10, 15].map(n => <option key={n} value={n}>{n} seconds</option>)}
-          </select>
+      <Group title="Motion">
+        <Select label="How messages change" value={value.animation ?? 'slide'} onChange={animation => set({ animation })}
+          options={[['slide', 'Slide in, one at a time'], ['fade', 'Fade, one at a time'], ['marquee', 'Scrolling strip (all at once)']]} />
+        {marquee
+          ? <Select label="Scroll speed" value={value.marqueeSpeed ?? 'normal'} onChange={marqueeSpeed => set({ marqueeSpeed })}
+              options={[['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]} />
+          : <Select label="Change every" value={String(value.rotateSeconds ?? 5)} onChange={v => set({ rotateSeconds: Number(v) })}
+              options={['3', '4', '5', '6', '8', '10', '15'].map(n => [n, `${n} seconds`] as [string, string])} />}
+      </Group>
+
+      <Group title="Text">
+        <div className="grid grid-cols-2 gap-3">
+          <Select label="Size" value={value.fontSize ?? 'sm'} onChange={fontSize => set({ fontSize })} options={[['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large']]} />
+          <Select label="Alignment" value={value.align ?? 'left'} onChange={align => set({ align })} options={[['left', 'Left'], ['center', 'Centered']]} />
+        </div>
+        <SwitchRow label="Bold" checked={!!value.bold} onChange={bold => set({ bold })} />
+        <SwitchRow label="Capital letters" checked={!!value.uppercase} onChange={uppercase => set({ uppercase })} />
+        <SwitchRow label="Show icon" checked={value.showIcon !== false} onChange={showIcon => set({ showIcon })} />
+        {value.showIcon !== false && (
+          <Select label="Icon" value={value.type} onChange={type => set({ type: type as StoreAnnouncementType })}
+            options={(Object.keys(ANNOUNCEMENT_TYPE_LABEL) as StoreAnnouncementType[]).map(k => [k, ANNOUNCEMENT_TYPE_LABEL[k]] as [StoreAnnouncementType, string])} />
+        )}
+      </Group>
+
+      <Group title="Colours">
+        <div className="grid grid-cols-2 gap-3">
+          <ColorField label="Background" value={value.bgColor} fallback="#f1ede5" onChange={bgColor => set({ bgColor })} />
+          <ColorField label="Text" value={value.textColor} fallback="#161412" onChange={textColor => set({ textColor })} />
+        </div>
+        <SwitchRow label="Gradient background" hint="Blends the background into a second colour." checked={!!value.bgColor2}
+          onChange={on => set({ bgColor2: on ? '#db2777' : null })} />
+        {value.bgColor2 && <ColorField label="Gradient end colour" value={value.bgColor2} fallback="#db2777" onChange={bgColor2 => set({ bgColor2 })} />}
+      </Group>
+
+      <Group title="Countdown timer">
+        <label className="flex flex-col gap-1">
+          <span className={LABEL}>Count down to</span>
+          <input type="datetime-local" value={toDatetimeLocal(value.countdownEndAt)} onChange={e => set({ countdownEndAt: fromDatetimeLocal(e.target.value) })} className={INPUT} />
+          <span className="text-[10.5px] text-slate">Shows a live “2d 04:12:09” timer next to your messages. It disappears when the time is up.</span>
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] text-slate">Position</span>
-            <select value={value.placement ?? 'below'} onChange={e => onChange({ ...value, placement: e.target.value as 'above' | 'below' })} className={INPUT}>
-              <option value="below">Below the header</option>
-              <option value="above">Above the header</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] text-slate">Text alignment</span>
-            <select value={value.align ?? 'left'} onChange={e => onChange({ ...value, align: e.target.value as 'left' | 'center' })} className={INPUT}>
-              <option value="left">Left</option>
-              <option value="center">Centered</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] text-slate">Icon</span>
-            <select value={value.type} onChange={e => onChange({ ...value, type: e.target.value as StoreAnnouncementType })} className={INPUT}>
-              {(Object.keys(ANNOUNCEMENT_TYPE_LABEL) as StoreAnnouncementType[]).map(k => <option key={k} value={k}>{ANNOUNCEMENT_TYPE_LABEL[k]}</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {([['bgColor', 'Background'], ['textColor', 'Text']] as const).map(([key, label]) => (
-            <div key={key} className="flex flex-col gap-1.5">
-              <span className="text-[10.5px] text-slate">{label} colour</span>
-              <div className="flex items-center gap-2">
-                <input type="color" aria-label={`${label} colour`} value={value[key] ?? (key === 'bgColor' ? '#f1ede5' : '#161412')}
-                  onChange={e => onChange({ ...value, [key]: e.target.value })} className="h-8 w-10 p-0 border border-bone rounded cursor-pointer bg-white" />
-                <button type="button" disabled={!value[key]} onClick={() => onChange({ ...value, [key]: null })}
-                  className="text-[11px] text-slate bg-transparent border-0 cursor-pointer disabled:opacity-40 underline">Use theme colour</button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-between bg-white border border-bone rounded-lg px-3 py-2">
-          <p className="text-[12.5px] font-semibold text-charcoal">Let visitors close the bar</p>
-          <Toggle checked={value.closable !== false} onChange={closable => onChange({ ...value, closable })} ariaLabel="Let visitors close the bar" />
-        </div>
-      </div>
+        {value.countdownEndAt && (
+          <button type="button" onClick={() => set({ countdownEndAt: null })} className="text-[11.5px] text-slate underline bg-transparent border-0 cursor-pointer p-0 self-start">Remove timer</button>
+        )}
+      </Group>
 
-      <div className="flex flex-col gap-1.5 border-t border-bone pt-3">
-        <span className={LABEL}>Schedule (optional)</span>
-        <p className="text-[11px] text-slate -mt-1">Leave blank to show as soon as it's on, with no end date.</p>
+      <Group title="Where and when">
+        <div className="grid grid-cols-2 gap-3">
+          <Select label="Position" value={value.placement ?? 'below'} onChange={placement => set({ placement })} options={[['below', 'Below the header'], ['above', 'Above the header']]} />
+          <Select label="Show on" value={value.device ?? 'all'} onChange={device => set({ device })} options={[['all', 'All devices'], ['mobile', 'Mobile only'], ['desktop', 'Desktop only']]} />
+        </div>
+        <SwitchRow label="Let visitors close the bar" checked={value.closable !== false} onChange={closable => set({ closable })} />
+        {value.closable !== false && (
+          <Select label="After closing, show it again" value={value.dismissFor ?? 'forever'} onChange={dismissFor => set({ dismissFor })}
+            options={[['session', 'On their next visit'], ['day', 'After 24 hours'], ['forever', 'Only when the message changes']]} />
+        )}
+        <p className={`${LABEL} mt-1`}>Schedule (optional)</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-[10.5px] text-slate">Starts</span>
-            <input type="datetime-local" value={toDatetimeLocal(value.startAt)} onChange={e => onChange({ ...value, startAt: fromDatetimeLocal(e.target.value) })} className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white" />
+            <input type="datetime-local" value={toDatetimeLocal(value.startAt)} onChange={e => set({ startAt: fromDatetimeLocal(e.target.value) })} className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white" />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[10.5px] text-slate">Ends</span>
-            <input type="datetime-local" value={toDatetimeLocal(value.endAt)} onChange={e => onChange({ ...value, endAt: fromDatetimeLocal(e.target.value) })} className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white" />
+            <input type="datetime-local" value={toDatetimeLocal(value.endAt)} onChange={e => set({ endAt: fromDatetimeLocal(e.target.value) })} className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white" />
           </label>
         </div>
-      </div>
+        <p className="text-[10.5px] text-slate">Leave blank to show as soon as it's on, with no end date.</p>
+      </Group>
     </div>
   );
 }

@@ -11,7 +11,7 @@ export type ActivityCategory = 'products' | 'orders' | 'finance' | 'marketing' |
 export type AdminActivityCategory =
   | ActivityCategory
   | 'loyalty' | 'subscriptions' | 'platform_billing' | 'platform_plans'
-  | 'seo' | 'ai_studio' | 'announcements' | 'moderation' | 'promotions';
+  | 'seo' | 'ai_studio' | 'announcements' | 'moderation' | 'promotions' | 'admin_audit' | 'admin_team';
 
 export const ADMIN_ACTIVITY_CATEGORIES: AdminActivityCategory[] = [
   'products', 'orders', 'finance', 'marketing', 'customers', 'settings', 'security',

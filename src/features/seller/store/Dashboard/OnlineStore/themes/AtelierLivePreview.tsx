@@ -96,8 +96,7 @@ const CHROME_CSS = '.editor-chrome-target{outline:2px solid transparent;outline-
   + '.editor-chrome-selected,.editor-chrome-selected:hover{outline-color:#D97757}'
   + '[data-editor-hover="1"]{outline:2px dashed rgba(217,119,87,0.8)!important;outline-offset:-2px}';
 
-export type AnnouncementBarPreviewValue = Pick<StoreAnnouncementBarValue,
-  'message' | 'type' | 'ctaLabel' | 'ctaLink' | 'moreMessages' | 'rotateSeconds' | 'closable' | 'bgColor' | 'textColor' | 'placement' | 'align'>;
+export type AnnouncementBarPreviewValue = Omit<StoreAnnouncementBarValue, 'isActive' | 'startAt' | 'endAt' | 'preset'>;
 
 /** A real, isolated `StorefrontProvider` for a live preview panel — built
  *  from the SAME real store data the public storefront uses (fetched once
@@ -337,17 +336,13 @@ export function AtelierLivePreview({
   const firstMessage = announcementBar && !(announcementBar as { messageHidden?: boolean }).messageHidden ? announcementBar.message : null;
   const previewAnnouncement = announcementBar && (firstMessage || announcementBar.moreMessages?.some(m => m.message && !m.hidden)) ? (
     <StoreAnnouncementBar
-      storeId={store.storeId}
+      {...announcementBar}
+      key={JSON.stringify(announcementBar)}
+      storeId={`preview-${store.storeId}`}
       message={firstMessage}
-      type={announcementBar.type}
-      ctaLabel={announcementBar.ctaLabel}
-      ctaLink={announcementBar.ctaLink}
-      moreMessages={announcementBar.moreMessages}
-      rotateSeconds={announcementBar.rotateSeconds}
-      closable={announcementBar.closable}
-      bgColor={announcementBar.bgColor}
-      textColor={announcementBar.textColor}
-      align={announcementBar.align}
+      couponCode={firstMessage ? announcementBar.couponCode : null}
+      device="all"
+      dismissFor="session"
       themeColors={{ bg: t.colors.bgAlt, text: t.colors.ink, border: t.colors.border }}
     />
   ) : null;

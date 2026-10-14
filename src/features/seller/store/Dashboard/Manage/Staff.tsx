@@ -426,7 +426,7 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
       )}
 
       {formOpen && (
-        <Modal title={formOpen === 'new' ? 'New Role' : `Edit "${formOpen.name}"`} onClose={() => setFormOpen(null)} footer={
+        <Modal width={1000} title={formOpen === 'new' ? 'New Role' : `Edit "${formOpen.name}"`} onClose={() => setFormOpen(null)} footer={
           <>
             <Button variant="ghost" onClick={() => setFormOpen(null)}>Cancel</Button>
             <Button variant="primary" onClick={handleSave} loading={saving}>Save</Button>
@@ -452,7 +452,7 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
                   <button type="button" className="text-slate hover:underline bg-transparent border-0 cursor-pointer p-0" onClick={() => setGroup([...STAFF_PERMISSIONS], false)}>Clear</button>
                 </span>
               </div>
-              <div className="flex flex-col gap-4 border border-bone rounded-lg p-3 max-h-[380px] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 border border-bone rounded-lg p-4 max-h-[58vh] overflow-y-auto">
                 {groupPermissions(STAFF_PERMISSIONS).map(g => {
                   const allOn = g.items.every(p => form.permissions.includes(p));
                   const some = g.items.some(p => form.permissions.includes(p));

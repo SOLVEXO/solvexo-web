@@ -9,7 +9,10 @@ import {
 } from '@/api/services/commissionRules';
 import { Button, Modal, StatusBadge, ActionMenu, Badge, SkeletonBox } from '@/components/comman/ui';
 import type { ActionMenuItem } from '@/components/comman/ui';
-import { Store as StoreIcon, Eye, Ban, CheckCircle2, Percent } from 'lucide-react';
+import { Store as StoreIcon, Eye, Ban, CheckCircle2, Percent, ScanEye } from 'lucide-react';
+import { startViewAsStore } from '@/utils/viewAsStore';
+import { can } from '@/hooks/auth/useCan';
+import { useToast } from '@/contexts/ToastContext';
 
 interface StoresTabProps {
   stores: SellerStore[];
@@ -149,6 +152,12 @@ export function StoresTab({ stores, onChanged }: StoresTabProps) {
   const [confirmStore, setConfirmStore] = useState<SellerStore | null>(null);
   const [customersFor, setCustomersFor] = useState<SellerStore | null>(null);
   const [commissionFor, setCommissionFor] = useState<SellerStore | null>(null);
+  const toast = useToast();
+
+  async function viewAs(store: SellerStore) {
+    try { const id = await startViewAsStore(store.id); window.location.assign('/store/' + id); }
+    catch (err) { toast.error(err instanceof Error ? err.message : 'Could not open the store.'); }
+  }
 
   async function toggleStore() {
     if (!confirmStore) return;
@@ -165,6 +174,7 @@ export function StoresTab({ stores, onChanged }: StoresTabProps) {
       <div className="flex flex-col gap-2">
         {stores.map((store) => {
           const items: ActionMenuItem[] = [
+            { label: 'View store as admin (read only)', icon: <ScanEye size={13} />, disabled: !can('clients.view'), onClick: () => { void viewAs(store); } },
             { label: 'View customers', icon: <Eye size={13} />, onClick: () => setCustomersFor(store) },
             { label: 'Commission rate', icon: <Percent size={13} />, onClick: () => setCommissionFor(store) },
             store.status === 'suspended'

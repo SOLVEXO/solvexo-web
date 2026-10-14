@@ -39,6 +39,9 @@ const AdminLoginPage     = lazy(() => import('@/features/auth/pages/admin/AdminL
 const StaffLoginPage     = lazy(() => import('@/features/auth/pages/StaffLoginPage').then(m => ({ default: m.StaffLoginPage })));
 const StaffAcceptInvitePage = lazy(() => import('@/features/auth/pages/StaffAcceptInvitePage'));
 const StaffForgotPasswordPage = lazy(() => import('@/features/auth/pages/StaffForgotPasswordPage'));
+const AdminAcceptInvitePage = lazy(() => import('@/features/auth/pages/admin/AdminTeamAuthPages').then(m => ({ default: m.AdminAcceptInvitePage })));
+const AdminForgotPasswordPage = lazy(() => import('@/features/auth/pages/admin/AdminTeamAuthPages').then(m => ({ default: m.AdminForgotPasswordPage })));
+const AdminResetPasswordPage = lazy(() => import('@/features/auth/pages/admin/AdminTeamAuthPages').then(m => ({ default: m.AdminResetPasswordPage })));
 const StaffResetPasswordPage = lazy(() => import('@/features/auth/pages/StaffResetPasswordPage'));
 const StoreAccountRoute = lazy(() => import('@/features/seller/store/Dashboard/Manage/StaffAccount'));
 const PayInvoicePage     = lazy(() => import('@/features/buyer/pages/PayInvoicePage'));
@@ -312,6 +315,9 @@ const mainRouter = createBrowserRouter([
       // ── Auth ──────────────────────────────────────────────────────────
       { path: '/login',           element: <LoginPage /> },
       { path: '/admin/login',     element: <AdminLoginPage /> },
+      { path: '/admin/forgot-password', element: <AdminForgotPasswordPage /> },
+      { path: '/admin-invite/:token', element: <AdminAcceptInvitePage /> },
+      { path: '/admin-reset-password/:token', element: <AdminResetPasswordPage /> },
       { path: '/staff-login/:storeId', element: <StaffLoginPage /> },
       { path: '/staff-invite/:token', element: <StaffAcceptInvitePage /> },
       { path: '/staff-forgot-password/:storeId', element: <StaffForgotPasswordPage /> },

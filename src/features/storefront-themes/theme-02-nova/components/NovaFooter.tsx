@@ -2,8 +2,8 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { PaymentBadges } from '../../navigation/FooterParts';
-import { readFooterOptions, expandCopyright, mutedOf } from '../../navigation/headerOptions';
-import { FooterColumns, SocialRow, visibleFooterBlocks } from '../../navigation/FooterColumns';
+import { readFooterOptions, expandCopyright, mutedOf, visibleFooterBlocks } from '../../navigation/headerOptions';
+import { FooterColumns, SocialRow } from '../../navigation/FooterColumns';
 import { apiSubmitPrivacyRequest } from '@/api/services/store';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { novaTheme as t } from '../theme.config';

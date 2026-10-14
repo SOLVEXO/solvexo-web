@@ -438,8 +438,20 @@ export interface StoreAnnouncementBar {
   startAt:  string | null;
   endAt:    string | null;
   messageHidden?: boolean;
+  couponCode?:    string | null;
   /** Up to 9 extra rotating messages. Optional: a bar saved before these existed omits them. */
-  moreMessages?:  { message: string; ctaLabel?: string | null; ctaLink?: string | null; hidden?: boolean }[];
+  moreMessages?:  { message: string; ctaLabel?: string | null; ctaLink?: string | null; hidden?: boolean; couponCode?: string | null }[];
+  animation?:     'slide' | 'fade' | 'marquee';
+  marqueeSpeed?:  'slow' | 'normal' | 'fast';
+  bgColor2?:      string | null;
+  fontSize?:      'sm' | 'md' | 'lg';
+  uppercase?:     boolean;
+  bold?:          boolean;
+  showIcon?:      boolean;
+  device?:        'all' | 'mobile' | 'desktop';
+  dismissFor?:    'forever' | 'day' | 'session';
+  countdownEndAt?: string | null;
+  preset?:        string | null;
   rotateSeconds?: number;
   closable?:      boolean;
   bgColor?:       string | null;
@@ -520,7 +532,7 @@ export interface PublicStoreData {
   badges:         string[];
   createdAt:      string;
   activeCampaign: ActiveCampaignBadge | null;
-  announcementBar: (Pick<StoreAnnouncementBar, 'message' | 'type' | 'ctaLabel' | 'ctaLink' | 'moreMessages' | 'rotateSeconds' | 'closable' | 'bgColor' | 'textColor' | 'placement' | 'align'>) | null;
+  announcementBar: (Omit<StoreAnnouncementBar, 'isActive' | 'startAt' | 'endAt' | 'messageHidden' | 'preset'>) | null;
   /** Real storefront access gate — 'public' (default) means every visitor
    *  sees the real site, same as before this field existed. See
    *  `StorefrontLayout.tsx` for where this is enforced. */

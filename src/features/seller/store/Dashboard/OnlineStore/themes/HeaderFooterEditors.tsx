@@ -135,17 +135,18 @@ export function HeaderEditor({ hf, storeId, onError }: { hf: HeaderFooterDraftSt
           </>
         )}
       </Group>
-      <Group title="Logo image">
-        <select className={SELECT} value={headerDraft.logoSource ?? 'store'} aria-label="Logo image"
-          onChange={e => setHeader({ ...headerDraft, logoSource: e.target.value as StorefrontHeader['logoSource'] })}>
-          <option value="store">Use store logo</option>
-          <option value="custom">Use a different logo for this theme</option>
-        </select>
-        {headerDraft.logoSource === 'custom' && (
-          <ImageUpload value={headerDraft.customLogoUrl ? [headerDraft.customLogoUrl] : []} onChange={urls => setHeader({ ...headerDraft, customLogoUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
-        )}
-      </Group>
-      <HeaderSettingsPanel header={headerDraft} onChange={setHeader} />
+      <HeaderSettingsPanel header={headerDraft} onChange={setHeader} logoSlot={(
+        <>
+          <select className={SELECT} value={headerDraft.logoSource ?? 'store'} aria-label="Logo image"
+            onChange={e => setHeader({ ...headerDraft, logoSource: e.target.value as StorefrontHeader['logoSource'] })}>
+            <option value="store">Use store logo</option>
+            <option value="custom">Use a different logo for this theme</option>
+          </select>
+          {headerDraft.logoSource === 'custom' && (
+            <ImageUpload value={headerDraft.customLogoUrl ? [headerDraft.customLogoUrl] : []} onChange={urls => setHeader({ ...headerDraft, customLogoUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
+          )}
+        </>
+      )} />
     </div>
   );
 }

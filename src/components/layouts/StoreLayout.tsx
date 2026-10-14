@@ -24,6 +24,7 @@ import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/co
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { FEATURES } from '@/constants/features';
+import { ViewAsBanner } from './ViewAsBanner';
 import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -1531,6 +1532,7 @@ export function StoreLayout() {
           {/* Platform announcements now arrive as real per-store Notifications
              (see AdminAnnouncementsService.broadcast) — the seller sees them
              in the bell above, not a separate dismissable banner here. */}
+          <ViewAsBanner />
           <PlatformBillingBanner />
           <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
             <GatedOutlet />

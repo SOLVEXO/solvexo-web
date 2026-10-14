@@ -43,6 +43,14 @@ function permissionsFromToken(token: string | null | undefined): string[] | null
     return Array.isArray(payload.permissions) ? payload.permissions : null;
   } catch { return null; }
 }
+/** Admin-team claims of an admin JWT (display/nav only). A token without `teamAdmin` is the owner / a Super Admin. */
+function adminClaimsFromToken(token: string | null | undefined): { teamAdmin: boolean; permissions: string[]; readOnly: boolean } | null {
+  try {
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return { teamAdmin: payload.teamAdmin === true, permissions: Array.isArray(payload.permissions) ? payload.permissions : [], readOnly: payload.readOnly === true };
+  } catch { return null; }
+}
 
 export const TokenStorage = {
   save(accessToken: string, refreshToken: string) {
@@ -86,6 +94,10 @@ export const TokenStorage = {
     if (parsed?.role === 'staff' && !Array.isArray(parsed.permissions)) {
       const perms = permissionsFromToken(getAuthCookie('accessToken'));
       if (perms) parsed.permissions = perms;
+    }
+    if (parsed?.role === 'admin') {
+      const c = adminClaimsFromToken(getAuthCookie('accessToken'));
+      if (c?.teamAdmin) { parsed.teamAdmin = true; parsed.permissions = c.permissions; parsed.readOnly = c.readOnly; }
     }
     return parsed as T;
   },

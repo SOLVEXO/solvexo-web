@@ -16,6 +16,7 @@ import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { CommandPalette } from '@/components/comman/ui/CommandPalette';
 import { Modal, Button, CopyIconButton } from '@/components/comman/ui';
+import { can, isTeamAdminSession } from '@/hooks/auth/useCan';
 
 interface AdminNavItem {
   id:    string;
@@ -183,6 +184,21 @@ function saveCollapsedAdminGroups(groups: Set<string>) {
 const VISIBLE_NAV_IDS = new Set(ADMIN_MODULES.flatMap(m => m.ids));
 const VISIBLE_ADMIN_NAV = ADMIN_NAV.filter(item => VISIBLE_NAV_IDS.has(item.id));
 
+// Platform-team admins only see the pages their role allows (the owner / Super Admin sees all). The backend
+// enforces the same permissions; this only hides what would answer 403. 'settings' (own account) is always open.
+const NAV_PERMISSION: Record<string, string> = {
+  overview: 'analytics.view', analytics: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
+  billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
+  'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',
+  content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage',
+};
+const navAllowed = (id: string) => !NAV_PERMISSION[id] || can(NAV_PERMISSION[id]);
+const findNav = (id: string) => { const n = ADMIN_NAV.find(x => x.id === id); return n && navAllowed(n.id) ? n : undefined; };
+/** First page a restricted admin may open (landing + redirect target). */
+export const firstAllowedAdminPath = () => ADMIN_NAV.find(n => navAllowed(n.id))?.path ?? '/admin/settings';
+/** The nav item whose path owns this URL (longest match), if any. */
+const navForPath = (pathname: string) => [...ADMIN_NAV].sort((a, b) => b.path.length - a.path.length).find(n => n.path === '/admin' ? pathname === '/admin' : pathname.startsWith(n.path));
+
 function isNavItemActive(item: AdminNavItem, pathname: string) {
   return item.path === '/admin' ? pathname === '/admin' : pathname.startsWith(item.path);
 }
@@ -202,7 +218,7 @@ export function AdminNavMenu({ excludeItemIds = [] }: { excludeItemIds?: string[
   return (
     <div className="flex flex-col gap-4">
       {ADMIN_MODULES.filter(m => m.id !== 'overview')
-        .map(module => ({ ...module, items: module.ids.map(id => ADMIN_NAV.find(n => n.id === id)).filter((n): n is AdminNavItem => !!n && !hiddenItems.has(n.id)) }))
+        .map(module => ({ ...module, items: module.ids.map(id => findNav(id)).filter((n): n is AdminNavItem => !!n && !hiddenItems.has(n.id)) }))
         .filter(module => module.items.length > 0)
         .map(module => (
         <div key={module.id} className="bg-white border border-bone rounded-2xl overflow-hidden">
@@ -313,7 +329,7 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
 
   const goTo = (path: string) => navigate(path);
 
-  const paletteItems = VISIBLE_ADMIN_NAV.map(item => ({
+  const paletteItems = VISIBLE_ADMIN_NAV.filter(item => navAllowed(item.id)).map(item => ({
     id:       item.id,
     label:    item.label,
     icon:     item.Icon,
@@ -383,7 +399,7 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
         <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto py-1', open ? 'px-3' : 'px-[10px] pt-1')}>
           {ADMIN_MODULES.map(module => {
             const children = module.ids
-              .map(id => ADMIN_NAV.find(n => n.id === id))
+              .map(id => findNav(id))
               .filter((n): n is AdminNavItem => !!n);
             if (!children.length) return null;
 
@@ -548,6 +564,12 @@ export function AdminLayout() {
   const user = TokenStorage.getUser<{ role?: AppRole }>();
   if (!TokenStorage.isLoggedIn() || user?.role !== 'admin') {
     return <Navigate to={`/admin/login?redirect=${encodeURIComponent(currentPath)}`} replace />;
+  }
+
+  const blocked = isTeamAdminSession() ? navForPath(currentPath) : undefined;
+  if (blocked && !navAllowed(blocked.id)) {
+    const to = firstAllowedAdminPath();
+    if (to !== currentPath) return <Navigate to={to} replace />;
   }
 
   return (

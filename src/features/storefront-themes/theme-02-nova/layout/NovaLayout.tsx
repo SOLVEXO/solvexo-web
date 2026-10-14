@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { CartDrawerProvider } from '../../CartDrawer';
@@ -25,17 +25,8 @@ export function NovaLayout({ children }: { children: ReactNode }) {
   const announcementAbove = bar?.placement === 'above';
   const announcement = bar?.message ? (
     <StoreAnnouncementBar
+      {...bar}
       storeId={store.storeId}
-      message={bar.message}
-      type={bar.type}
-      ctaLabel={bar.ctaLabel}
-      ctaLink={bar.ctaLink}
-      moreMessages={bar.moreMessages}
-      rotateSeconds={bar.rotateSeconds}
-      closable={bar.closable}
-      bgColor={bar.bgColor}
-      textColor={bar.textColor}
-      align={bar.align}
       themeColors={{ bg: t.colors.bgAlt, text: t.colors.ink, border: t.colors.border }}
     />
   ) : null;

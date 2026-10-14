@@ -104,7 +104,7 @@ export function AdminLoginPage() {
             }
           />
           <div className="flex justify-end mt-2">
-            <Button variant="link" size="sm" onClick={() => navigate('/forgot-password')}>
+            <Button variant="link" size="sm" onClick={() => navigate('/admin/forgot-password')}>
               Forgot password?
             </Button>
           </div>

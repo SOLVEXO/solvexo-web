@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Code2, Download, FilePlus2, FileCode2, Loader2, MonitorPlay, Pencil, RotateCcw, Save, Trash2, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  apiEditThemePackageFile, apiGetThemePackageRevision, apiListThemePackageRevisions,
-  apiRollbackThemePackage, apiUploadThemePackage, apiAddThemePackageFile, apiDeleteThemePackageFile, apiRenameThemePackageFile, apiUnpublishThemePackage, apiExportThemePackage, apiPreviewThemePackage, apiGetThemePackageStructure, apiPublishThemePackage,
+  apiEditThemePackageFile, apiGetThemePackageFile, apiStartThemeImport, apiGetThemeImportJob, apiGetThemePackageRevision, apiListThemePackageRevisions,
+  apiRollbackThemePackage, apiAddThemePackageFile, apiDeleteThemePackageFile, apiRenameThemePackageFile, apiUnpublishThemePackage, apiExportThemePackage, apiPreviewThemePackage, apiGetThemePackageStructure, apiPublishThemePackage,
   type ThemePackageRevision, type ThemePackageStructure,
 } from '@/api/services/storeTheme';
 import { ShopifyTemplateEditor } from './ShopifyTemplateEditor';
@@ -18,6 +18,9 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const [content, setContent] = useState('');
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [importState, setImportState] = useState<{ phase: 'uploading'; pct: number } | { phase: 'processing'; stage: string } | null>(null);
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const [error, setError] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
   const [structure, setStructure] = useState<ThemePackageStructure | null>(null);
@@ -34,7 +37,11 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
     setStructure(structureResult.data);
     const firstEditable = result.data.files.find((f) => f.encoding === 'utf8');
     setFilePath(firstEditable?.path ?? '');
-    setContent(firstEditable?.content ?? '');
+    setContent('');
+    if (firstEditable) {
+      const text = await apiGetThemePackageFile(storeId, installedThemeId, version, firstEditable.path);
+      setContent(text.data.content);
+    }
     setDirty(false);
     setError('');
   }, [storeId, installedThemeId]);
@@ -70,8 +77,13 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
           setStructure(packageStructure.data);
           const firstEditable = revision.data.files.find((file) => file.encoding === 'utf8');
           setFilePath(firstEditable?.path ?? '');
-          setContent(firstEditable?.content ?? '');
+          setContent('');
           setDirty(false);
+          if (firstEditable) {
+            void apiGetThemePackageFile(storeId, installedThemeId, rows[0].version, firstEditable.path)
+              .then((text) => { if (!cancelled) setContent(text.data.content); })
+              .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load the file.'); });
+          }
         });
       })
       .catch((e) => {
@@ -84,16 +96,37 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
     if (!file) return;
     if (dirty && !window.confirm('Discard unsaved source edits and import this ZIP?')) { if (inputRef.current) inputRef.current.value = ''; return; }
     if (!file.name.toLowerCase().endsWith('.zip')) { setError('Choose a .zip Shopify theme package.'); return; }
-    setBusy(true); setError('');
+    setBusy(true); setError(''); setImportState({ phase: 'uploading', pct: 0 });
     try {
-      await apiUploadThemePackage(storeId, installedThemeId, file);
+      // Like Shopify: the upload returns at once and the theme is processed in the background; we poll its status.
+      const started = await apiStartThemeImport(storeId, installedThemeId, file, (pct) => { if (alive.current) setImportState({ phase: 'uploading', pct }); });
+      const jobId = started.data.jobId;
+      if (alive.current) setImportState({ phase: 'processing', stage: started.data.stage });
+      let failedPolls = 0;
+      for (let attempt = 0; attempt < 200; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        if (!alive.current) return;
+        try {
+          const job = (await apiGetThemeImportJob(storeId, installedThemeId, jobId)).data;
+          failedPolls = 0;
+          if (job.status === 'failed') throw new Error(job.error || 'The theme could not be imported.');
+          if (job.status === 'ready') break;
+          setImportState({ phase: 'processing', stage: job.stage });
+        } catch (pollError) {
+          if (pollError instanceof Error && !/timeout|network/i.test(pollError.message)) throw pollError;
+          if (++failedPolls >= 4) throw new Error('Lost connection while the theme was being imported. Reopen this window in a minute to see the result.', { cause: pollError });
+        }
+        if (attempt === 199) throw new Error('The import is taking too long. Reopen this window in a minute to see the result.');
+      }
       toast.success('Theme imported. Check the preview, then press Publish to make it live.');
       await reload();
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
-      setError(/timeout|network/i.test(msg) ? 'The upload took too long or the connection dropped. Check your internet and try again — if the theme is very large, remove unused files from the ZIP.' : msg || 'Theme ZIP could not be uploaded.');
+      setError(/timeout|network/i.test(msg) ? 'The upload took too long or the connection dropped. Check your internet and try again.' : msg || 'Theme ZIP could not be uploaded.');
+    } finally {
+      if (alive.current) { setBusy(false); setImportState(null); }
+      if (inputRef.current) inputRef.current.value = '';
     }
-    finally { setBusy(false); if (inputRef.current) inputRef.current.value = ''; }
   };
 
   const save = async () => {
@@ -205,8 +238,14 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
     if (dirty && !window.confirm('Discard your unsaved source edits and switch files?')) return false;
     const file = selected.files.find((row) => row.path === path);
     if (!file || file.encoding !== 'utf8') { setFilePath(path); setContent('[Binary asset — source editor is text-only.]'); setDirty(false); return true; }
-    setFilePath(path); setContent(file.content ?? ''); setDirty(false); setError('');
-    return true;
+    try {
+      const text = await apiGetThemePackageFile(storeId, installedThemeId, selected.version, path);
+      setFilePath(path); setContent(text.data.content); setDirty(false); setError('');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not load the file.');
+      return false;
+    }
   };
   const selectedFile = selected?.files.find((file) => file.path === filePath);
 
@@ -223,7 +262,22 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
           <button type="button" onClick={() => { if (!dirty || window.confirm('Discard unsaved source edits and close?')) onClose(); }} className="p-2 rounded-lg border border-bone bg-white cursor-pointer" aria-label="Close"><X size={16} /></button>
         </div>
       </div>
-      {busy && <p role="status" className="m-0 px-4 py-2 text-[12px] text-slate bg-[#F1EDE5]">Working on your theme… large themes can take up to a minute. Please keep this window open.</p>}
+      {importState ? (
+        <div role="status" aria-live="polite" className="px-4 py-2 text-[12px] text-slate bg-[#F1EDE5]">
+          {importState.phase === 'uploading'
+            ? <>Uploading theme… {importState.pct}%<div className="mt-1 h-1.5 rounded bg-white overflow-hidden"><div className="h-full bg-charcoal" style={{ width: `${importState.pct}%` }} /></div></>
+            : <>{({ reading: 'Reading the ZIP…', checking: 'Checking the theme files…', saving: 'Saving the theme…', compatibility: 'Testing your theme\'s pages…' } as Record<string, string>)[importState.stage] ?? 'Processing…'} You can keep this window open.</>}
+        </div>
+      ) : busy && <p role="status" className="m-0 px-4 py-2 text-[12px] text-slate bg-[#F1EDE5]">Working on your theme… please keep this window open.</p>}
+      {selected?.compatibility && !importState && (
+        <details className="px-4 py-2 text-[12px] border-b border-bone" open={!selected.compatibility.ok}>
+          <summary className="cursor-pointer font-semibold">{selected.compatibility.ok ? 'Compatibility check: all main pages render' : 'Compatibility check: some pages have problems'}</summary>
+          <ul className="m-0 mt-2 pl-4 list-disc">
+            {selected.compatibility.pages.map((page) => <li key={page.path}>{page.ok ? '✓' : '✕'} {page.label}{page.message ? ` — ${page.message}` : ''}</li>)}
+            {selected.compatibility.notes.map((note) => <li key={note} className="text-slate">{note}</li>)}
+          </ul>
+        </details>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-[210px_260px_1fr] flex-1 min-h-0">
         <aside className="border-r border-bone p-3 overflow-y-auto">
           <p className="px-2 text-[10px] font-bold uppercase tracking-wide text-slate">Source revisions</p>

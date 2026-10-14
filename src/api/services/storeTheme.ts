@@ -251,6 +251,23 @@ export interface ThemePackageRevision {
   restoredFromVersion: number | null;
   createdAt?: string;
   files: Array<{ path: string; size: number; sha256: string; encoding?: 'utf8' | 'base64'; content?: string }>;
+  /** Result of the import-time check: which pages render, plus notes about features Solvexo does not provide. */
+  compatibility?: ThemeCompatibility | null;
+}
+
+export interface ThemeCompatibility {
+  checkedAt: string;
+  ok: boolean;
+  pages: Array<{ label: string; path: string; ok: boolean; message?: string }>;
+  notes: string[];
+}
+
+export interface ThemeImportJob {
+  jobId: string;
+  status: 'processing' | 'ready' | 'failed';
+  stage: 'reading' | 'checking' | 'saving' | 'compatibility' | 'done' | 'failed' | string;
+  error?: string | null;
+  version?: number | null;
 }
 
 export interface ThemePackageStructure {
@@ -292,6 +309,27 @@ export function apiUploadThemePackage(storeId: string, installedThemeId: string,
   const body = new FormData();
   body.append('file', file);
   return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body, { timeout: THEME_PACKAGE_TIMEOUT });
+}
+
+/** Starts a background import and returns at once; poll apiGetThemeImportJob until it is ready or failed. */
+export function apiStartThemeImport(storeId: string, installedThemeId: string, file: File, onProgress?: (percent: number) => void) {
+  const body = new FormData();
+  body.append('file', file);
+  return client.post<never, ApiResponse<ThemeImportJob>>(`${themePackagePath(storeId, installedThemeId)}/import`, body, {
+    timeout: THEME_PACKAGE_TIMEOUT,
+    onUploadProgress: (event) => { if (onProgress && event.total) onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100))); },
+  });
+}
+
+export function apiGetThemeImportJob(storeId: string, installedThemeId: string, jobId: string) {
+  return client.get<never, ApiResponse<ThemeImportJob>>(`${themePackagePath(storeId, installedThemeId)}/import/${jobId}`);
+}
+
+/** Text of one source file (the revision itself no longer carries file contents). */
+export function apiGetThemePackageFile(storeId: string, installedThemeId: string, version: number, path: string) {
+  return client.get<never, ApiResponse<{ path: string; encoding: 'utf8' | 'base64'; size: number; content: string }>>(
+    `${themePackagePath(storeId, installedThemeId)}/${version}/file`, { params: { path } },
+  );
 }
 
 export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number, path = '/', draft?: { path: string; content: string }) {

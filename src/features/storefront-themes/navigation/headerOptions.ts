@@ -133,6 +133,11 @@ export function footerLayoutBlocks(footer: Partial<StorefrontFooter> | null | un
   ];
 }
 
+/** Footer blocks that are visible on the storefront, in the retailer's order. */
+export function visibleFooterBlocks(footer: Partial<StorefrontFooter> | null | undefined): Block[] {
+  return footerLayoutBlocks(footer).filter(b => b.enabled !== false);
+}
+
 /** `{year}` in the copyright text becomes the current year. */
 export function expandCopyright(textValue: string, now = new Date()): string {
   return textValue.replace(/\{year\}/gi, String(now.getFullYear()));

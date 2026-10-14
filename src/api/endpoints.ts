@@ -747,6 +747,27 @@ export const ENDPOINTS = {
     DELETE_BIN: (storeId: string, binId: string) => `/api/inventory/${storeId}/bins/${binId}`,
   },
 
+  ADMIN_TEAM: {
+    INVITE: (token: string) => `/api/admin/team/invite/${token}`,
+    ACCEPT: (token: string) => `/api/admin/team/invite/${token}/accept`,
+    FORGOT: '/api/admin/team/forgot-password',
+    RESET: (token: string) => `/api/admin/team/reset-password/${token}`,
+    ADMINS: '/api/admin/team/admins',
+    ADMIN: (id: string) => `/api/admin/team/admins/${id}`,
+    RESEND: (id: string) => `/api/admin/team/admins/${id}/resend-invite`,
+    REVOKE_SESSIONS: (id: string) => `/api/admin/team/admins/${id}/revoke-sessions`,
+    SUPER: (id: string) => `/api/admin/team/admins/${id}/super`,
+    ROLES: '/api/admin/team/roles',
+    ROLE: (id: string) => `/api/admin/team/roles/${id}`,
+    APPROVALS: '/api/admin/team/approvals',
+    DECIDE: (id: string) => `/api/admin/team/approvals/${id}/decision`,
+    AUDIT: '/api/admin/team/audit',
+    MY_SESSIONS: '/api/admin/team/me/sessions',
+    MY_SESSION: (sid: string) => `/api/admin/team/me/sessions/${sid}`,
+    MY_SESSIONS_REVOKE_ALL: '/api/admin/team/me/sessions/revoke-all',
+    VIEW_AS_STORE: (storeId: string) => `/api/admin/team/view-as-store/${storeId}`,
+  },
+
   STAFF: {
     LOGIN: (storeId: string) => `/api/staff/${storeId}/login`,
     PERMISSIONS: () => `/api/staff/permissions`,

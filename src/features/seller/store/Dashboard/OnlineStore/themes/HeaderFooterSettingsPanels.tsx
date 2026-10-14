@@ -47,15 +47,20 @@ export function Group({ title, children, defaultOpen = false }: { title: string;
   );
 }
 
+/** A colour choice. Empty = the theme's own colour, shown as "Auto" (never a made-up swatch that is not on the store). */
 export function ColorField({ label, value, fallback, onChange }: { label: string; value: string | null | undefined; fallback: string; onChange: (v: string | null) => void }) {
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-[11.5px] text-charcoal">{label}</span>
       <div className="flex items-center gap-2">
-        <input type="color" aria-label={label} value={value ?? fallback} onChange={e => onChange(e.target.value)}
-          className="h-8 w-10 p-0 border border-bone rounded cursor-pointer bg-white" />
-        <button type="button" disabled={!value} onClick={() => onChange(null)}
-          className="text-[11px] text-slate bg-transparent border-0 cursor-pointer disabled:opacity-40 underline">{value ? 'Use theme colour' : 'Theme colour'}</button>
+        <label className="relative h-8 w-10 border border-bone rounded cursor-pointer overflow-hidden shrink-0"
+          style={value ? { background: value } : { background: 'repeating-linear-gradient(45deg,#fff 0 4px,#e9e5dc 4px 8px)' }}>
+          <input type="color" aria-label={label} value={value ?? fallback} onChange={e => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer" />
+        </label>
+        {value
+          ? <button type="button" onClick={() => onChange(null)} className="text-[11px] text-slate bg-transparent border-0 cursor-pointer underline p-0">Reset to theme</button>
+          : <span className="text-[11px] text-slate">Auto (theme)</span>}
       </div>
     </div>
   );
@@ -86,12 +91,13 @@ function TextField({ label, value, onChange, placeholder, maxLength, disabled }:
 }
 
 /** Header section settings, grouped like Shopify's header settings. Every control falls back to the theme's own look. */
-export function HeaderSettingsPanel({ header, onChange }: { header: StorefrontHeader; onChange: (next: StorefrontHeader) => void }) {
+export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: StorefrontHeader; onChange: (next: StorefrontHeader) => void; logoSlot?: ReactNode }) {
   const set = (patch: Partial<StorefrontHeader>) => onChange({ ...header, ...patch });
   const centered = header.headerStyle === 'centered';
   return (
     <>
       <Group title="Logo">
+        {logoSlot}
         <div className="grid grid-cols-2 gap-3">
           <SizeField label="Desktop width (px)" value={header.logoWidth} min={40} max={400} onChange={v => set({ logoWidth: v })} hint="40–400" />
           <SizeField label="Mobile width (px)" value={header.mobileLogoWidth} min={24} max={240} onChange={v => set({ mobileLogoWidth: v })} hint="24–240" />

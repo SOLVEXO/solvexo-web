@@ -5,7 +5,7 @@ import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import type { Block } from '@/api/services/storefrontTypes';
 import { NavAnchor } from './NavAnchor';
 import { SocialIcon, FooterContact } from './FooterParts';
-import { readFooterOptions, footerLayoutBlocks, FOOTER_COLUMN_TYPES } from './headerOptions';
+import { readFooterOptions, visibleFooterBlocks, FOOTER_COLUMN_TYPES } from './headerOptions';
 
 export interface FooterColumnTokens {
   fontBody: string;
@@ -24,11 +24,6 @@ export interface FooterColumnTokens {
   idPrefix: string;
   newsletterHeading: string;
   blogLabel: string;
-}
-
-/** Footer blocks that are visible on the storefront, in the retailer's order. */
-export function visibleFooterBlocks(footer: Parameters<typeof footerLayoutBlocks>[0]): Block[] {
-  return footerLayoutBlocks(footer).filter(b => b.enabled !== false);
 }
 
 /** The footer's column area: every column-type block in the order the retailer arranged it. */
@@ -87,7 +82,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
   const defaultsAfter = !hasColumnBlocks && opts.showDefaultColumns ? Math.max(0, columns.findIndex(b => b.type === 'footer_brand')) : -1;
 
   const render = (b: Block, i: number) => {
-    const s = b.settings as Record<string, any>;
+    const s = b.settings;
     const key = b._id ?? `${b.type}-${i}`;
     switch (b.type) {
       case 'footer_brand':
