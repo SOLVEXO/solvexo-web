@@ -7,6 +7,7 @@ import { useCurrencyPreferenceOptional } from '@/contexts/CurrencyPreferenceCont
 import type { PublicStoreProduct } from '@/api/services/store';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { novaTheme as t } from '../theme.config';
+import { productCardFrame } from '../../cardStyle';
 import { PRODUCT_CARD_RATIO } from '../../imageFit';
 
 const CARD_WIDTHS = [320, 480, 640];
@@ -69,19 +70,19 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
   const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 700, lineHeight: 1.4, margin: 0 }}>{product.name}</p>;
 
   return (
-    <div className="group flex flex-col">
+    <div className="group flex flex-col" style={productCardFrame(t.cardStyle, t.colors, t.productCardRadiusPx)}>
       <div className="relative" style={{ aspectRatio: CARD_RATIO[t.productImageRatio] ?? '1 / 1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.productCardRadiusPx }}>
         {demo ? (
           <div className="block w-full h-full">{media}</div>
         ) : (
           <Link to={`/product/${product.slug}`} className="block w-full h-full">{media}</Link>
         )}
-        {onSale && (
+        {((product.inStock === false && t.soldOutBadge) || (product.inStock !== false && onSale && t.saleBadge)) && (
           <span
             className="absolute top-3 left-3"
             style={{ fontFamily: t.fonts.body, fontSize: '10.5px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '4px 10px', borderRadius: '9999px' }}
           >
-            SALE
+            {product.inStock === false ? 'SOLD OUT' : 'SALE'}
           </span>
         )}
         {product.variantId && (

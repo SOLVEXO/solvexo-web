@@ -36,7 +36,14 @@ export function CartDrawerProvider({ theme, Button, children }: { theme: CartDra
   // a product link) dismisses the drawer without an effect.
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === location.pathname;
-  const openDrawer = useCallback(() => setOpenPath(location.pathname), [location.pathname]);
+  // Theme setting "Cart type": the cart page instead of the drawer (Shopify).
+  const navigate = useNavigate();
+  const { theme: storeTheme } = useStorefront();
+  const cartPage = (storeTheme?.theme as { cartType?: string } | undefined)?.cartType === 'page';
+  const openDrawer = useCallback(() => {
+    if (cartPage) navigate('/cart');
+    else setOpenPath(location.pathname);
+  }, [cartPage, navigate, location.pathname]);
   const closeDrawer = useCallback(() => setOpenPath(null), []);
   const value = useMemo(() => ({ open, openDrawer, closeDrawer, mounted: true }), [open, openDrawer, closeDrawer]);
   return (

@@ -49,6 +49,10 @@ export interface StorefrontColors {
   productCardRadius:  ThemeBorderRadius;
   productImageRatio:  ThemeProductImageRatio;
   productImageHover:  ThemeProductImageHover;
+  saleBadge?:         'show' | 'hide';
+  soldOutBadge?:      'show' | 'hide';
+  cardStyle?:         'theme' | 'flat' | 'outlined' | 'elevated';
+  cartType?:          'drawer' | 'page';
   productGridDensity: ThemeProductGridDensity;
   testimonialStyle:   ThemeTestimonialStyle;
   /** Testimonials scope — independent from product cards. */

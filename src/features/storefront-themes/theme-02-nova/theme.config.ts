@@ -31,6 +31,9 @@ const STATIC_DEFAULTS = {
   productCardRadiusPx: '14px',
   productImageRatio: 'square' as 'square' | 'portrait' | 'landscape' | 'adapt',
   productImageHover: 'zoom' as 'none' | 'zoom' | 'second-image',
+  saleBadge: true,
+  soldOutBadge: true,
+  cardStyle: 'theme' as 'theme' | 'flat' | 'outlined' | 'elevated',
 
   // Color system — white ground, near-black ink with a cool undertone, one
   // vivid indigo used generously (fills, primary buttons, active states) —
@@ -132,6 +135,7 @@ export function relativeLuminance(hex: string): number {
 export function applyMerchantThemeOverrides(colors: {
   bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
   imageRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productCardRadius?: 'none' | 'small' | 'medium' | 'large' | 'full'; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt'; productImageHover?: 'none' | 'zoom' | 'second-image';
+  saleBadge?: 'show' | 'hide'; soldOutBadge?: 'show' | 'hide'; cardStyle?: 'theme' | 'flat' | 'outlined' | 'elevated';
   buttonStyle?: 'solid' | 'outline' | 'soft';
   buttonRadius?: 'none' | 'small' | 'medium' | 'large' | 'full';
   buttonWidth?: 'auto' | 'full';
@@ -158,6 +162,9 @@ export function applyMerchantThemeOverrides(colors: {
   novaTheme.productCardRadiusPx = IMAGE_RADIUS_PRESET[colors?.productCardRadius ?? 'medium'];
   novaTheme.productImageRatio = colors?.productImageRatio ?? 'square';
   novaTheme.productImageHover = colors?.productImageHover ?? 'zoom';
+  novaTheme.saleBadge = colors?.saleBadge !== 'hide';
+  novaTheme.soldOutBadge = colors?.soldOutBadge !== 'hide';
+  novaTheme.cardStyle = colors?.cardStyle ?? 'theme';
 
   novaTheme.buttonStyle = colors?.buttonStyle ?? d.buttonStyle;
   novaTheme.buttonRadiusPx = BUTTON_RADIUS_PRESET[colors?.buttonRadius ?? 'full'];

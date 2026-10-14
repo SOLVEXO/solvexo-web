@@ -78,7 +78,7 @@ const GROUP_GRID: Record<number, string> = {
  *  can be — a theme's manifest can list its fields in any order; they
  *  always render grouped into these sections, in this order, and a group
  *  with zero fields for the active theme is simply skipped. */
-const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images'];
+const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Cart'];
 
 /** Renders one manifest-declared field against the theme's live working
  *  copy — a `color` control becomes a `ColorField`, a `select` control

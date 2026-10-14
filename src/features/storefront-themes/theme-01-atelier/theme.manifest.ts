@@ -77,6 +77,10 @@ export const atelierThemeManifest: ThemeManifest = {
     { key: 'productCardRadius', label: 'Product Card Corners', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }] } },
     { key: 'productImageRatio', label: 'Product Image Ratio', group: 'Images', control: { kind: 'select', options: [{ value: 'adapt', label: 'Adapt to image' }, { value: 'square', label: 'Square' }, { value: 'portrait', label: 'Portrait' }, { value: 'landscape', label: 'Landscape' }] } },
     { key: 'productImageHover', label: 'Product Image Hover', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'None' }, { value: 'zoom', label: 'Zoom' }, { value: 'second-image', label: 'Show second image' }] } },
+    { key: 'saleBadge', label: 'Sale badge', group: 'Product cards', control: { kind: 'select', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }] } },
+    { key: 'soldOutBadge', label: 'Sold out badge', group: 'Product cards', control: { kind: 'select', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }] } },
+    { key: 'cardStyle', label: 'Card style', group: 'Product cards', control: { kind: 'select', options: [{ value: 'theme', label: 'Theme default' }, { value: 'flat', label: 'Flat' }, { value: 'outlined', label: 'Border' }, { value: 'elevated', label: 'Shadow' }] } },
+    { key: 'cartType', label: 'Cart type', group: 'Cart', control: { kind: 'select', options: [{ value: 'drawer', label: 'Drawer (slides in)' }, { value: 'page', label: 'Cart page' }] }, helpText: 'What happens after a shopper adds a product.' },
   ],
 };
 

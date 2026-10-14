@@ -7,6 +7,7 @@ import { useCurrencyPreferenceOptional } from '@/contexts/CurrencyPreferenceCont
 import type { PublicStoreProduct } from '@/api/services/store';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
+import { productCardFrame } from '../../cardStyle';
 import { PRODUCT_CARD_RATIO } from '../../imageFit';
 
 const CARD_WIDTHS = [320, 480, 640];
@@ -74,14 +75,14 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
   const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 500, lineHeight: 1.4, margin: 0 }}>{product.name}</p>;
 
   return (
-    <div className="group flex flex-col">
+    <div className="group flex flex-col" style={productCardFrame(t.cardStyle, t.colors, t.productCardRadiusPx)}>
       <div className="relative" style={{ aspectRatio: CARD_RATIO[t.productImageRatio] ?? '1 / 1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.productCardRadiusPx }}>
         {demo ? (
           <div className="block w-full h-full">{media}</div>
         ) : (
           <Link to={`/product/${product.slug}`} className="block w-full h-full">{media}</Link>
         )}
-        {(soldOut || onSale) && (
+        {((soldOut && t.soldOutBadge) || (!soldOut && onSale && t.saleBadge)) && (
           <span
             className="absolute top-3 left-3 pointer-events-none"
             style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 10px', background: soldOut ? t.colors.ink : t.colors.accent, color: '#FFFFFF' }}
