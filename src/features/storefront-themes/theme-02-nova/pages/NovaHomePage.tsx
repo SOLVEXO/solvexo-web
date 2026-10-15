@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { tt } from '@/utils/tStatic';
 import { Link, useLocation } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
@@ -47,8 +48,8 @@ function IdentityHero() {
           </p>
         )}
         <div className="flex items-center gap-4 pt-2">
-          <a href="#shop" className="no-underline"><NovaButton>Shop the latest</NovaButton></a>
-          <span style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.inkMuted }}>Find your next favorite</span>
+          <a href="#shop" className="no-underline"><NovaButton>{tt('home.shopLatest', "Shop the latest")}</NovaButton></a>
+          <span style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.inkMuted }}>{tt('home.findFavorite', "Find your next favorite")}</span>
         </div>
       </div>
       {store.logo && <img src={store.logo} alt="" className="absolute right-[8%] top-1/2 hidden h-40 w-40 -translate-y-1/2 object-contain opacity-70 lg:block" />}
@@ -83,15 +84,15 @@ function DefaultHomeContent() {
               <p className="inline-flex items-center gap-2" style={{ fontFamily: t.fonts.body, fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.colors.accent, marginBottom: '10px' }}>
                 <span style={{ width: '18px', height: '2px', background: t.colors.accent }} /> Fresh on the store
               </p>
-              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 50px)', fontWeight: 700, color: t.colors.ink, letterSpacing: '-0.045em', lineHeight: 1, margin: 0 }}>Just dropped</h2>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(30px, 4vw, 50px)', fontWeight: 700, color: t.colors.ink, letterSpacing: '-0.045em', lineHeight: 1, margin: 0 }}>{tt('home.justDropped', "Just dropped")}</h2>
               <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '12px' }}>The newest finds from {store.name}.</p>
             </div>
-            <Link to="/search" className="no-underline w-fit" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accent, borderBottom: `2px solid ${t.colors.accent}`, paddingBottom: '5px' }}>Explore all products</Link>
+            <Link to="/search" className="no-underline w-fit" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accent, borderBottom: `2px solid ${t.colors.accent}`, paddingBottom: '5px' }}>{tt('home.exploreAll', "Explore all products")}</Link>
           </div>
           {products === null && !error && <ProductGridSkeleton />}
           {error && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{error}</p>}
           {products !== null && products.length === 0 && (
-            <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>No products yet — check back soon.</p>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>{tt('home.noProducts', "No products yet — check back soon.")}</p>
           )}
           {products !== null && products.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">

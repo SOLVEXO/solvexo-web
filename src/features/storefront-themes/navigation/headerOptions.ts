@@ -18,13 +18,41 @@ export interface HeaderOptions {
   includePagesInNav: boolean;
   showDefaultBlogLink: boolean;
   blogLabel: string;
-  headerStyle: 'standard' | 'centered';
+  headerStyle: 'standard' | 'centered' | 'split' | 'inline';
   navAlignment: 'left' | 'center' | 'right';
   bgColor: string | null;
   textColor: string | null;
   /** px added to the theme's own header padding (compact < 0). */
   paddingDelta: number;
   showDivider: boolean;
+  stickyMode: 'off' | 'always' | 'scroll-up';
+  transparentOnHome: boolean;
+  transparentTextColor: string;
+  navFontSize: 'sm' | 'md' | 'lg';
+  navUppercase: boolean;
+  navHoverStyle: 'none' | 'underline' | 'pill';
+  searchStyle: 'icon' | 'bar';
+  cta: { label: string; link: string } | null;
+  topBar: { text: string | null; phone: string | null; email: string | null; bg: string | null; color: string | null } | null;
+}
+
+const SAFE_LINK = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
+const NAV_FONT_PX = { sm: 13, md: 14, lg: 16 } as const;
+
+/** Scoped CSS for the retailer's menu typography + hover effect (inline theme styles need !important). */
+export function headerNavCss(scope: string, o: Pick<HeaderOptions, 'navFontSize' | 'navUppercase' | 'navHoverStyle'>): string {
+  const rules: string[] = [];
+  if (o.navFontSize !== 'md') rules.push(`[data-sx-header="${scope}"] nav a{font-size:${NAV_FONT_PX[o.navFontSize]}px!important}`);
+  if (o.navUppercase) rules.push(`[data-sx-header="${scope}"] nav a{text-transform:uppercase;letter-spacing:.06em}`);
+  if (o.navHoverStyle === 'underline') {
+    rules.push(`[data-sx-header="${scope}"] nav a{background-image:linear-gradient(currentColor,currentColor);background-size:0 1.5px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .25s ease;padding-bottom:2px}`);
+    rules.push(`[data-sx-header="${scope}"] nav a:hover,[data-sx-header="${scope}"] nav a:focus-visible{background-size:100% 1.5px}`);
+  }
+  if (o.navHoverStyle === 'pill') {
+    rules.push(`[data-sx-header="${scope}"] nav a{padding:6px 12px;border-radius:999px;transition:background-color .2s ease}`);
+    rules.push(`[data-sx-header="${scope}"] nav a:hover,[data-sx-header="${scope}"] nav a:focus-visible{background-color:color-mix(in srgb,currentColor 10%,transparent)}`);
+  }
+  return rules.join('');
 }
 
 const text = (v: unknown, fallback: string) => (typeof v === 'string' && v.trim() ? v.trim() : fallback);
@@ -53,12 +81,24 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     includePagesInNav: h.includePagesInNav !== false,
     showDefaultBlogLink: h.showDefaultBlogLink !== false,
     blogLabel: text(h.blogLinkLabel, defaultBlogLabel),
-    headerStyle: h.headerStyle === 'centered' ? 'centered' : 'standard',
+    headerStyle: h.headerStyle === 'centered' || h.headerStyle === 'split' || h.headerStyle === 'inline' ? h.headerStyle : 'standard',
     navAlignment: h.navAlignment === 'center' || h.navAlignment === 'right' ? h.navAlignment : 'left',
     bgColor: hex(h.bgColor),
     textColor: hex(h.textColor),
     paddingDelta: HEADER_PADDING[h.paddingY === 'compact' || h.paddingY === 'spacious' ? h.paddingY : 'normal'],
     showDivider: h.showDivider !== false,
+    stickyMode: h.stickyMode === 'off' || h.stickyMode === 'always' || h.stickyMode === 'scroll-up' ? h.stickyMode : h.sticky === true ? 'always' : 'off',
+    transparentOnHome: h.transparentOnHome === true,
+    transparentTextColor: hex(h.transparentTextColor) ?? '#ffffff',
+    navFontSize: h.navFontSize === 'sm' || h.navFontSize === 'lg' ? h.navFontSize : 'md',
+    navUppercase: h.navUppercase === true,
+    navHoverStyle: h.navHoverStyle === 'underline' || h.navHoverStyle === 'pill' ? h.navHoverStyle : 'none',
+    searchStyle: h.searchStyle === 'bar' ? 'bar' : 'icon',
+    cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
+      ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,
+    topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail)
+      ? { text: h.topBarText?.trim() || null, phone: h.topBarPhone?.trim() || null, email: h.topBarEmail?.trim() || null, bg: hex(h.topBarBg), color: hex(h.topBarTextColor) }
+      : null,
   };
 }
 
@@ -89,6 +129,31 @@ export interface FooterOptions {
   blogLabel: string;
   bgColor: string | null;
   textColor: string | null;
+  /** Top/bottom padding of the column area in px (columns layout / compact layout). */
+  padding: { columns: number; compact: number };
+  bgImageUrl: string | null;
+  bgOverlay: number;
+  align: 'left' | 'center';
+  headingUppercase: boolean;
+  socialStyle: 'plain' | 'circle' | 'square' | null;
+  newsletterTop: boolean;
+  mobileAccordion: boolean;
+  showPolicyLinks: boolean;
+  showCurrency: boolean;
+  showBackToTop: boolean;
+}
+
+const FOOTER_PADDING = { compact: { columns: 32, compact: 22 }, normal: { columns: 56, compact: 32 }, spacious: { columns: 80, compact: 48 } } as const;
+
+/** Flex sizing for a footer column block's `width` setting (auto = share the row). */
+export function footerColumnFlex(width: unknown): string {
+  switch (width) {
+    case 'quarter': return '0 0 calc(25% - 30px)';
+    case 'third': return '0 0 calc(33.333% - 27px)';
+    case 'half': return '0 0 calc(50% - 20px)';
+    case 'full': return '0 0 100%';
+    default: return '1 1 180px';
+  }
 }
 
 export function readFooterOptions(footer: Partial<StorefrontFooter> | null | undefined, defaultBlogLabel: string): FooterOptions {
@@ -107,6 +172,17 @@ export function readFooterOptions(footer: Partial<StorefrontFooter> | null | und
     blogLabel: text(f.blogLinkLabel, defaultBlogLabel),
     bgColor: hex(f.bgColor),
     textColor: hex(f.textColor),
+    padding: FOOTER_PADDING[f.paddingY === 'compact' || f.paddingY === 'spacious' ? f.paddingY : 'normal'],
+    bgImageUrl: typeof f.bgImageUrl === 'string' && /^https:\/\//i.test(f.bgImageUrl) ? f.bgImageUrl : null,
+    bgOverlay: typeof f.bgOverlay === 'number' && Number.isFinite(f.bgOverlay) ? Math.min(85, Math.max(0, f.bgOverlay)) : 50,
+    align: f.align === 'center' ? 'center' : 'left',
+    headingUppercase: f.headingUppercase !== false,
+    socialStyle: f.socialStyle === 'plain' || f.socialStyle === 'circle' || f.socialStyle === 'square' ? f.socialStyle : null,
+    newsletterTop: f.newsletterTop === true,
+    mobileAccordion: f.mobileAccordion !== false,
+    showPolicyLinks: f.showPolicyLinks !== false,
+    showCurrency: f.showCurrency === true,
+    showBackToTop: f.showBackToTop === true,
   };
 }
 

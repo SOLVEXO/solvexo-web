@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug, type PublicCollectionSummary } from '@/api/services/collections';
@@ -22,6 +23,7 @@ import { atelierTheme as t } from '../theme.config';
  *  store's template has never been customized (no sections yet), this page
  *  still shows a real product grid by itself rather than a blank page. */
 export function AtelierCollectionPage() {
+  const { t: tr } = useTranslation('storefront');
   const { slugOrId = '' } = useParams<{ slugOrId: string }>();
   const { store } = useStorefront();
   const [collection, setCollection] = useState<PublicCollectionSummary | null | undefined>(undefined);
@@ -60,14 +62,14 @@ export function AtelierCollectionPage() {
   });
 
   if (collection === undefined || sections === undefined) {
-    return <div style={{ padding: '96px 0', textAlign: 'center', fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>Loading…</div>;
+    return <div style={{ padding: '96px 0', textAlign: 'center', fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>{tr('common.loading', "Loading…")}</div>;
   }
 
   if (!collection) {
     return (
       <div className="flex flex-col items-center text-center" style={{ padding: '96px 20px' }}>
-        <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>Collection not found</p>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, maxWidth: '340px' }}>This collection may have been removed or unpublished.</p>
+        <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>{tr('collection.notFound', "Collection not found")}</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, maxWidth: '340px' }}>{tr('collection.notFoundHint', "This collection may have been removed or unpublished.")}</p>
       </div>
     );
   }

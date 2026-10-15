@@ -1,6 +1,7 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 import type { ActiveCampaignBadge } from './marketplace';
+import type { ContentTranslations } from '@/utils/localize';
 
 export type SellerType  = 'creator' | 'educator' | 'retailer' | 'brand_business' | 'freelancer' | 'mix';
 export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services_bookings' | 'in_person_pos';
@@ -452,6 +453,8 @@ export interface StoreAnnouncementBar {
   dismissFor?:    'forever' | 'day' | 'session';
   countdownEndAt?: string | null;
   preset?:        string | null;
+  linkStyle?:     'underline' | 'button';
+  barHeight?:     'sm' | 'md' | 'lg';
   rotateSeconds?: number;
   closable?:      boolean;
   bgColor?:       string | null;
@@ -589,6 +592,8 @@ export interface PublicStoreFacets {
 }
 
 export interface PublicStoreProduct {
+  /** Seller translations per language (see utils/localize). */
+  translations?: ContentTranslations;
   _id:         string;
   slug:        string;
   name:        string;

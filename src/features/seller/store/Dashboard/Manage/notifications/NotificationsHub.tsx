@@ -6,7 +6,7 @@ import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import type { CustomerEmailSetting } from '@/api/services/storeNotifications';
 import { CustomerEmailsList } from './CustomerEmailsList';
-import { EmailEditorPanel } from './EmailEditorPanel';
+import { EmailEditorHost } from './EmailEditorHost';
 import { LookAndSender } from './LookAndSender';
 import { useCustomerEmailSettings } from './useCustomerEmailSettings';
 
@@ -106,12 +106,15 @@ export function NotificationsHub({ storeId, canManage }: Props) {
       )}
 
       {editing && (
-        <EmailEditorPanel
+        <EmailEditorHost
           storeId={storeId}
           // always edit the latest saved version of this email, never a stale copy
           email={data.settings?.events.find(e => e.key === editing.key) ?? editing}
+          eventTranslations={data.settings?.eventTranslations}
+          defaultTranslations={data.settings?.defaultTranslations}
           onClose={() => setEditing(null)}
           onSave={data.saveEmail}
+          onSaveTranslation={data.saveTranslation}
         />
       )}
     </div>

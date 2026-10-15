@@ -1,0 +1,126 @@
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { apiSuggestLocationForStore } from '@/api/services/store';
+import { apiGetPublicStoreMarkets, resolveMarket, type PublicStoreMarkets } from '@/api/services/markets';
+import { TokenStorage } from '@/api/services/auth';
+import { useCurrencyPreference, CURRENCY_STORAGE_KEY } from '@/contexts/CurrencyPreferenceContext';
+import { setStorefrontLocaleInfo } from '@/utils/currentStorefront';
+import { COUNTRY_STORAGE_KEY, StorefrontMarketCtx, type StorefrontMarketValue } from './storefrontMarket';
+import { BOOT_LOCALE, DEFAULT_LOCALE, rememberLanguage, savedLanguage, switchLocalePath, localeFromPathname } from '@/i18n';
+
+function readSavedCountry(): string | null {
+  try {
+    const v = localStorage.getItem(COUNTRY_STORAGE_KEY);
+    return v && /^[A-Z]{2}$/.test(v) ? v : null;
+  } catch { return null; }
+}
+
+/** Markets + country + language for one storefront. Mount inside CurrencyPreferenceProvider. */
+export function StorefrontMarketProvider({ storeId, allowedCurrencies, children }: {
+  storeId: string;
+  /** The store's own restriction (Store.enabledCurrencies), null = platform list. */
+  allowedCurrencies?: string[] | null;
+  children: ReactNode;
+}) {
+  const { setCurrencyAuto, setMarketPricing, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
+  const [data, setData] = useState<PublicStoreMarkets | null>(null);
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const loaded = loadedFor === storeId;
+  const [savedCountry, setSavedCountry] = useState<string | null>(readSavedCountry);
+  const [detected, setDetected] = useState<{ country: string | null; suggestedCurrency: string | null } | null>(null);
+  const [locationDone, setLocationDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetPublicStoreMarkets(storeId)
+      .then(res => { if (!cancelled) setData(res.data); })
+      .catch(() => { if (!cancelled) setData(null); }) // fail open: single default market, plain FX
+      .finally(() => { if (!cancelled) setLoadedFor(storeId); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiSuggestLocationForStore(storeId)
+      .then(res => { if (!cancelled) setDetected(res.data); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLocationDone(true); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  const markets = useMemo(() => data?.markets ?? [], [data]);
+  const defaultLanguage = data?.defaultLanguage ?? DEFAULT_LOCALE;
+  const languages = useMemo(() => {
+    const set = new Set<string>([defaultLanguage, ...(data?.languages ?? [])]);
+    return Array.from(set);
+  }, [data, defaultLanguage]);
+  const country = savedCountry ?? detected?.country?.toUpperCase() ?? null;
+  const market = useMemo(() => resolveMarket(markets, country), [markets, country]);
+  const countries = useMemo(() => {
+    const set = new Set<string>();
+    markets.forEach(m => m.countries.forEach(c => set.add(c.toUpperCase())));
+    return Array.from(set).sort();
+  }, [markets]);
+
+  const setCountry = useCallback((code: string) => {
+    const c = code.toUpperCase();
+    try { localStorage.setItem(COUNTRY_STORAGE_KEY, c); } catch { /* per-viewer convenience */ }
+    setSavedCountry(c);
+  }, []);
+
+  // Pricing rule of the resolved market -> currency conversion (only bites when the buyer currency == market currency).
+  useEffect(() => {
+    setMarketPricing(market ? { currency: market.currency, pricingRule: market.pricingRule } : null);
+    return () => setMarketPricing(null);
+  }, [market, setMarketPricing]);
+
+  // Currency default: an explicit choice (or a logged-in account preference) always wins; otherwise the
+  // market's currency (when the store/platform enable it), else the old IP suggestion for a first visit.
+  const accountHasCurrency = !!TokenStorage.getUser<{ currencyPreference?: string | null }>()?.currencyPreference && TokenStorage.isLoggedIn();
+  useEffect(() => {
+    if (!loaded || !locationDone) return;
+    if (hasExplicitCurrency() || accountHasCurrency) return;
+    const allowed = (c: string) => enabledCurrencies.includes(c) && (!allowedCurrencies?.length || allowedCurrencies.includes(c));
+    if (market && allowed(market.currency)) { setCurrencyAuto(market.currency); return; }
+    let hasSaved = false;
+    try { hasSaved = !!localStorage.getItem(CURRENCY_STORAGE_KEY); } catch { /* ignore */ }
+    const suggested = detected?.suggestedCurrency;
+    if (!hasSaved && suggested) setCurrencyAuto(suggested);
+  }, [loaded, locationDone, market, detected, enabledCurrencies, allowedCurrencies, hasExplicitCurrency, accountHasCurrency, setCurrencyAuto]);
+
+  const language = BOOT_LOCALE;
+  const redirected = useRef(false);
+  // Keep the URL honest: a prefix the store does not offer is dropped; a remembered language gets its prefix.
+  useEffect(() => {
+    if (!loaded || redirected.current || !data) return;
+    const { pathname, search, hash } = window.location;
+    const current = localeFromPathname(pathname);
+    let target: string | null = null;
+    if (current && !languages.includes(current)) target = DEFAULT_LOCALE;
+    else if (!current) {
+      const saved = savedLanguage();
+      if (saved && saved !== DEFAULT_LOCALE && languages.includes(saved)) target = saved;
+    }
+    if (target) {
+      redirected.current = true;
+      if (target === DEFAULT_LOCALE) rememberLanguage(DEFAULT_LOCALE);
+      window.location.replace(switchLocalePath(pathname, search, hash, target));
+    }
+  }, [loaded, data, languages]);
+
+  const setLanguage = useCallback((code: string) => {
+    rememberLanguage(code);
+    const { pathname, search, hash } = window.location;
+    window.location.assign(switchLocalePath(pathname, search, hash, code));
+  }, []);
+
+  useEffect(() => {
+    setStorefrontLocaleInfo({ country, locale: language });
+    return () => setStorefrontLocaleInfo({ country: null, locale: DEFAULT_LOCALE });
+  }, [country, language]);
+
+  const value = useMemo<StorefrontMarketValue>(() => ({
+    loaded, markets, languages, defaultLanguage, country, countries, setCountry, market, language, setLanguage,
+  }), [loaded, markets, languages, defaultLanguage, country, countries, setCountry, market, language, setLanguage]);
+
+  return <StorefrontMarketCtx.Provider value={value}>{children}</StorefrontMarketCtx.Provider>;
+}

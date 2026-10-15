@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Minus, Plus } from 'lucide-react';
 import { apiListPublicStoreFaqs, type PublicStoreFaq } from '@/api/services/storeFaq';
 
@@ -10,6 +11,7 @@ interface FaqTokens {
 /** The store's FAQs as an accessible accordion (one shared implementation, styled by each theme's tokens). Also emits
  *  schema.org FAQPage data so the questions can appear in search results. */
 export function StoreFaqList({ storeId, tokens }: { storeId: string; tokens: FaqTokens }) {
+  const { t: tr } = useTranslation('storefront');
   const [faqs, setFaqs] = useState<PublicStoreFaq[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -21,9 +23,9 @@ export function StoreFaqList({ storeId, tokens }: { storeId: string; tokens: Faq
     return () => { off = true; };
   }, [storeId]);
 
-  if (faqs === null) return <p style={{ fontFamily: tokens.fonts.body, fontSize: '13px', color: tokens.colors.inkMuted }}>Loading…</p>;
-  if (failed) return <p style={{ fontFamily: tokens.fonts.body, fontSize: '14px', color: tokens.colors.inkMuted }}>We couldn't load the questions right now. Please try again later.</p>;
-  if (faqs.length === 0) return <p style={{ fontFamily: tokens.fonts.body, fontSize: '14px', color: tokens.colors.inkMuted }}>No questions have been added yet.</p>;
+  if (faqs === null) return <p style={{ fontFamily: tokens.fonts.body, fontSize: '13px', color: tokens.colors.inkMuted }}>{tr('common.loading', "Loading…")}</p>;
+  if (failed) return <p style={{ fontFamily: tokens.fonts.body, fontSize: '14px', color: tokens.colors.inkMuted }}>{tr('faq.loadError', "We couldn't load the questions right now. Please try again later.")}</p>;
+  if (faqs.length === 0) return <p style={{ fontFamily: tokens.fonts.body, fontSize: '14px', color: tokens.colors.inkMuted }}>{tr('faq.none', "No questions have been added yet.")}</p>;
 
   const jsonLd = {
     '@context': 'https://schema.org',

@@ -20,7 +20,7 @@ import {
 import type { Section } from '@/api/services/storefrontTypes';
 import { apiBrowseMediaLibrary, type MediaAsset } from '@/api/services/mediaLibrary';
 import { apiGetStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
-import { ThemeSourcePackageDialog } from './ThemeSourcePackageDialog';
+import { ThemeSourcePackageDialog } from '@/features/themes/liquid/ThemeSourcePackageDialog';
 import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { SECTION_META } from '../builder/sectionRegistry';
 import { validateSectionsJson } from '../builder/validateSectionsJson';

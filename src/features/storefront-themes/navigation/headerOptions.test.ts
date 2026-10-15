@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readHeaderOptions, logoImageProps, readFooterOptions, expandCopyright, footerLayoutBlocks } from './headerOptions';
+import { readHeaderOptions, logoImageProps, readFooterOptions, expandCopyright, footerLayoutBlocks, headerNavCss, footerColumnFlex } from './headerOptions';
 import { resolveStorefrontLink } from '@/features/storefront/StorefrontContext';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
 
@@ -9,7 +9,11 @@ describe('readHeaderOptions', () => {
       logoWidth: null, mobileLogoWidth: null, sticky: false, showSearch: true, showAccount: true, showWishlist: true,
       showShopMenu: true, shopLabel: 'Shop', includePagesInNav: true, showDefaultBlogLink: true, blogLabel: 'Journal',
       headerStyle: 'standard', navAlignment: 'left', bgColor: null, textColor: null, paddingDelta: 0, showDivider: true,
+      stickyMode: 'off', transparentOnHome: false, transparentTextColor: '#ffffff', navFontSize: 'md', navUppercase: false,
+      navHoverStyle: 'none', searchStyle: 'icon', cta: null, topBar: null,
     });
+    // the old sticky switch still works
+    expect(readHeaderOptions({ sticky: true }, 'Journal').stickyMode).toBe('always');
     // a stored doc that only has the old fields behaves the same
     expect(readHeaderOptions({ logoSource: 'store', blocks: [], menuId: null } as Partial<StorefrontHeader>, 'Stories').sticky).toBe(false);
   });
@@ -55,8 +59,16 @@ describe('readFooterOptions / expandCopyright', () => {
     expect(readFooterOptions(undefined, 'Stories')).toEqual({
       logoSource: 'none', logoUrl: null, logoWidth: 140, showNewsletter: true, newsletterHeading: null, newsletterText: null,
       showDefaultColumns: true, shopColumnHeading: 'Shop', accountColumnHeading: 'Account', blogLabel: 'Stories',
-      bgColor: null, textColor: null,
+      bgColor: null, textColor: null, padding: { columns: 56, compact: 32 }, bgImageUrl: null, bgOverlay: 50, align: 'left',
+      headingUppercase: true, socialStyle: null, newsletterTop: false, mobileAccordion: true, showPolicyLinks: true,
+      showCurrency: false, showBackToTop: false,
     });
+  });
+  it('reads the premium footer settings and ignores unsafe images', () => {
+    const o = readFooterOptions({ paddingY: 'spacious', bgImageUrl: 'http://x/y.png', bgOverlay: 200, align: 'center', socialStyle: 'square' } as Partial<StorefrontFooter>, 'Journal');
+    expect(o).toMatchObject({ padding: { columns: 80, compact: 48 }, bgImageUrl: null, bgOverlay: 85, align: 'center', socialStyle: 'square' });
+    expect(footerColumnFlex('half')).toBe('0 0 calc(50% - 20px)');
+    expect(footerColumnFlex(undefined)).toBe('1 1 180px');
   });
   it('reads retailer choices', () => {
     const o = readFooterOptions({
@@ -80,6 +92,20 @@ describe('readFooterOptions / expandCopyright', () => {
     expect(footerLayoutBlocks({ showNewsletter: false, blocks: [] } as Partial<StorefrontFooter>).map(b => b.type)).toEqual(['footer_brand']);
     const saved = [{ type: 'footer_newsletter', settings: {} }, { type: 'footer_column', settings: { heading: 'A', links: [] } }];
     expect(footerLayoutBlocks({ blockLayout: true, blocks: saved } as Partial<StorefrontFooter>)).toBe(saved);
+  });
+  it('reads the premium header settings and drops unsafe or empty ones', () => {
+    const o = readHeaderOptions({
+      headerStyle: 'split', stickyMode: 'scroll-up', transparentOnHome: true, ctaLabel: 'Sale', ctaLink: 'javascript:alert(1)',
+      topBarEnabled: true, topBarText: '  Hi  ', navHoverStyle: 'pill',
+    }, 'Journal');
+    expect(o).toMatchObject({ headerStyle: 'split', stickyMode: 'scroll-up', transparentOnHome: true, cta: null, navHoverStyle: 'pill' });
+    expect(o.topBar).toMatchObject({ text: 'Hi', phone: null });
+    expect(readHeaderOptions({ ctaLabel: 'Sale', ctaLink: '/collections/sale' }, 'Journal').cta).toEqual({ label: 'Sale', link: '/collections/sale' });
+    expect(readHeaderOptions({ topBarEnabled: true }, 'Journal').topBar).toBeNull();
+  });
+  it('builds scoped menu CSS only for the chosen options', () => {
+    expect(headerNavCss('x', { navFontSize: 'md', navUppercase: false, navHoverStyle: 'none' })).toBe('');
+    expect(headerNavCss('x', { navFontSize: 'lg', navUppercase: true, navHoverStyle: 'underline' })).toContain('[data-sx-header="x"] nav a{font-size:16px!important}');
   });
   it('reads header colours and spacing, ignoring junk', () => {
     expect(readHeaderOptions({ bgColor: '#112233', textColor: 'red', paddingY: 'spacious', showDivider: false }, 'Journal'))

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
 
 /** Real, recognisable social glyphs (lucide-react ships no brand icons in this version). Drawn on a 24px grid. */
@@ -46,9 +47,10 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 /** Neutral text badges for the payment methods the retailer accepts (no third-party logo artwork). */
 export function PaymentBadges({ icons, tokens, border, radius }: { icons: string[]; tokens: PartTokens; border: string; radius: string }) {
+  const { t: tr } = useTranslation('storefront');
   if (!icons.length) return null;
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-2 list-none p-0 m-0" aria-label="Accepted payment methods">
+    <ul className="flex flex-wrap items-center justify-center gap-2 list-none p-0 m-0" aria-label={tr('footer.paymentMethods', "Accepted payment methods")}>
       {icons.map(icon => (
         <li key={icon} style={{ fontFamily: tokens.fontFamily, fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.04em', color: tokens.muted, border: `1px solid ${border}`, borderRadius: radius, padding: '4px 8px' }}>
           {PAYMENT_LABELS[icon] ?? icon}

@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs, jsx-a11y/no-autofocus, jsx-a11y/click-events-have-key-events */
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -11,6 +12,7 @@ type Tab = 'product' | 'article' | 'page';
  *  Articles / Pages tabs when the query also matches store content. The tab
  *  lives in `?type=` (Shopify's own parameter) so it survives reload/share. */
 export function StorefrontSearchTabs({ tokens: t, q, products }: { tokens: BrowseTokens; q: string; products: ReactNode }) {
+  const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
   const [params, setParams] = useSearchParams();
   const [content, setContent] = useState<SearchContentResults | null>(null);
@@ -38,15 +40,15 @@ export function StorefrontSearchTabs({ tokens: t, q, products }: { tokens: Brows
 
   const border = `${t.borderWidth} solid ${t.colors.border}`;
   const tabs: { id: Tab; label: string; count?: number }[] = [
-    { id: 'product', label: 'Products' },
-    ...(articleCount ? [{ id: 'article' as Tab, label: 'Articles', count: articleCount }] : []),
-    ...(pageCount ? [{ id: 'page' as Tab, label: 'Pages', count: pageCount }] : []),
+    { id: 'product', label: tr('browse.products', "Products") },
+    ...(articleCount ? [{ id: 'article' as Tab, label: tr('browse.articles', "Articles"), count: articleCount }] : []),
+    ...(pageCount ? [{ id: 'page' as Tab, label: tr('browse.pages', "Pages"), count: pageCount }] : []),
   ];
 
   return (
     <div>
       {showTabs && (
-        <div role="tablist" aria-label="Search result types" className="flex gap-6 mb-8" style={{ borderBottom: border }}>
+        <div role="tablist" aria-label={tr('browse.resultTypes', "Search result types")} className="flex gap-6 mb-8" style={{ borderBottom: border }}>
           {tabs.map(x => (
             <button key={x.id} type="button" role="tab" aria-selected={tab === x.id} onClick={() => select(x.id)} className="cursor-pointer bg-transparent border-0"
               style={{ fontFamily: t.fonts.body, fontSize: '13px', padding: '10px 0', color: tab === x.id ? t.colors.ink : t.colors.inkMuted, borderBottom: `2px solid ${tab === x.id ? t.colors.ink : 'transparent'}`, marginBottom: '-1px' }}>

@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiGetStoreInventory } from '@/api/services/product';
-import type { ThemePackageStructure } from '@/api/services/storeTheme';
-import { ShopifyTemplateEditor } from './ShopifyTemplateEditor';
+import type { ThemePackageStructure } from '@/api/services/liquidTheme';
+import { LiquidTemplateEditor } from './LiquidTemplateEditor';
 
 vi.mock('@/api/services/product', () => ({
   apiGetStoreInventory: vi.fn().mockResolvedValue({
@@ -50,7 +50,7 @@ const structure: ThemePackageStructure = {
   }],
 };
 
-describe('ShopifyTemplateEditor', () => {
+describe('LiquidTemplateEditor', () => {
   it('adds a section and applies subsequent setting edits to the unsaved template content', () => {
     const onChange = vi.fn();
     const props = {
@@ -63,7 +63,7 @@ describe('ShopifyTemplateEditor', () => {
       onSelectFile: vi.fn(),
       onChange,
     };
-    const { rerender, getByRole, getByLabelText } = render(<ShopifyTemplateEditor {...props} />);
+    const { rerender, getByRole, getByLabelText } = render(<LiquidTemplateEditor {...props} />);
 
     fireEvent.change(getByRole('combobox', { name: 'Add section' }), { target: { value: 'hero::0' } });
     const changedTemplate = onChange.mock.calls.at(-1)?.[0] as string;
@@ -71,7 +71,7 @@ describe('ShopifyTemplateEditor', () => {
     expect(added.order).toHaveLength(1);
     expect(added.sections[added.order[0]].settings.heading).toBe('Welcome');
 
-    rerender(<ShopifyTemplateEditor {...props} currentContent={changedTemplate} dirty />);
+    rerender(<LiquidTemplateEditor {...props} currentContent={changedTemplate} dirty />);
     fireEvent.change(getByLabelText('Heading'), { target: { value: 'New heading' } });
     const edited = JSON.parse(onChange.mock.calls.at(-1)?.[0] as string) as typeof added;
     expect(edited.sections[edited.order[0]].settings.heading).toBe('New heading');
@@ -93,7 +93,7 @@ describe('ShopifyTemplateEditor', () => {
       onSelectFile: vi.fn(),
       onChange,
     };
-    const { getByRole, getByLabelText } = render(<ShopifyTemplateEditor {...props} />);
+    const { getByRole, getByLabelText } = render(<LiquidTemplateEditor {...props} />);
     fireEvent.click(getByRole('button', { name: 'Theme settings' }));
     fireEvent.change(getByLabelText('Brand name'), { target: { value: 'New brand' } });
     const updated = JSON.parse(onChange.mock.calls.at(-1)?.[0] as string) as { current: Record<string, unknown>; presets: Record<string, unknown> };
@@ -105,7 +105,7 @@ describe('ShopifyTemplateEditor', () => {
   it('selects a packaged image asset and previews the selected file', () => {
     const onChange = vi.fn();
     const empty = '{"sections":{},"order":[]}';
-    const { getByRole, getByLabelText, rerender, container } = render(<ShopifyTemplateEditor
+    const { getByRole, getByLabelText, rerender, container } = render(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[
@@ -121,7 +121,7 @@ describe('ShopifyTemplateEditor', () => {
 
     fireEvent.change(getByRole('combobox', { name: 'Add section' }), { target: { value: 'hero::0' } });
     const added = onChange.mock.calls.at(-1)?.[0] as string;
-    rerender(<ShopifyTemplateEditor
+    rerender(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[
@@ -137,7 +137,7 @@ describe('ShopifyTemplateEditor', () => {
     fireEvent.change(getByLabelText('Hero image'), { target: { value: 'assets/hero.png' } });
     const updated = JSON.parse(onChange.mock.calls.at(-1)?.[0] as string);
     expect(updated.sections[updated.order[0]].settings.hero_image).toBe('assets/hero.png');
-    rerender(<ShopifyTemplateEditor
+    rerender(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[
@@ -155,7 +155,7 @@ describe('ShopifyTemplateEditor', () => {
 
   it('loads store-scoped resources and saves a selected resource ID', async () => {
     const onChange = vi.fn();
-    const { getByRole, findByLabelText, rerender } = render(<ShopifyTemplateEditor
+    const { getByRole, findByLabelText, rerender } = render(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[{ path: templatePath, encoding: 'utf8', content: '{"sections":{},"order":[]}' }]}
@@ -168,7 +168,7 @@ describe('ShopifyTemplateEditor', () => {
 
     fireEvent.change(getByRole('combobox', { name: 'Add section' }), { target: { value: 'hero::0' } });
     const added = onChange.mock.calls.at(-1)?.[0] as string;
-    rerender(<ShopifyTemplateEditor
+    rerender(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[{ path: templatePath, encoding: 'utf8', content: added }]}
@@ -189,7 +189,7 @@ describe('ShopifyTemplateEditor', () => {
     const onChange = vi.fn();
     const sectionId = 'hero-section';
     const content = JSON.stringify({ sections: { [sectionId]: { type: 'hero', settings: { heading: 'Welcome' } } }, order: [sectionId] });
-    const { getByRole, queryByLabelText, rerender } = render(<ShopifyTemplateEditor
+    const { getByRole, queryByLabelText, rerender } = render(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[{ path: templatePath, encoding: 'utf8', content }]}
@@ -204,7 +204,7 @@ describe('ShopifyTemplateEditor', () => {
     const updated = onChange.mock.calls.at(-1)?.[0] as string;
     const hidden = JSON.parse(updated);
     expect(hidden.sections[sectionId]).toMatchObject({ disabled: true, settings: { heading: 'Welcome' } });
-    rerender(<ShopifyTemplateEditor
+    rerender(<LiquidTemplateEditor
       storeId="store-1"
       structure={structure}
       files={[{ path: templatePath, encoding: 'utf8', content: updated }]}

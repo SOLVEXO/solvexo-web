@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs, jsx-a11y/no-autofocus, jsx-a11y/click-events-have-key-events */
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -43,6 +44,7 @@ interface Props {
 type Panel = string | null;
 
 export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText }: Props) {
+  const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
   const { currency, convert } = useCurrencyPreference();
   const { state, update, products, total, totalPages, facets, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort });
@@ -93,16 +95,16 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
 
   if (facets) {
     groups.push({
-      id: 'availability', label: 'Availability', count: state.availability ? 1 : 0,
+      id: 'availability', label: tr('browse.availability', "Availability"), count: state.availability ? 1 : 0,
       body: () => (
         <>
-          {checkRow('in', 'In stock', facets.availability.in_stock, state.availability === 'in_stock', () => change(s => ({ ...s, availability: s.availability === 'in_stock' ? undefined : 'in_stock' })))}
-          {checkRow('out', 'Out of stock', facets.availability.out_of_stock, state.availability === 'out_of_stock', () => change(s => ({ ...s, availability: s.availability === 'out_of_stock' ? undefined : 'out_of_stock' })))}
+          {checkRow('in', tr('browse.inStock', "In stock"), facets.availability.in_stock, state.availability === 'in_stock', () => change(s => ({ ...s, availability: s.availability === 'in_stock' ? undefined : 'in_stock' })))}
+          {checkRow('out', tr('browse.outOfStock', "Out of stock"), facets.availability.out_of_stock, state.availability === 'out_of_stock', () => change(s => ({ ...s, availability: s.availability === 'out_of_stock' ? undefined : 'out_of_stock' })))}
         </>
       ),
     });
     groups.push({
-      id: 'price', label: 'Price', count: state.minPrice != null || state.maxPrice != null ? 1 : 0,
+      id: 'price', label: tr('browse.price', "Price"), count: state.minPrice != null || state.maxPrice != null ? 1 : 0,
       body: () => (
         <PriceFields
           key={`${state.minPrice ?? ''}-${state.maxPrice ?? ''}`}
@@ -114,7 +116,7 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
     });
     if (facets.productTypes.length > 1 || state.productTypes.length) {
       groups.push({
-        id: 'type', label: 'Product type', count: state.productTypes.length,
+        id: 'type', label: tr('browse.productType', "Product type"), count: state.productTypes.length,
         body: () => facets.productTypes.map(o => checkRow(o.value, PRODUCT_TYPE_LABEL[o.value] ?? o.value, o.count, state.productTypes.includes(o.value), () => change(s => ({ ...s, productTypes: toggleIn(s.productTypes, o.value) })))),
       });
     }
@@ -126,7 +128,7 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
     }
     if (facets.tags.length || state.tags.length) {
       groups.push({
-        id: 'tag', label: 'Tags', count: state.tags.length,
+        id: 'tag', label: tr('browse.tags', "Tags"), count: state.tags.length,
         body: () => facets.tags.map(o => checkRow(o.value, o.value, o.count, state.tags.includes(o.value), () => change(s => ({ ...s, tags: toggleIn(s.tags, o.value) })))),
       });
     }
@@ -134,7 +136,7 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
 
   // ── Active filter chips ──
   const chips: { key: string; label: string; remove: () => void }[] = [];
-  if (state.availability) chips.push({ key: 'avail', label: `Availability: ${state.availability === 'in_stock' ? 'In stock' : 'Out of stock'}`, remove: () => change(s => ({ ...s, availability: undefined })) });
+  if (state.availability) chips.push({ key: 'avail', label: tr('browse.availabilityChip', 'Availability: {{value}}', { value: state.availability === 'in_stock' ? tr('browse.inStock', "In stock") : tr('browse.outOfStock', "Out of stock") }), remove: () => change(s => ({ ...s, availability: undefined })) });
   if (state.minPrice != null || state.maxPrice != null) {
     chips.push({
       key: 'price',
@@ -162,7 +164,7 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4" style={{ borderTop: border, borderBottom: border, padding: '14px 0' }}>
         {/* Desktop facet dropdowns */}
         {showFilters && <div className="hidden md:flex items-center gap-3 flex-wrap">
-          {groups.length > 0 && <span style={muted}>Filter:</span>}
+          {groups.length > 0 && <span style={muted}>{tr('browse.filterLabel', "Filter:")}</span>}
           {groups.map(g => (
             <div key={g.id} className="relative z-10">
               <button type="button" aria-expanded={open === g.id} aria-haspopup="true" onClick={() => setOpen(o => (o === g.id ? null : g.id))} className="flex items-center gap-1.5 cursor-pointer" style={triggerStyle}>
@@ -175,18 +177,18 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
 
         {/* Mobile: one button opening the drawer */}
         {showFilters && <button type="button" className="md:hidden flex items-center gap-2 cursor-pointer" style={triggerStyle} onClick={() => setDrawer(true)} aria-haspopup="dialog">
-          <SlidersHorizontal size={14} aria-hidden="true" /> Filter and sort{chips.length > 0 ? ` (${chips.length})` : ''}
+          <SlidersHorizontal size={14} aria-hidden="true" /> {chips.length > 0 ? tr('browse.filterCount', 'Filter and sort ({{count}})', { count: chips.length }) : tr('browse.filterAndSort', "Filter and sort")}
         </button>}
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2">
-            <span style={muted}>Sort by:</span>
+            <span style={muted}>{tr('browse.sortBy', "Sort by:")}</span>
             <div className="relative z-10">
               <button type="button" aria-expanded={open === 'sort'} aria-haspopup="listbox" onClick={() => setOpen(o => (o === 'sort' ? null : 'sort'))} className="flex items-center gap-1.5 cursor-pointer" style={triggerStyle}>
                 {sortLabel} <ChevronDown size={13} aria-hidden="true" />
               </button>
               {open === 'sort' && (
-                <div role="listbox" aria-label="Sort by" className="absolute right-0" style={{ ...menuStyle, minWidth: '210px' }}>
+                <div role="listbox" aria-label={tr('browse.sortByAria', "Sort by")} className="absolute right-0" style={{ ...menuStyle, minWidth: '210px' }}>
                   {SORT_OPTIONS.map(o => (
                     <button
                       key={o.value} type="button" role="option" aria-selected={o.value === state.sort}
@@ -208,13 +210,13 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
       {chips.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap mb-6">
           {chips.map(c => (
-            <button key={c.key} type="button" onClick={c.remove} aria-label={`Remove filter: ${c.label}`} className="flex items-center gap-1.5 cursor-pointer bg-transparent"
+            <button key={c.key} type="button" onClick={c.remove} aria-label={tr('browse.removeFilter', 'Remove filter: {{label}}', { label: c.label })} className="flex items-center gap-1.5 cursor-pointer bg-transparent"
               style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.ink, border, padding: '5px 10px', borderRadius: t.radius }}>
               {c.label} <X size={12} aria-hidden="true" />
             </button>
           ))}
           <button type="button" onClick={() => change(clearFilters)} className="cursor-pointer bg-transparent border-0 underline" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.ink }}>
-            Remove all
+            {tr('browse.removeAll', "Remove all")}
           </button>
         </div>
       )}
@@ -224,19 +226,19 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
       {error && (
         <div role="alert" className="flex flex-col items-center gap-3 text-center" style={{ padding: '48px 0' }}>
           <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{error}</p>
-          <OutlineButton t={t} onClick={retry}>Try again</OutlineButton>
+          <OutlineButton t={t} onClick={retry}>{tr('orders.tryAgain', "Try again")}</OutlineButton>
         </div>
       )}
 
       {products !== null && products.length === 0 && !error && (
         <div className="flex flex-col items-center text-center" style={{ padding: '80px 0', border, borderRadius: t.radius }}>
           <p style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: t.headingWeight, color: t.colors.ink, marginBottom: '6px' }}>
-            {active ? 'No products found' : 'Nothing here yet'}
+            {active ? tr('browse.noProducts', "No products found") : tr('browse.nothingYet', "Nothing here yet")}
           </p>
           <p style={{ ...muted, fontSize: '13px', marginBottom: active ? '16px' : 0 }}>
-            {active ? 'Use fewer filters or remove all.' : (emptyText ?? 'Try a different search or check back soon.')}
+            {active ? tr('browse.fewerFilters', "Use fewer filters or remove all.") : (emptyText ?? tr('browse.tryDifferent', "Try a different search or check back soon."))}
           </p>
-          {active && <OutlineButton t={t} onClick={() => change(clearFilters)}>Remove all filters</OutlineButton>}
+          {active && <OutlineButton t={t} onClick={() => change(clearFilters)}>{tr('browse.removeAllFilters', "Remove all filters")}</OutlineButton>}
         </div>
       )}
 
@@ -282,6 +284,7 @@ function OutlineButton({ t, onClick, children }: { t: BrowseTokens; onClick: () 
 }
 
 function Pagination({ t, border, page, totalPages, onPage }: { t: BrowseTokens; border: string; page: number; totalPages: number; onPage: (p: number) => void }) {
+  const { t: tr } = useTranslation('storefront');
   const nums: (number | '…')[] = [];
   for (let p = 1; p <= totalPages; p++) {
     if (p === 1 || p === totalPages || Math.abs(p - page) <= 1) nums.push(p);
@@ -289,15 +292,15 @@ function Pagination({ t, border, page, totalPages, onPage }: { t: BrowseTokens; 
   }
   const cell = { fontFamily: t.fonts.body, fontSize: '12.5px', minWidth: '34px', height: '34px', border, borderRadius: t.radius } as const;
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-center gap-2 mt-14 flex-wrap">
-      <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page" className="cursor-pointer bg-transparent px-3" style={{ ...cell, color: t.colors.ink, opacity: page <= 1 ? 0.4 : 1 }}>Previous</button>
+    <nav aria-label={tr('browse.pagination', "Pagination")} className="flex items-center justify-center gap-2 mt-14 flex-wrap">
+      <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={tr('browse.prevPage', "Previous page")} className="cursor-pointer bg-transparent px-3" style={{ ...cell, color: t.colors.ink, opacity: page <= 1 ? 0.4 : 1 }}>{tr('orders.previous', "Previous")}</button>
       {nums.map((n, i) => n === '…'
         ? <span key={`e${i}`} style={{ ...cell, border: 'none', color: t.colors.inkMuted, textAlign: 'center', lineHeight: '34px' }}>…</span>
         : (
           <button key={n} type="button" onClick={() => onPage(n)} aria-label={`Page ${n}`} aria-current={n === page ? 'page' : undefined} className="cursor-pointer"
             style={{ ...cell, color: n === page ? t.colors.accentInk : t.colors.ink, background: n === page ? t.colors.ink : 'transparent' }}>{n}</button>
         ))}
-      <button type="button" disabled={page >= totalPages} onClick={() => onPage(page + 1)} aria-label="Next page" className="cursor-pointer bg-transparent px-3" style={{ ...cell, color: t.colors.ink, opacity: page >= totalPages ? 0.4 : 1 }}>Next</button>
+      <button type="button" disabled={page >= totalPages} onClick={() => onPage(page + 1)} aria-label={tr('browse.nextPage', "Next page")} className="cursor-pointer bg-transparent px-3" style={{ ...cell, color: t.colors.ink, opacity: page >= totalPages ? 0.4 : 1 }}>{tr('orders.next', "Next")}</button>
     </nav>
   );
 }
@@ -306,6 +309,7 @@ function PriceFields({ symbol, currency, t, border, highest, lowest, minPrice, m
   symbol: string; currency: string; t: BrowseTokens; border: string; highest: number | null; lowest: number | null;
   minPrice?: number; maxPrice?: number; onApply: (lo?: number, hi?: number) => void;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const [lo, setLo] = useState(minPrice != null ? String(minPrice) : '');
   const [hi, setHi] = useState(maxPrice != null ? String(maxPrice) : '');
   const idLo = useId();
@@ -324,7 +328,7 @@ function PriceFields({ symbol, currency, t, border, highest, lowest, minPrice, m
         </p>
       )}
       <div className="flex items-center gap-2">
-        {[{ id: idLo, label: 'From', v: lo, set: setLo }, { id: idHi, label: 'To', v: hi, set: setHi }].map(f => (
+        {[{ id: idLo, label: tr('browse.from', "From"), v: lo, set: setLo }, { id: idHi, label: tr('browse.to', "To"), v: hi, set: setHi }].map(f => (
           <label key={f.id} htmlFor={f.id} className="flex items-center gap-1 flex-1" style={{ border, borderRadius: t.radius, padding: '7px 8px', fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
             <span className="sr-only">{f.label} price</span>{symbol}
             <input id={f.id} type="number" min={0} inputMode="decimal" value={f.v} placeholder={f.label} onChange={e => f.set(e.target.value)}
@@ -332,7 +336,7 @@ function PriceFields({ symbol, currency, t, border, highest, lowest, minPrice, m
           </label>
         ))}
       </div>
-      <OutlineButton t={t} onClick={apply}>Apply</OutlineButton>
+      <OutlineButton t={t} onClick={apply}>{tr('checkout.apply', "Apply")}</OutlineButton>
     </div>
   );
 }
@@ -342,6 +346,7 @@ function FilterDrawer({ t, border, onClose, total, active, onClear, groups, sort
   groups: { id: string; label: string; body: (compact: boolean) => ReactNode; count: number }[];
   sort: BrowseState['sort']; onSort: (s: BrowseState['sort']) => void; facets: PublicStoreFacets | null;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const ref = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const titleId = useId();
@@ -373,18 +378,18 @@ function FilterDrawer({ t, border, onClose, total, active, onClear, groups, sort
       <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
         className="absolute top-0 right-0 h-full flex flex-col outline-none" style={{ width: 'min(92vw, 400px)', background: '#FFFFFF' }}>
         <div className="flex items-center justify-between" style={{ padding: '16px 18px', borderBottom: border }}>
-          <h2 id={titleId} style={{ fontFamily: t.fonts.display, fontSize: '17px', fontWeight: t.headingWeight, color: t.colors.ink }}>Filter and sort</h2>
-          <button type="button" onClick={onClose} aria-label="Close filters" className="cursor-pointer bg-transparent border-0"><X size={20} color={t.colors.ink} /></button>
+          <h2 id={titleId} style={{ fontFamily: t.fonts.display, fontSize: '17px', fontWeight: t.headingWeight, color: t.colors.ink }}>{tr('browse.filterAndSort', "Filter and sort")}</h2>
+          <button type="button" onClick={onClose} aria-label={tr('browse.closeFilters', "Close filters")} className="cursor-pointer bg-transparent border-0"><X size={20} color={t.colors.ink} /></button>
         </div>
         <div className="flex-1 overflow-y-auto">
           <div style={{ padding: '14px 18px', borderBottom: border }}>
-            <label htmlFor={`${titleId}-sort`} style={{ ...muted, display: 'block', marginBottom: '6px' }}>Sort by</label>
+            <label htmlFor={`${titleId}-sort`} style={{ ...muted, display: 'block', marginBottom: '6px' }}>{tr('browse.sortByLabel', "Sort by")}</label>
             <select id={`${titleId}-sort`} value={sort} onChange={e => onSort(e.target.value as BrowseState['sort'])} className="w-full"
               style={{ fontFamily: t.fonts.body, fontSize: '13px', padding: '10px', border, borderRadius: t.radius, color: t.colors.ink, background: '#FFFFFF' }}>
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-          {!facets && <p style={{ ...muted, padding: '18px' }}>Loading filters…</p>}
+          {!facets && <p style={{ ...muted, padding: '18px' }}>{tr('browse.loadingFilters', "Loading filters…")}</p>}
           {groups.map(g => (
             <div key={g.id} style={{ borderBottom: border }}>
               <button type="button" aria-expanded={expanded === g.id} onClick={() => setExpanded(e => (e === g.id ? null : g.id))}
@@ -398,7 +403,7 @@ function FilterDrawer({ t, border, onClose, total, active, onClear, groups, sort
         </div>
         <div className="flex items-center gap-3" style={{ padding: '14px 18px', borderTop: border }}>
           {active && (
-            <button type="button" onClick={onClear} className="cursor-pointer bg-transparent border-0 underline" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.ink }}>Remove all</button>
+            <button type="button" onClick={onClear} className="cursor-pointer bg-transparent border-0 underline" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.ink }}>{tr('browse.removeAll', "Remove all")}</button>
           )}
           <button type="button" onClick={onClose} className="flex-1 cursor-pointer"
             style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.accentInk, background: t.colors.ink, border: `${t.borderWidth} solid ${t.colors.ink}`, padding: '13px', borderRadius: t.radius }}>

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { localePath } from '@/i18n';
+import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   MapPin, Truck, CreditCard, Banknote, Loader2, AlertCircle,
@@ -64,7 +66,8 @@ function SectionCard({ step, title, done, children }: { step: number; title: str
  *  shipping zone price was hardcoded to display "PKR" regardless of the
  *  store's actual checkout currency. */
 export function AtelierCheckoutPage() {
-  useStorefrontSeo({ title: 'Checkout', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('checkout.title', "Checkout"), noindex: true });
   const navigate = useNavigate();
   // Computed once per render rather than early-returning before the hooks
   // below — an early return here would violate the Rules of Hooks (every
@@ -134,7 +137,7 @@ export function AtelierCheckoutPage() {
       _id: r.rateId, storeId: cart?.storeId ?? null, zoneType: 'shipping' as const,
       country: '', province: r.service, city: r.carrier,
       shippingPrice: r.amount,
-      estimatedDeliveryTime: r.estimatedDays ? `${r.estimatedDays} business day${r.estimatedDays === 1 ? '' : 's'}` : 'Varies',
+      estimatedDeliveryTime: r.estimatedDays ? tr('checkout.businessDays', { count: r.estimatedDays, defaultValue_one: '{{count}} business day', defaultValue_other: '{{count}} business days' }) : tr('checkout.varies', "Varies"),
       status: 'active' as const, isDelete: false, createdAt: '', updatedAt: '', __v: 0,
       isLiveRate: true as const,
     })),
@@ -307,11 +310,11 @@ export function AtelierCheckoutPage() {
             });
             setSummary(s => s ? { ...s, shippingFee: shipRes.data.shippingFee, totalAmount: shipRes.data.totalAmount, taxAmount: shipRes.data.taxAmount ?? s.taxAmount, includedTaxAmount: shipRes.data.includedTaxAmount ?? s.includedTaxAmount, internationalDutiesNotice: shipRes.data.internationalDutiesNotice } : s);
           } catch (err) {
-            setCheckoutError(err instanceof Error ? err.message : 'Failed to apply shipping to this checkout.');
+            setCheckoutError(err instanceof Error ? err.message : tr('checkout.err.shipping', "Failed to apply shipping to this checkout."));
           }
         }
       })
-      .catch(err => setCheckoutError(err instanceof Error ? err.message : 'Failed to initialize checkout.'))
+      .catch(err => setCheckoutError(err instanceof Error ? err.message : tr('checkout.err.init', "Failed to initialize checkout.")))
       .finally(() => setCreatingCheckout(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readyToCreateCheckout, selectedAddrId, selectedZoneId, gp.picksKey, cart]);
@@ -342,7 +345,7 @@ export function AtelierCheckoutPage() {
     setInitiateErr('');
     apiInitiatePayment({ checkoutId: checkout._id, paymentMode: 'full' })
       .then(res => { if (!cancelled) { setClientSecret(res.data.clientSecret); setChargeAmount(res.data.amount); } })
-      .catch(err => { if (!cancelled) setInitiateErr(err instanceof Error ? err.message : 'Failed to start card payment.'); })
+      .catch(err => { if (!cancelled) setInitiateErr(err instanceof Error ? err.message : tr('checkout.err.card', "Failed to start card payment.")); })
       .finally(() => { if (!cancelled) setInitiating(false); });
     return () => { cancelled = true; };
   }, [selectedMethod, checkout, clientSecret, creditCoversAll]);
@@ -363,7 +366,7 @@ export function AtelierCheckoutPage() {
       setAddingAddr(false);
       setNewAddr(EMPTY_ADDR);
     } catch (err) {
-      setAddrError(err instanceof Error ? err.message : 'Failed to save address.');
+      setAddrError(err instanceof Error ? err.message : tr('checkout.err.address', "Failed to save address."));
     } finally {
       setSavingAddr(false);
     }
@@ -404,7 +407,7 @@ export function AtelierCheckoutPage() {
       setGiftCardMsg(`Applied — ${currencySymbol(checkout.currency)}${fmt2(res.data.giftCardDiscountUSD)} used.`);
       setGiftCardInput('');
     } catch (err) {
-      setGiftCardMsg(err instanceof Error ? err.message : 'Invalid gift card code.');
+      setGiftCardMsg(err instanceof Error ? err.message : tr('checkout.err.giftCard', "Invalid gift card code."));
     } finally { setGiftCardBusy(false); }
   };
 
@@ -468,7 +471,7 @@ export function AtelierCheckoutPage() {
       await clearCart({ silent: true });
       setPlacedOrders(res.data.orders);
     } catch (err) {
-      setPlaceError(err instanceof Error ? err.message : 'Failed to place order.');
+      setPlaceError(err instanceof Error ? err.message : tr('checkout.err.placeOrder', "Failed to place order."));
     } finally { setPlacing(false); }
   };
 
@@ -483,8 +486,8 @@ export function AtelierCheckoutPage() {
     if (!checkout) return;
     setInitiatingExtra(true); setExtraInitiateErr('');
     try {
-      const returnUrl = `${window.location.origin}/checkout/${checkout._id}/return`;
-      const cancelUrl = `${window.location.origin}/checkout`;
+      const returnUrl = `${window.location.origin}${localePath(`/checkout/${checkout._id}/return`)}`;
+      const cancelUrl = `${window.location.origin}${localePath('/checkout')}`;
       const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl, provider === 'easypaisa' ? walletAccount.trim() || undefined : undefined);
       if (res.data.redirectUrl) {
         recordMarketingConsent();
@@ -493,7 +496,7 @@ export function AtelierCheckoutPage() {
       }
       setExtraInitiateErr('This payment method could not be started.');
     } catch (err) {
-      setExtraInitiateErr(err instanceof Error ? err.message : 'Failed to start payment.');
+      setExtraInitiateErr(err instanceof Error ? err.message : tr('checkout.err.payment', "Failed to start payment."));
     } finally {
       setInitiatingExtra(false);
     }
@@ -509,7 +512,7 @@ export function AtelierCheckoutPage() {
       await clearCart({ silent: true });
       setPlacedOrders(res.data.orders as any);
     } catch (err) {
-      setExtraInitiateErr(err instanceof Error ? err.message : 'Failed to place order.');
+      setExtraInitiateErr(err instanceof Error ? err.message : tr('checkout.err.placeOrder', "Failed to place order."));
     } finally {
       setInitiatingExtra(false);
     }
@@ -574,7 +577,7 @@ export function AtelierCheckoutPage() {
         <div className="flex items-center justify-center mx-auto" style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#E5EFE8', marginBottom: '20px' }}>
           <CheckCircle2 size={28} style={{ color: t.colors.success }} />
         </div>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>Thank you for your order!</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>{tr('checkout.thanks', "Thank you for your order!")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>Your order at {store.name} has been placed successfully.</p>
         <div style={{ border: `1px solid ${t.colors.border}`, marginBottom: '32px', textAlign: 'left' }}>
           {placedOrders.map((o, i) => (
@@ -590,19 +593,19 @@ export function AtelierCheckoutPage() {
           fontFamily={t.fonts.body} textColor={t.colors.ink} mutedColor={t.colors.inkMuted} accentColor={t.colors.accent} dangerColor={t.colors.danger}
           buttonStyle={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, padding: '10px 22px', border: '1px solid ' + t.colors.border, background: 'transparent', color: t.colors.ink }}
         />
-        <AtelierButton onClick={() => navigate('/')}>Continue Shopping <ChevronRight size={14} style={{ marginLeft: '4px' }} /></AtelierButton>
+        <AtelierButton onClick={() => navigate('/')}>{tr('cart.continueShopping', "Continue Shopping")} <ChevronRight size={14} style={{ marginLeft: '4px' }} /></AtelierButton>
       </div>
     );
   }
 
   return (
     <main className="mx-auto atelier-form" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 600, color: t.colors.ink, marginBottom: '28px' }}>Checkout</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 600, color: t.colors.ink, marginBottom: '28px' }}>{tr('checkout.title', "Checkout")}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
         <div className="flex flex-col gap-5">
           {guest && (
-            <SectionCard step={1} title="Contact" done={guestContact.valid && !guestContact.dirty}>
+            <SectionCard step={1} title={tr('checkout.contact', "Contact")} done={guestContact.valid && !guestContact.dirty}>
               <GuestContactSection
                 email={guestContact.email}
                 onEmailChange={v => { guestContact.setEmail(v); guestContact.setError(''); }}
@@ -617,33 +620,33 @@ export function AtelierCheckoutPage() {
           )}
 
           {!isDigital && (
-            <SectionCard step={guest ? 2 : 1} title="Delivery Address" done={pickupSelected || (!!selectedAddrId && !addingAddr)}>
+            <SectionCard step={guest ? 2 : 1} title={tr('checkout.deliveryAddress', "Delivery Address")} done={pickupSelected || (!!selectedAddrId && !addingAddr)}>
               {pickupSelected ? (
-                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No delivery address needed — you'll collect this order at the pickup location chosen below.</p>
+                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('checkout.noAddressNeeded', "No delivery address needed — you'll collect this order at the pickup location chosen below.")}</p>
               ) : addrLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : addingAddr ? (
                 <div className="flex flex-col gap-2.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <input style={inputStyle} placeholder="Recipient name" value={newAddr.recipientName} onChange={e => setNewAddr(a => ({ ...a, recipientName: e.target.value }))} />
-                    <input style={inputStyle} placeholder="Phone number" value={newAddr.phoneNumber} onChange={e => setNewAddr(a => ({ ...a, phoneNumber: e.target.value }))} />
+                    <input style={inputStyle} placeholder={tr('checkout.recipientName', "Recipient name")} value={newAddr.recipientName} onChange={e => setNewAddr(a => ({ ...a, recipientName: e.target.value }))} />
+                    <input style={inputStyle} placeholder={tr('checkout.phoneNumber', "Phone number")} value={newAddr.phoneNumber} onChange={e => setNewAddr(a => ({ ...a, phoneNumber: e.target.value }))} />
                   </div>
-                  <input style={inputStyle} placeholder="Address line 1" value={newAddr.addressLine1} onChange={e => setNewAddr(a => ({ ...a, addressLine1: e.target.value }))} />
-                  <input style={inputStyle} placeholder="Address line 2 (optional)" value={newAddr.addressLine2 ?? ''} onChange={e => setNewAddr(a => ({ ...a, addressLine2: e.target.value }))} />
+                  <input style={inputStyle} placeholder={tr('checkout.addressLine1', "Address line 1")} value={newAddr.addressLine1} onChange={e => setNewAddr(a => ({ ...a, addressLine1: e.target.value }))} />
+                  <input style={inputStyle} placeholder={tr('checkout.addressLine2', "Address line 2 (optional)")} value={newAddr.addressLine2 ?? ''} onChange={e => setNewAddr(a => ({ ...a, addressLine2: e.target.value }))} />
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <input style={inputStyle} placeholder="City" value={newAddr.city} onChange={e => setNewAddr(a => ({ ...a, city: e.target.value }))} />
-                    <input style={inputStyle} placeholder="State/Province" value={newAddr.state} onChange={e => setNewAddr(a => ({ ...a, state: e.target.value }))} />
-                    <input style={inputStyle} placeholder="Zip code" value={newAddr.zipCode} onChange={e => setNewAddr(a => ({ ...a, zipCode: e.target.value }))} />
+                    <input style={inputStyle} placeholder={tr('checkout.city', "City")} value={newAddr.city} onChange={e => setNewAddr(a => ({ ...a, city: e.target.value }))} />
+                    <input style={inputStyle} placeholder={tr('checkout.state', "State/Province")} value={newAddr.state} onChange={e => setNewAddr(a => ({ ...a, state: e.target.value }))} />
+                    <input style={inputStyle} placeholder={tr('checkout.zip', "Zip code")} value={newAddr.zipCode} onChange={e => setNewAddr(a => ({ ...a, zipCode: e.target.value }))} />
                   </div>
                   <select style={inputStyle} value={newAddr.country ?? ''} onChange={e => setNewAddr(a => ({ ...a, country: e.target.value }))}>
-                    <option value="" disabled>Select country</option>
+                    <option value="" disabled>{tr('checkout.selectCountry', "Select country")}</option>
                     {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
                   </select>
                   {addrError && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{addrError}</p>}
                   <div className="flex items-center gap-3 mt-1">
-                    <AtelierButton onClick={handleAddAddress} loading={savingAddr}>Save Address</AtelierButton>
+                    <AtelierButton onClick={handleAddAddress} loading={savingAddr}>{tr('checkout.saveAddress', "Save Address")}</AtelierButton>
                     {addresses.length > 0 && (
-                      <button type="button" onClick={() => setAddingAddr(false)} className="bg-transparent border-0 cursor-pointer" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>Cancel</button>
+                      <button type="button" onClick={() => setAddingAddr(false)} className="bg-transparent border-0 cursor-pointer" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>{tr('common.cancel', "Cancel")}</button>
                     )}
                   </div>
                 </div>
@@ -671,7 +674,7 @@ export function AtelierCheckoutPage() {
                     className="flex items-center gap-1 bg-transparent border-0 cursor-pointer"
                     style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.accent }}
                   >
-                    <Plus size={13} /> Add a new address
+                    <Plus size={13} /> {tr('checkout.addAddress', "Add a new address")}
                   </button>
                 </div>
               )}
@@ -679,14 +682,14 @@ export function AtelierCheckoutPage() {
           )}
 
           {!isDigital && (
-            <SectionCard step={guest ? 3 : 2} title="Shipping Method" done={shippingChosen}>
+            <SectionCard step={guest ? 3 : 2} title={tr('checkout.shippingMethod', "Shipping Method")} done={shippingChosen}>
               {zonesLoading ? (
                 <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
               ) : effectiveZones.length === 0 ? (
                 <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
                   {noMatchingZone
                     ? "Sorry, this store doesn't currently ship to your address's country."
-                    : 'No shipping methods are available yet.'}
+                    : tr('checkout.noShippingYet', "No shipping methods are available yet.")}
                 </p>
               ) : (
                 (() => {
@@ -702,7 +705,7 @@ export function AtelierCheckoutPage() {
                         {z.estimatedDeliveryTime && <span style={{ color: t.colors.inkMuted }}>· {z.estimatedDeliveryTime}</span>}
                         {zoneArrivalRange(z) && <span style={{ color: t.colors.inkMuted }}>· {zoneArrivalRange(z)}</span>}
                       </span>
-                      <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: t.colors.ink }}>{z.shippingPrice === 0 ? 'Free' : `${symbol}${fmt2(z.shippingPrice)}`}</span>
+                      <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 600, color: t.colors.ink }}>{z.shippingPrice === 0 ? tr('checkout.free', "Free") : `${symbol}${fmt2(z.shippingPrice)}`}</span>
                     </label>
                     {z.zoneType === 'pickup' && (z.pickupAddress || z.pickupInstructions) && (
                       <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, margin: '-4px 0 0 4px' }}>
@@ -722,7 +725,7 @@ export function AtelierCheckoutPage() {
                           <div key={g.groupKey} className="flex flex-col gap-2.5">
                             <p style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.ink, margin: 0 }}>Shipping: {g.name}</p>
                             {options.length === 0
-                              ? <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted, margin: 0 }}>No shipping method is available for these items to your address.</p>
+                              ? <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted, margin: 0 }}>{tr('checkout.noShippingForItems', "No shipping method is available for these items to your address.")}</p>
                               : renderRows(options, gp.picks[g.groupKey], id => gp.setPick(g.groupKey, id))}
                           </div>
                         );
@@ -733,15 +736,15 @@ export function AtelierCheckoutPage() {
               )}
               {summary?.internationalDutiesNotice && (
                 <p role="note" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, margin: '12px 0 0' }}>
-                  Duties and import taxes are not included in your total. You may be charged by the carrier on delivery.
+                  {tr('checkout.duties', "Duties and import taxes are not included in your total. You may be charged by the carrier on delivery.")}
                 </p>
               )}
             </SectionCard>
           )}
 
-          <SectionCard step={(isDigital ? 1 : 3) + (guest ? 1 : 0)} title="Payment Method">
+          <SectionCard step={(isDigital ? 1 : 3) + (guest ? 1 : 0)} title={tr('checkout.paymentMethod', "Payment Method")}>
             {guest && guestContact.dirty ? (
-              <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Enter and confirm your email above to continue to payment.</p>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('checkout.confirmEmail', "Enter and confirm your email above to continue to payment.")}</p>
             ) : checkoutError ? (
               <div className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger, border: `1px solid ${t.colors.danger}`, padding: '10px 12px' }}>
                 <AlertCircle size={13} className="mt-[1px] shrink-0" /> {checkoutError}
@@ -756,7 +759,7 @@ export function AtelierCheckoutPage() {
               <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
             ) : creditCoversAll ? (
               <div className="flex flex-col gap-3">
-                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Your store credit covers the full amount — no payment needed.</p>
+                <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('checkout.creditCovers', "Your store credit covers the full amount — no payment needed.")}</p>
                 {credit.placeError && (
                   <div className="flex items-start gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger, border: `1px solid ${t.colors.danger}`, padding: '10px 12px' }}>
                     <AlertCircle size={13} className="mt-[1px] shrink-0" /> {credit.placeError}
@@ -768,11 +771,11 @@ export function AtelierCheckoutPage() {
                 </label>
                 <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={credit.placing} onClick={handlePlaceWithCredit}>
                   {!credit.placing && <PackageCheck size={14} style={{ marginRight: '4px' }} />}
-                  {credit.placing ? 'Placing order…' : 'Place order'}
+                  {credit.placing ? tr('checkout.placingOrder', "Placing order…") : tr('checkout.placeOrderLower', "Place order")}
                 </AtelierButton>
               </div>
             ) : allowedMethods.length === 0 && extraMethods.length === 0 ? (
-              <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No payment methods are available for this order yet.</p>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('checkout.noPaymentMethods', "No payment methods are available for this order yet.")}</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {(allowedMethods.length + extraMethods.length) > 1 && (
@@ -785,7 +788,7 @@ export function AtelierCheckoutPage() {
                       >
                         <input type="radio" checked={selectedMethod === m} onChange={() => setSelectedMethod(m)} />
                         {m === 'stripe' ? <CreditCard size={15} style={{ color: t.colors.inkMuted }} /> : <Banknote size={15} style={{ color: t.colors.inkMuted }} />}
-                        <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 500, color: t.colors.ink }}>{m === 'stripe' ? 'Credit / Debit Card' : 'Cash on Delivery'}</span>
+                        <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 500, color: t.colors.ink }}>{m === 'stripe' ? tr('checkout.card', "Credit / Debit Card") : tr('checkout.cod', "Cash on Delivery")}</span>
                       </label>
                     ))}
                     {extraMethods.map(m => (
@@ -815,11 +818,11 @@ export function AtelierCheckoutPage() {
 
                 {selectedMethod === 'stripe' && (
                   !isStripeConfigured() ? (
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Card payments aren't configured for this store yet.</p>
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('checkout.cardNotConfigured', "Card payments aren't configured for this store yet.")}</p>
                   ) : polling ? (
                     <div className="flex flex-col items-center gap-2 text-center" style={{ padding: '24px 0' }}>
                       <Loader2 size={20} className="animate-spin" style={{ color: t.colors.accent }} />
-                      <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 500, color: t.colors.ink }}>Confirming your payment…</p>
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 500, color: t.colors.ink }}>{tr('checkout.confirmingPayment', "Confirming your payment…")}</p>
                     </div>
                   ) : initiating || !clientSecret ? (
                     <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
@@ -833,7 +836,7 @@ export function AtelierCheckoutPage() {
                 {selectedMethod === 'cash_on_delivery' && (
                   <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={placing} onClick={handlePlaceCod}>
                     {!placing && <PackageCheck size={14} style={{ marginRight: '4px' }} />}
-                    {placing ? 'Placing order…' : 'Place Order'}
+                    {placing ? tr('checkout.placingOrder', "Placing order…") : tr('checkout.placeOrder', "Place Order")}
                   </AtelierButton>
                 )}
 
@@ -845,7 +848,7 @@ export function AtelierCheckoutPage() {
                         {method.provider === 'manual'
                           ? (method.instructions || 'Place your order, then pay the store directly as described by them. Your order is confirmed once they receive your payment.')
                           : method.provider === 'easypaisa'
-                            ? <>You'll get a payment request in your Easypaisa app. Approve it there to place your order.</>
+                            ? <>{tr('checkout.easypaisaHint', "You'll get a payment request in your Easypaisa app. Approve it there to place your order.")}</>
                             : <>You'll be taken to {method.displayName} to complete your payment securely, then brought back here.</>}
                       </p>
                       {method.provider === 'easypaisa' && (
@@ -854,8 +857,8 @@ export function AtelierCheckoutPage() {
                           type="tel"
                           inputMode="tel"
                           autoComplete="tel"
-                          aria-label="Easypaisa account number"
-                          placeholder="Easypaisa account number (03XXXXXXXXX)"
+                          aria-label={tr('checkout.easypaisaAria', "Easypaisa account number")}
+                          placeholder={tr('checkout.easypaisaPlaceholder', "Easypaisa account number (03XXXXXXXXX)")}
                           value={walletAccount}
                           onChange={e => setWalletAccount(e.target.value)}
                         />
@@ -864,7 +867,7 @@ export function AtelierCheckoutPage() {
                         <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{extraInitiateErr}</p>
                       )}
                       <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={initiatingExtra} onClick={() => handleExtraMethodClick(method)}>
-                        {method.provider === 'manual' ? 'Place order' : method.provider === 'easypaisa' ? 'Pay with Easypaisa' : <>Continue to {method.displayName}</>}
+                        {method.provider === 'manual' ? tr('checkout.placeOrderLower', "Place order") : method.provider === 'easypaisa' ? tr('checkout.payEasypaisa', "Pay with Easypaisa") : <>{tr('checkout.continueTo', 'Continue to {{name}}', { name: method.displayName })}</>}
                       </AtelierButton>
                     </div>
                   );
@@ -872,10 +875,10 @@ export function AtelierCheckoutPage() {
 
                 {(privacyPage || termsPage) && (
                   <p style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted, textAlign: 'center' }}>
-                    By placing your order, you agree to our{' '}
-                    {privacyPage && <Link to={`/${privacyPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>Privacy Policy</Link>}
-                    {privacyPage && termsPage && ' and '}
-                    {termsPage && <Link to={`/${termsPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>Terms of Service</Link>}
+                    {tr('checkout.agree', "By placing your order, you agree to our")}{' '}
+                    {privacyPage && <Link to={`/${privacyPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>{tr('checkout.privacyPolicy', "Privacy Policy")}</Link>}
+                    {privacyPage && termsPage && ` ${tr('checkout.and', "and")} `}
+                    {termsPage && <Link to={`/${termsPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>{tr('checkout.terms', "Terms of Service")}</Link>}
                     .
                   </p>
                 )}
@@ -885,7 +888,7 @@ export function AtelierCheckoutPage() {
         </div>
 
         <div className="flex flex-col gap-4" style={{ border: `1px solid ${t.colors.border}`, padding: '22px' }}>
-          <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink }}>Order Summary</p>
+          <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink }}>{tr('checkout.orderSummary', "Order Summary")}</p>
           <div className="flex flex-col gap-2">
             {summaryLineItems.map(item => (
               <div key={item.key} className="flex justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
@@ -896,39 +899,39 @@ export function AtelierCheckoutPage() {
           </div>
           <div style={{ height: '1px', background: t.colors.border }} />
           <div className="flex flex-col gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
-            <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Subtotal</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(orderSubtotal)}</span></div>
-            {!isDigital && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Shipping</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(shipping)}</span></div>}
-            {tax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Tax</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(tax)}</span></div>}
-            {incTax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Including taxes</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(incTax)}</span></div>}
-            {couponDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Coupon</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(couponDiscount)}</span></div>}
-            {giftCardDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Gift card</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(giftCardDiscount)}</span></div>}
-            {storeCreditDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>Store credit</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(storeCreditDiscount)}</span></div>}
+            <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.subtotal', "Subtotal")}</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(orderSubtotal)}</span></div>
+            {!isDigital && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.shipping', "Shipping")}</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(shipping)}</span></div>}
+            {tax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.tax', "Tax")}</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(tax)}</span></div>}
+            {incTax > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.includingTaxes', "Including taxes")}</span><span style={{ color: t.colors.ink }}>{symbol}{fmt2(incTax)}</span></div>}
+            {couponDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.coupon', "Coupon")}</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(couponDiscount)}</span></div>}
+            {giftCardDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.giftCard', "Gift card")}</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(giftCardDiscount)}</span></div>}
+            {storeCreditDiscount > 0 && <div className="flex justify-between"><span style={{ color: t.colors.inkMuted }}>{tr('checkout.storeCredit', "Store credit")}</span><span style={{ color: t.colors.success }}>-{symbol}{fmt2(storeCreditDiscount)}</span></div>}
           </div>
 
           {checkout && (
             <div className="flex flex-col gap-2.5 pt-1">
               {checkout.couponCode ? (
                 <div className="flex items-center justify-between" style={{ fontFamily: t.fonts.body, fontSize: '11.5px' }}>
-                  <span style={{ color: t.colors.ink }}>Coupon <strong>{checkout.couponCode}</strong> applied</span>
-                  <button type="button" onClick={handleRemoveCoupon} disabled={couponBusy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>Remove</button>
+                  <span style={{ color: t.colors.ink }}>{tr('checkout.coupon', "Coupon")} <strong>{checkout.couponCode}</strong> {tr('checkout.applied', "applied")}</span>
+                  <button type="button" onClick={handleRemoveCoupon} disabled={couponBusy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>{tr('checkout.remove', "Remove")}</button>
                 </div>
               ) : (
                 <div className="flex gap-1.5">
-                  <input style={inputStyle} placeholder="Coupon code" value={couponInput} onChange={e => setCouponInput(e.target.value)} />
-                  <button type="button" onClick={handleApplyCoupon} disabled={couponBusy || !couponInput.trim()} className="shrink-0 cursor-pointer bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '0 14px', border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>Apply</button>
+                  <input style={inputStyle} placeholder={tr('checkout.couponCode', "Coupon code")} value={couponInput} onChange={e => setCouponInput(e.target.value)} />
+                  <button type="button" onClick={handleApplyCoupon} disabled={couponBusy || !couponInput.trim()} className="shrink-0 cursor-pointer bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '0 14px', border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>{tr('checkout.apply', "Apply")}</button>
                 </div>
               )}
               {couponMsg && <p style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted }}>{couponMsg}</p>}
 
               {checkout.giftCardCode ? (
                 <div className="flex items-center justify-between" style={{ fontFamily: t.fonts.body, fontSize: '11.5px' }}>
-                  <span style={{ color: t.colors.ink }}>Gift card <strong>{checkout.giftCardCode}</strong> applied</span>
-                  <button type="button" onClick={handleRemoveGiftCard} disabled={giftCardBusy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>Remove</button>
+                  <span style={{ color: t.colors.ink }}>{tr('checkout.giftCard', "Gift card")} <strong>{checkout.giftCardCode}</strong> {tr('checkout.applied', "applied")}</span>
+                  <button type="button" onClick={handleRemoveGiftCard} disabled={giftCardBusy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>{tr('checkout.remove', "Remove")}</button>
                 </div>
               ) : (
                 <div className="flex gap-1.5">
-                  <input style={inputStyle} placeholder="Gift card code" value={giftCardInput} onChange={e => setGiftCardInput(e.target.value)} />
-                  <button type="button" onClick={handleApplyGiftCard} disabled={giftCardBusy || !giftCardInput.trim()} className="shrink-0 cursor-pointer bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '0 14px', border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>Apply</button>
+                  <input style={inputStyle} placeholder={tr('checkout.giftCardCode', "Gift card code")} value={giftCardInput} onChange={e => setGiftCardInput(e.target.value)} />
+                  <button type="button" onClick={handleApplyGiftCard} disabled={giftCardBusy || !giftCardInput.trim()} className="shrink-0 cursor-pointer bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '0 14px', border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>{tr('checkout.apply', "Apply")}</button>
                 </div>
               )}
               {giftCardMsg && <p style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted }}>{giftCardMsg}</p>}
@@ -937,11 +940,11 @@ export function AtelierCheckoutPage() {
                 <div className="flex items-center justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '11.5px' }}>
                   <span style={{ color: t.colors.ink }}>
                     {checkout.storeCreditApplied
-                      ? <>Store credit <strong>-{symbol}{fmt2(storeCreditDiscount)}</strong> applied</>
+                      ? <>{tr('checkout.storeCredit', "Store credit")} <strong>-{symbol}{fmt2(storeCreditDiscount)}</strong> {tr('checkout.applied', "applied")}</>
                       : <>Store credit available: {currencySymbol(credit.balanceCurrency)}{fmt2(credit.balance)}</>}
                   </span>
                   {checkout.storeCreditApplied ? (
-                    <button type="button" onClick={credit.remove} disabled={credit.busy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>Remove</button>
+                    <button type="button" onClick={credit.remove} disabled={credit.busy} className="bg-transparent border-0 cursor-pointer" style={{ color: t.colors.danger }}>{tr('checkout.remove', "Remove")}</button>
                   ) : (
                     <button type="button" onClick={credit.apply} disabled={credit.busy} className="shrink-0 cursor-pointer bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, padding: '6px 14px', border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>{credit.busy ? 'Applying…' : 'Apply'}</button>
                   )}
@@ -953,7 +956,7 @@ export function AtelierCheckoutPage() {
 
           <div style={{ height: '1px', background: t.colors.border }} />
           <div className="flex justify-between items-baseline">
-            <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.ink }}>Total</span>
+            <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.ink }}>{tr('checkout.total', "Total")}</span>
             <span style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 600, color: t.colors.ink }}>{symbol}{fmt2(total)}</span>
           </div>
           <p className="flex items-center gap-1" style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted }}>

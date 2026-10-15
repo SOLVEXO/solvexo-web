@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ThemePackageStructure } from '@/api/services/storeTheme';
+import type { ThemePackageStructure } from '@/api/services/liquidTheme';
 import {
   addLiquidBlock,
   addLiquidSection,
@@ -14,7 +14,7 @@ import {
   setLiquidSectionDisabled,
   updateLiquidThemeSetting,
   type LiquidJsonTemplate,
-} from './shopifyTemplateEditor.utils';
+} from './liquidTemplateEditor.utils';
 
 const structure: ThemePackageStructure = {
   version: 1,

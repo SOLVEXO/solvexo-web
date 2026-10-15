@@ -1,14 +1,15 @@
+import { tt } from '@/utils/tStatic';
 import type { StoreCreditTransaction } from '@/api/services/storeCredit';
 
 /** Shared (theme-agnostic) labels/helpers for the buyer "Store credit" pages. */
 export const STORE_CREDIT_TYPE_LABEL: Record<string, string> = {
-  issue: 'Credit added',
-  adjust_credit: 'Credit added',
-  adjust_debit: 'Credit removed',
-  redeem: 'Used at checkout',
-  restore: 'Restored',
-  refund_credit: 'Refund to store credit',
-  expire: 'Expired',
+  issue: tt('credit.added', "Credit added"),
+  adjust_credit: tt('credit.added', "Credit added"),
+  adjust_debit: tt('credit.removed', "Credit removed"),
+  redeem: tt('credit.used', "Used at checkout"),
+  restore: tt('credit.restored', "Restored"),
+  refund_credit: tt('credit.refund', "Refund to store credit"),
+  expire: tt('credit.expired', "Expired"),
 };
 
 /** Whether the ledger row adds to (true) or removes from (false) the balance. */

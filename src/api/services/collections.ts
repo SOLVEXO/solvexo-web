@@ -61,6 +61,8 @@ export interface CollectionData {
 }
 
 export interface PublicCollectionSummary {
+  /** Seller translations per language (see utils/localize). */
+  translations?: import('@/utils/localize').ContentTranslations;
   _id: string;
   name: string;
   slug: string;

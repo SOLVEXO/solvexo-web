@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useLocalize } from '@/hooks/useLocalize';
+import { useTranslation } from 'react-i18next';
 import { ImageOff, Heart } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
@@ -24,6 +26,9 @@ const CARD_RATIO = PRODUCT_CARD_RATIO;
  *  preview's fictional showcase products, which have no real `slug` a
  *  `/product/:slug` route could resolve. */
 export function NovaProductCard({ product, currency, demo = false }: { product: PublicStoreProduct; currency: string; demo?: boolean }) {
+  const lz = useLocalize();
+  const displayName = lz.product(product).name;
+  const { t: tr } = useTranslation('storefront');
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const inWishlist = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const symbol = currencySymbol(currency);
@@ -46,7 +51,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
         src={cloudinaryUrl(product.images[0], 480)}
         srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
         sizes="(min-width: 1024px) 25vw, 50vw"
-        alt={product.name}
+        alt={displayName}
         className={`${t.productImageRatio === 'adapt' ? 'block w-full h-auto' : 'w-full h-full object-cover'} transition-transform duration-300 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
         loading="lazy"
       />
@@ -67,7 +72,7 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
       <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
     </div>
   );
-  const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 700, lineHeight: 1.4, margin: 0 }}>{product.name}</p>;
+  const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 700, lineHeight: 1.4, margin: 0 }}>{displayName}</p>;
 
   return (
     <div className="group flex flex-col" style={productCardFrame(t.cardStyle, t.colors, t.productCardRadiusPx)}>
@@ -82,14 +87,14 @@ export function NovaProductCard({ product, currency, demo = false }: { product: 
             className="absolute top-3 left-3"
             style={{ fontFamily: t.fonts.body, fontSize: '10.5px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '4px 10px', borderRadius: '9999px' }}
           >
-            {product.inStock === false ? 'SOLD OUT' : 'SALE'}
+            {product.inStock === false ? tr('product.soldOut', "Sold out").toUpperCase() : tr('product.sale', "Sale").toUpperCase()}
           </span>
         )}
         {product.variantId && (
           <button
             type="button"
             onClick={() => toggleWishlist(product._id, product.variantId!)}
-            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-label={inWishlist ? tr('wishlist.removeAria', "Remove from wishlist") : tr('wishlist.addAria', "Add to wishlist")}
             className="absolute top-3 right-3 flex items-center justify-center cursor-pointer border-0"
             style={{ width: '36px', height: '36px', borderRadius: '9999px', background: 'rgba(255,255,255,0.96)', boxShadow: '0 3px 14px rgba(20,18,31,0.12)' }}
           >

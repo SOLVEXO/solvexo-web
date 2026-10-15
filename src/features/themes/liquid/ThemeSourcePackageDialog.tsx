@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Code2, Download, FilePlus2, FileCode2, Loader2, MonitorPlay, Pencil, RotateCcw, Save, Trash2, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  apiEditThemePackageFile, apiGetThemePackageFile, apiStartThemeImport, apiGetThemeImportJob, apiGetThemePackageRevision, apiListThemePackageRevisions,
+  apiEditThemePackageFile, apiGetThemePackageFile, apiUploadThemeInChunks, MAX_THEME_ZIP_BYTES, apiGetThemeImportJob, apiGetThemePackageRevision, apiListThemePackageRevisions,
   apiRollbackThemePackage, apiAddThemePackageFile, apiDeleteThemePackageFile, apiRenameThemePackageFile, apiUnpublishThemePackage, apiExportThemePackage, apiPreviewThemePackage, apiGetThemePackageStructure, apiPublishThemePackage,
   type ThemePackageRevision, type ThemePackageStructure,
-} from '@/api/services/storeTheme';
-import { ShopifyTemplateEditor } from './ShopifyTemplateEditor';
+} from '@/api/services/liquidTheme';
+import { LiquidTemplateEditor } from './LiquidTemplateEditor';
 
 export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }: { storeId: string; installedThemeId: string; onClose: () => void }) {
   const toast = useToast();
@@ -18,7 +18,7 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const [content, setContent] = useState('');
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [importState, setImportState] = useState<{ phase: 'uploading'; pct: number } | { phase: 'processing'; stage: string } | null>(null);
+  const [importState, setImportState] = useState<{ phase: 'uploading'; pct: number; sent?: number; total?: number } | { phase: 'processing'; stage: string } | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const [error, setError] = useState('');
@@ -28,9 +28,16 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [fileOp, setFileOp] = useState<{ mode: 'new' | 'rename'; value: string } | null>(null);
   const [activePanel, setActivePanel] = useState<'files' | 'structure' | 'editor'>('files');
+  // The visual (section/block) editor shows a LIVE preview next to it, re-rendered a moment after each change —
+  // like Shopify's own customizer — rather than making the seller flip between "edit" and "preview revision".
+  const [livePreviewHtml, setLivePreviewHtml] = useState('');
+  const [livePreviewPending, setLivePreviewPending] = useState(false);
+  const [livePreviewError, setLivePreviewError] = useState('');
 
   const openRevision = useCallback(async (version: number) => {
     setPreviewHtml('');
+    setLivePreviewHtml('');
+    setLivePreviewError('');
     const result = await apiGetThemePackageRevision(storeId, installedThemeId, version);
     setSelected(result.data);
     const structureResult = await apiGetThemePackageStructure(storeId, installedThemeId, version);
@@ -95,11 +102,12 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   const upload = async (file?: File) => {
     if (!file) return;
     if (dirty && !window.confirm('Discard unsaved source edits and import this ZIP?')) { if (inputRef.current) inputRef.current.value = ''; return; }
-    if (!file.name.toLowerCase().endsWith('.zip')) { setError('Choose a .zip Shopify theme package.'); return; }
+    if (!file.name.toLowerCase().endsWith('.zip')) { setError('Choose a theme package in .zip format.'); return; }
+    if (file.size > MAX_THEME_ZIP_BYTES) { setError(`This ZIP is ${(file.size / 1048576).toFixed(1)} MB; the limit is ${MAX_THEME_ZIP_BYTES / 1048576} MB. Remove unused files (demo images, source maps) and try again.`); if (inputRef.current) inputRef.current.value = ''; return; }
     setBusy(true); setError(''); setImportState({ phase: 'uploading', pct: 0 });
     try {
       // Like Shopify: the upload returns at once and the theme is processed in the background; we poll its status.
-      const started = await apiStartThemeImport(storeId, installedThemeId, file, (pct) => { if (alive.current) setImportState({ phase: 'uploading', pct }); });
+      const started = await apiUploadThemeInChunks(storeId, installedThemeId, file, (sent, total) => { if (alive.current) setImportState({ phase: 'uploading', pct: Math.round((sent / total) * 100), sent, total }); });
       const jobId = started.data.jobId;
       if (alive.current) setImportState({ phase: 'processing', stage: started.data.stage });
       let failedPolls = 0;
@@ -160,6 +168,27 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
     } catch (e) { setError(e instanceof Error ? e.message : 'Theme preview could not be rendered.'); }
     finally { setBusy(false); }
   };
+
+  // Debounced auto-refresh for the visual editor's side-by-side preview. Kept independent of `preview`/`busy`
+  // above (which still back the manual "Preview revision" toggle used by the raw-file editor) so a run of
+  // keystrokes in a settings field never disables Save/Publish or shows a loud error mid-edit — a failed
+  // auto-render just leaves the last good preview on screen with a small inline note.
+  useEffect(() => {
+    if (activePanel !== 'editor' || !selected || !structure) return;
+    const normalizedPath = previewPath.startsWith('/') ? previewPath : `/${previewPath}`;
+    const draft = filePath && selectedFile?.encoding === 'utf8' ? { path: filePath, content } : undefined;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      setLivePreviewPending(true);
+      apiPreviewThemePackage(storeId, installedThemeId, selected.version, normalizedPath, draft)
+        .then((result) => { if (!cancelled) { setLivePreviewHtml(result.data.html); setLivePreviewError(''); } })
+        .catch((e) => { if (!cancelled) setLivePreviewError(e instanceof Error ? e.message : 'Preview could not be refreshed.'); })
+        .finally(() => { if (!cancelled) setLivePreviewPending(false); });
+    }, 600);
+    return () => { cancelled = true; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `selectedFile` is derived from `filePath`/`selected`, already deps here
+  }, [activePanel, selected, structure, storeId, installedThemeId, previewPath, filePath, content]);
 
   const publish = async () => {
     if (!selected || !window.confirm(`Publish revision ${selected.version} as this store's live storefront theme? This will activate the imported Liquid theme for buyers.`)) return;
@@ -252,7 +281,7 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
   return <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Theme source files">
     <div className="w-full max-w-6xl h-[min(88vh,900px)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-bone">
-        <div className="flex items-center gap-2"><Code2 size={18} /><div><h2 className="m-0 text-[16px] font-bold text-charcoal">Theme source files</h2><p className="m-0 mt-1 text-[11px] text-slate">Shopify Liquid theme ZIP import, source edits and revision rollback</p></div></div>
+        <div className="flex items-center gap-2"><Code2 size={18} /><div><h2 className="m-0 text-[16px] font-bold text-charcoal">Theme source files</h2><p className="m-0 mt-1 text-[11px] text-slate">Import a theme ZIP, edit its files and roll back to any earlier revision</p></div></div>
         <div className="flex items-center gap-2">
           <input ref={inputRef} type="file" accept=".zip,application/zip" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
           <input ref={assetRef} type="file" accept="image/*,font/*,.woff,.woff2,.ttf,.otf,.mp4,.webm,.css,.js,.svg" className="hidden" onChange={(e) => uploadAsset(e.target.files?.[0])} />
@@ -265,7 +294,7 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
       {importState ? (
         <div role="status" aria-live="polite" className="px-4 py-2 text-[12px] text-slate bg-[#F1EDE5]">
           {importState.phase === 'uploading'
-            ? <>Uploading theme… {importState.pct}%<div className="mt-1 h-1.5 rounded bg-white overflow-hidden"><div className="h-full bg-charcoal" style={{ width: `${importState.pct}%` }} /></div></>
+            ? <>Uploading theme… {importState.sent !== undefined && importState.total ? `${(importState.sent / 1048576).toFixed(1)} of ${(importState.total / 1048576).toFixed(1)} MB · ` : ''}{importState.pct}%<div className="mt-1 h-1.5 rounded bg-white overflow-hidden"><div className="h-full bg-charcoal" style={{ width: `${importState.pct}%` }} /></div></>
             : <>{({ reading: 'Reading the ZIP…', checking: 'Checking the theme files…', saving: 'Saving the theme…', compatibility: 'Testing your theme\'s pages…' } as Record<string, string>)[importState.stage] ?? 'Processing…'} You can keep this window open.</>}
         </div>
       ) : busy && <p role="status" className="m-0 px-4 py-2 text-[12px] text-slate bg-[#F1EDE5]">Working on your theme… please keep this window open.</p>}
@@ -330,9 +359,21 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
         <main className="p-4 flex flex-col min-w-0 min-h-0">
           {error && <p className="flex items-start gap-2 p-2.5 rounded-lg bg-error-bg text-error text-[12px]"><AlertTriangle size={14} className="shrink-0" />{error}</p>}
           {selected ? <>
-            <div className="flex items-center justify-between gap-3 mb-2"><span className="text-[12px] font-semibold truncate">{filePath || 'Choose a file'}</span><div className="flex gap-2 shrink-0">{previewHtml && <button type="button" onClick={() => setPreviewHtml('')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer"><Code2 size={12} /> Edit source</button>}<input aria-label="Preview page path" value={previewPath} onChange={(e) => setPreviewPath(e.target.value)} placeholder="/products/handle" className="w-36 px-2 py-1 rounded-lg border border-bone text-[11px]" /><select aria-label="Preview device" value={device} onChange={(e) => setDevice(e.target.value as 'desktop' | 'tablet' | 'mobile')} className="px-2 py-1 rounded-lg border border-bone bg-white text-[11px]"><option value="desktop">Desktop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option></select><button type="button" disabled={busy} onClick={preview} title={dirty ? 'Previews your unsaved edit without saving it.' : undefined} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><MonitorPlay size={12} /> Preview revision</button><button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button><button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button><button type="button" disabled={busy || dirty} onClick={publish} title={dirty ? 'Save source changes before publishing.' : 'Publish this source revision to the live storefront'} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-charcoal text-white text-[11px] font-semibold border-0 cursor-pointer disabled:opacity-50">Publish to storefront</button></div></div>
-            {previewHtml ? <div className="flex-1 min-h-0 rounded-xl border border-bone overflow-auto bg-cream flex justify-center"><iframe title={`Theme source revision ${selected.version} preview`} sandbox="allow-scripts" srcDoc={previewHtml} style={{ width: device === 'mobile' ? 390 : device === 'tablet' ? 820 : '100%', maxWidth: '100%' }} className="h-full border-0 bg-white" /></div>
-              : activePanel === 'editor' && structure ? <div className="flex-1 min-h-0 rounded-xl border border-bone p-3"><ShopifyTemplateEditor
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span className="text-[12px] font-semibold truncate">{filePath || 'Choose a file'}</span>
+              <div className="flex items-center gap-2 shrink-0">
+                {activePanel === 'editor' && <span role="status" className="flex items-center gap-1 text-[10px] text-slate">{livePreviewPending ? <><Loader2 size={11} className="animate-spin" /> Updating preview…</> : 'Live preview'}</span>}
+                {activePanel !== 'editor' && previewHtml && <button type="button" onClick={() => setPreviewHtml('')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer"><Code2 size={12} /> Edit source</button>}
+                <input aria-label="Preview page path" value={previewPath} onChange={(e) => setPreviewPath(e.target.value)} placeholder="/products/handle" className="w-36 px-2 py-1 rounded-lg border border-bone text-[11px]" />
+                <select aria-label="Preview device" value={device} onChange={(e) => setDevice(e.target.value as 'desktop' | 'tablet' | 'mobile')} className="px-2 py-1 rounded-lg border border-bone bg-white text-[11px]"><option value="desktop">Desktop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option></select>
+                {activePanel !== 'editor' && <button type="button" disabled={busy} onClick={preview} title={dirty ? 'Previews your unsaved edit without saving it.' : undefined} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><MonitorPlay size={12} /> Preview revision</button>}
+                <button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button>
+                <button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button>
+                <button type="button" disabled={busy || dirty} onClick={publish} title={dirty ? 'Save source changes before publishing.' : 'Publish this source revision to the live storefront'} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-charcoal text-white text-[11px] font-semibold border-0 cursor-pointer disabled:opacity-50">Publish to storefront</button>
+              </div>
+            </div>
+            {activePanel === 'editor' && structure ? <div className="flex-1 min-h-0 flex gap-3">
+              <div className="w-[360px] shrink-0 min-h-0 overflow-y-auto rounded-xl border border-bone p-3"><LiquidTemplateEditor
                 storeId={storeId}
                 structure={structure}
                 files={selected.files}
@@ -342,9 +383,19 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
                 onSelectFile={(path, value) => { setFilePath(path); setContent(value); setDirty(false); }}
                 onChange={(value) => { setContent(value); setDirty(true); }}
               /></div>
+              <div className="flex-1 min-h-0 rounded-xl border border-bone overflow-auto bg-cream flex flex-col">
+                {livePreviewError && <p role="alert" className="m-2 rounded-lg bg-error-bg p-2 text-[11px] text-error">{livePreviewError} The last successful preview is still shown below.</p>}
+                <div className="flex-1 min-h-0 flex justify-center">
+                  {livePreviewHtml
+                    ? <iframe title={`Theme source revision ${selected.version} live preview`} sandbox="allow-scripts" srcDoc={livePreviewHtml} style={{ width: device === 'mobile' ? 390 : device === 'tablet' ? 820 : '100%', maxWidth: '100%' }} className="h-full border-0 bg-white" />
+                    : <div className="flex items-center justify-center text-[11px] text-slate"><Loader2 size={14} className="animate-spin mr-2" /> Loading preview…</div>}
+                </div>
+              </div>
+            </div>
+              : previewHtml ? <div className="flex-1 min-h-0 rounded-xl border border-bone overflow-auto bg-cream flex justify-center"><iframe title={`Theme source revision ${selected.version} preview`} sandbox="allow-scripts" srcDoc={previewHtml} style={{ width: device === 'mobile' ? 390 : device === 'tablet' ? 820 : '100%', maxWidth: '100%' }} className="h-full border-0 bg-white" /></div>
                 : <textarea value={content} disabled={selectedFile?.encoding !== 'utf8'} onChange={(e) => { setContent(e.target.value); setDirty(true); }} spellCheck={false} className="flex-1 min-h-0 w-full resize-none rounded-xl bg-[#1E1B18] text-[#EDE9E1] disabled:text-[#B8B2A6] border border-bone p-4 font-mono text-[12px] leading-relaxed" />}
             <p className="m-0 mt-2 text-[10px] text-slate">Preview uses this store&apos;s product catalog in an isolated frame. Publishing activates the Liquid theme for the store&apos;s public storefront.</p>
-          </> : <div className="flex-1 flex items-center justify-center text-center text-[12px] text-slate">Import a Shopify theme ZIP to start a versioned source workspace.</div>}
+          </> : <div className="flex-1 flex items-center justify-center text-center text-[12px] text-slate">Import a theme ZIP to start editing its files. Every change is saved as a revision you can roll back.</div>}
         </main>
       </div>
       {busy && <div className="absolute inset-0 pointer-events-none flex items-center justify-center"><div className="flex items-center gap-2 rounded-lg bg-white shadow p-3 text-[12px]"><Loader2 size={15} className="animate-spin" /> Saving…</div></div>}

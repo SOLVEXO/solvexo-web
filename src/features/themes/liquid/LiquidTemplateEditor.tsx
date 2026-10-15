@@ -5,7 +5,7 @@ import { apiListCollections } from '@/api/services/collections';
 import { apiListStorePages } from '@/api/services/storePages';
 import { apiListBlogs, apiListBlogPosts } from '@/api/services/storeBlog';
 import { apiListMenus } from '@/api/services/menus';
-import type { ThemePackageComponentSchema, ThemePackageStructure } from '@/api/services/storeTheme';
+import type { ThemePackageComponentSchema, ThemePackageStructure } from '@/api/services/liquidTheme';
 import {
   addLiquidBlock,
   addLiquidSection,
@@ -22,7 +22,7 @@ import {
   updateLiquidThemeSetting,
   type LiquidJsonTemplate,
   type LiquidTemplateSection,
-} from './shopifyTemplateEditor.utils';
+} from './liquidTemplateEditor.utils';
 
 type ThemeSettingSchema = {
   id?: string;
@@ -39,7 +39,7 @@ type ThemeEditorFile = { path: string; encoding?: 'utf8' | 'base64'; content?: s
 type ResourceKind = 'product' | 'collection' | 'page' | 'blog' | 'article' | 'link_list';
 type ResourceChoice = { id: string; label: string };
 
-export function ShopifyTemplateEditor({
+export function LiquidTemplateEditor({
   storeId,
   structure,
   files,

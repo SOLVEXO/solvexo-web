@@ -4,7 +4,7 @@ import { getCheckoutAttributionFields } from '@/utils/promotionAttribution';
 import { getAffiliateRef } from '@/utils/affiliateAttribution';
 import type { VariantOption } from './product';
 import { analyticsSessionFields } from '@/utils/storefrontAnalytics';
-import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
+import { getCurrentStorefrontStoreId, getStorefrontLocaleInfo } from '@/utils/currentStorefront';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -231,6 +231,8 @@ export function apiCreateCheckout(payload: CreateCheckoutPayload) {
     ...analyticsSessionFields(getCurrentStorefrontStoreId()),
     attributedAffiliateCode: getAffiliateRef(),
     currencyPreference: getCurrencyPreference(),
+    // Resolved market country (ISO2) + active language, stamped on the checkout/order by the server.
+    ...getStorefrontLocaleInfo(),
   });
 }
 

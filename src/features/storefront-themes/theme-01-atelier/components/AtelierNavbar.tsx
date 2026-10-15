@@ -1,4 +1,6 @@
 ﻿import { useEffect, useRef, useState } from 'react';
+import { useLocalize } from '@/hooks/useLocalize';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, ChevronDown } from 'lucide-react';
 import { StorefrontPredictiveSearch } from '@/features/storefront/browse/StorefrontPredictiveSearch';
@@ -7,7 +9,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
-import { CurrencySelector } from '@/components/comman/ui';
+import { StorefrontLocaleControls } from '@/features/storefront/StorefrontLocaleControls';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
@@ -15,7 +17,9 @@ import { atelierTheme as t } from '../theme.config';
 import { buildNavImageLookup, isMegaItem, normalizeNavItems, useMegaNav } from '../../navigation/megaNav';
 import type { MobileNavTokens } from '../../navigation/MobileNavItem';
 import { MobileNavPanel } from '../../navigation/MobileNavPanel';
-import { mutedOf, readHeaderOptions, logoImageProps } from '../../navigation/headerOptions';
+import { mutedOf, readHeaderOptions, logoImageProps, headerNavCss } from '../../navigation/headerOptions';
+import { useHeaderScroll } from '../../navigation/useHeaderScroll';
+import { HeaderCta, HeaderSearchBar, HeaderTopBar } from '../../navigation/HeaderExtras';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { AtelierMegaPanel } from './AtelierMegaPanel';
 
@@ -30,6 +34,8 @@ import { AtelierMegaPanel } from './AtelierMegaPanel';
  *  (this theme doesn't consume the legacy seller-configured Header nav-link
  *  blocks, so without this a buyer could never reach either page type). */
 export function AtelierNavbar() {
+  const { t: tr } = useTranslation('storefront');
+  const lz = useLocalize();
   const { store, theme, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
   const cartDrawer = useCartDrawer();
@@ -42,8 +48,26 @@ export function AtelierNavbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const isLoggedIn = TokenStorage.isLoggedIn();
   const opts = readHeaderOptions(theme?.header, 'Journal');
-  const hc = { ink: opts.textColor ?? t.colors.ink, inkMuted: opts.textColor ? mutedOf(opts.textColor) : t.colors.inkMuted, bg: opts.bgColor ?? t.colors.bg };
-  const centered = opts.headerStyle === 'centered';
+  const scroll = useHeaderScroll(opts.stickyMode, opts.transparentOnHome && pathname === '/');
+  const hc = scroll.clear
+    ? { ink: opts.transparentTextColor, inkMuted: mutedOf(opts.transparentTextColor), bg: 'transparent' }
+    : { ink: opts.textColor ?? t.colors.ink, inkMuted: opts.textColor ? mutedOf(opts.textColor) : t.colors.inkMuted, bg: opts.bgColor ?? t.colors.bg };
+  const layout = opts.headerStyle;
+  const centered = layout === 'centered';
+  const navCss = headerNavCss('atelier', opts);
+  const mobileMenuButton = (
+    <button
+      type="button"
+      onClick={() => setMobileOpen(true)}
+      aria-label={tr('nav.openMenu', "Open menu")}
+      aria-expanded={mobileOpen}
+      aria-haspopup="dialog"
+      className="lg:hidden bg-transparent border-0 cursor-pointer p-1"
+      style={{ color: hc.ink }}
+    >
+      <Menu size={20} />
+    </button>
+  );
   // A custom logo with nothing uploaded falls back to the store logo instead of showing only the name.
   const logoSrc = (theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : null) || store.logo;
 
@@ -77,12 +101,12 @@ export function AtelierNavbar() {
   // any yet, so a brand-new store's nav isn't empty.
   const headerNavBlocks = (theme?.header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
   const navLinks: ResolvedStorefrontNavItem[] = headerNavBlocks.length > 0
-    ? normalizeNavItems(headerNavBlocks.map(b => b.settings as unknown as StorefrontNavItemSettings), resolveLink, buildNavImageLookup(categories, collections))
+    ? normalizeNavItems(headerNavBlocks.map(b => b.settings as unknown as StorefrontNavItemSettings), resolveLink, buildNavImageLookup(categories, collections), 'nav', lz.locale)
     : opts.showDefaultBlogLink ? [{ id: 'journal', label: opts.blogLabel, link: { to: '/blog' }, children: [] }] : [];
   const visibleNavLinks: ResolvedStorefrontNavItem[] = [...navLinks];
   (opts.includePagesInNav ? navigationPages : []).forEach(page => {
     const to = `/${page.slug}`;
-    if (!visibleNavLinks.some(item => item.link.to === to)) visibleNavLinks.push({ id: page._id, label: page.title, link: { to }, children: [] });
+    if (!visibleNavLinks.some(item => item.link.to === to)) visibleNavLinks.push({ id: page._id, label: lz.page(page).title, link: { to }, children: [] });
   });
 
   // Mega menu (items the seller set to "Mega menu"): one shared full-width
@@ -121,30 +145,30 @@ export function AtelierNavbar() {
                     onMouseEnter={keepShopOpen}
                     id="atelier-shop-menu"
                     role="region"
-                    aria-label="Shop categories and collections"
+                    aria-label={tr('nav.shopMenuAria', "Shop categories and collections")}
                   className="absolute left-0 z-20 flex gap-10"
                   style={{ top: '100%', background: '#FFFFFF', border: `1px solid ${t.colors.border}`, padding: '22px 26px', minWidth: '360px' }}
                 >
                   <div className="flex flex-col gap-2.5">
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: hc.inkMuted }}>Explore</p>
-                    <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: hc.ink }}>All products</Link>
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: hc.inkMuted }}>{tr('nav.explore', "Explore")}</p>
+                    <Link to="/#shop" onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: hc.ink }}>{tr('nav.allProducts', "All products")}</Link>
                   </div>
                   {categories.length > 0 && (
                     <div className="flex flex-col gap-2.5">
-                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: hc.inkMuted }}>Categories</p>
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: hc.inkMuted }}>{tr('nav.categories', "Categories")}</p>
                       {categories.map(c => (
                         <Link key={c._id} to={`/category/${c.slug || c._id}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: hc.ink }}>
-                          {c.name}
+                          {lz.collection(c).name}
                         </Link>
                       ))}
                     </div>
                   )}
                   {collections.length > 0 && (
                     <div className="flex flex-col gap-2.5">
-                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: hc.inkMuted }}>Collections</p>
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: hc.inkMuted }}>{tr('nav.collections', "Collections")}</p>
                       {collections.map(c => (
                         <Link key={c._id} to={`/collections/${c.slug}`} onClick={() => setShopOpen(false)} className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: hc.ink }}>
-                          {c.name}
+                          {lz.collection(c).name}
                         </Link>
                       ))}
                     </div>
@@ -201,53 +225,59 @@ export function AtelierNavbar() {
   );
 
   return (
-    <header {...megaNav.headerProps} style={{ borderBottom: opts.showDivider ? `1px solid ${t.colors.border}` : 'none', background: hc.bg, color: hc.ink, ...(opts.sticky ? { position: 'sticky' as const, top: 0, zIndex: 40 } : {}) }}>
+    <header {...megaNav.headerProps} ref={el => scroll.attach(el, megaNav.headerProps.ref)} data-sx-header="atelier"
+      style={{ borderBottom: opts.showDivider && !scroll.clear ? `1px solid ${t.colors.border}` : '1px solid transparent', background: hc.bg, color: hc.ink, ...scroll.style }}>
+      {navCss && <style>{navCss}</style>}
+      {opts.topBar && <HeaderTopBar bar={opts.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <div className="relative">
       <div
-        className={`relative mx-auto items-center ${centered ? 'grid grid-cols-[1fr_auto_1fr] gap-6' : 'flex justify-between'}`}
+        className={`relative mx-auto items-center ${layout !== 'standard' ? 'grid grid-cols-[1fr_auto_1fr] gap-6' : 'flex justify-between'}`}
         style={{ maxWidth: t.layout.maxWidth, padding: `${18 + opts.paddingDelta}px ${t.layout.containerPadX}` }}
       >
-        {/* Mobile menu toggle */}
-        <button
-          type="button"
-          onClick={() => setMobileOpen(true)}
-          aria-label="Open menu"
-          aria-expanded={mobileOpen}
-          aria-haspopup="dialog"
-          className="lg:hidden bg-transparent border-0 cursor-pointer p-1"
-          style={{ color: hc.ink }}
-        >
-          <Menu size={20} />
-        </button>
-
-        {/* Left nav (desktop) */}
-        {!centered && desktopNav}
-
-        {/* Center wordmark */}
-        {logoLink}
+        {layout === 'split' || layout === 'inline' ? (
+          <>
+            <div className="flex items-center gap-6 min-w-0">
+              {mobileMenuButton}
+              {layout === 'split' ? desktopNav : logoLink}
+            </div>
+            <div className="flex justify-center">{layout === 'split' ? logoLink : desktopNav}</div>
+          </>
+        ) : (
+          <>
+            {centered ? <div className="flex items-center">{mobileMenuButton}</div> : mobileMenuButton}
+            {/* Left nav (desktop) */}
+            {!centered && desktopNav}
+            {/* Center wordmark */}
+            {logoLink}
+          </>
+        )}
 
         {/* Right icon cluster */}
-        <div className={`flex items-center gap-4 ${centered ? 'justify-self-end' : ''}`}>
-          <CurrencySelector allowed={store.enabledCurrencies ?? undefined} />
+        <div className={`flex items-center gap-4 ${layout !== 'standard' ? 'justify-self-end' : ''}`}>
+          {opts.showSearch && opts.searchStyle === 'bar' && (
+            <HeaderSearchBar onOpen={() => setSearchOpen(true)} color={hc.ink} border={scroll.clear ? 'rgba(255,255,255,0.45)' : t.colors.border} bg="transparent" radius={t.radius.sm} fontFamily={t.fonts.body} />
+          )}
+          {opts.cta && <HeaderCta cta={opts.cta} bg={hc.ink} color={scroll.clear ? '#111111' : (opts.bgColor ?? t.colors.bg)} radius={t.radius.sm} fontFamily={t.fonts.body} />}
+          <StorefrontLocaleControls allowedCurrencies={store.enabledCurrencies} />
           {opts.showSearch && (
           <button
             type="button"
             onClick={() => setSearchOpen(o => !o)}
-            aria-label="Search"
+            aria-label={tr('nav.search', "Search")}
             aria-expanded={searchOpen}
-            className="bg-transparent border-0 cursor-pointer p-1"
+            className={`bg-transparent border-0 cursor-pointer p-1 ${opts.searchStyle === 'bar' ? 'md:hidden' : ''}`}
             style={{ color: hc.ink }}
           >
             <Search size={18} />
           </button>
           )}
 {opts.showAccount && (
-          <Link to={isLoggedIn ? '/account' : '/login'} aria-label="Account" style={{ color: hc.ink }}>
+          <Link to={isLoggedIn ? '/account' : '/login'} aria-label={tr('nav.account', "Account")} style={{ color: hc.ink }}>
             <User size={18} />
           </Link>
 )}
           {isLoggedIn && opts.showWishlist && (
-            <Link to="/wishlist" aria-label={`Wishlist, ${wishlistCount} item${wishlistCount !== 1 ? 's' : ''}`} className="relative" style={{ color: hc.ink }}>
+            <Link to="/wishlist" aria-label={tr('nav.wishlistAria', { count: wishlistCount, defaultValue_one: 'Wishlist, {{count}} item', defaultValue_other: 'Wishlist, {{count}} items' })} className="relative" style={{ color: hc.ink }}>
               <Heart size={18} />
               {wishlistCount > 0 && (
                 <span
@@ -260,7 +290,7 @@ export function AtelierNavbar() {
               )}
             </Link>
           )}
-          <Link to="/cart" onClick={e => { if (cartDrawer.mounted && pathname !== '/cart') { e.preventDefault(); cartDrawer.openDrawer(); } }} aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`} className="relative" style={{ color: hc.ink }}>
+          <Link to="/cart" onClick={e => { if (cartDrawer.mounted && pathname !== '/cart') { e.preventDefault(); cartDrawer.openDrawer(); } }} aria-label={tr('nav.cartAria', { count: cartCount, defaultValue_one: 'Cart, {{count}} item', defaultValue_other: 'Cart, {{count}} items' })} className="relative" style={{ color: hc.ink }}>
             <ShoppingBag size={18} />
             {cartCount > 0 && (
               <span
@@ -310,8 +340,8 @@ export function AtelierNavbar() {
         items={visibleNavLinks}
         shop={opts.showShopMenu ? {
           label: opts.shopLabel,
-          categories: categories.map(c => ({ id: c._id, label: c.name, to: `/category/${c.slug || c._id}` })),
-          collections: collections.map(c => ({ id: c._id, label: c.name, to: `/collections/${c.slug}` })),
+          categories: categories.map(c => ({ id: c._id, label: lz.collection(c).name, to: `/category/${c.slug || c._id}` })),
+          collections: collections.map(c => ({ id: c._id, label: lz.collection(c).name, to: `/collections/${c.slug}` })),
         } : null}
         showSearch={opts.showSearch}
         onSearch={() => setSearchOpen(true)}
@@ -319,7 +349,7 @@ export function AtelierNavbar() {
         accountTo={isLoggedIn ? '/account' : '/login'}
         showWishlist={isLoggedIn && opts.showWishlist}
         wishlistCount={wishlistCount}
-        footer={<CurrencySelector allowed={store.enabledCurrencies ?? undefined} />}
+        footer={<StorefrontLocaleControls allowedCurrencies={store.enabledCurrencies} />}
       />
     </header>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { tt } from '@/utils/tStatic';
 import { Link, useLocation } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
@@ -60,8 +61,8 @@ function StoreHeroText() {
         </p>
       )}
       <div className="flex items-center gap-5 pt-2">
-        <a href="#shop" className="no-underline"><AtelierButton>Explore the collection</AtelierButton></a>
-        <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, letterSpacing: '0.04em' }}>Thoughtfully selected for you</span>
+        <a href="#shop" className="no-underline"><AtelierButton>{tt('home.explore', "Explore the collection")}</AtelierButton></a>
+        <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, letterSpacing: '0.04em' }}>{tt('home.thoughtful', "Thoughtfully selected for you")}</span>
       </div>
     </>
   );
@@ -106,16 +107,16 @@ function DefaultHomeContent() {
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10">
             <div>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: t.colors.accent, marginBottom: '10px' }}>The latest edit</p>
-              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.6vw, 46px)', fontWeight: 600, color: t.colors.ink, letterSpacing: '-0.025em', lineHeight: 1.1, margin: 0 }}>New arrivals</h2>
-              <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '10px' }}>Discover the latest from {store.name}.</p>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: t.colors.accent, marginBottom: '10px' }}>{tt('home.latestEdit', "The latest edit")}</p>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(28px, 3.6vw, 46px)', fontWeight: 600, color: t.colors.ink, letterSpacing: '-0.025em', lineHeight: 1.1, margin: 0 }}>{tt('home.newArrivals', "New arrivals")}</h2>
+              <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '10px' }}>{tt('home.discover', 'Discover the latest from {{name}}.', { name: store.name })}</p>
             </div>
-            <Link to="/search" className="no-underline w-fit" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.ink, borderBottom: `1px solid ${t.colors.ink}`, paddingBottom: '5px' }}>View all products</Link>
+            <Link to="/search" className="no-underline w-fit" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.ink, borderBottom: `1px solid ${t.colors.ink}`, paddingBottom: '5px' }}>{tt('home.viewAll', "View all products")}</Link>
           </div>
           {products === null && !error && <ProductGridSkeleton />}
           {error && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{error}</p>}
           {products !== null && products.length === 0 && (
-            <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>No products yet — check back soon.</p>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>{tt('home.noProducts', "No products yet — check back soon.")}</p>
           )}
           {products !== null && products.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">

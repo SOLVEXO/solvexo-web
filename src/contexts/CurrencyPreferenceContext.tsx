@@ -3,7 +3,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { apiEditProfile } from '@/api/services/auth';
 import { apiGetCurrentRates, type CurrentRatesMap } from '@/api/services/exchangeRate';
 import { apiGetEnabledCurrencies, type SupportedCurrency } from '@/api/services/store';
-import { getCurrencyDecimals } from '@/utils/currency';
+import { computeMarketPrice, type MarketPricingTarget } from '@/utils/marketPriceMath';
 
 // Re-exported so existing importers of this file's own `SupportedCurrency`
 // don't need updating — the real type now lives in api/services/store.ts
@@ -17,6 +17,8 @@ export type { SupportedCurrency };
 // without duplicating it — that check must never fire after a real choice
 // (explicit or account-level) already exists.
 export const CURRENCY_STORAGE_KEY = 'solvexo_currency_preference';
+/** Set only when the buyer picked a currency themselves (not an automatic market/IP default). */
+export const CURRENCY_EXPLICIT_KEY = 'solvexo_currency_explicit';
 const STORAGE_KEY = CURRENCY_STORAGE_KEY;
 
 /**
@@ -28,29 +30,35 @@ const STORAGE_KEY = CURRENCY_STORAGE_KEY;
  * any checkout exists — the real, authoritative, snapshotted conversion
  * still happens server-side at checkout creation).
  */
-function convertAmount(amount: number, fromCurrency: string, toCurrency: string, rates: CurrentRatesMap): number {
-  if (!fromCurrency || fromCurrency === toCurrency) return amount;
-  const fromRate = fromCurrency === 'USD' ? 1 : rates[fromCurrency]?.ratePerUSD;
-  const toRate = toCurrency === 'USD' ? 1 : rates[toCurrency]?.ratePerUSD;
-  if (!fromRate || !toRate) return amount; // rates not loaded yet — show native rather than guess
-  const usd = amount / fromRate;
-  const converted = usd * toRate;
-  const decimals = getCurrencyDecimals(toCurrency);
-  const factor = Math.pow(10, decimals);
-  return Math.round(converted * factor) / factor;
+function convertAmount(
+  amount: number,
+  fromCurrency: string,
+  toCurrency: string,
+  rates: CurrentRatesMap,
+  market?: MarketPricingTarget | null,
+): number {
+  if (!fromCurrency) return amount;
+  // Same currency and no rounding rule to apply => untouched.
+  if (fromCurrency === toCurrency && !(market && market.currency === toCurrency && market.pricingRule.useRounding)) return amount;
+  return computeMarketPrice(amount, fromCurrency, toCurrency, rates, market);
 }
 
 // Location detection only ever sets the INITIAL default for a guest with no
 // saved preference yet — it never re-runs or overrides an explicit choice.
-// Deliberately out of scope for this pass (see the currency-architecture
-// plan's disclosed exclusions): a real IP-detected suggestion exists only at
-// seller Onboarding's currency step, not here — this stays the fixed
-// Pakistan-origin default, unchanged.
-const FALLBACK_CURRENCY = 'PKR';
+// Fallback currency when no preference is set. Changed from PKR to USD as a more neutral default.
+// The real store base currency should be passed from StorefrontLayout in a future improvement.
+const FALLBACK_CURRENCY = 'USD';
 
 interface CurrencyPreferenceContextValue {
   currency: SupportedCurrency;
+  /** Explicit buyer choice (persisted, never overridden by market/IP defaults). */
   setCurrency: (value: SupportedCurrency) => void;
+  /** Automatic default (market / IP): persisted for checkout but not an explicit choice. */
+  setCurrencyAuto: (value: SupportedCurrency) => void;
+  /** True once the buyer chose a currency themselves. */
+  hasExplicitCurrency: () => boolean;
+  /** Storefront sets the active market's pricing rule; null = plain FX. */
+  setMarketPricing: (market: MarketPricingTarget | null) => void;
   /** Converts a native-currency amount into the buyer's chosen display
    *  currency using the live current rate. This is what actually makes the
    *  navbar toggle change visible prices — every price display must call
@@ -76,6 +84,7 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   });
   const [rates, setRates] = useState<CurrentRatesMap>({});
   const [ratesLoaded, setRatesLoaded] = useState(false);
+  const [marketPricing, setMarketPricingState] = useState<MarketPricingTarget | null>(null);
   const [enabledCurrencies, setEnabledCurrencies] = useState<string[]>(['USD', 'PKR']);
 
   // Fetched once, globally — the same current-rate lookup every price
@@ -84,7 +93,7 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   useEffect(() => {
     apiGetCurrentRates()
       .then(res => { setRates(res.data); setRatesLoaded(true); })
-      .catch(() => { setRatesLoaded(true); }); // fail open — display falls back to native currency, never blocks the page
+      .catch(() => { setRatesLoaded(false); }); // Do NOT set true on error — components will show dashes instead of wrong symbols
   }, []);
 
   // Real, dynamic Markets list — replaces the old hardcoded ['PKR','USD'].
@@ -115,9 +124,21 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
     }
   }, []);
 
+  const setCurrencyAuto = useCallback((value: SupportedCurrency) => {
+    setCurrencyState(value);
+    try { localStorage.setItem(STORAGE_KEY, value); } catch { /* per-viewer convenience */ }
+  }, []);
+
+  const hasExplicitCurrency = useCallback(() => {
+    try { return localStorage.getItem(CURRENCY_EXPLICIT_KEY) === '1'; } catch { return false; }
+  }, []);
+
+  const setMarketPricing = useCallback((m: MarketPricingTarget | null) => setMarketPricingState(m), []);
+
   const setCurrency = useCallback((value: SupportedCurrency) => {
     setCurrencyState(value);
     localStorage.setItem(STORAGE_KEY, value);
+    try { localStorage.setItem(CURRENCY_EXPLICIT_KEY, '1'); } catch { /* per-viewer convenience */ }
     if (TokenStorage.isLoggedIn()) {
       apiEditProfile({ currencyPreference: value }).catch(() => {
         // Best-effort — the local choice still applies to this device/browser
@@ -127,18 +148,18 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   }, []);
 
   const convert = useCallback(
-    (amount: number, fromCurrency?: string | null) => convertAmount(amount, fromCurrency ?? currency, currency, rates),
-    [currency, rates],
+    (amount: number, fromCurrency?: string | null) => convertAmount(amount, fromCurrency ?? currency, currency, rates, marketPricing),
+    [currency, rates, marketPricing],
   );
 
   const convertTo = useCallback(
-    (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => convertAmount(amount, fromCurrency ?? toCurrency, toCurrency, rates),
-    [rates],
+    (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => convertAmount(amount, fromCurrency ?? toCurrency, toCurrency, rates, marketPricing),
+    [rates, marketPricing],
   );
 
   const value = useMemo<CurrencyPreferenceContextValue>(
-    () => ({ currency, setCurrency, convert, convertTo, ratesLoaded, enabledCurrencies }),
-    [currency, setCurrency, convert, convertTo, ratesLoaded, enabledCurrencies],
+    () => ({ currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, enabledCurrencies }),
+    [currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, enabledCurrencies],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

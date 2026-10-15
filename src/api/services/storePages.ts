@@ -36,6 +36,7 @@ export interface StorePageDraft {
 }
 
 export interface StorePageData {
+  translations?: import('@/utils/localize').ContentTranslations;
   _id:             string;
   storeId:         string;
   /** The installed theme instance whose sections/draft/version history are represented in this response. */
@@ -60,6 +61,8 @@ export interface StorePageData {
 }
 
 export interface PublicPageSummary {
+  /** Seller translations per language (see utils/localize). */
+  translations?: import('@/utils/localize').ContentTranslations;
   _id:          string;
   slug:         string;
   title:        string;

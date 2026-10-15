@@ -1,0 +1,63 @@
+{
+  "common": {
+    "addToCart": "کارٹ میں شامل کریں",
+    "soldOut": "فروخت ہو چکی",
+    "search": "تلاش کریں",
+    "filter": "فلٹر",
+    "sort": "ترتیب",
+    "viewAll": "سب دیکھیں",
+    "loading": "لوڈ ہو رہا ہے...",
+    "noResults": "کوئی نتیجہ نہیں ملا",
+    "readMore": "مزید پڑھیں",
+    "readLess": "کم پڑھیں"
+  },
+  "navigation": {
+    "home": "ہوم",
+    "shop": "دکان",
+    "collections": "کلیکشنز",
+    "about": "ہمارے بارے میں",
+    "contact": "رابطہ",
+    "account": "اکاؤنٹ",
+    "cart": "کارٹ",
+    "checkout": "چیک آؤٹ"
+  },
+  "product": {
+    "title": "پروڈکٹ",
+    "price": "قیمت",
+    "description": "تفصیل",
+    "variant": "ویرینٹ",
+    "quantity": "مقدار",
+    "inStock": "موجود",
+    "outOfStock": "نا موجود",
+    "onSale": "فروخت پر",
+    "compareAt": "سے موازنہ",
+    "youSave": "آپ بچاتے ہیں"
+  },
+  "cart": {
+    "title": "آپ کا کارٹ",
+    "empty": "آپ کا کارٹ خالی ہے",
+    "subtotal": "ذی مجموع",
+    "total": "کل",
+    "checkout": "چیک آؤٹ",
+    "continueShopping": "خریداری جاری رکھیں",
+    "remove": "ہٹائیں",
+    "update": "اپ ڈیٹ کریں"
+  },
+  "checkout": {
+    "title": "چیک آؤٹ",
+    "shipping": "شپنگ",
+    "billing": "بلنگ",
+    "payment": "پیمنٹ",
+    "placeOrder": "آرڈر پلیس کریں",
+    "guestCheckout": "مہمان چیک آؤٹ",
+    "login": "لاگ ان",
+    "register": "رجسٹر"
+  },
+  "footer": {
+    "newsletter": "ہماری نیوز لیٹر سبسکرائب کریں",
+    "emailPlaceholder": "اپنا ای میل درج کریں",
+    "subscribe": "سبسکرائب",
+    "socialLinks": "ہمیں فالو کریں",
+    "copyright": "تمام حقوق محفوظ ہیں"
+  }
+}

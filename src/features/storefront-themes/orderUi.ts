@@ -1,3 +1,4 @@
+import { tt } from '@/utils/tStatic';
 import type { OrderDetail, OrderLineItem, OrderStatus, OrderSummary } from '@/api/services/orders';
 
 /** Shared (theme-agnostic) helpers for the buyer "Orders" / "Order" pages. */
@@ -40,9 +41,9 @@ export function orderDisplaySubtotal(order: SubtotalSource): number {
  *  deliberately excludes campaign/auto-discount (see that function's doc). */
 export function orderSummaryDiscountRows(order: DiscountRowSource): OrderSummaryDiscountRow[] {
   return [
-    { label: order.couponCode ? `Coupon (${order.couponCode})` : 'Coupon', amount: order.couponDiscountTotal ?? 0 },
-    { label: 'Gift card', amount: order.giftCardDiscountTotal ?? 0 },
-    { label: 'Store credit', amount: order.storeCreditDiscountTotal ?? 0 },
+    { label: order.couponCode ? `${tt('checkout.coupon', "Coupon")} (${order.couponCode})` : tt('checkout.coupon', "Coupon"), amount: order.couponDiscountTotal ?? 0 },
+    { label: tt('checkout.giftCard', "Gift card"), amount: order.giftCardDiscountTotal ?? 0 },
+    { label: tt('checkout.storeCredit', "Store credit"), amount: order.storeCreditDiscountTotal ?? 0 },
   ].filter(d => d.amount > 0);
 }
 
@@ -68,44 +69,44 @@ export function derivePaymentBadge(order: PaymentSource): OrderBadgeInfo {
     const items = itemStatuses(order);
     const someCancelled = items.some(x => x === 'cancelled');
     const allCancelled = items.length > 0 && items.every(x => x === 'cancelled');
-    if (s.includes('partial') || (someCancelled && !allCancelled)) return { label: 'Partially refunded', tone: 'warning' };
-    return { label: 'Refunded', tone: 'neutral' };
+    if (s.includes('partial') || (someCancelled && !allCancelled)) return { label: tt('order.partiallyRefunded', "Partially refunded"), tone: 'warning' };
+    return { label: tt('order.refunded', "Refunded"), tone: 'neutral' };
   }
-  if (s === 'failed' || s === 'voided') return { label: 'Voided', tone: 'danger' };
-  if (s.includes('authoriz')) return { label: 'Authorized', tone: 'info' };
-  if (s === 'partially_paid') return { label: 'Partially paid', tone: 'warning' };
-  if (order.isPaid || s === 'paid') return { label: 'Paid', tone: 'success' };
-  return { label: 'Pending', tone: 'warning' };
+  if (s === 'failed' || s === 'voided') return { label: tt('order.voided', "Voided"), tone: 'danger' };
+  if (s.includes('authoriz')) return { label: tt('order.authorized', "Authorized"), tone: 'info' };
+  if (s === 'partially_paid') return { label: tt('order.partiallyPaid', "Partially paid"), tone: 'warning' };
+  if (order.isPaid || s === 'paid') return { label: tt('order.paid', "Paid"), tone: 'success' };
+  return { label: tt('order.pending', "Pending"), tone: 'warning' };
 }
 
 /** Shopify's fulfillment statuses: Unfulfilled, Partially fulfilled, Fulfilled (shipped counts as fulfilled — delivery
  *  progress is shown on the tracking card, not here). A fully cancelled order shows Cancelled. */
 export function deriveFulfillmentBadge(order: FulfillmentSource): OrderBadgeInfo {
-  if (order.orderStatus === 'cancelled') return { label: 'Cancelled', tone: 'danger' };
+  if (order.orderStatus === 'cancelled') return { label: tt('order.cancelled', "Cancelled"), tone: 'danger' };
   const live = itemStatuses(order).filter(x => x && x !== 'cancelled');
   // Local pickup: "shipped" means the order is waiting for the customer at the pickup point.
   if (order.fulfillmentMethod === 'pickup') {
     const pickedUp = live.length > 0 ? live.every(x => x === 'delivered' || x === 'completed') : ['delivered', 'completed'].includes(order.orderStatus);
-    if (pickedUp) return { label: 'Picked up', tone: 'success' };
+    if (pickedUp) return { label: tt('order.pickedUp', "Picked up"), tone: 'success' };
     const ready = live.length > 0 ? live.every(x => FULFILLED_ITEM.includes(x)) : order.orderStatus === 'shipped';
-    return ready ? { label: 'Ready for pickup', tone: 'info' } : { label: 'Unfulfilled', tone: 'warning' };
+    return ready ? { label: tt('order.readyForPickup', "Ready for pickup"), tone: 'info' } : { label: tt('order.unfulfilled', "Unfulfilled"), tone: 'warning' };
   }
   if (live.length > 0) {
     const done = live.filter(x => FULFILLED_ITEM.includes(x)).length;
-    if (done === live.length) return { label: 'Fulfilled', tone: 'success' };
-    if (done > 0) return { label: 'Partially fulfilled', tone: 'info' };
-    return { label: 'Unfulfilled', tone: 'warning' };
+    if (done === live.length) return { label: tt('order.fulfilled', "Fulfilled"), tone: 'success' };
+    if (done > 0) return { label: tt('order.partiallyFulfilled', "Partially fulfilled"), tone: 'info' };
+    return { label: tt('order.unfulfilled', "Unfulfilled"), tone: 'warning' };
   }
   return FULFILLED_ITEM.includes(order.orderStatus)
-    ? { label: 'Fulfilled', tone: 'success' }
-    : { label: 'Unfulfilled', tone: 'warning' };
+    ? { label: tt('order.fulfilled', "Fulfilled"), tone: 'success' }
+    : { label: tt('order.unfulfilled', "Unfulfilled"), tone: 'warning' };
 }
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  cash_on_delivery: 'Cash on delivery',
-  stripe: 'Card',
-  manual_bank_transfer: 'Bank transfer',
-  store_credit: 'Store credit',
+  cash_on_delivery: tt('order.method.cod', "Cash on delivery"),
+  stripe: tt('order.method.card', "Card"),
+  manual_bank_transfer: tt('order.method.bank', "Bank transfer"),
+  store_credit: tt('checkout.storeCredit', "Store credit"),
 };
 
 export function paymentMethodLabel(paymentType: string | undefined | null): string {
@@ -146,18 +147,18 @@ export function buildOrderTimeline(order: OrderDetail): TimelineStep[] {
   const deliveredAt = latest(subs.map(s => s.deliveredAt));
   const pickup = isPickupOrder(order);
   const partlyShipped = !pickup && subs.some(s => (s.shipments?.length ?? 0) > 0 && !['shipped', 'delivered', 'completed'].includes(String(s.status)));
-  const steps: TimelineStep[] = [{ label: 'Ordered', date: formatOrderDate(order.createdAt), done: true }];
+  const steps: TimelineStep[] = [{ label: tt('order.ordered', "Ordered"), date: formatOrderDate(order.createdAt), done: true }];
   if (order.orderStatus === 'cancelled') {
-    steps.push({ label: 'Cancelled', date: '', done: true });
+    steps.push({ label: tt('order.cancelled', "Cancelled"), date: '', done: true });
     return steps;
   }
   const payLabel = derivePaymentBadge(order).label;
-  const paid = !!order.paidAt || payLabel === 'Paid' || payLabel === 'Refunded' || payLabel === 'Partially refunded';
+  const paid = !!order.paidAt || payLabel === tt('order.paid', "Paid") || payLabel === tt('order.refunded', "Refunded") || payLabel === tt('order.partiallyRefunded', "Partially refunded");
   const shipped = !!shippedAt || ['shipped', 'delivered', 'completed'].includes(order.orderStatus);
   const delivered = !!deliveredAt || ['delivered', 'completed'].includes(order.orderStatus);
-  steps.push({ label: 'Paid', date: formatOrderDate(order.paidAt), done: paid });
-  steps.push({ label: pickup ? 'Ready for pickup' : partlyShipped ? 'Partially shipped' : 'Shipped', date: formatOrderDate(pickup ? (earliest(subs.map(s => s.pickupReadyAt)) ?? shippedAt) : shippedAt), done: shipped });
-  steps.push({ label: pickup ? 'Picked up' : 'Delivered', date: formatOrderDate(deliveredAt), done: delivered });
+  steps.push({ label: tt('order.paid', "Paid"), date: formatOrderDate(order.paidAt), done: paid });
+  steps.push({ label: pickup ? tt('order.readyForPickup', "Ready for pickup") : partlyShipped ? tt('order.partiallyShipped', "Partially shipped") : tt('order.shipped', "Shipped"), date: formatOrderDate(pickup ? (earliest(subs.map(s => s.pickupReadyAt)) ?? shippedAt) : shippedAt), done: shipped });
+  steps.push({ label: pickup ? tt('order.pickedUp', "Picked up") : tt('order.delivered', "Delivered"), date: formatOrderDate(deliveredAt), done: delivered });
   return steps;
 }
 

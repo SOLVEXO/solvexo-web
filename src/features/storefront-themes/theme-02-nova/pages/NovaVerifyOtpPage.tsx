@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type KeyboardEvent, type ClipboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Check } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -13,6 +14,7 @@ import { novaTheme as t } from '../theme.config';
 const OTP_LENGTH = 6;
 
 function NovaOtpInput({ values, onChange }: { values: string[]; onChange: (i: number, v: string) => void }) {
+  const { t: tr } = useTranslation('storefront');
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (i: number, val: string) => {
@@ -38,7 +40,7 @@ function NovaOtpInput({ values, onChange }: { values: string[]; onChange: (i: nu
         <input
           key={i}
           ref={el => { refs.current[i] = el; }}
-          aria-label={`Digit ${i + 1} of ${OTP_LENGTH}`}
+          aria-label={tr('otp.digit', 'Digit {{n}} of {{total}}', { n: i + 1, total: OTP_LENGTH })}
           type="text" inputMode="numeric" maxLength={1} value={val}
           onChange={e => handleChange(i, e.target.value)}
           onKeyDown={e => handleKeyDown(i, e)}
@@ -56,6 +58,7 @@ function NovaOtpInput({ values, onChange }: { values: string[]; onChange: (i: nu
 }
 
 function ResendTimer({ email, storeId, isForgot }: { email: string; storeId?: string; isForgot: boolean }) {
+  const { t: tr } = useTranslation('storefront');
   const toast = useToast();
   const [seconds, setSeconds] = useState(59);
   const [canResend, setCanResend] = useState(false);
@@ -81,9 +84,9 @@ function ResendTimer({ email, storeId, isForgot }: { email: string; storeId?: st
       if (isForgot) await apiForgotPassword({ email, role: 'user' as AppRole, storeId });
       else await apiResendOtp({ email, role: 'user', storeId });
       setSeconds(59); setCanResend(false); setResendKey(k => k + 1);
-      toast.success('Code resent');
+      toast.success(tr('otp.resent', "Code resent"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend code.');
+      setError(err instanceof Error ? err.message : tr('otp.err.resend', "Failed to resend code."));
     } finally { setSending(false); }
   };
 
@@ -95,7 +98,7 @@ function ResendTimer({ email, storeId, isForgot }: { email: string; storeId?: st
           className="cursor-pointer bg-transparent border-0"
           style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 700, color: t.colors.accent }}
         >
-          Resend code
+          {tr('otp.resendCode', "Resend code")}
         </button>
         {error && <p style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.danger }}>{error}</p>}
       </div>
@@ -103,7 +106,7 @@ function ResendTimer({ email, storeId, isForgot }: { email: string; storeId?: st
   }
   return (
     <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>
-      Resend in <span style={{ fontWeight: 700, color: t.colors.ink }}>{seconds}s</span>
+      {tr('otp.resendIn', "Resend in")} <span style={{ fontWeight: 700, color: t.colors.ink }}>{seconds}s</span>
     </span>
   );
 }
@@ -112,8 +115,9 @@ function ResendTimer({ email, storeId, isForgot }: { email: string; storeId?: st
  *  `AtelierVerifyOtpPage` (fresh registration vs. mid-forgot-password,
  *  disambiguated via `AuthContext.flow`). */
 export function NovaVerifyOtpPage() {
+  const { t: tr } = useTranslation('storefront');
   const isForgot = AuthContext.get()?.flow === 'forgot';
-  useStorefrontSeo({ title: isForgot ? 'Verify Identity' : 'Verify Email', noindex: true });
+  useStorefrontSeo({ title: isForgot ? tr('otp.verifyIdentity', "Verify Identity") : tr('otp.verifyEmail', "Verify Email"), noindex: true });
   const { store } = useStorefront();
   const navigate = useNavigate();
   const verifyOtp = useVerifyOtp();
@@ -139,7 +143,7 @@ export function NovaVerifyOtpPage() {
           This can happen if the link was opened on its own. Please {isForgot ? 'restart the password reset' : 'register or sign in'} again.
         </p>
         <NovaButton onClick={() => navigate(isForgot ? '/forgot-password' : '/register')}>
-          {isForgot ? 'Reset Password' : 'Create Account'}
+          {isForgot ? tr('auth.resetPasswordBtn', "Reset Password") : tr('auth.createAccountBtn', "Create Account")}
         </NovaButton>
       </div>
     );
@@ -172,11 +176,11 @@ export function NovaVerifyOtpPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>{isForgot ? 'Verify your identity' : 'Verify your email'}</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>{isForgot ? tr('otp.verifyYourIdentity', "Verify your identity") : tr('otp.verifyYourEmail', "Verify your email")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
           {isForgot
-            ? <>We sent a 6-digit code to <span style={{ fontWeight: 700, color: t.colors.ink }}>{userEmail || '—'}</span> to confirm it's you before resetting your password.</>
-            : <>We sent a 6-digit code to <span style={{ fontWeight: 700, color: t.colors.ink }}>{userEmail || '—'}</span> to finish creating your {store.name} account.</>}
+            ? <>{tr('otp.sentTo', "We sent a 6-digit code to")} <span style={{ fontWeight: 700, color: t.colors.ink }}>{userEmail || '—'}</span> {tr('otp.confirmItsYou', "to confirm it's you before resetting your password.")}</>
+            : <>{tr('otp.sentTo', "We sent a 6-digit code to")} <span style={{ fontWeight: 700, color: t.colors.ink }}>{userEmail || '—'}</span> {tr('otp.finishCreating', 'to finish creating your {{name}} account.', { name: store.name })}</>}
         </p>
       </div>
 
@@ -203,11 +207,11 @@ export function NovaVerifyOtpPage() {
           disabled={otp.join('').length < 6}
           loading={verifyOtp.loading}
         >
-          Verify Code
+          {tr('otp.verifyCode', "Verify Code")}
         </NovaButton>
 
         <div className="flex items-center justify-center gap-1.5" style={{ marginTop: '20px' }}>
-          <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Didn't receive it?</span>
+          <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('otp.didntReceive', "Didn't receive it?")}</span>
           <ResendTimer email={userEmail} storeId={ctx?.storeId} isForgot={isForgot} />
         </div>
       </div>

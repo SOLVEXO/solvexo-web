@@ -33,6 +33,8 @@ interface StoreAnnouncementBarProps {
   device?: 'all' | 'mobile' | 'desktop';
   dismissFor?: 'forever' | 'day' | 'session';
   countdownEndAt?: string | null;
+  linkStyle?: 'underline' | 'button';
+  barHeight?: 'sm' | 'md' | 'lg';
   /** The active theme's colours — used when the retailer set no colours, so the bar matches the storefront. */
   themeColors?: { bg: string; text: string; border: string };
   className?: string;
@@ -49,7 +51,7 @@ const STYLE: Record<StoreAnnouncementType, { Icon: LucideIcon; bg: string; borde
 
 const SAFE_LINK = /^(https?:\/\/|\/(?!\/))/i;
 const FONT_SIZE = { sm: '12.5px', md: '14px', lg: '16px' } as const;
-const PAD_Y = { sm: '10px', md: '12px', lg: '14px' } as const;
+const BAR_PAD_Y = { sm: '6px', md: '12px', lg: '20px' } as const;
 const MARQUEE_SECONDS = { slow: 40, normal: 26, fast: 14 } as const;
 const DEVICE_CLASS = { all: 'flex', mobile: 'flex lg:hidden', desktop: 'hidden lg:flex' } as const;
 const DAY_MS = 86_400_000;
@@ -112,7 +114,7 @@ function CouponButton({ code }: { code: string }) {
 export function StoreAnnouncementBar({
   storeId, message, type, ctaLabel, ctaLink, couponCode, moreMessages, rotateSeconds = 5, closable = true, bgColor, bgColor2, textColor,
   align = 'left', animation = 'slide', marqueeSpeed = 'normal', fontSize = 'sm', uppercase = false, bold = false, showIcon = true,
-  device = 'all', dismissFor = 'forever', countdownEndAt, themeColors, className,
+  device = 'all', dismissFor = 'forever', countdownEndAt, linkStyle = 'underline', barHeight = 'md', themeColors, className,
 }: StoreAnnouncementBarProps) {
   const messages: AnnouncementMessage[] = [
     ...(message ? [{ message, ctaLabel, ctaLink, couponCode }] : []),
@@ -159,7 +161,11 @@ export function StoreAnnouncementBar({
       <span key={key} className={`inline-flex items-center gap-2 ${marquee ? 'shrink-0 px-8' : 'flex-wrap'}`}>
         <span className={textClass}>{m.message}</span>
         {m.couponCode && <CouponButton code={m.couponCode} />}
-        {hasLink && <a href={m.ctaLink!} className={`underline font-semibold ${textClass}`} style={{ color: 'inherit' }}>{m.ctaLabel}</a>}
+        {hasLink && (
+          linkStyle === 'button'
+            ? <a href={m.ctaLink!} className={`font-semibold shrink-0 ${textClass}`} style={{ color: 'inherit', border: '1.5px solid currentColor', borderRadius: '9999px', padding: '3px 12px', fontSize: '0.9em' }}>{m.ctaLabel}</a>
+            : <a href={m.ctaLink!} className={`underline font-semibold ${textClass}`} style={{ color: 'inherit' }}>{m.ctaLabel}</a>
+        )}
       </span>
     );
   };
@@ -167,7 +173,7 @@ export function StoreAnnouncementBar({
   return (
     <div
       className={containerClass}
-      style={{ ...(palette ?? {}), paddingTop: PAD_Y[fontSize], paddingBottom: PAD_Y[fontSize] }}
+      style={{ ...(palette ?? {}), paddingTop: BAR_PAD_Y[barHeight], paddingBottom: BAR_PAD_Y[barHeight] }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}

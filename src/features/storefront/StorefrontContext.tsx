@@ -173,6 +173,8 @@ export interface StorefrontLinkSettings {
 export interface StorefrontNavItemSettings extends StorefrontLinkSettings {
   id?: string;
   label: string;
+  /** Seller translations of the label per language (empty = source label). */
+  labelTranslations?: Record<string, string | undefined> | null;
   /** Top-level only: `mega` renders the children as a full-width panel. */
   menuStyle?: 'dropdown' | 'mega';
   /** Optional mega-panel tile image. */

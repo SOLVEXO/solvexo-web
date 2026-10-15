@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Heart, Minus, Plus, Search, User, X } from 'lucide-react';
@@ -37,6 +38,7 @@ export function MobileNavPanel({
   /** e.g. the currency selector. */
   footer?: ReactNode;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
 
@@ -77,7 +79,7 @@ export function MobileNavPanel({
 
   return createPortal(
     <div className="lg:hidden fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label={`${storeName} menu`}>
-      <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 border-0 cursor-default" style={{ background: 'rgba(0,0,0,0.45)' }} />
+      <button type="button" aria-label={tr('nav.closeMenu', "Close menu")} onClick={onClose} className="absolute inset-0 border-0 cursor-default" style={{ background: 'rgba(0,0,0,0.45)' }} />
       <div
         ref={panelRef}
         className="absolute left-0 top-0 bottom-0 flex flex-col overflow-y-auto"
@@ -85,25 +87,25 @@ export function MobileNavPanel({
       >
         <div className="flex items-center justify-between" style={{ padding: `16px ${tokens.padX}`, borderBottom: `1px solid ${tokens.colors.border}` }}>
           <div className="min-w-0">{brand}</div>
-          <button type="button" onClick={onClose} aria-label="Close menu" className="bg-transparent border-0 cursor-pointer p-1" style={{ color: tokens.colors.ink }}>
+          <button type="button" onClick={onClose} aria-label={tr('nav.closeMenu', "Close menu")} className="bg-transparent border-0 cursor-pointer p-1" style={{ color: tokens.colors.ink }}>
             <X size={20} />
           </button>
         </div>
 
-        <nav className="flex flex-col" aria-label="Mobile">
+        <nav className="flex flex-col" aria-label={tr('nav.mobile', "Mobile")}>
           {showSearch && (
             <button type="button" onClick={() => { onClose(); onSearch(); }} style={rowStyle}>
-              <Search size={16} /> Search
+              <Search size={16} /> {tr('nav.search', "Search")}
             </button>
           )}
           {shop && <ShopGroup shop={shop} tokens={tokens} rowStyle={rowStyle} onNavigate={onClose} />}
           {items.map(item => <MobileNavItem key={item.id} item={item} tokens={tokens} onNavigate={onClose} />)}
           {showAccount && (
-            <Link to={accountTo} onClick={onClose} style={rowStyle}><User size={16} /> Account</Link>
+            <Link to={accountTo} onClick={onClose} style={rowStyle}><User size={16} /> {tr('nav.account', "Account")}</Link>
           )}
           {showWishlist && (
             <Link to="/wishlist" onClick={onClose} style={rowStyle}>
-              <Heart size={16} /> Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
+              <Heart size={16} /> {tr('nav.wishlist', "Wishlist")}{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
             </Link>
           )}
         </nav>
@@ -121,6 +123,7 @@ function ShopGroup({ shop, tokens, rowStyle, onNavigate }: {
   rowStyle: React.CSSProperties;
   onNavigate: () => void;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const [expanded, setExpanded] = useState(false);
   const regionId = useId();
   const sub = (heading: string, links: ShopLink[]) => links.length > 0 && (
@@ -144,10 +147,10 @@ function ShopGroup({ shop, tokens, rowStyle, onNavigate }: {
         <div id={regionId} style={{ background: tokens.colors.bgAlt, borderBottom: `1px solid ${tokens.colors.border}`, paddingBottom: '6px' }}>
           <Link to="/#shop" onClick={onNavigate} className="no-underline"
             style={{ display: 'block', padding: `9px ${tokens.padX}`, color: tokens.colors.ink, fontFamily: tokens.fonts.body, fontSize: tokens.childSize }}>
-            All products
+            {tr('nav.allProducts', "All products")}
           </Link>
-          {sub('Categories', shop.categories)}
-          {sub('Collections', shop.collections)}
+          {sub(tr('nav.categories', "Categories"), shop.categories)}
+          {sub(tr('nav.collections', "Collections"), shop.collections)}
         </div>
       )}
     </div>

@@ -481,10 +481,9 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
         <AddSectionModal
           onClose={() => setShowAdd(false)}
           supportedTypes={supportedSectionTypes}
-          onPick={type => {
-            const meta = SECTION_META_BY_TYPE[type];
+          onPick={picked => {
             const next = [...sections];
-            next.splice(Math.min(insertAt, sections.length), 0, { type, settings: { ...meta.defaultSettings }, blocks: [] });
+            next.splice(Math.min(insertAt, sections.length), 0, ...picked.map(p => ({ type: p.type, settings: p.settings, blocks: p.blocks }) as Section));
             onChange(next);
           }}
         />

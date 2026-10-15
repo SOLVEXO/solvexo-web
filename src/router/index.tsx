@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
+import { basenameFromPathname } from '@/i18n/localeConfig';
 
 // Root wrapper (reference nav + outlet)
 import { RootLayout }   from '@/components/layouts/RootLayout';
@@ -30,6 +31,7 @@ import { RequireRole }  from './RequireRole';
 
 // Critical conversion-path pages
 const LoginPage    = lazy(() => import('@/features/auth/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const StoreAccessDenied = lazy(() => import('@/components/layouts/StoreAccessDenied'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const OnboardingPage  = lazy(() => import('@/features/auth/pages/onboard/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 const OnboardingEntry = lazy(() => import('@/features/auth/pages/onboard/OnboardingPage').then(m => ({ default: m.OnboardingEntry })));
@@ -82,6 +84,7 @@ const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePag
 const SellerAreaRedirect = lazy(() => import('@/features/seller/SellerAreaRedirect').then(m => ({ default: m.SellerAreaRedirect })));
 const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
 const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MenuManagerPage').then(m => ({ default: m.MenuManagerPage })));
+const TranslationsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/translations/TranslationsPage').then(m => ({ default: m.TranslationsPage })));
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
 const AppsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/apps/AppsPage').then(m => ({ default: m.AppsPage })));
 const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
@@ -181,6 +184,10 @@ const AdminStoreAppRequests = lazy(() => import('@/features/admin/pages/AdminSto
 // unrelated top-level paths (`/marketplace`, `/cart`, `/admin`, ...) on the
 // same origin — instead the two trees never overlap, selected once at boot
 // by `getStoreSlugFromHost()` below.
+// Locale subfolders (`/ur/...`): the language prefix is detected ONCE at boot (this tree is already chosen
+// once) and handed to the router as its basename, so every route below stays prefix-free and a custom page
+// slug can never be mistaken for a language. The default language has no prefix.
+const storefrontBasename = basenameFromPathname(window.location.pathname);
 const storefrontRouter = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -247,7 +254,7 @@ const storefrontRouter = createBrowserRouter([
       },
     ],
   },
-]);
+], { basename: storefrontBasename });
 
 // ── Main app router (marketplace/buyer/seller/admin — the apex domain) ────────
 const mainRouter = createBrowserRouter([
@@ -332,6 +339,7 @@ const mainRouter = createBrowserRouter([
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
+      { path: '/access-denied',    element: <StoreAccessDenied /> },
 
       // ── Seller — no cross-store dashboard any more ─────────────────────
       // Every old /seller/* URL (/seller, /seller/stores, /seller/analytics,
@@ -407,6 +415,7 @@ const mainRouter = createBrowserRouter([
           // reason). See that route block's own comment.
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/menus',                element: <MenuManagerPage /> },
+          { path: 'online-store/translations',         element: <TranslationsPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'online-store/apps',                 element: <AppsPage /> },
           { path: 'online-store/banners',              element: <StoreBanners /> },

@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, RotateCcw, Trash2, Copy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, Trash2, Copy } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import type { StoreAnnouncementBar as StoreAnnouncementBarValue, StoreAnnouncementType } from '@/api/services/store';
 import { ANNOUNCEMENT_TYPE_LABEL } from './announcementDefaults';
-import { ANNOUNCEMENT_PRESETS, applyAnnouncementPreset } from './announcementPresets';
 import { Group, ColorField } from './HeaderFooterSettingsPanels';
 
 const MAX_BLOCKS = 10;
@@ -70,42 +69,8 @@ function SwitchRow({ label, hint, checked, onChange }: { label: string; hint?: s
   );
 }
 
-/** Ready-made looks, drawn as tiny bars so the merchant sees the result before choosing. */
-function DesignGallery({ value, onChange }: { value: Value; onChange: (v: Value) => void }) {
-  const active = ANNOUNCEMENT_PRESETS.find(p => p.id === value.preset);
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-2">
-        {ANNOUNCEMENT_PRESETS.map(p => {
-          const bg = p.look.bgColor2 ? `linear-gradient(90deg, ${p.look.bgColor}, ${p.look.bgColor2})` : (p.look.bgColor ?? '#f1ede5');
-          const selected = value.preset === p.id;
-          return (
-            <button key={p.id} type="button" onClick={() => onChange(applyAnnouncementPreset(value, p))} aria-pressed={selected}
-              className={`text-left bg-white rounded-lg p-1.5 cursor-pointer border-2 ${selected ? '' : 'border-bone hover:border-slate/40'}`}
-              style={selected ? { borderColor: ACCENT } : undefined}>
-              <span className="block rounded-md px-2 py-1.5 text-[9.5px] truncate"
-                style={{ background: bg, color: p.look.textColor ?? '#161412', fontWeight: p.look.bold ? 700 : 500, textTransform: p.look.uppercase ? 'uppercase' : undefined, textAlign: p.look.align === 'center' ? 'center' : 'left', border: p.look.bgColor === '#ffffff' ? '1px solid #e9e5dc' : undefined }}>
-                {p.sample.message}
-              </span>
-              <span className="block text-[12px] font-semibold text-charcoal mt-1.5 px-0.5">{p.name}</span>
-              <span className="block text-[10.5px] text-slate px-0.5 leading-tight">{p.description}</span>
-            </button>
-          );
-        })}
-      </div>
-      <p className="text-[10.5px] text-slate">A design only sets the look — your messages stay. Change anything below afterwards.</p>
-      {active && (
-        <button type="button" onClick={() => onChange(applyAnnouncementPreset(value, active))}
-          className="flex items-center gap-1.5 text-[11.5px] font-semibold text-slate bg-transparent border-0 cursor-pointer p-0 self-start">
-          <RotateCcw size={12} /> Reset to “{active.name}”
-        </button>
-      )}
-    </div>
-  );
-}
-
-/** Shopify-style announcement bar section: ready-made designs, a list of announcement blocks (drag, hide,
- *  duplicate, click to edit) and grouped section settings. Edits `Store.announcementBar`. */
+/** Shopify-style announcement bar section: a list of announcement blocks (drag, hide, duplicate, click to
+ *  edit — each with its own text/link/code/colours) and grouped section settings. Edits `Store.announcementBar`. */
 export function AnnouncementForm({ value, onChange }: { value: Value; onChange: (next: Value) => void }) {
   const blocks = toBlocks(value);
   const [selected, setSelected] = useState<number | null>(null);
@@ -179,10 +144,6 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
         <Toggle checked={value.isActive} onChange={isActive => set({ isActive })} ariaLabel="Show announcement bar" />
       </div>
 
-      <Group title="Design" defaultOpen={!value.preset}>
-        <DesignGallery value={value} onChange={onChange} />
-      </Group>
-
       <Group title={`Announcements (${blocks.length})`} defaultOpen>
         <ul className="flex flex-col gap-1 list-none m-0 p-0">
           {blocks.map((b, i) => (
@@ -228,9 +189,10 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
 
       <Group title="Text">
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Size" value={value.fontSize ?? 'sm'} onChange={fontSize => set({ fontSize })} options={[['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large']]} />
-          <Select label="Alignment" value={value.align ?? 'left'} onChange={align => set({ align })} options={[['left', 'Left'], ['center', 'Centered']]} />
+          <Select label="Text size" value={value.fontSize ?? 'sm'} onChange={fontSize => set({ fontSize })} options={[['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large']]} />
+          <Select label="Bar height" value={value.barHeight ?? 'md'} onChange={barHeight => set({ barHeight })} options={[['sm', 'Slim'], ['md', 'Normal'], ['lg', 'Tall']]} />
         </div>
+        <Select label="Alignment" value={value.align ?? 'left'} onChange={align => set({ align })} options={[['left', 'Left'], ['center', 'Centered']]} />
         <SwitchRow label="Bold" checked={!!value.bold} onChange={bold => set({ bold })} />
         <SwitchRow label="Capital letters" checked={!!value.uppercase} onChange={uppercase => set({ uppercase })} />
         <SwitchRow label="Show icon" checked={value.showIcon !== false} onChange={showIcon => set({ showIcon })} />
@@ -238,6 +200,8 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
           <Select label="Icon" value={value.type} onChange={type => set({ type: type as StoreAnnouncementType })}
             options={(Object.keys(ANNOUNCEMENT_TYPE_LABEL) as StoreAnnouncementType[]).map(k => [k, ANNOUNCEMENT_TYPE_LABEL[k]] as [StoreAnnouncementType, string])} />
         )}
+        <Select label="Link style" value={value.linkStyle ?? 'underline'} onChange={linkStyle => set({ linkStyle })}
+          options={[['underline', 'Underlined text'], ['button', 'Small outlined button']]} />
       </Group>
 
       <Group title="Colours">

@@ -1,18 +1,23 @@
 ﻿import { Link } from 'react-router-dom';
+import { tt } from '@/utils/tStatic';
+import { useLocalize } from '@/hooks/useLocalize';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, type FormEvent } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { PaymentBadges } from '../../navigation/FooterParts';
 import { readFooterOptions, expandCopyright, mutedOf, visibleFooterBlocks } from '../../navigation/headerOptions';
-import { FooterColumns, SocialRow } from '../../navigation/FooterColumns';
+import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from '../../navigation/FooterColumns';
+import { BackToTop } from '../../navigation/HeaderExtras';
+import { StorefrontLocaleControls } from '@/features/storefront/StorefrontLocaleControls';
 import { apiSubmitPrivacyRequest } from '@/api/services/store';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { novaTheme as t } from '../theme.config';
 
 const POLICY_LABELS: Record<string, string> = {
-  privacy_policy: 'Privacy Policy',
-  terms_of_service: 'Terms of Service',
-  refund_policy: 'Refund Policy',
-  shipping_policy: 'Shipping Policy',
+  privacy_policy: tt('footer.privacyPolicy', "Privacy Policy"),
+  terms_of_service: tt('footer.terms', "Terms of Service"),
+  refund_policy: tt('footer.refundPolicy', "Refund Policy"),
+  shipping_policy: tt('footer.shippingPolicy', "Shipping Policy"),
 };
 
 /** Theme 02's own footer — bold indigo-tinted panel rather than Atelier's
@@ -22,6 +27,8 @@ const POLICY_LABELS: Record<string, string> = {
  *  `social_link`/`copyright_text` blocks, same shared vocabulary every
  *  theme's footer content uses (see `AtelierFooter`'s own doc comment). */
 export function NovaFooter() {
+  const { t: tr } = useTranslation('storefront');
+  const lz = useLocalize();
   const { store, theme } = useStorefront();
   // Real, previously-unwired data: `showInFooter`/`policyType` have existed
   // on StorePage (and been editable from Page Settings) with no consumer
@@ -63,26 +70,33 @@ export function NovaFooter() {
   const opts = readFooterOptions(theme?.footer, 'Stories');
   const paymentBlock = footerBlocks.find(b => b.type === 'footer_payment_icons');
   const fg = opts.textColor ?? '#EDEBFF';
-  const muted = opts.textColor ? mutedOf(opts.textColor) : '#ABA6C9';
-  const faint = opts.textColor ? mutedOf(opts.textColor, 52) : '#847EA8';
-  const line = opts.textColor ? mutedOf(opts.textColor, 22) : '#2E2A4F';
-  const inputLine = opts.textColor ? mutedOf(opts.textColor, 30) : '#3A3560';
+  // Secondary shades are derived from the text colour so they stay readable on any background (the old fixed
+  // purple-greys nearly vanished on a recoloured footer).
+  const muted = mutedOf(fg, 74);
+  const faint = mutedOf(fg, 64);
+  const line = mutedOf(fg, 22);
+  const inputLine = mutedOf(fg, 32);
   const partTokens = { fontFamily: t.fonts.body, color: fg, muted, fontSize: '13px' };
+  const minimal = theme?.footer?.footerStyle === 'minimal';
+  const baseBg = opts.bgColor ?? t.colors.ink;
+  const shade = `rgba(0,0,0,${opts.bgOverlay / 100})`;
+  const tokens: FooterColumnTokens = {
+    fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted, brandWeight: 700, socialPill: true, linkSize: '13.5px',
+    heading: { fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: muted, fontWeight: 700, marginBottom: '14px' },
+    input: { fontFamily: t.fonts.body, fontSize: '13.5px', color: fg, border: `1.5px solid ${inputLine}`, padding: '10px 13px', borderRadius: t.radius.sm },
+    button: { fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '10px 13px', borderRadius: '9999px' },
+    buttonUppercase: false, doneColor: '#8B7CFF', errorColor: '#FF9B8F', idPrefix: 'nova', newsletterHeading: 'Stay in the loop', blogLabel: 'Stories',
+  };
 
   return (
     <>
-    <footer style={{ background: opts.bgColor ?? t.colors.ink, color: fg }}>
+    <footer style={{ background: opts.bgImageUrl ? `linear-gradient(${shade}, ${shade}), url("${opts.bgImageUrl}") center / cover no-repeat, ${baseBg}` : baseBg, color: fg }}>
+      <FooterNewsletterStrip tokens={tokens} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} line={line} />
       <div
-        className="mx-auto grid gap-10"
-        style={{ maxWidth: t.layout.maxWidth, padding: `${theme?.footer?.footerStyle === 'minimal' ? '32px' : '56px'} ${t.layout.containerPadX}`, gap: theme?.footer?.footerStyle === 'minimal' ? '24px' : '40px', gridTemplateColumns: theme?.footer?.footerStyle === 'minimal' ? 'repeat(auto-fit, minmax(260px, 1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))' }}
+        className="mx-auto flex flex-wrap"
+        style={{ maxWidth: t.layout.maxWidth, padding: `${minimal ? opts.padding.compact : opts.padding.columns}px ${t.layout.containerPadX}`, gap: minimal ? '24px' : '40px', justifyContent: opts.align === 'center' ? 'center' : undefined }}
       >
-        <FooterColumns tokens={{
-          fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted, brandWeight: 700, socialPill: true, linkSize: '13.5px',
-          heading: { fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: muted, fontWeight: 700, marginBottom: '14px' },
-          input: { fontFamily: t.fonts.body, fontSize: '13.5px', color: fg, border: `1.5px solid ${inputLine}`, padding: '10px 13px', borderRadius: t.radius.sm },
-          button: { fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 700, color: t.colors.accentInk, background: t.colors.accent, padding: '10px 13px', borderRadius: '9999px' },
-          buttonUppercase: false, doneColor: '#8B7CFF', errorColor: '#FF9B8F', idPrefix: 'nova', newsletterHeading: 'Stay in the loop', blogLabel: 'Stories',
-        }} />
+        <FooterColumns tokens={tokens} />
       </div>
 
       <div style={{ borderTop: `1px solid ${line}` }}>
@@ -90,21 +104,23 @@ export function NovaFooter() {
           className="mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center"
           style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
         >
-          {!brandShowsSocial && socialBlocks.length > 0 && <SocialRow socials={socialBlocks} k={{ fg, muted, socialPill: true }} />}
+          {!brandShowsSocial && socialBlocks.length > 0 && <SocialRow socials={socialBlocks} k={{ fg, muted, socialPill: true }} look={opts.socialStyle} center />}
           {paymentBlock && <PaymentBadges icons={paymentBlock.settings.icons ?? []} tokens={partTokens} border={inputLine} radius={t.radius.sm} />}
+          {opts.showCurrency && <StorefrontLocaleControls allowedCurrencies={store.enabledCurrencies} />}
           <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: faint }}>
             {expandCopyright(copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`)}
           </p>
-          {(footerPages.length > 0 || store.showDoNotSellLink) && (
+          {opts.showBackToTop && <BackToTop color={faint} fontFamily={t.fonts.body} />}
+          {((opts.showPolicyLinks && footerPages.length > 0) || store.showDoNotSellLink) && (
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
-              {footerPages.map(p => (
+              {opts.showPolicyLinks && footerPages.map(p => (
                 <Link
                   key={p._id}
                   to={`/${p.slug}`}
                   className="no-underline"
                   style={{ fontFamily: t.fonts.body, fontSize: '12px', color: muted }}
                 >
-                  {(p.policyType && POLICY_LABELS[p.policyType]) || p.title}
+                  {(p.policyType && POLICY_LABELS[p.policyType]) || lz.page(p).title}
                 </Link>
               ))}
               {store.showDoNotSellLink && (
@@ -113,7 +129,7 @@ export function NovaFooter() {
                   onClick={() => setShowDoNotSell(true)}
                   style={{ fontFamily: t.fonts.body, fontSize: '12px', color: muted, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
                 >
-                  Do Not Sell My Personal Information
+                  {tr('footer.doNotSell', "Do Not Sell My Personal Information")}
                 </button>
               )}
             </div>
@@ -128,17 +144,17 @@ export function NovaFooter() {
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
       >
         <div onClick={e => e.stopPropagation()} style={{ background: '#fff', color: t.colors.ink, maxWidth: '420px', width: '100%', borderRadius: t.radius.md, padding: '24px' }}>
-          <p style={{ fontFamily: t.fonts.display, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>Your Privacy Choices</p>
+          <p style={{ fontFamily: t.fonts.display, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>{tr('footer.privacyChoices', "Your Privacy Choices")}</p>
           <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#5A5852', lineHeight: 1.6, marginBottom: '16px' }}>
             {store.name} does not sell your personal information to third parties. You can still submit a formal request below and we'll confirm it in writing.{privacyPage && (
-              <> See our <Link to={`/${privacyPage.slug}`} onClick={() => setShowDoNotSell(false)} style={{ color: t.colors.ink, textDecoration: 'underline' }}>Privacy Policy</Link> for more details.</>
+              <> {tr('footer.seeOur', "See our")} <Link to={`/${privacyPage.slug}`} onClick={() => setShowDoNotSell(false)} style={{ color: t.colors.ink, textDecoration: 'underline' }}>{tr('footer.privacyPolicy', "Privacy Policy")}</Link> {tr('footer.forMoreDetails', "for more details.")}</>
             )}
           </p>
           {dnsStatus === 'done' ? (
-            <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#3C7A4B', marginBottom: '16px' }}>Request submitted — thank you.</p>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: '#3C7A4B', marginBottom: '16px' }}>{tr('footer.requestSubmitted', "Request submitted — thank you.")}</p>
           ) : (
             <form onSubmit={submitDoNotSell} style={{ marginBottom: '16px' }}>
-              <label htmlFor="nova-dns-email" style={{ display: 'block', fontFamily: t.fonts.body, fontSize: '11.5px', color: '#5A5852', marginBottom: '6px' }}>Your email</label>
+              <label htmlFor="nova-dns-email" style={{ display: 'block', fontFamily: t.fonts.body, fontSize: '11.5px', color: '#5A5852', marginBottom: '6px' }}>{tr('footer.yourEmail', "Your email")}</label>
               <input
                 id="nova-dns-email"
                 type="email"
@@ -153,9 +169,9 @@ export function NovaFooter() {
                 disabled={dnsStatus === 'loading'}
                 style={{ padding: '9px 16px', borderRadius: t.radius.sm, border: 'none', background: t.colors.ink, color: '#fff', fontSize: '13px', fontWeight: 600, cursor: dnsStatus === 'loading' ? 'wait' : 'pointer', opacity: dnsStatus === 'loading' ? 0.7 : 1 }}
               >
-                {dnsStatus === 'loading' ? 'Submitting…' : 'Submit Request'}
+                {dnsStatus === 'loading' ? tr('footer.submitting', "Submitting…") : tr('footer.submitRequest', "Submit Request")}
               </button>
-              {dnsStatus === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: '#B3261E', marginTop: '8px' }}>Something went wrong — try again.</p>}
+              {dnsStatus === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: '#B3261E', marginTop: '8px' }}>{tr('footer.error', "Something went wrong — try again.")}</p>}
             </form>
           )}
           <button
@@ -163,7 +179,7 @@ export function NovaFooter() {
             onClick={() => setShowDoNotSell(false)}
             style={{ padding: '9px 16px', borderRadius: t.radius.sm, border: `1.5px solid #E4E1D6`, background: 'transparent', color: t.colors.ink, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           >
-            Close
+            {tr('common.close', "Close")}
           </button>
         </div>
       </div>

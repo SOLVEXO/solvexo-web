@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Loader2, XCircle, ChevronRight } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -18,6 +19,7 @@ import { novaTheme as t } from '../theme.config';
  *  `apiGetPaymentStatus` `NovaCheckoutPage.handleStripeConfirmed` uses until
  *  that status flips. */
 export function NovaCheckoutReturnPage() {
+  const { t: tr } = useTranslation('storefront');
   useStorefrontSeo({ title: 'Confirming your payment', noindex: true });
   const navigate = useNavigate();
   const { store } = useStorefront();
@@ -76,7 +78,7 @@ export function NovaCheckoutReturnPage() {
         <div className="flex items-center justify-center mx-auto" style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#E1F5EB', marginBottom: '20px' }}>
           <CheckCircle2 size={28} style={{ color: t.colors.success }} />
         </div>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>Thank you for your order!</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>{tr('checkout.thanks', "Thank you for your order!")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>Your payment was confirmed and your order at {store.name} has been placed.</p>
         <div style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, marginBottom: '32px', textAlign: 'left', overflow: 'hidden' }}>
           {placedOrders.map((o, i) => (
@@ -86,7 +88,7 @@ export function NovaCheckoutReturnPage() {
             </div>
           ))}
         </div>
-        <NovaButton onClick={() => navigate('/')}>Continue Shopping <ChevronRight size={14} style={{ marginLeft: '4px' }} /></NovaButton>
+        <NovaButton onClick={() => navigate('/')}>{tr('cart.continueShopping', "Continue Shopping")} <ChevronRight size={14} style={{ marginLeft: '4px' }} /></NovaButton>
       </div>
     );
   }
@@ -97,9 +99,9 @@ export function NovaCheckoutReturnPage() {
         <div className="flex items-center justify-center mx-auto" style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#FBE1DF', marginBottom: '20px' }}>
           <XCircle size={28} style={{ color: t.colors.danger }} />
         </div>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>Payment wasn't completed</h1>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>Nothing was charged — your cart is still here, so you can try again or pick a different payment method.</p>
-        <NovaButton onClick={() => navigate('/checkout')}>Back to Checkout</NovaButton>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>{tr('checkout.paymentIncomplete', "Payment wasn't completed")}</h1>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>{tr('checkout.nothingCharged', "Nothing was charged — your cart is still here, so you can try again or pick a different payment method.")}</p>
+        <NovaButton onClick={() => navigate('/checkout')}>{tr('checkout.backToCheckout', "Back to Checkout")}</NovaButton>
       </div>
     );
   }

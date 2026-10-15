@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { localePath } from '@/i18n';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -16,7 +18,8 @@ import { novaTheme as t } from '../theme.config';
 /** Theme 02's own sign-up — creates an account scoped to THIS store
  *  (`Store.storeId`), same real flow as `AtelierRegisterPage`. */
 export function NovaRegisterPage() {
-  useStorefrontSeo({ title: 'Create Account', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('auth.createAccount', "Create Account"), noindex: true });
   const { store } = useStorefront();
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
@@ -39,9 +42,9 @@ export function NovaRegisterPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>Create your {store.name} account</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>{tr('auth.createYourAccount', 'Create your {{name}} account', { name: store.name })}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
-          Track orders, save your details, and check out faster.
+          {tr('auth.loginSub', "Track orders, save your details, and check out faster.")}
         </p>
       </div>
 
@@ -54,17 +57,17 @@ export function NovaRegisterPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '28px' }}>
         <div>
-          <label htmlFor="nova-register-name" style={novaLabel}>Full Name</label>
+          <label htmlFor="nova-register-name" style={novaLabel}>{tr('auth.fullName', "Full Name")}</label>
           <input id="nova-register-name" required autoComplete="name" value={name} onChange={e => setName(e.target.value)} style={novaInput} />
         </div>
         <div>
-          <label htmlFor="nova-register-email" style={novaLabel}>Email</label>
+          <label htmlFor="nova-register-email" style={novaLabel}>{tr('auth.email', "Email")}</label>
           <input id="nova-register-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} style={novaInput} />
         </div>
         <div>
           <PhoneInput
             unstyled
-            labelNode={<label htmlFor="nova-register-phone" style={novaLabel}>Phone Number</label>}
+            labelNode={<label htmlFor="nova-register-phone" style={novaLabel}>{tr('auth.phone', "Phone Number")}</label>}
             id="nova-register-phone" required
             value={phone} onChange={setPhone}
             defaultCountry={detectedCountry}
@@ -73,11 +76,11 @@ export function NovaRegisterPage() {
           />
         </div>
         <div>
-          <label htmlFor="nova-register-address" style={novaLabel}>Address</label>
+          <label htmlFor="nova-register-address" style={novaLabel}>{tr('auth.address', "Address")}</label>
           <input id="nova-register-address" required autoComplete="street-address" value={address} onChange={e => setAddress(e.target.value)} style={novaInput} />
         </div>
         <div>
-          <label htmlFor="nova-register-password" style={novaLabel}>Password</label>
+          <label htmlFor="nova-register-password" style={novaLabel}>{tr('auth.password', "Password")}</label>
           <div className="relative">
             <input
               id="nova-register-password"
@@ -87,7 +90,7 @@ export function NovaRegisterPage() {
             />
             <button
               type="button" onClick={() => setShowPassword(s => !s)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? tr('auth.hidePassword', "Hide password") : tr('auth.showPassword', "Show password")}
               className="absolute cursor-pointer bg-transparent border-0"
               style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', color: t.colors.inkMuted }}
             >
@@ -96,7 +99,7 @@ export function NovaRegisterPage() {
           </div>
         </div>
         <NovaButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }} loading={register.loading}>
-          Create Account
+          {tr('auth.createAccountBtn', "Create Account")}
         </NovaButton>
       </form>
 
@@ -110,9 +113,9 @@ export function NovaRegisterPage() {
       </div>
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
-        Already have an account?{' '}
-        <a href={`/login${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
-          Sign in
+        {tr('auth.haveAccount', "Already have an account?")}{' '}
+        <a href={localePath(`/login${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`)} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
+          {tr('auth.signInLink', "Sign in")}
         </a>
       </p>
     </div>

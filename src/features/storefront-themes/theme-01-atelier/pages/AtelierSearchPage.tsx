@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -23,10 +24,11 @@ import { atelierTheme as t } from '../theme.config';
  *  with a `search` template key needs zero backend changes and is genuinely
  *  real, versioned, draft/publishable data, not a shortcut). */
 export function AtelierSearchPage() {
+  const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
   const [searchParams] = useSearchParams();
   const q = searchParams.get('q') ?? '';
-  useStorefrontSeo({ title: q ? `"${q}"` : 'Search', noindex: true });
+  useStorefrontSeo({ title: q ? `"${q}"` : tr('search.title', "Search"), noindex: true });
 
   const [sections, setSections] = useState<Section[]>([]);
   useEffect(() => {
@@ -38,7 +40,7 @@ export function AtelierSearchPage() {
   if (!q.trim()) {
     return (
       <div style={{ padding: '96px 20px', textAlign: 'center' }}>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>Type something to search this store.</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>{tr('search.typeSomething', "Type something to search this store.")}</p>
       </div>
     );
   }
@@ -53,7 +55,7 @@ export function AtelierSearchPage() {
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
       {surrounding.length > 0 && <div style={{ marginBottom: '32px' }}><AtelierSectionRenderer sections={surrounding} /></div>}
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, marginBottom: '24px' }}>Results for &quot;{q}&quot;</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, marginBottom: '24px' }}>{tr('search.resultsFor', 'Results for "{{q}}"', { q })}</h1>
       <StorefrontSearchTabs tokens={tokens} q={q} products={<AtelierProductGrid search={q} syncUrl />} />
     </main>
   );

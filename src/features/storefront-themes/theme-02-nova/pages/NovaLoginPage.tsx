@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { localePath } from '@/i18n';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -15,7 +17,8 @@ import { novaTheme as t } from '../theme.config';
  *  no buyer/seller toggle (a storefront login is always a buyer). Same real
  *  `useLogin` flow as `AtelierLoginPage`, Nova's own rounded-card presentation. */
 export function NovaLoginPage() {
-  useStorefrontSeo({ title: 'Sign In', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('auth.signIn', "Sign In"), noindex: true });
   const { store } = useStorefront();
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
@@ -34,9 +37,9 @@ export function NovaLoginPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>Sign in to {store.name}</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>{tr('auth.signInTo', 'Sign in to {{name}}', { name: store.name })}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
-          Track orders, save your details, and check out faster.
+          {tr('auth.loginSub', "Track orders, save your details, and check out faster.")}
         </p>
       </div>
 
@@ -49,14 +52,14 @@ export function NovaLoginPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '28px' }}>
         <div>
-          <label htmlFor="nova-login-email" style={novaLabel}>Email</label>
+          <label htmlFor="nova-login-email" style={novaLabel}>{tr('auth.email', "Email")}</label>
           <input id="nova-login-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} style={novaInput} />
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label htmlFor="nova-login-password" style={novaLabel}>Password</label>
-            <a href="/forgot-password" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none', fontWeight: 600 }}>
-              Forgot password?
+            <label htmlFor="nova-login-password" style={novaLabel}>{tr('auth.password', "Password")}</label>
+            <a href={localePath('/forgot-password')} style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none', fontWeight: 600 }}>
+              {tr('auth.forgotPassword', "Forgot password?")}
             </a>
           </div>
           <div className="relative">
@@ -68,7 +71,7 @@ export function NovaLoginPage() {
             />
             <button
               type="button" onClick={() => setShowPassword(s => !s)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? tr('auth.hidePassword', "Hide password") : tr('auth.showPassword', "Show password")}
               className="absolute cursor-pointer bg-transparent border-0"
               style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', color: t.colors.inkMuted }}
             >
@@ -77,23 +80,23 @@ export function NovaLoginPage() {
           </div>
         </div>
         <NovaButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }} loading={login.loading}>
-          Sign In
+          {tr('auth.signInBtn', "Sign In")}
         </NovaButton>
       </form>
 
       <div style={{ marginTop: '18px' }}>
         <StorefrontSocialButtons
           providers={social.providers} onStart={social.start} loading={social.loading} disabled={login.loading}
-          dividerText="or"
+          dividerText={tr('auth.or', "or")}
           lineColor={t.colors.border} textColor={t.colors.inkMuted} fontFamily={t.fonts.body}
           buttonStyle={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.sm, background: 'transparent', color: t.colors.ink, fontFamily: t.fonts.body, fontSize: '13.5px', fontWeight: 600, padding: '12px 16px' }}
         />
       </div>
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
-        New here?{' '}
-        <a href={`/register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
-          Create an account
+        {tr('auth.newHere', "New here?")}{' '}
+        <a href={localePath(`/register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`)} style={{ color: t.colors.accent, fontWeight: 700, textDecoration: 'none' }}>
+          {tr('auth.createAnAccount', "Create an account")}
         </a>
       </p>
     </div>

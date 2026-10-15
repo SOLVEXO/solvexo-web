@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { tt } from '@/utils/tStatic';
 import { Link, useParams } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -150,7 +151,7 @@ export function FeaturedProductSection({ section, colors, theme }: Props) {
             <span style={{ fontFamily: theme.fonts.body, fontSize: '20px', color: colors.ink }}>{price(product.defaultVariantPrice)}</span>
             {onSale && <s style={{ fontFamily: theme.fonts.body, fontSize: '15px', color: colors.inkMuted }}>{price(product.compareAtPrice)}</s>}
           </div>
-          <Link to={`/product/${product.slug}`} className="no-underline"><B variant="primary">{(section.settings.buttonLabel as string) || 'View product'}</B></Link>
+          <Link to={`/product/${product.slug}`} className="no-underline"><B variant="primary">{(section.settings.buttonLabel as string) || tt('sections.viewProduct', "View product")}</B></Link>
         </div>
       </div>
     </div>

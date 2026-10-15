@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Button } from '@/components/comman/ui';
 import { apiAddAddress, apiUpdateAddress, type Address, type AddressPayload } from '@/api/services/address';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
@@ -14,6 +15,7 @@ export function AddressFormModal({ address, isFirst, onClose, onSaved }: {
     address ? addressToForm(address) : { ...EMPTY_ADDRESS_FORM, isDefault: isFirst });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const { t: tr } = useTranslation('storefront');
   const set = (patch: Partial<AddressPayload>) => setForm(f => ({ ...f, ...patch }));
 
   async function submit() {
@@ -26,7 +28,7 @@ export function AddressFormModal({ address, isFirst, onClose, onSaved }: {
       else await apiAddAddress(form);
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save address.');
+      setError(err instanceof Error ? err.message : tr('checkout.err.address', "Failed to save address."));
     } finally {
       setSaving(false);
     }
@@ -34,36 +36,36 @@ export function AddressFormModal({ address, isFirst, onClose, onSaved }: {
 
   return (
     <Modal
-      title={address ? 'Edit address' : 'Add a new address'}
+      title={address ? tr('addresses.editTitle', "Edit address") : tr('checkout.addAddress', "Add a new address")}
       onClose={onClose}
       width={520}
       footer={
         <>
-          <Button variant="outline" onClick={onClose} fullWidth>Cancel</Button>
-          <Button onClick={submit} loading={saving} fullWidth>{address ? 'Update address' : 'Add address'}</Button>
+          <Button variant="outline" onClick={onClose} fullWidth>{tr('common.cancel', "Cancel")}</Button>
+          <Button onClick={submit} loading={saving} fullWidth>{address ? tr('addresses.update', "Update address") : tr('addresses.addBtn', "Add address")}</Button>
         </>
       }
     >
       <div className="flex flex-col gap-2.5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <input className={field} aria-label="Recipient name" placeholder="Recipient name" value={form.recipientName} onChange={e => set({ recipientName: e.target.value })} />
-          <input className={field} aria-label="Phone number" placeholder="Phone number" value={form.phoneNumber} onChange={e => set({ phoneNumber: e.target.value })} />
+          <input className={field} aria-label={tr('checkout.recipientName', tr('checkout.recipientName', "Recipient name"))} placeholder={tr('checkout.recipientName', tr('checkout.recipientName', "Recipient name"))} value={form.recipientName} onChange={e => set({ recipientName: e.target.value })} />
+          <input className={field} aria-label={tr('checkout.phoneNumber', tr('checkout.phoneNumber', "Phone number"))} placeholder={tr('checkout.phoneNumber', tr('checkout.phoneNumber', "Phone number"))} value={form.phoneNumber} onChange={e => set({ phoneNumber: e.target.value })} />
         </div>
-        <input className={field} aria-label="Address line 1" placeholder="Address line 1" value={form.addressLine1} onChange={e => set({ addressLine1: e.target.value })} />
-        <input className={field} aria-label="Address line 2" placeholder="Address line 2 (optional)" value={form.addressLine2 ?? ''} onChange={e => set({ addressLine2: e.target.value })} />
+        <input className={field} aria-label={tr('checkout.addressLine1', tr('checkout.addressLine1', "Address line 1"))} placeholder={tr('checkout.addressLine1', tr('checkout.addressLine1', "Address line 1"))} value={form.addressLine1} onChange={e => set({ addressLine1: e.target.value })} />
+        <input className={field} aria-label={tr('addresses.line2Aria', tr('addresses.line2Aria', "Address line 2"))} placeholder={tr('checkout.addressLine2', tr('checkout.addressLine2', "Address line 2 (optional)"))} value={form.addressLine2 ?? ''} onChange={e => set({ addressLine2: e.target.value })} />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <input className={field} aria-label="City" placeholder="City" value={form.city} onChange={e => set({ city: e.target.value })} />
-          <input className={field} aria-label="State or province" placeholder="State/Province" value={form.state} onChange={e => set({ state: e.target.value })} />
-          <input className={field} aria-label="Zip code" placeholder="Zip code" value={form.zipCode} onChange={e => set({ zipCode: e.target.value })} />
+          <input className={field} aria-label={tr('checkout.city', tr('checkout.city', "City"))} placeholder={tr('checkout.city', tr('checkout.city', "City"))} value={form.city} onChange={e => set({ city: e.target.value })} />
+          <input className={field} aria-label={tr('addresses.stateAria', tr('addresses.stateAria', "State or province"))} placeholder={tr('checkout.state', tr('checkout.state', "State/Province"))} value={form.state} onChange={e => set({ state: e.target.value })} />
+          <input className={field} aria-label={tr('checkout.zip', tr('checkout.zip', "Zip code"))} placeholder={tr('checkout.zip', tr('checkout.zip', "Zip code"))} value={form.zipCode} onChange={e => set({ zipCode: e.target.value })} />
         </div>
-        <select className={field} aria-label="Country" value={form.country ?? ''} onChange={e => set({ country: e.target.value })}>
-          <option value="" disabled>Select country</option>
+        <select className={field} aria-label={tr('addresses.country', tr('addresses.country', "Country"))} value={form.country ?? ''} onChange={e => set({ country: e.target.value })}>
+          <option value="" disabled>{tr('checkout.selectCountry', "Select country")}</option>
           {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
         </select>
         {!address?.isDefault && (
           <label className="flex items-center gap-2 text-[12px] text-slate cursor-pointer">
             <input type="checkbox" checked={!!form.isDefault} onChange={e => set({ isDefault: e.target.checked })} />
-            Set as default address
+            {tr('addresses.setDefaultAddr', "Set as default address")}
           </label>
         )}
         {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
@@ -79,11 +81,12 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onClose 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  const { t: tr } = useTranslation('storefront');
   async function run() {
     setBusy(true);
     setError('');
     try { await onConfirm(); } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(err instanceof Error ? err.message : tr('common.somethingWrong', "Something went wrong."));
       setBusy(false);
     }
   }
@@ -94,7 +97,7 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onClose 
       onClose={onClose}
       footer={
         <>
-          <Button variant="outline" onClick={onClose} fullWidth>Cancel</Button>
+          <Button variant="outline" onClick={onClose} fullWidth>{tr('common.cancel', "Cancel")}</Button>
           <Button onClick={run} loading={busy} fullWidth>{confirmLabel}</Button>
         </>
       }

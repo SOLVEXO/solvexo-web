@@ -1,4 +1,5 @@
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AlertCircle, Package, Loader2, ArrowLeft } from 'lucide-react';
@@ -21,8 +22,9 @@ import { atelierTheme as t } from '../theme.config';
 /** Theme 01's Order page (Shopify customer account "Order"): status badges,
  *  timeline, tracking, items, summary, shipping address, Buy again / Return. */
 export function AtelierOrderDetailPage() {
+  const { t: tr } = useTranslation('storefront');
   useRequireRealAccount();
-  useStorefrontSeo({ title: 'Order', noindex: true });
+  useStorefrontSeo({ title: tr('orders.order', "Order"), noindex: true });
   const { orderId = '' } = useParams<{ orderId: string }>();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ export function AtelierOrderDetailPage() {
         if (cancelled) return;
         const status = (err as { response?: { status?: number } })?.response?.status;
         if (status === 404 || status === 403) setNotFound(true);
-        else setError(err instanceof Error ? err.message : 'Could not load this order.');
+        else setError(err instanceof Error ? err.message : tr('orders.err.loadOne', "Could not load this order."));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -69,16 +71,16 @@ export function AtelierOrderDetailPage() {
     content = (
       <div className="flex flex-col items-center text-center" style={{ padding: '56px 0', border: `1px solid ${t.colors.border}` }}>
         <Package size={26} style={{ color: t.colors.inkMuted, marginBottom: '12px' }} />
-        <p style={{ fontFamily: t.fonts.display, fontSize: '15px', fontWeight: 600, color: t.colors.ink }}>Order not found</p>
-        <Link to="/orders" className="underline" style={{ ...body, marginTop: '8px' }}>Back to orders</Link>
+        <p style={{ fontFamily: t.fonts.display, fontSize: '15px', fontWeight: 600, color: t.colors.ink }}>{tr('orders.notFound', "Order not found")}</p>
+        <Link to="/orders" className="underline" style={{ ...body, marginTop: '8px' }}>{tr('orders.backToOrders', "Back to orders")}</Link>
       </div>
     );
   } else if (error || !order) {
     content = (
       <div role="alert" className="flex flex-col items-center text-center" style={{ padding: '56px 0', border: `1px solid ${t.colors.border}` }}>
         <AlertCircle size={26} style={{ color: t.colors.danger, marginBottom: '12px' }} />
-        <p style={body}>{error || 'Could not load this order.'}</p>
-        <button type="button" onClick={retry} className="cursor-pointer bg-transparent" style={{ ...btn, marginTop: '14px' }}>Try again</button>
+        <p style={body}>{error || tr('orders.err.loadOne', "Could not load this order.")}</p>
+        <button type="button" onClick={retry} className="cursor-pointer bg-transparent" style={{ ...btn, marginTop: '14px' }}>{tr('orders.tryAgain', "Try again")}</button>
       </div>
     );
   } else {
@@ -115,10 +117,10 @@ export function AtelierOrderDetailPage() {
 
         <ExchangeOrderBanner exchangeOf={order.exchangeOf} look={{ fontFamily: t.fonts.body, color: t.colors.ink, accent: t.colors.accent, border: t.colors.border, bg: t.colors.bgAlt }} />
 
-        <section style={card} aria-label="Order status">
+        <section style={card} aria-label={tr('orders.statusAria', "Order status")}>
           <ol className="flex items-start justify-between gap-2" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {timeline.map(step => {
-              const cancelled = step.label === 'Cancelled';
+              const cancelled = step.label === tr('order.cancelled', "Cancelled");
               const color = cancelled ? BADGE_TONE_COLOR.danger : step.done ? t.colors.ink : t.colors.inkMuted;
               return (
                 <li key={step.label} className="flex-1 min-w-0" style={{ opacity: step.done ? 1 : 0.55 }}>
@@ -134,7 +136,7 @@ export function AtelierOrderDetailPage() {
         <OrderShipments order={order} look={look} />
 
         <section style={card}>
-          <p style={h2}>Items</p>
+          <p style={h2}>{tr('orders.items', "Items")}</p>
           {subs.flatMap(s => s.items ?? []).map((item, i) => (
             <div key={item.itemId ?? item._id ?? i} className="flex items-start gap-3" style={{ padding: '12px 0', borderTop: i === 0 ? 'none' : `1px solid ${t.colors.border}` }}>
               <div className="shrink-0 flex items-center justify-center" style={{ width: '56px', height: '56px', background: t.colors.bgAlt }}>
@@ -147,10 +149,10 @@ export function AtelierOrderDetailPage() {
                 )}
                 <p style={{ ...muted, marginTop: '2px' }}>{money(item.price)} x {item.quantity}</p>
                 {(item.refundedAmount ?? 0) > 0 && !item.exchangeOrderId && (
-                  <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Refunded {money(item.refundedAmount ?? 0)}</p>
+                  <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>{tr('orders.refundedAmount', 'Refunded {{amount}}', { amount: money(item.refundedAmount ?? 0) })}</p>
                 )}
                 <ReturnProgress status={item.returnStatus} rejectReason={item.returnRejectReason} look={{ fontFamily: t.fonts.body, color: t.colors.ink, accent: t.colors.accent, border: t.colors.border, muted: t.colors.inkMuted }} />
-                {item.status === 'cancelled' && <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Cancelled</p>}
+                {item.status === 'cancelled' && <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>{tr('order.cancelled', "Cancelled")}</p>}
                 {item.exchangeOrderId && (
                   <div style={{ marginTop: '4px' }}><ExchangeItemLink orderId={item.exchangeOrderId} orderNumber={item.exchangeOrderNumber} color={t.colors.accent} fontFamily={t.fonts.body} /></div>
                 )}
@@ -167,17 +169,17 @@ export function AtelierOrderDetailPage() {
         </section>
 
         <section style={card}>
-          <p style={h2}>Order summary</p>
-          {row('Subtotal', money(orderDisplaySubtotal(order)))}
+          <p style={h2}>{tr('orders.summary', "Order summary")}</p>
+          {row(tr('checkout.subtotal', "Subtotal"), money(orderDisplaySubtotal(order)))}
           {promotionSavings > 0 && (
-            <p style={{ ...muted, fontSize: '11.5px', padding: '2px 0 3px' }}>Includes {money(promotionSavings)} in promotional savings</p>
+            <p style={{ ...muted, fontSize: '11.5px', padding: '2px 0 3px' }}>{tr('orders.promoSavings', 'Includes {{amount}} in promotional savings', { amount: money(promotionSavings) })}</p>
           )}
           {discounts.map(d => row(d.label, `-${money(d.amount)}`))}
-          {row('Shipping', money(order.shippingFee))}
-          {row('Tax', money(order.taxAmount))}
-          {(order.includedTaxAmount ?? 0) > 0 && row('Including taxes', money(order.includedTaxAmount ?? 0))}
+          {row(tr('checkout.shipping', "Shipping"), money(order.shippingFee))}
+          {row(tr('checkout.tax', "Tax"), money(order.taxAmount))}
+          {(order.includedTaxAmount ?? 0) > 0 && row(tr('checkout.includingTaxes', "Including taxes"), money(order.includedTaxAmount ?? 0))}
           <div style={{ borderTop: `1px solid ${t.colors.border}`, marginTop: '8px', paddingTop: '8px' }}>
-            {row('Total', money(order.totalAmount), true)}
+            {row(tr('checkout.total', "Total"), money(order.totalAmount), true)}
           </div>
         </section>
 
@@ -186,17 +188,17 @@ export function AtelierOrderDetailPage() {
             <OrderPickupLocation order={order} look={look} />
           ) : (
             <section style={{ ...card, marginBottom: 0 }}>
-              <p style={h2}>Shipping address</p>
+              <p style={h2}>{tr('orders.shippingAddress', "Shipping address")}</p>
               {addr.name || addr.lines.length > 0 ? (
                 <>
                   {addr.name && <p style={{ ...body, fontWeight: 600 }}>{addr.name}</p>}
                   {addr.lines.map(l => <p key={l} style={{ ...muted, marginTop: '2px' }}>{l}</p>)}
                 </>
-              ) : <p style={muted}>No shipping address.</p>}
+              ) : <p style={muted}>{tr('orders.noShippingAddress', "No shipping address.")}</p>}
             </section>
           )}
           <section style={{ ...card, marginBottom: 0 }}>
-            <p style={h2}>Payment</p>
+            <p style={h2}>{tr('orders.payment', "Payment")}</p>
             <p style={body}>{method || '-'}</p>
             <div style={{ marginTop: '8px' }}><OrderBadge badge={derivePaymentBadge(order)} fontFamily={t.fonts.body} /></div>
           </section>
@@ -207,7 +209,7 @@ export function AtelierOrderDetailPage() {
             {buyAgain.busy && <Loader2 size={13} className="animate-spin" />} Buy again
           </button>
           {canRequestReturn(order) && (
-            <Link to="/returns" className="no-underline" style={btn}>Request a return</Link>
+            <Link to="/returns" className="no-underline" style={btn}>{tr('orders.requestReturn', "Request a return")}</Link>
           )}
         </div>
         {buyAgain.result && (
@@ -215,11 +217,11 @@ export function AtelierOrderDetailPage() {
             {buyAgain.result.added > 0 && (
               <p style={{ ...body, fontWeight: 600 }}>
                 {buyAgain.result.added} {buyAgain.result.added === 1 ? 'item' : 'items'} added to your cart.{' '}
-                <Link to="/cart" className="underline">Go to cart</Link>
+                <Link to="/cart" className="underline">{tr('orders.goToCart', "Go to cart")}</Link>
               </p>
             )}
             {buyAgain.result.added === 0 && buyAgain.result.errors.length === 0 && (
-              <p style={muted}>Nothing in this order can be added to your cart again.</p>
+              <p style={muted}>{tr('orders.nothingToReorder', "Nothing in this order can be added to your cart again.")}</p>
             )}
             {buyAgain.result.errors.map(e => (
               <p key={e} className="flex items-center gap-1.5" style={{ ...muted, color: t.colors.danger, marginTop: '4px' }}><AlertCircle size={12} /> {e}</p>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { useStorefrontMarketOptional } from '@/features/storefront/storefrontMarket';
+import { applyHreflangLinks, buildCanonicalUrl, buildHreflangLinks } from '@/utils/storefrontSeoLinks';
 import { apiGetSeoMeta, type ResolvedSeoMeta, type SeoEntityType } from '@/api/services/publicSeo';
 
 function setMetaTag(attr: 'name' | 'property', key: string, value: string) {
@@ -70,6 +72,9 @@ export function useStorefrontSeo({ entityType, entityId, title, description, ima
   noindex?: boolean;
 }) {
   const { store } = useStorefront();
+  const marketCtx = useStorefrontMarketOptional();
+  const locale = marketCtx?.language ?? 'en';
+  const offeredLanguages = marketCtx?.languages;
   const [resolved, setResolved] = useState<ResolvedSeoMeta | null>(null);
 
   useEffect(() => {
@@ -82,7 +87,16 @@ export function useStorefrontSeo({ entityType, entityId, title, description, ima
     return () => { cancelled = true; };
   }, [entityType, entityId]);
   // Storefront's own host (already redirected to the primary domain) — the backend URL is apex/path-based.
-  const pageUrl = `${window.location.origin}${window.location.pathname}`;
+  // Self-referencing, language-aware URL (default language = no prefix).
+  const pageUrl = buildCanonicalUrl(window.location.origin, window.location.pathname, locale);
+
+  // hreflang only for languages the store really offers (none with a single language).
+  const hreflangKey = (offeredLanguages ?? []).join(',');
+  useEffect(() => {
+    applyHreflangLinks(buildHreflangLinks(window.location.origin, window.location.pathname, offeredLanguages ?? []));
+    return () => applyHreflangLinks([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hreflangKey, pageUrl]);
 
   useEffect(() => {
     if (resolved) {

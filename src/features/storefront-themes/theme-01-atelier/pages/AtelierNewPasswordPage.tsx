@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -16,7 +17,8 @@ import { atelierTheme as t } from '../theme.config';
  *  in `AuthContext` — a direct visit/refresh with no code goes back to
  *  Forgot Password instead of showing a form that can only ever fail. */
 export function AtelierNewPasswordPage() {
-  useStorefrontSeo({ title: 'Reset Password', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('auth.resetPasswordBtn', "Reset Password"), noindex: true });
   const navigate = useNavigate();
   const { store } = useStorefront();
   const resetPassword = useResetPassword();
@@ -38,8 +40,8 @@ export function AtelierNewPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
-    if (password.length < 8) { setFormError('Password must be at least 8 characters.'); return; }
-    if (password !== confirmPassword) { setFormError('Passwords do not match.'); return; }
+    if (password.length < 8) { setFormError(tr('auth.err.pw8', "Password must be at least 8 characters.")); return; }
+    if (password !== confirmPassword) { setFormError(tr('auth.err.pwMismatch', "Passwords do not match.")); return; }
     await resetPassword.execute(otp, password);
   };
 
@@ -49,11 +51,11 @@ export function AtelierNewPasswordPage() {
         <div className="flex items-center justify-center mx-auto" style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#E5EFE8', marginBottom: '20px' }}>
           <CheckCircle2 size={28} style={{ color: t.colors.success }} />
         </div>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>Password updated</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>{tr('auth.passwordUpdated', "Password updated")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>
           You can now sign back in to {store.name} with your new password.
         </p>
-        <AtelierButton onClick={() => navigate('/login')}>Sign In</AtelierButton>
+        <AtelierButton onClick={() => navigate('/login')}>{tr('auth.signInBtn', "Sign In")}</AtelierButton>
       </div>
     );
   }
@@ -61,7 +63,7 @@ export function AtelierNewPasswordPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>Choose a new password</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>{tr('auth.chooseNewPassword', "Choose a new password")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
           Almost done — set a new password to finish resetting your account.
         </p>
@@ -91,7 +93,7 @@ export function AtelierNewPasswordPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 atelier-form" style={{ border: `1px solid ${t.colors.border}`, padding: '28px' }}>
         <div>
-          <label htmlFor="atelier-newpw-password" style={atelierLabel}>New Password</label>
+          <label htmlFor="atelier-newpw-password" style={atelierLabel}>{tr('account.newPassword', "New Password")}</label>
           <div className="relative">
             <input
               id="atelier-newpw-password"
@@ -101,7 +103,7 @@ export function AtelierNewPasswordPage() {
             />
             <button
               type="button" onClick={() => setShowPassword(s => !s)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? tr('auth.hidePassword', "Hide password") : tr('auth.showPassword', "Show password")}
               className="absolute cursor-pointer bg-transparent border-0"
               style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', color: t.colors.inkMuted }}
             >
@@ -110,7 +112,7 @@ export function AtelierNewPasswordPage() {
           </div>
         </div>
         <div>
-          <label htmlFor="atelier-newpw-confirm" style={atelierLabel}>Confirm Password</label>
+          <label htmlFor="atelier-newpw-confirm" style={atelierLabel}>{tr('auth.confirmPassword', "Confirm Password")}</label>
           <input
             id="atelier-newpw-confirm"
             type={showPassword ? 'text' : 'password'} required autoComplete="new-password"
@@ -119,7 +121,7 @@ export function AtelierNewPasswordPage() {
           />
         </div>
         <AtelierButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }} loading={resetPassword.loading}>
-          Reset Password
+          {tr('auth.resetPasswordBtn', tr('auth.resetPasswordBtn', "Reset Password"))}
         </AtelierButton>
       </form>
     </div>

@@ -51,7 +51,14 @@ export function AtelierMegaPanel({ item, id, onNavigate, onMouseEnter, onMouseLe
             {anyImage && (
               <NavAnchor link={col.link} onClick={onNavigate} className="atelier-mega-tile atelier-focus-ring block overflow-hidden" style={{ borderRadius: t.imageRadiusPx, background: t.colors.bgAlt }} tabIndex={-1}>
                 <span className="block w-full" style={{ aspectRatio: '4 / 5' }}>
-                  {col.imageUrl && <img src={col.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />}
+                  {col.imageUrl
+                    ? <img src={col.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />
+                    : (
+                      // Mixed menu (some items have a photo, some don't): show the initial, not a blank block.
+                      <span aria-hidden="true" className="w-full h-full flex items-center justify-center" style={{ fontFamily: t.fonts.display, fontSize: '40px', color: t.colors.inkMuted }}>
+                        {col.label.trim().charAt(0).toUpperCase()}
+                      </span>
+                    )}
                 </span>
               </NavAnchor>
             )}

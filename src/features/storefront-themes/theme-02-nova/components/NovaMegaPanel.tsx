@@ -90,14 +90,28 @@ export function NovaMegaPanel({ item, id, onNavigate, onMouseEnter, onMouseLeave
             </div>
           )}
 
-          {tiles.length === 0 && active && (
+          {tiles.length === 0 && active && active.imageUrl && (
             // A category with no sub-items: show it as one large tile so the panel isn't a dead end.
             <NavAnchor link={active.link} onClick={onNavigate} className="nova-mega-tile no-underline flex flex-col gap-2.5" style={{ maxWidth: '220px' }}>
               <span className="block w-full overflow-hidden" style={{ aspectRatio: '1 / 1', borderRadius: t.imageRadiusPx, background: t.colors.bgAlt }}>
-                {active.imageUrl && <img src={active.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />}
+                <img src={active.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />
               </span>
               <span style={{ fontFamily: t.fonts.body, fontSize: '13.5px', fontWeight: 600, color: t.colors.ink }}>{active.label}</span>
             </NavAnchor>
+          )}
+
+          {tiles.length === 0 && active && !active.imageUrl && (
+            // No image to show: a plain chip instead of an empty grey square.
+            <div className="flex flex-wrap gap-2.5">
+              <NavAnchor
+                link={active.link}
+                onClick={onNavigate}
+                className="nova-mega-chip nova-focus-ring no-underline"
+                style={{ fontFamily: t.fonts.body, fontSize: '13.5px', fontWeight: 600, padding: '9px 16px', borderRadius: '9999px', border: `1.5px solid ${t.colors.border}`, color: t.colors.ink }}
+              >
+                Shop {active.label}
+              </NavAnchor>
+            </div>
           )}
 
           {tiles.length > 0 && tilesHaveImages && (
@@ -105,7 +119,14 @@ export function NovaMegaPanel({ item, id, onNavigate, onMouseEnter, onMouseLeave
               {tiles.map(tile => (
                 <NavAnchor key={tile.id} link={tile.link} onClick={onNavigate} className="nova-mega-tile nova-focus-ring no-underline flex flex-col gap-2.5 min-w-0">
                   <span className="block w-full overflow-hidden" style={{ aspectRatio: '1 / 1', borderRadius: t.imageRadiusPx, background: t.colors.bgAlt }}>
-                    {tile.imageUrl && <img src={tile.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />}
+                    {tile.imageUrl
+                      ? <img src={tile.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />
+                      : (
+                        // Mixed menu (some items have a photo, some don't): show the initial, not a blank square.
+                        <span aria-hidden="true" className="w-full h-full flex items-center justify-center" style={{ fontFamily: t.fonts.display, fontSize: '34px', fontWeight: 700, color: t.colors.inkMuted }}>
+                          {tile.label.trim().charAt(0).toUpperCase()}
+                        </span>
+                      )}
                   </span>
                   <span style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink, lineHeight: 1.3 }}>{tile.label}</span>
                 </NavAnchor>

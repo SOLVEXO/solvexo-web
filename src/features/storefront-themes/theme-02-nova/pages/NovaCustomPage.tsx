@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useLocalize } from '@/hooks/useLocalize';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { apiGetPublicStorePage, type StorePageData } from '@/api/services/storePages';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
@@ -17,6 +19,7 @@ import { novaTheme as t } from '../theme.config';
  *  (`NovaNotFoundPage`), mirroring `AtelierCustomPage`'s use of
  *  `AtelierNotFoundPage` for the same case. */
 export function NovaCustomPage() {
+  const { t: tr } = useTranslation('storefront');
   const { pageSlug } = useParams<{ pageSlug: string }>();
   const { store } = useStorefront();
   const [page, setPage] = useState<StorePageData | null>(null);
@@ -41,9 +44,11 @@ export function NovaCustomPage() {
       .catch(() => setDynamicSourceValues({}));
   }, [store.storeId, page]);
 
+  const lz = useLocalize();
+  const lp = page ? lz.page(page) : null;
   useStorefrontSeo({
-    title: page?.seo.metaTitle || page?.title || undefined,
-    description: page?.seo.metaDescription || page?.seo.metaDesc || undefined,
+    title: lp?.localizedMetaTitle || page?.seo.metaTitle || lp?.title || undefined,
+    description: lp?.localizedMetaDescription || page?.seo.metaDescription || page?.seo.metaDesc || undefined,
     image: page?.seo.ogImage || undefined,
   });
 
@@ -63,11 +68,11 @@ export function NovaCustomPage() {
   return (
     <main className="w-full">
       <div className="mx-auto" style={{ maxWidth: '760px', padding: `48px ${t.layout.containerPadX} 0` }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '28px' }}>{page.title}</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '28px' }}>{lp?.title ?? page.title}</h1>
       </div>
       {page.sections.length
         ? <NovaSectionRenderer sections={page.sections} dynamicSourceValues={dynamicSourceValues} />
-        : <p className="mx-auto" style={{ maxWidth: '760px', padding: `0 ${t.layout.containerPadX}`, fontFamily: t.fonts.body, color: t.colors.inkMuted }}>This page has no content yet.</p>}
+        : <p className="mx-auto" style={{ maxWidth: '760px', padding: `0 ${t.layout.containerPadX}`, fontFamily: t.fonts.body, color: t.colors.inkMuted }}>{tr('page.noContent', "This page has no content yet.")}</p>}
     </main>
   );
 }

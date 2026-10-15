@@ -1,4 +1,6 @@
-import { useState, useEffect, Fragment, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, Fragment, type ReactNode } from 'react';
+import { useLocalize } from '@/hooks/useLocalize';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ImageOff, Minus, Plus, CheckCircle2, Star, Eye, Loader2 } from 'lucide-react';
 import { useProductById } from '@/hooks/marketplace/useProductById';
@@ -34,6 +36,7 @@ import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
 
 function Gallery({ images, name }: { images: string[]; name: string }) {
+  const { t: tr } = useTranslation('storefront');
   const [selected, setSelected] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [errored, setErrored] = useState<Record<number, boolean>>({});
@@ -51,7 +54,7 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
         className="relative w-full flex items-center justify-center"
         role={src && !errored[selected] ? 'button' : undefined}
         tabIndex={src && !errored[selected] ? 0 : undefined}
-        aria-label={src && !errored[selected] ? 'Enlarge photo' : undefined}
+        aria-label={src && !errored[selected] ? tr('product.enlargePhoto', "Enlarge photo") : undefined}
         onClick={() => { if (src && !errored[selected]) setZoomed(true); }}
         onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && src && !errored[selected]) { e.preventDefault(); setZoomed(true); } }}
         style={{ cursor: src && !errored[selected] ? 'zoom-in' : undefined, aspectRatio: ratio ?? (src && !errored[selected] ? 'auto' : '3 / 4'), background: t.colors.bgAlt, borderRadius: t.imageRadiusPx, overflow: 'hidden' }}
@@ -94,6 +97,7 @@ function VariantSelector({ variants, selected, onSelect, isDigital, pickerStyle 
   /** Seller's choice on the Variant picker block: buttons (pills) or a dropdown. */
   pickerStyle?: 'pills' | 'dropdown';
 }) {
+  const { t: tr } = useTranslation('storefront');
   const attributeNames = Array.from(new Set(variants.flatMap(v => (v.options ?? []).map(o => o.name))));
   if (!attributeNames.length) return null;
   const valueOf = (v: ProductVariant | null, name: string) => v?.options?.find(o => o.name === name)?.value;
@@ -118,7 +122,7 @@ function VariantSelector({ variants, selected, onSelect, isDigital, pickerStyle 
                 className="cursor-pointer"
                 style={{ fontFamily: t.fonts.body, fontSize: '13px', padding: '10px 12px', border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, borderRadius: t.radius?.sm ?? 0 }}>
                 {values.map(val => (
-                  <option key={val} value={val}>{val}{optionValueAvailable(variants, selected, name, val, isDigital) ? '' : ' — sold out'}</option>
+                  <option key={val} value={val}>{val}{optionValueAvailable(variants, selected, name, val, isDigital) ? '' : ' — ' + tr('product.soldOutLower', "sold out")}</option>
                 ))}
               </select>
             </div>
@@ -140,7 +144,7 @@ function VariantSelector({ variants, selected, onSelect, isDigital, pickerStyle 
                     type="button"
                     onClick={() => pickVariant(name, val)}
                     aria-pressed={active}
-                    title={unavailable ? `${val} — sold out or unavailable` : undefined}
+                    title={unavailable ? tr('product.soldOutOrUnavailable', '{{val}} — sold out or unavailable', { val }) : undefined}
                     className="cursor-pointer"
                     style={{
                       opacity: unavailable && !active ? 0.45 : 1,
@@ -177,6 +181,7 @@ function ProductSkeleton() {
 }
 
 export function AtelierProductPage() {
+  const { t: tr } = useTranslation('storefront');
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { store } = useStorefront();
@@ -198,7 +203,9 @@ export function AtelierProductPage() {
   // The same values with their field names — the Specifications block lists these.
   const [metafieldEntries, setMetafieldEntries] = useState<MetafieldValueEntry[]>([]);
 
-  const product = detail?.product ?? null;
+  const lz = useLocalize();
+  const rawProduct = detail?.product ?? null;
+  const product = useMemo(() => (rawProduct ? lz.product(rawProduct) : null), [rawProduct, lz]);
   useRecordProductView(product?._id);
   useStorefrontSeo({
     entityType: 'product',
@@ -300,8 +307,8 @@ export function AtelierProductPage() {
   if (error || !product) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 text-center" style={{ padding: `80px ${t.layout.containerPadX}` }}>
-        <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>This product isn't available.</p>
-        <Link to="/" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent }}>Back to shop</Link>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted }}>{tr('product.unavailable', "This product isn't available.")}</p>
+        <Link to="/" className="no-underline" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent }}>{tr('product.backToShop', "Back to shop")}</Link>
       </div>
     );
   }
@@ -342,7 +349,7 @@ export function AtelierProductPage() {
       className="w-full flex items-center justify-center gap-2 cursor-pointer bg-transparent"
       style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink, border: `1px solid ${t.colors.border}`, padding: '11px 0' }}
     >
-      <Eye size={14} /> Preview before you buy
+      <Eye size={14} /> {tr('product.previewBefore', "Preview before you buy")}
     </button>
   );
 
@@ -354,18 +361,18 @@ export function AtelierProductPage() {
         </p>
       ) : (
         <form onSubmit={backInStock.submit} className="flex flex-col gap-2.5 atelier-form">
-          <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink }}>Get notified when it's back</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink }}>{tr('product.notifyTitle', "Get notified when it's back")}</p>
           <div className="flex gap-2">
             <input
               type="email"
               required
               value={backInStock.email}
               onChange={e => backInStock.setEmail(e.target.value)}
-              placeholder="Your email"
-              aria-label="Email for back-in-stock alert"
+              placeholder={tr('footer.yourEmail', "Your email")}
+              aria-label={tr('product.notifyEmailAria', "Email for back-in-stock alert")}
               style={atelierInput}
             />
-            <AtelierButton type="submit" loading={backInStock.status === 'loading'} style={{ flexShrink: 0 }}>Notify me</AtelierButton>
+            <AtelierButton type="submit" loading={backInStock.status === 'loading'} style={{ flexShrink: 0 }}>{tr('product.notifyMe', "Notify me")}</AtelierButton>
           </div>
           {backInStock.status === 'error' && (
             <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{backInStock.message}</p>
@@ -413,16 +420,16 @@ export function AtelierProductPage() {
     product_quantity: !isDigital && (
       <div className="flex items-center gap-4">
         <div className="flex items-center" style={{ border: `1px solid ${t.colors.border}` }}>
-          <button type="button" disabled={qty <= rules.min} aria-label="Decrease quantity" onClick={() => setQty(q => clampQty(q - rules.step, rules))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+          <button type="button" disabled={qty <= rules.min} aria-label={tr('product.decreaseQty', "Decrease quantity")} onClick={() => setQty(q => clampQty(q - rules.step, rules))} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
             <Minus size={13} />
           </button>
           <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, width: '36px', textAlign: 'center' }}>{qty}</span>
-          <button type="button" onClick={() => setQty(q => clampQty(q + rules.step, rules))} disabled={!canBuy || qty >= rules.max} aria-label="Increase quantity" className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
+          <button type="button" onClick={() => setQty(q => clampQty(q + rules.step, rules))} disabled={!canBuy || qty >= rules.max} aria-label={tr('product.increaseQty', "Increase quantity")} className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer" style={{ color: t.colors.ink }}>
             <Plus size={13} />
           </button>
         </div>
         <span style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
-          {state === 'sold_out' ? 'Sold out' : state === 'low' ? `Only ${stock} left` : state === 'backorder' ? 'Available on backorder' : 'In stock'}
+          {state === 'sold_out' ? tr('product.soldOut', "Sold out") : state === 'low' ? tr('product.onlyLeft', 'Only {{count}} left', { count: stock }) : state === 'backorder' ? tr('product.backorder', "Available on backorder") : tr('product.inStock', "In stock")}
           {ruleHint ? ` · ${ruleHint}` : ''}
         </span>
       </div>
@@ -502,10 +509,10 @@ export function AtelierProductPage() {
       {sectionsAfter.length > 0 && <AtelierSectionRenderer sections={sectionsAfter} dynamicSourceValues={dynamicSourceValues} />}
 
       {previewOpen && (
-        <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>
+        <Modal title={tr('product.preview', "Preview")} onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>
           {previewLoading && (
             <div className="flex items-center justify-center gap-2 py-10" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>
-              <Loader2 size={16} className="animate-spin" /> Loading preview…
+              <Loader2 size={16} className="animate-spin" /> {tr('product.loadingPreview', "Loading preview…")}
             </div>
           )}
           {!previewLoading && previewError && (
@@ -517,7 +524,7 @@ export function AtelierProductPage() {
             </div>
           )}
           {!previewLoading && !previewError && previewData?.type === 'image' && (
-            <img src={previewData.url} alt="Preview" className="w-full" />
+            <img src={previewData.url} alt={tr('product.preview', "Preview")} className="w-full" />
           )}
           {!previewLoading && !previewError && previewData?.type === 'video' && (
             <video src={previewData.url} controls className="w-full" />

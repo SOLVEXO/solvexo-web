@@ -1,0 +1,60 @@
+import client from '../client';
+import { ENDPOINTS } from '../endpoints';
+import type { MarketPricingType, MarketRoundingRule } from '@/utils/marketPricing';
+
+interface ApiResponse<T> { success: boolean; message?: string; data: T }
+
+export interface SellerMarket {
+  _id: string;
+  name: string;
+  countries: string[];
+  currency: string;
+  languages: string[];
+  domainType: 'primary' | 'subdomain' | 'subfolder';
+  domain: string | null;
+  subfolder: string | null;
+  isActive: boolean;
+  isPrimary: boolean;
+  pricingRule: {
+    type: MarketPricingType;
+    percentageAdjustment?: number | null;
+    useRounding?: boolean;
+    roundingRule?: MarketRoundingRule;
+    conversionFee?: number | null;
+  };
+  shippingSettings?: { currencyMode: 'store' | 'local' };
+}
+
+/** Body of POST/PUT — mirrors CreateMarketDto / UpdateMarketDto in solvexo-api/src/markets/dto. */
+export interface SellerMarketPayload {
+  name: string;
+  countries: string[];
+  currency: string;
+  languages?: string[];
+  domainType?: 'primary' | 'subdomain' | 'subfolder';
+  domain?: string;
+  subfolder?: string;
+  isActive?: boolean;
+  isPrimary?: boolean;
+  pricingRule?: {
+    type?: MarketPricingType;
+    percentageAdjustment?: number;
+    useRounding?: boolean;
+    roundingRule?: MarketRoundingRule;
+    conversionFee?: number;
+  };
+  shippingSettings?: { currencyMode?: 'store' | 'local' };
+}
+
+export function apiListSellerMarkets(storeId: string) {
+  return client.get<never, ApiResponse<SellerMarket[]>>(ENDPOINTS.MARKETS_SELLER.LIST(storeId));
+}
+export function apiCreateSellerMarket(storeId: string, payload: SellerMarketPayload) {
+  return client.post<never, ApiResponse<SellerMarket>>(ENDPOINTS.MARKETS_SELLER.LIST(storeId), payload);
+}
+export function apiUpdateSellerMarket(storeId: string, marketId: string, payload: Partial<SellerMarketPayload>) {
+  return client.put<never, ApiResponse<SellerMarket>>(ENDPOINTS.MARKETS_SELLER.ONE(storeId, marketId), payload);
+}
+export function apiDeleteSellerMarket(storeId: string, marketId: string) {
+  return client.delete<never, { success: boolean; message?: string }>(ENDPOINTS.MARKETS_SELLER.ONE(storeId, marketId));
+}

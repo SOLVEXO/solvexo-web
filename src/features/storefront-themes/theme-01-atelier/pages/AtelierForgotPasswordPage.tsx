@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { localePath } from '@/i18n';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
@@ -16,7 +18,8 @@ import { atelierTheme as t } from '../theme.config';
  *  UI on whether the request "succeeded," which would otherwise leak that
  *  same information back through a different channel. */
 export function AtelierForgotPasswordPage() {
-  useStorefrontSeo({ title: 'Forgot Password', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('auth.forgotTitle', "Forgot Password"), noindex: true });
   const { store } = useStorefront();
   const forgotPassword = useForgotPassword();
   const [email, setEmail] = useState('');
@@ -34,7 +37,7 @@ export function AtelierForgotPasswordPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>Reset your password</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>{tr('auth.resetYourPassword', "Reset your password")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
           Enter the email on your {store.name} account and we'll send you a code to reset your password.
         </p>
@@ -49,16 +52,16 @@ export function AtelierForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 atelier-form" style={{ border: `1px solid ${t.colors.border}`, padding: '28px' }}>
         <div>
-          <label htmlFor="atelier-forgot-email" style={atelierLabel}>Email</label>
+          <label htmlFor="atelier-forgot-email" style={atelierLabel}>{tr('auth.email', "Email")}</label>
           <input id="atelier-forgot-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} style={atelierInput} />
         </div>
         <AtelierButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }} loading={forgotPassword.loading}>
-          Send Reset Code
+          {tr('auth.sendResetCode', "Send Reset Code")}
         </AtelierButton>
       </form>
 
       <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '18px' }}>
-        <a href="/login" style={{ color: t.colors.accent, fontWeight: 600, textDecoration: 'none' }}>Back to sign in</a>
+        <a href={localePath('/login')} style={{ color: t.colors.accent, fontWeight: 600, textDecoration: 'none' }}>{tr('auth.backToSignIn', "Back to sign in")}</a>
       </p>
     </div>
   );

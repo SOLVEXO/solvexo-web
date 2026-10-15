@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CookieConsentCategories } from '@/utils/trackingPixels';
 
 const DEFAULT_MESSAGE = 'We use cookies to improve your experience and for analytics. Choose which categories you allow.';
@@ -39,6 +40,7 @@ export function CookieConsentBanner({
   brandColor?: string;
   onDecide: (consent: CookieConsentCategories) => void;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const [showPreferences, setShowPreferences] = useState(false);
   const [analytics, setAnalytics] = useState(true);
   const [marketing, setMarketing] = useState(true);
@@ -52,7 +54,7 @@ export function CookieConsentBanner({
     >
       <div className={isCorner ? 'p-4 flex flex-col gap-3' : 'px-4 py-3 flex flex-wrap items-center justify-center gap-3'}>
         <p className={isCorner ? 'text-[12.5px]' : 'text-[12.5px] flex-1 min-w-0 max-w-[640px]'} style={{ color: p.text, opacity: 0.92 }}>
-          {message || DEFAULT_MESSAGE}
+          {message || tr('cookies.message', DEFAULT_MESSAGE)}
         </p>
         <div className={isCorner ? 'flex items-center justify-between gap-3' : 'flex items-center gap-3 shrink-0'}>
           <button
@@ -61,7 +63,7 @@ export function CookieConsentBanner({
             className="text-[12px] bg-transparent border-none cursor-pointer underline"
             style={{ color: p.textMuted }}
           >
-            Manage Preferences
+            {tr('cookies.manage', "Manage Preferences")}
           </button>
           <button
             type="button"
@@ -69,7 +71,7 @@ export function CookieConsentBanner({
             className="px-4 py-2 rounded-lg text-[12.5px] font-semibold border-none cursor-pointer shrink-0"
             style={{ background: p.buttonBg, color: p.buttonText }}
           >
-            Reject All
+            {tr('cookies.rejectAll', "Reject All")}
           </button>
           <button
             type="button"
@@ -77,7 +79,7 @@ export function CookieConsentBanner({
             className="px-4 py-2 rounded-lg text-[12.5px] font-semibold border-none cursor-pointer shrink-0"
             style={{ background: p.buttonBg, color: p.buttonText }}
           >
-            Accept All
+            {tr('cookies.acceptAll', "Accept All")}
           </button>
         </div>
       </div>
@@ -86,22 +88,22 @@ export function CookieConsentBanner({
         <div className={isCorner ? 'px-4 pb-4 flex flex-col gap-3' : 'px-4 py-4 mx-auto max-w-[640px] flex flex-col gap-3'} style={{ borderTop: `1px solid ${p.border}` }}>
           <label className="flex items-center justify-between gap-3 text-[12.5px]">
             <span>
-              <span className="font-semibold">Necessary</span>
-              <span style={{ color: p.textMuted }}> — required for the store to function, always on</span>
+              <span className="font-semibold">{tr('cookies.necessary', "Necessary")}</span>
+              <span style={{ color: p.textMuted }}>{tr('cookies.necessaryDesc', " — required for the store to function, always on")}</span>
             </span>
             <input type="checkbox" checked disabled className="shrink-0" />
           </label>
           <label className="flex items-center justify-between gap-3 text-[12.5px]">
             <span>
-              <span className="font-semibold">Analytics</span>
-              <span style={{ color: p.textMuted }}> — helps us understand how visitors use this store</span>
+              <span className="font-semibold">{tr('cookies.analytics', "Analytics")}</span>
+              <span style={{ color: p.textMuted }}>{tr('cookies.analyticsDesc', " — helps us understand how visitors use this store")}</span>
             </span>
             <input type="checkbox" checked={analytics} onChange={e => setAnalytics(e.target.checked)} className="shrink-0" />
           </label>
           <label className="flex items-center justify-between gap-3 text-[12.5px]">
             <span>
-              <span className="font-semibold">Marketing</span>
-              <span style={{ color: p.textMuted }}> — used for ads and retargeting on other platforms</span>
+              <span className="font-semibold">{tr('cookies.marketing', "Marketing")}</span>
+              <span style={{ color: p.textMuted }}>{tr('cookies.marketingDesc', " — used for ads and retargeting on other platforms")}</span>
             </span>
             <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} className="shrink-0" />
           </label>
@@ -111,7 +113,7 @@ export function CookieConsentBanner({
             className="self-end px-4 py-[7px] rounded-lg text-[12px] font-semibold border-none cursor-pointer"
             style={{ background: p.buttonBg, color: p.buttonText }}
           >
-            Save Preferences
+            {tr('cookies.save', "Save Preferences")}
           </button>
         </div>
       )}

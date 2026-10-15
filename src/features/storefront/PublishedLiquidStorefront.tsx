@@ -1,13 +1,47 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
-import { apiGetPublishedLiquidThemeHtml } from '@/api/services/storeTheme';
+import { apiGetPublishedLiquidThemeHtml, apiGetRecommendationsFragment, apiGetVariantProductId } from '@/api/services/liquidTheme';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
+import { apiGetPublicStoreProducts } from '@/api/services/store';
 import { useCartContext } from '@/contexts/CartContext';
+import { useStorefront } from './StorefrontContext';
 import { resolveLiquidStorefrontPath } from './liquidStorefrontRouting';
+import { findChangeTarget, parseAddPayload, parseUpdatePayload, toShopifyCartJson } from './liquidCartAjax';
+import { toShopifySearchJson } from './liquidStoreAjax';
 
 export function PublishedLiquidStorefront({ storeId }: { storeId: string }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const { store } = useStorefront();
   const { cart, addToCart, setQty, removeItem, clearCart } = useCartContext();
+  // Mirrors `cart` for code that needs the value AFTER an awaited mutation settles — a plain closure over
+  // `cart` would still see the pre-mutation value, since React only updates it on the next render.
+  const cartRef = useRef(cart);
+  const cartWaiters = useRef<Array<() => void>>([]);
+  useEffect(() => {
+    cartRef.current = cart;
+    const waiters = cartWaiters.current;
+    cartWaiters.current = [];
+    waiters.forEach((resolve) => resolve());
+  }, [cart]);
+  /** Resolves once `cart` has re-rendered at least once more (a mutation's `setCart` landed), or after a timeout. */
+  const waitForCartUpdate = () => new Promise<void>((resolve) => {
+    cartWaiters.current.push(resolve);
+    setTimeout(resolve, 1500);
+  });
+  // Variant id -> product id, resolved once per variant (Solvexo's cart needs both; a theme's own AJAX calls
+  // usually carry only the variant id, the same way Shopify's `/cart/add.js` does).
+  const variantProductIds = useRef(new Map<string, string>());
+  const resolveProductId = async (variantId: string): Promise<string | null> => {
+    const known = cartRef.current?.items.find((item) => item.productVariantId === variantId)?.productId;
+    if (known) return known;
+    if (variantProductIds.current.has(variantId)) return variantProductIds.current.get(variantId)!;
+    try {
+      const result = await apiGetVariantProductId(variantId, storeId);
+      const productId = result?.data?.product?._id ?? result?.data?.variant?.productId ?? null;
+      if (productId) variantProductIds.current.set(variantId, productId);
+      return productId;
+    } catch { return null; }
+  };
   const [html, setHtml] = useState('');
   const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
   const [loadedKey, setLoadedKey] = useState('');
@@ -95,6 +129,77 @@ export function PublishedLiquidStorefront({ storeId }: { storeId: string }) {
           navigate('/cart');
         })();
       }
+      // A theme's own predictive-search dropdown calling fetch('/search/suggest.json?q=...').
+      if (event.data.type === 'solvexo:store-ajax' && typeof event.data.id === 'string' && event.data.action === 'predictive-search') {
+        const { id, query } = event.data as { id: string; query?: { q?: string; limit?: string } };
+        const reply = (status: number, body: unknown) => frameRef.current?.contentWindow?.postMessage({ type: 'solvexo:store-ajax-reply', id, status, body }, '*');
+        const term = String(query?.q ?? '').trim().slice(0, 200);
+        if (!term) { reply(200, toShopifySearchJson([], store?.baseCurrency ?? 'USD')); return; }
+        const limit = Math.min(10, Math.max(1, Number(query?.limit) || 4));
+        void apiGetPublicStoreProducts(storeId, { search: term, limit })
+          .then((result) => reply(200, toShopifySearchJson(result.data.products, store?.baseCurrency ?? 'USD')))
+          .catch(() => reply(200, toShopifySearchJson([], store?.baseCurrency ?? 'USD')));
+      }
+      // A theme's own "you may also like" widget calling fetch('/recommendations/products.json?section_id=&product_id=&limit=').
+      if (event.data.type === 'solvexo:store-ajax' && typeof event.data.id === 'string' && event.data.action === 'recommendations') {
+        const { id, query } = event.data as { id: string; query?: { section_id?: string; product_id?: string; limit?: string } };
+        const reply = (status: number, html: string) => frameRef.current?.contentWindow?.postMessage({ type: 'solvexo:store-ajax-reply', id, status, html }, '*');
+        const sectionId = String(query?.section_id ?? '');
+        const productId = String(query?.product_id ?? '');
+        if (!sectionId || !productId) { reply(200, ''); return; }
+        void apiGetRecommendationsFragment(storeId, route, sectionId, productId, Number(query?.limit) || 4)
+          .then((html) => reply(200, html))
+          .catch(() => reply(200, ''));
+      }
+      // A theme's own JS calling fetch('/cart/add.js' | '/cart/change.js' | '/cart/update.js' | '/cart/clear.js' | '/cart.js')
+      // — the sandboxed iframe can't reach the network (no connect-src), so its bridge script turns those calls into this
+      // request/reply round trip instead, answered from the SAME cart the rest of the storefront uses.
+      if (event.data.type === 'solvexo:cart-ajax' && typeof event.data.id === 'string' && typeof event.data.action === 'string') {
+        const { id, action, payload } = event.data as { id: string; action: string; payload: unknown };
+        const reply = (status: number, body: unknown) => frameRef.current?.contentWindow?.postMessage({ type: 'solvexo:cart-ajax-reply', id, status, body }, '*');
+        void (async () => {
+          try {
+            if (action === 'get') { reply(200, toShopifyCartJson(cartRef.current)); return; }
+            if (action === 'clear') { await clearCart({ silent: true }); await waitForCartUpdate(); reply(200, toShopifyCartJson(cartRef.current)); return; }
+            if (action === 'add') {
+              const lines = parseAddPayload(payload as Parameters<typeof parseAddPayload>[0]);
+              if (!lines.length) { reply(422, { status: 422, message: 'Nothing to add', description: 'No valid variant/quantity was given.' }); return; }
+              for (const line of lines) {
+                const productId = await resolveProductId(line.variantId);
+                if (!productId) { reply(422, { status: 422, message: 'Not found', description: `Variant ${line.variantId} could not be found.` }); return; }
+                const ok = await addToCart(productId, line.variantId, undefined, line.quantity);
+                if (!ok) { reply(422, { status: 422, message: 'Could not add to cart', description: 'This item could not be added to the cart.' }); return; }
+              }
+              await waitForCartUpdate();
+              reply(200, toShopifyCartJson(cartRef.current));
+              return;
+            }
+            if (action === 'change') {
+              const target = findChangeTarget(cartRef.current, payload as Parameters<typeof findChangeTarget>[1]);
+              const quantity = Number((payload as { quantity?: unknown })?.quantity);
+              if (!target || !Number.isInteger(quantity) || quantity < 0 || quantity > 999) { reply(404, { status: 404, message: 'Not found', description: 'That cart line does not exist.' }); return; }
+              const ok = quantity === 0 ? await removeItem(target.productId, target.productVariantId) : await setQty(target.productId, target.productVariantId, quantity);
+              if (!ok) { reply(422, { status: 422, message: 'Could not update cart' }); return; }
+              await waitForCartUpdate();
+              reply(200, toShopifyCartJson(cartRef.current));
+              return;
+            }
+            if (action === 'update') {
+              const lines = parseUpdatePayload(cartRef.current, payload as Parameters<typeof parseUpdatePayload>[1]);
+              for (const line of lines) {
+                const ok = line.quantity === 0 ? await removeItem(line.item.productId, line.item.productVariantId) : await setQty(line.item.productId, line.item.productVariantId, line.quantity);
+                if (!ok) { reply(422, { status: 422, message: 'Could not update cart' }); return; }
+              }
+              await waitForCartUpdate();
+              reply(200, toShopifyCartJson(cartRef.current));
+              return;
+            }
+            reply(404, { status: 404, message: 'Unknown cart action' });
+          } catch (reason) {
+            reply(500, { status: 500, message: reason instanceof Error ? reason.message : 'Cart request failed' });
+          }
+        })();
+      }
       if (
         event.data.type === 'solvexo:add-to-cart' &&
         typeof event.data.productId === 'string' &&
@@ -113,7 +218,7 @@ export function PublishedLiquidStorefront({ storeId }: { storeId: string }) {
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [addToCart, cart, clearCart, removeItem, setQty, storeId]);
+  }, [addToCart, cart, clearCart, removeItem, setQty, storeId, store]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-slate"><Loader2 size={18} className="animate-spin" /> Loading published theme…</div>;
   if (error) return <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
@@ -122,7 +227,7 @@ export function PublishedLiquidStorefront({ storeId }: { storeId: string }) {
   </div>;
   return <iframe
     ref={frameRef}
-    title="Published Shopify-compatible theme"
+    title="Store theme"
     sandbox="allow-scripts"
     srcDoc={html}
     style={{ height: frameHeight ?? '100vh' }}

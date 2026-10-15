@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { tt } from '@/utils/tStatic';
 import type { Section } from '@/api/services/storefrontTypes';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -38,14 +39,14 @@ function NewsletterSection({ section, colors }: { section: Section; colors: Atel
         </div>
         <div className="flex flex-col gap-3">
         {status === 'done' ? (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.success }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : copyText(section.settings, 'successMessage', "Thank you — you're subscribed.")}</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.success }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : copyText(section.settings, 'successMessage', tt('footer.subscribed', "Thank you — you're subscribed."))}</p>
         ) : (
           <form onSubmit={submit} className="flex flex-col sm:flex-row gap-2 w-full atelier-form">
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(section.settings, 'placeholder', 'Your email')} style={atelierInput} />
-            <AtelierButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0 }}>{copyText(section.settings, 'buttonLabel', 'Subscribe')}</AtelierButton>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(section.settings, 'placeholder', tt('footer.yourEmail', "Your email"))} style={atelierInput} />
+            <AtelierButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0 }}>{copyText(section.settings, 'buttonLabel', tt('footer.subscribe', "Subscribe"))}</AtelierButton>
           </form>
         )}
-        {status === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.danger }}>Something went wrong — try again.</p>}
+        {status === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: colors.danger }}>{tt('footer.error', "Something went wrong — try again.")}</p>}
         </div>
       </div>
     </div>

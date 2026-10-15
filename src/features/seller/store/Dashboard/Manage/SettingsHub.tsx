@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
-  Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell,
+  Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell, Languages,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -20,6 +20,7 @@ import { MetaobjectTypesPage } from './Metaobjects/MetaobjectTypesPage';
 import { ActivityLogTab } from './tabs/ActivityLogTab';
 import { NotificationsHub } from './notifications/NotificationsHub';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
+import { MarketsSettings } from '../Operations/MarketsSettings';
 
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
 const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
@@ -30,6 +31,7 @@ const ALL_TABS: Tab[] = [
   { id: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={13} /> },
   { id: 'domains',       label: 'Domains',           icon: <Globe size={13} /> },
   { id: 'privacy',       label: 'Privacy',           icon: <ShieldCheck size={13} /> },
+  { id: 'markets',       label: 'Markets',           icon: <Languages size={13} /> },
   { id: 'notifications', label: 'Notifications',     icon: <Bell size={13} /> },
   { id: 'billing',      label: 'Billing',      icon: <CreditCard size={13} /> },
   { id: 'integrations', label: 'Integrations', icon: <Plug size={13} /> },
@@ -133,6 +135,7 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
 const TAB_PERMS: Record<string, string[]> = {
   profile: ['settings.general.manage'], 'product-types': ['settings.general.manage'],
   'payment-methods': ['settings.payments.manage'], domains: ['settings.domains.manage'], privacy: ['settings.general.manage'],
+  markets: ['settings.general.manage'],
   billing: ['settings.billing.view', 'settings.billing.manage'], integrations: ['settings.payments.manage', 'settings.shipping.manage'],
   staff: ['staff.manage'], 'custom-fields': ['content.menus.manage', 'content.metaobjects.manage'],
   'content-types': ['content.menus.manage', 'content.metaobjects.manage'], 'activity-log': ['settings.general.manage'],
@@ -271,6 +274,7 @@ export default function SettingsHub() {
         {isVisited('payment-methods')  && <div className={paneClassName('payment-methods')}><PaymentMethodsTab /></div>}
         {isVisited('domains')          && <div className={paneClassName('domains')}><DomainSettingsTab /></div>}
         {isVisited('privacy')          && <div className={paneClassName('privacy')}><PrivacyTab /></div>}
+        {isVisited('markets')          && <div className={paneClassName('markets') + ' px-4 lg:px-7 py-6'}><MarketsSettings embedded /></div>}
         {isVisited('notifications') && (
           <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6'}>
             <NotificationsHub key={storeId} storeId={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />

@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Ruler } from 'lucide-react';
 import { Modal } from '@/components/comman/ui';
 import type { PartTokens } from './ProductPageParts';
@@ -8,9 +9,10 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
 /** Product page "Collapsible tab" block (Shopify Dawn): a title that opens to plain text. */
 export function ProductCollapsibleTab({ settings, tokens }: { settings: Settings; tokens: PartTokens }) {
+  const { t: tr } = useTranslation('storefront');
   const [open, setOpen] = useState(settings.openByDefault === true);
   const panelId = useId();
-  const title = str(settings.title) || 'More information';
+  const title = str(settings.title) || tr('product.moreInfo', "More information");
   const content = str(settings.content);
   if (!content) return null;
   return (
@@ -30,10 +32,11 @@ export function ProductCollapsibleTab({ settings, tokens }: { settings: Settings
   );
 }
 
-/** Product page "Size chart" block: a link that opens a popup with the seller's text and/or image. */
+/** Product page tr('product.sizeChart', "Size chart") block: a link that opens a popup with the seller's text and/or image. */
 export function ProductSizeChart({ settings, tokens }: { settings: Settings; tokens: PartTokens }) {
+  const { t: tr } = useTranslation('storefront');
   const [open, setOpen] = useState(false);
-  const label = str(settings.label) || 'Size chart';
+  const label = str(settings.label) || tr('product.sizeChart', "Size chart");
   const title = str(settings.title) || label;
   const content = str(settings.content);
   const imageUrl = /^https:\/\//i.test(str(settings.imageUrl)) ? str(settings.imageUrl) : '';
@@ -55,10 +58,11 @@ export function ProductSizeChart({ settings, tokens }: { settings: Settings; tok
   );
 }
 
-/** Product page "Buy it now" button: adds this variant and goes straight to checkout. */
+/** Product page tr('product.buyNow', "Buy it now") button: adds this variant and goes straight to checkout. */
 export function ProductBuyNowButton({ settings, tokens, disabled, loading, onBuy }: {
   settings: Settings; tokens: PartTokens; disabled: boolean; loading: boolean; onBuy: () => void;
 }) {
+  const { t: tr } = useTranslation('storefront');
   return (
     <button type="button" onClick={onBuy} disabled={disabled || loading}
       className="w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -67,7 +71,7 @@ export function ProductBuyNowButton({ settings, tokens, disabled, loading, onBuy
         border: `1px solid ${tokens.colors.ink}`, borderRadius: tokens.buttonRadius,
         background: 'transparent', color: tokens.colors.ink,
       }}>
-      {loading ? 'Please wait…' : str(settings.label) || 'Buy it now'}
+      {loading ? tr('common.pleaseWait', "Please wait…") : str(settings.label) || tr('product.buyNow', "Buy it now")}
     </button>
   );
 }

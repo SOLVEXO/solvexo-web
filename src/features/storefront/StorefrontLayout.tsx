@@ -3,12 +3,13 @@ import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
 import { Store } from 'lucide-react';
-import { apiGetPublicStore, apiResolveStoreByDomain, apiSuggestLocationForStore, type PublicStoreData } from '@/api/services/store';
+import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
-import { useCurrencyPreference, CURRENCY_STORAGE_KEY } from '@/contexts/CurrencyPreferenceContext';
+import { StorefrontMarketProvider } from './StorefrontMarketContext';
+import { registerThemeTranslations } from '@/i18n';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { useFavicon } from '@/hooks/useFavicon';
@@ -83,7 +84,6 @@ export function StorefrontLayout() {
   // Preferences" semantics — see the pixel effect below, which now waits on
   // this instead of firing unconditionally.
   const [cookieConsent, setCookieConsent] = useState<CookieConsentCategories | null>(null);
-  const { setCurrency } = useCurrencyPreference();
 
   // Affiliate referral links land here with ?ref=CODE — remembered for
   // checkout attribution (see utils/affiliateAttribution.ts).
@@ -128,31 +128,8 @@ export function StorefrontLayout() {
     return () => { cancelled = true; };
   }, [slug]);
 
-  // Real IP-based currency default — Shopify-style: a first-time visitor to
-  // this store sees prices in their own local currency automatically, no
-  // click needed. Only ever fires when there's genuinely no existing
-  // preference yet (a fresh browser/tab, guest or not-yet-logged-in) — an
-  // explicit choice (this tab) or a logged-in account's own saved preference
-  // (handled inside CurrencyPreferenceContext itself) always wins and this
-  // never overrides either. Best-effort only: any failure (geolocation
-  // unavailable, offline, etc.) silently leaves the existing default in
-  // place, same fail-open convention as every other currency-suggestion call
-  // in this app.
-  useEffect(() => {
-    if (!store?.storeId) return;
-    if (localStorage.getItem(CURRENCY_STORAGE_KEY)) return;
-    let cancelled = false;
-    apiSuggestLocationForStore(store.storeId)
-      .then(res => {
-        if (cancelled) return;
-        const suggested = res.data.suggestedCurrency;
-        if (suggested && !localStorage.getItem(CURRENCY_STORAGE_KEY)) {
-          setCurrency(suggested);
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [store?.storeId, setCurrency]);
+  // First-visit currency default + country/market resolution now live in StorefrontMarketProvider
+  // (market currency when enabled, else the IP suggestion; an explicit buyer choice always wins).
 
   // Real ad-platform pixels (Facebook/Google/TikTok) — the seller's own ids
   // from Marketing → Tracking Pixels, fired straight from this buyer's
@@ -202,6 +179,10 @@ export function StorefrontLayout() {
   }, [redirectUrl]);
 
   const cfg = useMemo(() => resolveStorefrontCfg(theme), [theme]);
+
+  // Active theme's locale bundles merge over the shared storefront strings.
+  const activeThemeId = theme?.themeDefinitionId && NEW_THEME_REGISTRY[theme.themeDefinitionId] ? theme.themeDefinitionId : DEFAULT_THEME_ID;
+  useEffect(() => { registerThemeTranslations(activeThemeId); }, [activeThemeId]);
 
   const contextValue: StorefrontContextValue | null = useMemo(() => {
     if (!store) return null;
@@ -258,6 +239,7 @@ export function StorefrontLayout() {
     const Gate = impl.GatePage;
     return (
       <StorefrontProvider value={contextValue}>
+       <StorefrontMarketProvider storeId={store.storeId} allowedCurrencies={store.enabledCurrencies}>
         <Gate
           store={store}
           onUnlocked={() => {
@@ -265,11 +247,13 @@ export function StorefrontLayout() {
             apiGetPublicStoreTheme(store.storeId).then(r => setTheme(r.data)).catch(() => setError('Store not found'));
           }}
         />
+       </StorefrontMarketProvider>
       </StorefrontProvider>
     );
   }
   return (
     <StorefrontProvider value={contextValue}>
+     <StorefrontMarketProvider storeId={store.storeId} allowedCurrencies={store.enabledCurrencies}>
       <CartProvider storeId={store.storeId}>
         <WishlistProvider storeId={store.storeId}>
           {theme?.sourcePackageVersion != null && liquidRoute
@@ -286,6 +270,7 @@ export function StorefrontLayout() {
           )}
         </WishlistProvider>
       </CartProvider>
+     </StorefrontMarketProvider>
     </StorefrontProvider>
   );
 }

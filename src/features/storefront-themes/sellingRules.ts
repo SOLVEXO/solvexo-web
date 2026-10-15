@@ -1,3 +1,4 @@
+import { ts } from '@/utils/tStatic';
 /** Seller-set order quantity rules (minimum / maximum / multiples of) read off a product; missing = 1 / no cap / 1. */
 export interface QtyRules { min: number; max: number; step: number }
 
@@ -20,13 +21,13 @@ export const clampQty = (q: number, r: QtyRules): number => {
 
 export function qtyRuleHint(r: QtyRules): string | null {
   const parts: string[] = [];
-  if (r.min > 1) parts.push(`Minimum ${r.min}`);
-  if (r.step > 1) parts.push(`sold in multiples of ${r.step}`);
+  if (r.min > 1) parts.push(ts('product.minQty', 'Minimum {{count}}', { count: r.min }));
+  if (r.step > 1) parts.push(ts('product.stepQty', 'sold in multiples of {{count}}', { count: r.step }));
   return parts.length ? parts.join(', ') : null;
 }
 
 export function preorderLabel(p: { preorder?: { enabled?: boolean; availableOn?: string | null } | null } | null | undefined): string | null {
   if (!p?.preorder?.enabled) return null;
   const d = p.preorder.availableOn ? new Date(p.preorder.availableOn) : null;
-  return d && !Number.isNaN(d.getTime()) ? `Pre-order — ships from ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Pre-order';
+  return d && !Number.isNaN(d.getTime()) ? ts('product.preorderShips', 'Pre-order — ships from {{date}}', { date: d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) }) : ts('product.preorder', 'Pre-order');
 }

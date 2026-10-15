@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Download } from 'lucide-react';
 import { apiGetDownloadLink } from '@/api/services/orders';
 import { BADGE_TONE_COLOR, type OrderBadgeInfo } from './orderUi';
@@ -21,6 +22,7 @@ export function OrderBadge({ badge, fontFamily, radius = '2px' }: { badge: Order
 export function OrderDownloadLink({ orderId, productId, color, fontFamily, fontWeight = 600 }: {
   orderId: string; productId: string; color: string; fontFamily: string; fontWeight?: number;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const handle = async () => {
@@ -31,13 +33,13 @@ export function OrderDownloadLink({ orderId, productId, color, fontFamily, fontW
       const base = import.meta.env.VITE_API_URL as string;
       window.open(`${base}${res.data.endpoint}?token=${res.data.token}`, '_blank');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Download failed.');
+      setError(err instanceof Error ? err.message : tr('orders.err.download', "Download failed."));
     } finally { setBusy(false); }
   };
   return (
     <span className="inline-flex flex-col items-start">
       <button type="button" onClick={handle} disabled={busy} className="flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0" style={{ fontFamily, fontSize: '11.5px', fontWeight, color }}>
-        {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} Download
+        {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} {tr('orders.download', "Download")}
       </button>
       {error && <span role="alert" style={{ fontFamily, fontSize: '11px', color: BADGE_TONE_COLOR.danger }}>{error}</span>}
     </span>

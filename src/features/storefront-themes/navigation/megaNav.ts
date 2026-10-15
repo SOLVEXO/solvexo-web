@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import type { StorefrontLinkSettings, StorefrontNavItemSettings, ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
 import type { CategoryNode } from '@/api/services/categories';
 import type { PublicCollectionSummary } from '@/api/services/collections';
+import { localizeMenuItemLabel } from '@/utils/localize';
 
 /** Theme-agnostic navigation logic shared by every theme's navbar. The
  *  PRESENTATION (a mega panel, its columns, tiles, motion, the mobile
@@ -41,6 +42,7 @@ export function normalizeNavItems(
   resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string },
   lookup: NavImageLookup = EMPTY_LOOKUP,
   idPrefix = 'nav',
+  locale = 'en',
 ): ResolvedStorefrontNavItem[] {
   return items.map((item, index) => {
     const id = item.id || `${idPrefix}-${index}`;
@@ -49,11 +51,11 @@ export function normalizeNavItems(
       : undefined;
     return {
       id,
-      label: item.label,
+      label: localizeMenuItemLabel(item, locale),
       link: resolveLink(item),
       menuStyle: item.menuStyle === 'mega' ? 'mega' : 'dropdown',
       imageUrl: item.imageUrl || linkedImage || null,
-      children: normalizeNavItems(item.children ?? [], resolveLink, lookup, id),
+      children: normalizeNavItems(item.children ?? [], resolveLink, lookup, id, locale),
     };
   });
 }

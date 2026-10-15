@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, ImageOff, Loader2, Download } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -35,6 +36,7 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
  *  the cart via `collection-template`'s `page`/`cart` bucket), just Nova's
  *  own rounded/bold presentation instead of Atelier's sharp-cornered one. */
 export function NovaCartPage() {
+  const { t: tr } = useTranslation('storefront');
   useStorefrontSeo({ title: 'Cart', noindex: true });
   const navigate = useNavigate();
   const { store } = useStorefront();
@@ -79,14 +81,14 @@ export function NovaCartPage() {
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '32px' }}>
-        Your Cart
+        {tr('cart.cartTitle', "Your Cart")}
       </h1>
 
       {error && (
         <div className="mb-6 flex items-center justify-between gap-3" style={{ border: `1.5px solid ${t.colors.danger}`, borderRadius: t.radius.sm, padding: '12px 16px' }}>
           <span style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{error}</span>
           <button onClick={clearError} className="cursor-pointer border-0 bg-transparent" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger, fontWeight: 700 }}>
-            Dismiss
+            {tr('cart.dismiss', "Dismiss")}
           </button>
         </div>
       )}
@@ -94,12 +96,12 @@ export function NovaCartPage() {
       {isEmpty && (
         <div className="flex flex-col items-center text-center" style={{ padding: '80px 0', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md }}>
           <ShoppingBag size={32} style={{ color: t.colors.inkMuted }} className="mb-4" />
-          <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>Your cart is empty</p>
+          <p style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>{tr('cart.cartEmpty', "Your cart is empty")}</p>
           <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, maxWidth: '340px', lineHeight: 1.6, marginBottom: '20px' }}>
-            Nothing here yet — browse the shop to find something you'll love.
+            {tr('cart.cartEmptyHint', "Nothing here yet — browse the shop to find something you'll love.")}
           </p>
           <Link to="/#shop" className="no-underline">
-            <NovaButton variant="outline">Continue Shopping</NovaButton>
+            <NovaButton variant="outline">{tr('cart.continueShopping', "Continue Shopping")}</NovaButton>
           </Link>
         </div>
       )}
@@ -143,17 +145,17 @@ export function NovaCartPage() {
                       <p style={{ fontFamily: t.fonts.body, fontSize: '14px', fontWeight: 600, color: t.colors.ink }}>{item.name}</p>
                       {item.type === 'digital' && (
                         <span className="shrink-0 flex items-center gap-1 px-2 py-[2px]" style={{ background: t.colors.bgAlt, fontSize: '10px', color: t.colors.inkMuted, borderRadius: '9999px' }}>
-                          <Download size={9} /> Digital
+                          <Download size={9} /> {tr('cart.digital', "Digital")}
                         </span>
                       )}
                     </div>
-                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginBottom: '10px' }}>{money(price)} each</p>
+                    <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginBottom: '10px' }}>{money(price)} {tr('cart.each', "each")}</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: '9999px' }}>
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                           disabled={item.quantity <= 1 || isUpdating}
-                          aria-label={`Decrease quantity of ${item.name}`}
+                          aria-label={tr('cart.decreaseQty', 'Decrease quantity of {{name}}', { name: item.name })}
                           className="w-8 h-8 flex items-center justify-center bg-transparent border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           style={{ color: t.colors.ink }}
                         >
@@ -165,7 +167,7 @@ export function NovaCartPage() {
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'increase')}
                           disabled={isUpdating}
-                          aria-label={`Increase quantity of ${item.name}`}
+                          aria-label={tr('cart.increaseQty', 'Increase quantity of {{name}}', { name: item.name })}
                           className="w-8 h-8 flex items-center justify-center bg-transparent border-0 cursor-pointer disabled:opacity-40"
                           style={{ color: t.colors.ink }}
                         >
@@ -178,7 +180,7 @@ export function NovaCartPage() {
                         className="flex items-center gap-1 bg-transparent border-0 cursor-pointer"
                         style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}
                       >
-                        {isRemoving ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} Remove
+                        {isRemoving ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} {tr('cart.remove', "Remove")}
                       </button>
                     </div>
                   </div>
@@ -195,14 +197,14 @@ export function NovaCartPage() {
                   className="flex items-center gap-1.5 bg-transparent border-0 cursor-pointer"
                   style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}
                 >
-                  {clearing ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} Clear Cart
+                  {clearing ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} {tr('cart.clearCart', "Clear Cart")}
                 </button>
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-5" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '24px' }}>
-            <p style={{ fontFamily: t.fonts.display, fontSize: '17px', fontWeight: 700, color: t.colors.ink }}>Order Summary</p>
+            <p style={{ fontFamily: t.fonts.display, fontSize: '17px', fontWeight: 700, color: t.colors.ink }}>{tr('cart.orderSummary', "Order Summary")}</p>
 
             {!loading && (
               <div className="flex flex-col gap-2">
@@ -223,12 +225,12 @@ export function NovaCartPage() {
             <div style={{ height: '1.5px', background: t.colors.border }} />
 
             <div className="flex justify-between items-baseline">
-              <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.ink }}>Total</span>
+              <span style={{ fontFamily: t.fonts.body, fontSize: '15px', color: t.colors.ink }}>{tr('cart.total', "Total")}</span>
               <span style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink }}>{money(displayTotal)}</span>
             </div>
 
             <NovaButton style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/checkout')}>
-              Checkout
+              {tr('cart.checkout', "Checkout")}
             </NovaButton>
           </div>
         </div>

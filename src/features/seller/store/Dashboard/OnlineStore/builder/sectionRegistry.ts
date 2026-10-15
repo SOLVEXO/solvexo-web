@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
+﻿import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 
@@ -522,6 +522,14 @@ export const SECTION_META: SectionMeta[] = [
 
 export const SECTION_META_BY_TYPE: Record<SectionType, SectionMeta> = Object.fromEntries(SECTION_META.map(m => [m.type, m])) as Record<SectionType, SectionMeta>;
 
+export const FOOTER_WIDTH_OPTIONS = [
+  { value: 'auto', label: 'Automatic (share the row)' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'third', label: 'One third' },
+  { value: 'half', label: 'Half' },
+  { value: 'full', label: 'Full width' },
+];
+
 // ── Block settings schemas ──────────────────────────────────────────────────
 // Every block type below drives `SchemaForm` in `BlockFields.tsx`, keyed by
 // its `type` string — `nav_link`/`footer_column` are the one deliberate
@@ -584,25 +592,30 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'text', kind: 'text', label: 'Copyright text', hint: "Leave blank to show a default © line with your store name." },
   ],
   footer_text: [
+    { key: 'width', kind: 'select', label: 'Column width', options: FOOTER_WIDTH_OPTIONS },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'About us' },
     { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 600 },
   ],
   footer_brand: [
+    { key: 'width', kind: 'select', label: 'Column width', options: FOOTER_WIDTH_OPTIONS },
     { key: 'text', kind: 'textarea', label: 'About text', rows: 3, maxLength: 600, hint: 'Shown under your logo. The logo itself is set in Footer settings below.' },
     { key: 'showTagline', kind: 'checkbox', label: 'Show store tagline' },
     { key: 'showSocial', kind: 'checkbox', label: 'Show social icons', hint: 'Add Social link blocks to choose which icons appear.' },
   ],
   footer_newsletter: [
+    { key: 'width', kind: 'select', label: 'Column width', options: FOOTER_WIDTH_OPTIONS },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Stay in the loop' },
     { key: 'text', kind: 'textarea', label: 'Text', rows: 2, maxLength: 160 },
   ],
   footer_image: [
+    { key: 'width', kind: 'select', label: 'Column width', options: FOOTER_WIDTH_OPTIONS },
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60 },
     { key: 'alt', kind: 'text', label: 'Image description (alt text)', maxLength: 120 },
     { key: 'width', kind: 'number', label: 'Width (px)', min: 40, max: 400, step: 10 },
   ],
   footer_contact: [
+    { key: 'width', kind: 'select', label: 'Column width', options: FOOTER_WIDTH_OPTIONS },
     { key: 'heading', kind: 'text', label: 'Column title', placeholder: 'Contact', maxLength: 60 },
     { key: 'email', kind: 'text', label: 'Email', placeholder: 'hello@yourstore.com', maxLength: 120, half: true },
     { key: 'phone', kind: 'text', label: 'Phone', placeholder: '+92 300 1234567', maxLength: 40, half: true },

@@ -61,5 +61,13 @@ export function useCustomerEmailSettings(storeId: string) {
     setSettings(res.data);
   }, [storeId]);
 
-  return { settings, loading, loadError, rowError, reload, toggleEmail, saveEmail, saveLook };
+  /** Save (or, with null, remove) one email's text for one language. Sends only this change; rejects with the server's message. */
+  const saveTranslation = useCallback(async (key: string, locale: string, value: { subject: string; body: string } | null) => {
+    const res = await apiUpdateStoreNotificationSettings(storeId, {
+      eventTranslations: { [key]: { [locale]: value ? { subject: value.subject, body: value.body } : { reset: true } } },
+    });
+    setSettings(res.data);
+  }, [storeId]);
+
+  return { settings, loading, loadError, rowError, reload, toggleEmail, saveEmail, saveLook, saveTranslation };
 }

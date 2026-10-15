@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { AlertCircle, Package } from 'lucide-react';
 import { apiGetOrderByStatusToken, type OrderDetail } from '@/api/services/orders';
@@ -29,6 +30,7 @@ export interface OrderStatusLook {
  *  confirmation email via `/order-status/:token`, no login required. Same
  *  content as the account Order page minus Buy again / returns / downloads. */
 export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
+  const { t: tr } = useTranslation('storefront');
   const { token = '' } = useParams<{ token: string }>();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
         if (cancelled) return;
         const status = (err as { response?: { status?: number } })?.response?.status;
         if (status === 404 || status === 403 || status === 400 || status === 410) setNotFound(true);
-        else setError(err instanceof Error ? err.message : 'Could not load this order.');
+        else setError(err instanceof Error ? err.message : tr('orders.err.loadOne', "Could not load this order."));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -69,17 +71,17 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
     content = (
       <div className="flex flex-col items-center text-center" style={emptyBox}>
         <Package size={26} style={{ color: t.colors.inkMuted, marginBottom: '12px' }} />
-        <p style={{ fontFamily: t.fonts.display, fontSize: '15px', fontWeight: t.headingWeight, color: t.colors.ink }}>We couldn't find this order</p>
-        <p style={{ ...muted, marginTop: '6px' }}>This link may be invalid or expired. Check the link in your order confirmation email.</p>
-        <Link to="/" className="underline" style={{ ...body, marginTop: '10px' }}>Continue shopping</Link>
+        <p style={{ fontFamily: t.fonts.display, fontSize: '15px', fontWeight: t.headingWeight, color: t.colors.ink }}>{tr('orders.statusNotFound', "We couldn't find this order")}</p>
+        <p style={{ ...muted, marginTop: '6px' }}>{tr('orders.statusInvalidLink', "This link may be invalid or expired. Check the link in your order confirmation email.")}</p>
+        <Link to="/" className="underline" style={{ ...body, marginTop: '10px' }}>{tr('cart.continueShoppingLower', "Continue shopping")}</Link>
       </div>
     );
   } else if (error || !order) {
     content = (
       <div role="alert" className="flex flex-col items-center text-center" style={emptyBox}>
         <AlertCircle size={26} style={{ color: t.colors.danger, marginBottom: '12px' }} />
-        <p style={body}>{error || 'Could not load this order.'}</p>
-        <button type="button" onClick={retry} className="cursor-pointer bg-transparent" style={{ ...btn, marginTop: '14px' }}>Try again</button>
+        <p style={body}>{error || tr('orders.err.loadOne', "Could not load this order.")}</p>
+        <button type="button" onClick={retry} className="cursor-pointer bg-transparent" style={{ ...btn, marginTop: '14px' }}>{tr('orders.tryAgain', "Try again")}</button>
       </div>
     );
   } else {
@@ -114,10 +116,10 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
           </div>
         </div>
 
-        <section style={card} aria-label="Order status">
+        <section style={card} aria-label={tr('orders.statusAria', tr('orders.statusAria', "Order status"))}>
           <ol className="flex items-start justify-between gap-2" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {timeline.map(step => {
-              const cancelled = step.label === 'Cancelled';
+              const cancelled = step.label === tr('order.cancelled', "Cancelled");
               const color = cancelled ? BADGE_TONE_COLOR.danger : step.done ? t.colors.ink : t.colors.inkMuted;
               return (
                 <li key={step.label} className="flex-1 min-w-0" style={{ opacity: step.done ? 1 : 0.55 }}>
@@ -133,7 +135,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
         <OrderShipments order={order} look={look} />
 
         <section style={card}>
-          <p style={h2}>Items</p>
+          <p style={h2}>{tr('orders.items', "Items")}</p>
           {subs.flatMap(s => s.items ?? []).map((item, i) => (
             <div key={item.itemId ?? item._id ?? i} className="flex items-start gap-3" style={{ padding: '12px 0', borderTop: i === 0 ? 'none' : `${bw} solid ${t.colors.border}` }}>
               <div className="shrink-0 flex items-center justify-center" style={{ width: '56px', height: '56px', background: t.colors.bgAlt, borderRadius: t.radius, overflow: 'hidden' }}>
@@ -146,9 +148,9 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
                 )}
                 <p style={{ ...muted, marginTop: '2px' }}>{money(item.price)} x {item.quantity}</p>
                 {(item.refundedAmount ?? 0) > 0 && (
-                  <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Refunded {money(item.refundedAmount ?? 0)}</p>
+                  <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>{tr('orders.refundedAmount', 'Refunded {{amount}}', { amount: money(item.refundedAmount ?? 0) })}</p>
                 )}
-                {item.status === 'cancelled' && <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>Cancelled</p>}
+                {item.status === 'cancelled' && <p style={{ ...muted, color: BADGE_TONE_COLOR.danger, marginTop: '2px' }}>{tr('order.cancelled', "Cancelled")}</p>}
               </div>
               <p className="shrink-0" style={{ ...body, fontWeight: t.headingWeight }}>{money(item.totalPrice)}</p>
             </div>
@@ -156,17 +158,17 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
         </section>
 
         <section style={card}>
-          <p style={h2}>Order summary</p>
-          {row('Subtotal', money(orderDisplaySubtotal(order)))}
+          <p style={h2}>{tr('orders.summary', "Order summary")}</p>
+          {row(tr('checkout.subtotal', "Subtotal"), money(orderDisplaySubtotal(order)))}
           {promotionSavings > 0 && (
-            <p style={{ ...muted, fontSize: '11.5px', padding: '2px 0 3px' }}>Includes {money(promotionSavings)} in promotional savings</p>
+            <p style={{ ...muted, fontSize: '11.5px', padding: '2px 0 3px' }}>{tr('orders.promoSavings', 'Includes {{amount}} in promotional savings', { amount: money(promotionSavings) })}</p>
           )}
           {discounts.map(d => row(d.label, `-${money(d.amount)}`))}
-          {row('Shipping', money(order.shippingFee))}
-          {row('Tax', money(order.taxAmount))}
-          {(order.includedTaxAmount ?? 0) > 0 && row('Including taxes', money(order.includedTaxAmount ?? 0))}
+          {row(tr('checkout.shipping', "Shipping"), money(order.shippingFee))}
+          {row(tr('checkout.tax', "Tax"), money(order.taxAmount))}
+          {(order.includedTaxAmount ?? 0) > 0 && row(tr('checkout.includingTaxes', "Including taxes"), money(order.includedTaxAmount ?? 0))}
           <div style={{ borderTop: `${bw} solid ${t.colors.border}`, marginTop: '8px', paddingTop: '8px' }}>
-            {row('Total', money(order.totalAmount), true)}
+            {row(tr('checkout.total', "Total"), money(order.totalAmount), true)}
           </div>
         </section>
 
@@ -175,27 +177,27 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
             <OrderPickupLocation order={order} look={look} />
           ) : (
             <section style={{ ...card, marginBottom: 0 }}>
-              <p style={h2}>Shipping address</p>
+              <p style={h2}>{tr('orders.shippingAddress', "Shipping address")}</p>
               {addr.name || addr.lines.length > 0 ? (
                 <>
                   {addr.name && <p style={{ ...body, fontWeight: t.headingWeight }}>{addr.name}</p>}
                   {addr.lines.map(l => <p key={l} style={{ ...muted, marginTop: '2px' }}>{l}</p>)}
                 </>
-              ) : <p style={muted}>No shipping address.</p>}
+              ) : <p style={muted}>{tr('orders.noShippingAddress', "No shipping address.")}</p>}
             </section>
           )}
           <section style={{ ...card, marginBottom: 0 }}>
-            <p style={h2}>Payment</p>
+            <p style={h2}>{tr('orders.payment', "Payment")}</p>
             <p style={body}>{method || '-'}</p>
             <div style={{ marginTop: '8px' }}><OrderBadge badge={derivePaymentBadge(order)} fontFamily={t.fonts.body} radius={t.pillRadius} /></div>
           </section>
         </div>
 
-        <section style={{ ...card, marginTop: '24px', marginBottom: 0 }} aria-label="Create an account">
-          <p style={body}>Want to track all your orders in one place? Create an account with the same email.</p>
+        <section style={{ ...card, marginTop: '24px', marginBottom: 0 }} aria-label={tr('orders.createAccountAria', tr('orders.createAccountAria', "Create an account"))}>
+          <p style={body}>{tr('orders.trackAll', "Want to track all your orders in one place? Create an account with the same email.")}</p>
           <div className="flex items-center gap-3 flex-wrap" style={{ marginTop: '12px' }}>
-            <Link to="/register" className="no-underline" style={{ ...btn, background: t.colors.ink, color: t.colors.bg, border: `${bw} solid ${t.colors.ink}` }}>Create account</Link>
-            <Link to="/login" className="no-underline" style={btn}>Sign in</Link>
+            <Link to="/register" className="no-underline" style={{ ...btn, background: t.colors.ink, color: t.colors.bg, border: `${bw} solid ${t.colors.ink}` }}>{tr('orders.createAccountBtn', "Create account")}</Link>
+            <Link to="/login" className="no-underline" style={btn}>{tr('auth.signInLink', "Sign in")}</Link>
           </div>
         </section>
       </>

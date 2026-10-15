@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown,
+  Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Languages,
   ClipboardList, Megaphone, Star, Search, Wallet, HelpCircle, Inbox, SlidersHorizontal,
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
@@ -24,8 +24,7 @@ import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/co
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { FEATURES } from '@/constants/features';
-import { ViewAsBanner } from './ViewAsBanner';
-import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
+import { ViewAsBanner } from './ViewAsBanner';import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {
@@ -166,6 +165,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog',      requiredPermission: 'onlinestore.content.manage' },
       // { id: 'online-store-apps',      Icon: Blocks,     label: 'Apps',      path: 'online-store/apps',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
+      { id: 'online-store-translations', Icon: Languages, label: 'Translate & adapt', path: 'online-store/translations', requiredPermission: 'onlinestore.content.manage' },
       // Moved out of Marketing.tsx — these three are store-content/design
       // features (no promotion/targeting/scheduling logic tying them to
       // Marketing), matching where Shopify itself puts banners/announcement
@@ -1141,6 +1141,7 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const [store,   setStore]   = useState<StoreData | null>(() => readCachedStore(storeId));
   const [loading, setLoading] = useState(() => readCachedStore(storeId) === null);
   const [error,   setError]   = useState('');
+  const [denied,  setDenied]  = useState(false);
   const [tick,    setTick]    = useState(0);
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
 
@@ -1173,14 +1174,25 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
       // should never blank the workspace back to a loading state.
       if (!cancelled) setLoading(readCachedStore(storeId) === null);
       setError('');
+      setDenied(false);
       try {
         const res = await apiGetStoreById(storeId);
+        // Owners / the store's own staff / admins get the full record (with `sellerId`);
+        // anyone else only gets the public projection, which has none.
+        if (!cancelled && !res.data?.sellerId) {
+          try { window.localStorage.removeItem(`solvexo:store:${storeId}`); } catch { /* non-critical */ }
+          setStore(null);
+          setDenied(true);
+          return;
+        }
         if (!cancelled) {
           setStore(res.data);
           try { window.localStorage.setItem(`solvexo:store:${storeId}`, JSON.stringify(res.data)); } catch { /* non-critical */ }
         }
       } catch (err: unknown) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store.');
+        const msg = err instanceof Error ? err.message : 'Failed to load store.';
+        if (!cancelled && /not found|unauthori[sz]ed|forbidden/i.test(msg)) setDenied(true);
+        else if (!cancelled) setError(msg);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -1191,6 +1203,9 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   }, [storeId, tick]);
 
   const refetch = () => setTick(t => t + 1);
+
+  // Not this account's store: leave the workspace entirely (URL changes too, so the wrong link is obvious).
+  if (denied) return <Navigate to={`/access-denied?store=${encodeURIComponent(storeId)}`} replace />;
 
   return (
     <StoreWorkspaceCtx.Provider value={{ store, storeId, loading, error, refetch, entitlements }}>
@@ -1421,6 +1436,8 @@ export const ROUTE_RULES: { test: RegExp; permission: string | string[] }[] = [
   { test: /^staff(\/|$)/, permission: 'staff.manage' },
   { test: /^online-store\/contact-messages/, permission: 'onlinestore.content.manage' },
   { test: /^online-store\/preferences/, permission: ['onlinestore.content.manage', 'settings.general.manage'] },
+  { test: /^settings\/markets/, permission: 'settings.general.manage' },
+  { test: /^online-store\/translations/, permission: 'onlinestore.content.manage' },
 ];
 
 /** What a staff member needs to open this page: a ROUTE_RULES match wins, then the sidebar item that owns the URL.

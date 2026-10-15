@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Monitor, RotateCcw, Send, Smartphone, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button, Input, Textarea } from '@/components/comman/ui';
@@ -17,12 +17,16 @@ interface Props {
   onClose: () => void;
   /** Saves (or resets) this email's text; rejects with the server's message. */
   onSave: (key: string, change: { subject?: string; body?: string; reset?: boolean }) => Promise<void>;
+  /** Optional language switcher shown under the title (English is edited here; other languages by EmailTranslationEditor). */
+  headerExtra?: ReactNode;
+  /** Reports unsaved edits so a language switch can ask before discarding them. */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 type PreviewState = { key: string; data?: CustomerEmailPreview; error?: string } | null;
 
 /** Edit one customer email: subject + message on the left, a live preview of exactly what the customer gets on the right. */
-export function EmailEditorPanel({ storeId, email, onClose, onSave }: Props) {
+export function EmailEditorPanel({ storeId, email, onClose, onSave, headerExtra, onDirtyChange }: Props) {
   const initialSubject = email.subject ?? email.defaultSubject;
   const initialBody = email.body ?? email.defaultBody;
   const [subject, setSubject] = useState(initialSubject);
@@ -38,6 +42,8 @@ export function EmailEditorPanel({ storeId, email, onClose, onSave }: Props) {
   const dirty = subject !== initialSubject || body !== initialBody;
   const draftKey = `${subject}\u0000${body}`;
   const previewLoading = preview?.key !== draftKey;
+
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
 
   // Live preview: re-render a moment after the seller stops typing. A stale answer is ignored.
   useEffect(() => {
@@ -97,6 +103,7 @@ export function EmailEditorPanel({ storeId, email, onClose, onSave }: Props) {
         <div className="min-w-0">
           <h3 className="text-[15px] font-bold text-carbon">{email.label}</h3>
           <p className="text-[12px] text-slate mt-0.5">{email.description}</p>
+          {headerExtra && <div className="mt-2">{headerExtra}</div>}
         </div>
         <button type="button" onClick={requestClose} aria-label="Close" className="text-slate hover:text-charcoal bg-transparent border-0 cursor-pointer p-1"><X size={18} /></button>
       </div>

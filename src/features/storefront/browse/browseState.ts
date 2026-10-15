@@ -1,3 +1,4 @@
+import { tt } from '@/utils/tStatic';
 import type { PublicStoreProductsParams } from '@/api/services/store';
 
 /**
@@ -46,17 +47,17 @@ const URL_TO_SORT: Record<string, BrowseSort> = {
 };
 
 export const SORT_OPTIONS: { value: BrowseSort; label: string }[] = [
-  { value: 'newest', label: 'Featured' },
-  { value: 'best_selling', label: 'Best selling' },
-  { value: 'best_rated', label: 'Best rated' },
-  { value: 'title_asc', label: 'Alphabetically, A-Z' },
-  { value: 'title_desc', label: 'Alphabetically, Z-A' },
-  { value: 'price_asc', label: 'Price, low to high' },
-  { value: 'price_desc', label: 'Price, high to low' },
-  { value: 'oldest', label: 'Date, old to new' },
+  { value: 'newest', label: tt('browse.sort.featured', "Featured") },
+  { value: 'best_selling', label: tt('browse.sort.bestSelling', "Best selling") },
+  { value: 'best_rated', label: tt('browse.sort.bestRated', "Best rated") },
+  { value: 'title_asc', label: tt('browse.sort.az', "Alphabetically, A-Z") },
+  { value: 'title_desc', label: tt('browse.sort.za', "Alphabetically, Z-A") },
+  { value: 'price_asc', label: tt('browse.sort.priceLow', "Price, low to high") },
+  { value: 'price_desc', label: tt('browse.sort.priceHigh', "Price, high to low") },
+  { value: 'oldest', label: tt('browse.sort.dateOld', "Date, old to new") },
 ];
 
-export const PRODUCT_TYPE_LABEL: Record<string, string> = { physical: 'Physical', digital: 'Digital', educational: 'Educational' };
+export const PRODUCT_TYPE_LABEL: Record<string, string> = { physical: tt('browse.type.physical', "Physical"), digital: tt('browse.type.digital', "Digital"), educational: tt('browse.type.educational', "Educational") };
 
 const K_AVAIL = 'filter.v.availability';
 const K_GTE = 'filter.v.price.gte';

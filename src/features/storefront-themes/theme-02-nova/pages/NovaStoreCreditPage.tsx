@@ -1,4 +1,5 @@
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback } from 'react';
 import { Wallet, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -13,8 +14,9 @@ const LIMIT = 10;
 /** Theme 02's Store credit page: ported 1:1 from `AtelierStoreCreditPage`,
  *  restyled with Nova's rounded/pill vocabulary. */
 export function NovaStoreCreditPage() {
+  const { t: tr } = useTranslation('storefront');
   useRequireRealAccount();
-  useStorefrontSeo({ title: 'Store credit', noindex: true });
+  useStorefrontSeo({ title: tr('checkout.storeCredit', tr('checkout.storeCredit', "Store credit")), noindex: true });
   const { store } = useStorefront();
   const [data, setData] = useState<StoreCreditAccount | null>(null);
   const [page, setPage] = useState(1);
@@ -30,7 +32,7 @@ export function NovaStoreCreditPage() {
     setError('');
     apiGetMyStoreCredit(store.storeId, { page, limit: LIMIT })
       .then(res => { if (!cancelled) setData(res.data); })
-      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load your store credit.'); })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : tr('credit.err.load', "Could not load your store credit.")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [store.storeId, page, attempt]);
@@ -44,7 +46,7 @@ export function NovaStoreCreditPage() {
   return (
     <main className="mx-auto" style={{ maxWidth: '720px', padding: `48px ${t.layout.containerPadX}` }}>
       <h1 style={{ fontFamily: t.fonts.display, fontSize: '26px', fontWeight: 700, color: t.colors.ink, marginBottom: '28px' }}>
-        Store credit
+        {tr('checkout.storeCredit', tr('checkout.storeCredit', "Store credit"))}
       </h1>
 
       {loading && !data ? (
@@ -60,7 +62,7 @@ export function NovaStoreCreditPage() {
       ) : (
         <>
           <section style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '24px', marginBottom: '32px' }}>
-            <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted }}>Available balance</p>
+            <p style={{ fontFamily: t.fonts.body, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.colors.inkMuted }}>{tr('credit.available', "Available balance")}</p>
             <p style={{ fontFamily: t.fonts.display, fontSize: '32px', fontWeight: 700, color: t.colors.ink, marginTop: '4px' }}>
               {money(data?.balance ?? 0)}
             </p>
@@ -74,17 +76,17 @@ export function NovaStoreCreditPage() {
             </p>
           </section>
 
-          <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 700, color: t.colors.ink, marginBottom: '16px' }}>History</p>
+          <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 700, color: t.colors.ink, marginBottom: '16px' }}>{tr('credit.history', "History")}</p>
           {error && (
             <div role="alert" className="flex items-center gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.danger, marginBottom: '12px' }}>
               <AlertCircle size={13} /> {error}
-              <button type="button" onClick={retry} className="cursor-pointer bg-transparent underline" style={{ color: t.colors.ink, border: 'none' }}>Retry</button>
+              <button type="button" onClick={retry} className="cursor-pointer bg-transparent underline" style={{ color: t.colors.ink, border: 'none' }}>{tr('orders.retry', "Retry")}</button>
             </div>
           )}
           {!txs || txs.items.length === 0 ? (
             <div className="flex flex-col items-center text-center" style={{ padding: '48px 0', border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md }}>
               <Wallet size={26} style={{ color: t.colors.inkMuted, marginBottom: '12px' }} />
-              <p style={{ fontFamily: t.fonts.display, fontSize: '15px', fontWeight: 700, color: t.colors.ink }}>No store credit activity yet</p>
+              <p style={{ fontFamily: t.fonts.display, fontSize: '15px', fontWeight: 700, color: t.colors.ink }}>{tr('credit.none', "No store credit activity yet")}</p>
               <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
                 Credit from refunds or {store.name} will show up here.
               </p>
@@ -114,9 +116,9 @@ export function NovaStoreCreditPage() {
 
           {txs && totalPages > 1 && (
             <div className="flex items-center justify-between" style={{ marginTop: '16px', fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
-              <button type="button" disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)} className="cursor-pointer bg-transparent disabled:opacity-40 disabled:cursor-not-allowed" style={pillBtn}>Previous</button>
+              <button type="button" disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)} className="cursor-pointer bg-transparent disabled:opacity-40 disabled:cursor-not-allowed" style={pillBtn}>{tr('orders.previous', "Previous")}</button>
               <span>Page {page} of {totalPages}</span>
-              <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)} className="cursor-pointer bg-transparent disabled:opacity-40 disabled:cursor-not-allowed" style={pillBtn}>Next</button>
+              <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)} className="cursor-pointer bg-transparent disabled:opacity-40 disabled:cursor-not-allowed" style={pillBtn}>{tr('orders.next', "Next")}</button>
             </div>
           )}
         </>

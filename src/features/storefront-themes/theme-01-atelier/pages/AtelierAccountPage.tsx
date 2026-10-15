@@ -1,4 +1,6 @@
 import { FEATURES } from '@/constants/features';
+import { useTranslation } from 'react-i18next';
+import { tt } from '@/utils/tStatic';
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
@@ -18,8 +20,8 @@ import { usePageTemplateSections } from '../../usePageTemplateSections';
 import { AtelierSectionRenderer } from '../sections';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: 'Pending', processing: 'Processing', shipped: 'Shipped',
-  delivered: 'Delivered', completed: 'Completed', cancelled: 'Cancelled',
+  pending: tt('order.pending', "Pending"), processing: tt('order.processing', "Processing"), shipped: tt('order.shipped', "Shipped"),
+  delivered: tt('order.delivered', "Delivered"), completed: tt('order.completed', "Completed"), cancelled: tt('order.cancelled', "Cancelled"),
 };
 const STATUS_COLOR: Record<OrderStatus, string> = {
   pending: '#B36200', processing: '#3851D1', shipped: '#1A65A8',
@@ -27,6 +29,7 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 };
 
 function DownloadLink({ orderId, productId }: { orderId: string; productId: string }) {
+  const { t: tr } = useTranslation('storefront');
   const [busy, setBusy] = useState(false);
   const handle = async () => {
     setBusy(true);
@@ -38,7 +41,7 @@ function DownloadLink({ orderId, productId }: { orderId: string; productId: stri
   };
   return (
     <button type="button" onClick={handle} disabled={busy} className="flex items-center gap-1 cursor-pointer bg-transparent border-0" style={{ fontFamily: t.fonts.body, fontSize: '11.5px', fontWeight: 600, color: t.colors.accent }}>
-      {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} Download
+      {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} {tr('orders.download', "Download")}
     </button>
   );
 }
@@ -51,6 +54,7 @@ function DownloadLink({ orderId, productId }: { orderId: string; productId: stri
  *  proved who they are by being logged in), the same one the apex buyer
  *  Account Workspace's Security tab already uses. */
 function PasswordSection() {
+  const { t: tr } = useTranslation('storefront');
   const changePassword = useChangePassword();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,32 +64,32 @@ function PasswordSection() {
 
   const handleSubmit = async () => {
     setFormError('');
-    if (newPassword.length < 8) { setFormError('New password must be at least 8 characters.'); return; }
-    if (newPassword !== confirmPassword) { setFormError('New passwords do not match.'); return; }
+    if (newPassword.length < 8) { setFormError(tr('account.err.pwLen', "New password must be at least 8 characters.")); return; }
+    if (newPassword !== confirmPassword) { setFormError(tr('account.err.pwMatch', "New passwords do not match.")); return; }
     const ok = await changePassword.execute({ currentPassword, newPassword });
     if (ok) { setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }
   };
 
   return (
     <section style={{ border: `1px solid ${t.colors.border}`, padding: '24px', marginBottom: '36px' }}>
-      <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>Password</p>
+      <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>{tr('auth.password', "Password")}</p>
       <div className="flex flex-col gap-4 atelier-form">
         <div>
-          <label htmlFor="atelier-account-currentpw" style={atelierLabel}>Current Password</label>
+          <label htmlFor="atelier-account-currentpw" style={atelierLabel}>{tr('account.currentPassword', "Current Password")}</label>
           <input id="atelier-account-currentpw" type={show ? 'text' : 'password'} autoComplete="current-password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={atelierInput} />
         </div>
         <div>
-          <label htmlFor="atelier-account-newpw" style={atelierLabel}>New Password</label>
+          <label htmlFor="atelier-account-newpw" style={atelierLabel}>{tr('account.newPassword', "New Password")}</label>
           <div className="relative">
             <input id="atelier-account-newpw" type={show ? 'text' : 'password'} autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ ...atelierInput, paddingRight: '40px' }} />
-            <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide passwords' : 'Show passwords'}
+            <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? tr('account.hidePasswords', "Hide passwords") : tr('account.showPasswords', "Show passwords")}
               className="absolute cursor-pointer bg-transparent border-0" style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', color: t.colors.inkMuted }}>
               {show ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
         </div>
         <div>
-          <label htmlFor="atelier-account-confirmpw" style={atelierLabel}>Confirm New Password</label>
+          <label htmlFor="atelier-account-confirmpw" style={atelierLabel}>{tr('account.confirmNewPassword', "Confirm New Password")}</label>
           <input id="atelier-account-confirmpw" type={show ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={atelierInput} />
         </div>
         {(formError || changePassword.error) && (
@@ -95,11 +99,11 @@ function PasswordSection() {
         )}
         <div className="flex items-center gap-3">
           <AtelierButton onClick={handleSubmit} loading={changePassword.loading} disabled={!currentPassword || !newPassword || !confirmPassword}>
-            Update Password
+            {tr('account.updatePassword', "Update Password")}
           </AtelierButton>
           {changePassword.success && (
             <span className="flex items-center gap-1" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.success }}>
-              <Check size={13} /> Updated
+              <Check size={13} /> {tr('account.updated', "Updated")}
             </span>
           )}
         </div>
@@ -155,8 +159,9 @@ function OrderRow({ order }: { order: OrderSummary }) {
  *  legacy `StorefrontAccountPage`'s same disclosed scope (no wishlist/
  *  messages tabs yet — a later phase). */
 export function AtelierAccountPage() {
+  const { t: tr } = useTranslation('storefront');
   useRequireRealAccount();
-  useStorefrontSeo({ title: 'My Account', noindex: true });
+  useStorefrontSeo({ title: tr('account.title', "My Account"), noindex: true });
   const accountSections = usePageTemplateSections(useStorefront().store?.storeId, 'account');
   const { store } = useStorefront();
   const logout = useLogout();
@@ -187,7 +192,7 @@ export function AtelierAccountPage() {
     <main className="mx-auto" style={{ maxWidth: '720px', padding: `48px ${t.layout.containerPadX}` }}>
       <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: '28px' }}>
         <div>
-          <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>My Account</h1>
+          <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>{tr('account.title', "My Account")}</h1>
           <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '4px' }}>Your account at {store.name}.</p>
         </div>
         <button
@@ -195,7 +200,7 @@ export function AtelierAccountPage() {
           className="flex items-center gap-1.5 cursor-pointer bg-transparent"
           style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.ink, border: `1px solid ${t.colors.border}`, padding: '8px 14px' }}
         >
-          <LogOut size={13} /> Log out
+          <LogOut size={13} /> {tr('account.logout', "Log out")}
         </button>
       </div>
 
@@ -206,15 +211,15 @@ export function AtelierAccountPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" style={{ marginBottom: '36px' }}>
         {[
           // Hidden via FEATURES.loyalty (not built-in on Shopify) — to become an installable App later; code/data kept.
-          ...(FEATURES.loyalty ? [{ to: '/loyalty', icon: Award, label: 'Loyalty & Rewards' }] : []),
-          { to: '/orders', icon: Package, label: 'Orders' },
-          { to: '/messages', icon: MessageCircle, label: 'Messages' },
-          { to: '/notifications', icon: Bell, label: 'Notifications' },
-          { to: '/returns', icon: RotateCcw, label: 'Returns' },
-          { to: '/gift-cards', icon: Gift, label: 'Gift Cards' },
-          { to: '/store-credit', icon: Wallet, label: 'Store credit' },
-          { to: '/addresses', icon: MapPin, label: 'Addresses' },
-          { to: '/reviews', icon: Star, label: 'Reviews' },
+          ...(FEATURES.loyalty ? [{ to: '/loyalty', icon: Award, label: tr('account.loyalty', "Loyalty & Rewards") }] : []),
+          { to: '/orders', icon: Package, label: tr('account.orders', "Orders") },
+          { to: '/messages', icon: MessageCircle, label: tr('account.messages', "Messages") },
+          { to: '/notifications', icon: Bell, label: tr('account.notifications', "Notifications") },
+          { to: '/returns', icon: RotateCcw, label: tr('account.returns', "Returns") },
+          { to: '/gift-cards', icon: Gift, label: tr('account.giftCards', "Gift Cards") },
+          { to: '/store-credit', icon: Wallet, label: tr('checkout.storeCredit', "Store credit") },
+          { to: '/addresses', icon: MapPin, label: tr('account.addresses', "Addresses") },
+          { to: '/reviews', icon: Star, label: tr('account.reviews', "Reviews") },
         ].map(link => (
           <Link
             key={link.to} to={link.to}
@@ -231,32 +236,32 @@ export function AtelierAccountPage() {
       </div>
 
       <section style={{ border: `1px solid ${t.colors.border}`, padding: '24px', marginBottom: '36px' }}>
-        <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>Profile</p>
+        <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>{tr('account.profile', "Profile")}</p>
         {profileLoading ? (
           <div className="animate-pulse" style={{ height: '160px', background: t.colors.bgAlt }} />
         ) : (
           <div className="flex flex-col gap-4 atelier-form">
             <div>
-              <label htmlFor="atelier-account-name" style={atelierLabel}>Full Name</label>
+              <label htmlFor="atelier-account-name" style={atelierLabel}>{tr('auth.fullName', "Full Name")}</label>
               <input id="atelier-account-name" value={name} onChange={e => setName(e.target.value)} style={atelierInput} />
             </div>
             <div>
-              <label htmlFor="atelier-account-email" style={atelierLabel}>Email</label>
+              <label htmlFor="atelier-account-email" style={atelierLabel}>{tr('auth.email', "Email")}</label>
               <input id="atelier-account-email" value={profile?.email ?? ''} readOnly disabled style={{ ...atelierInput, opacity: 0.6, cursor: 'not-allowed' }} />
             </div>
             <div>
-              <label htmlFor="atelier-account-phone" style={atelierLabel}>Phone Number</label>
+              <label htmlFor="atelier-account-phone" style={atelierLabel}>{tr('auth.phone', "Phone Number")}</label>
               <input id="atelier-account-phone" value={phone} onChange={e => setPhone(e.target.value)} style={atelierInput} />
             </div>
             <div>
-              <label htmlFor="atelier-account-address" style={atelierLabel}>Address</label>
+              <label htmlFor="atelier-account-address" style={atelierLabel}>{tr('auth.address', "Address")}</label>
               <input id="atelier-account-address" value={address} onChange={e => setAddress(e.target.value)} style={atelierInput} />
             </div>
             <div className="flex items-center gap-3">
-              <AtelierButton onClick={() => editProfile({ name, phone, address })} loading={saving}>Save Changes</AtelierButton>
+              <AtelierButton onClick={() => editProfile({ name, phone, address })} loading={saving}>{tr('account.saveChanges', "Save Changes")}</AtelierButton>
               {saved && (
                 <span className="flex items-center gap-1" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.success }}>
-                  <Check size={13} /> Saved
+                  <Check size={13} /> {tr('account.saved', "Saved")}
                 </span>
               )}
             </div>
@@ -267,7 +272,7 @@ export function AtelierAccountPage() {
       <PasswordSection />
 
       <section>
-        <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>Order History</p>
+        <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>{tr('account.orderHistory', "Order History")}</p>
         {ordersError && <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{ordersError}</p>}
         {orders === null && !ordersError && (
           <div className="flex flex-col gap-2">
@@ -275,12 +280,12 @@ export function AtelierAccountPage() {
           </div>
         )}
         {orders !== null && orders.length === 0 && (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>You haven't placed any orders yet.</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>{tr('account.noOrders', "You haven't placed any orders yet.")}</p>
         )}
         {orders !== null && orders.length > 0 && (
           <div className="flex flex-col gap-2.5">
             {orders.map(o => <OrderRow key={o.orderId} order={o} />)}
-            <Link to="/orders" className="underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink, marginTop: '4px' }}>View all orders</Link>
+            <Link to="/orders" className="underline" style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: t.colors.ink, marginTop: '4px' }}>{tr('account.viewAllOrders', "View all orders")}</Link>
           </div>
         )}
       </section>

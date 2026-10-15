@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
+import { tt } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -365,7 +366,7 @@ export function ContactFormSection({ section, colors, theme }: Props) {
             {status === 'error' && <p role="alert" style={{ fontFamily: theme.fonts.body, fontSize: '13px', color: '#B3413A', margin: 0 }}>{error}</p>}
             <button type="submit" disabled={status === 'sending'} className="cursor-pointer border-0 disabled:opacity-60"
               style={{ alignSelf: 'center', fontFamily: theme.fonts.body, fontSize: '13px', fontWeight: 600, letterSpacing: '0.04em', color: colors.bg, background: colors.ink, padding: '13px 36px', borderRadius: theme.imageRadiusPx === '0px' ? '0' : '9999px' }}>
-              {status === 'sending' ? 'Sending…' : (s.buttonLabel || 'Send message')}
+              {status === 'sending' ? tt('sections.sending', "Sending…") : (s.buttonLabel || tt('sections.sendMessage', "Send message"))}
             </button>
           </form>
         )}

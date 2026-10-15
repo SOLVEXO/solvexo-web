@@ -14,7 +14,7 @@ import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { ThemeThumbnail } from './AtelierThemeDemoPreview';
 import { apiApplyThemeDefinition, apiListThemeCatalog, type ThemeDefinition } from '@/api/services/themeCatalog';
-import { ThemeSourcePackageDialog } from './ThemeSourcePackageDialog';
+import { ThemeSourcePackageDialog } from '@/features/themes/liquid/ThemeSourcePackageDialog';
 
 /**
  * The Theme Library (route: `online-store/themes`) — browse every

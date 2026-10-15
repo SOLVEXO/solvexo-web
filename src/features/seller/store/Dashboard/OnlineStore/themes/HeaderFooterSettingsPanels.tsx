@@ -111,7 +111,9 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
           <select className={SELECT} value={header.headerStyle ?? 'standard'}
             onChange={e => set({ headerStyle: e.target.value as StorefrontHeader['headerStyle'] })}>
             <option value="standard">Left, menu beside it</option>
-            <option value="centered">Center, menu below</option>
+            <option value="inline">Left, menu in the middle</option>
+            <option value="split">Middle, menu on the left</option>
+            <option value="centered">Middle, menu below</option>
           </select>
         </label>
         {centered && (
@@ -124,7 +126,66 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
             </select>
           </label>
         )}
-        <SwitchRow label="Sticky header" hint="Stays at the top while customers scroll." checked={header.sticky === true} onChange={v => set({ sticky: v })} />
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">While scrolling</span>
+          <select className={SELECT} value={header.stickyMode ?? (header.sticky ? 'always' : 'off')}
+            onChange={e => { const stickyMode = e.target.value as 'off' | 'always' | 'scroll-up'; set({ stickyMode, sticky: stickyMode !== 'off' }); }}>
+            <option value="off">Scrolls away with the page</option>
+            <option value="always">Always stays at the top</option>
+            <option value="scroll-up">Hides on scroll down, shows on scroll up</option>
+          </select>
+        </label>
+        <SwitchRow label="See-through on the home page" hint="Sits over your first section (e.g. the banner) until shoppers scroll."
+          checked={header.transparentOnHome === true} onChange={v => set({ transparentOnHome: v })} />
+        {header.transparentOnHome && (
+          <ColorField label="Text and icons while see-through" value={header.transparentTextColor} fallback="#ffffff" onChange={v => set({ transparentTextColor: v })} />
+        )}
+      </Group>
+
+      <Group title="Menu style">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">Text size</span>
+          <select className={SELECT} value={header.navFontSize ?? 'md'} onChange={e => set({ navFontSize: e.target.value as StorefrontHeader['navFontSize'] })}>
+            <option value="sm">Small</option>
+            <option value="md">Medium</option>
+            <option value="lg">Large</option>
+          </select>
+        </label>
+        <SwitchRow label="Capital letters" checked={header.navUppercase === true} onChange={v => set({ navUppercase: v })} />
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">When shoppers point at a link</span>
+          <select className={SELECT} value={header.navHoverStyle ?? 'none'} onChange={e => set({ navHoverStyle: e.target.value as StorefrontHeader['navHoverStyle'] })}>
+            <option value="none">No effect</option>
+            <option value="underline">Slide-in underline</option>
+            <option value="pill">Soft highlight</option>
+          </select>
+        </label>
+      </Group>
+
+      <Group title="Button">
+        <p className="text-[10.5px] text-slate -mt-1">An eye-catching button next to the icons, e.g. “Shop sale”. Shown on desktop.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <TextField label="Button text" value={header.ctaLabel} maxLength={30} placeholder="Shop sale" onChange={v => set({ ctaLabel: v })} />
+          <TextField label="Button link" value={header.ctaLink} maxLength={500} placeholder="/collections/sale" onChange={v => set({ ctaLink: v })} />
+        </div>
+        <p className="text-[10.5px] text-slate">Leave the text empty to hide it. Links start with https:// or /.</p>
+      </Group>
+
+      <Group title="Top info strip">
+        <SwitchRow label="Show a thin strip above the header" checked={header.topBarEnabled === true} onChange={v => set({ topBarEnabled: v })} />
+        {header.topBarEnabled && (
+          <>
+            <TextField label="Text" value={header.topBarText} maxLength={120} placeholder="Free shipping on orders over Rs. 3,000" onChange={v => set({ topBarText: v })} />
+            <div className="grid grid-cols-2 gap-3">
+              <TextField label="Phone" value={header.topBarPhone} maxLength={40} placeholder="+92 300 1234567" onChange={v => set({ topBarPhone: v })} />
+              <TextField label="Email" value={header.topBarEmail} maxLength={120} placeholder="hello@yourstore.com" onChange={v => set({ topBarEmail: v })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Strip background" value={header.topBarBg} fallback="#161412" onChange={v => set({ topBarBg: v })} />
+              <ColorField label="Strip text" value={header.topBarTextColor} fallback="#ffffff" onChange={v => set({ topBarTextColor: v })} />
+            </div>
+          </>
+        )}
       </Group>
 
       <Group title="Colours and spacing">
@@ -145,6 +206,15 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
 
       <Group title="Icons">
         <SwitchRow label="Search" checked={header.showSearch !== false} onChange={v => set({ showSearch: v })} />
+        {header.showSearch !== false && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Search look</span>
+            <select className={SELECT} value={header.searchStyle ?? 'icon'} onChange={e => set({ searchStyle: e.target.value as StorefrontHeader['searchStyle'] })}>
+              <option value="icon">Icon only</option>
+              <option value="bar">Search box (“Search products…”)</option>
+            </select>
+          </label>
+        )}
         <SwitchRow label="Account" checked={header.showAccount !== false} onChange={v => set({ showAccount: v })} />
         <SwitchRow label="Wishlist (signed-in shoppers)" checked={header.showWishlist !== false} onChange={v => set({ showWishlist: v })} />
         <p className="text-[10.5px] text-slate">The cart icon always stays.</p>
@@ -172,13 +242,62 @@ export function FooterSettingsPanel({ footer, onChange, storeId }: { footer: Sto
           <option value="columns">Columns</option>
           <option value="minimal">Compact (wider columns, less space)</option>
         </select>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Spacing</span>
+            <select className={SELECT} value={footer.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontFooter['paddingY'] })}>
+              <option value="compact">Compact</option>
+              <option value="normal">Normal</option>
+              <option value="spacious">Spacious</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Alignment</span>
+            <select className={SELECT} value={footer.align ?? 'left'} onChange={e => set({ align: e.target.value as StorefrontFooter['align'] })}>
+              <option value="left">Left</option>
+              <option value="center">Centred</option>
+            </select>
+          </label>
+        </div>
+        <SwitchRow label="Email sign-up as a wide strip on top" hint="Uses your Email sign-up block; add one if you have none."
+          checked={footer.newsletterTop === true} onChange={v => set({ newsletterTop: v })} />
+        <SwitchRow label="Fold columns on phones" hint="Shoppers tap a heading to open its links." checked={footer.mobileAccordion !== false} onChange={v => set({ mobileAccordion: v })} />
       </Group>
 
-      <Group title="Colours">
+      <Group title="Colours and background">
         <div className="grid grid-cols-2 gap-3">
           <ColorField label="Background" value={footer.bgColor} fallback="#161412" onChange={v => set({ bgColor: v })} />
           <ColorField label="Text" value={footer.textColor} fallback="#ede9e1" onChange={v => set({ textColor: v })} />
         </div>
+        <span className="text-[11.5px] text-charcoal">Background image (optional)</span>
+        <ImageUpload value={footer.bgImageUrl ? [footer.bgImageUrl] : []} onChange={urls => set({ bgImageUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
+        {footer.bgImageUrl && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Darken the image: {footer.bgOverlay ?? 50}%</span>
+            <input type="range" min={0} max={85} step={5} value={footer.bgOverlay ?? 50} onChange={e => set({ bgOverlay: Number(e.target.value) })} />
+            <span className="text-[10.5px] text-slate">Keeps your text readable on a busy photo.</span>
+          </label>
+        )}
+      </Group>
+
+      <Group title="Headings and social icons">
+        <SwitchRow label="Column headings in capital letters" checked={footer.headingUppercase !== false} onChange={v => set({ headingUppercase: v })} />
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">Social icon style</span>
+          <select className={SELECT} value={footer.socialStyle ?? ''} onChange={e => set({ socialStyle: (e.target.value || null) as StorefrontFooter['socialStyle'] })}>
+            <option value="">Theme default</option>
+            <option value="plain">Plain icons</option>
+            <option value="circle">Round buttons</option>
+            <option value="square">Square buttons</option>
+          </select>
+        </label>
+      </Group>
+
+      <Group title="Bottom bar">
+        <SwitchRow label="Policy links" hint="Pages you marked “Show in footer”." checked={footer.showPolicyLinks !== false} onChange={v => set({ showPolicyLinks: v })} />
+        <SwitchRow label="Currency selector" checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />
+        <SwitchRow label="“Back to top” link" checked={footer.showBackToTop === true} onChange={v => set({ showBackToTop: v })} />
+        <p className="text-[10.5px] text-slate">Copyright and payment icons are blocks — add or edit them in Footer blocks.</p>
       </Group>
 
       <Group title="Logo (Brand block)">

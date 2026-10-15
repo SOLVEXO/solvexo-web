@@ -1,4 +1,4 @@
-import type { ThemePackageComponentSchema, ThemePackageStructure } from '@/api/services/storeTheme';
+import type { ThemePackageComponentSchema, ThemePackageStructure } from '@/api/services/liquidTheme';
 
 export interface LiquidJsonTemplate {
   sections: Record<string, LiquidTemplateSection>;

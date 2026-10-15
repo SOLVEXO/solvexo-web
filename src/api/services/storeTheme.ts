@@ -22,7 +22,7 @@ export type ThemeProductImageHover  = 'none' | 'zoom' | 'second-image';
 export type ThemeProductGridDensity = 'cozy' | 'relaxed';
 export type ThemeTestimonialStyle   = 'cards' | 'minimal';
 export type ThemeFaqStyle           = 'accordion' | 'list';
-export type ThemeHeaderStyle        = 'standard' | 'centered';
+export type ThemeHeaderStyle        = 'standard' | 'centered' | 'split' | 'inline';
 export type ThemeFooterStyle        = 'columns' | 'minimal';
 
 export interface StorefrontColors {
@@ -138,6 +138,22 @@ export interface StorefrontHeader {
   textColor?:           string | null;
   paddingY?:            'compact' | 'normal' | 'spacious';
   showDivider?:         boolean;
+  stickyMode?:          'off' | 'always' | 'scroll-up' | null;
+  transparentOnHome?:   boolean;
+  transparentTextColor?: string | null;
+  navFontSize?:         'sm' | 'md' | 'lg';
+  navUppercase?:        boolean;
+  navHoverStyle?:       'none' | 'underline' | 'pill';
+  searchStyle?:         'icon' | 'bar';
+  ctaLabel?:            string | null;
+  ctaLink?:             string | null;
+  topBarEnabled?:       boolean;
+  topBarText?:          string | null;
+  topBarPhone?:         string | null;
+  topBarEmail?:         string | null;
+  topBarBg?:            string | null;
+  topBarTextColor?:     string | null;
+  preset?:              string | null;
 }
 
 export interface StorefrontFooter {
@@ -162,12 +178,25 @@ export interface StorefrontFooter {
   textColor?:            string | null;
   /** true once saved as an ordered block list (brand + newsletter are blocks). */
   blockLayout?:          boolean;
+  paddingY?:             'compact' | 'normal' | 'spacious';
+  bgImageUrl?:           string | null;
+  bgOverlay?:            number;
+  align?:                'left' | 'center';
+  headingUppercase?:     boolean;
+  socialStyle?:          'plain' | 'circle' | 'square' | null;
+  newsletterTop?:        boolean;
+  mobileAccordion?:      boolean;
+  showPolicyLinks?:      boolean;
+  showCurrency?:         boolean;
+  showBackToTop?:        boolean;
+  preset?:               string | null;
 }
 
 /** The footer settings the editor can save alongside its blocks. */
 export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
   'logoSource' | 'logoUrl' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
-  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout'>>;
+  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout' | 'paddingY' | 'bgImageUrl' | 'bgOverlay' | 'align' | 'headingUppercase' | 'socialStyle' |
+  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'preset'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
 
@@ -245,148 +274,6 @@ export function apiGetStoreTheme(storeId: string, installedThemeId?: string) {
   return client.get<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.GET(storeId), installedThemeId));
 }
 
-export interface ThemePackageRevision {
-  version: number;
-  changeType: 'upload' | 'file_edit' | 'rollback';
-  restoredFromVersion: number | null;
-  createdAt?: string;
-  files: Array<{ path: string; size: number; sha256: string; encoding?: 'utf8' | 'base64'; content?: string }>;
-  /** Result of the import-time check: which pages render, plus notes about features Solvexo does not provide. */
-  compatibility?: ThemeCompatibility | null;
-}
-
-export interface ThemeCompatibility {
-  checkedAt: string;
-  ok: boolean;
-  pages: Array<{ label: string; path: string; ok: boolean; message?: string }>;
-  notes: string[];
-}
-
-export interface ThemeImportJob {
-  jobId: string;
-  status: 'processing' | 'ready' | 'failed';
-  stage: 'reading' | 'checking' | 'saving' | 'compatibility' | 'done' | 'failed' | string;
-  error?: string | null;
-  version?: number | null;
-}
-
-export interface ThemePackageStructure {
-  version: number;
-  components: Array<{
-    kind: 'section' | 'block';
-    type: string;
-    path: string;
-    schema: ThemePackageComponentSchema;
-  }>;
-  templates: string[];
-  sectionGroups: string[];
-  themeSettings: Array<{ name?: string; settings?: Array<{ id?: string; type?: string; label?: string; [key: string]: unknown }>; [key: string]: unknown }>;
-}
-
-export interface ThemePackageComponentSchema {
-  name: string;
-  settings?: Array<{ id?: string; type?: string; label?: string; [key: string]: unknown }>;
-  blocks?: Array<{ type?: string; name?: string; limit?: number; settings?: Array<{ id?: string; type?: string; label?: string; [key: string]: unknown }>; [key: string]: unknown }>;
-  presets?: Array<{ name?: string; [key: string]: unknown }>;
-  limit?: number;
-  max_blocks?: number;
-  enabled_on?: { templates?: string[]; [key: string]: unknown };
-  disabled_on?: { templates?: string[]; [key: string]: unknown };
-  [key: string]: unknown;
-}
-
-const themePackagePath = (storeId: string, installedThemeId: string) =>
-  `/api/store-theme/${storeId}/installed/${installedThemeId}/package`;
-
-export function apiListThemePackageRevisions(storeId: string, installedThemeId: string) {
-  return client.get<never, ApiResponse<ThemePackageRevision[]>>(themePackagePath(storeId, installedThemeId));
-}
-
-/** Theme ZIP import/preview/export/publish parse and re-write many files; the default 15 s is too short. */
-const THEME_PACKAGE_TIMEOUT = 180_000;
-
-export function apiUploadThemePackage(storeId: string, installedThemeId: string, file: File) {
-  const body = new FormData();
-  body.append('file', file);
-  return client.post<never, ApiResponse<{ version: number }>>(themePackagePath(storeId, installedThemeId), body, { timeout: THEME_PACKAGE_TIMEOUT });
-}
-
-/** Starts a background import and returns at once; poll apiGetThemeImportJob until it is ready or failed. */
-export function apiStartThemeImport(storeId: string, installedThemeId: string, file: File, onProgress?: (percent: number) => void) {
-  const body = new FormData();
-  body.append('file', file);
-  return client.post<never, ApiResponse<ThemeImportJob>>(`${themePackagePath(storeId, installedThemeId)}/import`, body, {
-    timeout: THEME_PACKAGE_TIMEOUT,
-    onUploadProgress: (event) => { if (onProgress && event.total) onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100))); },
-  });
-}
-
-export function apiGetThemeImportJob(storeId: string, installedThemeId: string, jobId: string) {
-  return client.get<never, ApiResponse<ThemeImportJob>>(`${themePackagePath(storeId, installedThemeId)}/import/${jobId}`);
-}
-
-/** Text of one source file (the revision itself no longer carries file contents). */
-export function apiGetThemePackageFile(storeId: string, installedThemeId: string, version: number, path: string) {
-  return client.get<never, ApiResponse<{ path: string; encoding: 'utf8' | 'base64'; size: number; content: string }>>(
-    `${themePackagePath(storeId, installedThemeId)}/${version}/file`, { params: { path } },
-  );
-}
-
-export function apiPreviewThemePackage(storeId: string, installedThemeId: string, version?: number, path = '/', draft?: { path: string; content: string }) {
-  return client.post<never, ApiResponse<{ version: number; html: string }>>(`${themePackagePath(storeId, installedThemeId)}/preview`, { version, path, draft }, { timeout: THEME_PACKAGE_TIMEOUT });
-}
-
-export function apiGetThemePackageRevision(storeId: string, installedThemeId: string, version: number) {
-  return client.get<never, ApiResponse<ThemePackageRevision>>( `${themePackagePath(storeId, installedThemeId)}/${version}`);
-}
-
-export function apiGetThemePackageStructure(storeId: string, installedThemeId: string, version: number) {
-  return client.get<never, ApiResponse<ThemePackageStructure>>(`${themePackagePath(storeId, installedThemeId)}/${version}/structure`);
-}
-
-export function apiEditThemePackageFile(storeId: string, installedThemeId: string, path: string, content: string) {
-  return client.patch<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { path, content });
-}
-
-export function apiAddThemePackageFile(storeId: string, installedThemeId: string, path: string, content = '', encoding: 'utf8' | 'base64' = 'utf8') {
-  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { path, content, encoding });
-}
-
-export function apiDeleteThemePackageFile(storeId: string, installedThemeId: string, path: string) {
-  return client.delete<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file`, { data: { path } });
-}
-
-export function apiRenameThemePackageFile(storeId: string, installedThemeId: string, from: string, to: string) {
-  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/file/rename`, { from, to });
-}
-
-export function apiUnpublishThemePackage(storeId: string, installedThemeId: string) {
-  return client.post<never, ApiResponse<{ installedThemeId: string; version: null }>>(`${themePackagePath(storeId, installedThemeId)}/unpublish`);
-}
-
-/** Downloads a revision as a standard Shopify theme ZIP (the axios interceptor unwraps `res.data`, so this resolves to the Blob). */
-export function apiExportThemePackage(storeId: string, installedThemeId: string, version?: number) {
-  return client.get<never, Blob>(`${themePackagePath(storeId, installedThemeId)}/export/zip`, { params: version === undefined ? undefined : { version }, responseType: 'blob', timeout: THEME_PACKAGE_TIMEOUT });
-}
-
-export function apiRollbackThemePackage(storeId: string, installedThemeId: string, version: number) {
-  return client.post<never, ApiResponse<{ version: number }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/rollback`, undefined, { timeout: THEME_PACKAGE_TIMEOUT });
-}
-
-export function apiPublishThemePackage(storeId: string, installedThemeId: string, version: number) {
-  return client.post<never, ApiResponse<{ installedThemeId: string; version: number; status: string }>>(`${themePackagePath(storeId, installedThemeId)}/${version}/publish`, undefined, { timeout: THEME_PACKAGE_TIMEOUT });
-}
-
-export function apiGetPublishedLiquidThemeHtml(
-  storeId: string,
-  path: string,
-  cartItems: { productId: string; productVariantId: string; quantity: number }[] = [],
-) {
-  return client.post<never, ApiResponse<{ html: string; version: number }>>(
-    `/api/public/store-theme/${encodeURIComponent(storeId)}/source/render?path=${encodeURIComponent(path)}`,
-    { cartItems },
-  );
-}
 
 export function apiGetStoreThemeDraft(storeId: string, installedThemeId?: string) {
   return client.get<never, ApiResponse<StoreThemeDraftData>>(withInstance(ENDPOINTS.STORE_THEME.DRAFT(storeId), installedThemeId));

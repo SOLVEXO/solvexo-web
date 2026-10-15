@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useLocalize } from '@/hooks/useLocalize';
+import { useTranslation } from 'react-i18next';
 import { ImageOff, Heart } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
@@ -27,6 +29,9 @@ const CARD_RATIO = PRODUCT_CARD_RATIO;
  *  non-navigating wrappers — same markup and classes, just nowhere to
  *  (wrongly) go. */
 export function AtelierProductCard({ product, currency, demo = false }: { product: PublicStoreProduct; currency: string; demo?: boolean }) {
+  const lz = useLocalize();
+  const displayName = lz.product(product).name;
+  const { t: tr } = useTranslation('storefront');
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const inWishlist = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const symbol = currencySymbol(currency);
@@ -50,7 +55,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
         src={cloudinaryUrl(product.images[0], 480)}
         srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
         sizes="(min-width: 1024px) 25vw, 50vw"
-        alt={product.name}
+        alt={displayName}
         className={`${t.productImageRatio === 'adapt' ? 'block w-full h-auto' : 'w-full h-full object-cover'} transition-transform duration-500 ${t.productImageHover === 'zoom' ? 'group-hover:scale-[1.04]' : ''}`}
         loading="lazy"
       />
@@ -72,7 +77,7 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
       <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
     </div>
   );
-  const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 500, lineHeight: 1.4, margin: 0 }}>{product.name}</p>;
+  const title = <p className="line-clamp-2 min-h-[2.8em]" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.ink, fontWeight: 500, lineHeight: 1.4, margin: 0 }}>{displayName}</p>;
 
   return (
     <div className="group flex flex-col" style={productCardFrame(t.cardStyle, t.colors, t.productCardRadiusPx)}>
@@ -87,14 +92,14 @@ export function AtelierProductCard({ product, currency, demo = false }: { produc
             className="absolute top-3 left-3 pointer-events-none"
             style={{ fontFamily: t.fonts.body, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 10px', background: soldOut ? t.colors.ink : t.colors.accent, color: '#FFFFFF' }}
           >
-            {soldOut ? 'Sold out' : 'Sale'}
+            {soldOut ? tr('product.soldOut', "Sold out") : tr('product.sale', "Sale")}
           </span>
         )}
         {product.variantId && (
           <button
             type="button"
             onClick={() => toggleWishlist(product._id, product.variantId!)}
-            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-label={inWishlist ? tr('wishlist.removeAria', "Remove from wishlist") : tr('wishlist.addAria', "Add to wishlist")}
             className="absolute top-3 right-3 flex items-center justify-center cursor-pointer border-0"
             style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(250,248,244,0.94)', boxShadow: '0 2px 12px rgba(22,20,18,0.08)' }}
           >

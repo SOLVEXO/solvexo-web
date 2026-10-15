@@ -9,6 +9,7 @@ import { CurrencyPreferenceProvider } from '@/contexts/CurrencyPreferenceContext
 import { AuthGateProvider } from '@/contexts/AuthGateContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { captureSellerAcquisitionAttribution } from '@/utils/sellerAcquisitionAttribution';
+import './i18n';
 import './index.css';
 
 // Phase 9 — Merchant Acquisition Tracking. Must run here, once, on the

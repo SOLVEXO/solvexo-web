@@ -195,6 +195,7 @@ export const ENDPOINTS = {
     ENABLED_CURRENCIES: '/api/store/public/enabled-currencies',
     SUGGEST_LOCATION: '/api/store/suggest-location',
     SUGGEST_LOCATION_FOR_STORE: (storeId: string) => `/api/store/public/${storeId}/suggest-location`,
+    PUBLIC_MARKETS: (storeId: string) => `/api/public/store-markets/${storeId}`,
     DOMAINS:         (storeId: string) => `/api/store/${storeId}/domains`,
     DOMAIN_PRIMARY:  (storeId: string) => `/api/store/${storeId}/domains/primary`,
     DOMAIN_ITEM:     (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}`,
@@ -1461,6 +1462,16 @@ export const ENDPOINTS = {
     PUBLIC_DEFINITIONS: (storeId: string) => `/api/public/metaobjects/${storeId}/definitions`,
     PUBLIC_ENTRIES_BY_TYPE: (storeId: string, type: string) => `/api/public/metaobjects/${storeId}/${type}`,
     PUBLIC_ENTRY:       (storeId: string, entryId: string) => `/api/public/metaobjects/${storeId}/entry/${entryId}`,
+  },
+
+  // ── MARKETS (seller) + TRANSLATIONS ────────────────────────────────────────
+  MARKETS_SELLER: {
+    LIST: (storeId: string) => `/api/stores/${storeId}/markets`,
+    ONE:  (storeId: string, marketId: string) => `/api/stores/${storeId}/markets/${marketId}`,
+  },
+  TRANSLATIONS: {
+    LIST: (storeId: string, resource: string) => `/api/translations/${storeId}/${resource}`,
+    ONE:  (storeId: string, resource: string, id: string, locale: string) => `/api/translations/${storeId}/${resource}/${id}/${locale}`,
   },
 
 } as const;

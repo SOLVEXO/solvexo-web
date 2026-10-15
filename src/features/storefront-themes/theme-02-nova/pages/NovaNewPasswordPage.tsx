@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -17,7 +18,8 @@ import { novaTheme as t } from '../theme.config';
  *  refresh with no code goes back to Forgot Password instead of showing a
  *  form that can only ever fail. */
 export function NovaNewPasswordPage() {
-  useStorefrontSeo({ title: 'Reset Password', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('auth.resetPasswordBtn', "Reset Password"), noindex: true });
   const navigate = useNavigate();
   const { store } = useStorefront();
   const resetPassword = useResetPassword();
@@ -39,8 +41,8 @@ export function NovaNewPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
-    if (password.length < 8) { setFormError('Password must be at least 8 characters.'); return; }
-    if (password !== confirmPassword) { setFormError('Passwords do not match.'); return; }
+    if (password.length < 8) { setFormError(tr('auth.err.pw8', "Password must be at least 8 characters.")); return; }
+    if (password !== confirmPassword) { setFormError(tr('auth.err.pwMismatch', "Passwords do not match.")); return; }
     await resetPassword.execute(otp, password);
   };
 
@@ -50,11 +52,11 @@ export function NovaNewPasswordPage() {
         <div className="flex items-center justify-center mx-auto" style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#E1F5EB', marginBottom: '20px' }}>
           <CheckCircle2 size={28} style={{ color: t.colors.success }} />
         </div>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>Password updated</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '22px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>{tr('auth.passwordUpdated', "Password updated")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, marginBottom: '28px' }}>
           You can now sign back in to {store.name} with your new password.
         </p>
-        <NovaButton onClick={() => navigate('/login')}>Sign In</NovaButton>
+        <NovaButton onClick={() => navigate('/login')}>{tr('auth.signInBtn', "Sign In")}</NovaButton>
       </div>
     );
   }
@@ -62,7 +64,7 @@ export function NovaNewPasswordPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>Choose a new password</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 700, color: t.colors.ink }}>{tr('auth.chooseNewPassword', "Choose a new password")}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
           Almost done — set a new password to finish resetting your account.
         </p>
@@ -92,7 +94,7 @@ export function NovaNewPasswordPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '28px' }}>
         <div>
-          <label htmlFor="nova-newpw-password" style={novaLabel}>New Password</label>
+          <label htmlFor="nova-newpw-password" style={novaLabel}>{tr('account.newPassword', "New Password")}</label>
           <div className="relative">
             <input
               id="nova-newpw-password"
@@ -102,7 +104,7 @@ export function NovaNewPasswordPage() {
             />
             <button
               type="button" onClick={() => setShowPassword(s => !s)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? tr('auth.hidePassword', "Hide password") : tr('auth.showPassword', "Show password")}
               className="absolute cursor-pointer bg-transparent border-0"
               style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', color: t.colors.inkMuted }}
             >
@@ -111,7 +113,7 @@ export function NovaNewPasswordPage() {
           </div>
         </div>
         <div>
-          <label htmlFor="nova-newpw-confirm" style={novaLabel}>Confirm Password</label>
+          <label htmlFor="nova-newpw-confirm" style={novaLabel}>{tr('auth.confirmPassword', "Confirm Password")}</label>
           <input
             id="nova-newpw-confirm"
             type={showPassword ? 'text' : 'password'} required autoComplete="new-password"
@@ -120,7 +122,7 @@ export function NovaNewPasswordPage() {
           />
         </div>
         <NovaButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }} loading={resetPassword.loading}>
-          Reset Password
+          {tr('auth.resetPasswordBtn', tr('auth.resetPasswordBtn', "Reset Password"))}
         </NovaButton>
       </form>
     </div>

@@ -1,6 +1,7 @@
+import { tt } from '@/utils/tStatic';
 interface Look { fontFamily: string; color: string; accent: string; border: string; muted?: string }
 
-const STEPS = ['Requested', 'Approved', 'Received'];
+const STEPS = [tt('returns.step.requested', "Requested"), tt('returns.step.approved', "Approved"), tt('returns.step.received', "Received")];
 
 function stepIndex(status: string): number {
   switch (status) {
@@ -23,15 +24,15 @@ export function ReturnProgress({ status, look, rejectReason }: { status: string 
   if (status === 'rejected') {
     return (
       <p role="status" style={{ ...base, color: muted, marginTop: '6px' }}>
-        Your return request was declined{rejectReason ? `: ${rejectReason}` : '.'}
+        {tt('returns.declinedMsg', "Your return request was declined")}{rejectReason ? `: ${rejectReason}` : '.'}
       </p>
     );
   }
   const idx = stepIndex(status);
-  const finalLabel = status === 'exchanged' ? 'Exchanged' : status === 'closed' ? 'Closed' : 'Refunded';
+  const finalLabel = status === 'exchanged' ? tt('returns.step.exchanged', "Exchanged") : status === 'closed' ? tt('returns.step.closed', "Closed") : tt('returns.step.refunded', "Refunded");
   const labels = [...STEPS, finalLabel];
   return (
-    <ol aria-label="Return progress" className="flex items-center flex-wrap" style={{ gap: '6px', marginTop: '8px', padding: 0, listStyle: 'none' }}>
+    <ol aria-label={tt('returns.progress', "Return progress")} className="flex items-center flex-wrap" style={{ gap: '6px', marginTop: '8px', padding: 0, listStyle: 'none' }}>
       {labels.map((label, k) => {
         const done = k <= idx;
         return (

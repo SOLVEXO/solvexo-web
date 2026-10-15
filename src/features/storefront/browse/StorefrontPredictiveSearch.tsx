@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs, jsx-a11y/no-autofocus, jsx-a11y/click-events-have-key-events */
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
@@ -17,9 +18,10 @@ interface Option { id: string; group: string; label: string; sub?: string; image
  *  characters, debounced + abortable suggestions for queries, products,
  *  collections, articles and pages, fully keyboard operable (ARIA 1.2 combobox
  *  with a listbox popup), plus a "Search for ..." link to the full results page. */
-export function StorefrontPredictiveSearch({ tokens: t, inputId, placeholder = 'Search products…', maxWidth, onDone }: {
+export function StorefrontPredictiveSearch({ tokens: t, inputId, placeholder, maxWidth, onDone }: {
   tokens: BrowseTokens; inputId: string; placeholder?: string; maxWidth?: string; onDone?: () => void;
 }) {
+  const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
   const { currency, convert } = useCurrencyPreference();
   const navigate = useNavigate();
@@ -56,16 +58,16 @@ export function StorefrontPredictiveSearch({ tokens: t, inputId, placeholder = '
   const options = useMemo<Option[]>(() => {
     if (!data) return [];
     const list: Option[] = [];
-    data.queries.forEach(x => list.push({ id: `q:${x}`, group: 'Suggestions', label: x, to: `/search?q=${encodeURIComponent(x)}` }));
+    data.queries.forEach(x => list.push({ id: `q:${x}`, group: tr('browse.suggestionsGroup', "Suggestions"), label: x, to: `/search?q=${encodeURIComponent(x)}` }));
     data.products.forEach(p => list.push({
-      id: `p:${p.id}`, group: 'Products', label: p.name, image: p.image, to: `/product/${p.slug}`,
+      id: `p:${p.id}`, group: tr('browse.products', "Products"), label: p.name, image: p.image, to: `/product/${p.slug}`,
       sub: p.price != null ? formatMoney(convert(p.price, baseCurrency), currency) : undefined,
     }));
-    data.collections.forEach(c => list.push({ id: `c:${c.id}`, group: 'Collections', label: c.name, image: c.image, to: `/collections/${c.slug}` }));
-    data.articles.forEach(a => list.push({ id: `a:${a.id}`, group: 'Articles', label: a.title, image: a.image, to: `/blog/${a.slug}` }));
-    data.pages.forEach(p => list.push({ id: `g:${p.id}`, group: 'Pages', label: p.title, to: `/${p.slug}` }));
+    data.collections.forEach(c => list.push({ id: `c:${c.id}`, group: tr('nav.collections', "Collections"), label: c.name, image: c.image, to: `/collections/${c.slug}` }));
+    data.articles.forEach(a => list.push({ id: `a:${a.id}`, group: tr('browse.articles', "Articles"), label: a.title, image: a.image, to: `/blog/${a.slug}` }));
+    data.pages.forEach(p => list.push({ id: `g:${p.id}`, group: tr('browse.pages', "Pages"), label: p.title, to: `/${p.slug}` }));
     return list;
-  }, [data, convert, baseCurrency, currency]);
+  }, [tr, data, convert, baseCurrency, currency]);
   // The trailing "Search for ..." row is the last keyboard stop.
   const total = options.length + (term.length >= MIN_CHARS ? 1 : 0);
 
@@ -93,12 +95,12 @@ export function StorefrontPredictiveSearch({ tokens: t, inputId, placeholder = '
     <div ref={rootRef} className="relative" style={{ maxWidth, margin: maxWidth ? '0 auto' : undefined }}>
       <form onSubmit={submit} role="search" className="flex items-center gap-2">
         <Search size={16} color={t.colors.inkMuted} aria-hidden="true" />
-        <label htmlFor={inputId} className="sr-only">Search</label>
+        <label htmlFor={inputId} className="sr-only">{tr('nav.search', "Search")}</label>
         <input
           id={inputId} autoFocus type="search" value={q} autoComplete="off" autoCapitalize="off" spellCheck={false}
           role="combobox" aria-expanded={showPanel} aria-controls={listId} aria-autocomplete="list" aria-activedescendant={activeId}
           onChange={e => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onKeyDown={onKey}
-          placeholder={placeholder} className="w-full bg-transparent outline-none"
+          placeholder={placeholder ?? tr('nav.searchProducts', "Search products…")} className="w-full bg-transparent outline-none"
           style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink }}
         />
       </form>
@@ -109,10 +111,10 @@ export function StorefrontPredictiveSearch({ tokens: t, inputId, placeholder = '
 
       {showPanel && (
         <div className="absolute left-0 right-0 z-30" style={{ top: 'calc(100% + 10px)', background: '#FFFFFF', border: `${t.borderWidth} solid ${t.colors.border}`, borderRadius: t.radius, maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 12px 32px rgba(0,0,0,0.12)' }}>
-          <ul id={listId} role="listbox" aria-label="Search suggestions" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {loading && !data && <li role="presentation" style={{ ...muted, padding: '14px 16px' }}>Searching…</li>}
-            {failed && <li role="presentation" style={{ ...muted, padding: '14px 16px' }}>Suggestions are unavailable. Press Enter to search.</li>}
-            {noResults && <li role="presentation" style={{ ...muted, padding: '14px 16px' }}>No results for &quot;{term}&quot;</li>}
+          <ul id={listId} role="listbox" aria-label={tr('browse.suggestions', "Search suggestions")} style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {loading && !data && <li role="presentation" style={{ ...muted, padding: '14px 16px' }}>{tr('browse.searching', "Searching…")}</li>}
+            {failed && <li role="presentation" style={{ ...muted, padding: '14px 16px' }}>{tr('browse.suggestionsUnavailable', "Suggestions are unavailable. Press Enter to search.")}</li>}
+            {noResults && <li role="presentation" style={{ ...muted, padding: '14px 16px' }}>{tr('browse.noResultsFor', 'No results for "{{term}}"', { term })}</li>}
             {groups.map(g => (
               <li key={g} role="presentation">
                 <div role="presentation" style={{ ...muted, padding: '10px 16px 4px', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '10.5px' }}>{g}</div>

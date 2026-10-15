@@ -2,6 +2,7 @@ import {
   useCallback, useEffect, useMemo, useRef, useState,
   type ComponentType, type ButtonHTMLAttributes, type ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CartDrawerContext } from './cartDrawerContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Download, ImageOff, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide-react';
@@ -88,6 +89,7 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
     try { if (v) localStorage.setItem(noteKey(store.storeId), v); else localStorage.removeItem(noteKey(store.storeId)); } catch { /* storage unavailable */ }
   };
 
+  const { t: tr } = useTranslation('storefront');
   const items = cart?.items ?? [];
   // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
   const ratesOk = ratesLoaded || items.every(i => !i.currency || i.currency === displayCurrency);
@@ -112,9 +114,9 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
       >
         <div className="flex items-center justify-between shrink-0" style={{ padding: '18px 20px', borderBottom: `1px solid ${t.colors.border}` }}>
           <h2 id="sx-cart-drawer-title" style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: t.headingWeight ?? 600, color: t.colors.ink }}>
-            Your cart{items.length > 0 ? ` (${items.reduce((s, i) => s + i.quantity, 0)})` : ''}
+            {tr('cart.yourCart', "Your cart")}{items.length > 0 ? ` (${items.reduce((s, i) => s + i.quantity, 0)})` : ''}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close cart" className="bg-transparent border-0 cursor-pointer p-1" style={{ color: t.colors.ink }}>
+          <button type="button" onClick={onClose} aria-label={tr('cart.closeCart', "Close cart")} className="bg-transparent border-0 cursor-pointer p-1" style={{ color: t.colors.ink }}>
             <X size={20} />
           </button>
         </div>
@@ -136,8 +138,8 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
         ) : items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3" style={{ padding: '24px' }}>
             <ShoppingBag size={32} style={{ color: t.colors.inkMuted }} />
-            <p style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: t.headingWeight ?? 600 }}>Your cart is empty</p>
-            <Button type="button" variant="outline" onClick={() => { onClose(); navigate('/#shop'); }}>Continue shopping</Button>
+            <p style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: t.headingWeight ?? 600 }}>{tr('cart.cartEmpty', "Your cart is empty")}</p>
+            <Button type="button" variant="outline" onClick={() => { onClose(); navigate('/#shop'); }}>{tr('cart.continueShoppingLower', "Continue shopping")}</Button>
           </div>
         ) : (
           <>
@@ -158,12 +160,12 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
                       <p style={{ ...body, fontSize: '12px', color: t.colors.inkMuted }}>{money(unit)}</p>
                       {item.type === 'digital' && (
                         <span className="inline-flex items-center gap-1 self-start px-2 py-[1px]" style={{ background: t.colors.bgAlt, fontSize: '10px', color: t.colors.inkMuted, borderRadius: t.radius.sm }}>
-                          <Download size={9} /> Digital
+                          <Download size={9} /> {tr('cart.digital', "Digital")}
                         </span>
                       )}
                       <div className="flex items-center gap-3 mt-1">
                         <div className="flex items-center" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.radius.sm }}>
-                          <button type="button" aria-label={`Decrease quantity of ${item.name}`} disabled={item.quantity <= 1 || working}
+                          <button type="button" aria-label={tr('cart.decreaseQty', 'Decrease quantity of {{name}}', { name: item.name })} disabled={item.quantity <= 1 || working}
                             onClick={() => run(key, () => updateQty(item.productId, key, 'decrease'))}
                             className="w-8 h-8 flex items-center justify-center bg-transparent border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: t.colors.ink }}>
                             <Minus size={12} />
@@ -171,7 +173,7 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
                           <span aria-live="polite" style={{ ...body, fontSize: '13px', width: '30px', textAlign: 'center' }}>
                             {working ? <Loader2 size={12} className="animate-spin mx-auto" /> : item.quantity}
                           </span>
-                          <button type="button" aria-label={`Increase quantity of ${item.name}`} disabled={working}
+                          <button type="button" aria-label={tr('cart.increaseQty', 'Increase quantity of {{name}}', { name: item.name })} disabled={working}
                             onClick={() => run(key, () => updateQty(item.productId, key, 'increase'))}
                             className="w-8 h-8 flex items-center justify-center bg-transparent border-0 cursor-pointer disabled:opacity-40" style={{ color: t.colors.ink }}>
                             <Plus size={12} />
@@ -179,7 +181,7 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
                         </div>
                         <button type="button" disabled={working} onClick={() => run(key, () => removeItem(item.productId, key))}
                           className="bg-transparent border-0 cursor-pointer underline" style={{ ...body, fontSize: '12px', color: t.colors.inkMuted }}>
-                          Remove
+                          {tr('cart.remove', "Remove")}
                         </button>
                       </div>
                     </div>
@@ -190,7 +192,7 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
 
             <div className="shrink-0 flex flex-col gap-3" style={{ padding: '16px 20px 20px', borderTop: `1px solid ${t.colors.border}` }}>
               <label className="flex flex-col gap-1.5">
-                <span style={{ ...body, fontSize: '12px', color: t.colors.inkMuted }}>Order note</span>
+                <span style={{ ...body, fontSize: '12px', color: t.colors.inkMuted }}>{tr('cart.orderNote', "Order note")}</span>
                 <textarea
                   value={note}
                   onChange={e => saveNote(e.target.value)}
@@ -200,12 +202,12 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
                 />
               </label>
               <div className="flex justify-between items-baseline">
-                <span style={{ ...body, fontSize: '14px' }}>Subtotal</span>
+                <span style={{ ...body, fontSize: '14px' }}>{tr('cart.subtotal', "Subtotal")}</span>
                 <span style={{ fontFamily: t.fonts.display, fontSize: '18px', fontWeight: t.headingWeight ?? 600 }}>{money(subtotal)}</span>
               </div>
-              <p style={{ ...body, fontSize: '11.5px', color: t.colors.inkMuted }}>Taxes and shipping are calculated at checkout.</p>
-              <Button type="button" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { onClose(); navigate('/checkout'); }}>Check out</Button>
-              <Link to="/cart" onClick={onClose} className="text-center underline" style={{ ...body, fontSize: '12.5px', color: t.colors.inkMuted }}>View cart</Link>
+              <p style={{ ...body, fontSize: '11.5px', color: t.colors.inkMuted }}>{tr('cart.taxesNote', "Taxes and shipping are calculated at checkout.")}</p>
+              <Button type="button" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { onClose(); navigate('/checkout'); }}>{tr('cart.checkOut', "Check out")}</Button>
+              <Link to="/cart" onClick={onClose} className="text-center underline" style={{ ...body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('cart.viewCart', "View cart")}</Link>
             </div>
           </>
         )}

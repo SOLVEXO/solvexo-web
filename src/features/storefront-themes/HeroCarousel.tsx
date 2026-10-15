@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { tt } from '@/utils/tStatic';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { usePreviewInspector } from './previewInspector';
 
@@ -93,7 +94,7 @@ export function HeroCarousel({ slides, blockIds, settings, colors }: {
       className="relative overflow-hidden"
       role="region"
       aria-roledescription="carousel"
-      aria-label="Slideshow"
+      aria-label={tt('sections.slideshow', tt('sections.slideshow', "Slideshow"))}
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       onMouseEnter={() => setHovered(true)}
@@ -141,9 +142,9 @@ export function HeroCarousel({ slides, blockIds, settings, colors }: {
 
       {count > 1 && showArrows && (
         <>
-          <button type="button" aria-label="Previous slide" onClick={() => go(current - 1)}
+          <button type="button" aria-label={tt('sections.prevSlide', tt('sections.prevSlide', "Previous slide"))} onClick={() => go(current - 1)}
             className="absolute top-1/2 -translate-y-1/2 left-3 sm:left-5" style={controlStyle}><ChevronLeft size={20} /></button>
-          <button type="button" aria-label="Next slide" onClick={() => go(current + 1)}
+          <button type="button" aria-label={tt('sections.nextSlide', tt('sections.nextSlide', "Next slide"))} onClick={() => go(current + 1)}
             className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-5" style={controlStyle}><ChevronRight size={20} /></button>
         </>
       )}
@@ -151,7 +152,7 @@ export function HeroCarousel({ slides, blockIds, settings, colors }: {
       {count > 1 && (pagination !== 'none' || showPause) && (
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-3">
           {showPause && (
-            <button type="button" aria-label={userPaused ? 'Play slideshow' : 'Pause slideshow'}
+            <button type="button" aria-label={userPaused ? tt('sections.playSlideshow', "Play slideshow") : tt('sections.pauseSlideshow', "Pause slideshow")}
               onClick={() => setUserPaused(p => !p)} style={{ ...controlStyle, width: 28, height: 28 }}>
               {userPaused ? <Play size={13} /> : <Pause size={13} />}
             </button>
@@ -159,7 +160,7 @@ export function HeroCarousel({ slides, blockIds, settings, colors }: {
           {pagination === 'dots' && (
             <div className="flex gap-2">
               {slides.map((_, i) => (
-                <button key={blockIds[i] ?? i} type="button" aria-label={`Go to slide ${i + 1}`}
+                <button key={blockIds[i] ?? i} type="button" aria-label={tt('sections.goToSlide', 'Go to slide {{n}}', { n: i + 1 })}
                   aria-current={i === current} onClick={() => go(i)}
                   className="cursor-pointer border-0 p-0"
                   style={{ width: i === current ? 22 : 8, height: 8, borderRadius: 9999, transition: 'width 200ms',

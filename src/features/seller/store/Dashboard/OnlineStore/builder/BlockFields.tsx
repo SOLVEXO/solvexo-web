@@ -3,7 +3,7 @@ import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import { SortableList } from './Sortable';
 import { MenuStyleField, MenuImageField } from './MenuItemExtraFields';
 import { SchemaForm, type FieldSchema, type FieldKind } from './SchemaForm';
-import { BLOCK_SCHEMAS } from './sectionRegistry';
+import { BLOCK_SCHEMAS, FOOTER_WIDTH_OPTIONS } from './sectionRegistry';
 import { isAppBlockType, findInstalledAppBlock, type AppCatalogEntry, type AppBlockFieldKind } from '@/api/services/apps';
 import type { MetafieldOwnerResource } from '@/api/services/metafields';
 
@@ -140,6 +140,11 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
       return (
         <div className="flex flex-col gap-3">
           <Field label="Column heading"><input className={inp} value={settings.heading ?? ''} onChange={e => set({ heading: e.target.value })} /></Field>
+          <Field label="Column width">
+            <select className={inp} value={settings.width ?? 'auto'} onChange={e => set({ width: e.target.value })}>
+              {FOOTER_WIDTH_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
           <div className="flex flex-col gap-2">
             {links.map((link, i) => (
               <div key={i} className="border border-bone rounded-lg p-2 relative">

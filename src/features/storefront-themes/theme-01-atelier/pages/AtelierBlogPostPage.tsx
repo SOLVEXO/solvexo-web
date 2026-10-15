@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { FileQuestion, MessageSquare } from 'lucide-react';
 import {
@@ -17,6 +18,7 @@ import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
 
 function CommentsSection({ storeId, postId }: { storeId: string; postId: string }) {
+  const { t: tr } = useTranslation('storefront');
   const [comments, setComments] = useState<{ authorName: string; body: string; createdAt: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -37,7 +39,7 @@ function CommentsSection({ storeId, postId }: { storeId: string; postId: string 
       setMsg('Thanks — your comment will appear once approved.');
       setName(''); setEmail(''); setBody('');
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Failed to submit comment.');
+      setMsg(err instanceof Error ? err.message : tr('blog.err.comment', "Failed to submit comment."));
     } finally { setSubmitting(false); }
   };
 
@@ -48,9 +50,9 @@ function CommentsSection({ storeId, postId }: { storeId: string; postId: string 
       </p>
 
       {loading ? (
-        <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Loading comments…</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>{tr('blog.loadingComments', "Loading comments…")}</p>
       ) : comments.length === 0 ? (
-        <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted, marginBottom: '20px' }}>No comments yet — be the first to share your thoughts.</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted, marginBottom: '20px' }}>{tr('blog.noComments', "No comments yet — be the first to share your thoughts.")}</p>
       ) : (
         <div className="flex flex-col gap-3" style={{ marginBottom: '24px' }}>
           {comments.map((c, i) => (
@@ -66,12 +68,12 @@ function CommentsSection({ storeId, postId }: { storeId: string; postId: string 
 
       <div className="flex flex-col gap-2.5 atelier-form" style={{ maxWidth: '480px' }}>
         <div className="grid grid-cols-2 gap-2.5">
-          <input style={atelierInput} placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
-          <input style={atelierInput} placeholder="Your email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+          <input style={atelierInput} placeholder={tr('blog.yourName', tr('blog.yourName', "Your name"))} value={name} onChange={e => setName(e.target.value)} />
+          <input style={atelierInput} placeholder={tr('footer.yourEmail', tr('footer.yourEmail', "Your email"))} type="email" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
-        <textarea style={{ ...atelierInput, resize: 'vertical', minHeight: '90px' }} placeholder="Write a comment…" value={body} onChange={e => setBody(e.target.value)} />
+        <textarea style={{ ...atelierInput, resize: 'vertical', minHeight: '90px' }} placeholder={tr('blog.writeComment', tr('blog.writeComment', "Write a comment…"))} value={body} onChange={e => setBody(e.target.value)} />
         {msg && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>{msg}</p>}
-        <AtelierButton onClick={handleSubmit} loading={submitting} style={{ alignSelf: 'flex-start' }}>Post Comment</AtelierButton>
+        <AtelierButton onClick={handleSubmit} loading={submitting} style={{ alignSelf: 'flex-start' }}>{tr('blog.postComment', "Post Comment")}</AtelierButton>
       </div>
     </div>
   );
@@ -79,6 +81,7 @@ function CommentsSection({ storeId, postId }: { storeId: string; postId: string 
 
 /** Theme 01's own Journal article page. */
 export function AtelierBlogPostPage() {
+  const { t: tr } = useTranslation('storefront');
   const { postSlug } = useParams<{ postSlug: string }>();
   const { store } = useStorefront();
   const [post, setPost] = useState<(BlogPostData & { commentsEnabled: boolean }) | null>(null);
@@ -119,7 +122,7 @@ export function AtelierBlogPostPage() {
   }, [store.storeId]);
 
   useStorefrontSeo({
-    title: post ? (post.seoTitle || post.title) : 'Journal',
+    title: post ? (post.seoTitle || post.title) : tr('blog.journal', "Journal"),
     description: (post?.seoDescription || post?.excerpt) || undefined,
     image: post?.coverImage || undefined,
   });
@@ -137,7 +140,7 @@ export function AtelierBlogPostPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 text-center" style={{ minHeight: '50vh', padding: '20px' }}>
         <FileQuestion size={36} style={{ color: t.colors.inkMuted }} />
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>This post doesn't exist.</p>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>{tr('blog.postMissing', "This post doesn't exist.")}</p>
       </div>
     );
   }
@@ -153,7 +156,7 @@ export function AtelierBlogPostPage() {
       )}
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15, marginBottom: '20px' }}>{post.title}</h1>
       {post.tags?.length > 0 && (
-        <ul className="flex flex-wrap gap-2 list-none p-0" style={{ margin: '0 0 20px' }} aria-label="Tags">
+        <ul className="flex flex-wrap gap-2 list-none p-0" style={{ margin: '0 0 20px' }} aria-label={tr('product.tags', tr('product.tags', "Tags"))}>
           {post.tags.map((tag: string) => (
             <li key={tag} style={{ fontFamily: t.fonts.body, fontSize: '11.5px', color: t.colors.inkMuted, border: `1px solid ${t.colors.border}`, borderRadius: '2px', padding: '3px 10px' }}>{tag}</li>
           ))}

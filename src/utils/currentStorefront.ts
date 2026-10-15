@@ -26,3 +26,16 @@ export function setStorefrontToken(storeId: string, token: string | null) {
     if (token) sessionStorage.setItem(tokenKey(storeId), token); else sessionStorage.removeItem(tokenKey(storeId));
   } catch { /* storage unavailable */ }
 }
+
+// Resolved buyer country (ISO2) + active content language, published by StorefrontMarketProvider for code outside
+// the React tree (apiCreateCheckout sends both so the server can stamp market/locale on the checkout and order).
+let currentCountry: string | null = null;
+let currentLocale = 'en';
+
+export function setStorefrontLocaleInfo(info: { country: string | null; locale: string }) {
+  currentCountry = info.country;
+  currentLocale = info.locale;
+}
+export function getStorefrontLocaleInfo(): { country?: string; locale: string } {
+  return { ...(currentCountry ? { country: currentCountry } : {}), locale: currentLocale };
+}

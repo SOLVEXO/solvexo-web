@@ -1,4 +1,5 @@
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { RotateCcw, Package, Loader2, Check } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -13,12 +14,13 @@ const ELIGIBLE_STATUSES = new Set(['delivered', 'completed']);
 /** Theme 01's own Return/Refund request page — real, backend-wired
  *  (`apiRequestReturn`, the exact same endpoint the seller's Returns page
  *  already processes via `apiGetSellerReturns`/`apiReturnAction` — verified
- *  real this session). One "Request Return" action per delivered/completed
+ *  real this session). One tr('returns.requestBtn', "Request Return") action per delivered/completed
  *  line item, with an inline reason field — no bulk multi-select, matching
  *  this theme's other account surfaces' flat, simple scope. */
 export function AtelierReturnsPage() {
+  const { t: tr } = useTranslation('storefront');
   useRequireRealAccount();
-  useStorefrontSeo({ title: 'Returns', noindex: true });
+  useStorefrontSeo({ title: tr('account.returns', "Returns"), noindex: true });
   const [orders, setOrders] = useState<OrderSummary[] | null>(null);
   const [error, setError] = useState('');
   const [openItemKey, setOpenItemKey] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export function AtelierReturnsPage() {
   const eligible = (orders ?? []).filter(o => ELIGIBLE_STATUSES.has(o.orderStatus));
 
   const submitReturn = async (orderId: string, itemId: string, itemKey: string) => {
-    if (!reason.trim()) { setFormError('Please describe the issue.'); return; }
+    if (!reason.trim()) { setFormError(tr('returns.err.describe', "Please describe the issue.")); return; }
     setFormError('');
     setSubmitting(true);
     try {
@@ -45,7 +47,7 @@ export function AtelierReturnsPage() {
       setOpenItemKey(null);
       setReason('');
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to submit return request.');
+      setFormError(err instanceof Error ? err.message : tr('returns.err.submit', "Failed to submit return request."));
     } finally {
       setSubmitting(false);
     }
@@ -53,7 +55,7 @@ export function AtelierReturnsPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: '820px', padding: `48px ${t.layout.containerPadX}` }}>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>Returns</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>{tr('account.returns', "Returns")}</h1>
       <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginBottom: '28px' }}>
         Request a return on any delivered item.
       </p>
@@ -67,7 +69,7 @@ export function AtelierReturnsPage() {
       ) : eligible.length === 0 ? (
         <div className="flex flex-col items-center text-center" style={{ padding: '64px 0', border: `1px solid ${t.colors.border}` }}>
           <RotateCcw size={28} style={{ color: t.colors.inkMuted, marginBottom: '14px' }} />
-          <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink }}>No returnable orders</p>
+          <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink }}>{tr('returns.noneReturnable', "No returnable orders")}</p>
           <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
             Delivered orders will show up here, ready to return.
           </p>
@@ -106,7 +108,7 @@ export function AtelierReturnsPage() {
                           className="cursor-pointer bg-transparent"
                           style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.ink, border: `1px solid ${t.colors.border}`, padding: '7px 14px' }}
                         >
-                          {isOpen ? 'Cancel' : 'Request Return'}
+                          {isOpen ? tr('common.cancel', "Cancel") : tr('returns.requestBtn', "Request Return")}
                         </button>
                       )}
                     </div>
@@ -137,7 +139,7 @@ export function AtelierReturnsPage() {
                         <textarea
                           value={reason}
                           onChange={e => setReason(e.target.value)}
-                          placeholder="Describe the issue (e.g. damaged, wrong item)…"
+                          placeholder={tr('returns.describePlaceholder', tr('returns.describePlaceholder', "Describe the issue (e.g. damaged, wrong item)…"))}
                           rows={2}
                           className="w-full"
                           style={{ fontFamily: t.fonts.body, fontSize: '13px', border: `1px solid ${t.colors.border}`, padding: '10px 12px', resize: 'vertical', color: t.colors.ink, background: '#FFFFFF' }}

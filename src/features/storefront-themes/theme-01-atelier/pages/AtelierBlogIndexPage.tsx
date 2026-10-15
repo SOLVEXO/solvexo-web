@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { Newspaper, ImageOff } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -29,10 +30,11 @@ function PostImage({ src, alt }: { src?: string | null; alt: string }) {
  *  comes back from the API, so a named blog shows its own title instead of
  *  always saying "Journal". */
 export function AtelierBlogIndexPage() {
+  const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
   const { blogSlug } = useParams<{ blogSlug?: string }>();
   const [blogTitle, setBlogTitle] = useState<string | null>(null);
-  useStorefrontSeo({ title: blogTitle ?? 'Journal' });
+  useStorefrontSeo({ title: blogTitle ?? tr('blog.journal', "Journal") });
   const [posts, setPosts] = useState<BlogPostSummary[] | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [page, setPage] = useState(1);
@@ -62,7 +64,7 @@ export function AtelierBlogIndexPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 600, color: t.colors.ink, marginBottom: '36px' }}>{blogTitle ?? 'Journal'}</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 600, color: t.colors.ink, marginBottom: '36px' }}>{blogTitle ?? tr('blog.journal', "Journal")}</h1>
 
       {/* `blog_post_list` (the locked core section, seeded server-side) is
          NOT re-rendered here — the real post grid below already is it;
@@ -86,7 +88,7 @@ export function AtelierBlogIndexPage() {
       {posts !== null && posts.length === 0 && (
         <div className="flex flex-col items-center text-center" style={{ padding: '80px 0', border: `1px solid ${t.colors.border}` }}>
           <Newspaper size={30} style={{ color: t.colors.inkMuted }} className="mb-3" />
-          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>No posts yet — check back soon.</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted }}>{tr('blog.noPosts', "No posts yet — check back soon.")}</p>
         </div>
       )}
 
@@ -117,7 +119,7 @@ export function AtelierBlogIndexPage() {
         <div className="flex justify-center" style={{ marginTop: '40px' }}>
           <button type="button" onClick={loadMore} disabled={loadingMore} className="cursor-pointer disabled:opacity-60"
             style={{ fontFamily: t.fonts.body, fontSize: '12.5px', letterSpacing: '0.06em', padding: '12px 30px', border: `1px solid ${t.colors.ink}`, background: 'transparent', color: t.colors.ink, borderRadius: '0' }}>
-            {loadingMore ? 'Loading…' : 'Load more'}
+            {loadingMore ? tr('common.loading', "Loading…") : tr('blog.loadMore', "Load more")}
           </button>
         </div>
       )}

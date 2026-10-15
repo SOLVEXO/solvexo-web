@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { Lock, AlertCircle, Clock } from 'lucide-react';
 import type { PublicStoreData } from '@/api/services/store';
@@ -16,8 +17,9 @@ import { NovaSectionRenderer } from '../sections';
  *  in place of the theme's normal Layout/Outlet tree whenever the store is
  *  gated and this tab hasn't already unlocked it). */
 export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreData; onUnlocked: () => void }) {
+  const { t: tr } = useTranslation('storefront');
   const isComingSoon = store.privacyMode === 'coming_soon';
-  useStorefrontSeo({ title: isComingSoon ? 'Coming Soon' : 'This store is password protected', noindex: true });
+  useStorefrontSeo({ title: isComingSoon ? tr('gate.comingSoon', "Coming Soon") : tr('gate.passwordProtected', "This store is password protected"), noindex: true });
   const gateSections = usePageTemplateSections(store.storeId, 'password');
 
   const [password, setPassword] = useState('');
@@ -34,7 +36,7 @@ export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
         setStorefrontToken(store.storeId, res.data.token);
         onUnlocked();
       } else {
-        setError('Incorrect password. Please try again.');
+        setError(tr('gate.incorrect', "Incorrect password. Please try again."));
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -59,16 +61,16 @@ export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
       {isComingSoon ? (
         <div className="flex flex-col items-center gap-3" style={{ maxWidth: '380px' }}>
           <Clock size={32} style={{ color: t.colors.inkMuted }} />
-          <p style={{ fontSize: '15px', fontWeight: 700, color: t.colors.ink }}>We'll be right back</p>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: t.colors.ink }}>{tr('gate.beRightBack', "We'll be right back")}</p>
           <p style={{ fontSize: '13px', color: t.colors.inkMuted, lineHeight: 1.6 }}>
-            This store is getting ready to launch. Please check back soon.
+            {tr('gate.gettingReady', "This store is getting ready to launch. Please check back soon.")}
           </p>
         </div>
       ) : (
         <div className="w-full" style={{ maxWidth: '340px' }}>
           <div className="flex flex-col items-center gap-2" style={{ marginBottom: '18px' }}>
             <Lock size={22} style={{ color: t.colors.inkMuted }} />
-            <p style={{ fontSize: '13px', color: t.colors.inkMuted }}>This store is password protected.</p>
+            <p style={{ fontSize: '13px', color: t.colors.inkMuted }}>{tr('gate.passwordProtectedDot', "This store is password protected.")}</p>
           </div>
 
           {error && (
@@ -80,7 +82,7 @@ export function NovaStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '24px' }}>
             <div>
-              <label htmlFor="nova-gate-password" style={novaLabel}>Password</label>
+              <label htmlFor="nova-gate-password" style={novaLabel}>{tr('auth.password', "Password")}</label>
               <PasswordField
                 id="nova-gate-password"
                 required

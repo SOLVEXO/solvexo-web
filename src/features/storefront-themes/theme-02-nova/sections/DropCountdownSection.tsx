@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { tt } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -64,10 +65,10 @@ function DropCountdownSection({ section, colors }: { section: Section; colors: N
           <p style={{ fontFamily: t.fonts.display, fontSize: '22px', color: '#FFFFFF' }}>{copyText(section.settings, 'endedText', 'Dropped!')}</p>
         ) : (
           <div className="flex items-center gap-6 sm:gap-10">
-            <CountdownUnit value={now.days} label="Days" />
-            <CountdownUnit value={now.hours} label="Hrs" />
-            <CountdownUnit value={now.minutes} label="Min" />
-            <CountdownUnit value={now.seconds} label="Sec" />
+            <CountdownUnit value={now.days} label={tt('countdown.days', tt('countdown.days', "Days"))} />
+            <CountdownUnit value={now.hours} label={tt('countdown.hrs', tt('countdown.hrs', "Hrs"))} />
+            <CountdownUnit value={now.minutes} label={tt('countdown.min', tt('countdown.min', "Min"))} />
+            <CountdownUnit value={now.seconds} label={tt('countdown.sec', tt('countdown.sec', "Sec"))} />
           </div>
         )}
         {section.settings.ctaText && link && (

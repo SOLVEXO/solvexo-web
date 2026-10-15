@@ -1,4 +1,5 @@
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
+import { useTranslation } from 'react-i18next';
 import { OrderStatusView, type OrderStatusLook } from '../../OrderStatusView';
 import { novaTheme as t } from '../theme.config';
 
@@ -15,6 +16,7 @@ const look: OrderStatusLook = {
 
 /** Theme 02's public Order status page (`/order-status/:token`, no login). */
 export function NovaOrderStatusPage() {
-  useStorefrontSeo({ title: 'Order status', noindex: true });
+  const { t: tr } = useTranslation('storefront');
+  useStorefrontSeo({ title: tr('orders.statusAria', "Order status"), noindex: true });
   return <OrderStatusView look={look} />;
 }

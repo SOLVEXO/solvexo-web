@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FileQuestion } from 'lucide-react';
 import { NovaButton } from '../components/NovaButton';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
@@ -15,8 +16,9 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
  *  independent, not a fallback, since a genuinely unmatched URL is a
  *  first-class case any theme should own. */
 export function NovaNotFoundPage() {
+  const { t: tr } = useTranslation('storefront');
   const navigate = useNavigate();
-  useStorefrontSeo({ title: 'Page not found' });
+  useStorefrontSeo({ title: tr('notFound.title', "Page not found") });
   const { store } = useStorefront();
   const extra = usePageTemplateSections(store?.storeId, 'not-found');
 
@@ -29,13 +31,13 @@ export function NovaNotFoundPage() {
       <FileQuestion size={40} style={{ color: t.colors.inkMuted }} />
       <div className="flex flex-col gap-2">
         <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 700, color: t.colors.ink }}>
-          Page not found
+          {tr('notFound.title', "Page not found")}
         </h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, maxWidth: '380px' }}>
-          The page you're looking for doesn't exist or may have been moved.
+          {tr('notFound.body', "The page you're looking for doesn't exist or may have been moved.")}
         </p>
       </div>
-      <NovaButton onClick={() => navigate('/')}>Back to Home</NovaButton>
+      <NovaButton onClick={() => navigate('/')}>{tr('notFound.backHome', "Back to Home")}</NovaButton>
     </main>
     {/* Sections the seller added to the 404 template in Customize. */}
     {extra.length > 0 && <NovaSectionRenderer sections={extra} />}

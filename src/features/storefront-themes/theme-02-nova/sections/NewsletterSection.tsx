@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { tt } from '@/utils/tStatic';
 import type { Section } from '@/api/services/storefrontTypes';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -42,14 +43,14 @@ function NewsletterSection({ section }: { section: Section; colors: NovaSectionC
         </h2>
         {section.settings.subtext && <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: 'rgba(255,255,255,0.88)', maxWidth: '560px', lineHeight: 1.7 }}>{section.settings.subtext}</p>}
         {status === 'done' ? (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: '#FFFFFF' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : copyText(section.settings, 'successMessage', "Thank you — you're subscribed.")}</p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: '#FFFFFF' }}>{pendingConfirm ? 'Almost done — check your inbox to confirm your subscription.' : copyText(section.settings, 'successMessage', tt('footer.subscribed', "Thank you — you're subscribed."))}</p>
         ) : (
           <form onSubmit={submit} className="flex flex-col sm:flex-row gap-2 w-full" style={{ maxWidth: '520px', marginTop: '4px' }}>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(section.settings, 'placeholder', 'Your email')} aria-label={copyText(section.settings, 'placeholder', 'Your email')} style={{ ...novaInput, background: '#FFFFFF' }} />
-            <NovaButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0, background: '#FFFFFF', color: t.colors.accent }}>{copyText(section.settings, 'buttonLabel', 'Subscribe')}</NovaButton>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(section.settings, 'placeholder', tt('footer.yourEmail', "Your email"))} aria-label={copyText(section.settings, 'placeholder', tt('footer.yourEmail', "Your email"))} style={{ ...novaInput, background: '#FFFFFF' }} />
+            <NovaButton type="submit" loading={status === 'loading'} style={{ flexShrink: 0, background: '#FFFFFF', color: t.colors.accent }}>{copyText(section.settings, 'buttonLabel', tt('footer.subscribe', "Subscribe"))}</NovaButton>
           </form>
         )}
-        {status === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#FFFFFF' }}>Something went wrong — try again.</p>}
+        {status === 'error' && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#FFFFFF' }}>{tt('footer.error', "Something went wrong — try again.")}</p>}
       </div>
     </div>
   );
