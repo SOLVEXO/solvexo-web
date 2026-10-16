@@ -50,6 +50,8 @@ export interface StorefrontColors {
   productImageRatio:  ThemeProductImageRatio;
   productImageHover:  ThemeProductImageHover;
   saleBadge?:         'show' | 'hide';
+  quickView?:         'show' | 'hide';
+  colorSwatches?:     'show' | 'hide';
   soldOutBadge?:      'show' | 'hide';
   cardStyle?:         'theme' | 'flat' | 'outlined' | 'elevated';
   cartType?:          'drawer' | 'page';
@@ -89,12 +91,12 @@ export interface ColorScheme {
  * `blocks: Block[]` list plus a few scalar layout fields. Converting to that
  * shape was evaluated and deliberately NOT done this pass, because it would
  * buy no real merchant capability in this codebase specifically:
- * `AtelierNavbar`/`AtelierFooter` (and Nova's equivalents) render a FIXED
+ * `FashionNavbar` (and another theme's equivalents) render a FIXED
  * layout — one logo slot, one flat nav-link row; one columns/social/
  * copyright arrangement — with no place in their render tree for a second,
  * independently-positioned section, and `headerStyle`/`footerStyle` are
  * deliberately NOT swappable-by-the-merchant today (see
- * `AtelierHeaderFooterPage.tsx`'s own doc comment). Forcing a `Section[]`
+ * `ThemeHeaderFooterPage.tsx`'s own doc comment). Forcing a `Section[]`
  * wrapper around a group that can only ever meaningfully hold ONE section
  * would be exactly the "abstraction for its own sake" this phase's own
  * instructions warn against — there is nothing real to add/remove/reorder
@@ -103,7 +105,7 @@ export interface ColorScheme {
  * So: a `SectionGroupLike` group is what Header/Footer already are — an
  * ordered list of independently addable/removable/reorderable `Block`s
  * (hide/duplicate were the one genuinely missing capability, closed this
- * pass in `AtelierHeaderFooterPage.tsx`'s `BlockRow`) plus the group's own
+ * pass in `ThemeHeaderFooterPage.tsx`'s `BlockRow`) plus the group's own
  * settings. A future theme that DOES need multiple independently-orderable
  * header/footer sections can extend this to `sections: SectionGroupLike[]`
  * without this shape changing — the clean extension point this phase's
@@ -224,7 +226,7 @@ export interface StoreThemeData {
   sourcePackageVersion?: number | null;
   status:         InstalledThemeStatus;
   installedAt:    string;
-  /** Merchant override for this row's display name (e.g. "Copy of Atelier") — null means "just show the theme package's own name". */
+  /** Merchant override for this row's display name (e.g. "Copy of Maison") — null means "just show the theme package's own name". */
   name:           string | null;
   // Live/published — read by the public storefront exactly as before the
   // draft/publish split existed.

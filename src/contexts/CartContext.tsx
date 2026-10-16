@@ -97,7 +97,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
   // source it came from.
   const refreshGuestCartDisplay = useCallback(async () => {
     const guestItems = getGuestCartItems();
-    if (guestItems.length === 0) { setCart(null); return; }
+    if (guestItems.length === 0) { if (!TokenStorage.isLoggedIn()) setCart(null); return; }
 
     setLoading(true);
     const uniqueProductIds = Array.from(new Set(guestItems.map(i => i.productId)));
@@ -128,10 +128,14 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
         price:            unitPrice,
         currency:         variant.currency,
         quantity:         gi.quantity,
+        options:          variant.options ?? [],
         itemTotal:        unitPrice * gi.quantity,
         type:             gi.type,
       });
     }
+    // A session started while the product lookups above were in flight (guest checkout / login): the real
+    // server cart is the truth now, so a stale local snapshot must not overwrite it.
+    if (TokenStorage.isLoggedIn()) { setLoading(false); return; }
     const totalItems = items.reduce((s, i) => s + i.quantity, 0);
     const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
     setCart({ userId: 'guest', items, totalItems, totalPrice });

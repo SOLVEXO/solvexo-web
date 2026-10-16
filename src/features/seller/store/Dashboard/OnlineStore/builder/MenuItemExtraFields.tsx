@@ -8,7 +8,7 @@ const OPTIONS: { value: NavMenuStyle; label: string; hint: string }[] = [
 ];
 
 /** Top-level nav item: how its children are presented. Each theme draws
- *  both styles in its own look (Atelier: editorial columns, Nova: category
+ *  both styles in its own look (Maison: editorial columns, another theme: category
  *  rail + image tiles). Only meaningful once the item has children. */
 export function MenuStyleField({ value, onChange, hasChildren }: {
   value: NavMenuStyle | undefined;

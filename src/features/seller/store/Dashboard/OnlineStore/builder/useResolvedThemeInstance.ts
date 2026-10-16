@@ -7,10 +7,10 @@ import { apiListInstalledThemes, type StoreThemeData } from '@/api/services/stor
  *  call (and every save/publish/discard/version call alongside it) silently
  *  defaulted to whichever installed theme instance is currently ACTIVE,
  *  regardless of which theme's URL the seller was on. Proven live: with
- *  Nova active, visiting the Atelier URL rendered "Customize — Nova".
+ *  another theme active, visiting the Maison URL rendered "Customize — the other theme".
  *
  *  This resolves the URL's `:themeId` (a code-registry key, e.g.
- *  'theme-02-nova') against this STORE's own installed rows
+ *  'theme-03-fashion') against this STORE's own installed rows
  *  (`apiListInstalledThemes`, already storeId-scoped/ownership-verified on
  *  the backend) to find that theme's own row `_id` — the real
  *  `installedThemeId` every `apiXxxStoreTheme(...)` function already

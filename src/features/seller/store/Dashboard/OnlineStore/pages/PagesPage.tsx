@@ -53,11 +53,11 @@ export function PagesPage() {
   // Which section types this store's REAL active theme can actually render
   // — this page never had a theme lookup at all before, so its own "Add a
   // Section" picker (via PageSectionsEditor below) always showed the full,
-  // theme-agnostic catalogue regardless of which theme was active. On Nova
+  // theme-agnostic catalogue regardless of which theme was active. On another theme
   // that meant Video/Drop Countdown could be "added" to a custom page here
   // too and silently render as nothing — same bug as Customize, same fix:
   // resolve the real theme once and filter the picker against it. Falls
-  // back to Atelier's full set (same as every other `getThemePreviewComponents`
+  // back to Maison's full set (same as every other `getThemePreviewComponents`
   // call in the app) while this hasn't loaded yet, so the picker never sits
   // empty.
   const [themeDefinitionId, setThemeDefinitionId] = useState<string | undefined>(undefined);

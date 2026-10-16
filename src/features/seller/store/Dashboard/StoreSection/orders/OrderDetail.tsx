@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Package, MapPin, User, CreditCard, Truck, AlertCircle,
-  CheckCheck, RefreshCw, XCircle, Undo2, Store as StoreIcon, Printer, Pencil, RotateCcw,
+  CheckCheck, RefreshCw, XCircle, Undo2, Store as StoreIcon, Printer, Pencil, RotateCcw, StickyNote,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -572,6 +572,12 @@ export function StoreOrderDetail() {
                   {detail.shippingAddress.city}, {detail.shippingAddress.state} {detail.shippingAddress.zipCode}<br />
                   {detail.shippingAddress.phoneNumber}
                 </p>
+              </Card>
+            )}
+
+            {detail.customerNote && (
+              <Card title="Note from customer" icon={StickyNote}>
+                <p className="text-[13px] text-ink whitespace-pre-line m-0">{detail.customerNote}</p>
               </Card>
             )}
 

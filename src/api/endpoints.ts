@@ -677,6 +677,7 @@ export const ENDPOINTS = {
     APPLY_GIFT_CARD: '/api/checkout/apply-gift-card',
     REMOVE_GIFT_CARD: (checkoutId: string) => `/api/checkout/remove-gift-card/${checkoutId}`,
     APPLY_STORE_CREDIT: '/api/checkout/apply-store-credit',
+    CUSTOMER_NOTE: '/api/checkout/customer-note',
     REMOVE_STORE_CREDIT: (checkoutId: string) => `/api/checkout/remove-store-credit/${checkoutId}`,
     // New per-store connected gateways (Safepay et al) — only ever
     // non-empty for a single-store checkout, see CheckoutPaymentMethodsService.

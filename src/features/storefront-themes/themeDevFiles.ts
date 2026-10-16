@@ -2,9 +2,9 @@
  * The Theme Dev Files contract — Phase 5 of the theme-agnostic platform
  * work, sibling to `themeManifest.ts` (Phase 3/4).
  *
- * WHY THIS FILE EXISTS: `OnlineStore/themes/AtelierEditCodePage.tsx` (the
+ * WHY THIS FILE EXISTS: `OnlineStore/themes/ThemeEditCodePage.tsx` (the
  * seller-facing "Edit Code" developer workspace) used five module-level
- * `import.meta.glob(...)` calls with Atelier's literal file paths baked in,
+ * `import.meta.glob(...)` calls with Maison's literal file paths baked in,
  * to show real, read-only theme source (sections/layout/snippets/locales)
  * for transparency. That's a hard Vite constraint, not a design choice this
  * refactor can route around: `import.meta.glob`'s path argument MUST be a
@@ -16,9 +16,9 @@
  * The fix is the same pattern `themeManifest.ts` already established for a
  * different Vite/bundler constraint (dynamic Tailwind classes): each theme
  * owns ONE small file with its own literal `import.meta.glob(...)` calls
- * (see `theme-01-atelier/theme.devFiles.ts`), and registers the result here
+ * (see `theme-03-fashion/theme.devFiles.ts`), and registers the result here
  * under its `id` — exactly like `registerThemeManifest`. The page that
- * consumes this (`AtelierEditCodePage.tsx`) then resolves the ACTIVE
+ * consumes this (`ThemeEditCodePage.tsx`) then resolves the ACTIVE
  * store's theme id against this registry instead of importing one theme's
  * glob results by name, so a second theme's dev files show up there with
  * zero new code in that page.

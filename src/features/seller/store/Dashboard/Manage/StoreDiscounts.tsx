@@ -21,7 +21,7 @@ import {
 // (DiscountsService) and this frontend api client (discounts.ts) already
 // existed and were already wired into checkout pricing — this page is the
 // missing seller-facing surface that closes the loop, same class of gap as
-// AtelierLivePreview's hardcoded-theme bug fixed earlier: real, working
+// ThemeLivePreview's hardcoded-theme bug fixed earlier: real, working
 // functionality nobody could actually reach. ──
 
 const DISCOUNT_TYPE_LABEL: Record<DiscountType, string> = {

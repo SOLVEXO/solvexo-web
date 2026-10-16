@@ -103,7 +103,12 @@ export function CollageSection({ section, blocks, colors, theme }: Props) {
           </div>
           {rest.length > 0 && (
             <div className={`grid gap-4 ${rest.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {rest.map((b, i) => <PreviewBlock key={b._id ?? i + 1} blockId={String(b._id ?? i + 1)}><CollageTile block={b} big={false} colors={colors} theme={theme} /></PreviewBlock>)}
+              {rest.map((b, i) => (
+                // an odd number of small tiles would leave a hole in the 2-column grid: the last one spans both columns
+                <div key={b._id ?? i + 1} className={rest.length > 1 && rest.length % 2 === 1 && i === rest.length - 1 ? 'col-span-2' : ''}>
+                  <PreviewBlock blockId={String(b._id ?? i + 1)}><CollageTile block={b} big={false} colors={colors} theme={theme} /></PreviewBlock>
+                </div>
+              ))}
             </div>
           )}
         </div>

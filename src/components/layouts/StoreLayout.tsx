@@ -601,6 +601,31 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const currentPlanLabel = platformSub?.plan
     ? (platformSub.plan.isFree ? 'Free Plan' : `${platformSub.plan.name} Plan`)
     : null;
+  // Paid-plan card: current billing cycle (end = currentPeriodEnd, start = one
+  // month/year before it), price line and the state flags shown under the bar.
+  const planCycle = (() => {
+    if (!platformSub || !currentPlanLabel || !platformSub.currentPeriodEnd) return null;
+    const end = new Date(platformSub.currentPeriodEnd);
+    if (Number.isNaN(end.getTime())) return null;
+    const start = new Date(end);
+    if (platformSub.billingInterval === 'yearly') start.setFullYear(start.getFullYear() - 1);
+    else start.setMonth(start.getMonth() - 1);
+    const total = end.getTime() - start.getTime();
+    const pct = total > 0 ? Math.min(100, Math.max(0, Math.round(((trialNow - start.getTime()) / total) * 100))) : 0;
+    const daysLeft = Math.max(0, Math.ceil((end.getTime() - trialNow) / 86400000));
+    const fmt = (d: Date | string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const free = !!platformSub.plan?.isFree || !(platformSub.amountUSD > 0);
+    return {
+      pct, daysLeft, free,
+      endOn: fmt(end),
+      price: free ? 'Free' : `$${Number(platformSub.amountUSD).toLocaleString('en-US', { maximumFractionDigits: 2 })} / ${platformSub.billingInterval === 'yearly' ? 'year' : 'month'}`,
+      cancelling: !!platformSub.cancelAtPeriodEnd,
+      paymentFailed: (platformSub.failedPaymentAttempts ?? 0) > 0 || platformSub.status === 'past_due',
+      scheduled: platformSub.scheduledPlanChange
+        ? { name: platformSub.scheduledPlanChange.planName, on: fmt(platformSub.scheduledPlanChange.scheduledAt) }
+        : null,
+    };
+  })();
   // Seller's own per-store "don't show this trial card again" choice — see
   // `isTrialCardDismissed`'s comment. Re-read whenever storeId changes (the
   // seller switched stores without this component remounting) so one
@@ -914,21 +939,97 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                 </motion.div>
               ))}
             </AnimatePresence>
-            {!(isTrialing || isTrialEndedSidebar) && currentPlanLabel && (
-              <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
-                <div className="mb-[10px]">
-                  <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
+            <AnimatePresence mode="wait" initial={false}>
+              {!(isTrialing || isTrialEndedSidebar) && currentPlanLabel && (trialCardDismissed ? (
+                // Collapsed pill — same look + same per-store remembered
+                // choice as the trial card's pill.
+                <motion.button
+                  key="plan-pill"
+                  onClick={() => { if (storeId) showTrialCard(storeId); setTrialCardDismissed(false); }}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  title="Show plan card"
+                  className={clsx(
+                    'w-full flex items-center gap-2 mt-[8px] mb-[10px] pl-[6px] pr-3 py-[6px] rounded-full border-0 cursor-pointer text-left',
+                    'bg-gradient-to-r from-brand-orange to-brand-deep-orange',
+                    'hover:brightness-[1.06] active:scale-[0.98] transition-all duration-150',
+                  )}
+                >
+                  <span className="size-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    {planCycle?.paymentFailed
+                      ? <AlertTriangle size={11} className="text-white" />
+                      : <Layers size={11} className="text-white" />}
+                  </span>
+                  <span className="flex-1 min-w-0 text-[11px] font-semibold text-white truncate">
+                    {planCycle?.paymentFailed ? 'Payment failed' : currentPlanLabel}
+                  </span>
+                  <span className="size-[16px] rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+                    <ChevronDown size={11} className="text-brand-deep-orange rotate-180" />
+                  </span>
+                </motion.button>
+              ) : (
+                <motion.div
+                  key="plan-card"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 16 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative mt-[8px] mb-[10px]"
+                >
+                  <span className="absolute -top-[7px] left-[10px] z-10 inline-flex items-center px-[7px] py-[3px] rounded-full bg-white text-brand-deep-orange text-[8px] font-extrabold uppercase tracking-[0.05em] shadow-sm whitespace-nowrap">
                     {currentPlanLabel}
                   </span>
-                </div>
-                <button
-                  onClick={() => navigate(`/store/${storeId}/plan-billing`)}
-                  className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
-                >
-                  Manage Plan
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => { if (storeId) dismissTrialCard(storeId); setTrialCardDismissed(true); }}
+                    title="Collapse"
+                    aria-label="Collapse plan card"
+                    className="absolute -top-[7px] right-[6px] z-10 size-[16px] rounded-full bg-white flex items-center justify-center text-brand-deep-orange hover:text-charcoal shadow-sm cursor-pointer border-0"
+                  >
+                    <ChevronDown size={11} />
+                  </button>
+                  <div className="bg-brand-orange rounded-[10px] px-3 pt-[16px] pb-[10px]">
+                    <div className="flex items-center justify-between gap-2 mb-[10px]">
+                      <span className="min-w-0 truncate text-white text-[12px] font-bold leading-none tabular-nums whitespace-nowrap">
+                        {planCycle?.price ?? ''}
+                      </span>
+                      <span className={clsx(
+                        'inline-flex items-center gap-1 px-[8px] py-[4px] rounded-full text-white text-[9px] font-semibold shrink-0 whitespace-nowrap',
+                        planCycle?.paymentFailed ? 'bg-[#c0392b]' : planCycle?.cancelling ? 'bg-black/25' : 'bg-white/15',
+                      )}>
+                        {planCycle?.paymentFailed
+                          ? <AlertTriangle size={9} className="text-white" />
+                          : <span className="size-[6px] rounded-full bg-[#7be3a0]" />}
+                        {planCycle?.paymentFailed ? 'Failed' : planCycle?.cancelling ? 'Ending' : 'Active'}
+                      </span>
+                    </div>
+                    {planCycle && !planCycle.free && (
+                      <>
+                        <div className="h-[5px] bg-white/25 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full transition-[width] duration-300" style={{ width: `${planCycle.pct}%` }} />
+                        </div>
+                        <div className="flex justify-between gap-2 mb-[11px] mt-[4px] text-white/70 text-[8.5px] font-medium tabular-nums whitespace-nowrap">
+                          <span>{planCycle.cancelling ? `Ends ${planCycle.endOn}` : `Renews ${planCycle.endOn}`}</span>
+                          <span>{planCycle.daysLeft} day{planCycle.daysLeft === 1 ? '' : 's'} left</span>
+                        </div>
+                      </>
+                    )}
+                    {planCycle?.scheduled && (
+                      <p className="text-white/85 text-[9px] font-medium leading-[1.35] mb-[9px]">
+                        Switching to {planCycle.scheduled.name} on {planCycle.scheduled.on}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+                      className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                    >
+                      {planCycle?.paymentFailed ? 'Update Payment' : 'Manage Plan'}
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/store/${storeId}/account`)}

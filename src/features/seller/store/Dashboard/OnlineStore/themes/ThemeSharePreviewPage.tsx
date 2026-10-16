@@ -7,8 +7,7 @@ import { getThemeDemoPreview } from '@/features/storefront-themes/themeDemoPrevi
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { apiGetPreviewByToken, type PreviewByTokenData } from '@/api/services/storeTheme';
-import '@/features/storefront-themes/theme-01-atelier/atelier.css';
-import '@/features/storefront-themes/theme-02-nova/nova.css';
+import '@/features/storefront-themes/theme-03-fashion/fashion.css';
 
 /**
  * The PUBLIC (no-auth) half of "Share Preview" — real, shareable "see this

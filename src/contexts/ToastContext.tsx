@@ -16,6 +16,10 @@ interface ToastContextValue {
   dismiss: (id: number) => void;
   pause:   (id: number) => void;
   resume:  (id: number) => void;
+  /** How many themes/pages currently draw their own toast UI (the default ToastContainer stays hidden while > 0). */
+  customHosts: number;
+  /** A theme that renders its own toasts calls this on mount; call the returned function on unmount. */
+  claimHost: () => () => void;
 }
 
 const ToastCtx = createContext<ToastContextValue | null>(null);
@@ -27,6 +31,11 @@ const MAX_VISIBLE = 3;
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastEntry[]>([]);
   const nextId = useRef(0);
+  const [customHosts, setCustomHosts] = useState(0);
+  const claimHost = useCallback(() => {
+    setCustomHosts(n => n + 1);
+    return () => setCustomHosts(n => Math.max(0, n - 1));
+  }, []);
   // Per-toast auto-dismiss bookkeeping, kept out of state since it's just
   // timer plumbing — `remaining` lets hovering a toast genuinely pause its
   // countdown instead of merely freezing the progress bar's paint.
@@ -71,7 +80,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [schedule]);
 
   return (
-    <ToastCtx.Provider value={{ toasts, show, dismiss, pause, resume }}>
+    <ToastCtx.Provider value={{ toasts, show, dismiss, pause, resume, customHosts, claimHost }}>
       {children}
     </ToastCtx.Provider>
   );

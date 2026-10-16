@@ -5,7 +5,7 @@ import { NavAnchor } from './NavAnchor';
 import { isMegaItem } from './megaNav';
 
 /** Each theme passes its own tokens, so the same accordion reads as that
- *  theme's mobile navigation (Atelier: spaced uppercase, square tiles; Nova:
+ *  theme's mobile navigation (Maison: spaced uppercase, square tiles; another theme:
  *  bold, rounded tiles) without duplicating the open/close logic. */
 export interface MobileNavTokens {
   colors: { ink: string; inkMuted: string; border: string; bgAlt: string; accent: string };

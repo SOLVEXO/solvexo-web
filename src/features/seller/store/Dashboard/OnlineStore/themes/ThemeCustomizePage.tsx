@@ -1,0 +1,1164 @@
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink, Trash2, Pencil } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useToast } from '@/contexts/ToastContext';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { SkeletonBox } from '@/components/comman/ui';
+import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
+import { ScopePicker, ResourcePicker } from '../builder/ScopePicker';
+import {
+  apiListStorePages, apiUpdateStorePageSections, apiPublishStorePage, apiRevertStorePageDraft,
+  apiListStorePageVersions, apiRestoreStorePageVersion,
+  type StorePageData,
+} from '@/api/services/storePages';
+import {
+  apiListResourceTemplates, apiCreateResourceTemplate, apiDeleteResourceTemplate, apiRenameResourceTemplate, apiGetCollectionTemplate,
+  apiUpdateCollectionTemplateSections, apiPublishCollectionTemplate, apiRevertCollectionTemplateDraft,
+  apiListCollectionTemplateVersions, apiRestoreCollectionTemplateVersion,
+  type CollectionTemplateData, type ResourceTemplateType,
+} from '@/api/services/collectionTemplate';
+import {
+  apiListBlogs, apiListBlogPosts, apiGetBlogPost,
+  type BlogData, type BlogPostData,
+} from '@/api/services/storeBlog';
+import { apiListAppCatalog, type AppCatalogEntry } from '@/api/services/apps';
+import { apiGetPublicMetafieldValues, type MetafieldOwnerResource } from '@/api/services/metafields';
+import { apiGetStoreInventory, apiGetMyProductById } from '@/api/services/product';
+import { currencySymbol, fmt2 } from '@/utils/currency';
+import { apiListCollections } from '@/api/services/collections';
+import type { Section, SectionType, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
+import type { VersionRow } from '../builder/VersionHistoryModal';
+import { PageSectionsEditor } from '../builder/PageSectionsEditor';
+import { VersionHistoryModal } from '../builder/VersionHistoryModal';
+import { useEditorState } from '../builder/editor/useEditorState';
+import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
+import { ThemeLivePreview } from './ThemeLivePreview';
+import { ThemeSettingsPanel } from './ThemeSettingsPanel';
+import { useHeaderFooterDraft } from './useHeaderFooterDraft';
+import { HeaderEditor, FooterEditor } from './HeaderFooterEditors';
+import { AnnouncementForm } from './AnnouncementForm';
+import { DEFAULT_ANNOUNCEMENT } from './announcementDefaults';
+import { ChromeGroupCard } from './ChromeGroupCard';
+import type { PreviewChromePart } from './ThemeLivePreview';
+import { PanelTop, PanelBottom, Megaphone } from 'lucide-react';
+import { apiGetStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
+import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
+import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
+import { getThemeManifest, type ThemeTemplateScopeDef } from '@/features/storefront-themes/themeManifest';
+// See the load-bearing comment on this same import in
+// `ThemeSettingsPanel.tsx` — importing `DEFAULT_THEME_ID` from
+// `registry.ts` here (not redeclaring the literal) is what guarantees this
+// theme's manifest has already registered itself before `getThemeManifest`
+// below is called.
+import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
+import { UnsavedChangesDialog } from '@/components/layouts/UnsavedChangesDialog';
+
+const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = { desktop: '100%', tablet: '768px', mobile: '390px' };
+
+/** Every real customization surface for the active theme. `'theme'` is a
+ *  fixed sentinel scope (not part of any theme's manifest) for the
+ *  Schema-Driven Theme Settings screen (colors/fonts/buttons/spacing — a
+ *  `StoreTheme` document, not a `Section[]` template) — it renders
+ *  `ThemeSettingsPanel` instead of the section editor below and owns
+ *  its own draft/undo-redo/save/publish/version-history toolbar, since it's
+ *  editing a fundamentally different resource. Every other scope comes from
+ *  `manifest.templates` (see `themeManifest.ts` — a `store-page` resource
+ *  is one real `StorePage` like Home; a `collection-template` resource is a
+ *  real `CollectionTemplate` row, optionally with real alternate templates
+ *  via `templateKey`). This page no longer hardcodes which scopes exist or
+ *  how each is addressed on the backend — that's Phase 4 of the theme-
+ *  agnostic architecture: a second theme's manifest drives this same page
+ *  with no new code here. */
+type ResourceConfig = { resourceType: ResourceTemplateType; templateKey: string; allowAltTemplates: boolean; previewPicker?: 'blog' | 'article' };
+
+// Fixed platform brand color — same literal `ThemeLibraryPage.tsx` uses for
+// its own Install button. Admin-chrome controls (Save Draft/Publish here,
+// same reasoning as every other seller-dashboard button) intentionally use
+// the PLATFORM's own brand color, not the active theme's accent — an admin
+// screen isn't the merchant's storefront, so it shouldn't visually change
+// depending on which theme happens to be active (this was ALSO a real,
+// if purely cosmetic, per-theme-hardcoding bug before this pass: it read
+// Maison's static accent color unconditionally, regardless of which theme
+// was actually active on the store being edited).
+const ADMIN_ACCENT = '#D97757';
+
+// Phase 4 — explains the locked "core content" card these 5 scopes now
+// always seed (Main Product / Search Results / Cart Contents+Summary /
+// Blog Posts / Article Content), instead of leaving a merchant to wonder
+// why a section they can't delete is sitting in what used to look like an
+// empty list. `undefined` for every other scope (Home, Collection, theme) —
+// `PageSectionsEditor` simply shows no banner then, unchanged from before.
+const SCOPE_HELPER_TEXT: Record<string, string> = {
+  pages: 'Pick a page to edit. Its sections render through the active theme.',
+  product: 'This product\'s page always shows its media, title, price, variant picker, quantity and buy buttons — the locked "Main Product" card below. Hide or reorder its individual items there, or add more sections to customize what surrounds it.',
+  search: 'The Search page always shows its live results grid — the locked "Search Results" card below. Add sections to customize what surrounds it.',
+  cart: 'The Cart page always shows its line items and summary/checkout button — the two locked cards below. Add sections to customize what surrounds them.',
+  blogIndex: 'The Blog index always shows your list of posts — the locked "Blog Posts" card below. Add sections to customize what surrounds it.',
+  blogArticle: 'Every article always shows its title and body — the locked "Article Content" card below. Add sections to customize what surrounds it.',
+};
+
+function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: boolean; label: string }) {
+  return (
+    <button
+      onClick={onClick} disabled={saving}
+      className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer transition-opacity disabled:opacity-60"
+      style={{ background: ADMIN_ACCENT }}
+    >
+      {saving ? <Loader2 size={13} className="animate-spin" /> : null} {label}
+    </button>
+  );
+}
+
+/** Theme 01's own Merchant Visual Customizer — `Online Store → Themes →
+ *  Maison → Customize`. Covers every real Maison template (Home, Product,
+ *  Collection, Search, Cart, Blog Index, Blog Article), including real
+ *  alternate templates for Product/Collection. Reuses the exact same real
+ *  section/block editor (`PageSectionsEditor`) and draft/publish/version-
+ *  history engine the Pages tool already uses — no parallel editor built. */
+/** 409 DRAFT_CONFLICT from a sections save (stale baseUpdatedAt). */
+const isDraftConflict = (err: unknown) => (err as { status?: number; apiCode?: string })?.status === 409 && (err as { apiCode?: string }).apiCode === 'DRAFT_CONFLICT';
+
+export function ThemeCustomizePage() {
+  const { storeId, loading: storeLoading, store: workspaceStore, refetch: refetchStore } = useStoreWorkspace();
+  const toast = useToast();
+  const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
+  const [draftConflict, setDraftConflict] = useState(false);
+
+  // Fix for a confirmed P0: resolves the URL's `:themeId` to THIS theme's own
+  // installed row so every load/save/publish/discard/version call below acts
+  // on the selected theme, never silently on whatever's currently active.
+  const themeInstance = useResolvedThemeInstance(storeId);
+  const installedThemeId = themeInstance.status === 'ready' ? themeInstance.installedThemeId : undefined;
+
+  // Header group (announcement bar + header) and Footer group — edited right
+  // here, Shopify-style, on every template. Their draft is the theme's own.
+  const hf = useHeaderFooterDraft({ storeId, installedThemeId, ready: themeInstance.status === 'ready', store: workspaceStore, refetchStore });
+  const [selectedChrome, setSelectedChrome] = useState<PreviewChromePart | null>(null);
+  const [hoverSectionId, setHoverSectionId] = useState<string | null>(null);
+  // Phones/tablets: one pane at a time (settings or preview), like Shopify's mobile editor.
+  const [mobilePane, setMobilePane] = useState<'edit' | 'preview'>('edit');
+
+  const [scope, setScope] = useState<string>('home');
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [discarding, setDiscarding] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [versions, setVersions] = useState<VersionRow[]>([]);
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+
+  // Home AND every real custom Page (Phase 5) are `StorePage` documents —
+  // `pages` holds ALL of them from one `apiListStorePages` call; `homePage`/
+  // `customPages`/`currentStorePage` below just slice that one list.
+  // Every other scope is a real CollectionTemplate row (see `config`,
+  // derived below from the active theme's manifest).
+  const [pages, setPages] = useState<StorePageData[]>([]);
+  // Which real custom page is being edited while `scope === 'pages'` —
+  // irrelevant (and untouched) for every other scope. Persists across a
+  // scope switch, same convention as `templateKey` below, so coming back to
+  // Pages remembers what the seller was last working on.
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [templateList, setTemplateList] = useState<CollectionTemplateData[]>([]);
+  const [templateKey, setTemplateKey] = useState('default');
+  const [activeTemplate, setActiveTemplate] = useState<CollectionTemplateData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [resourceLoadError, setResourceLoadError] = useState('');
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
+  const [draftTheme, setDraftTheme] = useState<StoreThemeData | null>(null);
+  const [themeSettingsDirty, setThemeSettingsDirty] = useState(false);
+
+  // Phase 5 — Blogs/Articles never change WHICH document the Blog-Index/
+  // Blog-Article template edits (still the one shared `activeTemplate` per
+  // theme, exactly as Phase 4 built it); a real selected Blog/Article only
+  // changes what real data the live preview shows alongside it (see
+  // `previewContext` below). `posts` is every real post across every blog —
+  // used both as the Article picker's own list and, filtered by
+  // `selectedBlogId`, as the Blog Index preview's "recent posts" sample.
+  const [blogs, setBlogs] = useState<BlogData[]>([]);
+  const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
+  const [posts, setPosts] = useState<BlogPostData[]>([]);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+  const [selectedArticleDetail, setSelectedArticleDetail] = useState<BlogPostData | null>(null);
+
+  // Phase 9 — Dynamic Sources: Product/Collection Template each need a real
+  // picked resource too (previously neither had one at all — Product/
+  // Collection Template only ever rendered against synthetic/no data).
+  // Same "loaded once, lazily, the first time this scope is visited" and
+  // "never overrides a seller's own later pick" conventions as Blogs/
+  // Articles above — a capped, un-paginated fetch (same
+  // `PRODUCTS_FETCH_LIMIT` precedent `EntityPickerModal` already uses), not
+  // a new backend endpoint.
+  const [products, setProducts] = useState<{ id: string; label: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [collectionsList, setCollectionsList] = useState<{ id: string; label: string }[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
+
+  const editor = useEditorState<Section[]>();
+  const chromeDirty = hf.editor.dirty || hf.announcementDirty;
+  useThemeEditorUnsavedChanges(scope === 'theme' ? themeSettingsDirty || chromeDirty : editor.dirty || chromeDirty);
+  // Undo/redo follow whichever group is open: header/footer or the template.
+  const chromeEditing = selectedChrome === 'header' || selectedChrome === 'footer';
+  const undoActive = chromeEditing ? hf.editor.undo : editor.undo;
+  const redoActive = chromeEditing ? hf.editor.redo : editor.redo;
+  useUndoRedoShortcuts(undoActive, redoActive, true);
+
+  // `draftTheme` (fetched below) carries the store's real `themeDefinitionId`
+  // once loaded; before that (or if it's ever null) `getThemeManifest` falls
+  // back to `DEFAULT_THEME_ID`'s manifest, so this never throws waiting on
+  // that fetch.
+  const manifest = getThemeManifest(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID);
+  const scopeDefs: ThemeTemplateScopeDef[] = manifest.templates;
+  const scopeDefsById: Record<string, ThemeTemplateScopeDef> = Object.fromEntries(scopeDefs.map(d => [d.id, d]));
+  const activeScopeDef = scope === 'theme' ? null : scopeDefsById[scope] ?? null;
+  // `store-page` scopes (Home, and Phase 5's Pages) use the `StorePage` API
+  // family below; everything else (including the `theme` sentinel, which
+  // has no `activeScopeDef`) uses the `CollectionTemplate` family.
+  const isStorePage = activeScopeDef?.resource.kind === 'store-page';
+  const isCustomPageScope = activeScopeDef?.resource.kind === 'store-page' && activeScopeDef.resource.pageType === 'custom';
+  const config: ResourceConfig | null = activeScopeDef && activeScopeDef.resource.kind === 'collection-template'
+    ? { resourceType: activeScopeDef.resource.resourceType, templateKey: activeScopeDef.resource.templateKey, allowAltTemplates: activeScopeDef.resource.allowAltTemplates, previewPicker: activeScopeDef.resource.previewPicker }
+    : null;
+  const scopeLabel = (s: string) => (s === 'theme' ? 'Theme Settings' : scopeDefsById[s]?.label ?? s);
+  // Phase 5 — real derived lists/booleans for the Pages/Blogs/Articles
+  // resource pickers and their empty states.
+  const homePage = pages.find(p => p.type === 'home') ?? null;
+  const customPages = useMemo(() => pages.filter(p => p.type === 'custom'), [pages]);
+  const currentStorePage = isCustomPageScope ? customPages.find(p => p._id === selectedPageId) ?? null : homePage;
+  const needsBlogPicker = config?.previewPicker === 'blog';
+  const needsArticlePicker = config?.previewPicker === 'article';
+  // Phase 9 — a real picked Product/Collection is needed for BOTH the live
+  // preview (Dynamic Sources resolution) AND, going forward, any other
+  // per-instance preview data this template might want — `resourceType`
+  // alone (not `previewPicker`, which only Blog/Article scopes set) is
+  // enough to tell these two scopes apart from every other one.
+  const needsProductPicker = config?.resourceType === 'product';
+  const needsCollectionPicker = config?.resourceType === 'collection';
+
+  // Product template preview: the picked product's real name, price, image
+  // and description instead of sample copy (Shopify previews a real product).
+  const [previewProduct, setPreviewProduct] = useState<CoreSectionPreviewContext['product'] | null>(null);
+  useEffect(() => {
+    if (!needsProductPicker || !selectedProductId) { setPreviewProduct(null); return; }
+    let cancelled = false;
+    apiGetMyProductById(selectedProductId)
+      .then(res => {
+        if (cancelled) return;
+        const { product, variants, defaultVariant } = res.data;
+        const v = defaultVariant ?? variants?.[0] ?? null;
+        // Same formatter the storefront's product cards use.
+        const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)}${fmt2(n)}`);
+        const optionValues = Array.from(new Set((variants ?? []).flatMap(x => (x.options ?? []).map(o => String(o.value))))).slice(0, 8);
+        setPreviewProduct({
+          name: product.name,
+          price: fmt(v?.price),
+          compareAtPrice: v?.compareAtPrice && v.price != null && v.compareAtPrice > v.price ? fmt(v.compareAtPrice) : undefined,
+          image: product.images?.[0] ?? v?.images?.[0],
+          description: product.description,
+          sku: v?.sku,
+          optionValues,
+          rating: (product as { averageRating?: number }).averageRating,
+          reviewCount: (product as { totalRatings?: number }).totalRatings,
+        });
+      })
+      .catch(() => { if (!cancelled) setPreviewProduct(null); });
+    return () => { cancelled = true; };
+  }, [needsProductPicker, selectedProductId]);
+  const pagesEmpty = isCustomPageScope && customPages.length === 0;
+  const blogsEmpty = needsBlogPicker && blogs.length === 0;
+  const articlesEmpty = needsArticlePicker && posts.length === 0;
+  // Deliberately NOT gating on "0 products"/"0 collections" the way Pages/
+  // Blogs/Articles gate on being empty — Product/Collection Template is a
+  // real SHARED template (editable and useful even before the store's
+  // first product/collection exists, exactly as it already was before this
+  // phase); Dynamic Sources simply has nothing to resolve against yet, the
+  // same as a fresh store with no metafield definitions.
+  const emptyResourceState = pagesEmpty || blogsEmpty || articlesEmpty;
+  // Live working copy while the seller is on the Theme scope — composited
+  // into the preview instead of `draftTheme` so every keystroke reflects
+  // immediately, same as every section scope already does. `null` while on
+  // any other scope, so those fall back to `draftTheme` untouched below.
+  const [themeScopePreview, setThemeScopePreview] = useState<StoreThemeData | null>(null);
+
+  // Click-to-select: which section is highlighted, shared between
+  // `PageSectionsEditor`'s cards and `ThemeLivePreview`'s clickable
+  // sections — either side setting it drives both (see each component's own
+  // doc comment for how the id is computed/kept in sync). Cleared whenever
+  // the sections being edited change out from under it (scope/template
+  // switch), so a stale id never appears to "select" an unrelated section.
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const selectPreviewSection = (sectionId: string) => {
+    setMobilePane('edit');
+    setSelectedChrome(null);
+    setSelectedSectionId(sectionId);
+    setSelectedBlockId(null);
+  };
+  const selectPreviewBlock = (sectionId: string, blockId: string) => {
+    setMobilePane('edit');
+    setSelectedChrome(null);
+    setSelectedSectionId(sectionId);
+    setSelectedBlockId(blockId);
+  };
+  const selectChrome = (part: PreviewChromePart | null) => {
+    if (part) setMobilePane('edit');
+    setSelectedChrome(part);
+    setSelectedSectionId(null);
+    setSelectedBlockId(null);
+  };
+  useEffect(() => { setSelectedSectionId(null); setSelectedBlockId(null); }, [scope, templateKey]);
+
+  const onThemeScope = scope === 'theme';
+  useEffect(() => {
+    if (themeInstance.status !== 'ready') return;
+    let cancelled = false;
+    // Re-read after leaving Theme settings so palettes/colours saved there
+    // show up in the section Color scheme selects right away.
+    if (onThemeScope) return;
+    apiGetStoreTheme(storeId, themeInstance.installedThemeId).then(res => { if (!cancelled) setDraftTheme(res.data); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [storeId, themeInstance.status, installedThemeId, onThemeScope]);
+
+  // Phase 8 — this store's real installed apps (+ every catalog app's
+  // block definitions, needed to render an installed one's settings form),
+  // fetched once and passed straight through to `PageSectionsEditor`'s own
+  // "+ Add block" picker for whichever scope/section actually supports
+  // them. A fetch failure just means "no app blocks offered this session"
+  // — never a hard error for a feature most sections don't even use.
+  const [installedApps, setInstalledApps] = useState<AppCatalogEntry[]>([]);
+  useEffect(() => { apiListAppCatalog(storeId).then(res => setInstalledApps(res.data)).catch(() => setInstalledApps([])); }, [storeId]);
+
+  const loadPages = useCallback(() => {
+    setLoading(true);
+    setResourceLoadError('');
+    apiListStorePages(storeId, installedThemeId)
+      .then(res => {
+        setPages(res.data);
+        // Default to the first real custom page the first time this scope
+        // is visited — never overrides a seller's own later pick.
+        setSelectedPageId(prev => prev ?? res.data.find(p => p.type === 'custom')?._id ?? null);
+      })
+      .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load pages.'))
+      .finally(() => setLoading(false));
+  }, [storeId, installedThemeId]);
+
+  // Phase 5 — loaded once, lazily, the first time either Blog-Index or
+  // Blog-Article's scope is visited (both reuse the same real blogs/posts
+  // lists for their resource pickers). Never re-fetched on every scope
+  // switch between the two.
+  const loadBlogsAndPosts = useCallback(() => {
+    setLoading(true);
+    setResourceLoadError('');
+    Promise.all([apiListBlogs(storeId), apiListBlogPosts(storeId)])
+      .then(([blogsRes, postsRes]) => {
+        setBlogs(blogsRes.data);
+        setPosts(postsRes.data);
+        setSelectedBlogId(prev => prev ?? blogsRes.data[0]?._id ?? null);
+        setSelectedArticleId(prev => prev ?? postsRes.data[0]?._id ?? null);
+      })
+      .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load blog content.'))
+      .finally(() => setLoading(false));
+  }, [storeId]);
+
+  // Phase 9 — same lazy-load-once convention as `loadBlogsAndPosts`.
+  const loadProducts = useCallback(() => {
+    apiGetStoreInventory(storeId, 1, 200)
+      .then(res => {
+        const items = res.data.products.map(p => ({ id: p.productId, label: p.name }));
+        setProducts(items);
+        setSelectedProductId(prev => prev ?? items[0]?.id ?? null);
+      })
+      .catch(() => setProducts([]));
+  }, [storeId]);
+
+  const loadCollectionsList = useCallback(() => {
+    apiListCollections(storeId)
+      .then(res => {
+        const items = res.data.map(c => ({ id: c._id, label: c.name }));
+        setCollectionsList(items);
+        setSelectedCollectionId(prev => prev ?? items[0]?.id ?? null);
+      })
+      .catch(() => setCollectionsList([]));
+  }, [storeId]);
+
+  const templateLoadToken = useRef(0);
+  const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean) => {
+    setLoading(true);
+    setResourceLoadError('');
+    // Only the latest scope's response may land (a slow earlier scope must not overwrite it).
+    const token = ++templateLoadToken.current;
+    const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType, installedThemeId) : Promise.resolve({ data: [] as CollectionTemplateData[] });
+    Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key, installedThemeId)])
+      .then(([listRes, docRes]) => { if (token !== templateLoadToken.current) return; setTemplateList(listRes.data); setActiveTemplate(docRes.data); })
+      .catch(err => {
+        if (token === templateLoadToken.current) {
+          setResourceLoadError(err instanceof Error ? err.message : 'Could not load this template.');
+        }
+      })
+      .finally(() => { if (token === templateLoadToken.current) setLoading(false); });
+  }, [storeId, installedThemeId]);
+
+  useEffect(() => {
+    if (scope === 'theme') { setLoading(false); return; }
+    if (isStorePage) { loadPages(); return; }
+    if (!installedThemeId) return;
+    if (!config) return; // scope not (yet) resolvable against the manifest — nothing to load
+    if (config.previewPicker) loadBlogsAndPosts();
+    if (config.resourceType === 'product') loadProducts();
+    if (config.resourceType === 'collection') loadCollectionsList();
+    setTemplateKey(config.templateKey);
+    loadResourceTemplates(config.resourceType, config.templateKey, config.allowAltTemplates);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, installedThemeId]);
+
+  // Fetches the REAL selected article's title/excerpt for the live preview
+  // (see `previewContext` below) — only while on the Blog-Article scope
+  // with a real post actually picked.
+  useEffect(() => {
+    if (!needsArticlePicker || !selectedArticleId) { setSelectedArticleDetail(null); return; }
+    apiGetBlogPost(storeId, selectedArticleId).then(res => setSelectedArticleDetail(res.data)).catch(() => setSelectedArticleDetail(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsArticlePicker, selectedArticleId, storeId]);
+
+  // Phase 9 — Dynamic Sources: which real resource type/id (if any) the
+  // CURRENT scope represents (see `MetafieldKeyPickerField`'s own doc
+  // comment for the full picture). `null` for every scope with no single
+  // real resource — Home, Search, Cart, Blog Index, and the Theme sentinel.
+  const dynamicSourceOwnerResource: MetafieldOwnerResource | null = isCustomPageScope
+    ? 'page'
+    : needsProductPicker ? 'product'
+    : needsCollectionPicker ? 'collection'
+    : needsArticlePicker ? 'article'
+    : null;
+  const dynamicSourceOwnerId: string | null = isCustomPageScope
+    ? selectedPageId
+    : needsProductPicker ? selectedProductId
+    : needsCollectionPicker ? selectedCollectionId
+    : needsArticlePicker ? selectedArticleId
+    : null;
+
+  // Real metafield values for whichever resource is picked, resolved
+  // exactly the way the real storefront already does (`FashionProductPage.
+  // tsx`) — this is what makes the seller's own live preview (below) show a
+  // bound paragraph/heading's ACTUAL value instead of always falling back
+  // to blank/static, closing the gap this phase's own research found.
+  useEffect(() => {
+    if (!dynamicSourceOwnerResource || !dynamicSourceOwnerId) { setDynamicSourceValues({}); return; }
+    let cancelled = false;
+    apiGetPublicMetafieldValues(storeId, dynamicSourceOwnerResource, dynamicSourceOwnerId)
+      .then(res => { if (!cancelled) setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))); })
+      .catch(() => { if (!cancelled) setDynamicSourceValues({}); });
+    return () => { cancelled = true; };
+  }, [storeId, dynamicSourceOwnerResource, dynamicSourceOwnerId]);
+
+  // Re-fetch the active template doc (not the list) whenever the seller
+  // switches which alternate template they're editing (Product/Collection
+  // only — the other scopes' `templateKey` never changes from its fixed value).
+  useEffect(() => {
+    if (!config || !config.allowAltTemplates) return;
+    // Ignore a response for a template the seller has already switched away
+    // from — otherwise it lands late and replaces the doc being edited.
+    let cancelled = false;
+    apiGetCollectionTemplate(storeId, config.resourceType, templateKey, installedThemeId)
+      .then(res => { if (!cancelled) setActiveTemplate(res.data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, templateKey, installedThemeId]);
+
+  const loadEditor = editor.load;
+  useEffect(() => {
+    if (isStorePage) {
+      if (!currentStorePage) return;
+      loadEditor(currentStorePage.sections, currentStorePage.draft?.sections ?? currentStorePage.sections);
+    } else {
+      if (!activeTemplate) return;
+      loadEditor(activeTemplate.sections, activeTemplate.draft?.sections ?? activeTemplate.sections);
+    }
+  }, [scope, currentStorePage?._id, activeTemplate?._id, activeTemplate?.templateKey, loadEditor]);
+
+  const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding
+    || hf.editor.phase === 'saving' || hf.editor.phase === 'publishing' || hf.discarding;
+
+  // After switching the alternate template, the editor still holds the OLD
+  // template's sections until the new one is fetched — saving in that window
+  // would write them into the newly selected template. Block it.
+  const templateSwitchPending = !isStorePage && !!config && !!activeTemplate && activeTemplate.templateKey !== templateKey;
+
+  /** Conflict recovery: re-fetch the page/template and replace the editor's working copy with the server draft. */
+  const reloadDraftFromServer = async () => {
+    setDraftConflict(false);
+    try {
+      if (isStorePage) {
+        const res = await apiListStorePages(storeId, installedThemeId);
+        setPages(res.data);
+        const fresh = res.data.find(p => p._id === currentStorePage?._id);
+        if (fresh) loadEditor(fresh.sections, fresh.draft?.sections ?? fresh.sections);
+      } else {
+        const res = await apiGetCollectionTemplate(storeId, config!.resourceType, templateKey, installedThemeId);
+        setActiveTemplate(res.data);
+        loadEditor(res.data.sections, res.data.draft?.sections ?? res.data.sections);
+      }
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to reload.');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!editor.workingCopy) return;
+    if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
+    // Header/footer are their own (theme) draft — saved on their own so a
+    // template save problem never loses them.
+    if (hf.editor.dirty) {
+      try { await hf.save(); } catch (err) { flash(false, err instanceof Error ? err.message : 'Failed to save the header/footer.'); return; }
+    }
+    if (!editor.dirty) {
+      flash(true, hf.announcementDirty ? 'Draft saved. Your announcement bar changes go live when you Publish.' : 'Draft saved — Publish to make it live.');
+      return;
+    }
+    editor.markSaving();
+    try {
+      if (isStorePage) {
+        if (!currentStorePage) return;
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId, currentStorePage.updatedAt);
+        setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        editor.markSaved(res.data.draft.sections);
+      } else {
+        const res = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
+        setActiveTemplate(res.data);
+        editor.markSaved(res.data.draft.sections);
+      }
+      flash(true, hf.announcementDirty
+        ? 'Draft saved. Your announcement bar changes go live when you Publish.'
+        : 'Draft saved — Publish to make it live.');
+    } catch (err) {
+      editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
+      if (isDraftConflict(err)) { setDraftConflict(true); return; }
+      flash(false, err instanceof Error ? err.message : 'Failed to save.');
+    }
+  };
+
+  const handlePersist = async (next: Section[]) => {
+    // Real bug found in Phase 11 QA: `onChange(next)` (the caller's own
+    // optimistic local update) already ran by the time this fires — this
+    // function's closure still holds the PRE-change `editor.workingCopy`
+    // (React hasn't re-rendered yet), which is exactly what a failed
+    // persist needs to roll back to. Without this, a removal the server
+    // rejects (e.g. a sibling block left with an invalid required field)
+    // stayed "removed" in the editor while the real saved draft never
+    // changed — a real, confusing local/server divergence, not just a
+    // missed toast.
+    const rollbackTo = editor.workingCopy;
+    if (templateSwitchPending) return;
+    try {
+      if (isStorePage) {
+        if (!currentStorePage) return;
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, next, installedThemeId, currentStorePage.updatedAt);
+        setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        editor.markSaved(res.data.draft.sections);
+      } else {
+        const res = await apiUpdateCollectionTemplateSections(storeId, next, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
+        setActiveTemplate(res.data);
+        editor.markSaved(res.data.draft.sections);
+      }
+    } catch (err) {
+      if (isDraftConflict(err)) { setDraftConflict(true); return; }
+      if (rollbackTo) editor.discardDraft(rollbackTo);
+      flash(false, err instanceof Error ? err.message : 'Failed to save.');
+    }
+  };
+
+  const handlePublish = async () => {
+    if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
+    editor.markPublishing();
+    try {
+      // Publish must never republish a stale backend draft — if there's a
+      // local edit that hasn't been saved yet, persist it first so Publish
+      // always promotes exactly what the merchant currently sees.
+      if (editor.dirty && editor.workingCopy) {
+        if (isStorePage) {
+          if (!currentStorePage) return;
+          const saved = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId, currentStorePage.updatedAt);
+          setPages(prev => prev.map(p => p._id === saved.data._id ? saved.data : p));
+        } else {
+          const saved = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
+          setActiveTemplate(saved.data);
+        }
+      }
+      if (isStorePage) {
+        if (!currentStorePage) return;
+        const res = await apiPublishStorePage(storeId, currentStorePage._id, installedThemeId);
+        setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        editor.markPublished(res.data.sections);
+      } else {
+        const res = await apiPublishCollectionTemplate(storeId, config!.resourceType, templateKey, installedThemeId);
+        setActiveTemplate(res.data);
+        editor.markPublished(res.data.sections);
+      }
+      // One Publish, like Shopify: header/footer (theme draft) and the
+      // announcement bar go live together with the template.
+      if (hf.editor.dirty || hf.editor.hasUnpublishedChanges) await hf.publish();
+      if (hf.announcementDirty) await hf.saveAnnouncement();
+      flash(true, 'Published — your storefront is now live with these changes.');
+    } catch (err) {
+      editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
+      if (isDraftConflict(err)) { setDraftConflict(true); return; }
+      flash(false, err instanceof Error ? err.message : 'Failed to publish.');
+    }
+  };
+
+  const handleDiscard = async () => {
+    setDiscarding(true);
+    try {
+      if (isStorePage) {
+        if (!currentStorePage) return;
+        const res = await apiRevertStorePageDraft(storeId, currentStorePage._id, installedThemeId);
+        setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        editor.discardDraft(res.data.draft.sections);
+      } else {
+        const res = await apiRevertCollectionTemplateDraft(storeId, config!.resourceType, templateKey, installedThemeId);
+        setActiveTemplate(res.data);
+        editor.discardDraft(res.data.draft.sections);
+      }
+      if (hf.editor.hasUnpublishedChanges || hf.editor.dirty) await hf.discard();
+      hf.resetAnnouncement();
+      flash(true, 'Draft discarded — reverted to your published version.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to discard draft.');
+    } finally {
+      setDiscarding(false);
+    }
+  };
+
+  // Pending "leave the current edits" action, confirmed via `UnsavedChangesDialog`.
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
+  const hasLocalChanges = scope === 'theme' ? themeSettingsDirty : editor.dirty;
+
+  const discardLocalChanges = () => {
+    if (scope === 'theme') {
+      setThemeSettingsDirty(false);
+    } else {
+      const savedDraft = isStorePage ? currentStorePage?.draft?.sections : activeTemplate?.draft?.sections;
+      if (savedDraft) editor.discardDraft(savedDraft);
+    }
+  };
+
+  const guardUnsaved = (proceed: () => void) => {
+    if (busy) return; // never switch away while a save/publish is in flight (its response would land on the wrong doc)
+    if (!hasLocalChanges) { proceed(); return; }
+    setPendingLeave(() => proceed);
+  };
+
+  const changeScope = (nextScope: string) => guardUnsaved(() => setScope(nextScope));
+  const changeTemplateKey = (key: string) => guardUnsaved(() => setTemplateKey(key));
+
+  const openVersions = () => {
+    setVersionsOpen(true);
+    setVersionsLoading(true);
+    const req = isStorePage
+      ? (currentStorePage ? apiListStorePageVersions(storeId, currentStorePage._id, installedThemeId) : Promise.resolve({ data: [] as VersionRow[] }))
+      : apiListCollectionTemplateVersions(storeId, config!.resourceType, templateKey, installedThemeId);
+    req.then(res => setVersions(res.data)).catch(() => setVersions([])).finally(() => setVersionsLoading(false));
+  };
+
+  const restoreVersion = async (versionId: string) => {
+    setRestoringVersionId(versionId);
+    try {
+      if (isStorePage) {
+        if (!currentStorePage) return;
+        const res = await apiRestoreStorePageVersion(storeId, currentStorePage._id, versionId, installedThemeId);
+        setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        editor.discardDraft(res.data.draft.sections);
+      } else {
+        const res = await apiRestoreCollectionTemplateVersion(storeId, versionId, config!.resourceType, templateKey, installedThemeId);
+        setActiveTemplate(res.data);
+        editor.discardDraft(res.data.draft.sections);
+      }
+      setVersionsOpen(false);
+      flash(true, 'Version restored to your draft — review it, then Publish.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to restore version.');
+    } finally {
+      setRestoringVersionId(null);
+    }
+  };
+
+  // Alternate templates can be deleted (never "Default"); products/collections
+  // using it fall back to Default.
+  const [confirmDeleteTemplate, setConfirmDeleteTemplate] = useState(false);
+  const handleDeleteTemplate = async () => {
+    if (!config || templateKey === 'default') return;
+    setConfirmDeleteTemplate(false);
+    try {
+      await apiDeleteResourceTemplate(storeId, config.resourceType, templateKey, installedThemeId);
+      const listRes = await apiListResourceTemplates(storeId, config.resourceType, installedThemeId);
+      setTemplateList(listRes.data);
+      setTemplateKey('default');
+      flash(true, 'Template deleted. Items that used it now use Default.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to delete template.');
+    }
+  };
+
+  const handleRenameTemplate = async () => {
+    if (!config || templateKey === 'default') return;
+    const current = templateList.find(t => t.templateKey === templateKey)?.name ?? templateKey;
+    const name = window.prompt('Rename this template:', current);
+    if (!name?.trim() || name.trim() === current) return;
+    try {
+      await apiRenameResourceTemplate(storeId, config.resourceType, templateKey, name.trim(), installedThemeId);
+      const listRes = await apiListResourceTemplates(storeId, config.resourceType, installedThemeId);
+      setTemplateList(listRes.data);
+      flash(true, 'Template renamed.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to rename template.');
+    }
+  };
+
+  const handleCreateTemplate = async () => {
+    if (!config) return;
+    const name = window.prompt(`Name your new ${scopeLabel(scope)} template (e.g. "Featured"):`);
+    if (!name?.trim()) return;
+    const key = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `template-${Date.now()}`;
+    setCreatingTemplate(true);
+    try {
+      await apiCreateResourceTemplate(storeId, config.resourceType, { name: name.trim(), templateKey: key, cloneFromTemplateKey: templateKey }, installedThemeId);
+      const listRes = await apiListResourceTemplates(storeId, config.resourceType, installedThemeId);
+      setTemplateList(listRes.data);
+      setTemplateKey(key);
+      flash(true, `"${name.trim()}" template created.`);
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to create template.');
+    } finally {
+      setCreatingTemplate(false);
+    }
+  };
+
+  // Link pickers ("A page…") list Home + every custom page, whatever scope is
+  // open — `pages` above is only loaded on the Pages scope.
+  const [linkPages, setLinkPages] = useState<StorePageData[]>([]);
+  useEffect(() => {
+    apiListStorePages(storeId, installedThemeId).then(res => setLinkPages(res.data)).catch(() => setLinkPages([]));
+  }, [storeId, installedThemeId]);
+  const pageOptions = useMemo(() => [
+    { slug: '', title: 'Home' },
+    ...(pages.length ? pages : linkPages).filter(p => p.type === 'custom').map(p => ({ slug: p.slug, title: p.title })),
+  ], [pages, linkPages]);
+
+  if (storeLoading || themeInstance.status === 'loading' || loading) {
+    return (
+      <div className="p-7 flex flex-col gap-4">
+        <SkeletonBox width={240} height={22} rounded="6px" />
+        <SkeletonBox height={400} rounded="16px" />
+      </div>
+    );
+  }
+
+  // Safe rejection for an invalid/uninstalled/cross-store theme id — never
+  // silently falls back to editing whichever theme happens to be active.
+  if (themeInstance.status === 'not-found') {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 text-center py-24 px-6">
+        <p className="text-[14px] font-bold text-charcoal">This theme isn't installed on this store.</p>
+        <Link to={`/store/${storeId}/online-store/themes`} className="text-[13px] font-semibold no-underline" style={{ color: '#D97757' }}>
+          Back to Themes
+        </Link>
+      </div>
+    );
+  }
+
+  // For a custom-page scope with no pages at all, or a blog/article scope
+  // with nothing to pick, `emptyResourceState` (computed above) takes over
+  // the render entirely — `docMissing` only ever fires for a genuine load
+  // failure now, not "nothing exists yet" (which has its own real empty
+  // state below, per Phase 5's requirement 8).
+  const docMissing = scope === 'theme' || emptyResourceState ? false : isStorePage ? !currentStorePage : !activeTemplate;
+  const retryResourceLoad = () => {
+    if (isStorePage) {
+      loadPages();
+      return;
+    }
+    if (config?.previewPicker) loadBlogsAndPosts();
+    if (config) loadResourceTemplates(config.resourceType, templateKey, config.allowAltTemplates);
+  };
+  const baseDraftTheme = scope === 'theme' && themeScopePreview ? themeScopePreview : draftTheme;
+  // The preview always shows the CURRENT header/footer edits too.
+  const effectiveDraftTheme: StoreThemeData | null = baseDraftTheme && hf.headerDraft && hf.footerDraft
+    ? { ...baseDraftTheme, draft: { ...baseDraftTheme.draft, header: hf.headerDraft, footer: hf.footerDraft } }
+    : baseDraftTheme;
+  // Theme settings preview shows the real home page, not an empty body.
+  const homeSource = (pages.length ? pages : linkPages).find(p => p.type === 'home');
+  const homeDraftSections: Section[] = homeSource?.draft?.sections ?? homeSource?.sections ?? [];
+  const chromeError = (msg: string) => flash(false, msg);
+  const anyDirty = editor.dirty || chromeDirty;
+  const anyUnpublished = editor.hasUnpublishedChanges || hf.editor.hasUnpublishedChanges || hf.announcementDirty;
+  const toggleChrome = (part: PreviewChromePart) => selectChrome(selectedChrome === part ? null : part);
+  const chromeGroup = (part: PreviewChromePart) => {
+    if (part === 'announcement') {
+      if (!manifest.supportsAnnouncementBar) return null;
+      return (
+        <ChromeGroupCard title="Announcement bar" subtitle={hf.announcementForm?.isActive ? (hf.announcementForm.message || 'On') : 'Off'}
+          icon={<Megaphone size={15} />} open={selectedChrome === 'announcement'} onToggle={() => toggleChrome('announcement')}>
+          <p className="text-[11.5px] text-slate mb-3">Shown on every page. Changes go live when you Publish.</p>
+          <AnnouncementForm value={hf.announcementForm ?? DEFAULT_ANNOUNCEMENT} onChange={hf.setAnnouncementForm} />
+        </ChromeGroupCard>
+      );
+    }
+    const isHeader = part === 'header';
+    return (
+      <ChromeGroupCard title={isHeader ? 'Header' : 'Footer'}
+        subtitle={isHeader ? 'Logo, menu, icons and layout' : 'Columns, newsletter, social and copyright'}
+        icon={isHeader ? <PanelTop size={15} /> : <PanelBottom size={15} />}
+        open={selectedChrome === part} onToggle={() => toggleChrome(part)}>
+        {hf.loadError
+          ? <ChromeLoadError message={hf.loadError} onRetry={hf.reload} />
+          : hf.loading || !hf.headerDraft
+            ? <SkeletonBox height={120} rounded="10px" />
+            : isHeader ? <HeaderEditor hf={hf} storeId={storeId} onError={chromeError} /> : <FooterEditor hf={hf} storeId={storeId} onError={chromeError} />}
+      </ChromeGroupCard>
+    );
+  };
+  // The preview PANEL's own background — resolved against the real active
+  // theme (not hardcoded to Maison) so the frame around the embedded
+  // storefront preview matches whichever theme is actually being edited,
+  // instead of showing Maison's background color behind another theme preview.
+  const previewPanelBg = getThemePreviewComponents(effectiveDraftTheme?.themeDefinitionId, DEFAULT_THEME_ID).theme.colors.bg;
+  // The real active theme's own registered section types — NOT
+  // `effectiveDraftTheme` (which briefly swaps to a theme-settings-only
+  // preview while scope === 'theme'), since "which sections can I add" is a
+  // property of the store's actual theme, unrelated to which scope's colors
+  // are being previewed right now. See `AddSectionModal`'s own doc comment
+  // for the bug this closes (another theme could "add" Video/Drop Countdown and have
+  // them silently render as nothing).
+  const supportedSectionTypes = getThemePreviewComponents(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
+  const effectiveSupportedSectionTypes: SectionType[] | undefined = supportedSectionTypes;
+
+  // Phase 5 — real data for whichever Blog/Article is currently picked,
+  // fed into the live preview's `blog_post_list`/`article_content` core
+  // sections (see `CoreSectionPreviewContext`). `undefined` for every other
+  // scope, or before anything's loaded/picked yet.
+  const previewContext: CoreSectionPreviewContext | undefined = needsBlogPicker
+    ? (() => {
+        const blog = blogs.find(b => b._id === selectedBlogId);
+        if (!blog) return undefined;
+        const recentPostTitles = posts.filter(p => p.blogId === blog._id).slice(0, 3).map(p => p.title);
+        return { blogName: blog.title, recentPostTitles };
+      })()
+    : needsArticlePicker && selectedArticleDetail
+      ? { articleTitle: selectedArticleDetail.title, articleExcerpt: selectedArticleDetail.excerpt }
+      : needsProductPicker && previewProduct
+        ? { product: previewProduct }
+        : undefined;
+
+  return (
+    <div className="bg-[#FAF9F5] min-h-full">
+      <EditorTopBar
+        exitTo={`/store/${storeId}/online-store/themes`}
+        title={`Customize — ${manifest.name}`}
+        subtitle="Edits save to a draft — nothing goes live until you Publish."
+      >
+        {
+          // Two groups: the left one scrolls horizontally on narrow screens
+          // (min-w-0 + overflow-x-auto lets it actually shrink instead of
+          // pushing the page wide); Save Draft/Publish/Discard stay in their
+          // own shrink-0 group so they're always reachable without scrolling,
+          // even on a 390px viewport. The whole cluster still wraps beneath
+          // the title if there's truly no room for either group at all.
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <PreviewButton storeId={storeId} installedThemeId={installedThemeId} />
+            <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
+              <ScopePicker scopeDefs={scopeDefs} scope={scope} onChange={changeScope} currentLabel={scopeLabel(scope)} />
+
+              {isCustomPageScope && (
+                <ResourcePicker
+                  items={customPages.map(p => ({ id: p._id, label: p.title }))}
+                  valueId={selectedPageId}
+                  onChange={id => guardUnsaved(() => setSelectedPageId(id))}
+                  placeholder="Choose a page…"
+                />
+              )}
+              {needsProductPicker && (
+                <ResourcePicker
+                  items={products}
+                  valueId={selectedProductId}
+                  onChange={setSelectedProductId}
+                  placeholder="Choose a product to preview…"
+                />
+              )}
+              {needsCollectionPicker && (
+                <ResourcePicker
+                  items={collectionsList}
+                  valueId={selectedCollectionId}
+                  onChange={setSelectedCollectionId}
+                  placeholder="Choose a collection to preview…"
+                />
+              )}
+              {needsBlogPicker && (
+                <ResourcePicker
+                  items={blogs.map(b => ({ id: b._id, label: b.title }))}
+                  valueId={selectedBlogId}
+                  onChange={setSelectedBlogId}
+                  placeholder="Choose a blog…"
+                />
+              )}
+              {needsArticlePicker && (
+                <ResourcePicker
+                  items={posts.map(p => ({ id: p._id, label: p.status === 'published' ? p.title : `${p.title} (${p.status})` }))}
+                  valueId={selectedArticleId}
+                  onChange={setSelectedArticleId}
+                  placeholder="Choose an article…"
+                />
+              )}
+              {(isCustomPageScope || needsBlogPicker || needsArticlePicker) && (
+                <Link
+                  to={`/store/${storeId}/online-store/${isCustomPageScope ? 'pages' : 'blog'}`}
+                  target="_blank"
+                  className="shrink-0 flex items-center gap-1 text-[12px] font-semibold no-underline whitespace-nowrap"
+                  style={{ color: '#D97757' }}
+                  title="Opens in a new tab — your unsaved draft here is preserved."
+                >
+                  Manage {isCustomPageScope ? 'Pages' : 'Blog'} <ExternalLink size={12} />
+                </Link>
+              )}
+
+              {config?.allowAltTemplates && (
+                <>
+                  <select
+                    value={templateKey}
+                    onChange={e => changeTemplateKey(e.target.value)}
+                    className="shrink-0 text-[12.5px] font-semibold border border-bone rounded-lg px-2.5 py-[7px] bg-white text-charcoal cursor-pointer"
+                  >
+                    {templateList.length === 0 && <option value="default">Default</option>}
+                    {templateList.map(tpl => <option key={tpl.templateKey} value={tpl.templateKey}>{tpl.name}</option>)}
+                  </select>
+                  <button onClick={handleCreateTemplate} disabled={creatingTemplate} title="New Template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-60 cursor-pointer">
+                    {creatingTemplate ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                  </button>
+                  {templateKey !== 'default' && (
+                    <button onClick={() => { void handleRenameTemplate(); }} title="Rename this template" aria-label="Rename this template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">
+                      <Pencil size={15} />
+                    </button>
+                  )}
+                  {templateKey !== 'default' && (
+                    <button onClick={() => setConfirmDeleteTemplate(true)} title="Delete this template" aria-label="Delete this template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-error cursor-pointer">
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </>
+              )}
+
+              <div className="shrink-0 flex items-center gap-1 border border-bone rounded-lg p-1 bg-white mr-1">
+                {(['desktop', 'tablet', 'mobile'] as const).map(d => {
+                  const Icon = d === 'desktop' ? Monitor : d === 'tablet' ? Tablet : Smartphone;
+                  return (
+                    <button key={d} type="button" onClick={() => setDevice(d)} aria-label={d}
+                      className="p-1.5 rounded-md border-none cursor-pointer"
+                      style={{ background: device === d ? '#F1EDE5' : 'transparent', color: device === d ? '#161412' : '#8C8A82' }}>
+                      <Icon size={15} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Theme scope owns its own Undo/Redo/Version-History/Discard/
+                 Save/Publish (see `ThemeSettingsPanel`) — a different
+                 resource than a `Section[]` template, so it isn't wired to
+                 the `editor` instance below. */}
+              {scope !== 'theme' && (
+                <>
+                  <button onClick={undoActive} disabled={!(chromeEditing ? hf.editor.canUndo : editor.canUndo)} title="Undo" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Undo2 size={15} /></button>
+                  <button onClick={redoActive} disabled={!(chromeEditing ? hf.editor.canRedo : editor.canRedo)} title="Redo" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Redo2 size={15} /></button>
+                  <button onClick={openVersions} title="Version History" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal cursor-pointer"><History size={15} /></button>
+                </>
+              )}
+            </div>
+
+            {scope !== 'theme' && (
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className={`hidden sm:inline text-[11.5px] ${editor.phase === 'error' ? 'text-error' : anyDirty ? 'text-amber-700' : 'text-slate'}`}
+                >
+                  {editor.phase === 'dirty' || (anyDirty && editor.phase !== 'saving' && editor.phase !== 'error') ? 'Unsaved changes' :
+                    editor.phase === 'saving' ? 'Saving draft…' :
+                      editor.phase === 'error' ? (editor.errorMessage ?? 'Save failed') :
+                        editor.phase === 'published' ? 'Published' : 'Draft saved'}
+                </span>
+                {anyUnpublished && (
+                  <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
+                    <RotateCcw size={13} /> Discard Draft
+                  </button>
+                )}
+                <SaveButton onClick={handleSave} saving={editor.phase === 'saving'} label="Save Draft" />
+                <SaveButton onClick={handlePublish} saving={editor.phase === 'publishing'} label="Publish" />
+              </div>
+            )}
+          </div>
+        }
+      </EditorTopBar>
+
+      {!resourceLoadError && !emptyResourceState && !docMissing && (
+        <div className="lg:hidden sticky top-0 z-10 flex gap-1 px-4 pt-3 pb-2 bg-[#FAF9F5]" role="tablist" aria-label="Editor panes">
+          {(['edit', 'preview'] as const).map(p => (
+            <button key={p} type="button" role="tab" aria-selected={mobilePane === p} onClick={() => setMobilePane(p)}
+              className="flex-1 py-2 rounded-lg text-[13px] font-semibold border cursor-pointer"
+              style={{ background: mobilePane === p ? '#161412' : '#fff', color: mobilePane === p ? '#fff' : '#161412', borderColor: mobilePane === p ? '#161412' : '#E4DFD3' }}>
+              {p === 'edit' ? (scope === 'theme' ? 'Settings' : 'Sections') : 'Preview'}
+            </button>
+          ))}
+        </div>
+      )}
+      {scope === 'theme' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5 px-4 lg:px-7 py-5 items-start">
+          <div className={mobilePane === 'preview' ? 'hidden lg:block' : ''}>
+          <ThemeSettingsPanel storeId={storeId} installedThemeId={installedThemeId} onDraftChange={setThemeScopePreview} onDirtyChange={setThemeSettingsDirty} />
+          </div>
+          <div className={`border border-bone rounded-2xl bg-white overflow-hidden ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
+            <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
+              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+                <ThemeLivePreview sections={homeDraftSections} showChrome draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : resourceLoadError ? (
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
+          <p className="text-[13px] text-error">{resourceLoadError}</p>
+          <button
+            type="button"
+            onClick={retryResourceLoad}
+            className="rounded-lg border border-bone bg-white px-4 py-2 text-[13px] font-semibold text-charcoal cursor-pointer"
+          >
+            Retry loading
+          </button>
+        </div>
+      ) : emptyResourceState ? (
+        // Phase 5, requirement 8 — a useful empty state (not a bare "Select
+        // or create a page" line), with a real action rather than leaving
+        // the merchant stuck inside a fullscreen editor with nothing to do.
+        <div className="flex flex-col items-center justify-center gap-3 text-center py-24 px-6">
+          <p className="text-[14px] font-bold text-charcoal">
+            {pagesEmpty ? 'No pages yet' : blogsEmpty ? 'No blogs yet' : 'No articles yet'}
+          </p>
+          <p className="text-[12.5px] text-slate max-w-[360px]">
+            {pagesEmpty
+              ? 'Create your first custom page (About Us, Shipping Policy, …) from the Pages screen, then come back here to pick it.'
+              : blogsEmpty
+                ? 'Create a blog from the Blog screen, then come back here to preview this template against it.'
+                : 'Write your first post from the Blog screen, then come back here to preview this template against it.'}
+          </p>
+          <Link
+            to={`/store/${storeId}/online-store/${pagesEmpty ? 'pages' : 'blog'}`}
+            target="_blank"
+            className="flex items-center gap-1.5 px-4 py-[9px] mt-1 text-[13px] font-bold rounded-[9px] border-none text-white no-underline cursor-pointer transition-colors"
+            style={{ background: '#D97757' }}
+          >
+            {pagesEmpty ? 'Go to Pages' : 'Go to Blog'} <ExternalLink size={13} />
+          </Link>
+        </div>
+      ) : docMissing ? (
+        <div className="p-10 text-center"><p className="text-[14px] text-slate">Couldn't load this template.</p></div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 px-4 lg:px-7 py-5">
+          <div className={`flex flex-col gap-3 ${mobilePane === 'preview' ? 'hidden lg:flex' : ''}`}>
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1">Header</p>
+            {chromeGroup('announcement')}
+            {chromeGroup('header')}
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1 mt-2">Template — {scopeLabel(scope)}</p>
+            <PageSectionsEditor
+              onHoverSection={setHoverSectionId}
+              sections={editor.workingCopy ?? []}
+              onChange={editor.edit}
+              onPersist={handlePersist}
+              pageOptions={pageOptions}
+              storeId={storeId}
+              selectedSectionId={selectedSectionId}
+              selectedBlockId={selectedBlockId}
+              onSelectSection={selectPreviewSection}
+              onSelectBlock={selectPreviewBlock}
+              supportedSectionTypes={effectiveSupportedSectionTypes}
+              colorSchemes={draftTheme?.draft?.theme?.colorSchemes ?? draftTheme?.theme.colorSchemes ?? []}
+              helperText={SCOPE_HELPER_TEXT[scope]}
+              installedApps={installedApps}
+              ownerResource={dynamicSourceOwnerResource}
+            />
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1 mt-2">Footer</p>
+            {chromeGroup('footer')}
+          </div>
+
+          <div className={`border border-bone rounded-2xl bg-white overflow-hidden ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
+            <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
+              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+                <ThemeLivePreview
+                  sections={editor.workingCopy ?? []}
+                  showChrome={activeScopeDef?.showChrome ?? false}
+                  draftTheme={effectiveDraftTheme}
+                  interactive
+                  selectedSectionId={selectedSectionId}
+                  onSelectSection={selectPreviewSection}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={selectPreviewBlock}
+                  previewContext={previewContext}
+                  dynamicSourceValues={dynamicSourceValues}
+                  previewCollectionId={needsCollectionPicker ? selectedCollectionId : null}
+                  announcementOverride={hf.announcementForm ?? undefined}
+                  selectedChrome={selectedChrome}
+                  onSelectChrome={selectChrome}
+                  hoverSectionId={hoverSectionId}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {draftConflict && (
+        <UnsavedChangesDialog
+          title="Draft changed elsewhere"
+          message="This draft was changed elsewhere (another tab or teammate). Reload to get the latest draft, or keep editing to keep your local changes. Saving again will not overwrite until you reload."
+          confirmLabel="Reload"
+          onCancel={() => setDraftConflict(false)}
+          onConfirm={() => { void reloadDraftFromServer(); }}
+        />
+      )}
+
+      {confirmDeleteTemplate && (
+        <UnsavedChangesDialog
+          title="Delete this template?"
+          message="Products or collections using it will switch to the Default template. This cannot be undone."
+          confirmLabel="Delete"
+          onCancel={() => setConfirmDeleteTemplate(false)}
+          onConfirm={() => { void handleDeleteTemplate(); }}
+        />
+      )}
+
+      {pendingLeave && (
+        <UnsavedChangesDialog
+          message="Discard unsaved changes in this editor? Keep editing to save your draft first."
+          onCancel={() => setPendingLeave(null)}
+          onConfirm={() => { const run = pendingLeave; setPendingLeave(null); discardLocalChanges(); run(); }}
+        />
+      )}
+
+      <VersionHistoryModal
+        title={`${scopeLabel(scope)} — Version History`}
+        open={versionsOpen}
+        loading={versionsLoading}
+        versions={versions}
+        restoringId={restoringVersionId}
+        onClose={() => setVersionsOpen(false)}
+        onRestore={restoreVersion}
+      />
+    </div>
+  );
+}
+
+function ChromeLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="flex flex-col items-start gap-2 py-2">
+      <p className="text-[12.5px] text-error m-0">{message}</p>
+      <button type="button" onClick={onRetry} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">Try again</button>
+    </div>
+  );
+}

@@ -65,8 +65,9 @@ function resolveStyle(variant: ToastVariant, message: string): ToastStyle {
  *  looking identical. A thin countdown bar shows time-to-dismiss and
  *  genuinely pauses (not just visually) while hovered. */
 export function ToastContainer() {
-  const { toasts, dismiss, pause, resume } = useToastList();
-  if (toasts.length === 0) return null;
+  const { toasts, dismiss, pause, resume, customHosts } = useToastList();
+  // A storefront theme that draws its own toasts claims the host, so they are not shown twice.
+  if (toasts.length === 0 || customHosts > 0) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 items-end pointer-events-none">

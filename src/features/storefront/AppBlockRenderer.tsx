@@ -80,7 +80,7 @@ class AppBlockErrorBoundary extends Component<{ children: ReactNode }, { hasErro
 /** `type` is a full `Block.type` (`app:<appId>:<blockKey>`) — parsed here,
  *  not by the caller, so every call site stays a one-line dispatch. Renders
  *  nothing (not an error) for an unregistered/unknown block key — same
- *  silent-skip convention `AtelierSectionRenderer`/`NovaSectionRenderer`
+ *  silent-skip convention `FashionSectionRenderer`
  *  already use for any unknown section/block type. */
 export function AppBlockRenderer({ type, settings, colors }: {
   type: string;

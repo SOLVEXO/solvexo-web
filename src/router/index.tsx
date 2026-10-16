@@ -88,10 +88,10 @@ const TranslationsPage = lazy(() => import('@/features/seller/store/Dashboard/On
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
 const AppsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/apps/AppsPage').then(m => ({ default: m.AppsPage })));
 const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
-const AtelierCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage').then(m => ({ default: m.AtelierCustomizePage })));
-const AtelierEditCodePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage').then(m => ({ default: m.AtelierEditCodePage })));
-const AtelierHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage').then(m => ({ default: m.AtelierHeaderFooterPage })));
-const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview').then(m => ({ default: m.ThemeDemoPreview })));
+const ThemeCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeCustomizePage').then(m => ({ default: m.ThemeCustomizePage })));
+const ThemeEditCodePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeEditCodePage').then(m => ({ default: m.ThemeEditCodePage })));
+const ThemeHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeHeaderFooterPage').then(m => ({ default: m.ThemeHeaderFooterPage })));
+const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeDemoPreview').then(m => ({ default: m.ThemeDemoPreview })));
 const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeSharePreviewPage').then(m => ({ default: m.ThemeSharePreviewPage })));
 const CustomerAuthenticationPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerAuthenticationPage').then(m => ({ default: m.CustomerAuthenticationPage })));
 const CustomerSocialProviderPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerSocialProviderPage').then(m => ({ default: m.CustomerSocialProviderPage })));
@@ -138,7 +138,7 @@ const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/O
 // Seller-facing surfaces for two features whose backend + frontend API
 // clients already existed (automatic discounts, gift cards — both already
 // wired into checkout pricing) but had no dashboard page anywhere to reach
-// them from — the same "built but unreachable" gap as AtelierLivePreview's
+// them from — the same "built but unreachable" gap as ThemeLivePreview's
 // hardcoded-theme bug, just in a different corner of the app.
 const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
@@ -396,8 +396,8 @@ const mainRouter = createBrowserRouter([
           { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
           { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
           // `:themeId` is carried in the URL for a real reason now — it used
-          // to be the literal word "atelier" unconditionally, even while
-          // editing a Nova (or any other) store's theme, which is exactly
+          // to be a hardcoded theme name unconditionally, even while
+          // editing another theme (or any other) store's theme, which is exactly
           // the kind of "as a developer I can't tell what's happening here"
           // confusion a real URL segment is supposed to prevent (matches
           // Shopify's own `/admin/themes/<id>/editor` convention). None of
@@ -477,9 +477,9 @@ const mainRouter = createBrowserRouter([
         path: '/store/:storeId/online-store/themes/:themeId',
         element: <ThemeEditorLayout />,
         children: [
-          { path: 'customize',      element: <AtelierCustomizePage /> },
-          { path: 'edit-code',      element: <AtelierEditCodePage /> },
-          { path: 'header-footer',  element: <AtelierHeaderFooterPage /> },
+          { path: 'customize',      element: <ThemeCustomizePage /> },
+          { path: 'edit-code',      element: <ThemeEditCodePage /> },
+          { path: 'header-footer',  element: <ThemeHeaderFooterPage /> },
         ],
       },
 

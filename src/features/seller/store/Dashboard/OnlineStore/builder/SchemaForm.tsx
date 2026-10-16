@@ -181,7 +181,7 @@ function MetaobjectTypePickerField({ value, storeId, onChange }: { value: string
 // "Dynamic Sources" — binds a field (a paragraph/heading block's `text`, or
 // a rich_text section's own `heading`) to one of this store's own real
 // custom fields instead of a static value (see
-// AtelierContentBlocks.tsx/NovaContentBlocks.tsx's identical consumer
+// FashionContentBlocks.tsx's identical consumer
 // side). Previously this was two raw text inputs (namespace + key) a
 // seller had to type by hand, exact-match, with a silent no-op on any typo
 // — found during the Catalog audit. A real dropdown of the store's own
@@ -191,7 +191,7 @@ function MetaobjectTypePickerField({ value, storeId, onChange }: { value: string
 //
 // Phase 9 — generalized beyond the original Product-only, paragraph-only
 // MVP: `ownerResource` is now the real context of whatever's being edited
-// (resolved by `AtelierCustomizePage.tsx` per scope — Product Template →
+// (resolved by `ThemeCustomizePage.tsx` per scope — Product Template →
 // 'product', Collection Template → 'collection', a custom Page → 'page',
 // Blog Article Template → 'article'), not a hardcoded literal — a store's
 // own Category-scoped fields are deliberately never offered here, since no

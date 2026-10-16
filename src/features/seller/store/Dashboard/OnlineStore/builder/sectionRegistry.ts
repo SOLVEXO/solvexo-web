@@ -71,7 +71,7 @@ export const SECTION_META: SectionMeta[] = [
         { value: 'same', label: 'Same as desktop' }, { value: 'adapt', label: 'Adapt to image' },
         { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
       ] },
-      { key: 'mobileTextLayout', kind: 'select', label: 'Text on mobile', hint: 'Overlay themes only (e.g. Nova). "Below image" moves the text out from over the picture.', options: [
+      { key: 'mobileTextLayout', kind: 'select', label: 'Text on mobile', hint: 'Overlay themes only . "Below image" moves the text out from over the picture.', options: [
         { value: 'overlay', label: 'Over the image' }, { value: 'below', label: 'Below the image' },
       ] },
       { key: 'transition', kind: 'select', label: 'Slide transition', options: [
@@ -629,17 +629,17 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'subheading', kind: 'text', label: 'Subheading' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
-    // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (Nova); Atelier's split layout ignores it.
+    // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (another theme); Maison's split layout ignores it.
     { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [
       { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
     ] },
-    { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', half: true, min: 0, max: 80, step: 5, hint: 'Darkens the image behind the text. Only themes that put text over the image use it (e.g. Nova). Blank = theme default.' },
+    { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', half: true, min: 0, max: 80, step: 5, hint: 'Darkens the image behind the text. Only themes that put text over the image use it . Blank = theme default.' },
     { key: 'textColor', kind: 'color', label: 'Text colour' },
   ],
   // "Dynamic Sources" — dynamicSourceKey, when set, binds this block's
   // `text` to one of the store's own real custom fields instead of a
   // static value (namespace is always 'custom' — resolved at render time,
-  // see `AtelierContentBlocks.tsx`/`NovaContentBlocks.tsx`). A real
+  // see `FashionContentBlocks.tsx`). A real
   // dropdown of the store's own definitions, not two raw text inputs a
   // seller had to type exact-match by hand (silently no-op'd on any typo —
   // found during the Catalog audit; Phase 9 also closed the "silent no-op"

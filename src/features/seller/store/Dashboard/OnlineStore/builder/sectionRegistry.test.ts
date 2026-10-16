@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SECTION_META, BLOCK_SCHEMAS } from './sectionRegistry';
 import { SECTION_TYPES } from '@/api/services/storefrontTypes';
-import { getRegisteredAtelierSectionTypes } from '@/features/storefront-themes/theme-01-atelier/sections';
-import { getRegisteredNovaSectionTypes } from '@/features/storefront-themes/theme-02-nova/sections';
+import { getRegisteredFashionSectionTypes } from '@/features/storefront-themes/theme-03-fashion/sections';
 
 describe('storefront section library', () => {
   it('has editor metadata and an editor form for every section type', () => {
@@ -12,11 +11,8 @@ describe('storefront section library', () => {
     expect(SECTION_META.every(meta => Array.isArray(meta.settingsSchema))).toBe(true);
   });
 
-  it.each([
-    ['Atelier', getRegisteredAtelierSectionTypes()],
-    ['Nova', getRegisteredNovaSectionTypes()],
-  ] as const)('%s only offers sections that have a live renderer', (_theme, registeredTypes) => {
-    const available = new Set(registeredTypes);
+  it('Maison only offers sections that have a live renderer', () => {
+    const available = new Set(getRegisteredFashionSectionTypes());
     expect(SECTION_META.filter(meta => !meta.hidden).every(meta => available.has(meta.type))).toBe(true);
   });
 

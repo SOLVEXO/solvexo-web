@@ -885,6 +885,8 @@ export interface SellerOrderDetail {
   timeline?:       OrderTimelineEntry[];
   /** Seller-only internal note. */
   note?:           string;
+  /** What the buyer wrote at checkout (Shopify cart note). */
+  customerNote?:   string;
 }
 
 export type OrderTimelineType = 'email' | 'placed' | 'exchange' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';

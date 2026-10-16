@@ -1,0 +1,115 @@
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Minus, Plus } from 'lucide-react';
+import type { ProductVariant } from '@/api/services/marketplace';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { useCartContext } from '@/contexts/CartContext';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { useProductById } from '@/hooks/marketplace/useProductById';
+import { useLocalize } from '@/hooks/useLocalize';
+import { moneyText } from '../../../core/money';
+import { useCartDrawer } from '../../../cartDrawerContext';
+import { clampQty, resolveQtyRules } from '../../../sellingRules';
+import { optionValueAvailable, stockState, variantCanBuy, variantMaxQty } from '../../../variantAvailability';
+import { fashionTheme as t } from '../../theme.config';
+import { Dialog } from '../../ui/Dialog';
+import { Notice, PillButton } from '../../ui/primitives';
+
+/** Product pop-up opened from a product card: pick options, quantity and add to cart without leaving the grid. */
+export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () => void }) {
+  const { store } = useStorefront();
+  const { addToCart, adding } = useCartContext();
+  const { openDrawer, mounted: drawerMounted } = useCartDrawer();
+  const { currency, convert } = useCurrencyPreference();
+  const localize = useLocalize();
+  const { detail, loading, error, refetch } = useProductById(slug);
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [qty, setQty] = useState(1);
+
+  const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
+  const optionNames = useMemo(() => Array.from(new Set(variants.flatMap(v => (v.options ?? []).map(o => o.name)))), [variants]);
+  const variant: ProductVariant | null = useMemo(() => {
+    if (!variants.length) return null;
+    const exact = variants.find(v => optionNames.every(n => !picked[n] || v.options?.find(o => o.name === n)?.value === picked[n]));
+    return exact ?? detail?.defaultVariant ?? variants[0];
+  }, [variants, optionNames, picked, detail?.defaultVariant]);
+
+  const product = detail ? localize.product(detail.product) : null;
+  const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
+  const image = variant?.images?.find(Boolean) ?? detail?.product.images?.[0];
+
+  let body;
+  if (loading) {
+    body = <div aria-busy className="grid gap-6 sm:grid-cols-2"><div className="animate-pulse" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 20 }} /><div className="flex flex-col gap-3"><div className="h-7 w-3/4 animate-pulse" style={{ background: t.colors.bgAlt, borderRadius: 8 }} /><div className="h-5 w-1/3 animate-pulse" style={{ background: t.colors.bgAlt, borderRadius: 8 }} /></div></div>;
+  } else if (error || !detail || !product || !variant) {
+    body = <div className="flex flex-col gap-4"><Notice tone="error">We couldn&apos;t load this product.</Notice><PillButton variant="outline" onClick={refetch}>Try again</PillButton></div>;
+  } else {
+    const base = String(variant.currency ?? store.baseCurrency ?? currency);
+    const show = (n: number) => moneyText(convert(n, base), currency);
+    const state = stockState(variant, isDigital, store.lowStockThreshold);
+    const canBuy = variantCanBuy(variant, isDigital);
+    const max = variantMaxQty(variant, isDigital);
+    const rules = resolveQtyRules(detail.product, Number.isFinite(max) ? max : 999);
+    const safeQty = clampQty(qty, rules);
+    const onSale = variant.compareAtPrice != null && variant.compareAtPrice > variant.price;
+    const busy = adding === variant._id;
+    const add = async () => {
+      const ok = await addToCart(detail.product._id, variant._id, isDigital ? 'digital' : 'physical', safeQty);
+      if (!ok) return;
+      onClose();
+      if (drawerMounted) openDrawer();
+    };
+    body = (
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div className="overflow-hidden" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 20 }}>
+          {image && <img src={image} alt={product.name} className="size-full object-cover" />}
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <div>
+            {detail.product.vendor && <p className="m-0 mb-1 text-sm" style={{ color: t.colors.inkMuted }}>{detail.product.vendor}</p>}
+            <h3 className="m-0 text-2xl font-semibold leading-tight tracking-tight">{product.name}</h3>
+          </div>
+          <p className="m-0 flex flex-wrap items-baseline gap-3">
+            <span className="text-2xl font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.ink }}>{show(variant.price)}</span>
+            {onSale && <span className="text-lg line-through opacity-50">{show(variant.compareAtPrice as number)}</span>}
+          </p>
+          {optionNames.map(name => {
+            const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
+            const current = variant.options?.find(o => o.name === name)?.value;
+            return (
+              <fieldset key={name} className="m-0 border-0 p-0">
+                <legend className="mb-2 p-0 text-sm font-medium">{name}: <span style={{ color: t.colors.inkMuted }}>{current}</span></legend>
+                <div className="flex flex-wrap gap-2">
+                  {values.map(v => {
+                    const active = current === v;
+                    const available = optionValueAvailable(variants, variant, name, v, isDigital);
+                    return (
+                      <button key={v} type="button" aria-pressed={active} onClick={() => { setPicked(p => ({ ...p, [name]: v })); setQty(1); }}
+                        className="cursor-pointer px-4 py-2 text-sm" style={{ borderRadius: t.buttonRadiusPx, border: `1px solid ${active ? t.colors.ink : t.colors.border}`, background: active ? t.colors.ink : 'transparent', color: active ? t.colors.bg : t.colors.ink, opacity: available ? 1 : 0.45, textDecoration: available ? 'none' : 'line-through' }}>{v}</button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            );
+          })}
+          <p className="m-0 text-sm" style={{ color: state === 'in_stock' || state === 'backorder' ? t.colors.success : t.colors.danger }}>
+            {state === 'sold_out' ? 'Sold out' : state === 'low' ? 'Low stock' : state === 'backorder' ? 'Available on backorder' : 'In stock'}
+          </p>
+          <div className="mt-auto flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.buttonRadiusPx }}>
+                <button type="button" aria-label="Decrease quantity" disabled={safeQty <= rules.min} onClick={() => setQty(safeQty - rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={14} aria-hidden /></button>
+                <span className="w-8 text-center text-sm" aria-live="polite">{safeQty}</span>
+                <button type="button" aria-label="Increase quantity" disabled={safeQty + rules.step > rules.max} onClick={() => setQty(safeQty + rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} aria-hidden /></button>
+              </div>
+              <PillButton className="flex-1" loading={busy} disabled={!canBuy} onClick={add}>{canBuy ? 'Add to cart' : 'Sold out'}</PillButton>
+            </div>
+            <Link to={`/product/${detail.product.slug || detail.product._id}`} onClick={onClose} className="text-sm underline" style={{ color: t.colors.ink }}>View full details</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <Dialog title="Quick view" size="lg" onClose={onClose}>{body}</Dialog>;
+}

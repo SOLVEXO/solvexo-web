@@ -21,7 +21,7 @@ import { currencySymbol, fmt2 } from '@/utils/currency';
 export interface CartDrawerTheme {
   colors: { bg: string; bgAlt: string; ink: string; inkMuted: string; border: string; danger: string };
   fonts: { display: string; body: string };
-  /** Corner radius for thumbnails / stepper (Atelier is square, Nova is rounded). */
+  /** Corner radius for thumbnails / stepper (Maison is square, another theme is rounded). */
   radius: { sm: string };
   headingWeight?: number;
 }

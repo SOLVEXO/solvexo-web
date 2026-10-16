@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap');
+
+/* Pill call-to-action with an arrow chip that slides across on hover */
+.fx-cta { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 48px; overflow: hidden; cursor: pointer; text-decoration: none;
+  padding: 4px 56px 4px 24px; border-radius: 9999px; font-size: 14px; font-weight: 500; line-height: 1; white-space: nowrap; transition: padding .5s, opacity .2s; }
+.fx-cta:hover { padding-left: 56px; padding-right: 24px; }
+.fx-cta .fx-cta-icon { position: absolute; right: 4px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; transition: right .5s, transform .5s; }
+.fx-cta:hover .fx-cta-icon { right: calc(100% - 44px); transform: rotate(45deg); }
+.fx-cta[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* Plain pill (forms, drawer, add to cart) */
+.fx-pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 28px; border-radius: 9999px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: opacity .2s, background-color .2s; }
+.fx-pill:hover:not([disabled]) { opacity: .88; }
+.fx-pill[disabled] { opacity: .5; cursor: not-allowed; }
+
+.fx-serif { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+.fx-hide-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.fx-hide-scroll::-webkit-scrollbar { display: none; }
+
+@keyframes fx-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+.fx-up { animation: fx-up .8s cubic-bezier(.21,.47,.32,.98) both; }
+.fx-up-1 { animation-delay: .1s; } .fx-up-2 { animation-delay: .2s; }
+@media (prefers-reduced-motion: reduce) { .fx-up { animation: none; } .fx-cta, .fx-cta .fx-cta-icon { transition: none; } }
+
+/* Overlays: drawers, backdrops, popovers, toasts */
+@keyframes fx-slide-left { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes fx-slide-right { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fx-pop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fx-toast-in { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes fx-toast-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px) scale(.96); } }
+@keyframes fx-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.fx-drawer-right { animation: fx-slide-left .3s cubic-bezier(.22,.8,.3,1) both; }
+.fx-drawer-left { animation: fx-slide-right .3s cubic-bezier(.22,.8,.3,1) both; }
+.fx-backdrop { animation: fx-fade .25s ease both; }
+.fx-pop { animation: fx-pop .16s ease both; transform-origin: top; }
+.fx-toast { animation: fx-toast-in .28s cubic-bezier(.22,.8,.3,1) both; }
+.fx-toast[data-leaving='true'] { animation: fx-toast-out .22s ease both; }
+.fx-toast-bar { transform-origin: left; animation: fx-toast-bar linear both; }
+@media (prefers-reduced-motion: reduce) {
+  .fx-drawer-right, .fx-drawer-left, .fx-backdrop, .fx-pop, .fx-toast, .fx-toast[data-leaving='true'] { animation: none; }
+  .fx-toast[data-leaving='true'] { opacity: 0; }
+  .fx-toast-bar { animation: none; }
+}

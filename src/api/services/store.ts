@@ -393,7 +393,7 @@ export function apiCompletePrivacyRequest(storeId: string, requestId: string) {
 }
 
 /** POST /api/store/public/:storeId/verify-password — the storefront gate's
- *  own submit call (`AtelierStorefrontGate`/`NovaStorefrontGate`). */
+ *  own submit call (`FashionStorefrontGate`). */
 export function apiVerifyStorePassword(storeId: string, password: string) {
   return client.post<never, ApiResponse<{ valid: boolean; token: string | null }>>(ENDPOINTS.STORE.VERIFY_PASSWORD(storeId), { password });
 }
@@ -611,6 +611,8 @@ export interface PublicStoreProduct {
   inStock?:            boolean;
   compareAtPrice?:     number | null;
   activeCampaign?:     ActiveCampaignBadge | null;
+  /** Every active variant (the list endpoint already returns them); used for card swatches. */
+  variants?:           { options?: { name: string; value: string }[]; images?: string[] }[];
 }
 
 export interface PublicStoreProductsData {

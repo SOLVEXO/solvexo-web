@@ -114,7 +114,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
 
 function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelectSection, onSelectBlock, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource }: {
   section: Section;
-  /** Same id shape `AtelierSectionRenderer` computes (`section._id ?? index`,
+  /** Same id shape `FashionSectionRenderer` computes (`section._id ?? index`,
    *  stringified) — lets a click in the live preview and a card here refer
    *  to "the same section" without either side needing the other's index. */
   sectionId: string;
@@ -431,7 +431,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
             ) : null}
           >
             {(section, i) => {
-              // Must match `AtelierSectionRenderer`'s own `String(section._id
+              // Must match `FashionSectionRenderer`'s own `String(section._id
               // ?? i)` exactly — same array, same order, same fallback — so a
               // click in the preview and a card here agree on "which section."
               const sectionId = String(section._id ?? i);

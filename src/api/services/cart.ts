@@ -16,6 +16,8 @@ export interface CartItem {
    *  time — the authoritative conversion only happens at checkout creation. */
   currency?:        string | null;
   quantity:         number;
+  /** Chosen variant options (e.g. Size: M); empty for single-variant products. */
+  options?:         { name: string; value: string }[];
   itemTotal?:       number;
   type?:            'physical' | 'digital';
 }

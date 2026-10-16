@@ -22,23 +22,23 @@ interface PhoneInputProps {
   autoComplete?: string;
   required?: boolean;
   /** When true, skips the apex app's own `.solvexo-phone-input`/Tailwind
-   *  label styling entirely — for a storefront theme page (Atelier/Nova),
+   *  label styling entirely — for a storefront theme page (the theme),
    *  which renders its own independent chrome with its theme's own inline
-   *  style tokens (`atelierInput`/`novaInput`, etc.) rather than this app's
+   *  style tokens (`fashionInput`/`fashionInput`, etc.) rather than this app's
    *  shared design system, same convention every other raw `<input>` in
    *  those pages already follows. Pair with `containerStyle`/`inputStyle`/
    *  `labelNode` to fully re-skin it. */
   unstyled?: boolean;
   /** Only used when `unstyled` — inline style for the bordered container
    *  that wraps the flag/dial-code select + number input (the equivalent of
-   *  a theme's own `atelierInput`/`novaInput` box style). */
+   *  a theme's own `fashionInput`/`fashionInput` box style). */
   containerStyle?: CSSProperties;
   /** Only used when `unstyled` — inline style for the native number
    *  `<input>` itself (kept borderless/transparent so `containerStyle`'s
    *  border is the only visible one, same as the styled variant). */
   inputStyle?: CSSProperties;
   /** Only used when `unstyled` — a theme renders its own label markup
-   *  (`atelierLabel`/`novaLabel` style objects) rather than this
+   *  (`fashionLabel`/`fashionLabel` style objects) rather than this
    *  component's built-in Tailwind label, so it's passed in as a node. */
   labelNode?: ReactNode;
 }

@@ -2,7 +2,7 @@
 // backend's `common/store-content/section-settings.types.ts`. `settings`
 // stays a loose `Record<string, any>` here too (not a per-type union) since
 // each theme's own section-render registry (e.g.
-// `storefront-themes/theme-01-atelier/sections/atelierSectionRenderer.tsx`)
+// `storefront-themes/theme-03-fashion/sections/fashionSectionRenderer.tsx`)
 // owns the component map, not the type system — adding a new type touches
 // one registry entry, not a big discriminated-union refactor.
 
@@ -37,7 +37,7 @@ export const SECTION_TYPES = [
   'collection_product_grid',
   // Real, backend-validated (`section-settings.validator.ts`) section types
   // that predate any theme actually implementing them — added here as each
-  // theme adopts one. `drop_countdown` is Atelier's first (see
+  // theme adopts one. `drop_countdown` is Maison's first (see
   // `DropCountdownSection.tsx`); the rest are added only once a real theme
   // implements them, to keep this list an honest reflection of what's
   // actually usable, not a speculative wishlist.
@@ -88,8 +88,8 @@ export type SectionType = (typeof SECTION_TYPES)[number];
  *  live preview shows THAT real blog's name/recent posts or THAT real
  *  article's title/excerpt instead of the generic "Sample…" placeholder.
  *  Never reaches the real storefront — those pages already render their
- *  own real content directly (see `AtelierBlogIndexPage`/`AtelierBlogPostPage`
- *  and their Nova counterparts), this is editor-preview-only context. */
+ *  own real content directly (see `FashionBlogIndexPage`
+ *  and their another theme counterparts), this is editor-preview-only context. */
 export interface CoreSectionPreviewContext {
   blogName?: string;
   recentPostTitles?: string[];
@@ -112,7 +112,7 @@ export interface CoreSectionPreviewContext {
 /** Every core/locked section type — see the comment above. Shared by the
  *  Customize editor (`PageSectionsEditor`/`sectionRegistry`, which hide the
  *  Remove/Duplicate/Hide/Drag controls for these) and each theme's own
- *  storefront pages (`AtelierProductPage` etc., which filter these OUT of
+ *  storefront pages (`FashionProductPage` etc., which filter these OUT of
  *  what they hand to the generic section renderer, since their own fixed
  *  markup already renders the real thing — rendering both would duplicate
  *  it on the live storefront). */

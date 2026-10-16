@@ -5,11 +5,11 @@ import type { StorefrontColors } from '@/api/services/storeTheme';
  * The Theme Manifest contract — Phase 3 of the theme-agnostic platform work.
  *
  * WHY THIS FILE EXISTS: the merchant Customize/Theme-Settings/Header-Footer/
- * Edit-Code pages (`OnlineStore/themes/Atelier*.tsx`) are today hardcoded to
- * one theme — literal `theme-01-atelier` imports, `Atelier`-prefixed
+ * Edit-Code pages (`OnlineStore/themes/Maison*.tsx`) are today hardcoded to
+ * one theme — literal `theme-03-fashion` imports, `Maison`-prefixed
  * component names, a `TemplateScope` union and `SCOPE_CONFIG` map declared
- * inline inside `AtelierCustomizePage.tsx`, and a theme-settings field list
- * hand-written inside `AtelierThemeSettingsPanel.tsx`. A second theme today
+ * inline inside `ThemeCustomizePage.tsx`, and a theme-settings field list
+ * hand-written inside `ThemeSettingsPanel.tsx`. A second theme today
  * would mean copy-pasting all five pages and hand-editing each one — exactly
  * the "the architecture has failed this test" failure mode the reusability
  * requirement rules out.
@@ -37,8 +37,8 @@ import type { StorefrontColors } from '@/api/services/storeTheme';
  * already has a real, working, theme-agnostic contract: `NewThemeImpl` in
  * `registry.ts`. This manifest only covers what's genuinely NOT generic yet:
  * which of the shared `StorefrontColors` fields a theme's render tree
- * actually uses (Atelier deliberately exposes a real subset, not every
- * field — see `AtelierThemeSettingsPanel`'s own doc comment), which
+ * actually uses (Maison deliberately exposes a real subset, not every
+ * field — see `ThemeSettingsPanel`'s own doc comment), which
  * template scopes it has, and whether it renders the announcement bar.
  */
 
@@ -54,12 +54,12 @@ export interface ThemeSettingsFieldDef {
   control:
     | { kind: 'color' }
     | { kind: 'select'; options: { value: string; label: string }[] };
-  /** Shown under the field — e.g. Atelier's fixed headline typeface note. */
+  /** Shown under the field — e.g. Maison's fixed headline typeface note. */
   helpText?: string;
 }
 
 /** One merchant-editable template scope (Home / Product / Collection /
- *  Search / Cart / Blog…). Mirrors `AtelierCustomizePage.tsx`'s own
+ *  Search / Cart / Blog…). Mirrors `ThemeCustomizePage.tsx`'s own
  *  `TemplateScope`/`SCOPE_CONFIG`, extracted here so a generic Customize
  *  page can build its scope switcher from this list instead of a hardcoded
  *  union type. */
@@ -87,7 +87,7 @@ export interface ThemeTemplateScopeDef {
    *  backend — a real `StorePage` (Home, one per store, or Phase 5: any
    *  real merchant-created custom page, picked via `resourcePicker`) or a
    *  real `CollectionTemplate` row (every other scope), reusing the same
-   *  `resourceType`/`templateKey` addressing `AtelierCustomizePage.tsx`
+   *  `resourceType`/`templateKey` addressing `ThemeCustomizePage.tsx`
    *  already established (search/cart/blog reuse the `page` resourceType
    *  bucket with a distinguishing `templateKey`, since the backend's
    *  `resourceType` enum has no dedicated values for them — see that file's
@@ -109,7 +109,7 @@ export interface ThemeManifest {
   id: string;
   name: string;
   /** Whether this theme's chrome renders `Store.announcementBar` (a
-   *  site-wide, theme-independent field — see `AtelierLayout.tsx`'s own doc
+   *  site-wide, theme-independent field — see `FashionLayout.tsx`'s own doc
    *  comment on why it isn't theme-scoped data) at all. A theme can
    *  legitimately opt out if its design has no place for a message strip. */
   supportsAnnouncementBar: boolean;

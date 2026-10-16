@@ -12,8 +12,7 @@ import {
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/storefront-themes/registry';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
-import { ThemeThumbnail } from './AtelierThemeDemoPreview';
-import { apiApplyThemeDefinition, apiListThemeCatalog, type ThemeDefinition } from '@/api/services/themeCatalog';
+import { ThemeThumbnail } from './ThemeDemoPreview';
 import { ThemeSourcePackageDialog } from '@/features/themes/liquid/ThemeSourcePackageDialog';
 
 /**
@@ -127,8 +126,6 @@ export function ThemeLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<StoreThemeData | null>(null);
-  // Catalog presets overwrite the target theme's draft, so they are confirmed first.
-  const [pendingCatalogTheme, setPendingCatalogTheme] = useState<ThemeDefinition | null>(null);
   // The Shopify-style theme ZIP workspace, opened for one installed theme.
   const [zipForThemeId, setZipForThemeId] = useState<string | null>(null);
   const [pendingUninstall, setPendingUninstall] = useState<StoreThemeData | null>(null);
@@ -136,10 +133,6 @@ export function ThemeLibraryPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [sharePreviewRow, setSharePreviewRow] = useState<StoreThemeData | null>(null);
-  const [catalogThemes, setCatalogThemes] = useState<ThemeDefinition[]>([]);
-  const [catalogLoading, setCatalogLoading] = useState(true);
-  const [catalogTargetId, setCatalogTargetId] = useState('');
-  const [applyingCatalogId, setApplyingCatalogId] = useState<string | null>(null);
 
   const [loadError, setLoadError] = useState('');
   const load = useCallback(() => {
@@ -152,13 +145,6 @@ export function ThemeLibraryPage() {
   }, [storeId]);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    apiListThemeCatalog()
-      .then(res => setCatalogThemes(res.data))
-      .catch(() => setCatalogThemes([]))
-      .finally(() => setCatalogLoading(false));
-  }, []);
 
   const installedByDefinitionId = useMemo(
     () => {
@@ -175,11 +161,6 @@ export function ThemeLibraryPage() {
   const newThemeEntries = listNewThemeEntries();
   const activeThemeName = newThemeEntries.find((t) => t.id === activeRow?.themeDefinitionId)?.name;
 
-  useEffect(() => {
-    if (activeRow?._id) setCatalogTargetId(activeRow._id);
-    else if (installed[0]?._id) setCatalogTargetId(installed[0]._id);
-  }, [activeRow?._id, installed]);
-
   const handleInstallNewTheme = async (id: string, name: string, installDefaults: ThemeInstallColorDefaults) => {
     setInstallingId(id);
     try {
@@ -188,8 +169,8 @@ export function ThemeLibraryPage() {
       // (platform orange, Poppins, medium button radius — none of it this
       // theme's own design) silently became this installation's "customized"
       // colors from the moment it was created — the actual reason a fresh
-      // Nova install's Customize preview (and its real published storefront,
-      // which reads this exact same document) never showed Nova's real vivid
+      // another theme install's Customize preview (and its real published storefront,
+      // which reads this exact same document) never showed another theme's real vivid
       // indigo + full-pill buttons. See `registry.ts`'s `installDefaults`
       // doc comment for the full story.
       await apiInstallTheme(storeId, { themeDefinitionId: id, theme: installDefaults });
@@ -245,18 +226,21 @@ export function ThemeLibraryPage() {
     }
   };
 
-  const handleApplyCatalogTheme = async (theme: ThemeDefinition) => {
-    if (!catalogTargetId) return;
-    setApplyingCatalogId(theme._id);
-    try {
-      await apiApplyThemeDefinition(storeId, theme._id, catalogTargetId);
-      toast.success(`${theme.name} is ready in the selected theme's draft. Review it, then publish.`);
-      load();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not apply this theme preset.');
-    } finally {
-      setApplyingCatalogId(null);
-    }
+  // Rows whose theme no longer exists in the code registry (retired themes) and are not live.
+  const orphanRows = installed.filter(
+    (row) => row.status !== 'active' && !newThemeEntries.some((t) => t.id === row.themeDefinitionId),
+  );
+  const [confirmCleanup, setConfirmCleanup] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const handleCleanup = async () => {
+    setCleaning(true);
+    const results = await Promise.allSettled(orphanRows.map((row) => apiUninstallTheme(storeId, row._id)));
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    if (failed) toast.error(`${failed} theme(s) could not be removed.`);
+    else toast.success('Unused themes removed.');
+    setCleaning(false);
+    setConfirmCleanup(false);
+    load();
   };
 
   const handleStartRename = (row: StoreThemeData) => {
@@ -321,19 +305,24 @@ export function ThemeLibraryPage() {
               const isActive = row?.status === 'active';
               const isInstalled = !!row;
               return (
-                <div key={entry.id} className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
+                <div key={entry.id} className="group relative rounded-2xl overflow-hidden border border-bone bg-white">
                   {/* Live thumbnail of the theme's own real demo homepage —
                      what WordPress/Shopify theme pickers show as a
                      screenshot, so a seller can actually see the design
                      right here instead of reading a text description and
                      guessing. See `ThemeThumbnail`'s own doc comment. */}
-                  <ThemeThumbnail themeId={entry.id} className="w-full rounded-xl border border-bone" />
-                  <div className="flex items-center justify-between">
-                    <p className="text-[14.5px] font-bold text-charcoal">{entry.name}</p>
-                    {isActive && <span className="px-2 py-[3px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[10px] font-bold">ACTIVE</span>}
-                  </div>
-                  <p className="text-[12px] text-slate leading-snug">{entry.description}</p>
-                  <p className="text-[11px] text-slate">
+                  <ThemeThumbnail themeId={entry.id} className="w-full" />
+                  {isActive && (
+                    <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full bg-emerald-600 text-[10.5px] font-bold tracking-wide text-white shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" /> ACTIVE
+                    </span>
+                  )}
+                  {/* Details + actions appear only on hover/focus (tap on touch). */}
+                  <div className="absolute inset-0 flex items-center justify-center p-5 bg-gradient-to-b from-black/30 via-black/55 to-black/75 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100">
+                  <div className="flex flex-col gap-2 w-full max-w-[340px] text-center translate-y-2 transition-transform duration-200 ease-out group-hover:translate-y-0 group-focus-within:translate-y-0">
+                  <p className="text-[20px] font-bold tracking-tight text-white">{entry.name}</p>
+                  <p className="text-[12px] text-white/80 leading-snug line-clamp-2">{entry.description}</p>
+                  <p className="text-[11px] text-white/60">
                     {entry.builtRouteCount >= entry.totalRouteCount
                       ? `Complete — all ${entry.totalRouteCount} storefront pages built.`
                       : `In progress — ${entry.builtRouteCount} of ${entry.totalRouteCount} storefront pages built so far.`}
@@ -368,9 +357,9 @@ export function ThemeLibraryPage() {
                             resolves the active store's real
                             `themeDefinitionId` against `THEME_MANIFESTS`/
                             `THEME_DEV_FILES` internally — see
-                            `AtelierCustomizePage`/`AtelierEditCodePage`'s own
+                            `ThemeCustomizePage`/`ThemeEditCodePage`'s own
                             doc comments). Gating these three links behind
-                            `entry.id === 'theme-01-atelier'` was a real bug:
+                            `entry.id === 'theme-03-fashion'` was a real bug:
                             it left ANY second installed+active theme with no
                             way to reach its own editor pages from this UI at
                             all — exactly the "hardcoded per-theme editor
@@ -378,12 +367,12 @@ export function ThemeLibraryPage() {
                             architecture is required to avoid. These render
                             for any installed+active theme now, and the URL
                             segment is built from the real `entry.id` too
-                            (previously a literal "atelier" regardless of
+                            (previously a hardcoded theme name regardless of
                             which theme was actually active — a real, if
                             purely cosmetic, naming leak that made the URL
                             lie about which theme you were editing; fixed
                             alongside the same pages' title bars, which had
-                            the identical hardcoded-"Atelier" bug). */}
+                            the identical hardcoded-"Maison" bug). */}
                         <Link
                           to={`${row?._id ?? entry.id}/customize`}
                           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border-none bg-brand-orange text-white hover:bg-brand-deep-orange no-underline"
@@ -442,48 +431,12 @@ export function ThemeLibraryPage() {
                       </>
                     )}
                   </div>
+                  </div>
+                  </div>
                 </div>
               );
             })}
           </div>
-        </section>
-
-        <section className="flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <h2 className="text-[14px] font-bold text-charcoal">Theme catalog</h2>
-              <p className="text-[11.5px] text-slate mt-1">Apply a catalog design to an installed theme, review its draft, then publish.</p>
-            </div>
-            {installed.length > 0 && (
-              <label className="flex items-center gap-2 text-[11.5px] text-slate">
-                Apply to
-                <select value={catalogTargetId} onChange={event => setCatalogTargetId(event.target.value)} className="px-2.5 py-2 border border-bone rounded-lg bg-white text-charcoal">
-                  {installed.map(row => <option key={row._id} value={row._id}>{row.name || newThemeEntries.find(theme => theme.id === row.themeDefinitionId)?.name || 'Theme'}{row.status === 'active' ? ' (Active)' : ''}</option>)}
-                </select>
-              </label>
-            )}
-          </div>
-          {catalogLoading ? (
-            <div className="flex items-center gap-2 py-5 text-[12px] text-slate"><Loader2 size={14} className="animate-spin" /> Loading catalog…</div>
-          ) : catalogThemes.length === 0 ? (
-            <p className="text-[12px] text-slate bg-white border border-bone rounded-xl p-4">No published catalog themes are available yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {catalogThemes.map(theme => (
-                <article key={theme._id} className="bg-white border border-bone rounded-xl p-3 flex flex-col gap-2">
-                  {theme.thumbnail && <img src={theme.thumbnail} alt={`${theme.name} theme preview`} loading="lazy" className="w-full aspect-[16/9] object-cover rounded-lg border border-bone" />}
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-[13px] font-bold text-charcoal">{theme.name}</h3>
-                    {theme.featured && <span className="text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange">Featured</span>}
-                  </div>
-                  <p className="text-[11.5px] text-slate leading-snug line-clamp-3">{theme.description || 'A curated storefront design.'}</p>
-                  <button type="button" onClick={() => setPendingCatalogTheme(theme)} disabled={!catalogTargetId || applyingCatalogId === theme._id} className="mt-auto px-3 py-2 rounded-lg border-none bg-brand-orange text-white text-[11.5px] font-semibold cursor-pointer disabled:opacity-60">
-                    {applyingCatalogId === theme._id ? 'Applying…' : 'Apply to selected theme'}
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
         </section>
 
         {/* Every INSTALLED ROW, not one card per theme package — this is
@@ -492,62 +445,84 @@ export function ThemeLibraryPage() {
             the gallery above keys off `themeDefinitionId` alone and would
             silently collapse duplicates into one card. */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-[14px] font-bold text-charcoal">Installed Themes</h2>
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[14px] font-bold text-charcoal">Installed Themes</h2>
+            {orphanRows.length > 0 && (
+              <button type="button" onClick={() => setConfirmCleanup(true)} className="px-3 py-1.5 rounded-lg border border-bone bg-white text-error text-[11.5px] font-semibold cursor-pointer">
+                Remove {orphanRows.length} unused
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {installed.map(row => {
-              const defName = newThemeEntries.find(t => t.id === row.themeDefinitionId)?.name ?? 'Theme';
-              const displayName = row.name || defName;
+              const knownEntry = newThemeEntries.find(t => t.id === row.themeDefinitionId);
+              const displayName = row.name || knownEntry?.name || 'Retired theme';
               const isRenaming = renamingId === row._id;
+              const isLive = row.status === 'active';
+              const busy = busyRowId === row._id;
+              const ghost = 'flex items-center justify-center gap-1.5 px-2.5 py-[7px] rounded-lg text-[11.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer no-underline disabled:opacity-60';
               return (
-                <div key={row._id} className="flex items-center gap-3 bg-white border border-bone rounded-lg px-4 py-3">
-                  {isRenaming ? (
-                    <input
-                      autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSaveRename(row); if (e.key === 'Escape') setRenamingId(null); }}
-                      className="flex-1 px-2 py-1 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
-                    />
+                <article key={row._id} className="group relative rounded-2xl overflow-hidden border border-bone bg-white">
+                  <ThemeThumbnail themeId={row.themeDefinitionId ?? ''} className="w-full" />
+                  {isLive ? (
+                    <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full bg-emerald-600 text-[10.5px] font-bold tracking-wide text-white shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" /> LIVE
+                    </span>
                   ) : (
-                    <span className="text-[13px] font-semibold text-charcoal flex-1 truncate">{displayName}</span>
+                    <span className="absolute top-3 left-3 z-10 px-2.5 py-[5px] rounded-full bg-charcoal/80 text-[10.5px] font-bold tracking-wide text-white">NOT LIVE</span>
                   )}
-                  {row.status === 'active' && <span className="px-2 py-[3px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[10px] font-bold shrink-0">ACTIVE</span>}
-                  {row.status === 'active' && row.sourcePackageVersion != null && (
-                    <span title="Your storefront is rendering uploaded theme files. Customize / Header & Footer edits do not change those pages — edit them in Edit Code → Theme source." className="px-2 py-[3px] rounded-full bg-[#E0F2FE] text-[#075985] text-[10px] font-bold shrink-0">CUSTOM FILES LIVE · r{row.sourcePackageVersion}</span>
-                  )}
-                  <Link to={`${row._id}/customize`} title="Customize this installed theme" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><Settings2 size={13} /></Link>
-                  <Link to={`${row._id}/header-footer`} title="Edit header and footer" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><PanelTop size={13} /></Link>
-                  <Link to={`${row._id}/edit-code`} title="Edit theme files" className="p-1.5 rounded-lg border border-bone bg-white text-charcoal no-underline shrink-0"><Code2 size={13} /></Link>
-                  {isRenaming ? (
-                    <button type="button" onClick={() => handleSaveRename(row)} disabled={busyRowId === row._id}
-                      className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border-none bg-brand-orange text-white cursor-pointer disabled:opacity-60">
-                      Save
-                    </button>
-                  ) : (
-                    <button type="button" onClick={() => handleStartRename(row)} title="Rename"
-                      className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0">
-                      <Pencil size={13} />
-                    </button>
-                  )}
-                  {row.status !== 'active' && (
-                    <button type="button" onClick={() => setPendingActivate(row)} disabled={busyRowId === row._id} title="Make this theme live"
-                      className="px-2.5 py-1 rounded-lg text-[11.5px] font-semibold border-none bg-brand-orange text-white cursor-pointer shrink-0 disabled:opacity-60">
-                      Activate
-                    </button>
-                  )}
-                  <button type="button" onClick={() => handleDuplicate(row)} disabled={busyRowId === row._id} title="Duplicate"
-                    className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0 disabled:opacity-60">
-                    {busyRowId === row._id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
-                  </button>
-                  <button type="button" onClick={() => setSharePreviewRow(row)} title="Share Preview"
-                    className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0">
-                    <Link2 size={13} />
-                  </button>
-                  {row.status !== 'active' && (
-                    <button type="button" onClick={() => setPendingUninstall(row)} title="Delete"
-                      className="p-1.5 rounded-lg border-none bg-transparent text-error cursor-pointer shrink-0">
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
+                  {/* Name stays visible without hover (retired themes have no screenshot). */}
+                  <span className="absolute bottom-3 left-3 z-10 max-w-[80%] truncate px-2.5 py-[5px] rounded-full bg-white/90 text-[11.5px] font-semibold text-charcoal shadow-sm transition-opacity duration-200 group-hover:opacity-0 group-focus-within:opacity-0">{displayName}</span>
+                  <div className={`absolute inset-0 z-20 flex items-center justify-center p-4 bg-gradient-to-b from-black/30 via-black/55 to-black/80 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100 ${isRenaming ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="flex flex-col gap-2 w-full max-w-[340px] text-center translate-y-2 transition-transform duration-200 ease-out group-hover:translate-y-0 group-focus-within:translate-y-0">
+                      {isRenaming ? (
+                        <div className="flex gap-2">
+                          <input
+                            autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveRename(row); if (e.key === 'Escape') setRenamingId(null); }}
+                            aria-label="Theme name"
+                            className="flex-1 min-w-0 px-2.5 py-1.5 text-[13px] border-none rounded-lg text-charcoal bg-white outline-none"
+                          />
+                          <button type="button" onClick={() => handleSaveRename(row)} disabled={busy} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border-none bg-brand-orange text-white cursor-pointer disabled:opacity-60">Save</button>
+                        </div>
+                      ) : (
+                        <p className="text-[19px] font-bold tracking-tight text-white truncate">{displayName}</p>
+                      )}
+                      <p className="text-[11.5px] text-white/75 leading-snug">
+                        {knownEntry ? `Based on ${knownEntry.name}` : 'Old design, no longer available. Safe to remove.'}
+                      </p>
+                      {isLive && row.sourcePackageVersion != null && (
+                        <span title="Your storefront is rendering uploaded theme files. Customize / Header & Footer edits do not change those pages — edit them in Edit Code → Theme source." className="self-center px-2 py-[3px] rounded-full bg-[#E0F2FE] text-[#075985] text-[10px] font-bold">CUSTOM FILES LIVE · r{row.sourcePackageVersion}</span>
+                      )}
+                      <div className="flex gap-2">
+                        {isLive ? (
+                          <Link to={`${row._id}/customize`} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[8px] rounded-lg text-[12px] font-semibold bg-brand-orange text-white hover:bg-brand-deep-orange no-underline">
+                            <Settings2 size={13} /> Customize
+                          </Link>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => setPendingActivate(row)} disabled={busy} className="flex-1 flex items-center justify-center px-3 py-[8px] rounded-lg text-[12px] font-semibold border-none bg-brand-orange text-white hover:bg-brand-deep-orange cursor-pointer disabled:opacity-60">
+                              Make live
+                            </button>
+                            <Link to={`${row._id}/customize`} className={ghost}><Settings2 size={13} /> Customize</Link>
+                          </>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <Link to={`${row._id}/header-footer`} className={ghost}><PanelTop size={12} /> Header</Link>
+                        <Link to={`${row._id}/edit-code`} className={ghost}><Code2 size={12} /> Code</Link>
+                        <button type="button" onClick={() => handleStartRename(row)} className={ghost}><Pencil size={12} /> Rename</button>
+                        <button type="button" onClick={() => handleDuplicate(row)} disabled={busy} className={ghost}>
+                          {busy ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />} Copy
+                        </button>
+                        <button type="button" onClick={() => setSharePreviewRow(row)} className={ghost}><Link2 size={12} /> Share</button>
+                        {!isLive ? (
+                          <button type="button" onClick={() => setPendingUninstall(row)} className={`${ghost} !text-error hover:!bg-error-bg`}><Trash2 size={12} /> Delete</button>
+                        ) : <span />}
+                      </div>
+                    </div>
+                  </div>
+                </article>
               );
             })}
           </div>
@@ -559,15 +534,15 @@ export function ThemeLibraryPage() {
       )}
 
       {zipForThemeId && <ThemeSourcePackageDialog storeId={storeId} installedThemeId={zipForThemeId} onClose={() => { setZipForThemeId(null); load(); }} />}
-      {pendingCatalogTheme && (
+      {confirmCleanup && (
         <ConfirmDialog
-          title={`Apply "${pendingCatalogTheme.name}"?`}
-          message="This replaces the colours, header, footer and home page layout in the selected theme's DRAFT with this preset. Unpublished edits in that draft are overwritten. Nothing goes live until you publish."
-          confirmLabel="Apply to draft"
-          confirmVariant="primary"
-          loading={applyingCatalogId === pendingCatalogTheme._id}
-          onCancel={() => setPendingCatalogTheme(null)}
-          onConfirm={async () => { const t = pendingCatalogTheme; await handleApplyCatalogTheme(t); setPendingCatalogTheme(null); }}
+          title={`Remove ${orphanRows.length} unused themes?`}
+          message="These are old or retired theme copies that are not live. Your active theme is not touched."
+          confirmLabel="Remove"
+          confirmVariant="danger"
+          loading={cleaning}
+          onCancel={() => setConfirmCleanup(false)}
+          onConfirm={handleCleanup}
         />
       )}
       {pendingActivate && (

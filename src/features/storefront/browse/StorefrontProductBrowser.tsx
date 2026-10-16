@@ -19,7 +19,7 @@ export interface BrowseTokens {
   fonts: { display: string; body: string };
   colors: { ink: string; inkMuted: string; border: string; accent: string; accentInk: string; bgAlt: string; danger: string };
   radius: string;
-  /** e.g. '1px' (Atelier) or '1.5px' (Nova) */
+  /** e.g. '1px' (Maison) or '1.5px' (another theme) */
   borderWidth: string;
   headingWeight: number;
   skeletonAspect: string;

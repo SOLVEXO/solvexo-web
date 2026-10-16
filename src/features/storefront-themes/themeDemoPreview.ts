@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { Section } from '@/api/services/storefrontTypes';
 
 /**
@@ -12,10 +12,10 @@ import type { Section } from '@/api/services/storefrontTypes';
  * WHY THIS EXISTS (the bug it fixes): before this, the only way to preview
  * a candidate (installed-but-inactive) theme was to render the STORE'S REAL
  * saved Home sections through the candidate theme's own `SectionRenderer`
- * (see `AtelierLivePreview`'s `themeIdOverride`). That looks fine only when
+ * (see `ThemeLivePreview`'s `themeIdOverride`). That looks fine only when
  * the two themes happen to implement the exact same section types — but
  * every theme discloses its own real, honest subset of the shared section
- * vocabulary (see e.g. `theme-02-nova/sections/index.ts`'s own "DISCLOSED
+ * vocabulary (see e.g. `theme-03-fashion/sections/index.ts`'s own "DISCLOSED
  * SCOPE" comment), and an unregistered section type is silently skipped, not
  * rendered as a placeholder. So a store whose real, active theme uses a
  * section type a candidate theme hasn't implemented would render a
@@ -47,9 +47,11 @@ export interface ThemeDemoPreviewData {
   demoStore: { name: string; tagline: string; description: string };
   demoSections: Section[];
   SectionRenderer: ComponentType<{ sections: Section[] }>;
+  /** Optional: the theme's own static header + footer for the preview. When omitted the preview page draws a plain header/footer. */
+  Chrome?: ComponentType<{ children: ReactNode }>;
   /** A theme's own `theme.config.ts` export satisfies this generically —
    *  every theme deliberately mirrors the same shape (see
-   *  `theme-02-nova/theme.config.ts`'s own doc comment on why) — so this is
+   *  `theme-03-fashion/theme.config.ts`'s own doc comment on why) — so this is
    *  never hand-picked per theme, just passed straight through. */
   theme: ThemeVisualConfig;
 }

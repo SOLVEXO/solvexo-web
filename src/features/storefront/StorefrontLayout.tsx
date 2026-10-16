@@ -74,8 +74,8 @@ export function StorefrontLayout() {
   const [error, setError] = useState('');
   // Real Shopify-style storefront gate (`Store.privacyMode`) — a per-tab
   // unlock, checked the instant the store loads so a password-protected
-  // store never flashes its real content first. See `AtelierStorefrontGate`/
-  // `NovaStorefrontGate`'s own doc comments for the full rationale.
+  // store never flashes its real content first. See `FashionStorefrontGate`/
+  // `FashionStorefrontGate`'s own doc comments for the full rationale.
   const [unlocked, setUnlocked] = useState(false);
   // Real Customer-Privacy cookie consent — `null` means "not yet decided,
   // show the banner"; a real object means the visitor (or a store that

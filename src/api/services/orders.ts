@@ -139,6 +139,8 @@ export interface OrderDetail {
   shippingAddress: Record<string, unknown> | null;
   fulfillmentMethod?: 'ship' | 'pickup';
   pickupLocation?: { name: string | null; address: string | null; instructions: string | null } | null;
+  /** What the buyer wrote at checkout (Shopify cart note). */
+  customerNote?: string;
   sellerOrders:    OrderStoreGroup[];
   exchangeOf?:     { orderId: string; orderNumber: string; itemIds: string[] } | null;
   couponCode?:               string | null;

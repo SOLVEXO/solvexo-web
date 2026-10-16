@@ -68,8 +68,8 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
   switch (type) {
     case 'nav_link': {
       const children: any[] = settings.children ?? [];
-      // Real, reported bug: both themes' navbars (`AtelierNavbar.tsx`/
-      // `NovaNavbar.tsx`) already render their own fixed, built-in "Shop"
+      // Real, reported bug: both themes' navbars (`FashionNavbar.tsx`/
+      // `FashionNavbar.tsx`) already render their own fixed, built-in "Shop"
       // dropdown (real categories/collections) alongside whatever custom
       // nav links the seller adds here — a seller who also types "Shop" as
       // a custom link's label ends up with it showing twice, with no

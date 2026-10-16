@@ -109,7 +109,7 @@ export function ScopePicker({ scopeDefs, scope, onChange, currentLabel }: {
 
 /** The secondary "which real page/blog/article" picker shown alongside
  *  `ScopePicker` once the selected scope's group needs one (Pages/Blogs/
- *  Articles — see `AtelierCustomizePage.tsx`). Same searchable `ActionMenu`
+ *  Articles — see `ThemeCustomizePage.tsx`). Same searchable `ActionMenu`
  *  pattern as `ScopePicker` for visual/behavioral consistency. */
 export function ResourcePicker({ items, valueId, onChange, placeholder }: {
   items: { id: string; label: string }[];

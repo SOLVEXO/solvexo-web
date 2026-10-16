@@ -175,7 +175,7 @@ function MenuEditorModal({ storeId, menu, pageOptions, onClose, onSaved }: {
  *  this closes: nav links previously lived only embedded inside the
  *  Header/Footer editor, one-off, with no way to build a menu independent
  *  of "the Header's own blocks." Header attachment (see
- *  `AtelierHeaderFooterPage.tsx`'s "Navigation source" picker) is the
+ *  `ThemeHeaderFooterPage.tsx`'s "Navigation source" picker) is the
  *  first real consumer — a store's public navbar renders an attached
  *  menu's real items, resolved server-side. */
 export function MenuManagerPage() {

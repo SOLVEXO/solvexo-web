@@ -38,6 +38,8 @@ export interface CheckoutItem {
 
 export interface Checkout {
   _id:               string;
+  /** The buyer's note to the seller (Shopify cart note). */
+  customerNote?:     string;
   userId:            string;
   addressId:         string;
   currency:          string;
@@ -263,6 +265,11 @@ export function apiApplyGiftCard(payload: ApplyGiftCardPayload) {
 
 export function apiRemoveGiftCard(checkoutId: string) {
   return client.delete<never, RemoveGiftCardResponse>(ENDPOINTS.CHECKOUT.REMOVE_GIFT_CARD(checkoutId));
+}
+
+/** Saves the buyer's note to the seller on the open checkout (copied onto the order when it is placed). */
+export function apiSetCheckoutNote(checkoutId: string, note: string) {
+  return client.post<never, { success: boolean; data: { customerNote: string } }>(ENDPOINTS.CHECKOUT.CUSTOMER_NOTE, { checkoutId, note });
 }
 
 export function apiApplyStoreCredit(checkoutId: string) {

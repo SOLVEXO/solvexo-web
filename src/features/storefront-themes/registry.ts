@@ -1,120 +1,47 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { PublicStoreData } from '@/api/services/store';
-import { AtelierLayout } from './theme-01-atelier/layout/AtelierLayout';
-import { AtelierHomePage } from './theme-01-atelier/pages/AtelierHomePage';
-import { AtelierProductPage } from './theme-01-atelier/pages/AtelierProductPage';
-import { AtelierCartPage } from './theme-01-atelier/pages/AtelierCartPage';
-import { AtelierCheckoutPage } from './theme-01-atelier/pages/AtelierCheckoutPage';
-import { AtelierCheckoutReturnPage } from './theme-01-atelier/pages/AtelierCheckoutReturnPage';
-import { AtelierLoginPage } from './theme-01-atelier/pages/AtelierLoginPage';
-import { AtelierRegisterPage } from './theme-01-atelier/pages/AtelierRegisterPage';
-import { AtelierVerifyOtpPage } from './theme-01-atelier/pages/AtelierVerifyOtpPage';
-import { AtelierForgotPasswordPage } from './theme-01-atelier/pages/AtelierForgotPasswordPage';
-import { AtelierNewPasswordPage } from './theme-01-atelier/pages/AtelierNewPasswordPage';
-import { AtelierAccountPage } from './theme-01-atelier/pages/AtelierAccountPage';
-import { AtelierWishlistPage } from './theme-01-atelier/pages/AtelierWishlistPage';
-import { AtelierLoyaltyPage } from './theme-01-atelier/pages/AtelierLoyaltyPage';
-import { AtelierStoreCreditPage } from './theme-01-atelier/pages/AtelierStoreCreditPage';
-import { AtelierOrdersPage } from './theme-01-atelier/pages/AtelierOrdersPage';
-import { AtelierOrderDetailPage } from './theme-01-atelier/pages/AtelierOrderDetailPage';
-import { AtelierOrderStatusPage } from './theme-01-atelier/pages/AtelierOrderStatusPage';
-import { AtelierAddressesPage } from './theme-01-atelier/pages/AtelierAddressesPage';
-import { AtelierMyReviewsPage } from './theme-01-atelier/pages/AtelierMyReviewsPage';
-import { AtelierNotificationsPage } from './theme-01-atelier/pages/AtelierNotificationsPage';
-import { AtelierMessagesPage } from './theme-01-atelier/pages/AtelierMessagesPage';
-import { AtelierReturnsPage } from './theme-01-atelier/pages/AtelierReturnsPage';
-import { AtelierGiftCardsPage } from './theme-01-atelier/pages/AtelierGiftCardsPage';
-import { AtelierCategoryPage } from './theme-01-atelier/pages/AtelierCategoryPage';
-import { AtelierCollectionPage } from './theme-01-atelier/pages/AtelierCollectionPage';
-import { AtelierCollectionsPage } from './theme-01-atelier/pages/AtelierCollectionsPage';
-import { AtelierFaqsPage } from './theme-01-atelier/pages/AtelierFaqsPage';
-import { AtelierSearchPage } from './theme-01-atelier/pages/AtelierSearchPage';
-import { AtelierBlogIndexPage } from './theme-01-atelier/pages/AtelierBlogIndexPage';
-import { AtelierBlogPostPage } from './theme-01-atelier/pages/AtelierBlogPostPage';
-import { AtelierCustomPage } from './theme-01-atelier/pages/AtelierCustomPage';
-import { AtelierNotFoundPage } from './theme-01-atelier/pages/AtelierNotFoundPage';
-import { AtelierStorefrontGate } from './theme-01-atelier/pages/AtelierStorefrontGate';
-// Registers this theme's `ThemeManifest` (see `themeManifest.ts`) as a side
-// effect of importing this module — pure addition, nothing reads
-// `THEME_MANIFESTS` yet, so this cannot change any existing behavior. It's
-// wired here (not left for some future page to remember to import) so the
-// manifest is guaranteed live wherever the theme registry itself is.
-import './theme-01-atelier/theme.manifest';
-// Same pattern, for the Edit Code developer workspace's real read-only
-// source files (see `themeDevFiles.ts` for why this is a separate registry
-// from `theme.manifest.ts` rather than folded into it — a Vite
-// `import.meta.glob` constraint, not a design choice).
-import './theme-01-atelier/theme.devFiles';
-// Same pattern again, for the live-preview panel shared by Customize and
-// Header & Footer (see `themePreviewComponents.ts` — this closes a real gap
-// found while building Nova: that panel used to import Atelier's section
-// renderer/navbar/footer/theme.config directly by name).
-import './theme-01-atelier/theme.preview';
-// Same pattern again, for the Theme Library's static, dummy-content demo
-// preview (see `themeDemoPreview.ts` — this is what makes a preview always
-// look like a complete, finished theme instead of the real-store-content
-// cross-theme rendering that used to silently drop unsupported section types).
-import './theme-01-atelier/theme.demoPreview';
 
-// Theme 02 — "Nova": the reusability-proof second theme. Its own real,
-// independent implementation (own components/sections/pages), registered
-// through the exact same three generic contracts Atelier uses above — see
-// `theme-02-nova/theme.config.ts`'s README (now dated: written when Nova
-// was still an 8/18-route proof-of-concept) for the "why" of the original
-// design. Nova has since reached full 18/18 route parity with Atelier —
-// see the `pages` map's own comment below.
-import { NovaLayout } from './theme-02-nova/layout/NovaLayout';
-import { NovaHomePage } from './theme-02-nova/pages/NovaHomePage';
-import { NovaProductPage } from './theme-02-nova/pages/NovaProductPage';
-import { NovaCartPage } from './theme-02-nova/pages/NovaCartPage';
-import { NovaCheckoutPage } from './theme-02-nova/pages/NovaCheckoutPage';
-import { NovaCheckoutReturnPage } from './theme-02-nova/pages/NovaCheckoutReturnPage';
-import { NovaLoginPage } from './theme-02-nova/pages/NovaLoginPage';
-import { NovaRegisterPage } from './theme-02-nova/pages/NovaRegisterPage';
-import { NovaVerifyOtpPage } from './theme-02-nova/pages/NovaVerifyOtpPage';
-import { NovaForgotPasswordPage } from './theme-02-nova/pages/NovaForgotPasswordPage';
-import { NovaNewPasswordPage } from './theme-02-nova/pages/NovaNewPasswordPage';
-import { NovaAccountPage } from './theme-02-nova/pages/NovaAccountPage';
-import { NovaWishlistPage } from './theme-02-nova/pages/NovaWishlistPage';
-import { NovaLoyaltyPage } from './theme-02-nova/pages/NovaLoyaltyPage';
-import { NovaStoreCreditPage } from './theme-02-nova/pages/NovaStoreCreditPage';
-import { NovaOrdersPage } from './theme-02-nova/pages/NovaOrdersPage';
-import { NovaOrderDetailPage } from './theme-02-nova/pages/NovaOrderDetailPage';
-import { NovaOrderStatusPage } from './theme-02-nova/pages/NovaOrderStatusPage';
-import { NovaAddressesPage } from './theme-02-nova/pages/NovaAddressesPage';
-import { NovaMyReviewsPage } from './theme-02-nova/pages/NovaMyReviewsPage';
-import { NovaNotificationsPage } from './theme-02-nova/pages/NovaNotificationsPage';
-import { NovaMessagesPage } from './theme-02-nova/pages/NovaMessagesPage';
-import { NovaReturnsPage } from './theme-02-nova/pages/NovaReturnsPage';
-import { NovaGiftCardsPage } from './theme-02-nova/pages/NovaGiftCardsPage';
-import { NovaCategoryPage } from './theme-02-nova/pages/NovaCategoryPage';
-import { NovaCollectionPage } from './theme-02-nova/pages/NovaCollectionPage';
-import { NovaCollectionsPage } from './theme-02-nova/pages/NovaCollectionsPage';
-import { NovaFaqsPage } from './theme-02-nova/pages/NovaFaqsPage';
-import { NovaSearchPage } from './theme-02-nova/pages/NovaSearchPage';
-import { NovaBlogIndexPage } from './theme-02-nova/pages/NovaBlogIndexPage';
-import { NovaBlogPostPage } from './theme-02-nova/pages/NovaBlogPostPage';
-import { NovaCustomPage } from './theme-02-nova/pages/NovaCustomPage';
-import { NovaNotFoundPage } from './theme-02-nova/pages/NovaNotFoundPage';
-import { NovaStorefrontGate } from './theme-02-nova/pages/NovaStorefrontGate';
-import './theme-02-nova/theme.manifest';
-import './theme-02-nova/theme.devFiles';
-import './theme-02-nova/theme.preview';
-import './theme-02-nova/theme.demoPreview';
+// Maison (theme-03-fashion) is the single base theme. A theme is: a manifest, a layout, one page per StorefrontRouteKey, a gate page and the three preview registrations below.
+import { FashionLayout } from './theme-03-fashion/layout/FashionLayout';
+import { FashionHomePage } from './theme-03-fashion/pages/FashionHomePage';
+import { FashionProductPage } from './theme-03-fashion/pages/FashionProductPage';
+import { FashionCartPage } from './theme-03-fashion/pages/FashionCartPage';
+import { FashionCollectionPage } from './theme-03-fashion/pages/FashionCollectionPage';
+import { FashionCollectionsPage } from './theme-03-fashion/pages/FashionCollectionsPage';
+import { FashionCategoryPage } from './theme-03-fashion/pages/FashionCategoryPage';
+import { FashionSearchPage } from './theme-03-fashion/pages/FashionSearchPage';
+import { FashionCustomPage } from './theme-03-fashion/pages/FashionCustomPage';
+import { FashionNotFoundPage } from './theme-03-fashion/pages/FashionNotFoundPage';
+import { FashionCheckoutPage } from './theme-03-fashion/pages/FashionCheckoutPage';
+import { FashionCheckoutReturnPage } from './theme-03-fashion/pages/FashionCheckoutReturnPage';
+import { FashionLoginPage } from './theme-03-fashion/pages/FashionLoginPage';
+import { FashionRegisterPage } from './theme-03-fashion/pages/FashionRegisterPage';
+import { FashionVerifyOtpPage } from './theme-03-fashion/pages/FashionVerifyOtpPage';
+import { FashionForgotPasswordPage } from './theme-03-fashion/pages/FashionForgotPasswordPage';
+import { FashionNewPasswordPage } from './theme-03-fashion/pages/FashionNewPasswordPage';
+import { FashionAccountPage } from './theme-03-fashion/pages/FashionAccountPage';
+import { FashionAddressesPage } from './theme-03-fashion/pages/FashionAddressesPage';
+import { FashionMyReviewsPage } from './theme-03-fashion/pages/FashionMyReviewsPage';
+import { FashionOrdersPage } from './theme-03-fashion/pages/FashionOrdersPage';
+import { FashionOrderDetailPage } from './theme-03-fashion/pages/FashionOrderDetailPage';
+import { FashionOrderStatusPage } from './theme-03-fashion/pages/FashionOrderStatusPage';
+import { FashionReturnsPage } from './theme-03-fashion/pages/FashionReturnsPage';
+import { FashionStoreCreditPage } from './theme-03-fashion/pages/FashionStoreCreditPage';
+import { FashionGiftCardsPage } from './theme-03-fashion/pages/FashionGiftCardsPage';
+import { FashionLoyaltyPage } from './theme-03-fashion/pages/FashionLoyaltyPage';
+import { FashionWishlistPage } from './theme-03-fashion/pages/FashionWishlistPage';
+import { FashionNotificationsPage } from './theme-03-fashion/pages/FashionNotificationsPage';
+import { FashionMessagesPage } from './theme-03-fashion/pages/FashionMessagesPage';
+import { FashionFaqsPage } from './theme-03-fashion/pages/FashionFaqsPage';
+import { FashionBlogIndexPage } from './theme-03-fashion/pages/FashionBlogIndexPage';
+import { FashionBlogPostPage } from './theme-03-fashion/pages/FashionBlogPostPage';
+import { FashionStorefrontGate } from './theme-03-fashion/pages/FashionStorefrontGate';
+import './theme-03-fashion/theme.manifest';
+import './theme-03-fashion/theme.devFiles';
+import './theme-03-fashion/theme.preview';
+import './theme-03-fashion/theme.demoPreview';
 
-/** Every storefront route a theme can implement. The legacy shared-engine's
- *  per-key fallback (silently rendering nothing for an unbuilt key) has been
- *  removed along with the legacy rendering code — but `ThemedRoute` (below)
- *  keeps a real, deliberate replacement for it: a route a theme's `pages`
- *  map doesn't cover falls back to `DEFAULT_THEME_ID`'s own real,
- *  fully-functional page for that route, rather than a blank screen or a
- *  crash. A theme is expected to disclose its real build progress honestly
- *  (`display.builtRouteCount`/`totalRouteCount`, shown on its Theme Library
- *  card) rather than claim completeness it doesn't have — see
- *  `theme-02-nova`'s own manifest/README for a real theme that uses this.
- *  `forgotPassword`/`newPassword` were added alongside `login`/`register`/
- *  `verifyOtp` — a storefront's own account-recovery flow is as required as
- *  being able to sign in at all, not a later nice-to-have. */
+/** Every storefront route a theme can implement. A route a theme does not cover falls back to the default theme's page, so a theme that is still being built never renders a blank screen. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
@@ -122,16 +49,7 @@ export type StorefrontRouteKey =
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 
-/** The subset of `StorefrontColors` (see `api/services/storeTheme.ts`) that
- *  actually varies between themes and is worth sending at install time —
- *  matches exactly what each theme's own `applyMerchantThemeOverrides`
- *  reads (`bgColor`/`textColor`/`primaryColor`/`font`/`buttonStyle`/
- *  `buttonRadius`). `buttonWidth`/`sectionSpacing`/`containerWidth` are
- *  deliberately omitted — every theme's own default for those is already
- *  'auto'/'comfortable'/'standard' by construction (see either theme's
- *  `SECTION_PAD_Y_PRESET`/`MAX_WIDTH_PRESET` — the 'comfortable'/'standard'
- *  entry always equals that theme's own `STATIC_DEFAULTS`), so there's
- *  nothing theme-specific to carry for those three. */
+/** The theme-specific colour defaults sent at install time; they match what the theme's own `applyMerchantThemeOverrides` reads. */
 export interface ThemeInstallColorDefaults {
   primaryColor: string;
   bgColor: string;
@@ -144,181 +62,66 @@ export interface ThemeInstallColorDefaults {
 interface NewThemeImpl {
   Layout: ComponentType<{ children: ReactNode }>;
   pages: Partial<Record<StorefrontRouteKey, ComponentType>>;
-  /** Real storefront access gate ('password'/'coming_soon' — see
-   *  `Store.privacyMode`) — rendered by `StorefrontLayout.tsx` INSTEAD of
-   *  `Layout`/`pages` while the store is gated and this tab hasn't unlocked
-   *  it yet. Every registered theme must implement this (unlike `pages`,
-   *  there is no cross-theme fallback need since it's simple enough for
-   *  every theme to own outright). */
+  /** Rendered instead of `Layout`/`pages` while the store is password/coming-soon gated and this tab has not unlocked it. */
   GatePage: ComponentType<{ store: PublicStoreData; onUnlocked: () => void }>;
-  /** Seller-facing Theme Library card metadata — deliberately separate from
-   *  the legacy `ThemeDefinition` shape (no `colors`/`headerStyle` fields
-   *  the new theme doesn't use for rendering), and deliberately NOT run
-   *  through the old `ThemeCard`/`ThemeStorefrontPreview` synthetic-preview
-   *  mechanism, which renders through the legacy shared engine and would
-   *  misrepresent a genuinely independent theme's real layout. */
-  display: {
-    name: string;
-    description: string;
-    /** Which storefront route keys (see `StorefrontRouteKey`) this theme
-     *  has a real, finished implementation for — shown as build progress
-     *  on its Theme Library card so "installed" never silently implies
-     *  "production-ready" before it actually is. */
-    builtRouteCount: number;
-    totalRouteCount: number;
-  };
-  /** Sent as `theme` in `apiInstallTheme(...)` when a seller installs this
-   *  theme — this is the real fix for a genuine bug found via a live
-   *  install+customize walkthrough: `ThemeLibraryPage.tsx`'s install call
-   *  used to omit `theme` entirely, so the BACKEND's own `StorefrontColors`
-   *  Mongoose schema defaults (`#D97757`/`Poppins`/etc — leftovers from the
-   *  old pre-Atelier/Nova legacy shared-theme-engine, not either real
-   *  theme's own design) silently got persisted onto every newly-installed
-   *  theme row instead of that theme's OWN accent/font/button identity.
-   *  Concretely: a fresh Nova install rendered its Customize preview (and,
-   *  identically, its real published storefront — both read this exact
-   *  same `theme` document) with the platform's generic orange accent and
-   *  a medium button radius, never Nova's own vivid indigo + full-pill
-   *  buttons — this is the actual reason the preview looked "generic"
-   *  rather than a Nova/Atelier rendering difference. See `install-theme.dto.ts`'s
-   *  own doc comment: "the frontend theme-definition package is the single
-   *  source of truth for what a theme's defaults look like" — this field is
-   *  what finally makes that true; the backend's schema-level defaults are
-   *  now only a safety net for a malformed/omitted payload, never the
-   *  normal path. NOTE: this does not repair already-installed rows created
-   *  before this fix (their `theme.primaryColor` etc. already has the stale
-   *  values persisted) — those need either a one-time backend migration or
-   *  a seller manually re-entering their theme's real colors in Theme
-   *  Settings; flagged separately, not silently patched here. */
+  /** Theme Library card metadata; `builtRouteCount` is the honest build progress shown on the card. */
+  display: { name: string; description: string; builtRouteCount: number; totalRouteCount: number };
+  /** Sent as `theme` in `apiInstallTheme(...)` so a fresh install starts with this theme's own look, not the backend schema defaults. */
   installDefaults: ThemeInstallColorDefaults;
 }
 
-/** The single registry every store's `themeDefinitionId` is checked against.
- *  The legacy 12-theme shared-engine system (`src/features/storefront/` +
- *  `src/features/seller/.../builder/themes/`) has been fully removed — a
- *  snapshot is archived under `_legacy-theme-backup/` at the repo root, not
- *  reachable from the app. A store whose `themeDefinitionId` doesn't match
- *  an entry here (e.g. a pre-migration row still pointing at an old,
- *  deleted theme id) falls back to `DEFAULT_THEME_ID` — see `ThemedRoute`. */
-export const DEFAULT_THEME_ID = 'theme-01-atelier';
+/** Every store's `themeDefinitionId` is checked against this registry; an unknown id (e.g. a removed theme) renders `DEFAULT_THEME_ID` instead - see `ThemedRoute`. */
+export const DEFAULT_THEME_ID = 'theme-03-fashion';
 
 export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
-  'theme-01-atelier': {
-    Layout: AtelierLayout,
-    GatePage: AtelierStorefrontGate,
+  'theme-03-fashion': {
+    Layout: FashionLayout,
+    GatePage: FashionStorefrontGate,
     pages: {
-      home: AtelierHomePage,
-      product: AtelierProductPage,
-      cart: AtelierCartPage,
-      checkout: AtelierCheckoutPage,
-      checkoutReturn: AtelierCheckoutReturnPage,
-      login: AtelierLoginPage,
-      register: AtelierRegisterPage,
-      verifyOtp: AtelierVerifyOtpPage,
-      forgotPassword: AtelierForgotPasswordPage,
-      newPassword: AtelierNewPasswordPage,
-      account: AtelierAccountPage,
-      wishlist: AtelierWishlistPage,
-      loyalty: AtelierLoyaltyPage,
-      notifications: AtelierNotificationsPage,
-      messages: AtelierMessagesPage,
-      returns: AtelierReturnsPage,
-      giftCards: AtelierGiftCardsPage,
-      storeCredit: AtelierStoreCreditPage,
-      orders: AtelierOrdersPage,
-      orderDetail: AtelierOrderDetailPage,
-      orderStatus: AtelierOrderStatusPage,
-      addresses: AtelierAddressesPage,
-      myReviews: AtelierMyReviewsPage,
-      category: AtelierCategoryPage,
-      collection: AtelierCollectionPage,
-      collections: AtelierCollectionsPage,
-      faqs: AtelierFaqsPage,
-      search: AtelierSearchPage,
-      blogIndex: AtelierBlogIndexPage,
-      blogPost: AtelierBlogPostPage,
-      customPage: AtelierCustomPage,
-      notFound: AtelierNotFoundPage,
+      home: FashionHomePage,
+      product: FashionProductPage,
+      cart: FashionCartPage,
+      collection: FashionCollectionPage,
+      collections: FashionCollectionsPage,
+      category: FashionCategoryPage,
+      search: FashionSearchPage,
+      checkout: FashionCheckoutPage,
+      checkoutReturn: FashionCheckoutReturnPage,
+      login: FashionLoginPage,
+      register: FashionRegisterPage,
+      verifyOtp: FashionVerifyOtpPage,
+      forgotPassword: FashionForgotPasswordPage,
+      newPassword: FashionNewPasswordPage,
+      account: FashionAccountPage,
+      addresses: FashionAddressesPage,
+      myReviews: FashionMyReviewsPage,
+      orders: FashionOrdersPage,
+      orderDetail: FashionOrderDetailPage,
+      orderStatus: FashionOrderStatusPage,
+      returns: FashionReturnsPage,
+      storeCredit: FashionStoreCreditPage,
+      giftCards: FashionGiftCardsPage,
+      loyalty: FashionLoyaltyPage,
+      wishlist: FashionWishlistPage,
+      notifications: FashionNotificationsPage,
+      messages: FashionMessagesPage,
+      faqs: FashionFaqsPage,
+      blogIndex: FashionBlogIndexPage,
+      blogPost: FashionBlogPostPage,
+      customPage: FashionCustomPage,
+      notFound: FashionNotFoundPage,
     },
     display: {
-      name: 'Atelier',
-      description: 'Premium editorial fashion & lifestyle — asymmetric layouts, large photography, and a quiet, confident typographic voice. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 30,
-      totalRouteCount: 30,
+      name: 'Maison',
+      description: 'Fashion and apparel - modern, image-led and rounded, with a big headline, pill buttons, clean product cards and a polished buy box.',
+      builtRouteCount: 32,
+      totalRouteCount: 32,
     },
-    // Matches `theme-01-atelier/theme.config.ts`'s own `STATIC_DEFAULTS`
-    // exactly (brass accent, warm ivory ground, near-black ink, Inter body
-    // font, sharp outline buttons) — see `ThemeInstallColorDefaults`'s doc
-    // comment above for why this exists.
     installDefaults: {
-      primaryColor: '#9C7A3C',
-      bgColor: '#FAF8F4',
-      textColor: '#161412',
-      font: 'Inter',
-      buttonStyle: 'outline',
-      buttonRadius: 'none',
-    },
-  },
-  'theme-02-nova': {
-    Layout: NovaLayout,
-    GatePage: NovaStorefrontGate,
-    pages: {
-      home: NovaHomePage,
-      product: NovaProductPage,
-      cart: NovaCartPage,
-      checkout: NovaCheckoutPage,
-      checkoutReturn: NovaCheckoutReturnPage,
-      login: NovaLoginPage,
-      register: NovaRegisterPage,
-      verifyOtp: NovaVerifyOtpPage,
-      forgotPassword: NovaForgotPasswordPage,
-      newPassword: NovaNewPasswordPage,
-      account: NovaAccountPage,
-      wishlist: NovaWishlistPage,
-      loyalty: NovaLoyaltyPage,
-      notifications: NovaNotificationsPage,
-      messages: NovaMessagesPage,
-      returns: NovaReturnsPage,
-      giftCards: NovaGiftCardsPage,
-      storeCredit: NovaStoreCreditPage,
-      orders: NovaOrdersPage,
-      orderDetail: NovaOrderDetailPage,
-      orderStatus: NovaOrderStatusPage,
-      addresses: NovaAddressesPage,
-      myReviews: NovaMyReviewsPage,
-      category: NovaCategoryPage,
-      collection: NovaCollectionPage,
-      collections: NovaCollectionsPage,
-      faqs: NovaFaqsPage,
-      search: NovaSearchPage,
-      blogIndex: NovaBlogIndexPage,
-      blogPost: NovaBlogPostPage,
-      customPage: NovaCustomPage,
-      notFound: NovaNotFoundPage,
-      // Nova reached full 18/18 route parity with Atelier in this pass —
-      // cart/checkout/checkoutReturn/login/register/verifyOtp/
-      // forgotPassword/newPassword/account/customPage (the 10 that used to
-      // fall back to Atelier's page via `ThemedRoute`) are now real,
-      // independent Nova implementations, ported functionally 1:1 from
-      // their Atelier counterparts with Nova's own rounded/pill/
-      // accent-forward presentation. `ThemedRoute`'s cross-theme fallback
-      // stays in place as a safety net for any FUTURE theme that's still
-      // mid-build, not because Nova needs it any more.
-    },
-    display: {
-      name: 'Nova',
-      description: 'Bold, energetic, commerce-first — vivid color, confident geometric type, and punchy pill buttons. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 30,
-      totalRouteCount: 30,
-    },
-    // Matches `theme-02-nova/theme.config.ts`'s own `STATIC_DEFAULTS`
-    // exactly (vivid indigo accent, white ground, cool near-black ink,
-    // DM Sans body font, solid full-pill buttons).
-    installDefaults: {
-      primaryColor: '#4B3BFF',
+      primaryColor: '#09090B',
       bgColor: '#FFFFFF',
-      textColor: '#14121F',
-      font: 'DM Sans',
+      textColor: '#09090B',
+      font: 'Inter',
       buttonStyle: 'solid',
       buttonRadius: 'full',
     },
