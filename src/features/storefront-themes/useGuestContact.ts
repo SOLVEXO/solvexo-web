@@ -13,6 +13,7 @@ export function useCheckoutSession() {
   const started = useRef(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- logged-in buyers need no guest session
     if (TokenStorage.isLoggedIn()) { setPreparing(false); return; }
     if (started.current) return;
     started.current = true;

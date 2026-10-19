@@ -41,6 +41,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to loading on each (re)fetch
     setLoading(true);
     setError('');
     setNotFound(false);
@@ -54,6 +55,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- translator is stable
   }, [token, attempt]);
 
   const bw = t.borderWidth;

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- context hook lives with its provider */
 import { createContext, useContext, type ReactNode } from 'react';
 
 export type PreviewBlockSelection = (sectionId: string, blockId: string) => void;

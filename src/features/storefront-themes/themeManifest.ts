@@ -52,7 +52,7 @@ export interface ThemeSettingsFieldDef {
   label: string;
   group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Cart';
   control:
-    | { kind: 'color' }
+    | { kind: 'color'; /** Optional override: shows an "Auto (theme)" state with a Reset, and saves null when reset. */ optional?: { fallback: string } }
     | { kind: 'select'; options: { value: string; label: string }[] };
   /** Shown under the field — e.g. Maison's fixed headline typeface note. */
   helpText?: string;

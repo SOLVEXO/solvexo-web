@@ -37,6 +37,7 @@ function useCta() {
   return resolveLink;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- seller-authored link JSON
 export function CtaButton({ text, link, theme, variant = 'outline' }: { text?: string; link?: any; theme: SharedThemeTokens; variant?: 'primary' | 'outline' }) {
   const resolveLink = useCta();
   if (!text || !link) return null;

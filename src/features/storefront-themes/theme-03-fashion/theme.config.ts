@@ -87,7 +87,7 @@ function derive(bg: string, ink: string, accent: string): Pick<FashionColors, 'b
 }
 
 export interface FashionMerchantColors {
-  bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null;
+  bgColor?: string; textColor?: string; primaryColor?: string; font?: string; headingFont?: string | null; mutedColor?: string | null; borderColor?: string | null; saleColor?: string | null;
   imageRadius?: Radius; productCardRadius?: Radius; productImageRatio?: 'square' | 'portrait' | 'landscape' | 'adapt';
   productImageHover?: 'none' | 'zoom' | 'second-image';
   saleBadge?: 'show' | 'hide'; quickView?: 'show' | 'hide'; colorSwatches?: 'show' | 'hide'; soldOutBadge?: 'show' | 'hide'; cardStyle?: 'theme' | 'flat' | 'outlined' | 'elevated';
@@ -99,6 +99,9 @@ export interface FashionMerchantColors {
 export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | undefined): void {
   const d = STATIC_DEFAULTS;
   Object.assign(fashionTheme.colors, derive(c?.bgColor || d.colors.bg, c?.textColor || d.colors.ink, c?.primaryColor || d.colors.accent));
+  if (c?.mutedColor) fashionTheme.colors.inkMuted = c.mutedColor;
+  if (c?.borderColor) fashionTheme.colors.border = c.borderColor;
+  fashionTheme.colors.danger = c?.saleColor || d.colors.danger;
   fashionTheme.fonts.body = c?.font ? `'${c.font}', sans-serif` : d.fonts.body;
   fashionTheme.fonts.display = c?.headingFont ? `'${c.headingFont}', serif` : d.fonts.display;
   fashionTheme.imageRadiusPx = RADIUS_PX[c?.imageRadius ?? 'large'];

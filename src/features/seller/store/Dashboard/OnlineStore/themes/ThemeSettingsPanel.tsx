@@ -1,5 +1,6 @@
 import { Loader2, RotateCcw, Undo2, Redo2, History } from 'lucide-react';
 import { useEffect } from 'react';
+import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';
 import { useToast } from '@/contexts/ToastContext';
 import {
   apiGetStoreTheme, apiUpdateStoreThemeColors, apiUpdateStoreCustomCss,
@@ -91,6 +92,9 @@ function ThemeSettingsField({ field, colors, onChange }: {
   onChange: (patch: Partial<StorefrontColors>) => void;
 }) {
   const value = String(colors[field.key] ?? '');
+  if (field.control.kind === 'color' && field.control.optional) {
+    return <OptionalColorField label={field.label} value={colors[field.key] as string | null | undefined} fallback={field.control.optional.fallback} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />;
+  }
   if (field.control.kind === 'color') {
     return <ColorField heading={field.label} value={value} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />;
   }

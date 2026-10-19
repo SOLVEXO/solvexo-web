@@ -32,6 +32,10 @@ export interface StorefrontColors {
   accentColor:  string;
   font:         string;
   headingFont?: string | null;
+  /** Optional colour overrides; null/absent = derived by the theme. */
+  mutedColor?:  string | null;
+  borderColor?: string | null;
+  saleColor?:   string | null;
   buttonStyle:  ThemeButtonStyle;
   /** Buttons scope — independent from product/testimonial cards and images. */
   buttonRadius: ThemeBorderRadius;

@@ -28,6 +28,9 @@ export const fashionThemeManifest: ThemeManifest = {
     { key: 'bgColor', label: 'Background', group: 'Colors', control: { kind: 'color' } },
     { key: 'textColor', label: 'Text', group: 'Colors', control: { kind: 'color' } },
     { key: 'primaryColor', label: 'Buttons & accent', group: 'Colors', control: { kind: 'color' } },
+    { key: 'mutedColor', label: 'Secondary text', group: 'Colors', control: { kind: 'color', optional: { fallback: '#71717A' } }, helpText: 'Descriptions, captions and hints. Auto picks a tone that suits your colours.' },
+    { key: 'borderColor', label: 'Borders & dividers', group: 'Colors', control: { kind: 'color', optional: { fallback: '#E4E4E7' } } },
+    { key: 'saleColor', label: 'Sale & alert', group: 'Colors', control: { kind: 'color', optional: { fallback: '#DC2626' } }, helpText: 'Sale prices, low-stock and error text.' },
 
     { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'select', options: fonts(['Inter', 'Poppins', 'Roboto', 'Montserrat', 'DM Sans', 'Nunito', 'Space Grotesk', 'Playfair Display', 'Fraunces']) }, helpText: 'Sets body and interface text. Use Heading font for headlines.' },
     { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'select', options: fonts(['Inter', 'Poppins', 'Roboto', 'Montserrat', 'DM Sans', 'Space Grotesk', 'Playfair Display', 'Fraunces', 'Lora']) } },

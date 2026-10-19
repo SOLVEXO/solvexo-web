@@ -19,6 +19,7 @@ import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, vari
 import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../components/product/ProductParts';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart } from '../components/product/ProductExtraBlocks';
 import { FashionImageLightbox } from '../components/product/FashionImageLightbox';
+import { StickyBuyBar } from '../components/product/StickyBuyBar';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { FashionSectionRenderer } from '../sections';
 import { FashionButton } from '../components/FashionButton';
@@ -124,7 +125,7 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_price: () => (
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[28px] font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.ink }}>{show(variant.price)}</span>
-        {onSale && <><span className="text-xl line-through opacity-50">{show(variant.compareAtPrice as number)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: 'rgb(220 38 38 / .12)', color: t.colors.danger }}>Save {percentOff}%</span></>}
+        {onSale && <><span className="text-xl line-through opacity-50">{show(variant.compareAtPrice as number)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>Save {percentOff}%</span></>}
       </div>
     ),
     product_description: () => product.description ? <div className="text-base leading-[1.75]" style={{ color: t.colors.inkMuted }}>{renderRichText(product.description)}</div> : null,
@@ -169,7 +170,7 @@ function ProductPageInner({ slug }: { slug: string }) {
       </div>
     ),
     product_buy_buttons: () => (
-      <div className="flex flex-col gap-3">
+      <div id="fx-buy" className="flex flex-col gap-3">
         {pre && <p className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
         <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? 'Sold out' : pre ? 'Pre-order' : busy ? 'Adding…' : 'Add to cart'}</FashionButton>
       </div>
@@ -256,6 +257,7 @@ function ProductPageInner({ slug }: { slug: string }) {
       </section>
 
       {after.length > 0 && <FashionSectionRenderer sections={after} />}
+      <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? 'Sold out' : pre ? 'Pre-order' : 'Add to cart'} />
       {zoom && <FashionImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>
   );

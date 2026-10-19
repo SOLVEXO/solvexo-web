@@ -13,6 +13,7 @@ export function useMyAddresses() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to loading on each (re)fetch
     setLoading(true);
     setError('');
     apiGetMyAddresses()
@@ -37,6 +38,7 @@ export function useMyReviews() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to loading on each page/refetch
     setLoading(true);
     setError('');
     apiGetMyReviews(page)

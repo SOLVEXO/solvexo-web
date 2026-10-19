@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- exports a helper next to section components */
 import { useEffect, useState } from 'react';
 import { tt } from '@/utils/tStatic';
 import { Link, useParams } from 'react-router-dom';
@@ -133,6 +134,7 @@ export function FeaturedProductSection({ section, colors, theme }: Props) {
   const id = Array.isArray(section.settings.productIds) ? section.settings.productIds[0] : undefined;
   const [product, setProduct] = useState<PublicStoreProduct | null | undefined>(undefined);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- no product picked yet
     if (!id) { setProduct(null); return; }
     let off = false;
     apiGetPublicStoreProducts(store.storeId, { ids: [id], limit: 1 })
@@ -171,6 +173,7 @@ export function CollectionBannerSection({ section, colors, theme }: Props) {
   const ref = (section.settings.collectionId as string | undefined) || previewCollectionId || slugOrId || undefined;
   const [c, setC] = useState<PublicCollectionSummary | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- nothing to resolve
     if (!ref) { setC(null); return; }
     let off = false;
     apiGetPublicCollectionBySlug(store.storeId, ref).then(r => { if (!off) setC(r.data ?? null); }).catch(() => { if (!off) setC(null); });
@@ -214,7 +217,7 @@ export function RecentlyViewedSection({ section, colors, theme }: Props) {
   const [items, setItems] = useState<PublicStoreProduct[]>([]);
   const limit = Math.min(12, Math.max(2, Number(section.settings.limit) || 4));
   useEffect(() => {
-    let ids: string[] = [];
+    let ids: string[];
     try { ids = JSON.parse(localStorage.getItem(RV_KEY(store.storeId)) ?? '[]'); } catch { ids = []; }
     if (!Array.isArray(ids) || ids.length === 0) return;
     let off = false;
