@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { ts } from '@/utils/tStatic';
 import { useContext } from 'react';
 import { FashionProductBrowser } from '../components/browse/FashionProductBrowser';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -53,8 +54,8 @@ registerFashionSection('product_main', (_s, _b, colors, _d, ctx) => {
     </SectionShell>
   );
 });
-registerFashionSection('search_results', (_s, _b, colors) => <Placeholder title="Search results" note="Matching products appear here." colors={colors} />);
-registerFashionSection('cart_items', (_s, _b, colors) => <Placeholder title="Cart items" note="The shopper's cart lines appear here." colors={colors} />);
-registerFashionSection('cart_summary', (_s, _b, colors) => <Placeholder title="Order summary" note="Subtotal and the checkout button appear here." colors={colors} />);
+registerFashionSection('search_results', (_s, _b, colors) => <Placeholder title={ts('pg.search_results', 'Search results')} note="Matching products appear here." colors={colors} />);
+registerFashionSection('cart_items', (_s, _b, colors) => <Placeholder title={ts('pg.cart_items', 'Cart items')} note="The shopper's cart lines appear here." colors={colors} />);
+registerFashionSection('cart_summary', (_s, _b, colors) => <Placeholder title={ts('cart.summaryTitle', 'Order summary')} note="Subtotal and the checkout button appear here." colors={colors} />);
 registerFashionSection('blog_post_list', (_s, _b, colors, _d, ctx) => <Placeholder title={ctx?.blogName ?? 'Blog'} note={ctx?.recentPostTitles?.join(' · ') || 'Your latest posts appear here.'} colors={colors} />);
 registerFashionSection('article_content', (_s, _b, colors, _d, ctx) => <Placeholder title={ctx?.articleTitle ?? 'Article'} note={ctx?.articleExcerpt ?? 'The article body appears here.'} colors={colors} />);

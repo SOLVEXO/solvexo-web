@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { Package } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
@@ -19,18 +20,18 @@ function OrderDetail() {
 
   return (
     <AccountLayout
-      title="Order"
+      title={ts('checkout.orderLabel', 'Order')}
       accent={order ? `#${order.orderNumber}` : undefined}
       subtitle={order ? `Placed on ${formatOrderDate(order.createdAt, true)}` : undefined}
       actions={order && <div className="flex flex-wrap gap-2"><OrderPill badge={derivePaymentBadge(order)} /><OrderPill badge={deriveFulfillmentBadge(order)} /></div>}
     >
-      <BackLink to="/orders">All orders</BackLink>
+      <BackLink to="/orders">{ts('pg.all_orders', 'All orders')}</BackLink>
       {loading ? (
-        <div role="status" aria-label="Loading order"><SkeletonBlock h={160} rows={3} /></div>
+        <div role="status" aria-label={ts('pg.loading_order', 'Loading order')}><SkeletonBlock h={160} rows={3} /></div>
       ) : error ? (
-        <ErrorState message="We could not load this order." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_this_order', 'We could not load this order.')} onRetry={retry} />
       ) : !order ? (
-        <EmptyState icon={<Package size={24} />} title="Order not found" text="It may belong to another account, or no longer exist." action={<Link to="/orders" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Back to orders</Link>} />
+        <EmptyState icon={<Package size={24} />} title={ts('orders.notFound', 'Order not found')} text={ts('pg.it_may_belong_to_another_account_or_no_l', 'It may belong to another account, or no longer exist.')} action={<Link to="/orders" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('orders.backToOrders', 'Back to orders')}</Link>} />
       ) : (
         <OrderView order={order} mode="account" actions={<BuyAgainBar order={order} />} />
       )}

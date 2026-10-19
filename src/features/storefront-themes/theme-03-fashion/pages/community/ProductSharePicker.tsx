@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { ImageOff, Search, X } from 'lucide-react';
 import { apiGetPublicStoreProducts } from '@/api/services/store';
 
@@ -29,20 +30,20 @@ export function ProductSharePicker({ storeId, onClose, onPick }: { storeId: stri
 
   return (
     <div role="presentation" className="fixed inset-0 z-50 grid place-items-center px-4" style={{ background: 'rgba(0,0,0,.45)' }} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label="Share a product" tabIndex={-1} className="flex max-h-[82vh] w-full max-w-[460px] flex-col overflow-hidden outline-none" style={{ background: t.colors.bg, borderRadius: 24, color: t.colors.ink, fontFamily: t.fonts.body }}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={ts('pg.share_a_product', 'Share a product')} tabIndex={-1} className="flex max-h-[82vh] w-full max-w-[460px] flex-col overflow-hidden outline-none" style={{ background: t.colors.bg, borderRadius: 24, color: t.colors.ink, fontFamily: t.fonts.body }}>
         <div className="flex items-center justify-between gap-3 p-4 pb-2">
-          <h2 className="m-0 text-lg font-semibold">Share a product</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink, cursor: 'pointer' }}><X size={16} aria-hidden /></button>
+          <h2 className="m-0 text-lg font-semibold">{ts('pg.share_a_product', 'Share a product')}</h2>
+          <button type="button" onClick={onClose} aria-label={ts('common.close', 'Close')} className="grid size-9 place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink, cursor: 'pointer' }}><X size={16} aria-hidden /></button>
         </div>
         <div className="relative px-4 pb-3">
-          <label htmlFor="share-search" className="sr-only">Search products</label>
+          <label htmlFor="share-search" className="sr-only">{ts('pg.search_products', 'Search products')}</label>
           <Search size={16} aria-hidden className="pointer-events-none absolute left-8 top-1/2 -translate-y-[70%]" style={{ color: t.colors.inkMuted }} />
-          <TextInput id="share-search" type="search" value={query} onChange={e => onQuery(e.target.value)} placeholder="Search products" style={{ paddingLeft: 42, minHeight: 44 }} />
+          <TextInput id="share-search" type="search" value={query} onChange={e => onQuery(e.target.value)} placeholder={ts('pg.search_products', 'Search products')} style={{ paddingLeft: 42, minHeight: 44 }} />
         </div>
         <div className="min-h-[160px] flex-1 overflow-y-auto px-2 pb-3" aria-live="polite">
           {loading ? <div className="px-2"><SkeletonBlock h={56} rows={4} /></div>
-            : error ? <ErrorState message="We couldn't load products." onRetry={retry} />
-            : !data || data.length === 0 ? <div className="px-2"><EmptyState title="No products found" text="Try a different word." /></div>
+            : error ? <ErrorState message={ts('pg.we_couldn_t_load_products', 'We couldn\'t load products.')} onRetry={retry} />
+            : !data || data.length === 0 ? <div className="px-2"><EmptyState title={ts('browse.noProducts', 'No products found')} text={ts('pg.try_a_different_word', 'Try a different word.')} /></div>
             : (
               <ul className="m-0 flex list-none flex-col gap-1 p-0">
                 {data.map(p => (

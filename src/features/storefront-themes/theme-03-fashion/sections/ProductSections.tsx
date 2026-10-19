@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { FashionProductBrowser } from '../components/browse/FashionProductBrowser';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -32,7 +33,7 @@ function queryFor(s: Record<string, any>): PublicStoreProductsParams {
 
 function Skeleton({ n, columns }: { n: number; columns: unknown }) {
   return (
-    <div className={`grid gap-x-5 gap-y-10 ${cols(columns)}`} aria-busy="true">
+    <div className={`grid fx-grid-gap ${cols(columns)}`} aria-busy="true">
       {Array.from({ length: n }).map((_, i) => (
         <div key={i}><div className="animate-pulse" style={{ aspectRatio: '3 / 4', background: t.colors.bgAlt }} /><div className="mt-4 h-3 w-3/4 animate-pulse" style={{ background: t.colors.bgAlt }} /></div>
       ))}
@@ -53,9 +54,9 @@ function FeaturedProducts({ settings: s, colors }: { settings: Record<string, an
     <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'The edit') : undefined}
       action={<TextLink to={s.source === 'collection' && s.collectionId ? `/collections/${s.collectionId}` : '/search'} color={colors.ink}>View all</TextLink>}>
       {failed ? (
-        <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>We couldn't load these products. <button type="button" onClick={load} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>Try again</button></p>
+        <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', 'We couldn\'t load these products.')} <button type="button" onClick={load} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : items === null ? <Skeleton n={Number(s.columns) || 4} columns={s.columns} /> : (
-        <div className={`grid gap-x-5 gap-y-10 ${cols(s.columns)}`}>
+        <div className={`grid fx-grid-gap ${cols(s.columns)}`}>
           {items.map(p => <FashionProductCard key={p._id} product={p} currency={currency} />)}
         </div>
       )}
@@ -82,7 +83,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
   return (
     <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'Browse') : undefined}>
       {error ? (
-        <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>We couldn't load categories. <button type="button" onClick={refetch} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>Try again</button></p>
+        <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_categories', 'We couldn\'t load categories.')} <button type="button" onClick={refetch} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : loading ? <Skeleton n={n} columns={n} /> : (
         <ul className="fx-hide-scroll m-0 flex list-none gap-5 overflow-x-auto p-0 pb-1">
           {shown.map(c => {

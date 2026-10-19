@@ -1,4 +1,5 @@
 import client from '../client';
+import { dedupedGet } from '../../utils/dedupedGet';
 import { ENDPOINTS } from '../endpoints';
 import type { MarketPricingRule } from '@/utils/marketPriceMath';
 
@@ -23,7 +24,7 @@ export interface PublicStoreMarkets {
 
 /** GET /api/public/store-markets/:storeId (no auth) */
 export function apiGetPublicStoreMarkets(storeId: string) {
-  return client.get<never, { success: boolean; data: PublicStoreMarkets }>(ENDPOINTS.STORE.PUBLIC_MARKETS(storeId));
+  return dedupedGet(`markets:${storeId}`, () => client.get<never, { success: boolean; data: PublicStoreMarkets }>(ENDPOINTS.STORE.PUBLIC_MARKETS(storeId)));
 }
 
 /** Market resolution shared with the server: first market listing the country,

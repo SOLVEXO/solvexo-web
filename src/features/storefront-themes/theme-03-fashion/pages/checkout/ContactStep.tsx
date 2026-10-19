@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { Loader2 } from 'lucide-react';
 import { fashionTheme as t } from '../../theme.config';
 import { Field, TextInput } from '../../ui/primitives';
@@ -18,7 +19,7 @@ interface Props {
 export function ContactStep({ step, email, onChange, onBlur, error, saving, done }: Props) {
   return (
     <StepCard step={step} title="Contact" done={done}
-      aside={<span className="text-sm" style={{ color: t.colors.inkMuted }}>Have an account? <Link to={`/login?redirect=${encodeURIComponent('/checkout')}`} style={{ color: t.colors.ink, fontWeight: 500 }}>Log in</Link></span>}>
+      aside={<span className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.haveAccount', 'Have an account?')} <Link to={`/login?redirect=${encodeURIComponent('/checkout')}`} style={{ color: t.colors.ink, fontWeight: 500 }}>{ts('checkout.logIn', 'Log in')}</Link></span>}>
       <Field label="Email" required error={error || null} hint="Your order confirmation and updates are sent to this email.">
         {p => (
           <div className="relative">

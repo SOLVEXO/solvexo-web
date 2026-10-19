@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Gift } from 'lucide-react';
 import { apiCreateGiftCardPurchaseIntent, type GiftCardPublicSettings } from '@/api/services/giftCards';
@@ -37,8 +38,8 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
 
   if (done) {
     return (
-      <EmptyState icon={<CheckCircle2 size={26} style={{ color: t.colors.success }} />} title="Payment received" text={`The gift card code is being emailed to ${email.trim()}.`}
-        action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Keep shopping</Link>} />
+      <EmptyState icon={<CheckCircle2 size={26} style={{ color: t.colors.success }} />} title={ts('gift.paymentReceived', 'Payment received')} text={`The gift card code is being emailed to ${email.trim()}.`}
+        action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.keep_shopping', 'Keep shopping')}</Link>} />
     );
   }
 
@@ -47,11 +48,11 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
       <div className="flex aspect-[1.6] flex-col justify-between p-5" style={{ background: t.colors.ink, color: t.colors.bg, borderRadius: 18 }}>
         <div className="flex items-center justify-between"><span className="text-sm font-semibold">{storeName}</span><Gift size={20} aria-hidden /></div>
         <div>
-          <p className="m-0 text-xs" style={{ opacity: 0.7 }}>Gift card</p>
+          <p className="m-0 text-xs" style={{ opacity: 0.7 }}>{ts('checkout.giftCard', 'Gift card')}</p>
           <p className="m-0 text-[clamp(28px,5vw,40px)] font-medium leading-none" aria-live="polite">{amount ? nativeMoneyShort(amount, settings.currency) : '-'}</p>
         </div>
       </div>
-      <p className="m-0 mt-4 text-[13px] leading-relaxed" style={{ color: t.colors.inkMuted }}>Already have a gift card? Enter its code in the gift card box at checkout.</p>
+      <p className="m-0 mt-4 text-[13px] leading-relaxed" style={{ color: t.colors.inkMuted }}>{ts('pg.already_have_a_gift_card_enter_its_code_', 'Already have a gift card? Enter its code in the gift card box at checkout.')}</p>
     </Card>
   );
 
@@ -63,13 +64,13 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
             <p className="m-0 text-lg font-semibold">Pay {amount ? nativeMoneyShort(amount, settings.currency) : ''}</p>
             {isStripeReady()
               ? <MaisonCardForm clientSecret={secret} amountText={amount ? nativeMoneyShort(amount, settings.currency) : ''} returnUrl={window.location.href} onConfirmed={() => setDone(true)} />
-              : <Notice tone="error">Card payments are not configured yet.</Notice>}
-            <div><PillButton variant="ghost" onClick={() => setSecret(null)}>Change details</PillButton></div>
+              : <Notice tone="error">{ts('pg.card_payments_are_not_configured_yet', 'Card payments are not configured yet.')}</Notice>}
+            <div><PillButton variant="ghost" onClick={() => setSecret(null)}>{ts('pg.change_details', 'Change details')}</PillButton></div>
           </div>
         ) : (
           <form className="flex flex-col gap-6" noValidate onSubmit={e => { e.preventDefault(); void start(); }}>
             <fieldset className="m-0 border-0 p-0">
-              <legend className="mb-2 p-0 text-sm font-medium">Choose an amount <span aria-hidden style={{ color: t.colors.danger }}>*</span></legend>
+              <legend className="mb-2 p-0 text-sm font-medium">{ts('gift.chooseAmount', 'Choose an amount')} <span aria-hidden style={{ color: t.colors.danger }}>*</span></legend>
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {settings.denominations.map(d => {
                   const on = amount === d;
@@ -83,17 +84,17 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
               </div>
               {errors.amount && <p role="alert" className="m-0 mt-2 text-[13px]" style={{ color: t.colors.danger }}>{errors.amount}</p>}
             </fieldset>
-            <Field label="Recipient email" required error={errors.email}>
+            <Field label={ts('gift.recipientEmail', 'Recipient email')} required error={errors.email}>
               {p => <TextInput {...p} type="email" autoComplete="off" value={email} onChange={e => setEmail(e.target.value)} invalid={!!errors.email} />}
             </Field>
-            <Field label="Recipient name" hint="Optional">
+            <Field label={ts('checkout.recipientName', 'Recipient name')} hint={ts('pg.optional', 'Optional')}>
               {p => <TextInput {...p} value={name} onChange={e => setName(e.target.value)} />}
             </Field>
-            <Field label="Message" hint="Optional">
+            <Field label={ts('gift.message', 'Message')} hint={ts('pg.optional', 'Optional')}>
               {p => <TextArea {...p} value={message} onChange={e => setMessage(e.target.value)} rows={3} />}
             </Field>
             {apiError && <Notice tone="error">{apiError}</Notice>}
-            <div><PillButton type="submit" loading={creating}>Continue to payment</PillButton></div>
+            <div><PillButton type="submit" loading={creating}>{ts('pg.continue_to_payment', 'Continue to payment')}</PillButton></div>
           </form>
         )}
       </Card>

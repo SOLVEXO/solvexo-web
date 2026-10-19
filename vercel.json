@@ -1,9 +1,19 @@
 {
+  "regions": ["sin1"],
   "functions": {
     "api/storefront-document.js": {
       "includeFiles": "dist/index.html"
     }
   },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Powered-By", "value": "Solvexo" },
+        { "key": "X-Solvexo-Platform", "value": "1" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

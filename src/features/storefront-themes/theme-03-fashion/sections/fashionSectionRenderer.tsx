@@ -1,9 +1,10 @@
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { resolveSectionColors } from '../theme.config';
+import { resolveSectionColors, fashionTypographyCss } from '../theme.config';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { registry } from './sectionRegistry';
+import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
 
 interface Props {
   sections: Section[];
@@ -15,6 +16,8 @@ interface Props {
   onSelectBlock?: PreviewBlockSelection;
   dynamicSourceValues?: Record<string, string>;
   previewContext?: CoreSectionPreviewContext;
+  /** Editor only: headlines become click-to-type; called with the edited value. */
+  onEditText?: InlineEditHandler;
 }
 
 const EDITOR_CSS = `
@@ -23,18 +26,21 @@ const EDITOR_CSS = `
 .fx-sel-on{outline:2px solid #09090B;outline-offset:-2px;cursor:pointer}
 .theme-editor-block-target{outline:1px dashed transparent;outline-offset:2px;cursor:pointer}
 .theme-editor-block-target:hover{outline-color:rgba(9,9,11,.7)}
-.theme-editor-block-selected{outline:2px solid #09090B;outline-offset:2px;cursor:pointer}`;
+.theme-editor-block-selected{outline:2px solid #09090B;outline-offset:2px;cursor:pointer}
+[data-inline-edit]{cursor:text;outline:1px dashed transparent;outline-offset:3px;border-radius:2px}
+[data-inline-edit]:hover{outline-color:rgba(217,119,87,.7)}
+[data-inline-edit]:focus{outline:2px solid #D97757;background:rgba(217,119,87,.08)}`;
 
 /** Renders a store's authored `Section[]` through this theme's own section components.
  *  Types the theme has no renderer for, and `enabled:false` sections, are skipped. */
-export function FashionSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, selectedBlockId, onSelectBlock, dynamicSourceValues, previewContext }: Props) {
+export function FashionSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, selectedBlockId, onSelectBlock, dynamicSourceValues, previewContext, onEditText }: Props) {
   const { theme } = useStorefront();
   const schemes = theme?.theme?.colorSchemes;
   const dynamic = dynamicSourceValues ?? {};
 
   return (
     <>
-      <style>{SECTION_SPACING_CSS}{selectable ? EDITOR_CSS : ''}</style>
+      <style>{SECTION_SPACING_CSS}{fashionTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
       {sections.map((section, i) => {
         if (section.enabled === false) return null;
         const render = registry.get(section.type);
@@ -66,7 +72,7 @@ export function FashionSectionRenderer({ sections, selectable, selectedSectionId
             }}>
             {scoped && <style>{scoped}</style>}
             <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
-              {render(section, blocks, colors, dynamic, previewContext)}
+              {onEditText ? <InlineEditProvider sectionId={key} onEdit={onEditText}>{render(section, blocks, colors, dynamic, previewContext)}</InlineEditProvider> : render(section, blocks, colors, dynamic, previewContext)}
             </PreviewInspectorProvider>
           </div>
         );

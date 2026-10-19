@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Loader2, XCircle } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -43,7 +44,7 @@ export function FashionCheckoutReturnPage() {
   useEffect(() => { if (finished) window.scrollTo({ top: 0 }); }, [finished]);
 
   if (!checkoutId) {
-    return <Page narrow><ErrorState message="This confirmation link is incomplete." onRetry={undefined} /><p className="text-center"><Link to="/cart" style={{ color: t.colors.ink }}>Back to your cart</Link></p></Page>;
+    return <Page narrow><ErrorState message={ts('pg.this_confirmation_link_is_incomplete', 'This confirmation link is incomplete.')} onRetry={undefined} /><p className="text-center"><Link to="/cart" style={{ color: t.colors.ink }}>{ts('pg.back_to_your_cart', 'Back to your cart')}</Link></p></Page>;
   }
 
   if (poll.status === 'completed') {
@@ -55,9 +56,9 @@ export function FashionCheckoutReturnPage() {
       <Page narrow>
         <div role="alert" className="flex flex-col items-center gap-4 text-center">
           <span className="grid size-16 place-items-center rounded-full" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}><XCircle size={30} aria-hidden /></span>
-          <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-medium leading-[1.1] tracking-tight">Payment wasn&apos;t <span className="fx-serif">completed</span></h1>
+          <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-medium leading-[1.1] tracking-tight">{ts('pg.payment_wasn_t', 'Payment wasn\'t')} <span className="fx-serif">{ts('pg.word_completed', 'completed')}</span></h1>
           <p className="m-0 max-w-[440px] text-base" style={{ color: t.colors.inkMuted }}>Nothing was charged for an order - your cart is still here, so you can try again or pick a different payment method.</p>
-          <Link to="/checkout" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Back to checkout</Link>
+          <Link to="/checkout" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
         </div>
       </Page>
     );
@@ -68,7 +69,7 @@ export function FashionCheckoutReturnPage() {
       <div role="status" aria-live="polite" className="flex flex-col items-center gap-4 py-10 text-center">
         <Loader2 size={30} className="animate-spin" aria-hidden style={{ color: t.colors.ink }} />
         <h1 className="m-0 text-[clamp(24px,3.4vw,36px)] font-medium leading-[1.15] tracking-tight">
-          {awaitingWallet && !poll.timedOut ? <>Approve the payment in your <span className="fx-serif">Easypaisa</span> app</> : <>Confirming your <span className="fx-serif">payment</span></>}
+          {awaitingWallet && !poll.timedOut ? <>{ts('pg.approve_the_payment_in_your', 'Approve the payment in your')} <span className="fx-serif">{ts('pg.easypaisa', 'Easypaisa')}</span> app</> : <>{ts('pg.confirming_your', 'Confirming your')} <span className="fx-serif">{ts('pg.word_payment', 'payment')}</span></>}
         </h1>
         <p className="m-0 max-w-[460px] text-base" style={{ color: t.colors.inkMuted }}>
           {poll.timedOut
@@ -79,8 +80,8 @@ export function FashionCheckoutReturnPage() {
         </p>
         {poll.timedOut && (
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <PillButton onClick={poll.start}>Check again</PillButton>
-            <Link to="/checkout" className="fx-pill" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>Back to checkout</Link>
+            <PillButton onClick={poll.start}>{ts('checkout.checkAgain', 'Check again')}</PillButton>
+            <Link to="/checkout" className="fx-pill" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
           </div>
         )}
       </div>

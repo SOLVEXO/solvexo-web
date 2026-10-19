@@ -333,7 +333,7 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, selectedBlockId, onSelectSection, onSelectBlock, supportedSectionTypes, colorSchemes = [], helperText, installedApps, ownerResource, onHoverSection }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, selectedBlockId, onSelectSection, onSelectBlock, supportedSectionTypes, layoutThemeId, layoutScope, colorSchemes = [], helperText, installedApps, ownerResource, onHoverSection }: {
   sections: Section[];
   /** Hovering a card outlines that section in the live preview (null on leave). */
   onHoverSection?: (sectionId: string | null) => void;
@@ -359,6 +359,9 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
    *  to "show everything," same as before this existed, for any caller that
    *  hasn't resolved a theme yet. */
   supportedSectionTypes?: SectionType[];
+  /** Active theme id / template scope, so the Add-section picker offers that theme's own whole-page layouts. */
+  layoutThemeId?: string;
+  layoutScope?: string;
   /** The store's saved named palettes — passed straight through to every
    *  `SectionCard`'s Color Scheme picker. Optional, defaults to empty (just
    *  the "Theme default" option) for any caller that hasn't loaded them. */
@@ -481,6 +484,8 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
         <AddSectionModal
           onClose={() => setShowAdd(false)}
           supportedTypes={supportedSectionTypes}
+          layoutThemeId={layoutThemeId}
+          layoutScope={layoutScope}
           onPick={picked => {
             const next = [...sections];
             next.splice(Math.min(insertAt, sections.length), 0, ...picked.map(p => ({ type: p.type, settings: p.settings, blocks: p.blocks }) as Section));

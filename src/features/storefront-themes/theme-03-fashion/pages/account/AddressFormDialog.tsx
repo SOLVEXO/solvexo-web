@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { apiAddAddress, apiUpdateAddress, type Address, type AddressPayload } from '@/api/services/address';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { EMPTY_ADDRESS_FORM, addressToForm, validateAddressForm } from '../../../accountUi';
@@ -29,18 +30,18 @@ export function AddressFormDialog({ address, isFirst, onClose, onSaved }: { addr
 
   return (
     <Dialog title={address ? 'Edit address' : 'Add a new address'} onClose={onClose}
-      footer={<><PillButton variant="outline" className="flex-1" onClick={onClose}>Cancel</PillButton><PillButton className="flex-1" loading={saving} onClick={submit}>{address ? 'Update address' : 'Add address'}</PillButton></>}>
+      footer={<><PillButton variant="outline" className="flex-1" onClick={onClose}>{ts('common.cancel', 'Cancel')}</PillButton><PillButton className="flex-1" loading={saving} onClick={submit}>{address ? 'Update address' : 'Add address'}</PillButton></>}>
       <form onSubmit={e => { e.preventDefault(); void submit(); }} className="grid gap-4 sm:grid-cols-2">
-        <Field label="Recipient name" required>{p => <TextInput {...p} autoComplete="name" value={form.recipientName} onChange={e => set({ recipientName: e.target.value })} />}</Field>
-        <Field label="Phone number" required>{p => <TextInput {...p} type="tel" autoComplete="tel" value={form.phoneNumber} onChange={e => set({ phoneNumber: e.target.value })} />}</Field>
+        <Field label={ts('checkout.recipientName', 'Recipient name')} required>{p => <TextInput {...p} autoComplete="name" value={form.recipientName} onChange={e => set({ recipientName: e.target.value })} />}</Field>
+        <Field label={ts('checkout.phoneNumber', 'Phone number')} required>{p => <TextInput {...p} type="tel" autoComplete="tel" value={form.phoneNumber} onChange={e => set({ phoneNumber: e.target.value })} />}</Field>
         <div className="sm:col-span-2"><Field label="Address line 1" required>{p => <TextInput {...p} autoComplete="address-line1" value={form.addressLine1} onChange={e => set({ addressLine1: e.target.value })} />}</Field></div>
         <div className="sm:col-span-2"><Field label="Address line 2 (optional)">{p => <TextInput {...p} autoComplete="address-line2" value={form.addressLine2 ?? ''} onChange={e => set({ addressLine2: e.target.value })} />}</Field></div>
-        <Field label="City" required>{p => <TextInput {...p} autoComplete="address-level2" value={form.city} onChange={e => set({ city: e.target.value })} />}</Field>
-        <Field label="State / province" required>{p => <TextInput {...p} autoComplete="address-level1" value={form.state} onChange={e => set({ state: e.target.value })} />}</Field>
-        <Field label="Zip code" required>{p => <TextInput {...p} autoComplete="postal-code" value={form.zipCode} onChange={e => set({ zipCode: e.target.value })} />}</Field>
-        <Field label="Country" required>
+        <Field label={ts('checkout.city', 'City')} required>{p => <TextInput {...p} autoComplete="address-level2" value={form.city} onChange={e => set({ city: e.target.value })} />}</Field>
+        <Field label={ts('pg.state_province', 'State / province')} required>{p => <TextInput {...p} autoComplete="address-level1" value={form.state} onChange={e => set({ state: e.target.value })} />}</Field>
+        <Field label={ts('checkout.zip', 'Zip code')} required>{p => <TextInput {...p} autoComplete="postal-code" value={form.zipCode} onChange={e => set({ zipCode: e.target.value })} />}</Field>
+        <Field label={ts('addresses.country', 'Country')} required>
           {p => <SelectInput {...p} autoComplete="country-name" value={form.country ?? ''} onChange={e => set({ country: e.target.value })}>
-            <option value="" disabled>Select country</option>
+            <option value="" disabled>{ts('checkout.selectCountry', 'Select country')}</option>
             {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
           </SelectInput>}
         </Field>
@@ -51,7 +52,7 @@ export function AddressFormDialog({ address, isFirst, onClose, onSaved }: { addr
           </label>
         )}
         {error && <div className="sm:col-span-2"><Notice tone="error">{error}</Notice></div>}
-        <button type="submit" className="sr-only">Save</button>
+        <button type="submit" className="sr-only">{ts('pg.save', 'Save')}</button>
       </form>
     </Dialog>
   );

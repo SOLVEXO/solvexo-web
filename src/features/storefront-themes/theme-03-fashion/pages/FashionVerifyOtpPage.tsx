@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { AuthContext } from '@/api/services/auth';
@@ -30,7 +31,7 @@ export function FashionVerifyOtpPage() {
 
   if (!email) {
     return (
-      <AuthShell title="Details" accent="missing" subtitle={`We could not find your verification details. Please ${isForgot ? 'restart the password reset' : 'register or sign in'} again.`}>
+      <AuthShell title={ts('pg.details', 'Details')} accent={ts('pg.word_missing', 'missing')} subtitle={`We could not find your verification details. Please ${isForgot ? 'restart the password reset' : 'register or sign in'} again.`}>
         <PillButton full onClick={() => navigate(isForgot ? '/forgot-password' : '/register')}>{isForgot ? 'Reset password' : 'Create account'}</PillButton>
       </AuthShell>
     );
@@ -57,8 +58,8 @@ export function FashionVerifyOtpPage() {
         <OtpBoxes values={otp} onChange={change} invalid={!!shownError} />
         <p aria-live="polite" className="m-0 flex min-h-5 items-center justify-center gap-1 text-[13px]" style={{ color: t.colors.success }}>{complete && !shownError && <><Check size={13} aria-hidden /> Code entered</>}</p>
         {shownError && <Notice tone="error">{shownError}</Notice>}
-        <PillButton type="submit" full disabled={!complete} loading={verify.loading}>Verify code</PillButton>
-        <div className="flex items-center justify-center gap-2 text-sm" style={{ color: t.colors.inkMuted }}>Did not receive it? <ResendTimer email={email} storeId={ctx?.storeId} isForgot={isForgot} /></div>
+        <PillButton type="submit" full disabled={!complete} loading={verify.loading}>{ts('pg.verify_code', 'Verify code')}</PillButton>
+        <div className="flex items-center justify-center gap-2 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.did_not_receive_it', 'Did not receive it?')} <ResendTimer email={email} storeId={ctx?.storeId} isForgot={isForgot} /></div>
       </form>
     </AuthShell>
   );

@@ -1,4 +1,5 @@
 ﻿import { localePath } from '@/i18n';
+import { ts } from '@/utils/tStatic';
 import { Banknote, CreditCard, Landmark, Loader2, PackageCheck } from 'lucide-react';
 import { fashionTheme as t } from '../../theme.config';
 import { Field, Notice, PillButton, SkeletonBlock, TextInput } from '../../ui/primitives';
@@ -42,7 +43,7 @@ function methodIcon(o: PayOption) {
 
 function ErrorWithRestart({ message, stale, restart }: { message: string; stale: boolean; restart: () => void }) {
   return (
-    <Notice tone="error" action={stale ? <TextLinkButton onClick={restart}>Start over</TextLinkButton> : undefined}>
+    <Notice tone="error" action={stale ? <TextLinkButton onClick={restart}>{ts('checkout.startOver', 'Start over')}</TextLinkButton> : undefined}>
       {message}{stale ? ' Your checkout is no longer valid - start over to continue.' : ''}
     </Notice>
   );
@@ -63,23 +64,23 @@ function MethodPanel({ p, pay, currency, total, checkoutId }: { p: PayOption; pa
       return (
         <div role="status" aria-live="polite" className="grid place-items-center gap-3 py-8 text-center">
           <Loader2 size={24} className="animate-spin" aria-hidden />
-          <p className="m-0 text-sm font-medium">Confirming your payment...</p>
-          <Hint>Please keep this page open.</Hint>
+          <p className="m-0 text-sm font-medium">{ts('checkout.confirmingPay', 'Confirming your payment...')}</p>
+          <Hint>{ts('checkout.keepOpen', 'Please keep this page open.')}</Hint>
         </div>
       );
     }
     if (pay.poll.status === 'failed') {
-      return <Notice tone="error" action={<TextLinkButton onClick={pay.retryCard}>Try again</TextLinkButton>}>Payment could not be confirmed. You have not been charged for an order - please try again.</Notice>;
+      return <Notice tone="error" action={<TextLinkButton onClick={pay.retryCard}>{ts('checkout.tryAgain', 'Try again')}</TextLinkButton>}>{ts('checkout.payNotConfirmed', 'Payment could not be confirmed. You have not been charged for an order - please try again.')}</Notice>;
     }
     if (pay.poll.timedOut) {
       return (
         <div className="flex flex-col gap-3">
-          <Notice>Your payment was received and is still being confirmed. This can take a minute - you will get an email once your order is placed.</Notice>
-          <div><TextLinkButton onClick={pay.poll.start}>Check again</TextLinkButton></div>
+          <Notice>{ts('checkout.payReceived', 'Your payment was received and is still being confirmed. This can take a minute - you will get an email once your order is placed.')}</Notice>
+          <div><TextLinkButton onClick={pay.poll.start}>{ts('checkout.checkAgain', 'Check again')}</TextLinkButton></div>
         </div>
       );
     }
-    if (pay.card.error) return <Notice tone="error" action={<TextLinkButton onClick={pay.retryCard}>Retry</TextLinkButton>}>{pay.card.error}</Notice>;
+    if (pay.card.error) return <Notice tone="error" action={<TextLinkButton onClick={pay.retryCard}>{ts('cart.retry', 'Retry')}</TextLinkButton>}>{pay.card.error}</Notice>;
     if (pay.card.loading || !pay.card.secret) return <SkeletonBlock h={120} />;
     return (
       <MaisonCardForm
@@ -94,7 +95,7 @@ function MethodPanel({ p, pay, currency, total, checkoutId }: { p: PayOption; pa
   if (p.kind === 'cod') {
     return (
       <PillButton full loading={pay.busy} onClick={pay.placeCod}>
-        {!pay.busy && <PackageCheck size={16} aria-hidden />}{pay.busy ? 'Placing order...' : 'Place order'}
+        {!pay.busy && <PackageCheck size={16} aria-hidden />}{pay.busy ? ts('checkout.placingOrder', 'Placing order…') : ts('checkout.placeOrderLower', 'Place order')}
       </PillButton>
     );
   }
@@ -111,12 +112,12 @@ function MethodPanel({ p, pay, currency, total, checkoutId }: { p: PayOption; pa
             : `You will be taken to ${p.label} to complete your payment securely, then brought back here.`}
       </p>
       {easypaisa && (
-        <Field label="Easypaisa account number" hint="Leave empty to use your delivery phone number.">
+        <Field label={ts('checkout.easypaisaAria', 'Easypaisa account number')} hint={ts('checkout.easypaisaFieldHint', 'Leave empty to use your delivery phone number.')}>
           {f => <TextInput {...f} type="tel" inputMode="tel" autoComplete="tel" placeholder="03XXXXXXXXX" value={pay.walletAccount} onChange={e => pay.setWalletAccount(e.target.value)} />}
         </Field>
       )}
       <PillButton full loading={pay.busy} onClick={() => (manual && p.methodId ? pay.placeManual(p.methodId) : pay.payWithGateway(p.provider ?? ''))}>
-        {manual ? (pay.busy ? 'Placing order...' : 'Place order') : easypaisa ? 'Pay with Easypaisa' : pay.redirecting ? 'Redirecting...' : `Continue to ${p.label}`}
+        {manual ? (pay.busy ? ts('checkout.placingOrder', 'Placing order…') : ts('checkout.placeOrderLower', 'Place order')) : easypaisa ? ts('checkout.payEasypaisa', 'Pay with Easypaisa') : pay.redirecting ? ts('checkout.redirecting', 'Redirecting...') : ts('checkout.continueTo', 'Continue to {{name}}', { name: p.label })}
       </PillButton>
     </div>
   );
@@ -129,21 +130,21 @@ export function PaymentStep(props: PaymentStepProps) {
   if (createError) {
     body = (
       <div className="flex flex-col gap-3">
-        <Notice tone="error" action={<TextLinkButton onClick={restart}>Try again</TextLinkButton>}>{createError}</Notice>
+        <Notice tone="error" action={<TextLinkButton onClick={restart}>{ts('checkout.tryAgain', 'Try again')}</TextLinkButton>}>{createError}</Notice>
       </div>
     );
   } else if (waitingFor) {
     body = <Hint>{waitingFor}</Hint>;
   } else if (creating || !checkoutId) {
-    body = <div role="status" aria-label="Preparing your payment options"><SkeletonBlock h={64} rows={2} /></div>;
+    body = <div role="status" aria-label={ts('checkout.preparingPayment', 'Preparing your payment options')}><SkeletonBlock h={64} rows={2} /></div>;
   } else if (creditCoversAll) {
     body = (
       <div className="flex flex-col gap-4">
-        <Hint>Your store credit covers the full amount - no payment needed.</Hint>
+        <Hint>{ts('checkout.creditCovers', 'Your store credit covers the full amount - no payment needed.')}</Hint>
         {credit.placeError && <Notice tone="error">{credit.placeError}</Notice>}
         <Consent value={emailOffers} onChange={setEmailOffers} storeName={storeName} />
         <PillButton full loading={creditPlacing || credit.placing} onClick={onPlaceWithCredit}>
-          {!(creditPlacing || credit.placing) && <PackageCheck size={16} aria-hidden />}{creditPlacing || credit.placing ? 'Placing order...' : 'Place order'}
+          {!(creditPlacing || credit.placing) && <PackageCheck size={16} aria-hidden />}{creditPlacing || credit.placing ? ts('checkout.placingOrder', 'Placing order…') : ts('checkout.placeOrderLower', 'Place order')}
         </PillButton>
       </div>
     );

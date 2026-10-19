@@ -66,7 +66,7 @@ function DemoProducts({ heading }: { heading: string }) {
   return (
     <Shell heading={heading} eyebrow="The edit"
       action={<span className="fx-cta" style={{ height: 40, padding: '4px 48px 4px 18px', background: t.colors.ink, color: t.colors.bg, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>View all<span className="fx-cta-icon" style={{ width: 32, height: 32, background: t.colors.bg, color: t.colors.ink }}>↗</span></span>}>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+      <div className="grid grid-cols-2 fx-grid-gap lg:grid-cols-4">
         {PRODUCTS.map((p, i) => (
           <FashionProductCardView key={p.name} to="#" name={p.name} image={p.image} secondImage={t.productImageHover === 'second-image' ? p.second : undefined} tag={p.tag} rating={p.rating}
             price={p.price} comparePrice={p.compare} percentOff={p.off} soldOut={p.soldOut} wished={i === 2} onAdd={p.soldOut ? undefined : () => undefined} />

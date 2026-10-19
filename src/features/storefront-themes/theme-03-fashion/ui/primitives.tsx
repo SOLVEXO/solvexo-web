@@ -1,4 +1,5 @@
 import { useId, type CSSProperties, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { ts } from '@/utils/tStatic';
 import { AlertCircle, CheckCircle2, Info, Loader2 } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
 import { controlStyle } from './controlStyle';
@@ -92,7 +93,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   return (
     <div role="alert" className="grid place-items-center gap-4 px-6 py-14 text-center">
       <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{message}</p>
-      {onRetry && <button type="button" onClick={onRetry} className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none' }}>Try again</button>}
+      {onRetry && <button type="button" onClick={onRetry} className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none' }}>{ts('checkout.tryAgain', 'Try again')}</button>}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { imgProps } from '../components/imgProps';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Minus, Plus, Star, ZoomIn } from 'lucide-react';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { apiGetProductReviews, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
@@ -20,17 +22,19 @@ import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButto
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart } from '../components/product/ProductExtraBlocks';
 import { FashionImageLightbox } from '../components/product/FashionImageLightbox';
 import { StickyBuyBar } from '../components/product/StickyBuyBar';
+import { ProductDelivery } from '../components/product/ProductDelivery';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { FashionSectionRenderer } from '../sections';
 import { FashionButton } from '../components/FashionButton';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
+import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { fashionTheme as t } from '../theme.config';
 import { FashionNotFoundPage } from './FashionNotFoundPage';
 import { ErrorBlock, PageSkeleton } from './pageParts';
 import { useTemplateSections } from '../../core/pageHooks';
 
 const stars = (n: number, size = 15) => (
-  <span className="inline-flex" aria-hidden>{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={size} fill={i < Math.round(n) ? '#FB923C' : 'none'} stroke="#FB923C" />)}</span>
+  <span className="inline-flex" aria-hidden>{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={size} fill={i < Math.round(n) ? t.colors.star : 'none'} stroke="#FB923C" />)}</span>
 );
 
 /** `/product/:slug` — gallery on the left, buy box on the right, then the seller's own template sections and reviews. */
@@ -43,6 +47,7 @@ export function FashionProductPage() {
 function ProductPageInner({ slug }: { slug: string }) {
   const { store } = useStorefront();
   const navigate = useNavigate();
+  const { t: tr } = useTranslation('storefront');
   const { addToCart, adding } = useCartContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
   const { currency, convert } = useCurrencyPreference();
@@ -86,9 +91,20 @@ function ProductPageInner({ slug }: { slug: string }) {
   }, [variant, detail?.product.images]);
 
   useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
+  useJsonLd('product', product && variant ? {
+    '@context': 'https://schema.org', '@type': 'Product', name: product.name,
+    description: product.description?.replace(/s+/g, ' ').slice(0, 300) || undefined,
+    image: images.slice(0, 6), sku: variant.sku || undefined,
+    brand: detail?.product.vendor ? { '@type': 'Brand', name: detail.product.vendor } : undefined,
+    offers: {
+      '@type': 'Offer', url: window.location.href, price: variant.price, priceCurrency: String(variant.currency ?? store.baseCurrency ?? ''),
+      availability: variantCanBuy(variant, isDigital) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    },
+    ...(reviews && reviews.stats.totalReviews > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: reviews.stats.averageRating, reviewCount: reviews.stats.totalReviews } } : {}),
+  } : null);
 
   if (loading) return <PageSkeleton />;
-  if (error && !detail) return /not found|404/i.test(error) ? <FashionNotFoundPage /> : <ErrorBlock message="We couldn't load this product." onRetry={refetch} />;
+  if (error && !detail) return /not found|404/i.test(error) ? <FashionNotFoundPage /> : <ErrorBlock message={tr('product.loadError', "We couldn't load this product.")} onRetry={refetch} />;
   if (!detail || !product || !variant) return <FashionNotFoundPage />;
 
   const base = String(variant.currency ?? store.baseCurrency ?? currency);
@@ -113,19 +129,19 @@ function ProductPageInner({ slug }: { slug: string }) {
   const info: Record<string, (settings: Record<string, unknown>) => ReactNode> = {
     product_title: () => (
       <div>
-        {detail.product.vendor && <p className="m-0 mb-2 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{detail.product.vendor}</p>}
+        {detail.product.vendor && t.showVendor && <p className="m-0 mb-2 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{detail.product.vendor}</p>}
         <h1 className="m-0 text-[clamp(28px,3.4vw,42px)] font-semibold leading-[1.1] tracking-tight">{product.name}</h1>
       </div>
     ),
     product_rating: () => reviewCount > 0 || rating > 0 ? (
       <a href="#fx-reviews" className="inline-flex items-center gap-3 no-underline" style={{ color: t.colors.ink }}>
-        {stars(rating)}<span className="text-sm font-medium">{rating.toFixed(1)}</span><span className="text-sm" style={{ color: t.colors.inkMuted }}>{reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}</span>
+        {stars(rating)}<span className="text-sm font-medium">{rating.toFixed(1)}</span><span className="text-sm" style={{ color: t.colors.inkMuted }}>{tr('reviews.count', '{{count}} reviews', { count: reviewCount })}</span>
       </a>
     ) : null,
     product_price: () => (
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-[28px] font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.ink }}>{show(variant.price)}</span>
-        {onSale && <><span className="text-xl line-through opacity-50">{show(variant.compareAtPrice as number)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>Save {percentOff}%</span></>}
+        <span className="text-[28px] font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>
+        {onSale && <><span className="text-xl line-through opacity-50">{show(variant.compareAtPrice as number)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>{tr('product.savePercent', 'Save {{percent}}%', { percent: percentOff })}</span></>}
       </div>
     ),
     product_description: () => product.description ? <div className="text-base leading-[1.75]" style={{ color: t.colors.inkMuted }}>{renderRichText(product.description)}</div> : null,
@@ -155,16 +171,16 @@ function ProductPageInner({ slug }: { slug: string }) {
     ),
     product_quantity: () => (
       <div>
-        <p className="m-0 mb-3 text-sm font-medium">Quantity</p>
+        <p className="m-0 mb-3 text-sm font-medium">{tr('product.quantity', 'Quantity')}</p>
         <div className="flex flex-wrap items-center gap-4">
           <div className="inline-flex items-center" style={{ border: `1px solid ${t.colors.border}`, borderRadius: 9999 }}>
-            <button type="button" aria-label="Decrease quantity" disabled={safeQty <= rules.min} onClick={() => setQty(clampQty(safeQty - rules.step, rules))} className="grid size-11 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={15} /></button>
+            <button type="button" aria-label={tr('product.decreaseQty', 'Decrease quantity')} disabled={safeQty <= rules.min} onClick={() => setQty(clampQty(safeQty - rules.step, rules))} className="grid size-11 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={15} /></button>
             <span className="min-w-10 text-center text-sm font-medium" aria-live="polite">{safeQty}</span>
-            <button type="button" aria-label="Increase quantity" disabled={safeQty >= rules.max} onClick={() => setQty(clampQty(safeQty + rules.step, rules))} className="grid size-11 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={15} /></button>
+            <button type="button" aria-label={tr('product.increaseQty', 'Increase quantity')} disabled={safeQty >= rules.max} onClick={() => setQty(clampQty(safeQty + rules.step, rules))} className="grid size-11 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={15} /></button>
           </div>
-          <span className="text-sm" style={{ color: state === 'low' ? t.colors.danger : state === 'sold_out' ? t.colors.danger : t.colors.success }}>
-            {state === 'sold_out' ? 'Sold out' : state === 'low' ? `Only ${variantAvailable(variant, isDigital)} left` : state === 'backorder' ? 'Available on backorder' : 'In stock'}
-          </span>
+          {t.showStockStatus && <span className="text-sm" style={{ color: state === 'low' ? t.colors.danger : state === 'sold_out' ? t.colors.danger : t.colors.success }}>
+            {state === 'sold_out' ? tr('product.soldOut', 'Sold out') : state === 'low' ? tr('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? tr('product.backorder', 'Available on backorder') : tr('product.inStock', 'In stock')}
+          </span>}
         </div>
         {qtyRuleHint(rules) && <p className="m-0 mt-2 text-xs" style={{ color: t.colors.inkMuted }}>{qtyRuleHint(rules)}</p>}
       </div>
@@ -172,7 +188,7 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_buy_buttons: () => (
       <div id="fx-buy" className="flex flex-col gap-3">
         {pre && <p className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
-        <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? 'Sold out' : pre ? 'Pre-order' : busy ? 'Adding…' : 'Add to cart'}</FashionButton>
+        <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : busy ? tr('product.adding', 'Adding…') : tr('product.addToCart', 'Add to cart')}</FashionButton>
       </div>
     ),
     product_buy_now: s => <ProductBuyNowButton settings={s} disabled={!canBuy} loading={busy} onBuy={() => add(true)} />,
@@ -188,24 +204,24 @@ function ProductPageInner({ slug }: { slug: string }) {
     <ProductPageContext.Provider value={{ productId: detail.product._id, categoryId: detail.product.categoryId ?? null }}>
       {before.length > 0 && <FashionSectionRenderer sections={before} />}
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `clamp(20px, 3vw, 40px) ${t.layout.containerPadX} clamp(40px, 6vw, 88px)` }}>
-        <nav aria-label="Breadcrumb" className="mb-6 text-sm" style={{ color: t.colors.inkMuted }}>
-          <Link to="/" className="no-underline" style={{ color: 'inherit' }}>Home</Link> <span aria-hidden>/</span> <Link to="/search" className="no-underline" style={{ color: 'inherit' }}>Shop</Link> <span aria-hidden>/</span> <span style={{ color: t.colors.ink }}>{product.name}</span>
-        </nav>
+        {t.showBreadcrumbs && <nav aria-label={tr('product.breadcrumb', 'Breadcrumb')} className="mb-6 text-sm" style={{ color: t.colors.inkMuted }}>
+          <Link to="/" className="no-underline" style={{ color: 'inherit' }}>{tr('product.crumbHome', 'Home')}</Link> <span aria-hidden>/</span> <Link to="/search" className="no-underline" style={{ color: 'inherit' }}>{tr('product.crumbShop', 'Shop')}</Link> <span aria-hidden>/</span> <span style={{ color: t.colors.ink }}>{product.name}</span>
+        </nav>}
         <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
           {layout.mediaOn && (
             <div className="lg:sticky lg:top-24 lg:col-span-7">
               {images.length === 0 ? <div style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }} /> : (
                 <div className="flex flex-col gap-4 md:flex-row-reverse">
-                  <button type="button" onClick={() => setZoom(true)} aria-label="Zoom image" className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
-                    <img src={images[imageIndex] ?? images[0]} alt={product.name} className="size-full object-cover" />
+                  <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
+                    <img {...imgProps(images[imageIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="size-full object-cover" />
                     <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bg }}><ZoomIn size={18} /></span>
                   </button>
                   {images.length > 1 && (
                     <div className="fx-hide-scroll flex gap-3 overflow-x-auto md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden" style={{ maxHeight: 'min(640px, 70vh)' }}>
                       {images.map((src, i) => (
-                        <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={`Show image ${i + 1}`} aria-current={i === imageIndex}
+                        <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={tr('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex}
                           className="size-20 shrink-0 cursor-pointer overflow-hidden p-0 md:size-[84px]" style={{ borderRadius: 14, background: t.colors.bgAlt, border: `2px solid ${i === imageIndex ? t.colors.ink : 'transparent'}` }}>
-                          <img src={src} alt="" loading="lazy" className="size-full object-cover" />
+                          <img {...imgProps(src, [160, 240], '84px')} alt="" loading="lazy" className="size-full object-cover" />
                         </button>
                       ))}
                     </div>
@@ -219,21 +235,22 @@ function ProductPageInner({ slug }: { slug: string }) {
               const node = info[item.type]?.(item.settings);
               return node ? <div key={item.key}>{node}</div> : null;
             })}
+            {t.showDelivery && !isDigital && <ProductDelivery storeId={store.storeId} />}
           </div>
         </div>
       </div>
 
-      <section id="fx-reviews" style={{ background: t.colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+      {t.showReviews && <section id="fx-reviews" style={{ background: t.colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-          <h2 className="m-0 mb-8 text-[clamp(24px,3vw,36px)] font-semibold tracking-tight">Customer reviews</h2>
+          <h2 className="m-0 mb-8 text-[clamp(24px,3vw,36px)] font-semibold tracking-tight">{tr('reviews.title', 'Customer reviews')}</h2>
           {!reviews || reviews.reviews.length === 0 ? (
-            <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{reviews ? 'No reviews yet. Buyers can leave one from their account after receiving this product.' : 'Loading reviews…'}</p>
+            <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{reviews ? tr('reviews.noneYet', 'No reviews yet. Buyers can leave one from their account after receiving this product.') : tr('reviews.loadingReviews', 'Loading reviews…')}</p>
           ) : (
             <div className="grid gap-8 lg:grid-cols-12">
               <div className="lg:col-span-4">
                 <p className="m-0 text-5xl font-semibold">{reviews.stats.averageRating.toFixed(1)}</p>
                 <div className="mt-2">{stars(reviews.stats.averageRating, 18)}</div>
-                <p className="m-0 mt-2 text-sm" style={{ color: t.colors.inkMuted }}>{reviews.stats.totalReviews} reviews</p>
+                <p className="m-0 mt-2 text-sm" style={{ color: t.colors.inkMuted }}>{tr('reviews.count', '{{count}} reviews', { count: reviews.stats.totalReviews })}</p>
                 <div className="mt-5 flex flex-col gap-2">
                   {(['5', '4', '3', '2', '1'] as const).map(k => {
                     const n = reviews.stats.ratingBreakdown[k] ?? 0;
@@ -245,19 +262,19 @@ function ProductPageInner({ slug }: { slug: string }) {
               <ul className="m-0 flex list-none flex-col gap-4 p-0 lg:col-span-8">
                 {reviews.reviews.map(r => (
                   <li key={r.reviewId} className="p-5 md:p-6" style={{ background: t.colors.bg, borderRadius: 20 }}>
-                    <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">{r.rating != null && stars(r.rating)}<span className="text-sm font-semibold">{r.customerName}</span>{r.isVerifiedPurchase && <span className="text-xs" style={{ color: t.colors.success }}>Verified purchase</span>}<span className="text-xs" style={{ color: t.colors.inkMuted }}>{new Date(r.createdAt).toLocaleDateString()}</span></div>
+                    <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">{r.rating != null && stars(r.rating)}<span className="text-sm font-semibold">{r.customerName}</span>{r.isVerifiedPurchase && <span className="text-xs" style={{ color: t.colors.success }}>{tr('reviews.verified', 'Verified purchase')}</span>}<span className="text-xs" style={{ color: t.colors.inkMuted }}>{new Date(r.createdAt).toLocaleDateString()}</span></div>
                     {r.comments.map((c, i) => <p key={i} className="m-0 text-[15px] leading-relaxed" style={{ color: t.colors.inkMuted }}>{c.text}</p>)}
-                    {r.sellerReply && <p className="m-0 mt-3 rounded-xl px-4 py-3 text-sm" style={{ background: t.colors.bgAlt }}><strong>Reply from {store.name}:</strong> {r.sellerReply.text}</p>}
+                    {r.sellerReply && <p className="m-0 mt-3 rounded-xl px-4 py-3 text-sm" style={{ background: t.colors.bgAlt }}><strong>{tr('reviews.replyFrom', 'Reply from {{store}}:', { store: store.name })}</strong> {r.sellerReply.text}</p>}
                   </li>
                 ))}
               </ul>
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
       {after.length > 0 && <FashionSectionRenderer sections={after} />}
-      <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? 'Sold out' : pre ? 'Pre-order' : 'Add to cart'} />
+      {t.stickyBuyBar && <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : tr('product.addToCart', 'Add to cart')} />}
       {zoom && <FashionImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>
   );

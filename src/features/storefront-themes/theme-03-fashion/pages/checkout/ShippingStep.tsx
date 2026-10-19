@@ -1,4 +1,5 @@
 import { Store, Truck } from 'lucide-react';
+import { ts } from '@/utils/tStatic';
 import { fashionTheme as t } from '../../theme.config';
 import { ErrorState, Notice, SkeletonBlock } from '../../ui/primitives';
 import { RadioRow, StepCard } from './CheckoutParts';
@@ -17,7 +18,7 @@ interface RowsProps {
 
 function ShipRows({ name, options, current, onPick, priceText }: RowsProps) {
   return (
-    <div role="radiogroup" aria-label="Delivery options" className="flex flex-col gap-3">
+    <div role="radiogroup" aria-label={ts('checkout.deliveryOptions', 'Delivery options')} className="flex flex-col gap-3">
       {options.map(o => (
         <RadioRow key={o._id} name={name} checked={current === o._id} onChange={() => onPick(o._id)} label={`${o.label}, ${priceText(o)}`}>
           <div className="flex items-start justify-between gap-3">
@@ -51,9 +52,9 @@ interface Props {
 export function ShippingStep({ step, ship, priceText, dutiesNotice, addressReady }: Props) {
   let body;
   if (ship.loading) body = <SkeletonBlock h={68} rows={2} />;
-  else if (ship.error && ship.options.length === 0) body = <ErrorState message="We could not load delivery options." onRetry={ship.retry} />;
+  else if (ship.error && ship.options.length === 0) body = <ErrorState message={ts('checkout.deliveryLoadError', 'We could not load delivery options.')} onRetry={ship.retry} />;
   else if (ship.options.length === 0) {
-    body = <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ship.noMatching ? "Sorry, this store doesn't currently ship to your address's country." : 'No delivery options are available yet.'}</p>;
+    body = <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ship.noMatching ? ts('checkout.noShipToCountry', "Sorry, this store doesn't currently ship to your address's country.") : ts('checkout.noDeliveryYet', 'No delivery options are available yet.')}</p>;
   } else if (!ship.multiGroup) {
     body = <ShipRows name="shipping-rate" options={ship.options} current={ship.singleId} onPick={ship.select} priceText={priceText} />;
   } else {
@@ -65,7 +66,7 @@ export function ShippingStep({ step, ship, priceText, dutiesNotice, addressReady
             <div key={g.groupKey} className="flex flex-col gap-3">
               <h3 className="m-0 text-sm font-semibold">Shipping: {g.name}</h3>
               {options.length === 0
-                ? <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>No delivery option is available for these items to your address.</p>
+                ? <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.noDeliveryForItems', 'No delivery option is available for these items to your address.')}</p>
                 : <ShipRows name={`shipping-${g.groupKey}`} options={options} current={ship.picks[g.groupKey]} onPick={id => ship.setPick(g.groupKey, id)} priceText={priceText} />}
             </div>
           );
@@ -77,8 +78,8 @@ export function ShippingStep({ step, ship, priceText, dutiesNotice, addressReady
     <StepCard step={step} title="Delivery" done={ship.chosen && addressReady}>
       <div className="flex flex-col gap-4" aria-live="polite">
         {body}
-        {ship.liveLoading && ship.options.length > 0 && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>Checking carrier rates...</p>}
-        {dutiesNotice && <Notice>Duties and import taxes are not included in your total. You may be charged by the carrier on delivery.</Notice>}
+        {ship.liveLoading && ship.options.length > 0 && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{ts('checkout.checkingRates', 'Checking carrier rates...')}</p>}
+        {dutiesNotice && <Notice>{ts('checkout.duties', 'Duties and import taxes are not included in your total. You may be charged by the carrier on delivery.')}</Notice>}
       </div>
     </StepCard>
   );

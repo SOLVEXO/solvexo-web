@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Package } from 'lucide-react';
 import type { OrderDetail } from '@/api/services/orders';
 import { fashionTheme as t } from '../../theme.config';
@@ -38,7 +39,7 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
         <OrderShipments order={order} />
 
         <Card pad={false}>
-          <div className="p-5 pb-0 md:px-7 md:pt-6"><SectionHeading>Items</SectionHeading></div>
+          <div className="p-5 pb-0 md:px-7 md:pt-6"><SectionHeading>{ts('orders.items', 'Items')}</SectionHeading></div>
           <ul className="m-0 list-none p-0">
             {lines.map((item, i) => {
               const hint = account ? returnNextStepHint(item.returnStatus) : null;
@@ -54,7 +55,7 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
                     {item.options && item.options.length > 0 && <p className="m-0 mt-0.5 text-[13px]" style={muted}>{item.options.map(o => `${o.name}: ${o.value}`).join(' / ')}</p>}
                     <p className="m-0 mt-0.5 text-[13px]" style={muted}>{money(item.price)} x {item.quantity}</p>
                     {(item.refundedAmount ?? 0) > 0 && !(account && item.exchangeOrderId) && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>Refunded {money(item.refundedAmount ?? 0)}</p>}
-                    {item.status === 'cancelled' && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>Cancelled</p>}
+                    {item.status === 'cancelled' && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>{ts('order.cancelled', 'Cancelled')}</p>}
                   </div>
                   <p className="m-0 shrink-0 text-[15px] font-semibold">{money(item.totalPrice)}</p>
                   {hasExtras && (
@@ -73,9 +74,9 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
         {actions}
       </div>
 
-      <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24 lg:col-span-4" aria-label="Order details">
+      <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24 lg:col-span-4" aria-label={ts('pg.order_details', 'Order details')}>
         <Card tone="soft">
-          <SectionHeading>Order summary</SectionHeading>
+          <SectionHeading>{ts('cart.summaryTitle', 'Order summary')}</SectionHeading>
           <dl className="m-0 flex flex-col gap-2.5">
             {row('Subtotal', money(orderDisplaySubtotal(order)))}
             {promoSavings > 0 && <p className="m-0 text-xs" style={muted}>Includes {money(promoSavings)} in promotional savings</p>}
@@ -90,18 +91,18 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
 
         {isPickupOrder(order) ? <OrderPickupLocation order={order} /> : (
           <Card>
-            <SectionHeading>Shipping address</SectionHeading>
+            <SectionHeading>{ts('orders.shippingAddress', 'Shipping address')}</SectionHeading>
             {addr.name || addr.lines.length > 0 ? (
               <address className="text-sm not-italic leading-relaxed">
                 {addr.name && <p className="m-0 font-medium">{addr.name}</p>}
                 {addr.lines.map(l => <p key={l} className="m-0" style={muted}>{l}</p>)}
               </address>
-            ) : <p className="m-0 text-sm" style={muted}>No shipping address.</p>}
+            ) : <p className="m-0 text-sm" style={muted}>{ts('orders.noShippingAddress', 'No shipping address.')}</p>}
           </Card>
         )}
 
         <Card>
-          <SectionHeading>Payment</SectionHeading>
+          <SectionHeading>{ts('orders.payment', 'Payment')}</SectionHeading>
           <p className="m-0 mb-3 text-sm">{method || '-'}</p>
           <OrderPill badge={derivePaymentBadge(order)} />
         </Card>

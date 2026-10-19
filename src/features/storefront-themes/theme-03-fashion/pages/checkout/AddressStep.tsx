@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Plus } from 'lucide-react';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import type { AddressPayload } from '@/api/services/address';
@@ -29,9 +30,9 @@ function AddressForm({ book }: { book: Book }) {
   };
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-4" aria-label="New delivery address">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-4" aria-label={ts('checkout.deliveryAddressAria', 'New delivery address')}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Full name" required error={errors.recipientName}>
+        <Field label={ts('checkout.fullName', 'Full name')} required error={errors.recipientName}>
           {p => <TextInput {...p} autoComplete="name" value={form.recipientName} onChange={e => set('recipientName', e.target.value)} invalid={!!errors.recipientName} />}
         </Field>
         <Field label="Phone" required error={errors.phoneNumber}>
@@ -41,7 +42,7 @@ function AddressForm({ book }: { book: Book }) {
       <Field label="Country" required error={errors.country}>
         {p => (
           <SelectInput {...p} autoComplete="country-name" value={form.country ?? ''} onChange={e => set('country', e.target.value)} invalid={!!errors.country}>
-            <option value="" disabled>Select a country</option>
+            <option value="" disabled>{ts('checkout.selectCountryPrompt', 'Select a country')}</option>
             {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
           </SelectInput>
         )}
@@ -59,14 +60,14 @@ function AddressForm({ book }: { book: Book }) {
         <Field label="State / province" required error={errors.state}>
           {p => <TextInput {...p} autoComplete="address-level1" value={form.state} onChange={e => set('state', e.target.value)} invalid={!!errors.state} />}
         </Field>
-        <Field label="Postal code" required error={errors.zipCode}>
+        <Field label={ts('checkout.postalCode', 'Postal code')} required error={errors.zipCode}>
           {p => <TextInput {...p} autoComplete="postal-code" value={form.zipCode} onChange={e => set('zipCode', e.target.value)} invalid={!!errors.zipCode} />}
         </Field>
       </div>
       {book.saveError && <Notice tone="error">{book.saveError}</Notice>}
       <div className="flex flex-wrap items-center gap-4">
-        <PillButton type="submit" loading={book.saving}>Save address</PillButton>
-        {book.canCancelForm && <TextLinkButton onClick={book.closeForm} disabled={book.saving}>Cancel</TextLinkButton>}
+        <PillButton type="submit" loading={book.saving}>{ts('checkout.saveAddressBtn', 'Save address')}</PillButton>
+        {book.canCancelForm && <TextLinkButton onClick={book.closeForm} disabled={book.saving}>{ts('common.cancel', 'Cancel')}</TextLinkButton>}
       </div>
     </form>
   );
@@ -78,22 +79,22 @@ export function AddressStep({ step, book, pickup }: Props) {
   const done = pickup || (!!book.selected && !book.showForm);
   let body;
   if (pickup) {
-    body = <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>No delivery address needed - you will collect this order at the pickup location chosen below.</p>;
+    body = <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.noAddressNeededPickup', 'No delivery address needed - you will collect this order at the pickup location chosen below.')}</p>;
   } else if (book.loading) {
     body = <SkeletonBlock h={72} rows={2} />;
   } else if (book.showForm) {
     body = (
       <div className="flex flex-col gap-4">
-        {book.error && <Notice tone="error" action={<TextLinkButton onClick={book.retry}>Retry</TextLinkButton>}>We could not load your saved addresses. You can still add a new one.</Notice>}
+        {book.error && <Notice tone="error" action={<TextLinkButton onClick={book.retry}>{ts('cart.retry', 'Retry')}</TextLinkButton>}>{ts('checkout.savedAddressesLoadFailedHint', 'We could not load your saved addresses. You can still add a new one.')}</Notice>}
         <AddressForm book={book} />
       </div>
     );
   } else if (book.error) {
-    body = <ErrorState message="We could not load your saved addresses." onRetry={book.retry} />;
+    body = <ErrorState message={ts('checkout.savedAddressesLoadFailed', 'We could not load your saved addresses.')} onRetry={book.retry} />;
   } else {
     body = (
       <div className="flex flex-col gap-3">
-        <div role="radiogroup" aria-label="Saved addresses" className="flex flex-col gap-3">
+        <div role="radiogroup" aria-label={ts('checkout.savedAddresses', 'Saved addresses')} className="flex flex-col gap-3">
           {book.list.map(a => (
             <RadioRow key={a._id} name="delivery-address" checked={book.selected?._id === a._id} onChange={() => book.select(a._id)} label={`${a.recipientName}, ${a.addressLine1}, ${a.city}`}>
               <p className="m-0 text-sm font-medium">{a.recipientName} <span style={{ color: t.colors.inkMuted, fontWeight: 400 }}>- {a.phoneNumber}</span></p>
@@ -104,7 +105,7 @@ export function AddressStep({ step, book, pickup }: Props) {
           ))}
         </div>
         {book.selected && !book.selected.country && (
-          <Notice tone="error">This address has no country, so delivery options cannot be matched. Add it again with a country.</Notice>
+          <Notice tone="error">{ts('checkout.addressNoCountry', 'This address has no country, so delivery options cannot be matched. Add it again with a country.')}</Notice>
         )}
         <div>
           <button type="button" onClick={book.openForm} className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-medium" style={{ color: t.colors.ink }}>
@@ -114,5 +115,5 @@ export function AddressStep({ step, book, pickup }: Props) {
       </div>
     );
   }
-  return <StepCard step={step} title="Delivery address" done={done}>{body}</StepCard>;
+  return <StepCard step={step} title={ts('checkout.deliveryAddressTitle', 'Delivery address')} done={done}>{body}</StepCard>;
 }

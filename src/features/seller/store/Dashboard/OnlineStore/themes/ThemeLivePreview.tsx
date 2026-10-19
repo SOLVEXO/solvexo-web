@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { InlineEditProvider } from '@/features/storefront-themes/inlineEdit';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementBar as StoreAnnouncementBarValue } from '@/api/services/store';
 import type { StoreThemeData } from '@/api/services/storeTheme';
@@ -94,7 +95,10 @@ function ChromeTarget({ part, selected, onSelect, children }: { part: PreviewChr
 const CHROME_CSS = '.editor-chrome-target{outline:2px solid transparent;outline-offset:-2px;cursor:pointer;transition:outline-color 120ms ease}'
   + '.editor-chrome-target:hover{outline-color:rgba(217,119,87,0.45)}'
   + '.editor-chrome-selected,.editor-chrome-selected:hover{outline-color:#D97757}'
-  + '[data-editor-hover="1"]{outline:2px dashed rgba(217,119,87,0.8)!important;outline-offset:-2px}';
+  + '[data-editor-hover="1"]{outline:2px dashed rgba(217,119,87,0.8)!important;outline-offset:-2px}'
+  + '[data-inline-edit]{cursor:text;outline:1px dashed transparent;outline-offset:3px;border-radius:2px}'
+  + '[data-inline-edit]:hover{outline-color:rgba(217,119,87,.7)}'
+  + '[data-inline-edit]:focus{outline:2px solid #D97757;background:rgba(217,119,87,.08)}';
 
 export type AnnouncementBarPreviewValue = Omit<StoreAnnouncementBarValue, 'isActive' | 'startAt' | 'endAt' | 'preset'>;
 
@@ -159,8 +163,10 @@ export type AnnouncementBarPreviewValue = Omit<StoreAnnouncementBarValue, 'isAct
  *  in that section's markup can fire, and reports the section id instead. */
 export function ThemeLivePreview({
   sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
-  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId,
+  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText,
 }: {
+  /** Click-to-type headlines in the preview (editor only). */
+  onEditText?: (sectionId: string, blockId: string | null, key: string, value: string) => void;
   /** Which header/footer part is selected (editor only). */
   selectedChrome?: PreviewChromePart | null;
   /** Makes the header, footer and announcement bar clickable (editor only). */
@@ -307,7 +313,6 @@ export function ThemeLivePreview({
                 ],
               }
             : footer,
-          customCss: draftTheme.draft?.customCss ?? draftTheme.customCss,
         };
       })()
     : null;
@@ -326,7 +331,6 @@ export function ThemeLivePreview({
   // `theme` fields only if a draft was never created (matches every other
   // scope's "draft defaults to a copy of live" convention).
   applyMerchantThemeOverrides(draftTheme?.draft?.theme ?? draftTheme?.theme ?? null);
-  const previewCustomCss = draftTheme?.draft?.customCss ?? draftTheme?.customCss ?? null;
 
   // Same ordering as the real storefront chrome (`FashionLayout`):
   // navbar first, announcement bar directly under it — kept identical so the
@@ -354,13 +358,15 @@ export function ThemeLivePreview({
       : node
   );
 
+  // Header / footer text becomes click-to-type in the editor (same mechanism as the section headlines).
+  const withEdit = (part: 'header' | 'footer', node: ReactNode) => (interactive && onEditText ? <InlineEditProvider sectionId={part} onEdit={onEditText}>{node}</InlineEditProvider> : node);
+
   const body = (
     <StorefrontProvider value={contextValue}>
       <div ref={rootRef} style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: 'none' }}>
-        {previewCustomCss && <style>{previewCustomCss}</style>}
         {chromeSelectable && <style>{CHROME_CSS}</style>}
         {showChrome && announcementBar?.placement === 'above' && chrome('announcement', previewAnnouncement)}
-        {showChrome && chrome('header', <Navbar />)}
+        {showChrome && chrome('header', withEdit('header', <Navbar />))}
         {showChrome && announcementBar?.placement !== 'above' && chrome('announcement', previewAnnouncement)}
         <div style={{ pointerEvents: interactive ? 'auto' : 'none' }}>
           <SectionRenderer
@@ -370,11 +376,12 @@ export function ThemeLivePreview({
             onSelectSection={onSelectSection}
             selectedBlockId={selectedBlockId}
             onSelectBlock={onSelectBlock}
+            onEditText={interactive ? onEditText : undefined}
             previewContext={previewContext}
             dynamicSourceValues={dynamicSourceValues}
           />
         </div>
-        {showChrome && chrome('footer', <Footer />)}
+        {showChrome && chrome('footer', withEdit('footer', <Footer />))}
       </div>
     </StorefrontProvider>
   );

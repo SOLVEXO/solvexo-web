@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { focalOf } from '../../../imageFit';
 import { fashionTheme as t } from '../../theme.config';
+import { EditableText } from '../../../inlineEdit';
 import { LinkButton } from '../SectionShell';
 import type { SharedSectionProps } from './types';
 
@@ -26,9 +27,9 @@ export function ImageBannerSection({ section, colors }: SharedSectionProps) {
             style={adapt ? { display: 'block', width: '100%', height: 'auto' } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focalOf(s.focalPoint) }} />
         )}
         {hasImage && overlay > 0 && <div aria-hidden className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlay / 100})` }} />}
-        <div className="flex flex-col gap-4 p-8 md:p-14" style={{ position: adapt ? 'absolute' : 'relative', inset: adapt ? 0 : undefined, minHeight: adapt ? undefined : 'inherit', justifyContent: justify, alignItems, textAlign: align, color: textColor }}>
-          {s.heading && <h2 className="m-0 max-w-[720px] text-[clamp(30px,5vw,60px)] font-medium leading-[1.05] tracking-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
-          {s.subheading && <p className="m-0 max-w-[560px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}>{s.subheading}</p>}
+        <div className={`${hasImage ? 'fx-on-image ' : ''}flex flex-col gap-4 p-8 md:p-14`} style={{ position: adapt ? 'absolute' : 'relative', inset: adapt ? 0 : undefined, minHeight: adapt ? undefined : 'inherit', justifyContent: justify, alignItems, textAlign: align, color: textColor }}>
+          {s.heading && <h2 className="m-0 max-w-[720px] text-[clamp(30px,5vw,60px)] font-medium leading-[1.05] tracking-tight" style={{ fontFamily: t.fonts.display }}><EditableText value={s.heading} settingKey="heading" /></h2>}
+          {s.subheading && <p className="m-0 max-w-[560px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" /></p>}
           <LinkButton text={s.ctaText} link={s.ctaLink} variant={hasImage && !s.textColor ? 'light' : 'primary'} />
         </div>
       </div>

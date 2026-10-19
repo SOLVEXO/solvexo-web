@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { MessageCircle } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { apiStartConversation } from '@/api/services/messaging';
@@ -15,8 +16,8 @@ import { useLoad } from '../../core/pageHooks';
 function StoreChat() {
   const { store } = useStorefront();
   const { data, loading, error, retry } = useLoad(() => apiStartConversation({ storeId: store.storeId }), [store.storeId]);
-  if (loading) return <div role="status" aria-label="Opening chat"><SkeletonBlock h={520} /></div>;
-  if (error || !data) return <ErrorState message="We couldn't open your chat with the store." onRetry={retry} />;
+  if (loading) return <div role="status" aria-label={ts('pg.opening_chat', 'Opening chat')}><SkeletonBlock h={520} /></div>;
+  if (error || !data) return <ErrorState message={ts('pg.we_couldn_t_open_your_chat_with_the_stor', 'We couldn\'t open your chat with the store.')} onRetry={retry} />;
   return <ChatPanel key={data._id} conversation={data} storeId={store.storeId} storeName={store.name} storeLogo={store.logo} />;
 }
 
@@ -27,10 +28,10 @@ export function FashionMessagesPage() {
   useStorefrontSeo({ title: 'Messages', noindex: true });
   const signedIn = TokenStorage.isLoggedIn();
   return (
-    <AccountLayout title="Message" accent={store.name} subtitle="Questions about a product or an order? Chat with us directly.">
+    <AccountLayout title={ts('gift.message', 'Message')} accent={store.name} subtitle="Questions about a product or an order? Chat with us directly.">
       {guest ? null : !signedIn ? (
-        <EmptyState icon={<MessageCircle size={24} aria-hidden />} title="Sign in to chat with us" text="Your conversation is saved to your account so you can pick it up on any device."
-          action={<Link to="/login?redirect=%2Fmessages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Sign in</Link>} />
+        <EmptyState icon={<MessageCircle size={24} aria-hidden />} title={ts('pg.sign_in_to_chat_with_us', 'Sign in to chat with us')} text={ts('pg.your_conversation_is_saved_to_your_accou', 'Your conversation is saved to your account so you can pick it up on any device.')}
+          action={<Link to="/login?redirect=%2Fmessages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />
       ) : <StoreChat />}
     </AccountLayout>
   );

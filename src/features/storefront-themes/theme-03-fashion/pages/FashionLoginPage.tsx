@@ -1,4 +1,5 @@
 ﻿import { useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useLogin } from '@/hooks/auth/useLogin';
 import { useStorefrontSocialLogin } from '@/hooks/auth/useStorefrontSocialLogin';
@@ -30,14 +31,14 @@ export function FashionLoginPage() {
   };
 
   return (
-    <AuthShell title="Welcome" accent="back" subtitle="Track orders, save your details and check out faster."
-      footer={<>New here? <Link to={withRedirect('/register', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>Create an account</Link></>}>
+    <AuthShell title={ts('pg.welcome', 'Welcome')} accent={ts('pg.word_back', 'back')} subtitle="Track orders, save your details and check out faster."
+      footer={<>{ts('auth.newHere', 'New here?')} <Link to={withRedirect('/register', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('auth.createAnAccount', 'Create an account')}</Link></>}>
       {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate={false}>
-        <Field label="Email" required>{p => <TextInput {...p} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />}</Field>
-        <Field label="Password" required>{p => <PasswordInput {...p} required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />}</Field>
-        <div className="-mt-1 text-right text-sm"><Link to="/forgot-password" className="font-medium underline" style={{ color: t.colors.inkMuted }}>Forgot password?</Link></div>
-        <PillButton type="submit" full loading={login.loading}>Sign in</PillButton>
+        <Field label={ts('auth.email', 'Email')} required>{p => <TextInput {...p} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />}</Field>
+        <Field label={ts('auth.password', 'Password')} required>{p => <PasswordInput {...p} required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />}</Field>
+        <div className="-mt-1 text-right text-sm"><Link to="/forgot-password" className="font-medium underline" style={{ color: t.colors.inkMuted }}>{ts('auth.forgotPassword', 'Forgot password?')}</Link></div>
+        <PillButton type="submit" full loading={login.loading}>{ts('auth.signInLink', 'Sign in')}</PillButton>
       </form>
       <SocialSignIn providers={social.providers} onStart={social.start} loading={social.loading} disabled={login.loading} dividerText="or" />
     </AuthShell>

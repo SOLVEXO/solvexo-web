@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { apiForgotPassword, apiResendOtp } from '@/api/services/auth';
 import { useToast } from '@/contexts/ToastContext';
 import { fashionTheme as t } from '../../theme.config';
@@ -31,7 +32,7 @@ export function ResendTimer({ email, storeId, isForgot }: { email: string; store
     } finally { setSending(false); }
   };
 
-  if (seconds > 0) return <span className="text-sm" style={{ color: t.colors.inkMuted }}>Resend in <b style={{ color: t.colors.ink }}>{seconds}s</b></span>;
+  if (seconds > 0) return <span className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.resend_in', 'Resend in')} <b style={{ color: t.colors.ink }}>{seconds}s</b></span>;
   return (
     <span className="flex flex-col items-center gap-1">
       <button type="button" onClick={resend} disabled={sending} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline disabled:opacity-50" style={{ color: t.colors.ink }}>{sending ? 'Sending...' : 'Resend code'}</button>

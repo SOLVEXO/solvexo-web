@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Check, Package, X } from 'lucide-react';
 import { apiRequestReturn, type OrderLineItem } from '@/api/services/orders';
 import { fashionTheme as t } from '../../theme.config';
@@ -56,18 +57,18 @@ export function ReturnItemRow({ orderId, item }: { orderId: string; item: OrderL
       {hint && <p className="m-0 mt-2 text-[13px]" style={{ color: t.colors.inkMuted }}>{hint}</p>}
       {label && status === 'approved' && (
         <div className="mt-3 rounded-2xl p-3.5" style={{ background: t.colors.bgAlt }}>
-          <a href={label.labelUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>Download return label</a>
+          <a href={label.labelUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>{ts('pg.download_return_label', 'Download return label')}</a>
           {(label.carrier || label.trackingNumber) && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.inkMuted }}>{[label.carrier, label.trackingNumber].filter(Boolean).join(' · ')}</p>}
         </div>
       )}
 
       {open && (
         <form className="mt-4 flex flex-col gap-3" onSubmit={e => { e.preventDefault(); void submit(); }} noValidate>
-          <Field label="What went wrong?" error={fieldError} required>
-            {p => <TextArea {...p} value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="Describe the issue, for example damaged or wrong item" />}
+          <Field label={ts('pg.what_went_wrong', 'What went wrong?')} error={fieldError} required>
+            {p => <TextArea {...p} value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder={ts('pg.describe_the_issue_for_example_damaged_o', 'Describe the issue, for example damaged or wrong item')} />}
           </Field>
           {submitError && <Notice tone="error">{submitError}</Notice>}
-          <div><PillButton type="submit" loading={submitting}>Submit request</PillButton></div>
+          <div><PillButton type="submit" loading={submitting}>{ts('pg.submit_request', 'Submit request')}</PillButton></div>
         </form>
       )}
     </li>

@@ -31,6 +31,7 @@ import type { VersionRow } from '../builder/VersionHistoryModal';
 import { PageSectionsEditor } from '../builder/PageSectionsEditor';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
+import { useAutosave } from '../builder/editor/useAutosave';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { ThemeLivePreview } from './ThemeLivePreview';
 import { ThemeSettingsPanel } from './ThemeSettingsPanel';
@@ -300,6 +301,33 @@ export function ThemeCustomizePage() {
     setSelectedSectionId(sectionId);
     setSelectedBlockId(blockId);
   };
+  // Header menu labels and footer headings typed straight into the preview.
+  const handleChromeEdit = (part: 'header' | 'footer', blockId: string | null, key: string, value: string) => {
+    const hd = hf.headerDraft;
+    const ft = hf.footerDraft;
+    if (!hd || !ft || !blockId) return;
+    if (part === 'header') {
+      if (hd.menuId) return;
+      const m = /^nav-(\d+)$/.exec(blockId);
+      if (!m) return;
+      const target = hd.blocks.filter(b => b.type === 'nav_link' && b.enabled !== false)[Number(m[1])];
+      if (!target) return;
+      hf.editor.edit(prev => ({ ...prev!, header: { ...hd, blocks: hd.blocks.map(b => (b === target ? { ...b, settings: { ...b.settings, [key]: value } } : b)) } }));
+    } else {
+      hf.editor.edit(prev => ({ ...prev!, footer: { ...ft, blocks: ft.blocks.map(b => (b._id === blockId ? { ...b, settings: { ...b.settings, [key]: value } } : b)) } }));
+    }
+  };
+  // Click-to-type in the preview: writes the edited text into the draft like any other edit (undo/redo and autosave apply).
+  const handleInlineEdit = (sectionKey: string, blockId: string | null, key: string, value: string) => {
+    if (sectionKey === 'header' || sectionKey === 'footer') { handleChromeEdit(sectionKey, blockId, key, value); return; }
+    const cur = editor.workingCopy;
+    if (!cur) return;
+    editor.edit(cur.map((sec, i) => {
+      if (String(sec._id ?? i) !== sectionKey) return sec;
+      if (!blockId) return { ...sec, settings: { ...sec.settings, [key]: value } };
+      return { ...sec, blocks: (sec.blocks ?? []).map((b, bi) => String(b._id ?? bi) === blockId ? { ...b, settings: { ...b.settings, [key]: value } } : b) };
+    }));
+  };
   const selectChrome = (part: PreviewChromePart | null) => {
     if (part) setMobilePane('edit');
     setSelectedChrome(part);
@@ -504,15 +532,17 @@ export function ThemeCustomizePage() {
     }
   };
 
-  const handleSave = async () => {
+  // `silent` = autosave: no success toast, and no complaint while a template is still loading.
+  const handleSave = async (_event?: unknown, silent = false) => {
     if (!editor.workingCopy) return;
-    if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
+    if (templateSwitchPending) { if (!silent) flash(false, 'Template is still loading — try again in a moment.'); return; }
     // Header/footer are their own (theme) draft — saved on their own so a
     // template save problem never loses them.
     if (hf.editor.dirty) {
       try { await hf.save(); } catch (err) { flash(false, err instanceof Error ? err.message : 'Failed to save the header/footer.'); return; }
     }
     if (!editor.dirty) {
+      if (silent) return;
       flash(true, hf.announcementDirty ? 'Draft saved. Your announcement bar changes go live when you Publish.' : 'Draft saved — Publish to make it live.');
       return;
     }
@@ -528,7 +558,7 @@ export function ThemeCustomizePage() {
         setActiveTemplate(res.data);
         editor.markSaved(res.data.draft.sections);
       }
-      flash(true, hf.announcementDirty
+      if (!silent) flash(true, hf.announcementDirty
         ? 'Draft saved. Your announcement bar changes go live when you Publish.'
         : 'Draft saved — Publish to make it live.');
     } catch (err) {
@@ -537,6 +567,14 @@ export function ThemeCustomizePage() {
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
     }
   };
+
+  const autosaveBusy = editor.phase === 'saving' || editor.phase === 'publishing' || hf.editor.phase === 'saving' || hf.editor.phase === 'publishing';
+  const autosaveFailed = editor.phase === 'error' || hf.editor.phase === 'error';
+  useAutosave({
+    active: scope !== 'theme' && (editor.dirty || hf.editor.dirty) && !autosaveBusy && !autosaveFailed,
+    version: [editor.workingCopy, hf.editor.workingCopy],
+    save: () => { void handleSave(undefined, true); },
+  });
 
   const handlePersist = async (next: Section[]) => {
     // Real bug found in Phase 11 QA: `onChange(next)` (the caller's own
@@ -1078,6 +1116,8 @@ export function ThemeCustomizePage() {
               onSelectSection={selectPreviewSection}
               onSelectBlock={selectPreviewBlock}
               supportedSectionTypes={effectiveSupportedSectionTypes}
+              layoutThemeId={draftTheme?.themeDefinitionId ?? DEFAULT_THEME_ID}
+              layoutScope={scope}
               colorSchemes={draftTheme?.draft?.theme?.colorSchemes ?? draftTheme?.theme.colorSchemes ?? []}
               helperText={SCOPE_HELPER_TEXT[scope]}
               installedApps={installedApps}
@@ -1099,6 +1139,7 @@ export function ThemeCustomizePage() {
                   onSelectSection={selectPreviewSection}
                   selectedBlockId={selectedBlockId}
                   onSelectBlock={selectPreviewBlock}
+                  onEditText={handleInlineEdit}
                   previewContext={previewContext}
                   dynamicSourceValues={dynamicSourceValues}
                   previewCollectionId={needsCollectionPicker ? selectedCollectionId : null}

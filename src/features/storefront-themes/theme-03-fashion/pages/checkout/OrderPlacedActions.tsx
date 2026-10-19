@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiGetOrderStatusLink } from '@/api/services/orders';
 import { fashionTheme as t } from '../../theme.config';
@@ -17,7 +18,7 @@ export function OrderPlacedActions({ orderId, guestEmail }: { orderId: string | 
       const res = await apiGetOrderStatusLink(orderId);
       navigate(`/order-status/${encodeURIComponent(res.data.token)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open the order status page.');
+      setError(err instanceof Error ? err.message : ts('checkout.orderStatusOpenError', 'Could not open the order status page.'));
     } finally { setBusy(false); }
   };
 
@@ -25,11 +26,11 @@ export function OrderPlacedActions({ orderId, guestEmail }: { orderId: string | 
     <div className="flex flex-col items-center gap-3">
       {guestEmail !== null && (
         <p className="m-0 max-w-[460px] text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>
-          {guestEmail ? <>A confirmation was sent to <strong style={{ color: t.colors.ink }}>{guestEmail}</strong>. </> : null}
-          <Link to="/register" className="font-semibold underline" style={{ color: t.colors.ink }}>Create an account</Link> with this email to track all your orders.
+          {guestEmail ? <>{ts('checkout.confirmationSentTo', 'A confirmation was sent to')} <strong style={{ color: t.colors.ink }}>{guestEmail}</strong>. </> : null}
+          <Link to="/register" className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('checkout.createAccount', 'Create an account')}</Link> {ts('checkout.createAccountRest', 'with this email to track all your orders.')}
         </p>
       )}
-      {orderId && <PillButton variant="outline" loading={busy} onClick={open}>{busy ? 'Opening…' : 'View order status'}</PillButton>}
+      {orderId && <PillButton variant="outline" loading={busy} onClick={open}>{busy ? ts('checkout.opening', 'Opening…') : ts('checkout.viewOrderStatus', 'View order status')}</PillButton>}
       {error && <p role="alert" className="m-0 text-[13px]" style={{ color: t.colors.danger }}>{error}</p>}
     </div>
   );

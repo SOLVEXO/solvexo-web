@@ -1,4 +1,5 @@
 import { fashionTheme as t } from '../../theme.config';
+import { ts } from '@/utils/tStatic';
 import type { OrderDetail } from '@/api/services/orders';
 import { buildOrderTimeline } from '../../../orderUi';
 
@@ -7,7 +8,7 @@ export function OrderTimeline({ order }: { order: OrderDetail }) {
   const steps = buildOrderTimeline(order);
   const cancelled = order.orderStatus === 'cancelled';
   return (
-    <ol aria-label="Order status" className="m-0 grid list-none gap-2 p-0" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
+    <ol aria-label={ts('orders.statusAria', 'Order status')} className="m-0 grid list-none gap-2 p-0" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
       {steps.map((step, i) => {
         const bad = cancelled && i === steps.length - 1;
         const color = bad ? t.colors.danger : step.done ? t.colors.ink : t.colors.border;

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { EditableText } from '../../../inlineEdit';
 import { useTranslation } from 'react-i18next';
 import { Fragment, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -168,11 +169,11 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
           </>
         );
       case 'footer_column':
-        return fold(id, s.heading, linkList((s.links ?? []).map((l: StorefrontLinkSettings & { label: string; labelTranslations?: Record<string, string | undefined> | null }, j: number) => (
+        return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, linkList((s.links ?? []).map((l: StorefrontLinkSettings & { label: string; labelTranslations?: Record<string, string | undefined> | null }, j: number) => (
           <NavAnchor key={j} link={resolveLink(l)} className={linkCls} style={link}>{localizeMenuItemLabel(l, locale)}</NavAnchor>
         ))));
       case 'footer_text':
-        return fold(id, s.heading, <p style={{ ...body, whiteSpace: 'pre-line' }}>{s.text}</p>);
+        return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, <p style={{ ...body, whiteSpace: 'pre-line' }}>{s.text}</p>);
       case 'footer_contact':
         return fold(id, s.heading || 'Contact', <FooterContact settings={s} tokens={parts} />);
       case 'footer_image':
@@ -186,7 +187,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
         if (opts.newsletterTop) return null;
         return (
           <>
-            <p style={heading}>{s.heading || k.newsletterHeading}</p>
+            <p style={heading}>{b._id && !opts.mobileAccordion ? <EditableText value={s.heading || k.newsletterHeading} settingKey="heading" blockId={b._id} /> : (s.heading || k.newsletterHeading)}</p>
             {s.text && <p style={{ ...body, marginBottom: 12 }}>{s.text}</p>}
             <NewsletterForm k={k} id={`${k.idPrefix}-footer-newsletter-${i}`} />
           </>

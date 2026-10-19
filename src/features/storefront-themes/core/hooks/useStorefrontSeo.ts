@@ -27,6 +27,19 @@ export function useStorefrontSeo({ title, description, image, noindex }: { title
     meta('property', 'og:description', desc || null);
     meta('property', 'og:image', image ?? store.logo ?? null);
     meta('name', 'robots', noindex ? 'noindex, nofollow' : null);
+    meta('property', 'og:site_name', storeName);
+    meta('property', 'og:type', 'website');
+    meta('property', 'og:url', `${window.location.origin}${window.location.pathname}`);
+    meta('name', 'twitter:card', (image ?? store.logo) ? 'summary_large_image' : 'summary');
+    meta('name', 'twitter:title', full);
+    meta('name', 'twitter:description', desc || null);
+    // One canonical address per page (no query string), so filters and tracking parameters never split the page's ranking.
+    let canon = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const canonCreated = !canon;
+    const canonBefore = canon?.href ?? null;
+    if (!canon) { canon = document.createElement('link'); canon.rel = 'canonical'; document.head.appendChild(canon); }
+    canon.href = `${window.location.origin}${window.location.pathname}`;
+    restore.push(() => { if (canonCreated) canon!.remove(); else if (canonBefore !== null) canon!.href = canonBefore; });
     return () => { document.title = previousTitle; restore.forEach(fn => fn()); };
   }, [title, description, image, noindex, storeName, fallbackDescription, store.logo]);
 }

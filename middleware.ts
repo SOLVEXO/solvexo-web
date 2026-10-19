@@ -7,13 +7,15 @@ const SEO_API_ORIGIN = 'https://api.solvexo.store';
 export default function middleware(request: Request) {
   const hostname = request.headers.get('host')?.split(':')[0]?.toLowerCase();
   const pathname = new URL(request.url).pathname;
-  const crawlerFile = pathname === '/robots.txt' || pathname === '/sitemap.xml' || /^\/sitemap-\d+\.xml$/.test(pathname);
+  const crawlerFile = pathname === '/robots.txt' || pathname === '/products.json' || pathname === '/sitemap.xml' || /^\/sitemap-\d+\.xml$/.test(pathname);
   if (crawlerFile && hostname && isStorefrontHost(hostname)) {
     const target = new URL(`${SEO_API_ORIGIN}/api/storefront-seo${pathname}`);
+    new URL(request.url).searchParams.forEach((value, key) => { if (key !== 'host') target.searchParams.set(key, value); });
     target.searchParams.set('host', hostname);
     return rewrite(target);
   }
-  if (!hostname || isPlatformHost(hostname) || hostname.endsWith('.vercel.app') || hostname === 'localhost' || pathname.startsWith('/api/') || pathname.startsWith('/assets/') || pathname === '/favicon.ico') {
+  if (pathname.startsWith('/_solvexo/')) return next(); // platform marker script — must never be rewritten to the HTML shell
+  if (!hostname || isPlatformHost(hostname) || hostname.endsWith('.vercel.app') || hostname === 'localhost' || pathname.startsWith('/api/') || pathname.startsWith('/assets/') || pathname === '/favicon.ico' || pathname === '/favicon.png') {
     return next();
   }
   if (pathname === '/manifest.webmanifest' || pathname === '/site.webmanifest') return next();

@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { imgProps } from '../imgProps';
+import { ts } from '@/utils/tStatic';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Download, ImageOff, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide-react';
@@ -42,7 +44,7 @@ function Thumb({ src, name }: { src?: string; name: string }) {
   if (!src || bad) {
     return <div className={`${box} grid place-items-center`} style={{ background: t.colors.bgAlt, borderRadius: t.imageRadiusPx }}><ImageOff size={20} style={{ color: t.colors.inkMuted }} /></div>;
   }
-  return <img src={src} alt={name} loading="lazy" decoding="async" onError={() => setBad(true)} className={`${box} block object-cover`} style={{ borderRadius: t.imageRadiusPx, background: t.colors.bgAlt }} />;
+  return <img {...imgProps(src, [160, 240], '96px')} alt={name} loading="lazy" onError={() => setBad(true)} className={`${box} block object-cover`} style={{ borderRadius: t.imageRadiusPx, background: t.colors.bgAlt }} />;
 }
 
 function DrawerPanel({ onClose }: { onClose: () => void }) {
@@ -61,7 +63,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
   const subtotal = items.reduce((s, i) => s + convert(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency), 0);
   const run = (key: string, fn: () => Promise<void | boolean>) => { setBusy(key); fn().finally(() => setBusy(null)); };
 
-  const stepBtn = 'grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40';
+  const stepBtn = 'grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-40';
 
   return (
     <div className="fixed inset-0 z-[9999] flex justify-end">
@@ -76,7 +78,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
             {tr('cart.yourCart', 'Your cart')}
             {count > 0 && <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs font-semibold" style={{ background: t.colors.bgAlt }}>{count}</span>}
           </h2>
-          <button type="button" onClick={onClose} aria-label={tr('cart.closeCart', 'Close cart')} className="grid size-10 cursor-pointer place-items-center rounded-full border-0 p-0 transition-colors hover:bg-black/10" style={{ background: t.colors.bgAlt, color: t.colors.ink }}>
+          <button type="button" onClick={onClose} aria-label={tr('cart.closeCart', 'Close cart')} className="grid size-10 cursor-pointer place-items-center rounded-full border-0 p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_14%,transparent)]" style={{ background: t.colors.bgAlt, color: t.colors.ink }}>
             <X size={18} />
           </button>
         </div>
@@ -98,7 +100,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
             <span className="grid size-16 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><ShoppingBag size={26} style={{ color: t.colors.inkMuted }} /></span>
-            <p className="m-0 text-2xl font-medium tracking-tight">Your cart is <span className="fx-serif" style={{ fontSize: '1.08em' }}>empty</span></p>
+            <p className="m-0 text-2xl font-medium tracking-tight">{ts('pg.your_cart_is', 'Your cart is')} <span className="fx-serif" style={{ fontSize: '1.08em' }}>{ts('pg.word_empty', 'empty')}</span></p>
             <p className="m-0 max-w-[280px] text-sm" style={{ color: t.colors.inkMuted }}>{tr('cart.cartEmpty', 'Your cart is empty')}</p>
             <PillButton variant="outline" onClick={() => { onClose(); navigate('/#shop'); }}>{tr('cart.continueShoppingLower', 'Continue shopping')}</PillButton>
           </div>
@@ -144,7 +146,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
               })}
             </ul>
 
-            <div className="shrink-0 px-4 pb-4 sm:px-5 sm:pb-5">
+            <div className="shrink-0 px-4 pb-4 sm:px-5 sm:pb-5" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
               <div className="flex flex-col gap-3.5 p-5" style={{ background: t.colors.bgAlt, borderRadius: 24 }}>
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm">{tr('cart.subtotal', 'Subtotal')}</span>

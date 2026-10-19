@@ -6,24 +6,21 @@ import { sortAddresses } from './accountUi';
 /** Loads the buyer's saved addresses; `reload` refetches (old rows stay on screen meanwhile). */
 export function useMyAddresses() {
   const [addresses, setAddresses] = useState<Address[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // which request has finished (and how): loading/error are derived from it, never set synchronously inside the effect
+  const [done, setDone] = useState<{ attempt: number; error: string } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const reload = useCallback(() => setAttempt(a => a + 1), []);
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to loading on each (re)fetch
-    setLoading(true);
-    setError('');
     apiGetMyAddresses()
-      .then(res => { if (!cancelled) setAddresses(sortAddresses(res.data ?? [])); })
-      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load your addresses.'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .then(res => { if (!cancelled) { setAddresses(sortAddresses(res.data ?? [])); setDone({ attempt, error: '' }); } })
+      .catch(err => { if (!cancelled) setDone({ attempt, error: err instanceof Error ? err.message : 'Could not load your addresses.' }); });
     return () => { cancelled = true; };
   }, [attempt]);
 
-  return { addresses, loading, error, reload };
+  const settled = done?.attempt === attempt;
+  return { addresses, loading: !settled, error: settled ? done.error : '', reload };
 }
 
 /** Loads one page of the buyer's own reviews. */
@@ -31,28 +28,26 @@ export function useMyReviews() {
   const [reviews, setReviews] = useState<MyReviewEntry[] | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [done, setDone] = useState<{ key: string; error: string } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const reload = useCallback(() => setAttempt(a => a + 1), []);
+  const key = `${page}:${attempt}`;
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to loading on each page/refetch
-    setLoading(true);
-    setError('');
     apiGetMyReviews(page)
       .then(res => {
         if (cancelled) return;
         setReviews(res.data.reviews ?? []);
         setTotalPages(Math.max(1, res.data.pagination?.totalPages ?? 1));
+        setDone({ key, error: '' });
       })
-      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load your reviews.'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .catch(err => { if (!cancelled) setDone({ key, error: err instanceof Error ? err.message : 'Could not load your reviews.' }); });
     return () => { cancelled = true; };
-  }, [page, attempt]);
+  }, [page, key]);
 
-  return { reviews, totalPages, page, setPage, loading, error, reload };
+  const settled = done?.key === key;
+  return { reviews, totalPages, page, setPage, loading: !settled, error: settled ? done.error : '', reload };
 }
 
 export type { Address };

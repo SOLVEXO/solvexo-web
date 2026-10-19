@@ -1,4 +1,5 @@
 ﻿import { LogOut } from 'lucide-react';
+import { ts } from '@/utils/tStatic';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
@@ -25,7 +26,7 @@ export function FashionAccountPage() {
 
   return (
     <>
-      <AccountLayout title="My" accent="account" subtitle={`Your account at ${store.name}.`}
+      <AccountLayout title="My" accent={ts('pg.word_account', 'account')} subtitle={`Your account at ${store.name}.`}
         actions={<PillButton variant="outline" onClick={() => void logout('/')}><LogOut size={16} aria-hidden /> Log out</PillButton>}>
         <div className="flex flex-col gap-6">
           {loading && !profile ? <SkeletonBlock h={220} />

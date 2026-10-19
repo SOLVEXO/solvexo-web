@@ -1,4 +1,5 @@
 import PhoneInputWithCountrySelect, { isSupportedCountry, type Country } from 'react-phone-number-input';
+import { ts } from '@/utils/tStatic';
 import 'react-phone-number-input/style.css';
 import { fashionTheme as t } from '../theme.config';
 import { controlStyle } from './controlStyle';
@@ -14,7 +15,7 @@ export function PhoneField({ label = 'Phone number', value, onChange, defaultCou
     <Field label={label} required={required} error={error}>
       {p => (
         <PhoneInputWithCountrySelect id={p.id} name={name} international defaultCountry={seed} value={value || undefined} onChange={v => onChange(v ?? '')}
-          placeholder="Enter your phone number" disabled={disabled} autoComplete="tel" aria-invalid={p['aria-invalid']} aria-describedby={p['aria-describedby']}
+          placeholder={ts('pg.enter_your_phone_number', 'Enter your phone number')} disabled={disabled} autoComplete="tel" aria-invalid={p['aria-invalid']} aria-describedby={p['aria-describedby']}
           style={{ ...controlStyle(p['aria-invalid']), display: 'flex', alignItems: 'center', gap: 8, '--PhoneInputCountrySelectArrow-color': t.colors.inkMuted } as React.CSSProperties}
           numberInputProps={{ required, style: { border: 'none', outline: 'none', background: 'transparent', padding: 0, minWidth: 0, fontFamily: t.fonts.body, fontSize: 15, color: t.colors.ink } }} />
       )}

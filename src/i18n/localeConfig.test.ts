@@ -23,7 +23,8 @@ describe('localeConfig', () => {
   it('rtl + ui language fallback', () => {
     expect(isRtlLocale('ur')).toBe(true);
     expect(isRtlLocale('fr')).toBe(false);
-    expect(uiLanguageFor('fr')).toBe('en');
+    expect(uiLanguageFor('fr')).toBe('fr');
+    expect(uiLanguageFor('he')).toBe('en'); // no bundle yet
     expect(uiLanguageFor('ur')).toBe('ur');
   });
 });

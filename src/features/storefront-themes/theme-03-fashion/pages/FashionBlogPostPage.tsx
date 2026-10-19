@@ -1,4 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { ArrowLeft } from 'lucide-react';
 import { apiGetPublicBlogPost, apiListPublicBlogPosts } from '@/api/services/storeBlog';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
@@ -39,7 +40,7 @@ export function FashionBlogPostPage() {
   useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : 'Journal', description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
 
   if (loading) return <PageSkeleton hero />;
-  if (error) return <PageBox><ErrorState message="We couldn't load this article." onRetry={retry} /></PageBox>;
+  if (error) return <PageBox><ErrorState message={ts('pg.we_couldn_t_load_this_article', 'We couldn\'t load this article.')} onRetry={retry} /></PageBox>;
   if (!data || !post) return <FashionNotFoundPage />;
 
   const dynamic = data.dynamic;
@@ -61,7 +62,7 @@ export function FashionBlogPostPage() {
       <article>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
         <PageBox narrow>
-          <Link to={blogIndexPath(blogSlug)} className="mb-8 inline-flex items-center gap-2 text-sm font-medium no-underline" style={{ color: t.colors.inkMuted }}><ArrowLeft size={16} aria-hidden />All stories</Link>
+          <Link to={blogIndexPath(blogSlug)} className="mb-8 inline-flex items-center gap-2 text-sm font-medium no-underline" style={{ color: t.colors.inkMuted }}><ArrowLeft size={16} aria-hidden />{ts('pg.all_stories', 'All stories')}</Link>
           {(post.tags?.length ?? 0) > 0 && <div className="mb-4 flex flex-wrap gap-1.5">{post.tags.map(tag => <StatusPill key={tag}>{tag}</StatusPill>)}</div>}
           <h1 className="m-0 text-[clamp(32px,5.2vw,58px)] font-medium leading-[1.06] tracking-tight" style={{ fontFamily: t.fonts.display }}>{post.title}</h1>
           {post.excerpt && <p className="m-0 mt-5 text-lg leading-relaxed" style={{ color: t.colors.inkMuted }}>{post.excerpt}</p>}
@@ -84,7 +85,7 @@ export function FashionBlogPostPage() {
         </PageBox>
         {more.length > 0 && (
           <PageBox>
-            <h2 className="m-0 mb-8 text-[clamp(24px,3vw,34px)] font-medium tracking-tight">Keep <span className="fx-serif" style={{ fontSize: '1.06em' }}>reading</span></h2>
+            <h2 className="m-0 mb-8 text-[clamp(24px,3vw,34px)] font-medium tracking-tight">{ts('pg.keep', 'Keep')} <span className="fx-serif" style={{ fontSize: '1.06em' }}>{ts('pg.word_reading', 'reading')}</span></h2>
             <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">{more.map(p => <BlogPostCard key={p.slug} post={p} blogSlug={blogSlug} />)}</div>
           </PageBox>
         )}

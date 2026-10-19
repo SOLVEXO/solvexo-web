@@ -278,7 +278,6 @@ export const ENDPOINTS = {
     UPDATE_HEADER:  (storeId: string) => `/api/store-theme/${storeId}/header`,
     UPDATE_FOOTER:  (storeId: string) => `/api/store-theme/${storeId}/footer`,
     UPDATE_IDENTITY_BANNER: (storeId: string) => `/api/store-theme/${storeId}/identity-banner`,
-    UPDATE_CUSTOM_CSS: (storeId: string) => `/api/store-theme/${storeId}/custom-css`,
     COLOR_SCHEMES:       (storeId: string) => `/api/store-theme/${storeId}/color-schemes`,
     DELETE_COLOR_SCHEME: (storeId: string, schemeId: string) => `/api/store-theme/${storeId}/color-schemes/${schemeId}`,
     APPLY_COLOR_SCHEME:  (storeId: string, schemeId: string) => `/api/store-theme/${storeId}/color-schemes/${schemeId}/apply`,

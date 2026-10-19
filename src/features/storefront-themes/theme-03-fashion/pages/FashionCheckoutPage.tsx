@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -20,7 +21,7 @@ export function FashionCheckoutPage() {
   const { loggedIn, guest, preparing, denied } = useCheckoutSession();
   const { cart, loading, error, refetch, clearCart } = useCartContext();
   const [placed, setPlaced] = useState<{ orders: PlacedLike[]; guestEmail: string | null } | null>(null);
-  useStorefrontSeo({ title: placed ? 'Order confirmed' : 'Checkout', noindex: true });
+  useStorefrontSeo({ title: placed ? ts('checkout.orderConfirmed', 'Order confirmed') : ts('checkout.title', 'Checkout'), noindex: true });
   // The confirmation replaces a long, scrolled page: show it from the top.
   const isPlaced = !!placed;
   useEffect(() => { if (isPlaced) window.scrollTo({ top: 0 }); }, [isPlaced]);
@@ -54,8 +55,8 @@ export function FashionCheckoutPage() {
     return (
       <Page narrow>
         <EmptyState
-          icon={<ShoppingBag size={24} aria-hidden />} title="Your cart is empty" text="Add something to your cart before checking out."
-          action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Start shopping</Link>}
+          icon={<ShoppingBag size={24} aria-hidden />} title={ts('cart.cartEmpty', 'Your cart is empty')} text={ts('checkout.cartEmptyBefore', 'Add something to your cart before checking out.')}
+          action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>}
         />
       </Page>
     );

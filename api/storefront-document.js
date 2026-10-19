@@ -46,6 +46,8 @@ async function sendStorefrontShell(response, status = 200) {
 }
 
 export default async function handler(request, response) {
+  response.setHeader('X-Powered-By', 'Solvexo');
+  response.setHeader('X-Solvexo-Platform', '1');
   const host = String(request.headers['x-forwarded-host'] || request.headers.host || '').split(',')[0].trim().toLowerCase();
   const routePath = typeof request.query.path === 'string' ? request.query.path : '/';
   if (!host || routePath.length > 2048 || !routePath.startsWith('/') || routePath.startsWith('//')) {
@@ -101,7 +103,9 @@ export default async function handler(request, response) {
     }
     const file = path.join(process.cwd(), 'dist', 'index.html');
     const shell = await fs.readFile(file, 'utf8');
-    response.setHeader('Cache-Control', 'private, no-store');
+    // Only SEO tags are injected (the store itself loads client-side), so a short edge cache is safe and removes the
+    // function + API round trip for repeat visitors. Per-host: `host` is part of the rewritten URL and Vary is Host.
+    response.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     response.setHeader('Vary', 'Host');
     response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(injectMetadata(shell, meta));
   } catch (error) {

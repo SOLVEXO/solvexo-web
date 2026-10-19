@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Download, Loader2, Package } from 'lucide-react';
 import { apiGetDownloadLink, apiGetMyOrders, type OrderStatus, type OrderSummary } from '@/api/services/orders';
@@ -53,7 +54,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
               </span>
             </li>
           ))}
-          <li className="pt-2"><Link to={`/orders/${order.orderId}`} className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>View order</Link></li>
+          <li className="pt-2"><Link to={`/orders/${order.orderId}`} className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>{ts('pg.view_order', 'View order')}</Link></li>
         </ul>
       )}
     </div>
@@ -65,10 +66,10 @@ export function RecentOrders() {
   const { data, loading, error, retry } = useLoad(() => apiGetMyOrders({ page: 1, limit: 20 }).then(r => r.data.orders), []);
   return (
     <Card>
-      <SectionHeading action={data && data.length > 0 ? <Link to="/orders" className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>View all orders</Link> : undefined}>Order history</SectionHeading>
+      <SectionHeading action={data && data.length > 0 ? <Link to="/orders" className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>{ts('account.viewAllOrders', 'View all orders')}</Link> : undefined}>{ts('pg.order_history', 'Order history')}</SectionHeading>
       {loading ? <SkeletonBlock h={64} rows={2} />
-        : error ? <ErrorState message="Could not load your orders right now." onRetry={retry} />
-        : !data || data.length === 0 ? <EmptyState icon={<Package size={22} aria-hidden />} title="No orders yet" text="When you place an order it will show up here." />
+        : error ? <ErrorState message={ts('pg.could_not_load_your_orders_right_now', 'Could not load your orders right now.')} onRetry={retry} />
+        : !data || data.length === 0 ? <EmptyState icon={<Package size={22} aria-hidden />} title={ts('orders.none', 'No orders yet')} text={ts('pg.when_you_place_an_order_it_will_show_up_', 'When you place an order it will show up here.')} />
         : <div className="flex flex-col gap-3">{data.map(o => <OrderRow key={o.orderId} order={o} />)}</div>}
     </Card>
   );

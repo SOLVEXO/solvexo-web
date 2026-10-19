@@ -1,4 +1,5 @@
 ﻿import { Fragment, useEffect, useRef, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Loader2, MessageCircle, Store as StoreIcon } from 'lucide-react';
 import { apiUploadAttachment, type Conversation, type Message } from '@/api/services/messaging';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -85,7 +86,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
 
       {(chat.error || notice) && (
         <div className="shrink-0 px-4 pt-3">
-          <Notice tone="error" action={chat.error ? <button type="button" onClick={() => void chat.refetch()} className="border-0 bg-transparent p-0 text-sm font-semibold underline" style={{ color: t.colors.ink, cursor: 'pointer' }}>Retry</button> : undefined}>{notice || chat.error}</Notice>
+          <Notice tone="error" action={chat.error ? <button type="button" onClick={() => void chat.refetch()} className="border-0 bg-transparent p-0 text-sm font-semibold underline" style={{ color: t.colors.ink, cursor: 'pointer' }}>{ts('cart.retry', 'Retry')}</button> : undefined}>{notice || chat.error}</Notice>
         </div>
       )}
 
@@ -96,7 +97,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
           </button>
         )}
         {chat.loading && chat.messages.length === 0 ? (
-          <div role="status" aria-label="Loading messages" className="flex flex-col gap-3">
+          <div role="status" aria-label={ts('pg.loading_messages', 'Loading messages')} className="flex flex-col gap-3">
             {[60, 40, 70].map((w, i) => <div key={i} className="animate-pulse" style={{ width: `${w}%`, height: 48, borderRadius: 20, background: t.colors.bgAlt, alignSelf: i === 1 ? 'flex-end' : 'flex-start' }} />)}
           </div>
         ) : chat.messages.length === 0 ? (

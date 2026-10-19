@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { AlertCircle, Check, CheckCheck, CornerUpLeft, FileText, ImageOff, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { Message } from '@/api/services/messaging';
@@ -77,7 +78,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
             </div>
           )}
           {m.isDeleted ? (
-            <p className="m-0 text-sm italic opacity-70">This message was deleted</p>
+            <p className="m-0 text-sm italic opacity-70">{ts('pg.this_message_was_deleted', 'This message was deleted')}</p>
           ) : (
             <div className="flex flex-col gap-2">
               {m.type === 'product_share' && m.productShare && <ProductShareCard share={m.productShare} />}
@@ -94,18 +95,18 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
           <p className="m-0 mt-1 flex items-center justify-end gap-1 text-[11px] opacity-70">
             {m.isEdited && !m.isDeleted && <span>edited</span>}
             <time dateTime={m.createdAt}>{clockTime(m.createdAt)}</time>
-            {mine && !m._pending && !m._failed && (seen ? <CheckCheck size={13} aria-label="Seen" /> : <Check size={13} aria-label="Sent" />)}
+            {mine && !m._pending && !m._failed && (seen ? <CheckCheck size={13} aria-label={ts('pg.seen', 'Seen')} /> : <Check size={13} aria-label={ts('pg.sent', 'Sent')} />)}
           </p>
         </div>
         {canAct && (
-          <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label="Message actions" className="grid size-8 shrink-0 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
+          <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={ts('pg.message_actions', 'Message actions')} className="grid size-8 shrink-0 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
             <MoreHorizontal size={16} aria-hidden />
           </button>
         )}
       </div>
 
       {Object.keys(grouped).length > 0 && !m.isDeleted && (
-        <ul className="m-0 mt-1 flex list-none gap-1 p-0" aria-label="Reactions">
+        <ul className="m-0 mt-1 flex list-none gap-1 p-0" aria-label={ts('pg.reactions', 'Reactions')}>
           {Object.entries(grouped).map(([emoji, count]) => <li key={emoji} className="rounded-full px-2 py-0.5 text-xs" style={{ background: t.colors.bgAlt, border: `1px solid ${t.colors.border}` }}>{emoji}{count > 1 ? ` ${count}` : ''}</li>)}
         </ul>
       )}
@@ -113,7 +114,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
       {m._failed && (
         <p role="alert" className="m-0 mt-1 flex items-center gap-2 text-xs" style={{ color: t.colors.danger }}>
           <AlertCircle size={13} aria-hidden />Not sent.
-          <button type="button" onClick={() => onRetry(m)} className="inline-flex items-center gap-1 border-0 bg-transparent p-0 text-xs font-semibold underline" style={{ color: t.colors.danger, cursor: 'pointer' }}><RotateCcw size={12} aria-hidden />Retry</button>
+          <button type="button" onClick={() => onRetry(m)} className="inline-flex items-center gap-1 border-0 bg-transparent p-0 text-xs font-semibold underline" style={{ color: t.colors.danger, cursor: 'pointer' }}><RotateCcw size={12} aria-hidden />{ts('cart.retry', 'Retry')}</button>
         </p>
       )}
 
@@ -122,9 +123,9 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
           {REACTION_EMOJIS.map(e => (
             <button key={e} type="button" onClick={() => { onReact(m._id, e); setOpen(false); }} aria-label={`React ${e}`} aria-pressed={mineReaction === e} className="grid size-8 place-items-center rounded-full border-0 text-base" style={{ cursor: 'pointer', background: mineReaction === e ? t.colors.bgAlt : 'transparent' }}>{e}</button>
           ))}
-          <button type="button" onClick={() => { onReply(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><CornerUpLeft size={13} aria-hidden />Reply</button>
-          {mine && m.type === 'text' && <button type="button" onClick={() => { onEdit(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><Pencil size={13} aria-hidden />Edit</button>}
-          {mine && <button type="button" onClick={() => { onDelete(m._id); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.danger, cursor: 'pointer' }}><Trash2 size={13} aria-hidden />Delete</button>}
+          <button type="button" onClick={() => { onReply(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><CornerUpLeft size={13} aria-hidden />{ts('pg.reply', 'Reply')}</button>
+          {mine && m.type === 'text' && <button type="button" onClick={() => { onEdit(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><Pencil size={13} aria-hidden />{ts('addresses.edit', 'Edit')}</button>}
+          {mine && <button type="button" onClick={() => { onDelete(m._id); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.danger, cursor: 'pointer' }}><Trash2 size={13} aria-hidden />{ts('addresses.delete', 'Delete')}</button>}
         </div>
       )}
     </div>

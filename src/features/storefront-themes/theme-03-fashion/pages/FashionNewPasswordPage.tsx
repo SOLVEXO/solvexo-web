@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { AuthContext } from '@/api/services/auth';
@@ -25,9 +26,9 @@ export function FashionNewPasswordPage() {
 
   if (reset.success) {
     return (
-      <AuthShell title="Password" accent="updated" subtitle={`You can now sign back in to ${store.name} with your new password.`}>
+      <AuthShell title={ts('auth.password', 'Password')} accent={ts('pg.word_updated', 'updated')} subtitle={`You can now sign back in to ${store.name} with your new password.`}>
         <div className="mb-6 grid place-items-center"><span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><CheckCircle2 size={28} style={{ color: t.colors.success }} aria-hidden /></span></div>
-        <PillButton full onClick={() => navigate('/login')}>Sign in</PillButton>
+        <PillButton full onClick={() => navigate('/login')}>{ts('auth.signInLink', 'Sign in')}</PillButton>
       </AuthShell>
     );
   }
@@ -42,14 +43,14 @@ export function FashionNewPasswordPage() {
   const error = formError || reset.error;
 
   return (
-    <AuthShell title="Choose a new" accent="password" subtitle="Almost done. Set a new password to finish resetting your account.">
+    <AuthShell title={ts('pg.choose_a_new', 'Choose a new')} accent={ts('pg.word_password', 'password')} subtitle="Almost done. Set a new password to finish resetting your account.">
       {error && (
-        <div className="mb-5"><Notice tone="error" action={reset.error ? <button type="button" onClick={() => navigate('/verify-otp')} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline">Re-enter code</button> : undefined}>{error}</Notice></div>
+        <div className="mb-5"><Notice tone="error" action={reset.error ? <button type="button" onClick={() => navigate('/verify-otp')} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline">{ts('pg.re_enter_code', 'Re-enter code')}</button> : undefined}>{error}</Notice></div>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label="New password" hint="At least 8 characters." required>{p => <PasswordInput {...p} required autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} />}</Field>
-        <Field label="Confirm password" required>{p => <PasswordInput {...p} required autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} />}</Field>
-        <PillButton type="submit" full loading={reset.loading}>Reset password</PillButton>
+        <Field label={ts('pg.new_password', 'New password')} hint="At least 8 characters." required>{p => <PasswordInput {...p} required autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} />}</Field>
+        <Field label={ts('pg.confirm_password', 'Confirm password')} required>{p => <PasswordInput {...p} required autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} />}</Field>
+        <PillButton type="submit" full loading={reset.loading}>{ts('pg.reset_password', 'Reset password')}</PillButton>
       </form>
     </AuthShell>
   );

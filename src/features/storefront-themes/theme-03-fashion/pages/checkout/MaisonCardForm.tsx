@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import type { Appearance } from '@stripe/stripe-js';
 import { ShieldCheck } from 'lucide-react';
@@ -40,7 +41,7 @@ function CardFields({ amountText, returnUrl, onConfirmed }: Omit<Props, 'clientS
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4" aria-label="Card payment">
+    <form onSubmit={submit} className="flex flex-col gap-4" aria-label={ts('checkout.cardPaymentAria', 'Card payment')}>
       <PaymentElement />
       {error && <Notice tone="error">{error}</Notice>}
       <PillButton type="submit" full loading={submitting} disabled={!stripe || !elements}>Pay {amountText}</PillButton>
@@ -54,7 +55,7 @@ function CardFields({ amountText, returnUrl, onConfirmed }: Omit<Props, 'clientS
 /** Stripe Elements card form dressed in the Maison tokens (colors, radius, font follow merchant customization). */
 export function MaisonCardForm({ clientSecret, ...rest }: Props) {
   const promise = getStripe();
-  if (!promise) return <Notice tone="error">Card payments are not configured for this store yet.</Notice>;
+  if (!promise) return <Notice tone="error">{ts('checkout.cardNotConfigured', "Card payments aren't configured for this store yet.")}</Notice>;
   const appearance: Appearance = {
     theme: 'flat',
     variables: {

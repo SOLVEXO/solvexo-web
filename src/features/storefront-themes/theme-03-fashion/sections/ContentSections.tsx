@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { ts } from '@/utils/tStatic';
 import { useState, type FormEvent } from 'react';
 import { Check, Gift, Headphones, Lock, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
 import type { Block } from '@/api/services/storefrontTypes';
@@ -144,7 +145,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
         {s.subtext && <p className="m-0 mb-8 text-[15px] leading-[1.7]" style={{ color: colors.inkMuted }}>{s.subtext}</p>}
         {state === 'done' ? <p role="status" className="m-0 text-[15px]" style={{ color: t.colors.success }}>{message}</p> : (
           <form onSubmit={submit} className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <label htmlFor="fx-nl" className="sr-only">Email</label>
+            <label htmlFor="fx-nl" className="sr-only">{ts('auth.email', 'Email')}</label>
             <input id="fx-nl" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(s, 'placeholder', 'Your email')}
               className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm outline-none" style={{ border: `1px solid ${colors.ink}`, color: colors.ink, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }} />
             <button type="submit" disabled={state === 'loading'} className="cursor-pointer px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] disabled:opacity-60"
@@ -153,7 +154,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
             </button>
           </form>
         )}
-        {state === 'error' && <p role="alert" className="mt-3 text-xs" style={{ color: t.colors.danger }}>Something went wrong. Please try again.</p>}
+        {state === 'error' && <p role="alert" className="mt-3 text-xs" style={{ color: t.colors.danger }}>{ts('pg.something_went_wrong_please_try_again', 'Something went wrong. Please try again.')}</p>}
       </div>
     </section>
   );

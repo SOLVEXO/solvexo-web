@@ -1,4 +1,5 @@
 import client from '../client';
+import { dedupedGet } from '../../utils/dedupedGet';
 import { ENDPOINTS } from '../endpoints';
 import type { Section } from './storefrontTypes';
 
@@ -141,7 +142,7 @@ export function apiDeleteStorePage(storeId: string, pageId: string) {
 // ── Public ───────────────────────────────────────────────────────────────────
 
 export function apiGetPublicHomePage(storeId: string) {
-  return client.get<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.PUBLIC_HOME(storeId));
+  return dedupedGet(`home:${storeId}`, () => client.get<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.PUBLIC_HOME(storeId)));
 }
 
 export function apiGetPublicStorePage(storeId: string, slug: string) {
@@ -149,5 +150,5 @@ export function apiGetPublicStorePage(storeId: string, slug: string) {
 }
 
 export function apiListPublicStorePages(storeId: string) {
-  return client.get<never, ApiResponse<PublicPageSummary[]>>(ENDPOINTS.STORE_PAGES.PUBLIC_LIST(storeId));
+  return dedupedGet(`pages:${storeId}`, () => client.get<never, ApiResponse<PublicPageSummary[]>>(ENDPOINTS.STORE_PAGES.PUBLIC_LIST(storeId)));
 }

@@ -1,6 +1,7 @@
 import client from '../client';
+import { dedupedGet } from '../../utils/dedupedGet';
 import { ENDPOINTS } from '../endpoints';
-import type { Block } from './storefrontTypes';
+import type { Block, Section } from './storefrontTypes';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -36,6 +37,48 @@ export interface StorefrontColors {
   mutedColor?:  string | null;
   borderColor?: string | null;
   saleColor?:   string | null;
+  /** Typography / shape options; a theme ignores any it does not support. */
+  headingWeight?:   'regular' | 'medium' | 'semibold' | 'bold';
+  headingCase?:     'none' | 'uppercase';
+  headingTracking?: 'auto' | 'tight' | 'normal' | 'wide';
+  buttonCase?:      'normal' | 'uppercase';
+  sectionRadius?:   'none' | 'small' | 'medium' | 'large';
+  inputRadius?:     'none' | 'small' | 'medium' | 'large' | 'full';
+  badgeStyle?:      'pill' | 'square';
+  cardRating?:      'show' | 'hide';
+  cardTag?:         'show' | 'hide';
+  cardButton?:      'show' | 'hide';
+  headingScale?: 'small' | 'medium' | 'large' | 'xlarge';
+  bodyScale?: 'small' | 'medium' | 'large';
+  headingLineHeight?: 'auto' | 'tight' | 'normal' | 'loose';
+  linkUnderline?: 'auto' | 'always' | 'never';
+  pagePadding?: 'narrow' | 'standard' | 'wide';
+  gridGap?: 'tight' | 'standard' | 'airy';
+  buttonHover?: 'fade' | 'lift' | 'grow';
+  buttonShadow?: 'none' | 'soft';
+  cardHover?: 'shadow' | 'lift' | 'none';
+  cardTextAlign?: 'left' | 'center';
+  showBreadcrumbs?: 'show' | 'hide';
+  showStockStatus?: 'show' | 'hide';
+  showVendor?: 'show' | 'hide';
+  showReviews?: 'show' | 'hide';
+  stickyBuyBar?: 'show' | 'hide';
+  animations?: 'on' | 'off';
+  focusRing?: 'auto' | 'accent' | 'ink';
+  bodyWeight?: 'regular' | 'medium';
+  sectionDividers?: 'none' | 'line';
+  selection?: 'auto' | 'accent';
+  cardWishlist?: 'show' | 'hide';
+  cardViewLink?: 'show' | 'hide';
+  saleBadgeText?: 'percent' | 'label';
+  showDelivery?: 'show' | 'hide';
+  headingColor?: string | null;
+  linkColor?: string | null;
+  priceColor?: string | null;
+  starColor?: string | null;
+  successColor?: string | null;
+  buttonTextColor?: string | null;
+  cardBgColor?: string | null;
   buttonStyle:  ThemeButtonStyle;
   /** Buttons scope — independent from product/testimonial cards and images. */
   buttonRadius: ThemeBorderRadius;
@@ -81,6 +124,9 @@ export interface ColorScheme {
   bgColor:      string;
   textColor:    string;
   primaryColor: string;
+  mutedColor?:  string | null;
+  borderColor?: string | null;
+  saleColor?:   string | null;
 }
 
 /**
@@ -121,6 +167,8 @@ export interface SectionGroupLike {
 }
 
 export interface StorefrontHeader {
+  /** Extra full-width sections shown under the header bar. */
+  sections?:     Section[];
   logoSource:    'store' | 'custom';
   customLogoUrl: string | null;
   blocks:        Block[]; // nav_link blocks — the fallback content when no menu is attached
@@ -163,6 +211,8 @@ export interface StorefrontHeader {
 }
 
 export interface StorefrontFooter {
+  /** Extra full-width sections shown above the footer panel. */
+  sections?:   Section[];
   blocks:      Block[]; // footer_column / social_link / copyright_text blocks
   footerStyle: ThemeFooterStyle;
   /** A Menu id whose items become one synthetic footer_column block on the
@@ -202,7 +252,7 @@ export interface StorefrontFooter {
 export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
   'logoSource' | 'logoUrl' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
   'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout' | 'paddingY' | 'bgImageUrl' | 'bgOverlay' | 'align' | 'headingUppercase' | 'socialStyle' |
-  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'preset'>>;
+  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'preset' | 'sections'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
 
@@ -241,7 +291,6 @@ export interface StoreThemeData {
   // Which curated `themes.ts` definition the `theme`/`header`/`footer`
   // fields were last bulk-applied from — null if never applied one.
   baseThemeId:    string | null;
-  customCss:      string | null;
   // The seller's working copy — what every `apiUpdateStoreXxx` call below
   // now writes to. Mirrors the live shape exactly; only `apiPublishStoreTheme`
   // ever copies this over the live fields above.
@@ -251,7 +300,6 @@ export interface StoreThemeData {
     footer:         StorefrontFooter;
     identityBanner: IdentityBanner;
     baseThemeId:    string | null;
-    customCss:      string | null;
   };
   lastPublishedAt: string | null;
 }
@@ -267,7 +315,6 @@ export interface StoreThemeDraftData {
   identityBanner: IdentityBanner;
   baseThemeId:    string | null;
   themeDefinitionId: string | null;
-  customCss:      string | null;
   lastPublishedAt: string | null;
 }
 
@@ -335,7 +382,6 @@ export interface PreviewByTokenData {
   footer: StorefrontFooter;
   identityBanner: IdentityBanner;
   themeDefinitionId: string | null;
-  customCss: string | null;
   storeSlug: string | null;
   homeSections: import('./storefrontTypes').Section[];
 }
@@ -353,7 +399,6 @@ export interface ThemeVersionData {
   footer:         StorefrontFooter;
   identityBanner: IdentityBanner;
   baseThemeId:    string | null;
-  customCss:      string | null;
   publishedAt:    string;
 }
 
@@ -368,7 +413,7 @@ export function apiRestoreStoreThemeVersion(storeId: string, versionId: string, 
 }
 
 export function apiGetPublicStoreTheme(storeId: string) {
-  return client.get<never, ApiResponse<StoreThemeData | null>>(ENDPOINTS.STORE_THEME.PUBLIC(storeId));
+  return dedupedGet(`theme:${storeId}`, () => client.get<never, ApiResponse<StoreThemeData | null>>(ENDPOINTS.STORE_THEME.PUBLIC(storeId)));
 }
 
 export function apiUpdateStoreThemeColors(storeId: string, payload: Partial<StorefrontColors> & { baseThemeId?: string | null }, installedThemeId?: string) {
@@ -388,7 +433,7 @@ export function apiUpdateIdentityBanner(storeId: string, payload: Partial<Identi
 }
 
 // ── Color Schemes — named, reusable saved palettes ──────────────────────
-export function apiCreateColorScheme(storeId: string, payload: { name: string; bgColor: string; textColor: string; primaryColor: string }, installedThemeId?: string) {
+export function apiCreateColorScheme(storeId: string, payload: { name: string; bgColor: string; textColor: string; primaryColor: string; mutedColor?: string | null; borderColor?: string | null; saleColor?: string | null }, installedThemeId?: string) {
   return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.COLOR_SCHEMES(storeId), installedThemeId), payload);
 }
 export function apiDeleteColorScheme(storeId: string, schemeId: string, installedThemeId?: string) {
@@ -398,14 +443,3 @@ export function apiApplyColorScheme(storeId: string, schemeId: string, installed
   return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.APPLY_COLOR_SCHEME(storeId, schemeId), installedThemeId));
 }
 
-/** Real, bounded "developer/advanced authoring" capability — raw CSS
- *  injected into the storefront. See the backend `StoreTheme.customCss`
- *  schema comment for the full safety rationale (CSS-only, no custom JS). */
-export function apiUpdateStoreCustomCss(storeId: string, customCss: string | null, installedThemeId?: string) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), installedThemeId), { customCss });
-}
-
-/** Code editor (Phase 5) — server re-sanitizes independently of whatever the client already checked. */
-export function apiUpdateCustomCss(storeId: string, customCss: string | null) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), { customCss });
-}

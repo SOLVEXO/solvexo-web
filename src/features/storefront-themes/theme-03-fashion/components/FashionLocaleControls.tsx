@@ -81,7 +81,7 @@ function LocaleMenu({ icon, code, ariaLabel, options, value, onPick, searchPlace
       <button ref={btnRef} id={triggerId} type="button" aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? listId : undefined} aria-label={ariaLabel}
         onClick={() => (open ? close() : show())}
         onKeyDown={e => { if (!open && e.key === 'ArrowDown') { e.preventDefault(); show(); } }}
-        className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-transparent px-3 text-[13px] font-medium transition-colors hover:bg-black/5"
+        className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-transparent px-3 text-[13px] font-medium transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]"
         style={{ color: 'inherit', fontFamily: t.fonts.body }}>
         {icon}<span>{code}</span><ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .2s' }} />
       </button>

@@ -5,6 +5,8 @@ import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeThe
 import type { Block } from '@/api/services/storefrontTypes';
 import { BlockFields, type PageOption } from '../builder/BlockFields';
 import { SortableList } from '../builder/Sortable';
+import { PageSectionsEditor } from '../builder/PageSectionsEditor';
+import type { Section, SectionType } from '@/api/services/storefrontTypes';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { HeaderSettingsPanel, FooterSettingsPanel, Group } from './HeaderFooterSettingsPanels';
 import { footerLayoutBlocks } from '@/features/storefront-themes/navigation/headerOptions';
@@ -24,6 +26,18 @@ const FOOTER_BLOCK_OPTIONS: { type: string; label: string; hint: string; default
   { type: 'copyright_text', label: 'Copyright', hint: 'Bottom bar text, {year} = current year', defaults: { text: '' } },
 ];
 const BLOCK_LABEL: Record<string, string> = Object.fromEntries(FOOTER_BLOCK_OPTIONS.map(o => [o.type, o.label]));
+
+/** Content strips that make sense under the header / above the footer (the server enforces the same list). */
+const CHROME_SECTION_TYPES: SectionType[] = ['newsletter', 'trust_badges', 'image_banner', 'rich_text', 'testimonials', 'marquee', 'logo_list', 'multicolumn', 'custom_html', 'divider', 'image_with_text', 'multirow', 'gallery_grid', 'faq'];
+
+function ChromeSections({ sections, onChange, onPersist, pageOptions, storeId, helperText }: {
+  sections: Section[]; onChange: (next: Section[]) => void; onPersist: (next: Section[]) => void; pageOptions: PageOption[]; storeId: string; helperText: string;
+}) {
+  return (
+    <PageSectionsEditor sections={sections} onChange={onChange} onPersist={onPersist} pageOptions={pageOptions} storeId={storeId}
+      supportedSectionTypes={CHROME_SECTION_TYPES} helperText={helperText} />
+  );
+}
 
 function AddBlockMenu({ onAdd }: { onAdd: (opt: typeof FOOTER_BLOCK_OPTIONS[number]) => void }) {
   const [open, setOpen] = useState(false);
@@ -135,6 +149,12 @@ export function HeaderEditor({ hf, storeId, onError }: { hf: HeaderFooterDraftSt
           </>
         )}
       </Group>
+      <Group title="Header sections">
+        <ChromeSections sections={headerDraft.sections ?? []} pageOptions={pageOptions} storeId={storeId}
+          helperText="Extra full-width sections shown right under the header bar, like a promo strip or a trust row."
+          onChange={next => setHeader({ ...headerDraft, sections: next })}
+          onPersist={next => void hf.persistRemoval({ header: { ...headerDraft, sections: next }, footer: footerDraft }, onError)} />
+      </Group>
       <HeaderSettingsPanel header={headerDraft} onChange={setHeader} logoSlot={(
         <>
           <select className={SELECT} value={headerDraft.logoSource ?? 'store'} aria-label="Logo image"
@@ -193,6 +213,12 @@ export function FooterEditor({ hf, storeId, onError }: { hf: HeaderFooterDraftSt
           {menus.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
         </select>
         <p className="text-[11px] text-slate">A menu from Online Store → Menus replaces your Link column blocks, in the place of the first one.</p>
+      </Group>
+      <Group title="Footer sections">
+        <ChromeSections sections={footerDraft.sections ?? []} pageOptions={pageOptions} storeId={storeId}
+          helperText="Extra full-width sections shown above the footer, like an email sign-up, reviews or brand logos."
+          onChange={next => setFooter({ ...footerDraft, sections: next })}
+          onPersist={next => void hf.persistRemoval({ header: headerDraft, footer: { ...footerDraft, sections: next } }, onError)} />
       </Group>
       <FooterSettingsPanel footer={footerDraft} storeId={storeId} onChange={setFooter} />
     </div>

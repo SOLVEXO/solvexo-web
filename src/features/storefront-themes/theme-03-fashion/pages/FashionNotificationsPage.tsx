@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { BellOff, CheckCheck } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
@@ -26,14 +27,14 @@ export function FashionNotificationsPage() {
   const tabs: { key: Filter; label: string }[] = [{ key: 'all', label: 'All' }, { key: 'unread', label: unreadCount > 0 ? `Unread (${unreadCount})` : 'Unread' }];
 
   return (
-    <AccountLayout title="Your" accent="notifications" subtitle={<span aria-live="polite">{!signedIn ? 'Sign in to see your updates.' : unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up.'}</span>}
-      actions={signedIn && unreadCount > 0 ? <PillButton variant="outline" onClick={() => void markAllAsRead()} style={{ height: 40, padding: '0 18px' }}><CheckCheck size={16} aria-hidden />Mark all as read</PillButton> : undefined}>
+    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_notifications', 'notifications')} subtitle={<span aria-live="polite">{!signedIn ? 'Sign in to see your updates.' : unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up.'}</span>}
+      actions={signedIn && unreadCount > 0 ? <PillButton variant="outline" onClick={() => void markAllAsRead()} style={{ height: 40, padding: '0 18px' }}><CheckCheck size={16} aria-hidden />{ts('pg.mark_all_as_read', 'Mark all as read')}</PillButton> : undefined}>
       {guest ? null : !signedIn ? (
-        <EmptyState icon={<BellOff size={24} aria-hidden />} title="Sign in to see notifications" text="Order updates and replies from the store show up here."
-          action={<Link to="/login?redirect=%2Fnotifications" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Sign in</Link>} />
+        <EmptyState icon={<BellOff size={24} aria-hidden />} title={ts('pg.sign_in_to_see_notifications', 'Sign in to see notifications')} text={ts('pg.order_updates_and_replies_from_the_store', 'Order updates and replies from the store show up here.')}
+          action={<Link to="/login?redirect=%2Fnotifications" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />
       ) : (
         <>
-          <div role="group" aria-label="Filter notifications" className="mb-5 flex gap-2">
+          <div role="group" aria-label={ts('pg.filter_notifications', 'Filter notifications')} className="mb-5 flex gap-2">
             {tabs.map(tab => (
               <button key={tab.key} type="button" aria-pressed={filter === tab.key} onClick={() => setFilter(tab.key)}
                 className="rounded-full px-4 py-2 text-sm font-medium" style={{ cursor: 'pointer', border: `1px solid ${filter === tab.key ? t.colors.ink : t.colors.border}`, background: filter === tab.key ? t.colors.ink : 'transparent', color: filter === tab.key ? t.colors.bg : t.colors.ink }}>
@@ -42,13 +43,13 @@ export function FashionNotificationsPage() {
             ))}
           </div>
           {notificationsLoading && notifications.length === 0 ? (
-            <div role="status" aria-label="Loading notifications"><SkeletonBlock h={84} rows={4} /></div>
+            <div role="status" aria-label={ts('pg.loading_notifications', 'Loading notifications')}><SkeletonBlock h={84} rows={4} /></div>
           ) : shown.length === 0 ? (
             <EmptyState icon={<BellOff size={24} aria-hidden />} title={filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
               text={filter === 'unread' ? 'Everything has been read.' : 'Order updates and messages from the store will show up here.'}
-              action={filter === 'unread' ? <PillButton variant="outline" onClick={() => setFilter('all')}>Show all</PillButton> : undefined} />
+              action={filter === 'unread' ? <PillButton variant="outline" onClick={() => setFilter('all')}>{ts('pg.show_all', 'Show all')}</PillButton> : undefined} />
           ) : (
-            <ul className="m-0 overflow-hidden p-0" aria-label="Notifications" style={{ border: `1px solid ${t.colors.border}`, borderRadius: 20 }}>
+            <ul className="m-0 overflow-hidden p-0" aria-label={ts('account.notifications', 'Notifications')} style={{ border: `1px solid ${t.colors.border}`, borderRadius: 20 }}>
               {shown.map(n => <NotificationRow key={n._id} item={n} onRead={id => void markAsRead(id)} onDelete={id => void deleteNotification(id)} />)}
             </ul>
           )}

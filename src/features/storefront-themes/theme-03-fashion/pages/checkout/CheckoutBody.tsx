@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { apiListPublicStorePages } from '@/api/services/storePages';
 import { apiSubscribeMeToStore } from '@/api/services/newsletter';
@@ -131,7 +132,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
   const rows = checkout
     ? reconcileSummary({ currency, subtotal, shipping: isDigital ? 0 : shippingFee, tax: checkout.taxAmount ?? 0, coupon, giftCard, storeCredit, total })
     : { tax: 0, adjustment: 0 };
-  const shippingText = isDigital ? null : checkout ? (shippingFee === 0 ? 'Free' : moneyText(shippingFee, currency)) : 'Calculated next';
+  const shippingText = isDigital ? null : checkout ? (shippingFee === 0 ? ts('checkout.free', 'Free') : moneyText(shippingFee, currency)) : ts('checkout.calculatedNext', 'Calculated next');
 
   const priceText = (o: ShipOption) => {
     const amount = o.priceCurrency === currency ? o.price : convertTo(o.price, o.priceCurrency, currency);
@@ -152,7 +153,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
 
   return (
     <Page>
-      <PageTitle accent="checkout" actions={<Link to="/cart" className="text-sm" style={{ color: t.colors.inkMuted }}>Back to cart</Link>}>Secure</PageTitle>
+      <PageTitle accent={ts('checkout.accentWord', 'checkout')} actions={<Link to="/cart" className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('checkout.secure', 'Secure')}</PageTitle>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
         <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1">
           {checkout && checkout.currency !== displayCurrency && (
@@ -178,9 +179,9 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
           {(privacy || terms) && (
             <p className="m-0 text-center text-xs" style={{ color: t.colors.inkMuted }}>
               By placing your order, you agree to our{' '}
-              {privacy && <Link to={`/${privacy.slug}`} style={{ color: 'inherit' }}>Privacy Policy</Link>}
+              {privacy && <Link to={`/${privacy.slug}`} style={{ color: 'inherit' }}>{ts('checkout.privacyPolicy', 'Privacy Policy')}</Link>}
               {privacy && terms && ' and '}
-              {terms && <Link to={`/${terms.slug}`} style={{ color: 'inherit' }}>Terms of Service</Link>}.
+              {terms && <Link to={`/${terms.slug}`} style={{ color: 'inherit' }}>{ts('checkout.terms', 'Terms of Service')}</Link>}.
             </p>
           )}
         </div>

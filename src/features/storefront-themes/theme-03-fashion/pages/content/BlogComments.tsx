@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { MessageSquare } from 'lucide-react';
 import { apiListPublicBlogComments, apiSubmitPublicBlogComment } from '@/api/services/storeBlog';
 import { fashionTheme as t } from '../../theme.config';
@@ -43,8 +44,8 @@ export function BlogComments({ storeId, postId }: { storeId: string; postId: str
     <section aria-labelledby="comments-title" className="mt-14 pt-10" style={{ borderTop: `1px solid ${t.colors.border}` }}>
       <h2 id="comments-title" className="m-0 mb-6 flex items-center gap-2.5 text-2xl font-medium tracking-tight"><MessageSquare size={22} aria-hidden />Comments{data && data.length > 0 ? ` (${data.length})` : ''}</h2>
 
-      {loading ? <div role="status" aria-label="Loading comments"><SkeletonBlock h={72} rows={2} /></div>
-        : error ? <ErrorState message="We couldn't load the comments." onRetry={retry} />
+      {loading ? <div role="status" aria-label={ts('pg.loading_comments', 'Loading comments')}><SkeletonBlock h={72} rows={2} /></div>
+        : error ? <ErrorState message={ts('pg.we_couldn_t_load_the_comments', 'We couldn\'t load the comments.')} onRetry={retry} />
         : data && data.length > 0 ? (
           <ul className="m-0 mb-8 flex list-none flex-col gap-3 p-0">
             {data.map((c, i) => (
@@ -54,18 +55,18 @@ export function BlogComments({ storeId, postId }: { storeId: string; postId: str
               </li>
             ))}
           </ul>
-        ) : <p className="m-0 mb-8 text-[15px]" style={{ color: t.colors.inkMuted }}>No comments yet. Be the first to share your thoughts.</p>}
+        ) : <p className="m-0 mb-8 text-[15px]" style={{ color: t.colors.inkMuted }}>{ts('pg.no_comments_yet_be_the_first_to_share_yo', 'No comments yet. Be the first to share your thoughts.')}</p>}
 
       <Card tone="soft">
         <form onSubmit={e => void submit(e)} noValidate className="flex flex-col gap-4">
-          <h3 className="m-0 text-lg font-semibold">Leave a comment</h3>
+          <h3 className="m-0 text-lg font-semibold">{ts('pg.leave_a_comment', 'Leave a comment')}</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Name" required error={touched ? errors.name : null}>{p => <TextInput {...p} value={name} onChange={e => setName(e.target.value)} autoComplete="name" maxLength={80} invalid={p['aria-invalid']} />}</Field>
-            <Field label="Email" required hint="Never shown publicly" error={touched ? errors.email : null}>{p => <TextInput {...p} type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" invalid={p['aria-invalid']} />}</Field>
+            <Field label={ts('auth.email', 'Email')} required hint={ts('pg.never_shown_publicly', 'Never shown publicly')} error={touched ? errors.email : null}>{p => <TextInput {...p} type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" invalid={p['aria-invalid']} />}</Field>
           </div>
-          <Field label="Comment" required error={touched ? errors.body : null}>{p => <TextArea {...p} rows={4} value={body} onChange={e => setBody(e.target.value)} maxLength={2000} invalid={p['aria-invalid']} />}</Field>
+          <Field label={ts('pg.comment', 'Comment')} required error={touched ? errors.body : null}>{p => <TextArea {...p} rows={4} value={body} onChange={e => setBody(e.target.value)} maxLength={2000} invalid={p['aria-invalid']} />}</Field>
           {result && <Notice tone={result.tone}>{result.text}</Notice>}
-          <div><PillButton type="submit" loading={busy}>Post comment</PillButton></div>
+          <div><PillButton type="submit" loading={busy}>{ts('pg.post_comment', 'Post comment')}</PillButton></div>
         </form>
       </Card>
     </section>

@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { FashionProductBrowser } from '../components/browse/FashionProductBrowser';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
@@ -20,7 +21,7 @@ export function FashionCategoryPage() {
   useStorefrontSeo({ title: category?.name, description: category?.description });
 
   if (loading) return <PageSkeleton />;
-  if (error) return <ErrorBlock message="We couldn't load this category." onRetry={refetch} />;
+  if (error) return <ErrorBlock message={ts('pg.we_couldn_t_load_this_category', 'We couldn\'t load this category.')} onRetry={refetch} />;
   if (!category) return <FashionNotFoundPage />;
   return (
     <PageBox>

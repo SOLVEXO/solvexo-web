@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Check, Link2, Mail, MessageCircle, Share2 } from 'lucide-react';
 import { fashionTheme as t } from '../../theme.config';
 import { shareTargets } from '../../../core/content/blogUtils';
@@ -17,10 +18,10 @@ export function ShareBar({ url, title }: { url: string; title: string }) {
   const chip = { width: 40, height: 40, borderRadius: 9999, border: `1px solid ${t.colors.border}`, background: 'transparent', color: t.colors.ink, cursor: 'pointer' } as const;
 
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Share this article">
-      <span className="mr-1 text-sm font-medium">Share</span>
-      {canNativeShare && <button type="button" onClick={nativeShare} aria-label="Share using your device" title="Share" className="grid place-items-center" style={chip}><Share2 size={16} aria-hidden /></button>}
-      <button type="button" onClick={() => void copy()} aria-label="Copy link" title="Copy link" className="grid place-items-center" style={chip}>{copied ? <Check size={16} aria-hidden /> : <Link2 size={16} aria-hidden />}</button>
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={ts('pg.share_this_article', 'Share this article')}>
+      <span className="mr-1 text-sm font-medium">{ts('product.share', 'Share')}</span>
+      {canNativeShare && <button type="button" onClick={nativeShare} aria-label={ts('pg.share_using_your_device', 'Share using your device')} title={ts('product.share', 'Share')} className="grid place-items-center" style={chip}><Share2 size={16} aria-hidden /></button>}
+      <button type="button" onClick={() => void copy()} aria-label={ts('pg.copy_link', 'Copy link')} title={ts('pg.copy_link', 'Copy link')} className="grid place-items-center" style={chip}>{copied ? <Check size={16} aria-hidden /> : <Link2 size={16} aria-hidden />}</button>
       {shareTargets(url, title).map(s => {
         const Icon = ICONS[s.key];
         return (

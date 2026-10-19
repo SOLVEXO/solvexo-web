@@ -48,6 +48,21 @@ i18n
     interpolation: { escapeValue: false }, // React already escapes
   });
 
+// Other languages' storefront bundles are lazy chunks (only the visitor's language is downloaded).
+const lazyStorefront = import.meta.glob('./locales/storefront.*.json', { import: 'default' }) as Record<string, () => Promise<Record<string, unknown>>>;
+
+export async function ensureBundle(lang: string): Promise<void> {
+  if (i18n.hasResourceBundle(lang, 'storefront')) return;
+  const load = lazyStorefront[`./locales/storefront.${lang}.json`];
+  if (!load) return;
+  i18n.addResourceBundle(lang, 'storefront', await load(), true, true);
+}
+
+/** Resolves once the boot language's storefront bundle is registered (main.tsx awaits it before rendering). */
+export const i18nReady: Promise<void> = ensureBundle(uiLanguageFor(BOOT_LOCALE))
+  .then(() => { void i18n.changeLanguage(uiLanguageFor(BOOT_LOCALE)); })
+  .catch(() => undefined);
+
 /** Applies <html lang/dir> + script fonts for the CONTENT language (may be one with no UI strings, e.g. fr). */
 export function applyDocumentLanguage(lang: string): void {
   applyDocumentDirection(lang);
@@ -58,7 +73,8 @@ if (typeof document !== 'undefined' && IS_STOREFRONT_HOST) applyDocumentLanguage
 
 /** Switches the active content language without a reload (UI strings fall back to English when missing). */
 export function setActiveLanguage(lang: string): void {
-  void i18n.changeLanguage(uiLanguageFor(lang));
+  const ui = uiLanguageFor(lang);
+  void ensureBundle(ui).then(() => i18n.changeLanguage(ui));
   if (IS_STOREFRONT_HOST) applyDocumentLanguage(lang);
 }
 

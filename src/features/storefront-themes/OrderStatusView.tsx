@@ -33,30 +33,33 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
   const { t: tr } = useTranslation('storefront');
   const { token = '' } = useParams<{ token: string }>();
   const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [notFound, setNotFound] = useState(false);
+  // the outcome of the latest request; loading/error/notFound are derived from it instead of being set inside the effect
+  const [result, setResult] = useState<{ key: string; error: string; notFound: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => setAttempt(a => a + 1), []);
+  const key = `${token}:${attempt}`;
+  const loadFailed = tr('orders.err.loadOne', 'Could not load this order.');
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to loading on each (re)fetch
-    setLoading(true);
-    setError('');
-    setNotFound(false);
     apiGetOrderByStatusToken(token)
-      .then(res => { if (!cancelled) { if (res.data) setOrder(res.data); else setNotFound(true); } })
+      .then(res => {
+        if (cancelled) return;
+        if (res.data) { setOrder(res.data); setResult({ key, error: '', notFound: false }); } else setResult({ key, error: '', notFound: true });
+      })
       .catch(err => {
         if (cancelled) return;
         const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 404 || status === 403 || status === 400 || status === 410) setNotFound(true);
-        else setError(err instanceof Error ? err.message : tr('orders.err.loadOne', "Could not load this order."));
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+        if (status === 404 || status === 403 || status === 400 || status === 410) setResult({ key, error: '', notFound: true });
+        else setResult({ key, error: err instanceof Error ? err.message : loadFailed, notFound: false });
+      });
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- translator is stable
-  }, [token, attempt]);
+  }, [token, key, loadFailed]);
+
+  const settled = result?.key === key;
+  const loading = !settled;
+  const error = settled ? result.error : '';
+  const notFound = settled ? result.notFound : false;
 
   const bw = t.borderWidth;
   const card = { border: `${bw} solid ${t.colors.border}`, borderRadius: t.radius, padding: '20px', marginBottom: '20px' } as const;

@@ -121,7 +121,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
   const sortLabel = SORT_OPTIONS.find(o => o.value === state.sort)?.label;
   const first = products === null;
 
-  const pill = 'flex h-11 cursor-pointer items-center gap-2 rounded-full bg-transparent px-5 text-sm font-medium transition-colors hover:bg-black/5';
+  const pill = 'flex h-11 cursor-pointer items-center gap-2 rounded-full bg-transparent px-5 text-sm font-medium transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]';
   const pillStyle = (on: boolean) => ({ border: `1px solid ${on ? t.colors.ink : t.colors.border}`, color: t.colors.ink, fontFamily: t.fonts.body }) as const;
   const popover = 'fx-pop absolute top-[calc(100%+8px)] z-20 max-h-[360px] overflow-y-auto p-1.5';
   const popoverStyle = { background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 48px rgba(0,0,0,.14)' } as const;
@@ -162,7 +162,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
               <div role="listbox" aria-label={tr('browse.sortByAria', 'Sort by')} className={`${popover} right-0 min-w-[240px]`} style={popoverStyle}>
                 {SORT_OPTIONS.map(o => (
                   <button key={o.value} type="button" role="option" aria-selected={o.value === state.sort} onClick={() => { change(s => ({ ...s, sort: o.value })); setOpen(null); }}
-                    className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-black/5" style={{ fontWeight: o.value === state.sort ? 600 : 400, color: t.colors.ink }}>
+                    className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ fontWeight: o.value === state.sort ? 600 : 400, color: t.colors.ink }}>
                     {o.label}
                   </button>
                 ))}
@@ -205,7 +205,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
 
       {products !== null && products.length > 0 && !error && (
         <div aria-busy={loading} style={{ opacity: loading ? 0.5 : 1, transition: 'opacity .15s' }}>
-          <div className={`grid ${responsiveGridColumnsClass(columns)} gap-x-5 gap-y-10`}>
+          <div className={`grid ${responsiveGridColumnsClass(columns)} fx-grid-gap`}>
             {products.map(p => <div key={p._id}>{renderCard(p, currency)}</div>)}
           </div>
           {totalPages > 1 && <BrowsePagination page={state.page} totalPages={totalPages} onPage={goPage} />}

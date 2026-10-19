@@ -30,7 +30,7 @@ export function RelatedProductsSection({ section, colors }: SharedSectionProps) 
   const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 4;
   return (
     <SectionShell colors={colors} heading={section.settings.heading}>
-      <div className="grid gap-x-5 gap-y-10" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
+      <div className="grid fx-grid-gap" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
         {items.map(p => <FashionProductCard key={p._id} product={p} currency={currency} />)}
       </div>
     </SectionShell>

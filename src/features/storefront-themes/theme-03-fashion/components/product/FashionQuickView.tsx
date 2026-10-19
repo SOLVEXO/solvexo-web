@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { Minus, Plus } from 'lucide-react';
 import type { ProductVariant } from '@/api/services/marketplace';
@@ -42,7 +43,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
   if (loading) {
     body = <div aria-busy className="grid gap-6 sm:grid-cols-2"><div className="animate-pulse" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 20 }} /><div className="flex flex-col gap-3"><div className="h-7 w-3/4 animate-pulse" style={{ background: t.colors.bgAlt, borderRadius: 8 }} /><div className="h-5 w-1/3 animate-pulse" style={{ background: t.colors.bgAlt, borderRadius: 8 }} /></div></div>;
   } else if (error || !detail || !product || !variant) {
-    body = <div className="flex flex-col gap-4"><Notice tone="error">We couldn&apos;t load this product.</Notice><PillButton variant="outline" onClick={refetch}>Try again</PillButton></div>;
+    body = <div className="flex flex-col gap-4"><Notice tone="error">{ts('product.loadError', 'We couldn\'t load this product.')}</Notice><PillButton variant="outline" onClick={refetch}>{ts('checkout.tryAgain', 'Try again')}</PillButton></div>;
   } else {
     const base = String(variant.currency ?? store.baseCurrency ?? currency);
     const show = (n: number) => moneyText(convert(n, base), currency);
@@ -98,18 +99,18 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
           <div className="mt-auto flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <div className="inline-flex items-center" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.buttonRadiusPx }}>
-                <button type="button" aria-label="Decrease quantity" disabled={safeQty <= rules.min} onClick={() => setQty(safeQty - rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={14} aria-hidden /></button>
+                <button type="button" aria-label={ts('product.decreaseQty', 'Decrease quantity')} disabled={safeQty <= rules.min} onClick={() => setQty(safeQty - rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={14} aria-hidden /></button>
                 <span className="w-8 text-center text-sm" aria-live="polite">{safeQty}</span>
-                <button type="button" aria-label="Increase quantity" disabled={safeQty + rules.step > rules.max} onClick={() => setQty(safeQty + rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} aria-hidden /></button>
+                <button type="button" aria-label={ts('product.increaseQty', 'Increase quantity')} disabled={safeQty + rules.step > rules.max} onClick={() => setQty(safeQty + rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} aria-hidden /></button>
               </div>
               <PillButton className="flex-1" loading={busy} disabled={!canBuy} onClick={add}>{canBuy ? 'Add to cart' : 'Sold out'}</PillButton>
             </div>
-            <Link to={`/product/${detail.product.slug || detail.product._id}`} onClick={onClose} className="text-sm underline" style={{ color: t.colors.ink }}>View full details</Link>
+            <Link to={`/product/${detail.product.slug || detail.product._id}`} onClick={onClose} className="text-sm underline" style={{ color: t.colors.ink }}>{ts('pg.view_full_details', 'View full details')}</Link>
           </div>
         </div>
       </div>
     );
   }
 
-  return <Dialog title="Quick view" size="lg" onClose={onClose}>{body}</Dialog>;
+  return <Dialog title={ts('pg.quick_view', 'Quick view')} size="lg" onClose={onClose}>{body}</Dialog>;
 }

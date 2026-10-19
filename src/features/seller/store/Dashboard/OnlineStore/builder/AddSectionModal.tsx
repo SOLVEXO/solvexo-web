@@ -46,8 +46,11 @@ function Mock({ kind }: { kind: PresetMock }) {
 }
 
 export function AddSectionModal({
-  onPick, onClose, supportedTypes,
+  onPick, onClose, supportedTypes, layoutThemeId, layoutScope,
 }: {
+  /** Active theme id and template scope: theme-specific whole-page layouts are offered only to their own theme/template. */
+  layoutThemeId?: string;
+  layoutScope?: string;
   /** One section, or several in order (a whole-page layout). */
   onPick: (sections: PickedSection[]) => void;
   onClose: () => void;
@@ -59,6 +62,7 @@ export function AddSectionModal({
   const [category, setCategory] = useState<PresetCategory | 'all'>('all');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
+  const layouts = PAGE_LAYOUTS.filter(l => (!l.themeId || l.themeId === layoutThemeId) && (l.scope === 'product' ? layoutScope === 'product' : layoutScope !== 'product'));
   const typeOk = (type: SectionType) => !supportedTypes || supportedTypes.includes(type);
   const presets = SECTION_PRESETS.filter(p => typeOk(p.type) && (category === 'all' || p.category === category)
     && (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)));
@@ -132,7 +136,7 @@ export function AddSectionModal({
         <>
           <p className="text-[12px] text-slate mb-3">Adds a full set of sections for your kind of store, in a good order. Your current sections stay — remove or reorder anything afterwards.</p>
           <div className="flex flex-col gap-3">
-            {PAGE_LAYOUTS.map(l => {
+            {layouts.map(l => {
               const kinds = l.presets.map(id => SECTION_PRESETS.find(p => p.id === id)).filter(p => p && typeOk(p.type));
               return (
                 <button key={l.id} type="button" onClick={() => pickLayout(l.presets)}

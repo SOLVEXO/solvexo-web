@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Paperclip, Pencil, SendHorizontal, ShoppingBag, X } from 'lucide-react';
 import type { Message } from '@/api/services/messaging';
 import { fashionTheme as t } from '../../theme.config';
@@ -52,12 +53,12 @@ export function ChatComposer({ initialText = '', editing, replyTo, sending, uplo
       {(replyTo || editing) && (
         <div className="mb-2 flex items-center gap-2 px-3 py-2 text-[13px]" style={{ borderRadius: 12, background: t.colors.bgAlt }}>
           {editing ? <Pencil size={14} aria-hidden /> : null}
-          <span className="min-w-0 flex-1 truncate">{editing ? 'Editing message' : <>Replying to: <span style={{ color: t.colors.inkMuted }}>{replyTo ? messagePreview(replyTo) : ''}</span></>}</span>
+          <span className="min-w-0 flex-1 truncate">{editing ? 'Editing message' : <>{ts('pg.replying_to', 'Replying to:')} <span style={{ color: t.colors.inkMuted }}>{replyTo ? messagePreview(replyTo) : ''}</span></>}</span>
           <button type="button" onClick={editing ? onCancelEdit : onCancelReply} aria-label={editing ? 'Cancel editing' : 'Cancel reply'} className="grid size-7 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.ink, cursor: 'pointer' }}><X size={14} aria-hidden /></button>
         </div>
       )}
       {uploading && (
-        <div className="mb-2" role="status" aria-label="Uploading file">
+        <div className="mb-2" role="status" aria-label={ts('pg.uploading_file', 'Uploading file')}>
           <div className="h-1.5 overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}><div style={{ width: `${Math.max(6, uploadProgress)}%`, height: '100%', background: t.colors.ink, transition: 'width .2s' }} /></div>
           <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>Uploading {uploadProgress > 0 ? `${uploadProgress}%` : ''}</p>
         </div>
@@ -66,17 +67,17 @@ export function ChatComposer({ initialText = '', editing, replyTo, sending, uplo
         {!editing && (
           <>
             <input ref={fileRef} type="file" hidden onChange={e => pick(e.target.files)} aria-hidden tabIndex={-1} accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt" />
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading || disabled} aria-label={`Attach a file (up to ${formatBytes(MAX_UPLOAD_BYTES)})`} title="Attach a file" className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink, cursor: 'pointer', opacity: uploading || disabled ? 0.5 : 1 }}>
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading || disabled} aria-label={`Attach a file (up to ${formatBytes(MAX_UPLOAD_BYTES)})`} title={ts('pg.attach_a_file', 'Attach a file')} className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink, cursor: 'pointer', opacity: uploading || disabled ? 0.5 : 1 }}>
               <Paperclip size={18} aria-hidden />
             </button>
             {onShareProduct && (
-              <button type="button" onClick={onShareProduct} disabled={disabled} aria-label="Share a product" title="Share a product" className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink, cursor: 'pointer', opacity: disabled ? 0.5 : 1 }}>
+              <button type="button" onClick={onShareProduct} disabled={disabled} aria-label={ts('pg.share_a_product', 'Share a product')} title={ts('pg.share_a_product', 'Share a product')} className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink, cursor: 'pointer', opacity: disabled ? 0.5 : 1 }}>
                 <ShoppingBag size={18} aria-hidden />
               </button>
             )}
           </>
         )}
-        <label htmlFor="maison-chat-input" className="sr-only">Message</label>
+        <label htmlFor="maison-chat-input" className="sr-only">{ts('gift.message', 'Message')}</label>
         <textarea id="maison-chat-input" rows={1} value={text} onChange={e => { setText(e.target.value); onTyping(e.target.value.trim().length > 0); }} onKeyDown={onKey} onBlur={() => onTyping(false)}
           placeholder={editing ? 'Edit your message' : 'Write a message'} disabled={disabled} className="max-h-32 min-h-11 flex-1 resize-none"
           style={{ padding: '11px 18px', borderRadius: 22, background: t.colors.bg, color: t.colors.ink, border: `1px solid ${t.colors.border}`, fontFamily: t.fonts.body, fontSize: 15, outline: 'none', fieldSizing: 'content' } as React.CSSProperties} />

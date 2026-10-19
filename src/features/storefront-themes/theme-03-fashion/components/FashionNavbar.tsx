@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useStorefront, type StorefrontNavItemSettings, type ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
@@ -17,6 +18,8 @@ import { fashionTheme as t } from '../theme.config';
 import { FashionPredictiveSearch } from './browse/FashionPredictiveSearch';
 import { FashionLocaleControls } from './FashionLocaleControls';
 import { FashionMobileNav } from './nav/MobileNavPanel';
+import { FashionSectionRenderer } from '../sections';
+import { EditableText } from '../../inlineEdit';
 import { HeaderCta, HeaderTopBar } from './nav/HeaderExtras';
 
 /** Fashion header: centered wordmark between the menu (left) and the icons (right), thin rule, calm hover states. */
@@ -74,7 +77,7 @@ export function FashionNavbar() {
 
   const openCart = () => (drawerMounted ? openDrawer() : navigate('/cart'));
 
-  const iconBtn = 'relative flex size-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-black/5';
+  const iconBtn = 'relative flex size-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]';
   const badge = (n: number) => n > 0 && (
     <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center px-1 text-[10px] font-semibold" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: 9999 }}>{n > 99 ? '99+' : n}</span>
   );
@@ -90,15 +93,15 @@ export function FashionNavbar() {
         <style>{headerNavCss(scope, o)}</style>
         <div className="mx-auto grid items-center" style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, gridTemplateColumns: '1fr auto 1fr', columnGap: 16 }}>
           <div className="flex min-w-0 items-center gap-2">
-            <button type="button" className={`${iconBtn} lg:hidden`} aria-label="Open menu" onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
+            <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
             <Link to="/" className="flex items-center no-underline" aria-label={store.name}>{wordmark}</Link>
           </div>
 
           <div className="flex justify-center">
-            <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+            <nav className="hidden items-center gap-1 lg:flex" aria-label={ts('pg.main', 'Main')}>
               {items.map(item => (
                 <div key={item.id} className="group relative">
-                  <NavAnchor link={item.link} className="inline-block rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors hover:bg-black/5" style={{ color: fg }}>{item.label}</NavAnchor>
+                  <NavAnchor link={item.link} className="inline-block rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}</NavAnchor>
                   {isMegaItem(item) && (
                     <div className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                       <div className="grid gap-x-8 gap-y-6 p-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
@@ -128,9 +131,9 @@ export function FashionNavbar() {
                       <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
                         {item.children.map(c => (
                           <li key={c.id}>
-                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-black/5" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
                             {c.children.map(g => (
-                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-black/5" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
+                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
                             ))}
                           </li>
                         ))}
@@ -145,9 +148,9 @@ export function FashionNavbar() {
           <div className="flex items-center justify-end gap-0.5" style={{ color: fg }}>
             {o.cta && <HeaderCta cta={o.cta} bg={t.colors.accent} color={t.colors.accentInk} radius={t.buttonRadiusPx} fontFamily={t.fonts.body} />}
             <span className="hidden md:block"><FashionLocaleControls /></span>
-            {o.showSearch && <button type="button" className={iconBtn} aria-label="Search" onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}
-            {o.showAccount && <Link to={accountTo} className={`${iconBtn} hidden sm:flex`} aria-label="Account" style={{ color: fg }}><User size={20} /></Link>}
-            {o.showWishlist && <Link to="/wishlist" className={`${iconBtn} hidden sm:flex`} aria-label="Wishlist" style={{ color: fg }}><Heart size={20} />{badge(wishlistCount)}</Link>}
+            {o.showSearch && <button type="button" className={iconBtn} aria-label={ts('nav.search', 'Search')} onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}
+            {o.showAccount && <Link to={accountTo} className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.account', 'Account')} style={{ color: fg }}><User size={20} /></Link>}
+            {o.showWishlist && <Link to="/wishlist" className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.wishlist', 'Wishlist')} style={{ color: fg }}><Heart size={20} />{badge(wishlistCount)}</Link>}
             <button type="button" className={iconBtn} aria-label={`Cart, ${cartCount} items`} onClick={openCart} style={{ color: fg }}><ShoppingBag size={20} />{badge(cartCount)}</button>
           </div>
         </div>
@@ -155,11 +158,12 @@ export function FashionNavbar() {
         {searchOpen && o.showSearch && (
           <div style={{ background: t.colors.bg, borderTop: `1px solid ${t.colors.border}`, borderBottom: `1px solid ${t.colors.border}`, color: t.colors.ink }}>
             <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `20px ${t.layout.containerPadX}` }}>
-              <FashionPredictiveSearch inputId="fx-search" placeholder="Search the collection" maxWidth="720px" onDone={() => setSearchOpen(false)} />
+              <FashionPredictiveSearch inputId="fx-search" placeholder={ts('pg.search_the_collection', 'Search the collection')} maxWidth="720px" onDone={() => setSearchOpen(false)} />
             </div>
           </div>
         )}
       </header>
+      {(header?.sections?.length ?? 0) > 0 && <FashionSectionRenderer sections={header?.sections ?? []} />}
 
       <FashionMobileNav
         open={mobileOpen} onClose={() => setMobileOpen(false)} storeName={store.name} brand={wordmark}

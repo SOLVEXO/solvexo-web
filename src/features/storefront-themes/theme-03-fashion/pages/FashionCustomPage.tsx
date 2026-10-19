@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicStorePage } from '@/api/services/storePages';
 import { useLocalize } from '@/hooks/useLocalize';
@@ -21,7 +22,7 @@ export function FashionCustomPage() {
   useStorefrontSeo({ title: page?.seo?.metaTitle || page?.title, description: page?.seo?.metaDescription || page?.seo?.metaDesc, image: page?.seo?.ogImage, noindex: page?.seo?.noindex });
 
   if (loading) return <PageSkeleton />;
-  if (error) return <ErrorBlock message="We couldn't load this page." onRetry={retry} />;
+  if (error) return <ErrorBlock message={ts('pg.we_couldn_t_load_this_page', 'We couldn\'t load this page.')} onRetry={retry} />;
   if (!page) return <FashionNotFoundPage />;
   return <FashionSectionRenderer sections={page.sections ?? []} />;
 }

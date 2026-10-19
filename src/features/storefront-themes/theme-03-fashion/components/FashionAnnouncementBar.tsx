@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Info, Percent, Tag, AlertTriangle, Truck, PartyPopper, X, ChevronLeft, ChevronRight, Copy, Check, type LucideIcon } from 'lucide-react';
 import { getDismissedBannerIds, dismissBanner } from '@/utils/dismissedBanners';
 import { fashionTheme as t } from '../theme.config';
@@ -153,10 +154,10 @@ export function FashionAnnouncementBar({
       className={`${DEVICE_CLASS[device]} relative items-center gap-3 overflow-hidden px-4`}
       style={{ ...palette, paddingTop: BAR_PAD_Y[barHeight], paddingBottom: BAR_PAD_Y[barHeight] }}
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
-      role="region" aria-label="Announcement"
+      role="region" aria-label={ts('pg.announcement', 'Announcement')}
     >
       <style>{KEYFRAMES}</style>
-      {!marquee && count > 1 && <button type="button" aria-label="Previous announcement" onClick={() => setIndex(i => (i - 1 + count) % count)} className={step} style={{ color: 'inherit' }}><ChevronLeft size={15} /></button>}
+      {!marquee && count > 1 && <button type="button" aria-label={ts('pg.previous_announcement', 'Previous announcement')} onClick={() => setIndex(i => (i - 1 + count) % count)} className={step} style={{ color: 'inherit' }}><ChevronLeft size={15} /></button>}
       {showIcon && !marquee && <Icon size={15} className="shrink-0" />}
       {marquee ? (
         <div className="min-w-0 flex-1 overflow-hidden" style={typeStyle} aria-live="off">
@@ -177,9 +178,9 @@ export function FashionAnnouncementBar({
           {countdown && <span className="rounded-full px-3 py-0.5 font-bold tabular-nums" style={{ background: 'rgba(255,255,255,0.18)' }} aria-label={`Ends in ${countdown}`}>{countdown}</span>}
         </div>
       )}
-      {!marquee && count > 1 && <button type="button" aria-label="Next announcement" onClick={() => setIndex(i => (i + 1) % count)} className={step} style={{ color: 'inherit' }}><ChevronRight size={15} /></button>}
+      {!marquee && count > 1 && <button type="button" aria-label={ts('pg.next_announcement', 'Next announcement')} onClick={() => setIndex(i => (i + 1) % count)} className={step} style={{ color: 'inherit' }}><ChevronRight size={15} /></button>}
       {closable && (
-        <button type="button" aria-label="Dismiss announcement" onClick={() => { rememberDismiss(id, dismissFor); setClosedId(id); }} className={step} style={{ color: 'inherit' }}>
+        <button type="button" aria-label={ts('pg.dismiss_announcement', 'Dismiss announcement')} onClick={() => { rememberDismiss(id, dismissFor); setClosedId(id); }} className={step} style={{ color: 'inherit' }}>
           <X size={15} />
         </button>
       )}

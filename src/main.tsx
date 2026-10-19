@@ -9,7 +9,7 @@ import { CurrencyPreferenceProvider } from '@/contexts/CurrencyPreferenceContext
 import { AuthGateProvider } from '@/contexts/AuthGateContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { captureSellerAcquisitionAttribution } from '@/utils/sellerAcquisitionAttribution';
-import './i18n';
+import { i18nReady } from './i18n';
 import './index.css';
 
 // Phase 9 — Merchant Acquisition Tracking. Must run here, once, on the
@@ -19,7 +19,7 @@ import './index.css';
 // Read back later, at seller-registration submit time, by RegisterPage.tsx.
 captureSellerAcquisitionAttribution();
 
-createRoot(document.getElementById('root')!).render(
+void i18nReady.then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ToastProvider>
       <AuthGateProvider>
@@ -35,4 +35,4 @@ createRoot(document.getElementById('root')!).render(
       </AuthGateProvider>
     </ToastProvider>
   </StrictMode>,
-);
+));

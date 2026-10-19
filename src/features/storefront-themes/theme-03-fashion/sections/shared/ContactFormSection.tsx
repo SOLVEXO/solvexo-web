@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 import { CheckCircle2, Loader2 } from 'lucide-react';
-import { tt } from '@/utils/tStatic';
+import { ts, tt } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiSubmitContactMessage } from '@/api/services/storeContact';
 import { copyText } from '../../../sectionCopy';
@@ -57,7 +57,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
             <div><label htmlFor={`${uid}-message`} className={label}>{copyText(s, 'messageLabel', 'Message')}</label><textarea id={`${uid}-message`} required rows={6} maxLength={3000} value={values.message} onChange={set('message')} style={{ ...controlStyle(), minHeight: 140, resize: 'vertical' }} /></div>
             {/* Bot trap: invisible to people, so only automated fills reach it. */}
             <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
-              <label htmlFor={`${uid}-website`}>Website</label>
+              <label htmlFor={`${uid}-website`}>{ts('pg.website', 'Website')}</label>
               <input id={`${uid}-website`} tabIndex={-1} autoComplete="off" value={values.website} onChange={set('website')} />
             </div>
             {status === 'error' && <p role="alert" className="m-0 text-sm" style={{ color: t.colors.danger }}>{error}</p>}

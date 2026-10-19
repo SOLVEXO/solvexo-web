@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug } from '@/api/services/collections';
 import { useLocalize } from '@/hooks/useLocalize';
@@ -27,7 +28,7 @@ export function FashionCollectionPage() {
   useStorefrontSeo({ title: collection?.seo?.metaTitle || collection?.name, description: collection?.seo?.metaDescription || collection?.description, image: collection?.image });
 
   if (loading) return <PageSkeleton />;
-  if (error) return <ErrorBlock message="We couldn't load this collection." onRetry={retry} />;
+  if (error) return <ErrorBlock message={ts('pg.we_couldn_t_load_this_collection', 'We couldn\'t load this collection.')} onRetry={retry} />;
   if (!data || !collection) return <FashionNotFoundPage />;
 
   const hasGrid = sections.some(s => s.type === 'collection_product_grid');
@@ -37,7 +38,7 @@ export function FashionCollectionPage() {
         <header className="relative mt-3 grid overflow-hidden" style={{ borderRadius: 28, background: t.colors.bgAlt, minHeight: collection.image ? 'clamp(220px, 34vh, 340px)' : undefined }}>
           {collection.image && <img src={collection.image} alt="" className="absolute inset-0 size-full object-cover" />}
           {collection.image && <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.1) 70%)' }} />}
-          <div className="relative z-10 self-end p-6 md:p-10" style={{ color: collection.image ? '#fff' : t.colors.ink }}>
+          <div className={`${collection.image ? 'fx-on-image ' : ''}relative z-10 self-end p-6 md:p-10`} style={{ color: collection.image ? '#fff' : t.colors.ink }}>
             <h1 className="m-0 text-[clamp(30px,4.6vw,56px)] font-medium leading-[1.05] tracking-tight">{collection.name}</h1>
             {collection.description && <div className="mt-3 max-w-[620px] text-base leading-relaxed opacity-90">{renderRichText(collection.description)}</div>}
           </div>

@@ -16,7 +16,9 @@ export const SUPPORTED_UI_LOCALES = [
 export type UiLocale = (typeof SUPPORTED_UI_LOCALES)[number];
 
 /** Locales with a real UI string bundle. */
-export const UI_STRING_LOCALES: readonly string[] = ['en', 'ur'];
+export const UI_STRING_LOCALES: readonly string[] = [
+  'en', 'ur', 'ar', 'fr', 'de', 'es', 'it', 'pt', 'nl', 'tr', 'hi', 'fa', 'id', 'ru', 'zh', 'ja', 'ko', 'ms', 'pl', 'sv', 'th', 'vi',
+]; // bn/he/pa/ta bundles not written yet: they fall back to English UI
 
 export const RTL_LOCALES: readonly string[] = ['ur', 'ar', 'he', 'fa'];
 
@@ -61,7 +63,7 @@ export function switchLocalePath(pathname: string, search: string, hash: string,
   return `${path}${search}${hash}`;
 }
 
-/** Locales that may be used for UI (only 'en'/'ur' have strings; others resolve to English UI). */
+/** Locales that may be used for UI (locales without a bundle resolve to English UI). */
 export function uiLanguageFor(code: string): string {
   return UI_STRING_LOCALES.includes(code) ? code : DEFAULT_LOCALE;
 }

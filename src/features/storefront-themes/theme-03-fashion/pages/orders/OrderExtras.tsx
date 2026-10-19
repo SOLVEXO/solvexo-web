@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2, RefreshCw, Store, Truck } from 'lucide-react';
 import { apiGetDownloadLink, type OrderDetail } from '@/api/services/orders';
-import { tt } from '@/utils/tStatic';
+import { ts, tt } from '@/utils/tStatic';
 import { collectShipments, formatOrderDate, isPickupOrder, pickupInfo, safeTrackingUrl } from '../../../orderUi';
 import { fashionTheme as t } from '../../theme.config';
 import { Card } from '../../ui/primitives';
@@ -74,7 +74,7 @@ export function ExchangeOrderBanner({ exchangeOf }: { exchangeOf: { orderId: str
   return (
     <div role="status" className="flex items-center gap-3 px-4 py-3 text-sm" style={{ borderRadius: 14, background: t.colors.bgAlt, color: t.colors.ink }}>
       <RefreshCw size={16} aria-hidden className="shrink-0" />
-      <span>This is the replacement order for <Link to={`/orders/${exchangeOf.orderId}`} className="font-semibold underline" style={{ color: t.colors.ink }}>#{exchangeOf.orderNumber}</Link>.</span>
+      <span>{ts('pg.this_is_the_replacement_order_for', 'This is the replacement order for')} <Link to={`/orders/${exchangeOf.orderId}`} className="font-semibold underline" style={{ color: t.colors.ink }}>#{exchangeOf.orderNumber}</Link>.</span>
     </div>
   );
 }

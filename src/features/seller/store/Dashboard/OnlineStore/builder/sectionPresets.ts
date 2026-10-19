@@ -31,7 +31,20 @@ const inDays = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString(
 const only = (settings: Record<string, unknown>) => () => ({ settings, blocks: [] });
 
 /** Whole-page starting points: a list of section designs added together, in order. */
-export const PAGE_LAYOUTS: { id: string; name: string; description: string; presets: string[] }[] = [
+export const PAGE_LAYOUTS: { id: string; name: string; description: string; presets: string[]; /** Only offered on this theme (omitted = every theme). */ themeId?: string; /** 'product' = only on the product template; omitted = every other template. */ scope?: 'product' }[] = [
+  // ── Maison (theme-03-fashion) ──
+  { id: 'maison-editorial', themeId: 'theme-03-fashion', name: 'Maison · Editorial', description: 'Slideshow, trust row, new arrivals, story, reviews, sign-up',
+    presets: ['hero-slides', 'trust-4', 'products-new', 'story-rows', 'reviews-3', 'newsletter-offer'] },
+  { id: 'maison-catalogue', themeId: 'theme-03-fashion', name: 'Maison · Catalogue', description: 'Big banner, collections, best sellers, offer strip, gallery',
+    presets: ['banner-hero', 'collections-grid', 'products-best', 'marquee-offers', 'social-gallery', 'newsletter-offer'] },
+  { id: 'maison-minimal', themeId: 'theme-03-fashion', name: 'Maison · Minimal', description: 'Statement, a few best sellers, brand film, sign-up',
+    presets: ['story-statement', 'products-best', 'brand-video', 'newsletter-offer'] },
+  { id: 'maison-product-classic', themeId: 'theme-03-fashion', scope: 'product', name: 'Maison · Classic product page', description: 'Related products, benefits, reviews',
+    presets: ['related-also-like', 'benefits-3', 'reviews-3'] },
+  { id: 'maison-product-lookbook', themeId: 'theme-03-fashion', scope: 'product', name: 'Maison · Complete the look', description: 'Complete the look, trust row, FAQ',
+    presets: ['related-complete-look', 'trust-4', 'faq-basics'] },
+  { id: 'maison-product-minimal', themeId: 'theme-03-fashion', scope: 'product', name: 'Maison · Minimal product page', description: 'Just a related-products row',
+    presets: ['related-also-like'] },
   { id: 'fashion', name: 'Fashion & lifestyle', description: 'Big banner, new arrivals, collections, story, reviews, sign-up',
     presets: ['banner-hero', 'trust-4', 'products-new', 'collections-grid', 'story-rows', 'reviews-3', 'social-gallery', 'newsletter-offer'] },
   { id: 'electronics', name: 'Electronics & gadgets', description: 'Slideshow, categories, best sellers, sale timer, FAQ',
@@ -62,6 +75,10 @@ export const SECTION_PRESETS: SectionPreset[] = [
     build: only({ heading: 'New arrivals', source: 'newArrivals', limit: 8, columns: 4 }) },
   { id: 'products-best', type: 'featured_products', category: 'products', name: 'Best sellers', description: 'Your top sellers, 3 large cards per row', mock: 'products-3',
     build: only({ heading: 'Best sellers', source: 'bestsellers', limit: 6, columns: 3 }) },
+  { id: 'related-also-like', type: 'related_products', category: 'products', name: 'You may also like', description: 'Other products from the same category (product page only)', mock: 'products',
+    build: only({ heading: 'You may also like', limit: 4, columns: 4 }) },
+  { id: 'related-complete-look', type: 'related_products', category: 'products', name: 'Complete the look', description: 'Pieces from the same category to wear with it (product page only)', mock: 'products-3',
+    build: only({ heading: 'Complete the look', limit: 3, columns: 3 }) },
   { id: 'products-sale', type: 'featured_products', category: 'products', name: 'On sale', description: 'Products with a discount price', mock: 'products',
     build: only({ heading: 'On sale now', source: 'onSale', limit: 8, columns: 4 }) },
   { id: 'products-trending', type: 'featured_products', category: 'products', name: 'Trending now', description: 'What shoppers are looking at most', mock: 'products',

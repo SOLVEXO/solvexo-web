@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
 import { apiGetMyStoreCredit } from '@/api/services/storeCredit';
@@ -26,24 +27,24 @@ function StoreCredit() {
   const totalPages = txs ? Math.max(1, Math.ceil(txs.total / (txs.limit || LIMIT))) : 1;
 
   return (
-    <AccountLayout title="Store" accent="credit" subtitle={`Credit from refunds and gifts at ${store.name}. It is applied at checkout.`}>
+    <AccountLayout title={ts('pg.store', 'Store')} accent={ts('pg.word_credit', 'credit')} subtitle={`Credit from refunds and gifts at ${store.name}. It is applied at checkout.`}>
       {loading ? (
-        <div role="status" aria-label="Loading store credit"><SkeletonBlock h={150} /><div className="mt-6"><SkeletonBlock h={64} rows={3} /></div></div>
+        <div role="status" aria-label={ts('pg.loading_store_credit', 'Loading store credit')}><SkeletonBlock h={150} /><div className="mt-6"><SkeletonBlock h={64} rows={3} /></div></div>
       ) : error ? (
-        <ErrorState message="We could not load your store credit." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_your_store_credit', 'We could not load your store credit.')} onRetry={retry} />
       ) : (
         <div className="flex flex-col gap-8">
           <Card tone="soft" style={{ background: t.colors.ink, color: t.colors.bg }}>
-            <p className="m-0 text-sm" style={{ opacity: 0.7 }}>Available balance</p>
+            <p className="m-0 text-sm" style={{ opacity: 0.7 }}>{ts('credit.available', 'Available balance')}</p>
             <p className="m-0 mt-1 text-[clamp(36px,6vw,56px)] font-medium leading-none tracking-tight" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
             {data?.nextExpiry && <p className="m-0 mt-4 text-sm" style={{ opacity: 0.75 }}>{money(data.nextExpiry.amount, from)} expires on {formatStoreCreditDate(data.nextExpiry.expiresAt)}</p>}
-            <Link to="/cart" className="fx-pill mt-6" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>Go to cart</Link>
+            <Link to="/cart" className="fx-pill mt-6" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.goToCart', 'Go to cart')}</Link>
           </Card>
 
           <section aria-labelledby="credit-history">
-            <SectionHeading><span id="credit-history">History</span></SectionHeading>
+            <SectionHeading><span id="credit-history">{ts('credit.history', 'History')}</span></SectionHeading>
             {!txs || txs.items.length === 0 ? (
-              <EmptyState icon={<Wallet size={24} />} title="No store credit activity yet" text={`Credit from refunds or ${store.name} will show up here.`} />
+              <EmptyState icon={<Wallet size={24} />} title={ts('credit.none', 'No store credit activity yet')} text={`Credit from refunds or ${store.name} will show up here.`} />
             ) : (
               <>
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { Bell, Check, Gift, MessageSquare, Package, Trash2 } from 'lucide-react';
 import type { NotificationItem } from '@/api/services/notifications';
 import { fashionTheme as t } from '../../theme.config';
@@ -30,11 +31,11 @@ export function NotificationRow({ item, onRead, onDelete }: { item: Notification
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {!item.isRead && (
-          <button type="button" onClick={() => onRead(item._id)} aria-label={`Mark "${item.title}" as read`} title="Mark as read" className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.ink, cursor: 'pointer' }}>
+          <button type="button" onClick={() => onRead(item._id)} aria-label={`Mark "${item.title}" as read`} title={ts('pg.mark_as_read', 'Mark as read')} className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.ink, cursor: 'pointer' }}>
             <Check size={16} aria-hidden />
           </button>
         )}
-        <button type="button" onClick={() => onDelete(item._id)} aria-label={`Delete "${item.title}"`} title="Delete" className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
+        <button type="button" onClick={() => onDelete(item._id)} aria-label={`Delete "${item.title}"`} title={ts('addresses.delete', 'Delete')} className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
           <Trash2 size={16} aria-hidden />
         </button>
       </div>

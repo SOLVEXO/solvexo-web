@@ -42,3 +42,20 @@ describe('section presets', () => {
     for (const l of PAGE_LAYOUTS) for (const id of l.presets) expect(ids.has(id), `${l.id} → ${id}`).toBe(true);
   });
 });
+
+describe('theme-specific whole-page layouts', () => {
+  const maison = PAGE_LAYOUTS.filter(l => l.themeId === 'theme-03-fashion');
+  it('Maison ships 3 home layouts and 3 product-page layouts', () => {
+    expect(maison.filter(l => !l.scope)).toHaveLength(3);
+    expect(maison.filter(l => l.scope === 'product')).toHaveLength(3);
+  });
+  it('product-page layouts only use designs that make sense below a product', () => {
+    const allowed = new Set(['related_products', 'multicolumn', 'testimonials', 'trust_badges', 'faq']);
+    for (const l of maison.filter(x => x.scope === 'product')) {
+      for (const id of l.presets) expect(allowed.has(SECTION_PRESETS.find(p => p.id === id)!.type), `${l.id} → ${id}`).toBe(true);
+    }
+  });
+  it('generic layouts stay available to every theme', () => {
+    expect(PAGE_LAYOUTS.filter(l => !l.themeId).length).toBeGreaterThanOrEqual(5);
+  });
+});

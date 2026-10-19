@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
@@ -6,6 +7,8 @@ import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../n
 import { fashionTheme as t } from '../theme.config';
 import { FooterColumns, FooterNewsletterStrip, type FooterColumnTokens } from './nav/FooterColumns';
 import { FashionLocaleControls } from './FashionLocaleControls';
+import { FashionSectionRenderer } from '../sections';
+import { EditableText, useInlineEditActive } from '../../inlineEdit';
 
 /** Footer: a dark rounded panel with the retailer's columns, newsletter and socials, plus a legal row. */
 export function FashionFooter() {
@@ -22,7 +25,9 @@ export function FashionFooter() {
   const fg = opts.textColor ?? t.colors.bg;
   const muted = `color-mix(in srgb, ${fg} 66%, transparent)`;
   const line = `color-mix(in srgb, ${fg} 16%, transparent)`;
-  const copyright = visibleFooterBlocks(theme?.footer).find(b => b.type === 'copyright_text')?.settings.text as string | undefined;
+  const copyrightBlock = visibleFooterBlocks(theme?.footer).find(b => b.type === 'copyright_text');
+  const copyright = copyrightBlock?.settings.text as string | undefined;
+  const editing = useInlineEditActive();
   const legal = [...pages.filter(p => p.showInFooter && !p.policyType), ...(opts.showPolicyLinks ? pages.filter(p => p.policyType) : [])];
 
   const tokens: FooterColumnTokens = {
@@ -35,16 +40,18 @@ export function FashionFooter() {
   };
 
   return (
+    <>
+    {(theme?.footer?.sections?.length ?? 0) > 0 && <FashionSectionRenderer sections={theme?.footer?.sections ?? []} />}
     <footer style={{ padding: `0 ${t.layout.containerPadX} 24px`, fontFamily: t.fonts.body, background: t.colors.bg }}>
-      <div className="mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, background: bg, color: fg, borderRadius: 28 }}>
+      <div className="mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, background: bg, color: fg, borderRadius: t.sectionRadiusPx }}>
         <FooterNewsletterStrip tokens={tokens} maxWidth="100%" padX="clamp(24px, 4vw, 56px)" line={line} />
         <div className="flex flex-wrap gap-x-10 gap-y-10" style={{ padding: `${opts.padding.columns}px clamp(24px, 4vw, 56px)` }}>
           <FooterColumns tokens={tokens} />
         </div>
         <div style={{ borderTop: `1px solid ${line}` }}>
           <div className="flex flex-col items-center justify-between gap-3 text-[13px] md:flex-row" style={{ padding: '20px clamp(24px, 4vw, 56px)', color: muted }}>
-            <p className="m-0">{copyright ? expandCopyright(copyright) : `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}</p>
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label="Legal">
+            <p className="m-0">{copyright && copyrightBlock?._id && editing ? <EditableText value={copyright} settingKey="text" blockId={copyrightBlock._id} /> : copyright ? expandCopyright(copyright) : `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
               {legal.map(p => <Link key={p._id} to={`/${p.slug}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
               {opts.showCurrency && <FashionLocaleControls />}
             </nav>
@@ -52,5 +59,6 @@ export function FashionFooter() {
         </div>
       </div>
     </footer>
+    </>
   );
 }

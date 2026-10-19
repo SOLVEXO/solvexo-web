@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { HelpCircle, Search } from 'lucide-react';
 import { apiListPublicStoreFaqs } from '@/api/services/storeFaq';
@@ -25,26 +26,26 @@ export function FashionFaqsPage() {
 
   return (
     <Page narrow>
-      <PageTitle accent="questions" subtitle={`Quick answers about orders, delivery and shopping at ${store.name}.`}>Frequently asked</PageTitle>
+      <PageTitle accent={ts('pg.word_questions', 'questions')} subtitle={`Quick answers about orders, delivery and shopping at ${store.name}.`}>{ts('pg.frequently_asked', 'Frequently asked')}</PageTitle>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
-      {loading ? <div role="status" aria-label="Loading questions"><SkeletonBlock h={68} rows={5} /></div>
-        : error ? <ErrorState message="We couldn't load the questions right now." onRetry={retry} />
-        : !data || data.length === 0 ? <EmptyState icon={<HelpCircle size={24} aria-hidden />} title="No questions yet" text="Nothing has been added here yet. If you need help, send us a message." action={<Link to="/messages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Contact us</Link>} />
+      {loading ? <div role="status" aria-label={ts('pg.loading_questions', 'Loading questions')}><SkeletonBlock h={68} rows={5} /></div>
+        : error ? <ErrorState message={ts('pg.we_couldn_t_load_the_questions_right_now', 'We couldn\'t load the questions right now.')} onRetry={retry} />
+        : !data || data.length === 0 ? <EmptyState icon={<HelpCircle size={24} aria-hidden />} title={ts('pg.no_questions_yet', 'No questions yet')} text={ts('pg.nothing_has_been_added_here_yet_if_you_n', 'Nothing has been added here yet. If you need help, send us a message.')} action={<Link to="/messages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.contact_us', 'Contact us')}</Link>} />
         : (
           <>
             {data.length > 5 && (
               <div className="mb-5 relative">
-                <Field label="Search the questions">
-                  {props => <><Search size={16} aria-hidden className="pointer-events-none absolute left-4 bottom-[17px]" style={{ color: t.colors.inkMuted }} /><TextInput {...props} type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Type a word, e.g. shipping" style={{ paddingLeft: 42 }} /></>}
+                <Field label={ts('pg.search_the_questions', 'Search the questions')}>
+                  {props => <><Search size={16} aria-hidden className="pointer-events-none absolute left-4 bottom-[17px]" style={{ color: t.colors.inkMuted }} /><TextInput {...props} type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={ts('pg.type_a_word_e_g_shipping', 'Type a word, e.g. shipping')} style={{ paddingLeft: 42 }} /></>}
                 </Field>
               </div>
             )}
             <p className="sr-only" role="status">{q ? `${shown.length} ${shown.length === 1 ? 'question' : 'questions'} found` : ''}</p>
-            {shown.length === 0 ? <EmptyState title="No matching questions" text="Try a different word or clear the search." /> : <FaqAccordion faqs={shown} />}
+            {shown.length === 0 ? <EmptyState title={ts('pg.no_matching_questions', 'No matching questions')} text={ts('pg.try_a_different_word_or_clear_the_search', 'Try a different word or clear the search.')} /> : <FaqAccordion faqs={shown} />}
             <div className="mt-10 grid gap-3 p-6 text-center" style={{ borderRadius: 24, background: t.colors.bgAlt }}>
-              <p className="m-0 text-lg font-semibold">Still need help?</p>
-              <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>Our team is happy to answer anything else.</p>
-              <div><Link to="/messages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Message us</Link></div>
+              <p className="m-0 text-lg font-semibold">{ts('pg.still_need_help', 'Still need help?')}</p>
+              <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.our_team_is_happy_to_answer_anything_els', 'Our team is happy to answer anything else.')}</p>
+              <div><Link to="/messages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.message_us', 'Message us')}</Link></div>
             </div>
           </>
         )}

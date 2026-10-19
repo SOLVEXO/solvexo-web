@@ -1,20 +1,21 @@
-import { Loader2, RotateCcw, Undo2, Redo2, History } from 'lucide-react';
+import { Loader2, RotateCcw, Undo2, Redo2, History, Search } from 'lucide-react';
 import { useEffect } from 'react';
 import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  apiGetStoreTheme, apiUpdateStoreThemeColors, apiUpdateStoreCustomCss,
+  apiGetStoreTheme, apiUpdateStoreThemeColors,
   apiPublishStoreTheme, apiRevertStoreThemeDraft,
   apiListStoreThemeVersions, apiRestoreStoreThemeVersion,
   apiCreateColorScheme, apiApplyColorScheme, apiDeleteColorScheme,
   type StorefrontColors, type StoreThemeData,
 } from '@/api/services/storeTheme';
 import { useEditorState } from '../builder/editor/useEditorState';
+import { useAutosave } from '../builder/editor/useAutosave';
 import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUnsavedContext';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
-import { getThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
+import { getThemeManifest, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
 // Fixed platform brand color — same literal `ThemeLibraryPage.tsx`'s Install
@@ -29,7 +30,7 @@ const ADMIN_ACCENT = '#D97757';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const label = 'text-[11.5px] font-bold uppercase tracking-wide text-slate';
 
-interface ThemeDraft { colors: StorefrontColors; customCss: string }
+interface ThemeDraft { colors: StorefrontColors }
 
 function Field({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
@@ -79,7 +80,7 @@ const GROUP_GRID: Record<number, string> = {
  *  can be — a theme's manifest can list its fields in any order; they
  *  always render grouped into these sections, in this order, and a group
  *  with zero fields for the active theme is simply skipped. */
-const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Cart'];
+const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Product page', 'Effects', 'Cart'];
 
 /** Renders one manifest-declared field against the theme's live working
  *  copy — a `color` control becomes a `ColorField`, a `select` control
@@ -93,10 +94,10 @@ function ThemeSettingsField({ field, colors, onChange }: {
 }) {
   const value = String(colors[field.key] ?? '');
   if (field.control.kind === 'color' && field.control.optional) {
-    return <OptionalColorField label={field.label} value={colors[field.key] as string | null | undefined} fallback={field.control.optional.fallback} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />;
+    return <div className="flex flex-col gap-1.5"><OptionalColorField label={field.label} value={colors[field.key] as string | null | undefined} fallback={field.control.optional.fallback} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
   }
   if (field.control.kind === 'color') {
-    return <ColorField heading={field.label} value={value} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />;
+    return <div className="flex flex-col gap-1.5"><ColorField heading={field.label} value={value} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
   }
   return (
     <div className="flex flex-col gap-1.5">
@@ -130,7 +131,7 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
   storeId: string;
   installedThemeId: string | undefined;
   schemes: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
-  current: { bgColor: string; textColor: string; primaryColor: string };
+  current: { bgColor: string; textColor: string; primaryColor: string; mutedColor?: string | null; borderColor?: string | null; saleColor?: string | null };
   onSchemesChanged: (doc: StoreThemeData) => void;
   onApplied: (doc: StoreThemeData) => void;
 }) {
@@ -233,7 +234,7 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
  *  editable — see `applyMerchantThemeOverrides` in `theme.config.ts`.
  *
  *  Same backend contract as the pre-existing (now-superseded) Store
- *  Builder's Theme tab — `apiUpdateStoreThemeColors`/`apiUpdateStoreCustomCss`
+ *  Builder's Theme tab — `apiUpdateStoreThemeColors`
  *  /`apiPublishStoreTheme` etc. already existed and needed zero backend
  *  changes; this is a new frontend consumer of an already-complete API. Its
  *  own self-contained draft/undo-redo/save/publish/version-history toolbar
@@ -251,6 +252,110 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
  *  text, so this is a zero-visible-change refactor for Maison today — but a
  *  second theme's manifest now renders its own field set here with no new
  *  code in this component, which is the actual point. */
+/** One-click complete looks from the theme's manifest, plus "Reset to default". Applying only patches the working copy
+ *  (undo/redo works); nothing is saved or published until the merchant does it. */
+const STYLE_RADIUS_PX: Record<string, number> = { none: 0, small: 6, medium: 12, large: 16, full: 999 };
+function ThemeStyles({ manifest, current, onApply }: {
+  manifest: ThemeManifest;
+  current: StorefrontColors;
+  onApply: (patch: Partial<StorefrontColors>, label: string) => void;
+}) {
+  const styles = manifest.styles ?? [];
+  if (styles.length === 0) return null;
+  const matches = (settings: Partial<StorefrontColors>) =>
+    (Object.keys(settings) as (keyof StorefrontColors)[]).every(k => (current[k] ?? null) === (settings[k] ?? null));
+  return (
+    <div className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[13px] font-bold text-charcoal">Theme styles</p>
+          <p className="text-[11.5px] text-slate mt-0.5">Pick a complete look in one click, then fine-tune any setting below. Nothing goes live until you Publish.</p>
+        </div>
+        {manifest.defaultSettings && (
+          <button type="button" onClick={() => onApply(manifest.defaultSettings!, 'Defaults')}
+            className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">Reset to default</button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {styles.map(st => {
+          const x = st.settings;
+          const active = matches(x);
+          const heading = (x.headingFont || x.font || 'Inter') as string;
+          return (
+            <button key={st.id} type="button" onClick={() => onApply(x, st.name)} aria-pressed={active}
+              className="flex flex-col gap-2 p-2 rounded-xl text-left cursor-pointer bg-[#faf8f4] border"
+              style={{ borderColor: active ? '#161412' : '#e9e5dc', borderWidth: active ? 2 : 1 }}>
+              <span className="block p-3" style={{ background: x.bgColor, color: x.textColor, borderRadius: Math.min(STYLE_RADIUS_PX[x.sectionRadius ?? 'large'] ?? 16, 14), border: '1px solid rgba(0,0,0,.08)' }}>
+                <span className="block text-[18px] leading-none" style={{ fontFamily: `'${heading}', serif`, fontWeight: x.headingWeight === 'bold' ? 700 : x.headingWeight === 'semibold' ? 600 : x.headingWeight === 'regular' ? 400 : 500, textTransform: x.headingCase === 'uppercase' ? 'uppercase' : undefined, letterSpacing: x.headingTracking === 'wide' ? '.04em' : undefined }}>Aa</span>
+                <span className="mt-2 flex items-center gap-1.5">
+                  <span className="inline-block h-4 w-12" style={{ background: x.buttonStyle === 'outline' ? 'transparent' : x.primaryColor, border: `1px solid ${x.primaryColor}`, borderRadius: STYLE_RADIUS_PX[x.buttonRadius ?? 'full'] ?? 999 }} />
+                  <span className="inline-block h-4 w-4 rounded-full" style={{ background: x.saleColor || '#DC2626' }} />
+                </span>
+              </span>
+              <span className="flex items-center justify-between px-0.5">
+                <span className="text-[13px] font-bold text-charcoal">{st.name}</span>
+                {active && <span className="text-[10.5px] font-semibold text-slate">Current</span>}
+              </span>
+              <span className="px-0.5 text-[11.5px] text-slate leading-snug">{st.description}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Export the theme's settings to a small JSON file and import them back (another store, or a backup). Import only accepts
+ *  settings this theme actually has, with valid values; it patches the draft, so undo/redo works and nothing is live until Publish. */
+function SettingsTransfer({ manifest, current, onImport, onError }: {
+  manifest: ThemeManifest;
+  current: StorefrontColors;
+  onImport: (patch: Partial<StorefrontColors>, count: number) => void;
+  onError: (message: string) => void;
+}) {
+  const fields = manifest.themeSettingsFields;
+  const doExport = () => {
+    const settings: Record<string, unknown> = {};
+    for (const f of fields) settings[f.key] = current[f.key] ?? null;
+    const blob = new Blob([JSON.stringify({ themeId: manifest.id, settings }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `theme-settings-${manifest.id}.json`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  const doImport = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text()) as { themeId?: string; settings?: Record<string, unknown> };
+      if (!parsed || typeof parsed !== 'object' || !parsed.settings || typeof parsed.settings !== 'object') throw new Error('This file is not a theme settings export.');
+      if (parsed.themeId && parsed.themeId !== manifest.id) throw new Error('This file was exported from a different theme.');
+      const patch: Record<string, unknown> = {};
+      for (const f of fields) {
+        if (!(f.key in parsed.settings)) continue;
+        const v = parsed.settings[f.key];
+        if (f.control.kind === 'select') { if (typeof v === 'string' && f.control.options.some(o => o.value === v)) patch[f.key] = v; }
+        else if (v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v))) patch[f.key] = v;
+      }
+      const count = Object.keys(patch).length;
+      if (count === 0) throw new Error('No matching settings were found in this file.');
+      onImport(patch as Partial<StorefrontColors>, count);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Could not read this file.');
+    }
+  };
+  const btn = 'text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer';
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <button type="button" onClick={doExport} className={btn}>Export settings</button>
+      <label className={btn}>
+        Import settings
+        <input type="file" accept="application/json,.json" className="sr-only" aria-label="Import theme settings file"
+          onChange={e => { void doImport(e.target.files?.[0]); e.target.value = ''; }} />
+      </label>
+    </div>
+  );
+}
+
 export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, onDirtyChange }: {
   storeId: string;
   /** The specific installed theme row this panel edits — resolved by the
@@ -273,6 +378,8 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [doc, setDoc] = useState<StoreThemeData | null>(null);
   const [discarding, setDiscarding] = useState(false);
+  const [query, setQuery] = useState('');
+  const [tipsHidden, setTipsHidden] = useState(() => { try { return localStorage.getItem('sx-theme-tips') === '1'; } catch { return false; } });
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versions, setVersions] = useState<{ _id: string; publishedAt: string }[]>([]);
@@ -295,8 +402,8 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
         setDoc(res.data);
         setLoadedKey(requestKey);
         editor.load(
-          { colors: res.data.theme, customCss: res.data.customCss ?? '' },
-          { colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' },
+          { colors: res.data.theme },
+          { colors: res.data.draft.theme },
         );
       })
       .catch(err => {
@@ -316,8 +423,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
     onDraftChange({
       ...doc,
       theme: doc.theme,
-      customCss: doc.customCss,
-      draft: { ...doc.draft, theme: editor.workingCopy.colors, customCss: editor.workingCopy.customCss },
+      draft: { ...doc.draft, theme: editor.workingCopy.colors },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, editor.workingCopy]);
@@ -326,29 +432,28 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
     if (!editor.workingCopy) return;
     editor.edit({ ...editor.workingCopy, colors: { ...editor.workingCopy.colors, ...patch } });
   };
-  const setCss = (customCss: string) => {
-    if (!editor.workingCopy) return;
-    editor.edit({ ...editor.workingCopy, customCss });
-  };
 
   const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding;
 
-  const handleSave = async () => {
+  const handleSave = async (_event?: unknown, silent = false) => {
     if (!editor.workingCopy) return;
     editor.markSaving();
     try {
-      const [colorsRes] = await Promise.all([
-        apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors, installedThemeId),
-        apiUpdateStoreCustomCss(storeId, editor.workingCopy.customCss || null, installedThemeId),
-      ]);
+      const colorsRes = await apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors, installedThemeId);
       setDoc(colorsRes.data);
-      editor.markSaved({ colors: colorsRes.data.draft.theme, customCss: colorsRes.data.draft.customCss ?? '' });
-      flash(true, 'Draft saved — Publish to make it live.');
+      editor.markSaved({ colors: colorsRes.data.draft.theme });
+      if (!silent) flash(true, 'Draft saved — Publish to make it live.');
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
     }
   };
+
+  useAutosave({
+    active: editor.dirty && editor.phase !== 'saving' && editor.phase !== 'publishing' && editor.phase !== 'error' && !discarding,
+    version: editor.workingCopy,
+    save: () => { void handleSave(undefined, true); },
+  });
 
   const handlePublish = async () => {
     editor.markPublishing();
@@ -357,14 +462,11 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
       // local edit that hasn't been saved yet, persist it first so Publish
       // always promotes exactly what the merchant currently sees.
       if (editor.dirty && editor.workingCopy) {
-        await Promise.all([
-          apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors, installedThemeId),
-          apiUpdateStoreCustomCss(storeId, editor.workingCopy.customCss || null, installedThemeId),
-        ]);
+        await apiUpdateStoreThemeColors(storeId, editor.workingCopy.colors, installedThemeId);
       }
       const res = await apiPublishStoreTheme(storeId, installedThemeId);
       setDoc(res.data);
-      editor.markPublished({ colors: res.data.theme, customCss: res.data.customCss ?? '' });
+      editor.markPublished({ colors: res.data.theme });
       flash(true, 'Published — your storefront is now live with these changes.');
     } catch (err) {
       editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
@@ -377,7 +479,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
     try {
       const res = await apiRevertStoreThemeDraft(storeId, installedThemeId);
       setDoc(res.data);
-      editor.discardDraft({ colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' });
+      editor.discardDraft({ colors: res.data.draft.theme });
       flash(true, 'Draft discarded — reverted to your published version.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to discard draft.');
@@ -397,7 +499,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
     try {
       const res = await apiRestoreStoreThemeVersion(storeId, versionId, installedThemeId);
       setDoc(res.data);
-      editor.discardDraft({ colors: res.data.draft.theme, customCss: res.data.draft.customCss ?? '' });
+      editor.discardDraft({ colors: res.data.draft.theme });
       setVersionsOpen(false);
       flash(true, 'Version restored to your draft — review it, then Publish.');
     } catch (err) {
@@ -453,8 +555,34 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
         </div>
       </div>
 
+      {!tipsHidden && (
+        <div className="flex items-start justify-between gap-3 bg-white border border-bone rounded-2xl p-4">
+          <div>
+            <p className="text-[13px] font-bold text-charcoal">Quick start</p>
+            <ol className="text-[12px] text-slate mt-1 pl-4 list-decimal flex flex-col gap-0.5">
+              <li>Pick a <b>Theme style</b> below, or set your own colours and fonts.</li>
+              <li>Use <b>Home page</b> in the left menu to add, reorder and edit sections.</li>
+              <li>Open <b>Header</b> and <b>Footer</b> to add your logo, menu and links.</li>
+              <li>Your changes save automatically as a draft. Press <b>Publish</b> when you are happy.</li>
+            </ol>
+          </div>
+          <button type="button" onClick={() => { setTipsHidden(true); try { localStorage.setItem('sx-theme-tips', '1'); } catch { /* storage blocked: hidden for this visit only */ } }}
+            className="shrink-0 text-[12px] font-semibold text-slate bg-transparent border-none cursor-pointer">Got it</button>
+        </div>
+      )}
+
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate" aria-hidden />
+        <input type="search" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search theme settings" placeholder="Search settings, e.g. font, button, color" className={`${inp} pl-9`} />
+      </div>
+
+      {!query.trim() && <SettingsTransfer manifest={manifest} current={c} onImport={(patch, count) => { set(patch); flash(true, `Imported ${count} settings. Save or Publish to keep them.`); }} onError={msg => flash(false, msg)} />}
+
+      {!query.trim() && <ThemeStyles manifest={manifest} current={c} onApply={(patch, label) => { set(patch); flash(true, label === 'Defaults' ? 'Reset to default settings. Save or Publish to keep it.' : `${label} style applied. Save or Publish to keep it.`); }} />}
+
       {GROUP_ORDER.map(group => {
-        const fields = manifest.themeSettingsFields.filter(f => f.group === group);
+        const q = query.trim().toLowerCase();
+        const fields = manifest.themeSettingsFields.filter(f => f.group === group && (!q || `${f.label} ${f.helpText ?? ''} ${group}`.toLowerCase().includes(q)));
         if (fields.length === 0) return null;
         return (
           <div key={group} className="flex flex-col gap-4 bg-white border border-bone rounded-2xl p-4">
@@ -466,11 +594,12 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
         );
       })}
 
+      {!query.trim() && (
       <SavedPalettes
         storeId={storeId}
         installedThemeId={installedThemeId}
         schemes={doc?.draft.theme.colorSchemes ?? []}
-        current={{ bgColor: c.bgColor, textColor: c.textColor, primaryColor: c.primaryColor }}
+        current={{ bgColor: c.bgColor, textColor: c.textColor, primaryColor: c.primaryColor, mutedColor: c.mutedColor, borderColor: c.borderColor, saleColor: c.saleColor }}
         onSchemesChanged={setDoc}
         onApplied={updated => {
           setDoc(updated);
@@ -482,25 +611,14 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
               bgColor: updated.draft.theme.bgColor,
               textColor: updated.draft.theme.textColor,
               primaryColor: updated.draft.theme.primaryColor,
+              mutedColor: updated.draft.theme.mutedColor ?? null,
+              borderColor: updated.draft.theme.borderColor ?? null,
+              saleColor: updated.draft.theme.saleColor ?? null,
             },
           });
         }}
       />
-
-      <div className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
-        <div>
-          <p className="text-[13px] font-bold text-charcoal">Custom CSS</p>
-          <p className="text-[11.5px] text-slate mt-0.5">Advanced — injected into your storefront exactly as written. CSS only, no scripts.</p>
-        </div>
-        <textarea
-          className="w-full px-3 py-2.5 text-[12.5px] font-mono border border-bone rounded-lg text-charcoal bg-cream/40 outline-none resize-y"
-          rows={8}
-          spellCheck={false}
-          value={editor.workingCopy.customCss}
-          onChange={e => setCss(e.target.value)}
-          placeholder=".my-hero { letter-spacing: 0.02em; }"
-        />
-      </div>
+      )}
 
       <VersionHistoryModal
         title="Theme — Version History"

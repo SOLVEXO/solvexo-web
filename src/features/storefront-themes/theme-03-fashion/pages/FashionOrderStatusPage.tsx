@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { Package } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
@@ -23,22 +24,22 @@ export function FashionOrderStatusPage() {
         accent={order ? `#${order.orderNumber}` : undefined}
         subtitle={order ? `Placed on ${formatOrderDate(order.createdAt, true)}` : undefined}
         actions={order && <div className="flex flex-wrap gap-2"><OrderPill badge={derivePaymentBadge(order)} /><OrderPill badge={deriveFulfillmentBadge(order)} /></div>}
-      >Order status</PageTitle>
+      >{ts('orders.statusAria', 'Order status')}</PageTitle>
       {loading ? (
-        <div role="status" aria-label="Loading order"><SkeletonBlock h={160} rows={3} /></div>
+        <div role="status" aria-label={ts('pg.loading_order', 'Loading order')}><SkeletonBlock h={160} rows={3} /></div>
       ) : error ? (
-        <ErrorState message="We could not load this order." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_this_order', 'We could not load this order.')} onRetry={retry} />
       ) : !order ? (
-        <EmptyState icon={<Package size={24} />} title="We could not find this order" text="This link may be invalid or expired. Check the link in your order confirmation email." action={<Link to="/" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Continue shopping</Link>} />
+        <EmptyState icon={<Package size={24} />} title={ts('pg.we_could_not_find_this_order', 'We could not find this order')} text={ts('orders.statusInvalidLink', 'This link may be invalid or expired. Check the link in your order confirmation email.')} action={<Link to="/" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>} />
       ) : (
         <div className="flex flex-col gap-6">
           <OrderView order={order} mode="public" />
           <Card tone="soft">
-            <p className="m-0 text-base font-medium">Want to track all your orders in one place?</p>
+            <p className="m-0 text-base font-medium">{ts('pg.want_to_track_all_your_orders_in_one_pla', 'Want to track all your orders in one place?')}</p>
             <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>Create an account with the same email address and this order will appear in your history.</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Link to="/register" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Create account</Link>
-              <Link to="/login" className="fx-pill" style={outlineLink}>Sign in</Link>
+              <Link to="/register" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('orders.createAccountBtn', 'Create account')}</Link>
+              <Link to="/login" className="fx-pill" style={outlineLink}>{ts('auth.signInLink', 'Sign in')}</Link>
             </div>
           </Card>
         </div>

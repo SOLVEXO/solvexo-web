@@ -1,4 +1,5 @@
 ﻿import { useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Check } from 'lucide-react';
 import { useChangePassword } from '@/hooks/auth/useChangePassword';
 import { Card, Field, PillButton, Notice, SectionHeading } from '../../ui/primitives';
@@ -24,14 +25,14 @@ export function PasswordCard() {
 
   return (
     <Card>
-      <SectionHeading>Password</SectionHeading>
+      <SectionHeading>{ts('auth.password', 'Password')}</SectionHeading>
       <form onSubmit={submit} className="grid max-w-[460px] gap-4">
-        <Field label="Current password">{p => <PasswordInput {...p} autoComplete="current-password" value={current} onChange={e => setCurrent(e.target.value)} />}</Field>
-        <Field label="New password" hint="At least 8 characters.">{p => <PasswordInput {...p} autoComplete="new-password" value={next} onChange={e => setNext(e.target.value)} />}</Field>
-        <Field label="Confirm new password">{p => <PasswordInput {...p} autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} />}</Field>
+        <Field label={ts('pg.current_password', 'Current password')}>{p => <PasswordInput {...p} autoComplete="current-password" value={current} onChange={e => setCurrent(e.target.value)} />}</Field>
+        <Field label={ts('pg.new_password', 'New password')} hint="At least 8 characters.">{p => <PasswordInput {...p} autoComplete="new-password" value={next} onChange={e => setNext(e.target.value)} />}</Field>
+        <Field label={ts('pg.confirm_new_password', 'Confirm new password')}>{p => <PasswordInput {...p} autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} />}</Field>
         {error && <Notice tone="error">{error}</Notice>}
         <div className="flex items-center gap-3">
-          <PillButton type="submit" loading={change.loading} disabled={!current || !next || !confirm}>Update password</PillButton>
+          <PillButton type="submit" loading={change.loading} disabled={!current || !next || !confirm}>{ts('pg.update_password', 'Update password')}</PillButton>
           <span aria-live="polite" className="flex items-center gap-1 text-sm font-medium" style={{ color: t.colors.success }}>{change.success && !error && <><Check size={15} aria-hidden /> Updated</>}</span>
         </div>
       </form>

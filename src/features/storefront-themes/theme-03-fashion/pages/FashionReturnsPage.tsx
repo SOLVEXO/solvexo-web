@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { RotateCcw } from 'lucide-react';
 import { apiGetMyOrders } from '@/api/services/orders';
@@ -22,14 +23,14 @@ function Returns() {
   const totalPages = Math.max(1, data?.data.pagination?.totalPages ?? 1);
 
   return (
-    <AccountLayout title="Returns &" accent="refunds" subtitle="Request a return on any delivered item and follow it until your refund or exchange.">
+    <AccountLayout title={ts('pg.returns', 'Returns &')} accent={ts('pg.word_refunds', 'refunds')} subtitle="Request a return on any delivered item and follow it until your refund or exchange.">
       {loading ? (
-        <div role="status" aria-label="Loading returns"><SkeletonBlock h={120} rows={2} /></div>
+        <div role="status" aria-label={ts('pg.loading_returns', 'Loading returns')}><SkeletonBlock h={120} rows={2} /></div>
       ) : error ? (
-        <ErrorState message="We could not load your orders." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_your_orders', 'We could not load your orders.')} onRetry={retry} />
       ) : eligible.length === 0 ? (
         <>
-          <EmptyState icon={<RotateCcw size={24} />} title="No returnable orders" text={totalPages > 1 ? 'Nothing on this page has been delivered yet. Try another page.' : 'Delivered orders will show up here, ready to return.'} action={totalPages <= 1 ? <Link to="/orders" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>View orders</Link> : undefined} />
+          <EmptyState icon={<RotateCcw size={24} />} title={ts('returns.noneReturnable', 'No returnable orders')} text={totalPages > 1 ? 'Nothing on this page has been delivered yet. Try another page.' : 'Delivered orders will show up here, ready to return.'} action={totalPages <= 1 ? <Link to="/orders" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.view_orders', 'View orders')}</Link> : undefined} />
           <Pager page={page} totalPages={totalPages} onChange={setPage} />
         </>
       ) : (

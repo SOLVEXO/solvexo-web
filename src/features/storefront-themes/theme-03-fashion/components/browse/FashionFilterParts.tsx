@@ -12,7 +12,7 @@ export interface FacetGroup { id: string; label: string; body: ReactNode; count:
 
 export function BrowseSkeleton({ columns }: { columns?: 2 | 3 | 4 }) {
   return (
-    <div className={`grid ${responsiveGridColumnsClass(columns)} gap-x-5 gap-y-10`} aria-busy="true">
+    <div className={`grid ${responsiveGridColumnsClass(columns)} fx-grid-gap`} aria-busy="true">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="flex flex-col gap-3">
           <div className="animate-pulse" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: t.productCardRadiusPx }} />
@@ -35,7 +35,7 @@ export function BrowseButton({ onClick, children, solid }: { onClick: () => void
 export function CheckRow({ label, count, checked, onToggle }: { label: string; count: number; checked: boolean; onToggle: () => void }) {
   const dim = count === 0 && !checked;
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors hover:bg-black/5" style={{ opacity: dim ? 0.45 : 1 }}>
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ opacity: dim ? 0.45 : 1 }}>
       <input type="checkbox" checked={checked} onChange={onToggle} disabled={dim} className="size-4" style={{ accentColor: t.colors.accent }} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       <span className="text-xs" style={{ color: t.colors.inkMuted }}>{count}</span>

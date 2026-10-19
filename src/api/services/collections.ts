@@ -1,4 +1,5 @@
 import client from '../client';
+import { dedupedGet } from '../../utils/dedupedGet';
 import { ENDPOINTS } from '../endpoints';
 
 interface ApiResponse<T> {
@@ -120,7 +121,7 @@ export function apiDeleteCollection(storeId: string, collectionId: string) {
 // ── Public ───────────────────────────────────────────────────────────────────
 
 export function apiGetPublicCollections(storeId: string) {
-  return client.get<never, ApiResponse<PublicCollectionSummary[]>>(ENDPOINTS.COLLECTIONS.PUBLIC_LIST(storeId));
+  return dedupedGet(`collections:${storeId}`, () => client.get<never, ApiResponse<PublicCollectionSummary[]>>(ENDPOINTS.COLLECTIONS.PUBLIC_LIST(storeId)));
 }
 
 export function apiGetPublicCollectionBySlug(storeId: string, slugOrId: string) {

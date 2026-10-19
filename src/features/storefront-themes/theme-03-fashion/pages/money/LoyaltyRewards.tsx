@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Award, Check, Copy, Gift } from 'lucide-react';
 import { apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
 import { fashionTheme as t } from '../../theme.config';
@@ -36,7 +37,7 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
       <Card tone="soft">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>Your balance</p>
+            <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.your_balance', 'Your balance')}</p>
             <p className="m-0 mt-1 text-4xl font-medium tracking-tight" aria-live="polite">{current.toLocaleString()} <span className="text-base font-normal" style={{ color: t.colors.inkMuted }}>points</span></p>
           </div>
           {balance?.currentTier && <span className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}` }}><Award size={15} aria-hidden />{balance.currentTier}</span>}
@@ -53,8 +54,8 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
       )}
 
       <section aria-labelledby="loyalty-rewards">
-        <SectionHeading><span id="loyalty-rewards">Available rewards</span></SectionHeading>
-        {rewards.length === 0 ? <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>No rewards available right now.</p> : (
+        <SectionHeading><span id="loyalty-rewards">{ts('pg.available_rewards', 'Available rewards')}</span></SectionHeading>
+        {rewards.length === 0 ? <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.no_rewards_available_right_now', 'No rewards available right now.')}</p> : (
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {rewards.map(r => {
               const can = current >= r.pointsCost;

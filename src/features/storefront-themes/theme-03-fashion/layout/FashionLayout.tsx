@@ -5,7 +5,7 @@ import { FashionAnnouncementBar } from '../components/FashionAnnouncementBar';
 import { FashionNavbar } from '../components/FashionNavbar';
 import { FashionFooter } from '../components/FashionFooter';
 import { FashionToaster } from '../components/FashionToaster';
-import { fashionTheme as t, applyMerchantThemeOverrides } from '../theme.config';
+import { fashionTheme as t, applyMerchantThemeOverrides, fashionTypographyCss } from '../theme.config';
 import '../fashion.css';
 
 /** Root chrome for stores running the Fashion theme: announcement bar, header, page, footer, cart drawer, toasts. */
@@ -19,7 +19,7 @@ export function FashionLayout({ children }: { children: ReactNode }) {
   return (
     <FashionCartDrawerProvider>
       <div className="flex min-h-screen flex-col" style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>
-        {theme?.customCss && <style>{theme.customCss}</style>}
+        <style>{fashionTypographyCss('main')}</style>
         {above && announcement}
         <FashionNavbar />
         {!above && announcement}

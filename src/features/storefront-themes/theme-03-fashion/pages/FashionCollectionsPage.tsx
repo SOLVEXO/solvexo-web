@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollections } from '@/api/services/collections';
 import { useLocalize } from '@/hooks/useLocalize';
@@ -15,12 +16,12 @@ export function FashionCollectionsPage() {
   useStorefrontSeo({ title: 'Collections' });
 
   if (loading) return <PageSkeleton />;
-  if (error) return <ErrorBlock message="We couldn't load the collections." onRetry={retry} />;
+  if (error) return <ErrorBlock message={ts('pg.we_couldn_t_load_the_collections', 'We couldn\'t load the collections.')} onRetry={retry} />;
   const list = (data ?? []).map(c => localize.collection(c));
   return (
     <PageBox>
-      <h1 className="m-0 mb-8 text-[clamp(28px,4vw,48px)] font-medium leading-[1.1] tracking-tight">Collections</h1>
-      {list.length === 0 ? <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>No collections yet.</p> : (
+      <h1 className="m-0 mb-8 text-[clamp(28px,4vw,48px)] font-medium leading-[1.1] tracking-tight">{ts('collections.title', 'Collections')}</h1>
+      {list.length === 0 ? <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{ts('pg.no_collections_yet', 'No collections yet.')}</p> : (
         <ul className="m-0 grid list-none grid-cols-1 gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3">
           {list.map(c => (
             <li key={c._id}>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ts } from '@/utils/tStatic';
 import { NavLink } from 'react-router-dom';
 import { Bell, Gift, Heart, MapPin, MessageSquare, Package, RotateCcw, Star, User, Wallet } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
@@ -23,7 +24,7 @@ export function AccountLayout({ title, accent, subtitle, actions, children }: { 
     <Page>
       <PageTitle accent={accent} subtitle={subtitle} actions={actions}>{title}</PageTitle>
       <div className="grid items-start gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
-        <nav aria-label="Account" className="fx-hide-scroll -mx-1 flex gap-1 overflow-x-auto px-1 lg:sticky lg:top-24 lg:flex-col lg:overflow-visible">
+        <nav aria-label={ts('nav.account', 'Account')} className="fx-hide-scroll -mx-1 flex gap-1 overflow-x-auto px-1 lg:sticky lg:top-24 lg:flex-col lg:overflow-visible">
           {LINKS.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className="flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium no-underline transition-colors lg:rounded-xl"
               style={({ isActive }) => ({ background: isActive ? t.colors.ink : 'transparent', color: isActive ? t.colors.bg : t.colors.ink })}>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Package } from 'lucide-react';
 import { apiGetMyOrders, type OrderSummary } from '@/api/services/orders';
@@ -57,13 +58,13 @@ function OrdersList() {
   const totalPages = Math.max(1, data?.data.pagination?.totalPages ?? 1);
 
   return (
-    <AccountLayout title="Your" accent="orders" subtitle="Track deliveries, download receipts and buy your favourites again.">
+    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_orders', 'orders')} subtitle="Track deliveries, download receipts and buy your favourites again.">
       {loading ? (
-        <div role="status" aria-label="Loading orders"><SkeletonBlock h={92} rows={3} /></div>
+        <div role="status" aria-label={ts('pg.loading_orders', 'Loading orders')}><SkeletonBlock h={92} rows={3} /></div>
       ) : error ? (
-        <ErrorState message="We could not load your orders." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_your_orders', 'We could not load your orders.')} onRetry={retry} />
       ) : orders.length === 0 ? (
-        <EmptyState icon={<Package size={24} />} title="No orders yet" text="When you place an order it will show up here." action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>Start shopping</Link>} />
+        <EmptyState icon={<Package size={24} />} title={ts('orders.none', 'No orders yet')} text={ts('pg.when_you_place_an_order_it_will_show_up_', 'When you place an order it will show up here.')} action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>} />
       ) : (
         <>
           <ul className="m-0 flex list-none flex-col gap-3 p-0">{orders.map(o => <OrderRow key={o.orderId} o={o} />)}</ul>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Trash2, Sparkles, ExternalLink, Settings2, Code2, PanelTop, Eye, Copy, Link2, Pencil, Check } from 'lucide-react';
+import { Loader2, Trash2, Sparkles, ExternalLink, Settings2, PanelTop, Eye, Copy, Link2, Pencil, Check } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, Modal, Button } from '@/components/comman/ui';
@@ -386,13 +386,6 @@ export function ThemeLibraryPage() {
                         >
                           <PanelTop size={13} />
                         </Link>
-                        <Link
-                          to={`${row?._id ?? entry.id}/edit-code`}
-                          className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
-                          title="Edit Code"
-                        >
-                          <Code2 size={13} />
-                        </Link>
                         <a
                           href={getStorefrontUrl(store.slug)}
                           target="_blank"
@@ -492,7 +485,7 @@ export function ThemeLibraryPage() {
                         {knownEntry ? `Based on ${knownEntry.name}` : 'Old design, no longer available. Safe to remove.'}
                       </p>
                       {isLive && row.sourcePackageVersion != null && (
-                        <span title="Your storefront is rendering uploaded theme files. Customize / Header & Footer edits do not change those pages — edit them in Edit Code → Theme source." className="self-center px-2 py-[3px] rounded-full bg-[#E0F2FE] text-[#075985] text-[10px] font-bold">CUSTOM FILES LIVE · r{row.sourcePackageVersion}</span>
+                        <span title="Your storefront is rendering uploaded theme files. Customize / Header & Footer edits do not change those pages." className="self-center px-2 py-[3px] rounded-full bg-[#E0F2FE] text-[#075985] text-[10px] font-bold">CUSTOM FILES LIVE · r{row.sourcePackageVersion}</span>
                       )}
                       <div className="flex gap-2">
                         {isLive ? (
@@ -510,7 +503,6 @@ export function ThemeLibraryPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">
                         <Link to={`${row._id}/header-footer`} className={ghost}><PanelTop size={12} /> Header</Link>
-                        <Link to={`${row._id}/edit-code`} className={ghost}><Code2 size={12} /> Code</Link>
                         <button type="button" onClick={() => handleStartRename(row)} className={ghost}><Pencil size={12} /> Rename</button>
                         <button type="button" onClick={() => handleDuplicate(row)} disabled={busy} className={ghost}>
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />} Copy

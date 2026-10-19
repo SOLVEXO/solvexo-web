@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { ts } from '@/utils/tStatic';
 import { createPortal } from 'react-dom';
 import { Loader2, X } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
@@ -47,7 +48,7 @@ export function Dialog({ title, onClose, children, footer, size = 'md' }: Dialog
         style={{ maxWidth: SIZES[size], background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, boxShadow: '0 24px 70px rgba(0,0,0,0.28)' }}>
         <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-5" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
           <h2 id={titleId} className="m-0 text-lg font-semibold tracking-tight">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="grid size-9 cursor-pointer place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink }}><X size={16} aria-hidden /></button>
+          <button type="button" onClick={onClose} aria-label={ts('pg.close_dialog', 'Close dialog')} className="grid size-9 cursor-pointer place-items-center rounded-full border-0" style={{ background: t.colors.bgAlt, color: t.colors.ink }}><X size={16} aria-hidden /></button>
         </div>
         <div className="overflow-y-auto px-6 py-5">{children}</div>
         {footer && <div className="flex shrink-0 flex-wrap gap-3 px-6 py-4" style={{ borderTop: `1px solid ${t.colors.border}` }}>{footer}</div>}

@@ -37,7 +37,6 @@ import { FashionBlogIndexPage } from './theme-03-fashion/pages/FashionBlogIndexP
 import { FashionBlogPostPage } from './theme-03-fashion/pages/FashionBlogPostPage';
 import { FashionStorefrontGate } from './theme-03-fashion/pages/FashionStorefrontGate';
 import './theme-03-fashion/theme.manifest';
-import './theme-03-fashion/theme.devFiles';
 import './theme-03-fashion/theme.preview';
 import './theme-03-fashion/theme.demoPreview';
 

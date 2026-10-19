@@ -132,16 +132,17 @@ export function FeaturedProductSection({ section, colors, theme }: Props) {
   const { store } = useStorefront();
   const price = usePrice();
   const id = Array.isArray(section.settings.productIds) ? section.settings.productIds[0] : undefined;
-  const [product, setProduct] = useState<PublicStoreProduct | null | undefined>(undefined);
+  // the product that was loaded for THIS id (nothing is set inside the effect unless a request finishes)
+  const [loaded, setLoaded] = useState<{ id: string; product: PublicStoreProduct | null } | null>(null);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- no product picked yet
-    if (!id) { setProduct(null); return; }
+    if (!id) return;
     let off = false;
     apiGetPublicStoreProducts(store.storeId, { ids: [id], limit: 1 })
-      .then(r => { if (!off) setProduct(r.data?.products?.[0] ?? null); })
-      .catch(() => { if (!off) setProduct(null); });
+      .then(r => { if (!off) setLoaded({ id, product: r.data?.products?.[0] ?? null }); })
+      .catch(() => { if (!off) setLoaded({ id, product: null }); });
     return () => { off = true; };
   }, [store.storeId, id]);
+  const product = id && loaded && loaded.id === id ? loaded.product : null;
   if (!product) return null;
   const B = theme.Button;
   const onSale = product.compareAtPrice != null && product.defaultVariantPrice != null && product.compareAtPrice > product.defaultVariantPrice;
@@ -171,14 +172,14 @@ export function CollectionBannerSection({ section, colors, theme }: Props) {
   // Picked collection, else (on the Collection template) the one being viewed.
   const { slugOrId } = useParams();
   const ref = (section.settings.collectionId as string | undefined) || previewCollectionId || slugOrId || undefined;
-  const [c, setC] = useState<PublicCollectionSummary | null>(null);
+  const [loadedCollection, setLoadedCollection] = useState<{ ref: string; c: PublicCollectionSummary | null } | null>(null);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- nothing to resolve
-    if (!ref) { setC(null); return; }
+    if (!ref) return;
     let off = false;
-    apiGetPublicCollectionBySlug(store.storeId, ref).then(r => { if (!off) setC(r.data ?? null); }).catch(() => { if (!off) setC(null); });
+    apiGetPublicCollectionBySlug(store.storeId, ref).then(r => { if (!off) setLoadedCollection({ ref, c: r.data ?? null }); }).catch(() => { if (!off) setLoadedCollection({ ref, c: null }); });
     return () => { off = true; };
   }, [store.storeId, ref]);
+  const c = ref && loadedCollection && loadedCollection.ref === ref ? loadedCollection.c : null;
   if (!c) return null;
   const showImage = section.settings.showImage !== false && !!c.image;
   return (

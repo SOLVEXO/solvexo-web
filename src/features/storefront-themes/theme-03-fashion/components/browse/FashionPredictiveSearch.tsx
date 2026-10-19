@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { ts } from '@/utils/tStatic';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Search, X } from 'lucide-react';
@@ -107,7 +108,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
           onChange={e => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onKeyDown={onKey}
           placeholder={placeholder ?? tr('nav.searchProducts', 'Search products…')} className="h-[52px] w-full min-w-0 border-0 bg-transparent text-base outline-none" style={{ color: t.colors.ink }}
         />
-        {q && <button type="button" aria-label="Clear search" onClick={() => { setQ(''); inputRef.current?.focus(); }} className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0" style={muted}><X size={16} /></button>}
+        {q && <button type="button" aria-label={ts('pg.clear_search', 'Clear search')} onClick={() => { setQ(''); inputRef.current?.focus(); }} className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0" style={muted}><X size={16} /></button>}
       </form>
 
       <div className="sr-only" role="status" aria-live="polite">

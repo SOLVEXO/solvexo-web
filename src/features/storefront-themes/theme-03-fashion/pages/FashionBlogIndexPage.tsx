@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { useParams } from 'react-router-dom';
 import { Newspaper } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -33,17 +34,17 @@ export function FashionBlogIndexPage() {
         <PageTitle accent={feed.title ? undefined : 'stories'} subtitle={`Stories, guides and news from ${store.name}.`}>{feed.title ?? 'The'}</PageTitle>
 
         {feed.loading ? (
-          <div role="status" aria-label="Loading posts" className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div role="status" aria-label={ts('pg.loading_posts', 'Loading posts')} className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map(i => <div key={i}><div className="animate-pulse" style={{ aspectRatio: '4 / 3', background: t.colors.bgAlt, borderRadius: 24 }} /><div className="mt-4"><SkeletonBlock h={18} rows={2} /></div></div>)}
           </div>
         ) : feed.error ? (
-          <ErrorState message="We couldn't load the posts." onRetry={feed.retry} />
+          <ErrorState message={ts('pg.we_couldn_t_load_the_posts', 'We couldn\'t load the posts.')} onRetry={feed.retry} />
         ) : feed.posts.length === 0 ? (
-          <EmptyState icon={<Newspaper size={24} aria-hidden />} title="No posts yet" text="Check back soon for new stories." />
+          <EmptyState icon={<Newspaper size={24} aria-hidden />} title={ts('pg.no_posts_yet', 'No posts yet')} text={ts('pg.check_back_soon_for_new_stories', 'Check back soon for new stories.')} />
         ) : (
           <>
             {topics.length > 0 && (
-              <div role="group" aria-label="Filter posts by topic" className="fx-hide-scroll -mx-1 mb-8 flex gap-2 overflow-x-auto px-1">
+              <div role="group" aria-label={ts('pg.filter_posts_by_topic', 'Filter posts by topic')} className="fx-hide-scroll -mx-1 mb-8 flex gap-2 overflow-x-auto px-1">
                 {[null, ...topics].map(tag => {
                   const on = tag === activeTopic;
                   return (
@@ -57,7 +58,7 @@ export function FashionBlogIndexPage() {
             )}
             <p className="sr-only" role="status">{activeTopic ? `${filtered.length} posts about ${activeTopic}` : ''}</p>
             {filtered.length === 0 ? (
-              <EmptyState title="No posts in this topic yet" action={<PillButton variant="outline" onClick={() => setTopic(null)}>Show all posts</PillButton>} />
+              <EmptyState title={ts('pg.no_posts_in_this_topic_yet', 'No posts in this topic yet')} action={<PillButton variant="outline" onClick={() => setTopic(null)}>{ts('pg.show_all_posts', 'Show all posts')}</PillButton>} />
             ) : (
               <>
                 {featured && <div className="mb-12"><BlogPostCard post={featured} blogSlug={blogSlug} featured /></div>}
@@ -66,7 +67,7 @@ export function FashionBlogIndexPage() {
             )}
             {feed.hasMore && (
               <div className="mt-12 grid place-items-center gap-3">
-                {feed.loadMoreFailed && <p role="alert" className="m-0 text-sm" style={{ color: t.colors.danger }}>We couldn't load more posts.</p>}
+                {feed.loadMoreFailed && <p role="alert" className="m-0 text-sm" style={{ color: t.colors.danger }}>{ts('pg.we_couldn_t_load_more_posts', 'We couldn\'t load more posts.')}</p>}
                 <PillButton variant="outline" onClick={() => void feed.loadMore()} loading={feed.loadingMore}>{feed.loadMoreFailed ? 'Try again' : 'Load more posts'}</PillButton>
               </div>
             )}

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { ts } from '@/utils/tStatic';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 import { TOAST_DURATION_MS, useToastList, type ToastVariant } from '@/contexts/ToastContext';
 import { useCartDrawer } from '../../cartDrawerContext';
@@ -33,8 +34,8 @@ export function FashionToaster() {
                 <Icon size={17} aria-hidden />
               </span>
               <p className="m-0 min-w-0 flex-1 self-center text-sm font-medium leading-snug">{toast.message}</p>
-              <button type="button" onClick={() => dismiss(toast.id)} aria-label="Dismiss notification"
-                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-black/5" style={{ color: t.colors.inkMuted }}>
+              <button type="button" onClick={() => dismiss(toast.id)} aria-label={ts('pg.dismiss_notification', 'Dismiss notification')}
+                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>
                 <X size={15} />
               </button>
             </div>

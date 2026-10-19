@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { Bell, ImageOff, Loader2, ShoppingBag, Trash2 } from 'lucide-react';
 import type { WishlistListItem } from '@/api/services/wishlist';
@@ -56,7 +57,7 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
             {money(variant.price, variant.currency)}
             {compare != null && <span className="text-sm font-normal line-through" style={{ color: t.colors.inkMuted }}>{money(compare, variant.currency)}</span>}
           </p>
-          {soldOut && <div className="mt-2"><StatusPill tone="bad">Sold out</StatusPill></div>}
+          {soldOut && <div className="mt-2"><StatusPill tone="bad">{ts('product.soldOut', 'Sold out')}</StatusPill></div>}
           <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
             <PillButton onClick={add} disabled={soldOut} loading={isAdding} style={{ height: 40, padding: '0 20px' }}>
               {!isAdding && <ShoppingBag size={15} aria-hidden />}
@@ -73,13 +74,13 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
 
       {back.show && (
         <form onSubmit={back.submit} className="flex flex-col gap-2 p-3" style={{ borderRadius: 14, background: t.colors.bgAlt }}>
-          <label htmlFor={`bis-${variant._id}`} className="flex items-center gap-2 text-[13px] font-medium"><Bell size={14} aria-hidden />Email me when it is back</label>
+          <label htmlFor={`bis-${variant._id}`} className="flex items-center gap-2 text-[13px] font-medium"><Bell size={14} aria-hidden />{ts('pg.email_me_when_it_is_back', 'Email me when it is back')}</label>
           {back.status !== 'done' && back.status !== 'available' && (
             <div className="flex flex-wrap gap-2">
               <div className="min-w-[180px] flex-1">
                 <TextInput id={`bis-${variant._id}`} type="email" required autoComplete="email" placeholder="you@example.com" value={back.email} onChange={e => back.setEmail(e.target.value)} style={{ minHeight: 40, padding: '8px 14px' }} />
               </div>
-              <PillButton type="submit" loading={back.status === 'loading'} style={{ height: 40, padding: '0 18px' }}>Notify me</PillButton>
+              <PillButton type="submit" loading={back.status === 'loading'} style={{ height: 40, padding: '0 18px' }}>{ts('product.notifyMe', 'Notify me')}</PillButton>
             </div>
           )}
           <p className="m-0 text-[13px]" role={back.status === 'error' ? 'alert' : 'status'} style={{ color: back.status === 'error' ? t.colors.danger : t.colors.inkMuted }}>{back.message}</p>

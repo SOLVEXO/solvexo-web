@@ -50,7 +50,7 @@ export interface ThemeSettingsFieldDef {
    *  same document every theme's `StoreTheme.theme`/`.draft.theme` uses). */
   key: keyof StorefrontColors;
   label: string;
-  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Cart';
+  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart';
   control:
     | { kind: 'color'; /** Optional override: shows an "Auto (theme)" state with a Reset, and saves null when reset. */ optional?: { fallback: string } }
     | { kind: 'select'; options: { value: string; label: string }[] };
@@ -104,6 +104,14 @@ export interface ThemeTemplateScopeDef {
     | { kind: 'collection-template'; resourceType: ResourceTemplateType; templateKey: string; allowAltTemplates: boolean; previewPicker?: 'blog' | 'article' };
 }
 
+/** A named, complete look a merchant can apply in one click (a bundle of theme settings). */
+export interface ThemeStylePreset {
+  id: string;
+  name: string;
+  description: string;
+  settings: Partial<StorefrontColors>;
+}
+
 export interface ThemeManifest {
   /** Matches this theme's `NEW_THEME_REGISTRY` key / `StoreTheme.themeDefinitionId`. */
   id: string;
@@ -115,6 +123,10 @@ export interface ThemeManifest {
   supportsAnnouncementBar: boolean;
   templates: ThemeTemplateScopeDef[];
   themeSettingsFields: ThemeSettingsFieldDef[];
+  /** Every editable setting at the theme's own default: what "Reset to default" applies. */
+  defaultSettings?: Partial<StorefrontColors>;
+  /** One-click complete looks; applied as a bundle over the current settings. */
+  styles?: ThemeStylePreset[];
 }
 
 /** Every real theme's manifest, keyed the same way `NEW_THEME_REGISTRY` is.

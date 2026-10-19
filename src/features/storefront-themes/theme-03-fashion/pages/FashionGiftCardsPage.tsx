@@ -1,4 +1,5 @@
 import { Gift } from 'lucide-react';
+import { ts } from '@/utils/tStatic';
 import { apiGetGiftCardPublicSettings } from '@/api/services/giftCards';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
@@ -15,13 +16,13 @@ function GiftCards() {
   const settings = res?.data ?? null;
 
   return (
-    <AccountLayout title="Gift" accent="cards" subtitle={`Buy a gift card for yourself or someone else at ${store.name}.`}>
+    <AccountLayout title={ts('pg.gift', 'Gift')} accent={ts('pg.word_cards', 'cards')} subtitle={`Buy a gift card for yourself or someone else at ${store.name}.`}>
       {loading ? (
-        <div role="status" aria-label="Loading gift cards"><SkeletonBlock h={140} rows={2} /></div>
+        <div role="status" aria-label={ts('pg.loading_gift_cards', 'Loading gift cards')}><SkeletonBlock h={140} rows={2} /></div>
       ) : error ? (
-        <ErrorState message="We could not load gift card options." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_gift_card_options', 'We could not load gift card options.')} onRetry={retry} />
       ) : !settings?.purchaseEnabled || settings.denominations.length === 0 ? (
-        <EmptyState icon={<Gift size={24} />} title="Gift cards are not available" text={`${store.name} has not enabled gift card purchases.`} />
+        <EmptyState icon={<Gift size={24} />} title={ts('pg.gift_cards_are_not_available', 'Gift cards are not available')} text={`${store.name} has not enabled gift card purchases.`} />
       ) : (
         <GiftCardPurchase settings={settings} storeId={store.storeId} storeName={store.name} />
       )}

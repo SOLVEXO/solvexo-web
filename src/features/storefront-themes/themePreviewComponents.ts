@@ -38,6 +38,8 @@ export interface ThemePreviewComponents {
     onSelectSection?: (sectionId: string) => void;
     selectedBlockId?: string | null;
     onSelectBlock?: PreviewBlockSelection;
+    /** Click-to-type headlines in the preview (editor only). */
+    onEditText?: (sectionId: string, blockId: string | null, key: string, value: string) => void;
     /** Phase 5 — see `CoreSectionPreviewContext`'s own doc comment
      *  (`api/services/storefrontTypes.ts`). */
     previewContext?: CoreSectionPreviewContext;

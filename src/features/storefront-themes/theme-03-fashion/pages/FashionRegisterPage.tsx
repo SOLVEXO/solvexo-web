@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useRegister } from '@/hooks/auth/useRegister';
 import { useStorefrontSocialLogin } from '@/hooks/auth/useStorefrontSocialLogin';
@@ -36,16 +37,16 @@ export function FashionRegisterPage() {
   };
 
   return (
-    <AuthShell title="Create your" accent="account" subtitle={`Join ${store.name} to track orders and check out faster.`}
-      footer={<>Already have an account? <Link to={withRedirect('/login', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>Sign in</Link></>}>
+    <AuthShell title={ts('pg.create_your', 'Create your')} accent={ts('pg.word_account', 'account')} subtitle={`Join ${store.name} to track orders and check out faster.`}
+      footer={<>{ts('auth.haveAccount', 'Already have an account?')} <Link to={withRedirect('/login', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('auth.signInLink', 'Sign in')}</Link></>}>
       {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label="Full name" required>{p => <TextInput {...p} required autoComplete="name" value={form.name} onChange={e => set({ name: e.target.value })} />}</Field>
-        <Field label="Email" required>{p => <TextInput {...p} type="email" required autoComplete="email" value={form.email} onChange={e => set({ email: e.target.value })} />}</Field>
+        <Field label={ts('checkout.fullName', 'Full name')} required>{p => <TextInput {...p} required autoComplete="name" value={form.name} onChange={e => set({ name: e.target.value })} />}</Field>
+        <Field label={ts('auth.email', 'Email')} required>{p => <TextInput {...p} type="email" required autoComplete="email" value={form.email} onChange={e => set({ email: e.target.value })} />}</Field>
         <PhoneField required value={form.phone} onChange={v => set({ phone: v })} defaultCountry={country} error={phoneError} />
-        <Field label="Address" required>{p => <TextInput {...p} required autoComplete="street-address" value={form.address} onChange={e => set({ address: e.target.value })} />}</Field>
-        <Field label="Password" required>{p => <PasswordInput {...p} required autoComplete="new-password" value={form.password} onChange={e => set({ password: e.target.value })} />}</Field>
-        <PillButton type="submit" full loading={register.loading}>Create account</PillButton>
+        <Field label={ts('auth.address', 'Address')} required>{p => <TextInput {...p} required autoComplete="street-address" value={form.address} onChange={e => set({ address: e.target.value })} />}</Field>
+        <Field label={ts('auth.password', 'Password')} required>{p => <PasswordInput {...p} required autoComplete="new-password" value={form.password} onChange={e => set({ password: e.target.value })} />}</Field>
+        <PillButton type="submit" full loading={register.loading}>{ts('orders.createAccountBtn', 'Create account')}</PillButton>
       </form>
       <SocialSignIn providers={social.providers} onStart={social.start} loading={social.loading} disabled={register.loading} dividerText="or sign up with" />
     </AuthShell>

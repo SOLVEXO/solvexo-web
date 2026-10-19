@@ -12,6 +12,9 @@ import { StorefrontMarketProvider } from './StorefrontMarketContext';
 import { registerThemeTranslations } from '@/i18n';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { apiGetPublicHomePage, apiListPublicStorePages } from '@/api/services/storePages';
+import { apiGetPublicCollections } from '@/api/services/collections';
+import { apiGetPublicStoreMarkets } from '@/api/services/markets';
 import { useFavicon } from '@/hooks/useFavicon';
 import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
 import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
@@ -115,6 +118,11 @@ export function StorefrontLayout() {
         setCookieConsent(!res.data.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(id));
         // A password-protected store's theme is server-locked until the visitor unlocks it (fetched in onUnlocked).
         if (res.data.privacyMode === 'password' && !hasToken) return;
+        // Start the data the page needs in parallel with the theme instead of after it (the components that read
+        // these only mount once the theme resolves). Same calls, deduped — nothing is fetched twice.
+        for (const prefetch of [apiGetPublicHomePage, apiListPublicStorePages, apiGetPublicCollections, apiGetPublicStoreMarkets]) {
+          void prefetch(id).catch(() => {});
+        }
         return apiGetPublicStoreTheme(id)
           .then(r => { if (!cancelled) setTheme(r.data); })
           .catch(err => {
@@ -183,6 +191,15 @@ export function StorefrontLayout() {
   // Active theme's locale bundles merge over the shared storefront strings.
   const activeThemeId = theme?.themeDefinitionId && NEW_THEME_REGISTRY[theme.themeDefinitionId] ? theme.themeDefinitionId : DEFAULT_THEME_ID;
   useEffect(() => { registerThemeTranslations(activeThemeId); }, [activeThemeId]);
+
+  // Platform fingerprint (Shopify-style `window.Shopify.theme`/`_shopify_s`): lets detection tools and
+  // developers identify a Solvexo store + its active theme. Public data only; the cookie carries no id.
+  useEffect(() => {
+    if (!store) return;
+    const w = window as unknown as { Solvexo?: Record<string, unknown> };
+    w.Solvexo = { ...w.Solvexo, platform: 'Solvexo', shop: { id: store.storeId, slug: store.slug, name: store.name }, theme: { id: activeThemeId, name: NEW_THEME_REGISTRY[activeThemeId]?.display.name ?? activeThemeId } };
+    document.cookie = '_solvexo_s=1; path=/; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
+  }, [store, activeThemeId]);
 
   const contextValue: StorefrontContextValue | null = useMemo(() => {
     if (!store) return null;

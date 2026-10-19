@@ -70,6 +70,13 @@ const SolutionPage         = lazy(() => import('@/features/buyer/pages/solutions
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/features/storefront/StorefrontLayout').then(m => ({ default: m.StorefrontLayout })));
 const ThemedRoute = lazy(() => import('@/features/storefront-themes/ThemedRoute').then(m => ({ default: m.ThemedRoute })));
+// On a store host, start both chunks at boot, in parallel, instead of only when the router first renders them
+// (render → StorefrontLayout chunk → ThemedRoute chunk was a serial chain). Kept lazy so the marketplace/seller/admin
+// bundle never pays for storefront + all themes.
+if (getStoreSlugFromHost() || isCustomDomainCandidate()) {
+  void import('@/features/storefront/StorefrontLayout');
+  void import('@/features/storefront-themes/ThemedRoute');
+}
 const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
 
 // ── Seller ────────────────────────────────────────────────────────────────────
@@ -89,7 +96,6 @@ const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStor
 const AppsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/apps/AppsPage').then(m => ({ default: m.AppsPage })));
 const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
 const ThemeCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeCustomizePage').then(m => ({ default: m.ThemeCustomizePage })));
-const ThemeEditCodePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeEditCodePage').then(m => ({ default: m.ThemeEditCodePage })));
 const ThemeHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeHeaderFooterPage').then(m => ({ default: m.ThemeHeaderFooterPage })));
 const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeDemoPreview').then(m => ({ default: m.ThemeDemoPreview })));
 const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeSharePreviewPage').then(m => ({ default: m.ThemeSharePreviewPage })));
@@ -478,7 +484,6 @@ const mainRouter = createBrowserRouter([
         element: <ThemeEditorLayout />,
         children: [
           { path: 'customize',      element: <ThemeCustomizePage /> },
-          { path: 'edit-code',      element: <ThemeEditCodePage /> },
           { path: 'header-footer',  element: <ThemeHeaderFooterPage /> },
         ],
       },

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ts } from '@/utils/tStatic';
 import { fashionTheme as t } from '../theme.config';
 
 export function PageBox({ children, narrow, padY = true }: { children: ReactNode; narrow?: boolean; padY?: boolean }) {
@@ -11,14 +12,14 @@ export function ErrorBlock({ message, onRetry }: { message: string; onRetry: () 
   return (
     <div role="alert" className="grid place-items-center gap-4 px-6 py-20 text-center">
       <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{message}</p>
-      <button type="button" onClick={onRetry} className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx }}>Try again</button>
+      <button type="button" onClick={onRetry} className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx }}>{ts('checkout.tryAgain', 'Try again')}</button>
     </div>
   );
 }
 
 export function PageSkeleton({ hero }: { hero?: boolean }) {
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={ts('pg.loading', 'Loading')}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `16px ${t.layout.containerPadX}` }}>
         {hero && <div className="animate-pulse" style={{ height: 'clamp(320px, 56vh, 560px)', background: t.colors.bgAlt, borderRadius: 28 }} />}
         <div className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-4">

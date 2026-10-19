@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { fashionTheme as t, type FashionColors } from '../theme.config';
+import { EditableText } from '../../inlineEdit';
 
 /** Standard section frame: vertical rhythm from the merchant's spacing setting, centered content box (`mx-auto`
  *  so a section's "full width" option can lift it), optional eyebrow + heading + trailing action. */
@@ -16,7 +17,7 @@ export function SectionShell({ colors, eyebrow, heading, action, align = 'left',
           <header className={`mb-8 flex gap-4 md:mb-10 ${align === 'center' ? 'flex-col items-center text-center' : 'flex-wrap items-end justify-between'}`}>
             <div>
               {eyebrow && <p className="m-0 mb-2 text-sm font-medium" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{eyebrow}</p>}
-              {heading && <h2 className="m-0 text-[clamp(26px,3.2vw,40px)] font-semibold leading-[1.15] tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{heading}</h2>}
+              {heading && <h2 className="m-0 text-[clamp(26px,3.2vw,40px)] font-semibold leading-[1.15] tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}><EditableText value={heading} settingKey="heading" /></h2>}
             </div>
             {action}
           </header>

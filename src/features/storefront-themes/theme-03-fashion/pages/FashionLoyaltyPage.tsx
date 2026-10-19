@@ -1,4 +1,5 @@
 import { Award } from 'lucide-react';
+import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { AccountLayout } from '../ui/AccountLayout';
@@ -14,13 +15,13 @@ function Loyalty() {
   const { data, loading, error, retry } = useLoad(() => loadLoyalty(store.storeId), [store.storeId]);
 
   return (
-    <AccountLayout title="Loyalty &" accent="rewards" subtitle={`Earn points on every order at ${store.name} and trade them for rewards.`}>
+    <AccountLayout title={ts('pg.loyalty', 'Loyalty &')} accent={ts('pg.word_rewards', 'rewards')} subtitle={`Earn points on every order at ${store.name} and trade them for rewards.`}>
       {loading ? (
-        <div role="status" aria-label="Loading rewards"><SkeletonBlock h={120} rows={2} /></div>
+        <div role="status" aria-label={ts('pg.loading_rewards', 'Loading rewards')}><SkeletonBlock h={120} rows={2} /></div>
       ) : error ? (
-        <ErrorState message="We could not load your rewards." onRetry={retry} />
+        <ErrorState message={ts('pg.we_could_not_load_your_rewards', 'We could not load your rewards.')} onRetry={retry} />
       ) : !data || data.unavailable ? (
-        <EmptyState icon={<Award size={24} />} title="No loyalty program yet" text={`${store.name} has not set up a rewards program. Check back later.`} />
+        <EmptyState icon={<Award size={24} />} title={ts('pg.no_loyalty_program_yet', 'No loyalty program yet')} text={`${store.name} has not set up a rewards program. Check back later.`} />
       ) : (
         <LoyaltyRewards key={store.storeId} storeId={store.storeId} balance={data.balance} rewards={data.rewards} />
       )}
