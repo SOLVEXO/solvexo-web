@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content="Solvexo" />
     <title>Solvexo</title>
+    <!-- A store's own host: show its name in the tab at once (from the last visit) instead of "Solvexo" while the app loads. -->
+    <script>(function(){try{var raw=localStorage.getItem('solvexo:sf-boot:v1:'+location.hostname.toLowerCase());if(!raw)return;var s=JSON.parse(raw);var n=s&&s.store&&s.store.name;if(n)document.title=n}catch(e){}})();</script>
+    <!-- Open the connection to the API while the app code downloads. -->
+    <link rel="preconnect" href="%VITE_API_URL%" crossorigin />
     <!-- Fonts load without blocking the first paint: the print media trick swaps to all once the stylesheet is in. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

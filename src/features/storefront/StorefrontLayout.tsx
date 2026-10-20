@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -25,6 +25,7 @@ import { captureAffiliateRef } from '@/utils/affiliateAttribution';
 import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout, getStorefrontToken, setStorefrontToken } from '@/utils/currentStorefront';
 import { PublishedLiquidStorefront } from './PublishedLiquidStorefront';
 import { isLiquidStorefrontRoute } from './liquidStorefrontRouting';
+import { readBootSnapshot, writeBootSnapshot, clearBootSnapshot } from '@/utils/storefrontBootCache';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -71,22 +72,27 @@ function readSavedConsent(storeId: string): CookieConsentCategories | null {
 export function StorefrontLayout() {
   const location = useLocation();
   const slug = getStoreSlugFromHost();
-  const [store, setStore] = useState<PublicStoreData | null>(null);
-  const [theme, setTheme] = useState<StoreThemeData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Repeat visit: paint the last-known store + theme at once and refresh them in the background (see storefrontBootCache.ts).
+  const boot = useRef(readBootSnapshot());
+  const [store, setStore] = useState<PublicStoreData | null>(() => boot.current?.store ?? null);
+  const [theme, setTheme] = useState<StoreThemeData | null>(() => boot.current?.theme ?? null);
+  const [loading, setLoading] = useState(() => boot.current === null);
   const [error, setError] = useState('');
   // Real Shopify-style storefront gate (`Store.privacyMode`) — a per-tab
   // unlock, checked the instant the store loads so a password-protected
   // store never flashes its real content first. See `FashionStorefrontGate`/
   // `FashionStorefrontGate`'s own doc comments for the full rationale.
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(() => boot.current !== null);
   // Real Customer-Privacy cookie consent — `null` means "not yet decided,
   // show the banner"; a real object means the visitor (or a store that
   // never enabled `cookieBannerEnabled`, resolved to full consent
   // immediately) has decided, per-category, real Shopify "Manage
   // Preferences" semantics — see the pixel effect below, which now waits on
   // this instead of firing unconditionally.
-  const [cookieConsent, setCookieConsent] = useState<CookieConsentCategories | null>(null);
+  const [cookieConsent, setCookieConsent] = useState<CookieConsentCategories | null>(() => {
+    const cached = boot.current?.store;
+    return cached ? (!cached.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(cached.storeId)) : null;
+  });
 
   // Affiliate referral links land here with ?ref=CODE — remembered for
   // checkout attribution (see utils/affiliateAttribution.ts).
@@ -103,7 +109,7 @@ export function StorefrontLayout() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    if (!boot.current) setLoading(true);
     setError('');
     const load = slug ? apiGetPublicStore(slug) : apiResolveStoreByDomain(window.location.hostname);
     load
@@ -124,14 +130,22 @@ export function StorefrontLayout() {
           void prefetch(id).catch(() => {});
         }
         return apiGetPublicStoreTheme(id)
-          .then(r => { if (!cancelled) setTheme(r.data); })
+          .then(r => { if (!cancelled) { setTheme(r.data); if (r.data) writeBootSnapshot(res.data, r.data); } })
           .catch(err => {
             // Expired/invalid access token → back to the gate instead of "Store not found".
             if (err?.status === 403 && res.data.privacyMode === 'password') { setStorefrontToken(id, null); if (!cancelled) setUnlocked(false); return; }
             throw err;
           });
       })
-      .catch(() => { if (!cancelled) setError('Store not found'); })
+      .catch((err) => {
+        if (cancelled) return;
+        // A cached storefront stays on screen through a network blip; a real 404 clears it.
+        if (boot.current && err?.status !== 404) return;
+        clearBootSnapshot();
+        setStore(null);
+        setTheme(null);
+        setError('Store not found');
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [slug]);

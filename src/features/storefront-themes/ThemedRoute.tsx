@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID, type StorefrontRouteKey } from './registry';
 
@@ -17,5 +18,6 @@ export function ThemedRoute({ routeKey }: { routeKey: StorefrontRouteKey }) {
   // mid-build and hasn't reached this route yet, rather than a runtime crash.
   const Page = impl.pages[routeKey] ?? NEW_THEME_REGISTRY[DEFAULT_THEME_ID].pages[routeKey];
   if (!Page) return null;
-  return <Page />;
+  // Pages opened less often are loaded on demand; the theme's own header/footer stay on screen while they arrive.
+  return <Suspense fallback={<div style={{ minHeight: '60vh' }} aria-busy="true" />}><Page /></Suspense>;
 }
