@@ -247,6 +247,7 @@ export const ENDPOINTS = {
       EXPORT:        (storeId: string) => `/api/store/${storeId}/customers/export`,
       BULK_TAG:      (storeId: string) => `/api/store/${storeId}/customers/bulk-tag`,
       BULK_ARCHIVE:  (storeId: string) => `/api/store/${storeId}/customers/bulk-archive`,
+      BULK_MARKETING: (storeId: string) => `/api/store/${storeId}/customers/bulk-marketing`,
       UPDATE:        (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
       UPDATE_META:   (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/meta`,
       EXPORT_DATA:   (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/export-data`,

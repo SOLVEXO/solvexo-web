@@ -112,7 +112,6 @@ const StoreAddProduct = lazy(() => import('@/features/seller/store/Dashboard/Sto
 const StoreEditProduct = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
 const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
 const StoreCustomerList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
-const StoreSubscribers = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/Subscribers'));
 const SettingsHub = lazy(() => import('@/features/seller/store/Dashboard/Manage/SettingsHub'));
 const StoreStaff = lazy(() => import('@/features/seller/store/Dashboard/Manage/Staff'));
 const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
@@ -375,7 +374,8 @@ const mainRouter = createBrowserRouter([
           { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
           { path: 'products/detail/:productId',       element: <StoreProductDetail /> },
           { path: 'customer/list',                    element: <StoreCustomerList /> },
-          { path: 'customer/subscribers',             element: <StoreSubscribers /> },
+          // Shopify has no separate subscribers screen: it is the Customers list filtered by email-marketing status.
+          { path: 'customer/subscribers',             element: <Navigate to="../customer/list?marketing=subscribed" replace /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
           // Settings hub — one tabbed page (General/Billing/Integrations/Staff/
           // Custom Fields/Content Types/Activity Log) replacing 6 separate

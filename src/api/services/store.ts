@@ -732,6 +732,8 @@ export function apiGetPlatformStats() {
 export type StoreCustomerSegment = 'new' | 'returning' | 'vip' | 'at_risk' | 'no_orders';
 
 export type StoreCustomerView = 'active' | 'archived' | 'all';
+/** Shopify's email-marketing states. Campaigns only reach `subscribed`. */
+export type StoreCustomerMarketingStatus = 'subscribed' | 'pending' | 'unsubscribed' | 'not_subscribed';
 export type StoreCustomerSortBy = 'name' | 'totalSpent' | 'orderCount' | 'lastOrderAt' | 'createdAt';
 
 export interface StoreCustomer {
@@ -750,6 +752,12 @@ export interface StoreCustomer {
   notes:          string;
   isArchived:     boolean;
   marketingOptIn: boolean;
+  marketingStatus: StoreCustomerMarketingStatus;
+  marketingSource?: string;
+  marketingConsentAt?: string | null;
+  marketingUnsubscribedAt?: string | null;
+  /** Signed up for marketing email but has no account/orders yet — `_id` is `sub:<subscriberId>`; only unsubscribe/remove apply. */
+  isSubscriberOnly: boolean;
   /** Real GDPR erasure marker — this store's own data for this customer has been scrubbed (see apiEraseCustomerData). */
   isErased:       boolean;
 }
@@ -759,6 +767,7 @@ export interface GetStoreCustomersParams {
   limit?:           number;
   search?:          string;
   segment?:         StoreCustomerSegment;
+  marketing?:       StoreCustomerMarketingStatus;
   sortBy?:          StoreCustomerSortBy;
   sortDir?:         'asc' | 'desc';
   dateFrom?:        string;
@@ -793,7 +802,7 @@ export interface BulkArchiveCustomersPayload {
 
 interface PaginatedCustomers {
   pagination: { page: number; limit: number; total: number; totalPages: number };
-  summary:    { totalOrders: number; totalRevenue: number };
+  summary:    { totalOrders: number; totalRevenue: number; subscribed: number };
   customers:  StoreCustomer[];
 }
 
@@ -803,6 +812,7 @@ function customerQueryString(params: GetStoreCustomersParams) {
   qs.set('limit', String(params.limit ?? 20));
   if (params.search)   qs.set('search', params.search);
   if (params.segment)  qs.set('segment', params.segment);
+  if (params.marketing) qs.set('marketing', params.marketing);
   if (params.sortBy)   qs.set('sortBy', params.sortBy);
   if (params.sortDir)  qs.set('sortDir', params.sortDir);
   if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
@@ -830,8 +840,8 @@ export function apiExportStoreCustomers(storeId: string, params: GetStoreCustome
 /** POST /api/store/:storeId/customers — real "Create customer profile"
  *  (previously edit-only, no seller-initiated create). Finds an existing
  *  account by email first rather than always creating a new one. */
-export function apiCreateStoreCustomer(storeId: string, payload: { name: string; email: string; phone?: string }) {
-  return client.post<never, ApiResponse<{ _id: string; name: string; email: string; phone: string | null; createdAt: string }>>(
+export function apiCreateStoreCustomer(storeId: string, payload: { name?: string; email: string; phone?: string; marketingConsent?: boolean }) {
+  return client.post<never, ApiResponse<{ _id: string; name: string; email: string; phone: string | null; createdAt: string; marketingSubscribed: boolean }>>(
     ENDPOINTS.STORE.CUSTOMERS.CREATE(storeId), payload,
   );
 }
@@ -840,6 +850,14 @@ export function apiCreateStoreCustomer(storeId: string, payload: { name: string;
 export function apiBulkTagCustomers(storeId: string, payload: BulkTagCustomersPayload) {
   return client.post<never, ApiResponse<{ updated: number }>>(
     ENDPOINTS.STORE.CUSTOMERS.BULK_TAG(storeId), payload,
+  );
+}
+
+/** POST /api/store/:storeId/customers/bulk-marketing — subscribe/unsubscribe the selected customers from email marketing.
+ *  Customers who opted out (or have not confirmed) are never re-subscribed; they are counted in `skipped`. */
+export function apiBulkCustomerMarketing(storeId: string, payload: { customerIds: string[]; subscribed: boolean }) {
+  return client.post<never, ApiResponse<{ updated: number; skipped: number }> & { message: string }>(
+    ENDPOINTS.STORE.CUSTOMERS.BULK_MARKETING(storeId), payload,
   );
 }
 
@@ -859,7 +877,7 @@ export function apiUpdateStoreCustomer(storeId: string, customerId: string, payl
 
 /** PATCH /api/store/:storeId/customers/:customerId/meta  (seller only) — tags/notes/marketing opt-in, private to this store. */
 export function apiUpdateStoreCustomerMeta(storeId: string, customerId: string, payload: UpdateStoreCustomerMetaPayload) {
-  return client.patch<never, ApiResponse<{ tags: string[]; notes: string; marketingOptIn: boolean }>>(
+  return client.patch<never, ApiResponse<{ tags: string[]; notes: string; marketingOptIn: boolean; marketingStatus?: StoreCustomerMarketingStatus }>>(
     ENDPOINTS.STORE.CUSTOMERS.UPDATE_META(storeId, customerId), payload,
   );
 }

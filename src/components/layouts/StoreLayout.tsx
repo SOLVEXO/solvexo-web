@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, GalleryHorizontal, MailCheck, Landmark, ShieldOff,
+  Store, TrendingUp, GalleryHorizontal, Landmark, ShieldOff,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -148,7 +148,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // not general view (e.g. a data-entry-only role) still needs a nav
       // path to the list that create/edit actually happens from.
       { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
-      { id: 'subscribers', Icon: MailCheck,    label: 'Subscribers', path: 'customer/subscribers', requiredPermission: ['customers.view', 'customers.edit'] },
       { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: ['customers.view', 'reviews.manage'] },
       { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
       // Storefront contact-form inbox (Shopify sends these to the store's inbox, not Online Store).

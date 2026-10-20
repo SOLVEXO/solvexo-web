@@ -16,7 +16,7 @@ type Align = 'left' | 'center' | 'right';
 export interface OrderDocumentSettings {
   companyName: string | null; addressText: string | null; phone: string | null; email: string | null;
   taxIdLabel: string | null; taxIdValue: string | null;
-  paperSize: DocPaper; accentColor: string | null; showLogo: boolean; logoSize: Size; logoAlign: Align;
+  paperSize: DocPaper; accentColor: string | null; showLogo: boolean; showNameWithLogo: boolean; logoSize: Size; logoAlign: Align;
   watermarkEnabled: boolean; watermarkType: 'logo' | 'text'; watermarkText: string | null;
   watermarkPosition: 'center' | 'tiled'; watermarkAngle: 0 | -30 | -45; watermarkOpacity: number; watermarkSize: Size;
   slipShowPrices: boolean; slipShowSku: boolean; slipShowImages: boolean; slipShowNote: boolean; slipShowPayment: boolean; slipShowCheckbox: boolean;
@@ -29,9 +29,9 @@ export interface OrderDocumentStore { name: string; logo: string | null; contact
 
 export const DEFAULT_DOCUMENT_SETTINGS: OrderDocumentSettings = {
   companyName: null, addressText: null, phone: null, email: null, taxIdLabel: null, taxIdValue: null,
-  paperSize: 'a4', accentColor: null, showLogo: true, logoSize: 'medium', logoAlign: 'left',
+  paperSize: 'a4', accentColor: null, showLogo: true, showNameWithLogo: false, logoSize: 'medium', logoAlign: 'left',
   watermarkEnabled: false, watermarkType: 'logo', watermarkText: null, watermarkPosition: 'center', watermarkAngle: -30, watermarkOpacity: 8, watermarkSize: 'medium',
-  slipShowPrices: false, slipShowSku: true, slipShowImages: true, slipShowNote: true, slipShowPayment: true, slipShowCheckbox: true, slipMessage: null, slipFooter: null,
+  slipShowPrices: true, slipShowSku: true, slipShowImages: true, slipShowNote: true, slipShowPayment: true, slipShowCheckbox: false, slipMessage: null, slipFooter: null,
   invoiceTitle: null, invoiceShowSku: true, invoiceShowImages: false, invoiceShowTaxId: true, invoiceTerms: null, invoiceFooter: null,
 };
 
@@ -120,11 +120,13 @@ function money(amount: number, code: string): string {
   return `${currencySymbol(code)} ${amount.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
 }
 
-const PAPER: Record<DocPaper, { page: string; px: number; font: number }> = {
-  a4: { page: 'A4; margin: 14mm', px: 794, font: 13 },
-  a5: { page: 'A5; margin: 10mm', px: 560, font: 11.5 },
-  letter: { page: 'Letter; margin: 14mm', px: 816, font: 13 },
-  thermal80: { page: '80mm auto; margin: 3mm', px: 302, font: 11 },
+// `margin` is the printed page margin. It lives INSIDE the document (the @page margin is 0) so the browser has no room
+// left for its own date / page-address header and footer lines.
+const PAPER: Record<DocPaper, { size: string; margin: string; px: number; font: number }> = {
+  a4: { size: 'A4', margin: '14mm', px: 794, font: 13 },
+  a5: { size: 'A5', margin: '10mm', px: 560, font: 11.5 },
+  letter: { size: 'Letter', margin: '14mm', px: 816, font: 13 },
+  thermal80: { size: '80mm auto', margin: '3mm', px: 302, font: 11 },
 };
 const LOGO_H: Record<Size, number> = { small: 36, medium: 56, large: 84 };
 const WM_IMG_PCT: Record<Size, number> = { small: 30, medium: 48, large: 70 };
@@ -183,8 +185,9 @@ function headerHtml(kind: DocKind, o: DocumentOrder, s: OrderDocumentSettings, s
   const email = s.email || store.contactEmail || '';
   const phone = s.phone || store.phone || '';
   const taxId = kind === 'invoice' && s.invoiceShowTaxId && s.taxIdValue ? `${esc(s.taxIdLabel || 'Tax ID')}: ${esc(s.taxIdValue)}` : '';
-  const brand = `<div class="brand">${s.showLogo && logo ? `<img class="logo" src="${esc(logo)}" alt="" style="max-height:${LOGO_H[s.logoSize]}px">` : ''}
-<div class="co"><div class="co-name">${esc(name)}</div>${s.addressText ? `<div class="co-line">${lines(s.addressText)}</div>` : ''}${phone ? `<div class="co-line">${esc(phone)}</div>` : ''}${email ? `<div class="co-line">${esc(email)}</div>` : ''}${taxId ? `<div class="co-line">${taxId}</div>` : ''}</div></div>`;
+  const showLogoImg = s.showLogo && !!logo;
+  const brand = `<div class="brand">${showLogoImg ? `<img class="logo" src="${esc(logo)}" alt="" style="max-height:${LOGO_H[s.logoSize]}px">` : ''}
+<div class="co">${showLogoImg && !s.showNameWithLogo ? '' : `<div class="co-name">${esc(name)}</div>`}${s.addressText ? `<div class="co-line">${lines(s.addressText)}</div>` : ''}${phone ? `<div class="co-line">${esc(phone)}</div>` : ''}${email ? `<div class="co-line">${esc(email)}</div>` : ''}${taxId ? `<div class="co-line">${taxId}</div>` : ''}</div></div>`;
   const title = kind === 'invoice' ? (s.invoiceTitle || 'Invoice') : 'Packing slip';
   const chip = kind === 'invoice' || s.slipShowPayment ? paymentChip(o) : null;
   const doc = `<div class="doc"><div class="doc-title">${esc(title)}</div><div class="doc-meta">Order <b>${esc(o.orderNumber)}</b><br>${esc(fmtDate(o.createdAt))}${chip ? `<br><span class="chip ${chip.cls}">${esc(chip.label)}</span>` : ''}${paymentLine(o) && (kind === 'invoice' || s.slipShowPayment) ? `<br><span class="muted">${esc(paymentLine(o))}</span>` : ''}</div></div>`;
@@ -264,12 +267,12 @@ function css(s: OrderDocumentSettings, preview: boolean): string {
   return `
 :root{--accent:${accent}}
 *{box-sizing:border-box}
-@page{size:${p.page}}
+@page{size:${p.size};margin:0}
 html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:${p.font}px;line-height:1.4;${preview ? 'background:#e9e9ec;padding:18px;' : 'padding:0;'}}
 .paper{position:relative;background:#fff;${preview ? `overflow:hidden;width:${p.px}px;max-width:100%;margin:0 auto;padding:${thermal ? 14 : 38}px;box-shadow:0 1px 6px rgba(0,0,0,.15);` : ''}}
 .wm{position:${preview ? 'absolute' : 'fixed'};inset:0;overflow:hidden;pointer-events:none;z-index:0}
-.slip{position:relative;z-index:1;page-break-after:always;break-after:page}
+.slip{position:relative;z-index:1;page-break-after:always;break-after:page;${preview ? '' : `padding:${p.margin};-webkit-box-decoration-break:clone;box-decoration-break:clone;`}}
 .slip:last-child{page-break-after:auto;break-after:auto}
 .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:2px solid var(--accent);padding-bottom:12px;margin-bottom:16px}
 .hd.right{flex-direction:row-reverse}

@@ -6,11 +6,11 @@ const html = (kind: 'slip' | 'invoice', over: Partial<OrderDocumentSettings> = {
   buildDocumentsHtml(kind, [SAMPLE_DOCUMENT_ORDER], { ...DEFAULT_DOCUMENT_SETTINGS, ...over }, store, { preview });
 
 describe('order documents', () => {
-  it('packing slip has no prices by default, invoice shows the totals', () => {
+  it('packing slip shows prices and totals by default and has no tick boxes; the invoice shows the totals', () => {
     const slip = html('slip');
     expect(slip).toContain('Packing slip');
-    expect(slip).not.toContain('Subtotal');
-    expect(slip).toContain('Collect on delivery');
+    expect(slip).toContain('Subtotal');
+    expect(slip).not.toContain('class="box"');
     const inv = html('invoice');
     expect(inv).toContain('Invoice');
     expect(inv).toContain('Subtotal');
@@ -18,8 +18,25 @@ describe('order documents', () => {
     expect(inv).toContain('Amount to collect');
   });
 
-  it('slip prices can be switched on', () => {
-    expect(html('slip', { slipShowPrices: true })).toContain('Subtotal');
+  it('slip prices can be switched off (plain picking list, with the cash-on-delivery amount)', () => {
+    const plain = html('slip', { slipShowPrices: false });
+    expect(plain).not.toContain('Subtotal');
+    expect(plain).toContain('Collect on delivery');
+  });
+
+  it('tick boxes only when asked for', () => {
+    expect(html('slip', { slipShowCheckbox: true })).toContain('class="box"');
+  });
+
+  it('the logo replaces the business name unless both are asked for', () => {
+    expect(html('slip')).not.toContain('class="co-name"');
+    expect(html('slip', { showNameWithLogo: true })).toContain('class="co-name"');
+    const noLogo = buildDocumentsHtml('slip', [SAMPLE_DOCUMENT_ORDER], { ...DEFAULT_DOCUMENT_SETTINGS }, { ...store, logo: null }, { preview: true });
+    expect(noLogo).toContain('class="co-name"');
+  });
+
+  it('prints with a zero page margin so the browser adds no date or address line', () => {
+    expect(html('slip', {}, false)).toContain('@page{size:A4;margin:0}');
   });
 
   it('escapes everything the seller or customer typed', () => {

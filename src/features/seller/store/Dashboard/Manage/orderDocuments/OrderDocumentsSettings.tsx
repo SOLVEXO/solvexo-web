@@ -161,6 +161,9 @@ export function OrderDocumentsSettings({ storeId, canManage }: { storeId: string
               </label>
             </div>
             <Row label="Show my logo in the header" hint={logoAvailable ? undefined : 'Add a logo in Store Profile first.'} checked={draft.showLogo} onChange={v => set('showLogo', v)} />
+            {draft.showLogo && logoAvailable && (
+              <Row label="Also print my business name next to the logo" hint="Off: the logo replaces the name, like a letterhead." checked={draft.showNameWithLogo} onChange={v => set('showNameWithLogo', v)} />
+            )}
             {draft.showLogo && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Pick label="Logo size" value={draft.logoSize} options={SIZES} onChange={v => set('logoSize', v as OrderDocumentSettings['logoSize'])} />
@@ -200,7 +203,7 @@ export function OrderDocumentsSettings({ storeId, canManage }: { storeId: string
             )}
           </Section>
 
-          <Section title="Packing slip" hint="For whoever packs the order. Prices are hidden by default.">
+          <Section title="Packing slip" hint="For whoever packs the order. Switch prices off for a plain picking list.">
             <Row label="Show prices and totals" checked={draft.slipShowPrices} onChange={v => set('slipShowPrices', v)} />
             <Row label="Show product images" checked={draft.slipShowImages} onChange={v => set('slipShowImages', v)} />
             <Row label="Show SKU" checked={draft.slipShowSku} onChange={v => set('slipShowSku', v)} />

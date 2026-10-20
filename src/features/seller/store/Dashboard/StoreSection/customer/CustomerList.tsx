@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert, MailCheck, MailX, Trash2 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
@@ -8,9 +8,11 @@ import { CustomerStoreCreditCard } from './CustomerStoreCreditCard';
 import {
   apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta,
   apiExportStoreCustomers, apiBulkTagCustomers, apiBulkArchiveCustomers, apiCreateStoreCustomer,
-  apiExportCustomerData, apiEraseCustomerData,
-  type StoreCustomer, type StoreCustomerSegment, type StoreCustomerView, type GetStoreCustomersParams,
+  apiExportCustomerData, apiEraseCustomerData, apiBulkCustomerMarketing,
+  type StoreCustomer, type StoreCustomerSegment, type StoreCustomerView, type StoreCustomerMarketingStatus, type GetStoreCustomersParams,
 } from '@/api/services/store';
+import { apiSetStoreSubscriberStatus, apiDeleteStoreSubscriber } from '@/api/services/newsletter';
+import { SUBSCRIBER_SOURCE_LABEL } from '@/utils/subscribers';
 import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
@@ -44,6 +46,24 @@ const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green'
 
 const SEGMENT_OPTIONS = Object.entries(SEGMENT_META).map(([value, m]) => ({ value, label: m.label }));
 
+// Shopify's four email-marketing states. Campaigns and automations only ever
+// reach "Subscribed"; "Pending" is a double opt-in that was never confirmed.
+const MARKETING_META: Record<StoreCustomerMarketingStatus, { label: string; color: 'green' | 'yellow' | 'gray' | 'red' }> = {
+  subscribed:     { label: 'Subscribed',     color: 'green' },
+  pending:        { label: 'Pending',        color: 'yellow' },
+  unsubscribed:   { label: 'Unsubscribed',   color: 'red' },
+  not_subscribed: { label: 'Not subscribed', color: 'gray' },
+};
+const MARKETING_OPTIONS = Object.entries(MARKETING_META).map(([value, m]) => ({ value, label: m.label }));
+const isMarketingFilter = (v: string | null): v is StoreCustomerMarketingStatus => !!v && v in MARKETING_META;
+
+/** Why the seller cannot switch marketing on for this customer (null = they can). */
+function marketingLockReason(status: StoreCustomerMarketingStatus): string | null {
+  if (status === 'unsubscribed') return 'This customer is unsubscribed. Only they can re-subscribe (e.g. from your storefront).';
+  if (status === 'pending') return 'Waiting for the customer to confirm from the email we sent.';
+  return null;
+}
+
 export default function StoreCustomerList() {
   const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
@@ -51,6 +71,12 @@ export default function StoreCustomerList() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [segment, setSegment] = useState('');
+  // `?marketing=subscribed` deep-links the old Subscribers screen (now a filter, like Shopify).
+  const [searchParams] = useSearchParams();
+  const [marketing, setMarketing] = useState<string>(() => {
+    const q = searchParams.get('marketing');
+    return isMarketingFilter(q) ? q : '';
+  });
   // Click-to-sort table headers (Shopify convention) rather than a separate sort dropdown.
   const [sortBy, setSortBy] = useState<NonNullable<GetStoreCustomersParams['sortBy']>>('lastOrderAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -61,7 +87,7 @@ export default function StoreCustomerList() {
 
   const [customers, setCustomers] = useState<StoreCustomer[]>([]);
   const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState({ totalOrders: 0, totalRevenue: 0 });
+  const [summary, setSummary] = useState({ totalOrders: 0, totalRevenue: 0, subscribed: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -76,15 +102,21 @@ export default function StoreCustomerList() {
   const [saving, setSaving] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', email: '', phone: '' });
+  const [createForm, setCreateForm] = useState({ name: '', email: '', phone: '', marketingConsent: false });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [createNotice, setCreateNotice] = useState('');
 
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [savingMeta, setSavingMeta] = useState(false);
+  const [metaError, setMetaError] = useState('');
+  // Subscriber-only rows: unsubscribe / remove through the subscriber endpoints.
+  const [subBusy, setSubBusy] = useState(false);
+  const [subError, setSubError] = useState('');
+  const [subRemoveOpen, setSubRemoveOpen] = useState(false);
 
   const [customerOrders, setCustomerOrders] = useState<SellerOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -111,7 +143,7 @@ export default function StoreCustomerList() {
   useEffect(() => {
     setPage(1);
     setSelectedKeys(new Set());
-  }, [debouncedSearch, segment, sortBy, sortDir, dateFrom, dateTo, view]);
+  }, [debouncedSearch, segment, marketing, sortBy, sortDir, dateFrom, dateTo, view]);
 
   function handleSortChange(key: string) {
     if (key === sortBy) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -121,6 +153,7 @@ export default function StoreCustomerList() {
   const filterParams: GetStoreCustomersParams = {
     search: debouncedSearch || undefined,
     segment: (segment || undefined) as StoreCustomerSegment | undefined,
+    marketing: (marketing || undefined) as StoreCustomerMarketingStatus | undefined,
     sortBy, sortDir,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
@@ -140,7 +173,7 @@ export default function StoreCustomerList() {
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load customers.'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, page, debouncedSearch, segment, sortBy, sortDir, dateFrom, dateTo, view]);
+  }, [storeId, page, debouncedSearch, segment, marketing, sortBy, sortDir, dateFrom, dateTo, view]);
 
   function refetch() {
     if (!storeId) return;
@@ -164,13 +197,22 @@ export default function StoreCustomerList() {
       .finally(() => setOrdersLoading(false));
   }, [sel, storeId]);
 
+  // On a phone the detail panel is stacked BELOW the whole list, so a tap on a row would show nothing: bring it into view.
+  const selId = sel?._id;
+  useEffect(() => {
+    if (!selId || window.matchMedia('(min-width: 1024px)').matches) return;
+    document.querySelector('[data-customer-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selId]);
+
   function select(c: StoreCustomer) {
     setSel(c);
     setForm({ name: c.name, phone: c.phone ?? '', email: c.email });
     setNotes(c.notes ?? '');
     setTags(c.tags ?? []);
-    setMarketingOptIn(c.marketingOptIn ?? false);
+    setMarketingOptIn(c.marketingStatus === 'subscribed');
     setTagInput('');
+    setMetaError('');
+    setSubError('');
     setEraseConfirmOpen(false);
     setEraseError('');
   }
@@ -178,12 +220,50 @@ export default function StoreCustomerList() {
   async function saveMeta(nextTags: string[], nextNotes: string, nextMarketingOptIn: boolean) {
     if (!sel) return;
     setSavingMeta(true);
+    setMetaError('');
     try {
       const res = await apiUpdateStoreCustomerMeta(storeId, sel._id, { tags: nextTags, notes: nextNotes, marketingOptIn: nextMarketingOptIn });
       setCustomers(prev => prev.map(c => c._id === sel._id ? { ...c, ...res.data } : c));
       setSel(prev => prev ? { ...prev, ...res.data } : prev);
+      setMarketingOptIn((res.data.marketingStatus ?? (nextMarketingOptIn ? 'subscribed' : 'not_subscribed')) === 'subscribed');
+      if (res.data.marketingStatus) refetch(); // the marketing filter / Subscribed count may have changed
+    } catch (err) {
+      // The server refuses e.g. re-subscribing someone who opted out — show why and put the checkbox back.
+      setMetaError(err instanceof Error ? err.message : 'Could not save.');
+      setMarketingOptIn(sel.marketingStatus === 'subscribed');
     } finally {
       setSavingMeta(false);
+    }
+  }
+
+  async function handleSubscriberUnsubscribe() {
+    if (!sel?.isSubscriberOnly) return;
+    setSubBusy(true);
+    setSubError('');
+    try {
+      await apiSetStoreSubscriberStatus(storeId, sel._id.replace(/^sub:/, ''), false);
+      setSel(prev => prev ? { ...prev, marketingStatus: 'unsubscribed', marketingOptIn: false } : prev);
+      refetch();
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : 'Could not unsubscribe.');
+    } finally {
+      setSubBusy(false);
+    }
+  }
+
+  async function handleSubscriberRemove() {
+    if (!sel?.isSubscriberOnly) return;
+    setSubBusy(true);
+    setSubError('');
+    try {
+      await apiDeleteStoreSubscriber(storeId, sel._id.replace(/^sub:/, ''));
+      setSubRemoveOpen(false);
+      setSel(null);
+      refetch();
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : 'Could not remove.');
+    } finally {
+      setSubBusy(false);
     }
   }
 
@@ -274,18 +354,22 @@ export default function StoreCustomerList() {
   }
 
   async function handleCreateCustomer() {
-    if (!createForm.name.trim()) { setCreateError('Enter a name.'); return; }
     if (!createForm.email.trim()) { setCreateError('Enter an email.'); return; }
     setCreating(true);
     setCreateError('');
     try {
-      await apiCreateStoreCustomer(storeId, {
-        name: createForm.name.trim(),
+      const res = await apiCreateStoreCustomer(storeId, {
+        name: createForm.name.trim() || undefined,
         email: createForm.email.trim(),
         phone: createForm.phone.trim() || undefined,
+        marketingConsent: createForm.marketingConsent || undefined,
       });
       setCreateOpen(false);
-      setCreateForm({ name: '', email: '', phone: '' });
+      setCreateForm({ name: '', email: '', phone: '', marketingConsent: false });
+      // They had opted out earlier, so the box was ignored — tell the seller instead of silently dropping it.
+      setCreateNotice(createForm.marketingConsent && !res.data.marketingSubscribed
+        ? 'Customer added, but not subscribed to marketing emails: they opted out earlier and only they can opt back in.'
+        : '');
       refetch();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create customer.');
@@ -300,6 +384,22 @@ export default function StoreCustomerList() {
       await apiBulkArchiveCustomers(storeId, { customerIds: ids, archived });
       setSelectedKeys(new Set());
       refetch();
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function handleBulkMarketing(ids: string[], subscribed: boolean) {
+    setBulkSaving(true);
+    setCreateNotice('');
+    try {
+      const res = await apiBulkCustomerMarketing(storeId, { customerIds: ids, subscribed });
+      setSelectedKeys(new Set());
+      // Say plainly when someone was left alone (opted out / unconfirmed) instead of reporting a clean success.
+      setCreateNotice(res.message || '');
+      refetch();
+    } catch (err) {
+      setCreateNotice(err instanceof Error ? err.message : 'Could not update email marketing.');
     } finally {
       setBulkSaving(false);
     }
@@ -325,15 +425,19 @@ export default function StoreCustomerList() {
       key: 'name', header: 'Customer', sortable: true,
       render: c => (
         <div className="flex items-center gap-2.5">
-          <div className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">{initialsOf(c.name)}</div>
+          <div className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">{initialsOf(c.name || c.email)}</div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-charcoal leading-[1.3] truncate">{c.name}</p>
-            <p className="text-[11px] text-slate truncate">{c.email}</p>
+            <p className="text-[13px] font-semibold text-charcoal leading-[1.3] truncate">{c.name || c.email}</p>
+            {c.name && <p className="text-[11px] text-slate truncate">{c.email}</p>}
           </div>
         </div>
       ),
     },
     { key: 'phone', header: 'Phone', render: c => <span className="text-slate">{c.phone || '—'}</span> },
+    {
+      key: 'marketing', header: 'Email marketing',
+      render: c => <Badge color={MARKETING_META[c.marketingStatus ?? 'not_subscribed'].color} dot>{MARKETING_META[c.marketingStatus ?? 'not_subscribed'].label}</Badge>,
+    },
     {
       key: 'segment', header: 'Segment',
       render: c => <Badge color={SEGMENT_META[c.segment].color}>{SEGMENT_META[c.segment].label}</Badge>,
@@ -351,7 +455,7 @@ export default function StoreCustomerList() {
     {
       key: 'actions', header: '', align: 'right',
       render: c => (
-        <button onClick={e => { e.stopPropagation(); select(c); }} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">Edit</button>
+        <button onClick={e => { e.stopPropagation(); select(c); }} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">{c.isSubscriberOnly ? 'View' : 'Edit'}</button>
       ),
     },
   ];
@@ -360,7 +464,7 @@ export default function StoreCustomerList() {
     <>
       <StorePageHeader
         title="Customers"
-        subtitle="Manage buyer relationships and followers for this store."
+        subtitle="Everyone who bought from, signed up to, or was added to this store — and whether they agreed to marketing emails."
         actions={
           <div className="flex flex-wrap gap-2">
             {hasNavPermission(TokenStorage.getUser(), 'customers.edit') && (
@@ -368,10 +472,11 @@ export default function StoreCustomerList() {
                 entityLabel="customers"
                 basePath={`/api/store/${storeId}/customers`}
                 onImported={refetch}
-                notes={['Email is the unique key — customers that already exist in this store are skipped.', 'No password or email is sent; customers can sign in later by resetting their password.']}
+                consent={{ label: 'These customers agreed to receive marketing emails from my store (needed for rows marked "yes" in Accepts Email Marketing).', optional: true }}
+                notes={['Email is the unique key — customers that already exist in this store are skipped.', 'No password or email is sent; customers can sign in later by resetting their password.', 'People who unsubscribed earlier are never re-subscribed by an import.']}
               />
             )}
-            <Button size="sm" icon={<Plus size={14} />} onClick={() => { setCreateForm({ name: '', email: '', phone: '' }); setCreateError(''); setCreateOpen(true); }}>
+            <Button size="sm" icon={<Plus size={14} />} onClick={() => { setCreateForm({ name: '', email: '', phone: '', marketingConsent: false }); setCreateError(''); setCreateNotice(''); setCreateOpen(true); }}>
               Create Customer
             </Button>
           </div>
@@ -382,9 +487,17 @@ export default function StoreCustomerList() {
 
         <div className="flex flex-wrap gap-3">
           <MetricCard label="Total Customers" value={total.toLocaleString()} icon={<Users size={16} />} loading={loading && page === 1 && customers.length === 0} />
-          <MetricCard label="Total Orders"     value={summary.totalOrders.toLocaleString()} icon={<ShoppingBag size={16} />} loading={loading && page === 1 && customers.length === 0} />
+          <MetricCard label="Subscribed to email" value={summary.subscribed.toLocaleString()} icon={<MailCheck size={16} />} loading={loading && page === 1 && customers.length === 0} />
+          <MetricCard label="Total Orders"    value={summary.totalOrders.toLocaleString()} icon={<ShoppingBag size={16} />} loading={loading && page === 1 && customers.length === 0} />
           <MetricCard label="Total Revenue"    value={formatMoneyCompact(summary.totalRevenue, store?.baseCurrency)} icon={<DollarSign size={16} />} loading={loading && page === 1 && customers.length === 0} />
         </div>
+
+        {createNotice && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-warning-bg text-warning text-[12.5px]" role="status">
+            <span>{createNotice}</span>
+            <button onClick={() => setCreateNotice('')} className="bg-transparent border-none cursor-pointer text-warning text-xs font-semibold">Dismiss</button>
+          </div>
+        )}
 
         <div className={`grid grid-cols-1 gap-4 items-start ${sel ? 'lg:grid-cols-[1fr_300px]' : ''}`}>
           <div className="bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden">
@@ -397,6 +510,7 @@ export default function StoreCustomerList() {
             <div className="px-5 py-3.5 border-b border-bone flex flex-wrap items-center gap-2.5">
               <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" className="max-w-[220px]" />
               <FilterDropdown placeholder="All Segments" options={SEGMENT_OPTIONS} value={segment} onChange={setSegment} />
+              <FilterDropdown placeholder="Email marketing" options={MARKETING_OPTIONS} value={marketing} onChange={setMarketing} />
               <div className="flex items-center gap-1.5 text-[12px] text-slate">
                 <span>Last order</span>
                 <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
@@ -429,6 +543,16 @@ export default function StoreCustomerList() {
                     <Button size="xs" variant="outline" icon={<TagIcon size={12} />} disabled={bulkSaving} onClick={() => setBulkTagOpen(true)}>
                       Add Tag
                     </Button>
+                    {hasNavPermission(TokenStorage.getUser(), 'customers.edit') && (
+                      <>
+                        <Button size="xs" variant="outline" icon={<MailCheck size={12} />} disabled={bulkSaving} onClick={() => handleBulkMarketing(Array.from(keys) as string[], true)}>
+                          Subscribe
+                        </Button>
+                        <Button size="xs" variant="outline" icon={<MailX size={12} />} disabled={bulkSaving} onClick={() => handleBulkMarketing(Array.from(keys) as string[], false)}>
+                          Unsubscribe
+                        </Button>
+                      </>
+                    )}
                     {view === 'archived' ? (
                       <Button size="xs" variant="outline" icon={<ArchiveRestore size={12} />} loading={bulkSaving} onClick={() => handleBulkArchive(Array.from(keys) as string[], false)}>
                         Restore
@@ -446,18 +570,65 @@ export default function StoreCustomerList() {
                 pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'customers' }}
                 emptyState={{
                   icon: <Users size={28} className="text-brand-orange opacity-55" />,
-                  title: view === 'archived' ? 'No archived customers' : 'No customers found for this store yet',
+                  title: view === 'archived' ? 'No archived customers' : marketing || segment || debouncedSearch ? 'No customers match these filters' : 'No customers found for this store yet',
                   description: view === 'archived'
                     ? 'Customers you archive will show up here.'
-                    : 'Customers who place an order from this store will show up here.',
+                    : marketing || segment || debouncedSearch
+                      ? 'Try clearing a filter.'
+                      : 'People who order, sign up for your emails, or that you add will show up here.',
                 }}
               />
             )}
           </div>
 
+          {/* Signed up for marketing email but has no account/orders: only consent can be managed. */}
+          {sel && sel.isSubscriberOnly && (
+            <div data-customer-panel className="w-full lg:w-[300px] shrink-0">
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 lg:sticky lg:top-[70px]">
+                <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
+                  <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
+                    {initialsOf(sel.name || sel.email)}
+                  </div>
+                  <p className="text-[15px] font-bold text-carbon mb-[3px] break-all">{sel.name || sel.email}</p>
+                  {sel.name && <p className="text-xs text-slate break-all">{sel.email}</p>}
+                </div>
+                <div className="flex flex-col gap-2 text-[12px] text-charcoal">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate">Email marketing</span>
+                    <Badge color={MARKETING_META[sel.marketingStatus].color} dot>{MARKETING_META[sel.marketingStatus].label}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate">Joined from</span>
+                    <span>{(sel.marketingSource && SUBSCRIBER_SOURCE_LABEL[sel.marketingSource]) || sel.marketingSource || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate">{sel.marketingStatus === 'unsubscribed' ? 'Unsubscribed' : 'Agreed on'}</span>
+                    <span>{fmtDate(sel.marketingStatus === 'unsubscribed' ? sel.marketingUnsubscribedAt ?? null : sel.marketingConsentAt ?? sel.createdAt)}</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate leading-[1.4] mt-3">
+                  No account or orders yet — they will show full customer details after they order or register with this email.
+                </p>
+                {subError && <p className="text-[11px] text-error mt-2" role="alert">{subError}</p>}
+                {hasNavPermission(TokenStorage.getUser(), 'customers.edit') && (
+                  <div className="mt-4 pt-4 border-t border-[#f0eee6] flex flex-col gap-1.5">
+                    {(sel.marketingStatus === 'subscribed' || sel.marketingStatus === 'pending') && (
+                      <Button size="xs" variant="outline" icon={<MailCheck size={12} />} loading={subBusy} onClick={handleSubscriberUnsubscribe} className="w-full justify-center">
+                        Unsubscribe
+                      </Button>
+                    )}
+                    <Button size="xs" variant="danger" icon={<Trash2 size={12} />} disabled={subBusy} onClick={() => setSubRemoveOpen(true)} className="w-full justify-center">
+                      Remove from list
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Edit panel */}
-          {sel && (
-            <div className="w-full lg:w-[300px] shrink-0">
+          {sel && !sel.isSubscriberOnly && (
+            <div data-customer-panel className="w-full lg:w-[300px] shrink-0">
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 lg:sticky lg:top-[70px]">
                 <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
                   <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
@@ -582,10 +753,29 @@ export default function StoreCustomerList() {
                     />
                     {savingMeta && <p className="text-[10px] text-slate mt-1">Saving…</p>}
                   </div>
-                  <label className="flex items-center gap-2 text-xs font-medium text-graphite cursor-pointer">
-                    <input type="checkbox" checked={marketingOptIn} onChange={toggleMarketingOptIn} className="accent-brand-orange cursor-pointer" />
-                    Subscribed to marketing emails
-                  </label>
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-xs font-medium text-graphite">Email marketing</span>
+                      <Badge color={MARKETING_META[sel.marketingStatus ?? 'not_subscribed'].color} dot>{MARKETING_META[sel.marketingStatus ?? 'not_subscribed'].label}</Badge>
+                    </div>
+                    <label className={`flex items-center gap-2 text-xs font-medium text-graphite ${marketingLockReason(sel.marketingStatus ?? 'not_subscribed') ? 'opacity-60' : 'cursor-pointer'}`}>
+                      <input
+                        type="checkbox"
+                        checked={marketingOptIn}
+                        onChange={toggleMarketingOptIn}
+                        disabled={savingMeta || (!marketingOptIn && !!marketingLockReason(sel.marketingStatus ?? 'not_subscribed'))}
+                        className="accent-brand-orange cursor-pointer"
+                      />
+                      Customer agreed to receive marketing emails
+                    </label>
+                    {marketingLockReason(sel.marketingStatus ?? 'not_subscribed') && (
+                      <p className="text-[10.5px] text-slate mt-1 leading-[1.4]">{marketingLockReason(sel.marketingStatus ?? 'not_subscribed')}</p>
+                    )}
+                    {sel.marketingStatus === 'subscribed' && sel.marketingSource && (
+                      <p className="text-[10.5px] text-slate mt-1">Joined from {SUBSCRIBER_SOURCE_LABEL[sel.marketingSource] ?? sel.marketingSource}{sel.marketingConsentAt ? ` · ${fmtDate(sel.marketingConsentAt)}` : ''}</p>
+                    )}
+                    {metaError && <p className="text-[11px] text-error mt-1" role="alert">{metaError}</p>}
+                  </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-[#f0eee6]">
@@ -625,7 +815,7 @@ export default function StoreCustomerList() {
           </p>
           <div className="flex flex-col gap-3">
             <div>
-              <label className="text-xs font-medium text-graphite mb-[5px] block">Name</label>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Name <span className="text-slate font-normal">(optional — the email is shown without one)</span></label>
               <input autoFocus value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                 className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
             </div>
@@ -639,7 +829,27 @@ export default function StoreCustomerList() {
               <input value={createForm.phone} onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
                 className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
             </div>
+            <label className="flex items-start gap-2 text-[12px] text-charcoal cursor-pointer">
+              <input type="checkbox" checked={createForm.marketingConsent} onChange={e => setCreateForm(f => ({ ...f, marketingConsent: e.target.checked }))} className="mt-[2px] accent-brand-orange cursor-pointer" />
+              <span>Customer agreed to receive marketing emails<span className="block text-[11px] text-slate">Only tick this if they actually agreed — you are confirming their consent.</span></span>
+            </label>
           </div>
+        </Modal>
+      )}
+
+      {subRemoveOpen && sel?.isSubscriberOnly && (
+        <Modal
+          title="Remove from list?"
+          onClose={() => { if (!subBusy) setSubRemoveOpen(false); }}
+          footer={<>
+            <Button variant="ghost" onClick={() => setSubRemoveOpen(false)} disabled={subBusy}>Cancel</Button>
+            <Button variant="danger" onClick={handleSubscriberRemove} loading={subBusy}>Remove</Button>
+          </>}
+        >
+          {subError && <p className="text-[12px] text-error mb-3">{subError}</p>}
+          <p className="text-[13px] text-charcoal">
+            <strong>{sel.email}</strong> will be deleted from your list, including their consent record. To just stop emailing them, use Unsubscribe instead.
+          </p>
         </Modal>
       )}
 

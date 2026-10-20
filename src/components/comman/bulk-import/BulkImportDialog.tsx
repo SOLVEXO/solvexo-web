@@ -22,8 +22,9 @@ export interface BulkImportDialogProps {
   onImported?: (data: BulkImportData) => void;
   /** Extra one-line rules for this module, shown above the file picker. */
   notes?: string[];
-  /** When set, a required checkbox gates the Import button and `consentConfirmed=true` is sent as an extra form field. */
-  consent?: { label: string };
+  /** When set, a required checkbox gates the Import button and `consentConfirmed=true` is sent as an extra form field.
+   *  `optional`: the box does not gate the import — `consentConfirmed=true` is sent only when it is ticked. */
+  consent?: { label: string; optional?: boolean };
 }
 
 const MAX_SHOWN_FAILURES = 100;
@@ -36,6 +37,7 @@ const MAX_SHOWN_FAILURES = 100;
  */
 export function BulkImportDialog({ title, entityLabel, basePath, onClose, onImported, notes, consent }: BulkImportDialogProps) {
   const [consentChecked, setConsentChecked] = useState(false);
+  const consentBlocks = !!consent && !consent.optional && !consentChecked;
   const [template, setTemplate] = useState<BulkTemplate | null>(null);
   const [templateError, setTemplateError] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -73,11 +75,11 @@ export function BulkImportDialog({ title, entityLabel, basePath, onClose, onImpo
   };
 
   const runImport = async () => {
-    if (!file || (consent && !consentChecked)) return;
+    if (!file || consentBlocks) return;
     setUploading(true);
     setError('');
     try {
-      const res = await apiRunBulkImport(basePath, file, consent ? { consentConfirmed: 'true' } : undefined);
+      const res = await apiRunBulkImport(basePath, file, consent && consentChecked ? { consentConfirmed: 'true' } : undefined);
       setResult(res.data);
       if (res.data.created + res.data.updated > 0) onImported?.(res.data);
     } catch (err: unknown) {
@@ -179,7 +181,7 @@ export function BulkImportDialog({ title, entityLabel, basePath, onClose, onImpo
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={uploading}>Cancel</Button>
-          <Button variant="primary" icon={<Upload size={14} />} onClick={runImport} disabled={!file || uploading || (!!consent && !consentChecked)} loading={uploading}>
+          <Button variant="primary" icon={<Upload size={14} />} onClick={runImport} disabled={!file || uploading || consentBlocks} loading={uploading}>
             {uploading ? 'Importing…' : 'Import'}
           </Button>
         </>
