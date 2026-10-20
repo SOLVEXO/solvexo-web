@@ -38,6 +38,16 @@ export function SmoothScroll() {
         duration: 1.1,
         smoothWheel: true,
         touchMultiplier: 1.4,
+        // Lenis would otherwise swallow wheel/touch events over ANY nested
+        // scrollable box (filter dropdowns, drawers, lists, dialogs), so
+        // they could not scroll. Hand those events back to the browser.
+        prevent: (node) => {
+          if (node === wrapper || !(node instanceof HTMLElement)) return false;
+          if (node.hasAttribute('data-lenis-prevent')) return true;
+          if (node.scrollHeight <= node.clientHeight + 1) return false;
+          const oy = getComputedStyle(node).overflowY;
+          return oy === 'auto' || oy === 'scroll';
+        },
       });
       lenisRef.current = instance;
       // `wrapper`'s own box is pinned by `fixed ... top-0 bottom-0` (see

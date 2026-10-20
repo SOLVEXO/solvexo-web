@@ -60,7 +60,7 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
       {open && <>
       <div className="flex flex-col gap-2 pr-14 mt-2">
         <Field label="Label"><input className={inp} value={item.label} onChange={e => onChange({ ...item, label: e.target.value })} /></Field>
-        <LinkTargetFields value={item as LinkTarget} onChange={next => onChange({ ...item, ...next })} pageOptions={pageOptions} storeId={storeId} />
+        <LinkTargetFields value={item as LinkTarget} onChange={next => onChange({ ...item, ...next })} pageOptions={pageOptions} storeId={storeId} allowNone />
         <div className="flex items-center justify-between">
           <span className="text-[12px] text-charcoal">Highlight as button</span>
           <Toggle checked={!!item.highlight} onChange={v => onChange({ ...item, highlight: v })} />
@@ -75,7 +75,7 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
 
       <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-bone">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">{depth === 1 ? 'Dropdown items' : `Level ${depth + 1} items`}</p>
-        {children.length === 0 && <p className="text-[12px] text-slate">No dropdown — this link goes straight to its target above.</p>}
+        {children.length === 0 && <p className={`text-[12px] ${item.linkType === 'none' ? 'text-error' : 'text-slate'}`}>{item.linkType === 'none' ? 'This item has no link and no dropdown items, so it will do nothing. Add a dropdown item or pick a link.' : 'No dropdown — this link goes straight to its target above.'}</p>}
         <SortableList<MenuItemChild> items={children} keyFor={c => c.id} onReorder={next => onChange({ ...item, children: next })}>
           {(child, i) => (
             <MenuItemEditor

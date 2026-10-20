@@ -201,6 +201,7 @@ export interface ResolvedStorefrontNavItem {
  *  render a prettier URL — matches the existing Marketplace legacy-id
  *  redirect precedent rather than requiring a second slug lookup here. */
 export function resolveStorefrontLink(link: StorefrontLinkSettings): { to?: string; href?: string; newTab?: boolean } {
+  if (link.linkType === 'none') return {}; // label-only menu item (no destination)
   const target = resolveLinkTarget(link);
   return link.newTab ? { ...target, newTab: true } : target;
 }

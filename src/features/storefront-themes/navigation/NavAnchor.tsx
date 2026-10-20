@@ -12,7 +12,11 @@ export function NavAnchor({ link, children, className, style, onClick, onMouseEn
   onFocus?: () => void;
   tabIndex?: number;
 }) {
-  const newTabProps = link.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : { rel: 'noopener' };
+  // "No link" menu item: plain label (its dropdown opens on hover/focus), never a link to "/".
+  if (!link.to && !link.href) {
+    return <span onClick={onClick} onMouseEnter={onMouseEnter} onFocus={onFocus} className={className} style={{ ...style, cursor: 'default' }} tabIndex={tabIndex ?? 0}>{children}</span>;
+  }
+  const newTabProps =link.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : { rel: 'noopener' };
   if (link.to) {
     return <Link to={link.to} onClick={onClick} onMouseEnter={onMouseEnter} onFocus={onFocus} className={className} style={style} tabIndex={tabIndex} {...(link.newTab ? newTabProps : {})}>{children}</Link>;
   }

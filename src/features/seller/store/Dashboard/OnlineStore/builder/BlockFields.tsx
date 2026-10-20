@@ -87,7 +87,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
               Your theme already shows a built-in "Shop" menu (your categories/collections) in the navbar. Adding another link labeled "Shop" will show it twice — consider a different label, e.g. "New Arrivals" or a specific collection's name.
             </p>
           )}
-          <LinkTargetFields value={settings as LinkTarget} onChange={next => onChange({ ...settings, ...next })} pageOptions={pageOptions} storeId={storeId} />
+          <LinkTargetFields value={settings as LinkTarget} onChange={next => onChange({ ...settings, ...next })} pageOptions={pageOptions} storeId={storeId} allowNone />
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-charcoal">Highlight as button</span>
             <Toggle checked={!!settings.highlight} onChange={v => set({ highlight: v })} />
@@ -105,7 +105,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                   <button type="button" onClick={() => set({ children: children.filter((_, j) => j !== i) })}
                     className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                   <Field label="Label"><input className={inp} value={child.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, label: e.target.value } : c) })} /></Field>
-                  <LinkTargetFields value={child} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, ...next } : c) })} pageOptions={pageOptions} storeId={storeId} />
+                  <LinkTargetFields value={child} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, ...next } : c) })} pageOptions={pageOptions} storeId={storeId} allowNone />
                   {settings.menuStyle === 'mega' && (
                     <MenuImageField value={child.imageUrl} onChange={imageUrl => set({ children: children.map((c, j) => j === i ? { ...c, imageUrl } : c) })} storeId={storeId} />
                   )}
@@ -116,7 +116,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                         <button type="button" onClick={() => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).filter((_: unknown, n: number) => n !== k) } : c) })}
                           className="absolute top-1 right-1 text-[10px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                         <Field label="Label"><input className={inp} value={grandchild.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, label: e.target.value } : g) } : c) })} /></Field>
-                        <LinkTargetFields value={grandchild} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, ...next } : g) } : c) })} pageOptions={pageOptions} storeId={storeId} />
+                        <LinkTargetFields value={grandchild} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, ...next } : g) } : c) })} pageOptions={pageOptions} storeId={storeId} allowNone />
                         {settings.menuStyle === 'mega' && (
                           <MenuImageField value={grandchild.imageUrl} onChange={imageUrl => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: Record<string, unknown>, n: number) => n === k ? { ...g, imageUrl } : g) } : c) })} storeId={storeId} />
                         )}

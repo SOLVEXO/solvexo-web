@@ -75,6 +75,17 @@ export function FashionNavbar() {
   const scope = 'fx-header';
   const padY = 18 + o.paddingDelta;
 
+  // Seller's "Logo position" choice (Customize > Header > Layout) decides where logo, menu and icons sit on desktop.
+  const layout = {
+    standard: { grid: 'lg:grid-cols-[auto_1fr_auto]', logo: '', nav: 'lg:col-start-2 lg:row-start-1 lg:pl-6 justify-start' },
+    inline: { grid: 'lg:grid-cols-[1fr_auto_1fr]', logo: '', nav: 'lg:col-start-2 lg:row-start-1 justify-center' },
+    split: { grid: 'lg:grid-cols-[1fr_auto_1fr]', logo: 'lg:col-start-2 lg:justify-center', nav: 'lg:col-start-1 lg:row-start-1 justify-start' },
+    centered: {
+      grid: 'lg:grid-cols-[1fr_auto_1fr] lg:gap-y-1.5', logo: 'lg:col-start-2 lg:justify-center',
+      nav: `lg:col-span-3 lg:col-start-1 lg:row-start-2 ${o.navAlignment === 'left' ? 'justify-start' : o.navAlignment === 'right' ? 'justify-end' : 'justify-center'}`,
+    },
+  }[o.headerStyle];
+
   const openCart = () => (drawerMounted ? openDrawer() : navigate('/cart'));
 
   const iconBtn = 'relative flex size-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]';
@@ -91,17 +102,17 @@ export function FashionNavbar() {
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <header ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
         <style>{headerNavCss(scope, o)}</style>
-        <div className="mx-auto grid items-center" style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, gridTemplateColumns: '1fr auto 1fr', columnGap: 16 }}>
-          <div className="flex min-w-0 items-center gap-2">
+        <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
+          <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
             <Link to="/" className="flex items-center no-underline" aria-label={store.name}>{wordmark}</Link>
           </div>
 
-          <div className="flex justify-center">
-            <nav className="hidden items-center gap-1 lg:flex" aria-label={ts('pg.main', 'Main')}>
+          <div className={`hidden min-w-0 lg:flex ${layout.nav}`}>
+            <nav className="hidden flex-wrap items-center justify-center gap-1 lg:flex" aria-label={ts('pg.main', 'Main')}>
               {items.map(item => (
                 <div key={item.id} className="group relative">
-                  <NavAnchor link={item.link} className="inline-block rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}</NavAnchor>
+                  <NavAnchor link={item.link} className="inline-block whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}</NavAnchor>
                   {isMegaItem(item) && (
                     <div className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                       <div className="grid gap-x-8 gap-y-6 p-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
@@ -145,7 +156,7 @@ export function FashionNavbar() {
             </nav>
           </div>
 
-          <div className="flex items-center justify-end gap-0.5" style={{ color: fg }}>
+          <div className="col-start-3 row-start-1 flex items-center justify-end gap-0.5" style={{ color: fg }}>
             {o.cta && <HeaderCta cta={o.cta} bg={t.colors.accent} color={t.colors.accentInk} radius={t.buttonRadiusPx} fontFamily={t.fonts.body} />}
             <span className="hidden md:block"><FashionLocaleControls /></span>
             {o.showSearch && <button type="button" className={iconBtn} aria-label={ts('nav.search', 'Search')} onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}

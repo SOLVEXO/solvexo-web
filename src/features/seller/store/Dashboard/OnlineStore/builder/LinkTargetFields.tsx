@@ -6,7 +6,7 @@ import { apiGetCollection } from '@/api/services/collections';
 import { apiGetMyProductById } from '@/api/services/product';
 
 export interface LinkTarget {
-  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'email' | 'phone';
+  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'email' | 'phone' | 'none';
   pageSlug?: string;
   url?: string;
   categoryId?: string;
@@ -22,11 +22,13 @@ const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-cha
  *  target — nav links, footer links, hero/image CTAs. `category`/`collection`
  *  (Phase 4) resolve through `EntityPickerModal` rather than a raw-ID paste
  *  field, same as every other entity reference in this builder. */
-export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
+export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowNone }: {
   value: LinkTarget;
   onChange: (next: LinkTarget) => void;
   pageOptions: { slug: string; title: string }[];
   storeId: string;
+  /** Menu items only: offer "No link" (label opens its dropdown, click goes nowhere). */
+  allowNone?: boolean;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [resolvedLabel, setResolvedLabel] = useState('');
@@ -52,6 +54,7 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
     <div className="grid grid-cols-2 gap-2">
       <Field label="Links to">
         <select className={inp} value={value.linkType} onChange={e => onChange({ ...value, linkType: e.target.value as LinkTarget['linkType'] })}>
+          {(allowNone || value.linkType === 'none') && <option value="none">No link (opens its dropdown only)</option>}
           <option value="home">Home page</option>
           <option value="blog">Blog</option>
           <option value="search">Search results</option>
@@ -98,7 +101,11 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
         </Field>
       )}
 
-      {value.linkType !== 'email' && value.linkType !== 'phone' && (
+      {value.linkType === 'none' && (
+        <p className="col-span-2 m-0 text-[11px] text-slate">Shows as plain text in the menu. Add items below so the dropdown has something to open.</p>
+      )}
+
+      {value.linkType !== 'email' && value.linkType !== 'phone' && value.linkType !== 'none' && (
         <label className="col-span-2 flex items-center gap-2 text-[12px] text-charcoal cursor-pointer">
           <input type="checkbox" checked={!!value.newTab} onChange={e => onChange({ ...value, newTab: e.target.checked })} /> Open in a new tab
         </label>

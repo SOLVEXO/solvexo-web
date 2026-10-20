@@ -32,7 +32,9 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
   return (
     <div style={{ borderBottom: row }}>
       <div className="flex items-center justify-between gap-2 py-2.5 pl-1">
-        <NavAnchor link={item.link} onClick={onNavigate} className="flex-1 py-1.5 no-underline" style={top}>{item.label}</NavAnchor>
+        {item.link.to || item.link.href
+          ? <NavAnchor link={item.link} onClick={onNavigate} className="flex-1 py-1.5 no-underline" style={top}>{item.label}</NavAnchor>
+          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} className="flex-1 cursor-pointer border-0 bg-transparent py-1.5 text-left" style={top}>{item.label}</button>}
         <Toggle expanded={open} label={item.label} controls={panelId} onClick={() => setOpen(o => !o)} />
       </div>
 
@@ -50,7 +52,9 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
             return (
               <div key={child.id} style={divider}>
                 <div className="flex items-center justify-between gap-2 py-1.5 pl-[18px] pr-2">
-                  <NavAnchor link={child.link} onClick={onNavigate} className="flex-1 py-2 no-underline" style={{ ...childStyle, fontWeight: 600 }}>{child.label}</NavAnchor>
+                  {child.link.to || child.link.href
+                    ? <NavAnchor link={child.link} onClick={onNavigate} className="flex-1 py-2 no-underline" style={{ ...childStyle, fontWeight: 600 }}>{child.label}</NavAnchor>
+                    : <button type="button" onClick={() => setOpenChildId(childOpen ? null : child.id)} aria-expanded={childOpen} aria-controls={childPanelId} className="flex-1 cursor-pointer border-0 bg-transparent py-2 text-left" style={{ ...childStyle, fontWeight: 600 }}>{child.label}</button>}
                   <Toggle expanded={childOpen} label={child.label} controls={childPanelId} onClick={() => setOpenChildId(childOpen ? null : child.id)} />
                 </div>
                 {childOpen && (
