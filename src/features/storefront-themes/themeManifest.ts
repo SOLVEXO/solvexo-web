@@ -1,5 +1,6 @@
 import type { ResourceTemplateType } from '@/api/services/collectionTemplate';
 import type { StorefrontColors } from '@/api/services/storeTheme';
+import type { FieldSchema } from '@/features/seller/store/Dashboard/OnlineStore/builder/SchemaForm';
 
 /**
  * The Theme Manifest contract — Phase 3 of the theme-agnostic platform work.
@@ -48,7 +49,8 @@ import type { StorefrontColors } from '@/api/services/storeTheme';
 export interface ThemeSettingsFieldDef {
   /** A real key on the shared `StorefrontColors` schema (backend-validated,
    *  same document every theme's `StoreTheme.theme`/`.draft.theme` uses). */
-  key: keyof StorefrontColors;
+  /** A shared `StorefrontColors` key, or `custom.<name>` for a setting only THIS theme defines: it is stored in `StorefrontColors.themeSettings` (no backend change needed) and read in the theme with `customThemeSetting`. */
+  key: keyof StorefrontColors | `custom.${string}`;
   label: string;
   group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart';
   control:
@@ -56,6 +58,25 @@ export interface ThemeSettingsFieldDef {
     | { kind: 'select'; options: { value: string; label: string }[] };
   /** Shown under the field — e.g. Maison's fixed headline typeface note. */
   helpText?: string;
+}
+
+/** Current value of a manifest field: a shared key or a `custom.<name>` theme-declared setting. */
+export function readThemeSetting(colors: StorefrontColors, field: Pick<ThemeSettingsFieldDef, 'key'>): unknown {
+  return field.key.startsWith('custom.') ? colors.themeSettings?.[field.key.slice(7)] : colors[field.key as keyof StorefrontColors];
+}
+
+/** The patch that sets a manifest field (custom fields merge into `themeSettings`; `null` removes one). */
+export function themeSettingPatch(colors: StorefrontColors, field: Pick<ThemeSettingsFieldDef, 'key'>, value: string | number | boolean | null): Partial<StorefrontColors> {
+  if (!field.key.startsWith('custom.')) return { [field.key]: value } as Partial<StorefrontColors>;
+  const next = { ...(colors.themeSettings ?? {}) };
+  if (value === null) delete next[field.key.slice(7)]; else next[field.key.slice(7)] = value;
+  return { themeSettings: next };
+}
+
+/** Read a theme-declared setting inside the theme (string/number/boolean), with the theme's own default. */
+export function customThemeSetting<T extends string | number | boolean>(colors: { themeSettings?: Record<string, string | number | boolean> } | null | undefined, name: string, fallback: T): T {
+  const v = colors?.themeSettings?.[name];
+  return typeof v === typeof fallback ? (v as T) : fallback;
 }
 
 /** One merchant-editable template scope (Home / Product / Collection /
@@ -118,6 +139,49 @@ export type HeaderOptionKey =
   | 'logoPosition' | 'menuPosition' | 'menuAlignment' | 'searchBar' | 'searchPosition'
   | 'sticky' | 'transparent' | 'menuStyle' | 'button' | 'topBar' | 'colours';
 
+/** One choice a theme offers for a header option (shown in the Header panel in this order). */
+export interface HeaderChoice {
+  /** Short slug saved on the store (lowercase letters, digits, - and _). The theme itself interprets it. */
+  value: string;
+  label: string;
+  /** Small note shown under the select while this choice is picked. */
+  hint?: string;
+}
+
+/** A repeatable item inside a theme-declared section (e.g. one look in a lookbook). Stored as a `theme_block` with `blockKey = <sectionKey>.<key>`. */
+export interface ThemeCustomBlockDef {
+  key: string;
+  label: string;
+  fields: FieldSchema[];
+  defaults?: Record<string, unknown>;
+}
+
+/** A section only this theme has. Stored as a `theme_section` (`settings.sectionKey = key`, the fields flat beside it), so the backend and the editor need no change: declare it here and register a renderer with the theme. `key` must be lowercase and namespaced, e.g. `maison.lookbook`. */
+export interface ThemeCustomSectionDef {
+  key: string;
+  label: string;
+  description: string;
+  /** Accent colour of the editor card icon. */
+  color?: string;
+  fields: FieldSchema[];
+  defaults?: Record<string, unknown>;
+  /** Repeatable items; omit for a section without blocks. */
+  block?: ThemeCustomBlockDef;
+  /** How many blocks a new section starts with (default 0). */
+  initialBlocks?: number;
+  /** Ready-made starting points; each is offered as its own card in Add section. */
+  presets?: ThemeCustomSectionPreset[];
+}
+
+/** A ready-made starting point for a theme-declared section. `blocks` holds the fields of each pre-filled block. */
+export interface ThemeCustomSectionPreset {
+  id: string;
+  name: string;
+  description: string;
+  settings?: Record<string, unknown>;
+  blocks?: Record<string, unknown>[];
+}
+
 export interface ThemeManifest {
   /** Matches this theme's `NEW_THEME_REGISTRY` key / `StoreTheme.themeDefinitionId`. */
   id: string;
@@ -129,6 +193,10 @@ export interface ThemeManifest {
   supportsAnnouncementBar: boolean;
   /** Which optional header layout/search controls this theme renders. Missing = none of them. */
   supportedHeaderOptions?: HeaderOptionKey[];
+  /** The values this theme offers for options that vary per theme. The first one is the default. */
+  headerOptionChoices?: { searchPosition?: HeaderChoice[] };
+  /** Sections only this theme offers (shown in Add section, edited with the generic form). */
+  customSections?: ThemeCustomSectionDef[];
   templates: ThemeTemplateScopeDef[];
   themeSettingsFields: ThemeSettingsFieldDef[];
   /** Every editable setting at the theme's own default: what "Reset to default" applies. */
@@ -146,6 +214,30 @@ export const THEME_MANIFESTS: Record<string, ThemeManifest> = {};
 
 export function registerThemeManifest(manifest: ThemeManifest) {
   THEME_MANIFESTS[manifest.id] = manifest;
+}
+
+/** The theme's own custom sections (empty for an unknown theme). */
+export function customSectionsOf(themeDefinitionId: string | null | undefined, fallbackId: string): ThemeCustomSectionDef[] {
+  return getThemeManifest(themeDefinitionId, fallbackId)?.customSections ?? [];
+}
+
+/** A saved `theme_section`'s definition, found by its `sectionKey` across every registered theme. */
+export function findCustomSectionDef(sectionKey: unknown): ThemeCustomSectionDef | undefined {
+  if (typeof sectionKey !== 'string') return undefined;
+  for (const m of Object.values(THEME_MANIFESTS)) {
+    const hit = m.customSections?.find(d => d.key === sectionKey);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/** A saved `theme_block`'s definition, found by its `blockKey` (`<sectionKey>.<block key>`). */
+export function findCustomBlockDef(blockKey: unknown): ThemeCustomBlockDef | undefined {
+  if (typeof blockKey !== 'string') return undefined;
+  for (const m of Object.values(THEME_MANIFESTS)) {
+    for (const d of m.customSections ?? []) if (d.block && `${d.key}.${d.block.key}` === blockKey) return d.block;
+  }
+  return undefined;
 }
 
 export function getThemeManifest(themeDefinitionId: string | null | undefined, fallbackId: string): ThemeManifest {

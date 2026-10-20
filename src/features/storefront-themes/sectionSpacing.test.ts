@@ -52,3 +52,12 @@ describe('sectionCopy', () => {
     expect(showEyebrow({ showEyebrow: false })).toBe(false);
   });
 });
+
+describe('sectionSpacing show-on', () => {
+  it.each([
+    ['all', ''], ['desktop', 'sx-hide-m'], ['mobile', 'sx-hide-d'],
+    ['tablet', 'sx-hide-m sx-hide-w'], ['large', 'sx-hide-m sx-hide-t'], ['mobile-tablet', 'sx-hide-w'],
+  ])('%s -> %s', (visibility, classes) => {
+    expect(sectionSpacing({ visibility }).className).toBe(classes);
+  });
+});

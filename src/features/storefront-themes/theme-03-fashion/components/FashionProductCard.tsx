@@ -21,15 +21,16 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   const localize = useLocalize();
   const [quick, setQuick] = useState(false);
   const [hoverImage, setHoverImage] = useState<string | undefined>();
+  const showSwatches = t.colorSwatches; // module singleton: read per render so the editor preview reacts to the setting
   const swatches = useMemo(() => {
-    if (!t.colorSwatches) return [];
+    if (!showSwatches) return [];
     const seen = new Map<string, { value: string; image?: string }>();
     for (const v of product.variants ?? []) {
       const color = v.options?.find(o => /^colou?r$/i.test(o.name))?.value;
       if (color && !seen.has(color.toLowerCase())) seen.set(color.toLowerCase(), { value: color, image: v.images?.find(Boolean) });
     }
     return Array.from(seen.values());
-  }, [product.variants]);
+  }, [product.variants, showSwatches]);
 
   const p = localize.product(product);
   const base = String(store.baseCurrency ?? currency);

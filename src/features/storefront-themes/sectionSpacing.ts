@@ -19,7 +19,22 @@ export const SECTION_SPACING_CSS =
   '.sx-pad-b>:last-child,.sx-pad-b>[data-editor-block-id]:last-child>:last-child{padding-bottom:var(--sx-pb)!important}' +
   '.sx-full>*>.mx-auto,.sx-full>.mx-auto,.sx-full>[data-editor-block-id]>*>.mx-auto{max-width:none!important}' +
   '@media (max-width:749px){.sx-hide-m{display:none!important}}' +
-  '@media (min-width:750px){.sx-hide-d{display:none!important}}';
+  '@media (min-width:750px){.sx-hide-d{display:none!important}}' +
+  // tablet = 750-1023px, wide = 1024px and up ("Show on" options tablet / large screens / mobile and tablet)
+  '@media (min-width:750px) and (max-width:1023px){.sx-hide-t{display:none!important}}' +
+  '@media (min-width:1024px){.sx-hide-w{display:none!important}}';
+
+/** "Show on" -> the hide classes: desktop = tablet + large (hide mobile), mobile = mobile only, tablet = tablet only, large = 1024px+ only, mobile-tablet = hide on large screens. */
+function visibilityClasses(visibility: unknown): string {
+  switch (visibility) {
+    case 'desktop': return 'sx-hide-m';
+    case 'mobile': return 'sx-hide-d';
+    case 'tablet': return 'sx-hide-m sx-hide-w';
+    case 'large': return 'sx-hide-m sx-hide-t';
+    case 'mobile-tablet': return 'sx-hide-w';
+    default: return '';
+  }
+}
 
 export function sectionSpacing(settings: Record<string, unknown> | undefined): { className: string; style: CSSProperties } {
   const top = typeof settings?.spacingTop === 'number' ? settings.spacingTop : undefined;
@@ -36,7 +51,7 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
       padTop !== undefined ? 'sx-pad-t' : '',
       padBottom !== undefined ? 'sx-pad-b' : '',
       settings?.fullWidth === true ? 'sx-full' : '',
-      visibility === 'desktop' ? 'sx-hide-m' : visibility === 'mobile' ? 'sx-hide-d' : '',
+      visibilityClasses(visibility),
     ].filter(Boolean).join(' '),
     style: {
       marginTop: top,

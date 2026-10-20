@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
 import { readHeaderOptions } from '@/features/storefront-themes/navigation/headerOptions';
-import type { HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
+import type { HeaderChoice, HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
 
 const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const INPUT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -93,11 +93,14 @@ function TextField({ label, value, onChange, placeholder, maxLength, disabled }:
 }
 
 /** Header section settings, grouped like Shopify's header settings. Every control falls back to the theme's own look. */
-export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [] }: {
+export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [], choices }: {
   header: StorefrontHeader; onChange: (next: StorefrontHeader) => void; logoSlot?: ReactNode;
   /** Optional controls the active theme actually renders (its manifest's `supportedHeaderOptions`). */
   supports?: HeaderOptionKey[];
+  /** The active theme's own choices for the options that vary per theme (its manifest `headerOptionChoices`). */
+  choices?: { searchPosition?: HeaderChoice[] };
 }) {
+  const searchChoices = choices?.searchPosition ?? [{ value: 'icons', label: 'Next to the icons' }];
   const can = (k: HeaderOptionKey) => supports.includes(k);
   const set = (patch: Partial<StorefrontHeader>) => onChange({ ...header, ...patch });
   // Effective values (older stores only have the combined `headerStyle`); saving writes all three explicitly.
@@ -234,13 +237,14 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [] 
             </select>
           </label>
         )}
-        {header.showSearch !== false && can('searchBar') && can('searchPosition') && header.searchStyle === 'bar' && (
+        {header.showSearch !== false && can('searchBar') && can('searchPosition') && header.searchStyle === 'bar' && searchChoices.length > 1 && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Search box position</span>
-            <select className={SELECT} value={header.searchPosition ?? 'icons'} onChange={e => set({ searchPosition: e.target.value as 'icons' | 'center' })}>
-              <option value="icons">Next to the icons</option>
-              <option value="center">Centered, on its own row</option>
+            <select className={SELECT} value={searchChoices.some(c => c.value === header.searchPosition) ? header.searchPosition : searchChoices[0].value}
+              onChange={e => set({ searchPosition: e.target.value })}>
+              {searchChoices.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
+            {searchChoices.find(c => c.value === header.searchPosition)?.hint && <span className="text-[10.5px] text-slate">{searchChoices.find(c => c.value === header.searchPosition)?.hint}</span>}
           </label>
         )}
         <SwitchRow label="Account" checked={header.showAccount !== false} onChange={v => set({ showAccount: v })} />

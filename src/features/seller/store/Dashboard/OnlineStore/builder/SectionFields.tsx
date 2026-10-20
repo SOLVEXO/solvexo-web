@@ -4,6 +4,7 @@ import type { SectionType } from '@/api/services/storefrontTypes';
 import type { MetafieldOwnerResource } from '@/api/services/metafields';
 import { SchemaForm, type FieldSchema } from './SchemaForm';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
+import { resolveSectionMeta } from './themeSectionMeta';
 import type { PageOption } from './BlockFields';
 
 /** Settings every (non-core) section has, Shopify-style — rendered by each
@@ -19,6 +20,9 @@ const COMMON_SECTION_SCHEMA: FieldSchema[] = [
       { value: 'all', label: 'All devices' },
       { value: 'desktop', label: 'Desktop and tablet only' },
       { value: 'mobile', label: 'Mobile only' },
+      { value: 'tablet', label: 'Tablet only' },
+      { value: 'large', label: 'Large screens only (1024px and up)' },
+      { value: 'mobile-tablet', label: 'Mobile and tablet only' },
     ],
   },
   { key: 'fullWidth', kind: 'checkbox', label: 'Full width', hint: 'Content spans the whole screen instead of the centred page width.', defaultOff: true },
@@ -40,8 +44,9 @@ export function SectionFields({ type, settings, onChange, storeId, pageOptions, 
   /** Phase 9 — Dynamic Sources; see `SchemaForm`'s own doc comment. */
   ownerResource?: MetafieldOwnerResource | null;
 }) {
-  const schema = SECTION_META_BY_TYPE[type]?.settingsSchema ?? [];
-  const isLocked = SECTION_META_BY_TYPE[type]?.locked;
+  const meta = type === 'theme_section' ? resolveSectionMeta({ type, settings }) : SECTION_META_BY_TYPE[type];
+  const schema = meta?.settingsSchema ?? [];
+  const isLocked = meta?.locked;
   const hasDesign = ['visibility', 'fullWidth', 'backgroundImageUrl', 'anchorId', 'customCss'].some(k => settings?.[k]);
   const [designOpen, setDesignOpen] = useState(hasDesign);
   return (

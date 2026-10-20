@@ -15,7 +15,7 @@ import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUn
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
-import { getThemeManifest, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
+import { getThemeManifest, readThemeSetting, themeSettingPatch, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
 // Fixed platform brand color — same literal `ThemeLibraryPage.tsx`'s Install
@@ -92,17 +92,17 @@ function ThemeSettingsField({ field, colors, onChange }: {
   colors: StorefrontColors;
   onChange: (patch: Partial<StorefrontColors>) => void;
 }) {
-  const value = String(colors[field.key] ?? '');
+  const value = String(readThemeSetting(colors, field) ?? '');
   if (field.control.kind === 'color' && field.control.optional) {
-    return <div className="flex flex-col gap-1.5"><OptionalColorField label={field.label} value={colors[field.key] as string | null | undefined} fallback={field.control.optional.fallback} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
+    return <div className="flex flex-col gap-1.5"><OptionalColorField label={field.label} value={readThemeSetting(colors, field) as string | null | undefined} fallback={field.control.optional.fallback} onChange={v => onChange(themeSettingPatch(colors, field, v))} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
   }
   if (field.control.kind === 'color') {
-    return <div className="flex flex-col gap-1.5"><ColorField heading={field.label} value={value} onChange={v => onChange({ [field.key]: v } as Partial<StorefrontColors>)} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
+    return <div className="flex flex-col gap-1.5"><ColorField heading={field.label} value={value} onChange={v => onChange(themeSettingPatch(colors, field, v))} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
   }
   return (
     <div className="flex flex-col gap-1.5">
       <Field heading={field.label}>
-        <select className={inp} value={value} onChange={e => onChange({ [field.key]: e.target.value } as Partial<StorefrontColors>)}>
+        <select className={inp} value={value} onChange={e => onChange(themeSettingPatch(colors, field, e.target.value))}>
           {field.control.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </Field>
@@ -316,7 +316,7 @@ function SettingsTransfer({ manifest, current, onImport, onError }: {
   const fields = manifest.themeSettingsFields;
   const doExport = () => {
     const settings: Record<string, unknown> = {};
-    for (const f of fields) settings[f.key] = current[f.key] ?? null;
+    for (const f of fields) settings[f.key] = readThemeSetting(current, f) ?? null;
     const blob = new Blob([JSON.stringify({ themeId: manifest.id, settings }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -329,16 +329,20 @@ function SettingsTransfer({ manifest, current, onImport, onError }: {
       const parsed = JSON.parse(await file.text()) as { themeId?: string; settings?: Record<string, unknown> };
       if (!parsed || typeof parsed !== 'object' || !parsed.settings || typeof parsed.settings !== 'object') throw new Error('This file is not a theme settings export.');
       if (parsed.themeId && parsed.themeId !== manifest.id) throw new Error('This file was exported from a different theme.');
-      const patch: Record<string, unknown> = {};
+      let patch: Partial<StorefrontColors> = {};
+      let count = 0;
       for (const f of fields) {
         if (!(f.key in parsed.settings)) continue;
         const v = parsed.settings[f.key];
-        if (f.control.kind === 'select') { if (typeof v === 'string' && f.control.options.some(o => o.value === v)) patch[f.key] = v; }
-        else if (v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v))) patch[f.key] = v;
+        const ok = f.control.kind === 'select'
+          ? typeof v === 'string' && f.control.options.some(o => o.value === v)
+          : v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v));
+        if (!ok) continue;
+        patch = { ...patch, ...themeSettingPatch({ ...current, ...patch }, f, v as string | null) };
+        count += 1;
       }
-      const count = Object.keys(patch).length;
       if (count === 0) throw new Error('No matching settings were found in this file.');
-      onImport(patch as Partial<StorefrontColors>, count);
+      onImport(patch, count);
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Could not read this file.');
     }

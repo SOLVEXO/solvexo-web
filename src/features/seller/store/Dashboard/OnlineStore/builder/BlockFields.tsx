@@ -4,6 +4,7 @@ import { SortableList } from './Sortable';
 import { MenuStyleField, MenuImageField } from './MenuItemExtraFields';
 import { SchemaForm, type FieldSchema, type FieldKind } from './SchemaForm';
 import { BLOCK_SCHEMAS, FOOTER_WIDTH_OPTIONS } from './sectionRegistry';
+import { customBlockSchema } from './themeSectionMeta';
 import { isAppBlockType, findInstalledAppBlock, type AppCatalogEntry, type AppBlockFieldKind } from '@/api/services/apps';
 import type { MetafieldOwnerResource } from '@/api/services/metafields';
 
@@ -194,7 +195,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
       return <p className="text-[12px] text-slate italic">A plain divider line — no settings.</p>;
 
     default: {
-      const schema = BLOCK_SCHEMAS[type];
+      const schema = type === 'theme_block' ? customBlockSchema(settings.blockKey) : BLOCK_SCHEMAS[type];
       if (!schema) return null;
       return <SchemaForm schema={schema} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />;
     }

@@ -99,6 +99,8 @@ export interface StorefrontColors {
   saleBadge?:         'show' | 'hide';
   quickView?:         'show' | 'hide';
   colorSwatches?:     'show' | 'hide';
+  /** Settings a theme declares in its manifest (`custom.<name>` fields); see themeManifest.ts. */
+  themeSettings?:     Record<string, string | number | boolean>;
   soldOutBadge?:      'show' | 'hide';
   cardStyle?:         'theme' | 'flat' | 'outlined' | 'elevated';
   cartType?:          'drawer' | 'page';
@@ -203,7 +205,8 @@ export interface StorefrontHeader {
   navHoverStyle?:       'none' | 'underline' | 'pill';
   searchStyle?:         'icon' | 'bar';
   /** Search box only: next to the icons, or centered on its own row. */
-  searchPosition?:      'icons' | 'center';
+  /** A choice the active theme offers (see its manifest `headerOptionChoices`); unknown values read as the default. */
+  searchPosition?:      string;
   ctaLabel?:            string | null;
   ctaLink?:             string | null;
   topBarEnabled?:       boolean;

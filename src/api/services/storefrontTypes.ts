@@ -78,6 +78,8 @@ export const SECTION_TYPES = [
   'cart_summary',
   'blog_post_list',
   'article_content',
+  // Carrier for a section the active theme declares in its own manifest (settings.sectionKey picks which).
+  'theme_section',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 

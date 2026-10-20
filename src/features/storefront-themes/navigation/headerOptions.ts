@@ -35,7 +35,8 @@ export interface HeaderOptions {
   navUppercase: boolean;
   navHoverStyle: 'none' | 'underline' | 'pill';
   searchStyle: 'icon' | 'bar';
-  searchPosition: 'icons' | 'center';
+  /** Theme-defined slug (default 'icons'); each theme interprets the ones it offers. */
+  searchPosition: string;
   cta: { label: string; link: string } | null;
   topBar: { text: string | null; phone: string | null; email: string | null; bg: string | null; color: string | null } | null;
 }
@@ -103,7 +104,7 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     navUppercase: h.navUppercase === true,
     navHoverStyle: h.navHoverStyle === 'underline' || h.navHoverStyle === 'pill' ? h.navHoverStyle : 'none',
     searchStyle: h.searchStyle === 'bar' ? 'bar' : 'icon',
-    searchPosition: h.searchPosition === 'center' ? 'center' : 'icons',
+    searchPosition: typeof h.searchPosition === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.searchPosition) ? h.searchPosition : 'icons',
     cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
       ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,
     topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail)

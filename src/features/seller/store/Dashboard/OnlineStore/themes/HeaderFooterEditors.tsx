@@ -11,7 +11,7 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { HeaderSettingsPanel, FooterSettingsPanel, Group } from './HeaderFooterSettingsPanels';
 import { footerLayoutBlocks } from '@/features/storefront-themes/navigation/headerOptions';
 import type { HeaderFooterDraftState } from './useHeaderFooterDraft';
-import type { HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
+import type { HeaderOptionKey, ThemeManifest } from '@/features/storefront-themes/themeManifest';
 
 const ADMIN_ACCENT = '#D97757';
 const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -106,7 +106,7 @@ function BlockRow({ block, onChange, onRemove, onDuplicate, pageOptions, storeId
 }
 
 /** Header: the menu (drag to reorder, hide, duplicate), logo, then the section's settings groups. */
-export function HeaderEditor({ hf, storeId, onError, supports }: { hf: HeaderFooterDraftState; storeId: string; onError: (msg: string) => void; supports?: HeaderOptionKey[] }) {
+export function HeaderEditor({ hf, storeId, onError, supports, choices }: { hf: HeaderFooterDraftState; storeId: string; onError: (msg: string) => void; supports?: HeaderOptionKey[]; choices?: ThemeManifest['headerOptionChoices'] }) {
   const { headerDraft, footerDraft, editor, menus, pageOptions } = hf;
   if (!headerDraft || !footerDraft) return null;
   const setHeader = (header: StorefrontHeader) => editor.edit(prev => ({ ...prev!, header }));
@@ -156,7 +156,7 @@ export function HeaderEditor({ hf, storeId, onError, supports }: { hf: HeaderFoo
           onChange={next => setHeader({ ...headerDraft, sections: next })}
           onPersist={next => void hf.persistRemoval({ header: { ...headerDraft, sections: next }, footer: footerDraft }, onError)} />
       </Group>
-      <HeaderSettingsPanel header={headerDraft} onChange={setHeader} supports={supports} logoSlot={(
+      <HeaderSettingsPanel header={headerDraft} onChange={setHeader} supports={supports} choices={choices} logoSlot={(
         <>
           <select className={SELECT} value={headerDraft.logoSource ?? 'store'} aria-label="Logo image"
             onChange={e => setHeader({ ...headerDraft, logoSource: e.target.value as StorefrontHeader['logoSource'] })}>

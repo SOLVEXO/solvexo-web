@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useStorefront, type StorefrontNavItemSettings, type ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
 import { useContentLocale } from '@/features/storefront/storefrontMarket';
 import { useCartContext } from '@/contexts/CartContext';
@@ -34,6 +34,34 @@ export function FashionNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
+  // Click/touch toggle for a menu with children (hover and keyboard focus still open it on desktop).
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  // A menu the shopper just closed (chevron click / Esc): stays shut even while the pointer or focus is still on it, until they leave and come back.
+  const [dismissedMenu, setDismissedMenu] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const lastPointer = useRef<string>('mouse');
+  useEffect(() => {
+    const close = (e: MouseEvent) => { if (!(e.target as HTMLElement | null)?.closest('[data-open="true"]')) setOpenMenu(null); };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpenMenu(null);
+      const group = navRef.current?.querySelector<HTMLElement>('[data-nav-group]:hover, [data-nav-group]:focus-within');
+      if (group) {
+        setDismissedMenu(group.dataset.navGroup ?? null);
+        if (group.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
+      }
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
+  }, []);
+  const toggleMenu = (id: string, button: HTMLElement) => {
+    // Mouse: the panel is usually already open from hovering, so a click closes what is visible. Touch: the tap's emulated hover would make it look open, so use the click state instead.
+    const panel = button.parentElement?.querySelector<HTMLElement>('[data-nav-panel]');
+    const visible = lastPointer.current === 'touch' ? openMenu === id : !!panel && getComputedStyle(panel).visibility === 'visible';
+    if (visible) { setOpenMenu(null); setDismissedMenu(id); button.blur(); }
+    else { setDismissedMenu(null); setOpenMenu(id); }
+  };
   const [pages, setPages] = useState<PublicPageSummary[]>([]);
 
   const header = theme?.header;
@@ -76,11 +104,13 @@ export function FashionNavbar() {
   const padY = 18 + o.paddingDelta;
 
   // Seller's header layout (Customize > Header > Layout): logo position, menu position and menu alignment are independent.
-  const below = o.menuPosition === 'below';
+  const searchBar = o.showSearch && o.searchStyle === 'bar';
+  // "In the logo row" needs a free middle: logo on the left (the menu then drops to its own row). Otherwise it falls back to its own row.
+  const rowBar = searchBar && o.searchPosition === 'row' && o.logoPosition === 'left';
+  const below = o.menuPosition === 'below' || rowBar;
   const navJustify = o.navAlignment === 'right' ? 'justify-end' : o.navAlignment === 'center' ? 'justify-center' : 'justify-start';
   // Search box (seller option): next to the icons, or centered on its own row between the logo row and the menu row.
-  const searchBar = o.showSearch && o.searchStyle === 'bar';
-  const centerBar = searchBar && o.searchPosition === 'center';
+  const centerBar = searchBar && (o.searchPosition === 'center' || (o.searchPosition === 'row' && !rowBar));
   const layout = {
     grid: o.logoPosition === 'left' ? 'lg:grid-cols-[auto_1fr_auto]' : o.logoPosition === 'center' ? 'lg:grid-cols-[1fr_auto_1fr]' : 'lg:grid-cols-[1fr_auto_auto]',
     logo: o.logoPosition === 'left' ? '' : 'lg:col-start-2 lg:justify-center',
@@ -113,12 +143,19 @@ export function FashionNavbar() {
           </div>
 
           <div className={`hidden min-w-0 lg:flex ${layout.nav}`}>
-            <nav className="hidden flex-wrap items-center justify-center gap-1 lg:flex" aria-label={ts('pg.main', 'Main')}>
+            <nav ref={navRef} className="hidden flex-wrap items-center justify-center gap-1 lg:flex" aria-label={ts('pg.main', 'Main')}>
               {items.map(item => (
-                <div key={item.id} className="group relative">
+                <div key={item.id} className="group relative" data-open={openMenu === item.id} data-dismissed={dismissedMenu === item.id} data-nav-group={item.id}
+                  onMouseEnter={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }} onFocus={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }}>
                   <NavAnchor link={item.link} className="inline-block whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}</NavAnchor>
+                  {item.children.length > 0 && (
+                    <button type="button" aria-expanded={openMenu === item.id} aria-label={`${openMenu === item.id ? 'Close' : 'Open'} ${item.label} menu`} onPointerDown={e => { lastPointer.current = e.pointerType; }} onClick={e => toggleMenu(item.id, e.currentTarget)}
+                      className="-ml-2 inline-grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 align-middle hover:bg-black/5" style={{ color: fg }}>
+                      <ChevronDown size={14} aria-hidden style={{ transform: openMenu === item.id ? 'rotate(180deg)' : undefined, transition: 'transform .2s' }} />
+                    </button>
+                  )}
                   {isMegaItem(item) && (
-                    <div className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                    <div data-nav-panel className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                       <div className="grid gap-x-8 gap-y-6 p-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
                         {item.children.map(c => (
                           <div key={c.id}>
@@ -142,7 +179,7 @@ export function FashionNavbar() {
                     </div>
                   )}
                   {item.children.length > 0 && !isMegaItem(item) && (
-                    <div className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                    <div data-nav-panel className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                       <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
                         {item.children.map(c => (
                           <li key={c.id}>
@@ -160,6 +197,14 @@ export function FashionNavbar() {
             </nav>
           </div>
 
+          {rowBar && (
+            <div className="hidden min-w-0 lg:col-start-2 lg:row-start-1 lg:block lg:px-6" style={{ color: t.colors.ink }}>
+              <div className="mx-auto w-full max-w-[560px]">
+                <FashionPredictiveSearch inputId="fx-search-bar" placeholder={ts('pg.search_the_collection', 'Search the collection')} maxWidth="100%" />
+              </div>
+            </div>
+          )}
+
           {centerBar && (
             <div className="hidden lg:col-span-3 lg:col-start-1 lg:row-start-2 lg:block" style={{ color: t.colors.ink }}>
               <div className="mx-auto w-full max-w-[560px]">
@@ -171,7 +216,7 @@ export function FashionNavbar() {
           <div className="col-start-3 row-start-1 flex items-center justify-end gap-0.5" style={{ color: fg }}>
             {o.cta && <HeaderCta cta={o.cta} bg={t.colors.accent} color={t.colors.accentInk} radius={t.buttonRadiusPx} fontFamily={t.fonts.body} />}
             <span className="hidden md:block"><FashionLocaleControls /></span>
-            {searchBar && !centerBar && (
+            {searchBar && !centerBar && !rowBar && (
               <div className="mr-1 hidden w-[240px] lg:block" style={{ color: t.colors.ink }}>
                 <FashionPredictiveSearch inputId="fx-search-bar" placeholder={ts('pg.search_the_collection', 'Search the collection')} maxWidth="100%" />
               </div>

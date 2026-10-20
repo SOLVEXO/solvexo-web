@@ -2,6 +2,10 @@
 import { Search } from 'lucide-react';
 import { Modal } from '@/components/comman/ui';
 import { SECTION_META, SECTION_META_BY_TYPE } from './sectionRegistry';
+import { customSectionsOf } from '@/features/storefront-themes/themeManifest';
+import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import type { ThemeCustomSectionPreset } from '@/features/storefront-themes/themeManifest';
+import { metaForCustomDef, newCustomSection } from './themeSectionMeta';
 import { SECTION_PRESETS, PRESET_CATEGORIES, PAGE_LAYOUTS, type PresetCategory, type PresetMock } from './sectionPresets';
 import type { SectionType } from '@/api/services/storefrontTypes';
 
@@ -68,6 +72,9 @@ export function AddSectionModal({
     && (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)));
   const pickable = SECTION_META.filter(meta => !meta.hidden && typeOk(meta.type)
     && (!q || meta.label.toLowerCase().includes(q) || meta.description.toLowerCase().includes(q) || meta.type.replace(/_/g, ' ').includes(q)));
+
+  const customDefs = customSectionsOf(layoutThemeId, DEFAULT_THEME_ID).filter(d => typeOk('theme_section')
+    && (!q || d.label.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)));
 
   const buildPreset = (id: string): PickedSection | null => {
     const preset = SECTION_PRESETS.find(p => p.id === id);
@@ -154,8 +161,29 @@ export function AddSectionModal({
         </>
       ) : (
         <>
-          {pickable.length === 0 && <p role="status" className="text-[13px] text-slate py-6 text-center">No sections match &ldquo;{query}&rdquo;.</p>}
+          {pickable.length === 0 && customDefs.length === 0 && <p role="status" className="text-[13px] text-slate py-6 text-center">No sections match &ldquo;{query}&rdquo;.</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {customDefs.flatMap(def => [
+              { def, preset: undefined as ThemeCustomSectionPreset | undefined },
+              ...(def.presets ?? []).map(preset => ({ def, preset })),
+            ]).map(({ def, preset }) => {
+              const meta = metaForCustomDef(def);
+              return (
+                <button
+                  key={preset ? `${def.key}:${preset.id}` : def.key}
+                  onClick={() => { onPick([newCustomSection(def, preset)]); onClose(); }}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-bone bg-white text-left cursor-pointer transition-colors hover:border-brand-orange/50"
+                >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${meta.color}18` }}>
+                    <meta.Icon size={18} style={{ color: meta.color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-bold text-charcoal">{preset ? `${meta.label} · ${preset.name}` : meta.label}</p>
+                    <p className="text-[11.5px] text-slate leading-snug mt-[2px]">{preset ? preset.description : meta.description}</p>
+                  </div>
+                </button>
+              );
+            })}
             {pickable.map(meta => (
               <button
                 key={meta.type}

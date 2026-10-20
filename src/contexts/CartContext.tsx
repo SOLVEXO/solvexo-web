@@ -156,6 +156,8 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       .finally(() => setLoading(false));
   }, [refreshGuestCartDisplay, storeId]);
 
+  // Loading the cart when the store/login state changes is a sync with the server (the loading flag is set inside).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchCart(); }, [fetchCart]);
 
   // Merges a guest's local cart into their real server cart the instant they
@@ -376,6 +378,8 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
   );
 }
 
+// The provider and its hook live together by design (one import for consumers).
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCartContext() {
   const ctx = useContext(CartCtx);
   if (!ctx) throw new Error('useCartContext must be used inside CartProvider');

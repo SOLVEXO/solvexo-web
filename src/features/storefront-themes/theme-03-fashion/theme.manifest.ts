@@ -37,9 +37,62 @@ export const fashionThemeManifest: ThemeManifest = {
   id: 'theme-03-fashion',
   name: 'Maison',
   supportsAnnouncementBar: true,
+  headerOptionChoices: {
+    searchPosition: [
+      { value: 'icons', label: 'Next to the icons' },
+      { value: 'row', label: 'In the logo row, between the logo and the icons', hint: 'The menu moves to its own row below. Needs the logo on the left; otherwise the box shows on its own row.' },
+      { value: 'center', label: 'Centered, on its own row' },
+    ],
+  },
   supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'button', 'topBar', 'colours'],
   defaultSettings: DEFAULTS,
   styles: STYLES,
+
+  // Sections only Maison has: stored as theme_section, rendered by sections/ThemeSections.tsx.
+  customSections: [
+    {
+      key: 'maison.lookbook', label: 'Lookbook', color: '#BE185D',
+      description: 'Editorial photo grid of looks or outfits, each with a title, caption and optional link.',
+      fields: [
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'eyebrow', kind: 'text', label: 'Small label above the heading', maxLength: 60 },
+        { key: 'intro', kind: 'textarea', label: 'Intro text', rows: 3, maxLength: 600 },
+        { key: 'columns', kind: 'select', label: 'Columns on desktop', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }] },
+        { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Portrait (default)' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }, { value: 'adapt', label: 'Adapt to image' }] },
+      ],
+      defaults: { heading: 'The lookbook', columns: 3 },
+      block: {
+        key: 'look', label: 'Look',
+        fields: [
+          { key: 'imageUrl', kind: 'image', label: 'Photo', required: true },
+          { key: 'title', kind: 'text', label: 'Title', maxLength: 80 },
+          { key: 'caption', kind: 'text', label: 'Caption', maxLength: 160 },
+          { key: 'link', kind: 'link', label: 'Link (optional)' },
+        ],
+      },
+      initialBlocks: 3,
+      presets: [
+        { id: 'two-up', name: 'Two-up editorial', description: 'Two large looks side by side, for a campaign or a seasonal edit.', settings: { heading: 'The edit', columns: 2 }, blocks: [{ title: 'Look 1' }, { title: 'Look 2' }] },
+        { id: 'six-grid', name: 'Six-look grid', description: 'Three columns of six looks: a full lookbook page.', settings: { heading: 'Lookbook', columns: 3 }, blocks: Array.from({ length: 6 }, (_, i) => ({ title: `Look ${i + 1}` })) },
+      ],
+    },
+    {
+      key: 'maison.size_guide', label: 'Size guide', color: '#0F766E',
+      description: 'A size chart table with a cm / inch switch. One size per line, columns split with |.',
+      fields: [
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'rows', kind: 'textarea', label: 'Size table', rows: 8, maxLength: 3000, hint: 'First line is the header, e.g. Size | Chest | Waist | Hips. Then one size per line.' },
+        { key: 'defaultUnit', kind: 'select', label: 'Start in', options: [{ value: 'cm', label: 'Centimetres' }, { value: 'in', label: 'Inches' }] },
+        { key: 'showUnitToggle', kind: 'checkbox', label: 'Let shoppers switch cm / inch' },
+        { key: 'note', kind: 'text', label: 'Note under the table', maxLength: 200 },
+      ],
+      presets: [
+        { id: 'tops', name: 'Tops and dresses', description: 'Chest, waist and hips from XS to XL.', settings: { rows: ['Size | Chest | Waist | Hips', 'XS | 80 | 62 | 86', 'S | 86 | 70 | 92', 'M | 94 | 78 | 100', 'L | 102 | 86 | 108', 'XL | 110 | 94 | 116'].join(String.fromCharCode(10)) } },
+        { id: 'bottoms', name: 'Trousers and jeans', description: 'Waist, hips and inseam by size.', settings: { heading: 'Trousers size guide', rows: ['Size | Waist | Hips | Inseam', '28 | 71 | 92 | 76', '30 | 76 | 97 | 78', '32 | 81 | 102 | 80', '34 | 86 | 107 | 81'].join(String.fromCharCode(10)) } },
+      ],
+      defaults: { heading: 'Size guide', defaultUnit: 'cm', showUnitToggle: true, rows: ['Size | Chest | Waist | Hips', 'S | 86 | 70 | 92', 'M | 94 | 78 | 100', 'L | 102 | 86 | 108'].join(String.fromCharCode(10)) },
+    },
+  ],
 
   templates: [
     { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },

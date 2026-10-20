@@ -113,7 +113,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
   useJsonLd('product', product && variant ? {
     '@context': 'https://schema.org', '@type': 'Product', name: product.name,
-    description: product.description?.replace(/s+/g, ' ').slice(0, 300) || undefined,
+    description: product.description?.replace(/\s+/g, ' ').slice(0, 300) || undefined,
     image: images.slice(0, 6), sku: variant.sku || undefined,
     brand: detail?.product.vendor ? { '@type': 'Brand', name: detail.product.vendor } : undefined,
     offers: {
