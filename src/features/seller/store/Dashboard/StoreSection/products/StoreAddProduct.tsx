@@ -194,6 +194,7 @@ export default function StoreAddProduct() {
               ...customsPayload(phys),
               sku: r.sku.trim() || undefined,
               barcode: r.barcode.trim() || undefined,
+              images: r.image ? [r.image] : [],
             }))
           : [{
               price: Number(phys.price),
@@ -628,6 +629,7 @@ export default function StoreAddProduct() {
                       rows={phys.variantRows}
                       onRowsChange={v => sp('variantRows', v)}
                       currencySymbol={currencySymbol}
+                      productImages={phys.images}
                     />
                     {hasVariants && (
                       <>

@@ -22,6 +22,7 @@ import { useFavicon } from '@/hooks/useFavicon';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
+import { useNavBadgeCounts, useClearViewedBadges, useRefreshServerBadges } from '@/hooks/useNavBadges';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { FEATURES } from '@/constants/features';
 import { ViewAsBanner } from './ViewAsBanner';import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
@@ -433,6 +434,7 @@ function StoreBottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { storeId } = useStoreWorkspace();
+  const badges = useNavBadgeCounts(storeId);
   const user = TokenStorage.getUser();
   const tabs = STORE_TABS.filter(tab => tab.alwaysVisible || hasNavPermission(user, tab.requiredPermission));
 
@@ -458,6 +460,7 @@ function StoreBottomNav() {
                 strokeWidth={active ? 2.2 : 1.8}
                 className={clsx('transition-colors duration-150', active ? 'text-brand-orange' : 'text-slate')}
               />
+              {(badges[tab.id] ?? 0) > 0 && <span className="absolute ml-4 -mt-3 min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center">{badges[tab.id] > 99 ? '99+' : badges[tab.id]}</span>}
               <span className={clsx('w-[16px] h-[3px] rounded-full transition-colors duration-150', active ? 'bg-brand-orange' : 'bg-transparent')} />
             </button>
           );
@@ -493,6 +496,15 @@ function buildPaletteItems(
 // screen + back-arrow drill-in, not a hamburger-triggered copy of this rail).
 interface StoreSidebarProps { open: boolean; onToggle: () => void; }
 
+/** Small orange count pill for a sidebar entry (new orders, unread messages...). */
+function NavCountBadge({ count }: { count: number }) {
+  return (
+    <span className="relative min-w-[18px] h-[18px] px-1.5 rounded-full bg-brand-orange text-white text-[10px] font-bold leading-[18px] text-center shrink-0" aria-label={`${count} new`}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
 function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
@@ -501,6 +513,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // another instantly appears — scoped per sidebar instance via useId().
   const navPillId = useId();
   const { store, storeId, loading, entitlements } = useStoreWorkspace();
+  const badges = useNavBadgeCounts(storeId);
   const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const paletteItems = buildPaletteItems(navigate, storeId, entitlements);
@@ -748,6 +761,9 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                     >
                       <GroupIcon size={15} className="shrink-0 text-slate opacity-55" />
                       <span className="text-[13px] flex-1 font-normal text-slate text-left">{section.group}</span>
+                      {isCollapsed && section.items.reduce((sum, it) => sum + (badges[it.id] ?? 0), 0) > 0 && (
+                        <NavCountBadge count={section.items.reduce((sum, it) => sum + (badges[it.id] ?? 0), 0)} />
+                      )}
                       <ChevronDown
                         size={14}
                         className={clsx('text-slate opacity-70 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
@@ -803,11 +819,13 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                           <span className={clsx('relative text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
                             {item.label}
                           </span>
+                          {(badges[item.id] ?? 0) > 0 && <NavCountBadge count={badges[item.id]} />}
                           {active && (
                             <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
                           )}
                         </>
                       )}
+                      {!open && (badges[item.id] ?? 0) > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-brand-orange" />}
                     </div>
                   );
                 })}
@@ -1239,6 +1257,8 @@ export function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   // tab) to just this store for as long as the seller is inside its
   // dashboard — restored to the account-wide cross-store view on leaving.
   useNotificationStoreScope(storeId || null);
+  useClearViewedBadges(storeId);
+  useRefreshServerBadges(storeId);
   const [store,   setStore]   = useState<StoreData | null>(() => readCachedStore(storeId));
   const [loading, setLoading] = useState(() => readCachedStore(storeId) === null);
   const [error,   setError]   = useState('');

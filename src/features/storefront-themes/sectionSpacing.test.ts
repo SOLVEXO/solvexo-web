@@ -4,13 +4,21 @@ import { copyText, showEyebrow } from './sectionCopy';
 
 describe('sectionSpacing', () => {
   it('adds nothing when no design setting is set', () => {
-    expect(sectionSpacing({})).toEqual({ className: '', style: { paddingTop: undefined, paddingBottom: undefined } });
+    expect(sectionSpacing({})).toEqual({ className: '', style: { marginTop: undefined, marginBottom: undefined } });
   });
 
   it('maps spacing, full width and show-on to classes', () => {
     const r = sectionSpacing({ spacingTop: 0, spacingBottom: 24, fullWidth: true, visibility: 'desktop' });
-    expect(r.className.split(' ').sort()).toEqual(['sx-full', 'sx-hide-m', 'sx-sp-b', 'sx-sp-t']);
-    expect(r.style).toMatchObject({ paddingTop: 0, paddingBottom: 24 });
+    expect(r.className.split(' ').sort()).toEqual(['sx-full', 'sx-hide-m']);
+    // outside space is a margin; the section's own padding is left alone
+    expect(r.style).toMatchObject({ marginTop: 0, marginBottom: 24 });
+    expect(r.style).not.toHaveProperty('paddingTop');
+  });
+
+  it('inner padding replaces the own padding of the section through CSS variables', () => {
+    const r = sectionSpacing({ paddingTop: 12, paddingBottom: 0 });
+    expect(r.className.split(' ').sort()).toEqual(['sx-pad-b', 'sx-pad-t']);
+    expect(r.style).toMatchObject({ '--sx-pt': '12px', '--sx-pb': '0px' });
     expect(sectionSpacing({ visibility: 'mobile' }).className).toBe('sx-hide-d');
   });
 

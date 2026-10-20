@@ -37,6 +37,7 @@ export const fashionThemeManifest: ThemeManifest = {
   id: 'theme-03-fashion',
   name: 'Maison',
   supportsAnnouncementBar: true,
+  supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'button', 'topBar', 'colours'],
   defaultSettings: DEFAULTS,
   styles: STYLES,
 

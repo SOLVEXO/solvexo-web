@@ -13,6 +13,8 @@ import type { NotificationPreferenceFlags } from '@/api/services/notifications';
 import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
 import { TokenStorage } from '@/api/services/auth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { notificationTarget } from '@/utils/notificationTarget';
 
 function formatFullTime(dateStr: string): string {
   try {
@@ -43,6 +45,14 @@ export function NotificationsPanel() {
     fetchPreferences,
     updatePreferences,
   } = useNotification();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const storeFromPath = pathname.match(/^\/store\/([^/]+)/)?.[1] ?? null;
+  const openNotification = (notif: (typeof notifications)[number]) => {
+    if (!notif.isRead) markAsRead(notif._id);
+    const to = notificationTarget(notif, storeFromPath);
+    if (to) navigate(to);
+  };
 
   const role = TokenStorage.getUser<{ role?: 'user' | 'seller' | 'admin' }>()?.role;
   const topics: { key: keyof NotificationPreferenceFlags; title: string; hint: string; Icon: typeof Package; bg: string; color: string }[] = role === 'admin'
@@ -239,8 +249,10 @@ export function NotificationsPanel() {
             visibleNotifications.map((notif) => (
               <div
                 key={notif._id}
+                onClick={() => openNotification(notif)}
                 className={clsx(
                   'p-4 flex gap-4 transition-colors duration-150 relative group',
+                  notificationTarget(notif, storeFromPath) && 'cursor-pointer hover:bg-cream/40',
                   !notif.isRead && 'bg-brand-pale-orange/5'
                 )}
               >

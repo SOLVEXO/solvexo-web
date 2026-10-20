@@ -501,6 +501,16 @@ export const ENDPOINTS = {
     TEST_EMAIL: (storeId: string) => `/api/store-notifications/${storeId}/test-email`,
   },
 
+  // ── SIDEBAR BADGES (real "needs attention" counts) ──
+  STORE_BADGES: {
+    COUNTS: (storeId: string) => `/api/store-badges/${storeId}`,
+  },
+
+  // ── ORDER DOCUMENTS (Settings → Order documents: packing slip + invoice) ──
+  ORDER_DOCUMENTS: {
+    SETTINGS: (storeId: string) => `/api/order-documents/${storeId}`,
+  },
+
   // ── ABANDONED CART RECOVERY ───────────────────────────────────────────────
   ABANDONED_CART: {
     SETTINGS: (storeId: string) => `/api/abandoned-cart/${storeId}/settings`,

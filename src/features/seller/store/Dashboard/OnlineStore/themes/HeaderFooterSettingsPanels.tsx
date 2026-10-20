@@ -2,6 +2,8 @@
 import { ChevronDown } from 'lucide-react';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
+import { readHeaderOptions } from '@/features/storefront-themes/navigation/headerOptions';
+import type { HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
 
 const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const INPUT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -91,9 +93,17 @@ function TextField({ label, value, onChange, placeholder, maxLength, disabled }:
 }
 
 /** Header section settings, grouped like Shopify's header settings. Every control falls back to the theme's own look. */
-export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: StorefrontHeader; onChange: (next: StorefrontHeader) => void; logoSlot?: ReactNode }) {
+export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [] }: {
+  header: StorefrontHeader; onChange: (next: StorefrontHeader) => void; logoSlot?: ReactNode;
+  /** Optional controls the active theme actually renders (its manifest's `supportedHeaderOptions`). */
+  supports?: HeaderOptionKey[];
+}) {
+  const can = (k: HeaderOptionKey) => supports.includes(k);
   const set = (patch: Partial<StorefrontHeader>) => onChange({ ...header, ...patch });
-  const centered = header.headerStyle === 'centered';
+  // Effective values (older stores only have the combined `headerStyle`); saving writes all three explicitly.
+  const eff = readHeaderOptions(header, '');
+  const setLayout = (patch: Partial<Pick<StorefrontHeader, 'logoPosition' | 'menuPosition' | 'navAlignment'>>) =>
+    set({ logoPosition: eff.logoPosition, menuPosition: eff.menuPosition, navAlignment: eff.navAlignment, ...patch });
   return (
     <>
       <Group title="Logo">
@@ -106,27 +116,36 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
       </Group>
 
       <Group title="Layout">
-        <label className="flex flex-col gap-1">
-          <span className="text-[11.5px] text-charcoal">Logo position</span>
-          <select className={SELECT} value={header.headerStyle ?? 'standard'}
-            onChange={e => set({ headerStyle: e.target.value as StorefrontHeader['headerStyle'] })}>
-            <option value="standard">Left, menu beside it</option>
-            <option value="inline">Left, menu in the middle</option>
-            <option value="split">Middle, menu on the left</option>
-            <option value="centered">Middle, menu below</option>
-          </select>
-        </label>
-        {centered && (
+        {can('logoPosition') && (
           <label className="flex flex-col gap-1">
-            <span className="text-[11.5px] text-charcoal">Menu alignment</span>
-            <select className={SELECT} value={header.navAlignment ?? 'left'} onChange={e => set({ navAlignment: e.target.value as StorefrontHeader['navAlignment'] })}>
+            <span className="text-[11.5px] text-charcoal">Logo position</span>
+            <select className={SELECT} value={eff.logoPosition} onChange={e => setLayout({ logoPosition: e.target.value as 'left' | 'center' | 'right' })}>
               <option value="left">Left</option>
               <option value="center">Center</option>
               <option value="right">Right</option>
             </select>
           </label>
         )}
-        <label className="flex flex-col gap-1">
+        {can('menuPosition') && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Menu position</span>
+            <select className={SELECT} value={eff.menuPosition} onChange={e => setLayout({ menuPosition: e.target.value as 'beside' | 'below' })}>
+              <option value="beside">Same row as the logo</option>
+              <option value="below">Own row below the logo</option>
+            </select>
+          </label>
+        )}
+        {can('menuAlignment') && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Menu alignment</span>
+            <select className={SELECT} value={eff.navAlignment} onChange={e => setLayout({ navAlignment: e.target.value as 'left' | 'center' | 'right' })}>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+        )}
+        {can('sticky') && <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">While scrolling</span>
           <select className={SELECT} value={header.stickyMode ?? (header.sticky ? 'always' : 'off')}
             onChange={e => { const stickyMode = e.target.value as 'off' | 'always' | 'scroll-up'; set({ stickyMode, sticky: stickyMode !== 'off' }); }}>
@@ -134,15 +153,15 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
             <option value="always">Always stays at the top</option>
             <option value="scroll-up">Hides on scroll down, shows on scroll up</option>
           </select>
-        </label>
-        <SwitchRow label="See-through on the home page" hint="Sits over your first section (e.g. the banner) until shoppers scroll."
+        </label>}
+        {can('transparent') && <><SwitchRow label="See-through on the home page" hint="Sits over your first section (e.g. the banner) until shoppers scroll."
           checked={header.transparentOnHome === true} onChange={v => set({ transparentOnHome: v })} />
         {header.transparentOnHome && (
           <ColorField label="Text and icons while see-through" value={header.transparentTextColor} fallback="#ffffff" onChange={v => set({ transparentTextColor: v })} />
-        )}
+        )}</>}
       </Group>
 
-      <Group title="Menu style">
+      {can('menuStyle') && <Group title="Menu style">
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">Text size</span>
           <select className={SELECT} value={header.navFontSize ?? 'md'} onChange={e => set({ navFontSize: e.target.value as StorefrontHeader['navFontSize'] })}>
@@ -160,18 +179,18 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
             <option value="pill">Soft highlight</option>
           </select>
         </label>
-      </Group>
+      </Group>}
 
-      <Group title="Button">
+      {can('button') && <Group title="Button">
         <p className="text-[10.5px] text-slate -mt-1">An eye-catching button next to the icons, e.g. “Shop sale”. Shown on desktop.</p>
         <div className="grid grid-cols-2 gap-3">
           <TextField label="Button text" value={header.ctaLabel} maxLength={30} placeholder="Shop sale" onChange={v => set({ ctaLabel: v })} />
           <TextField label="Button link" value={header.ctaLink} maxLength={500} placeholder="/collections/sale" onChange={v => set({ ctaLink: v })} />
         </div>
         <p className="text-[10.5px] text-slate">Leave the text empty to hide it. Links start with https:// or /.</p>
-      </Group>
+      </Group>}
 
-      <Group title="Top info strip">
+      {can('topBar') && <Group title="Top info strip">
         <SwitchRow label="Show a thin strip above the header" checked={header.topBarEnabled === true} onChange={v => set({ topBarEnabled: v })} />
         {header.topBarEnabled && (
           <>
@@ -186,9 +205,9 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
             </div>
           </>
         )}
-      </Group>
+      </Group>}
 
-      <Group title="Colours and spacing">
+      {can('colours') && <Group title="Colours and spacing">
         <div className="grid grid-cols-2 gap-3">
           <ColorField label="Background" value={header.bgColor} fallback="#ffffff" onChange={v => set({ bgColor: v })} />
           <ColorField label="Text and icons" value={header.textColor} fallback="#161412" onChange={v => set({ textColor: v })} />
@@ -202,16 +221,25 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot }: { header: St
           </select>
         </label>
         <SwitchRow label="Show a line under the header" checked={header.showDivider !== false} onChange={v => set({ showDivider: v })} />
-      </Group>
+      </Group>}
 
       <Group title="Icons">
         <SwitchRow label="Search" checked={header.showSearch !== false} onChange={v => set({ showSearch: v })} />
-        {header.showSearch !== false && (
+        {header.showSearch !== false && can('searchBar') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Search look</span>
             <select className={SELECT} value={header.searchStyle ?? 'icon'} onChange={e => set({ searchStyle: e.target.value as StorefrontHeader['searchStyle'] })}>
               <option value="icon">Icon only</option>
               <option value="bar">Search box (“Search products…”)</option>
+            </select>
+          </label>
+        )}
+        {header.showSearch !== false && can('searchBar') && can('searchPosition') && header.searchStyle === 'bar' && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Search box position</span>
+            <select className={SELECT} value={header.searchPosition ?? 'icons'} onChange={e => set({ searchPosition: e.target.value as 'icons' | 'center' })}>
+              <option value="icons">Next to the icons</option>
+              <option value="center">Centered, on its own row</option>
             </select>
           </label>
         )}

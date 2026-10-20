@@ -32,7 +32,8 @@ import { currencySymbol, fmt2 } from '@/utils/currency';
 import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetSellerOrderDetail } from '@/api/services/product';
-import { openPackingSlips, toPackingSlipOrder, type PackingSlipOrder } from '@/utils/packingSlip';
+import { openOrderDocuments, toDocumentOrder, type DocKind, type DocumentOrder } from '@/utils/orderDocuments';
+import { cachedOrderDocuments, loadOrderDocuments } from '@/api/services/orderDocuments';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
 function CustomerCell({ name, email }: { name: string; email: string }) {
@@ -208,12 +209,12 @@ export function StoreOrderList() {
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(orders.map(o => o.orderId)));
 
-  const handleBulkPrint = async () => {
+  const handleBulkPrint = async (kind: DocKind = 'slip') => {
     if (bulkBusy || selectedOrders.length === 0) return;
     setBulkBusy('print');
     setBulkResult(null);
     const targets = [...selectedOrders];
-    const slips: PackingSlipOrder[] = [];
+    const slips: DocumentOrder[] = [];
     const failures: string[] = [];
     for (let i = 0; i < targets.length; i += 5) {
       const batch = targets.slice(i, i + 5);
@@ -221,12 +222,16 @@ export function StoreOrderList() {
       const results = await Promise.allSettled(batch.map(o => apiGetSellerOrderDetail(storeId, o.orderId)));
       results.forEach((r, idx) => {
         const o = batch[idx];
-        if (r.status === 'fulfilled') slips.push(toPackingSlipOrder(r.value.data, o.orderNumber));
+        if (r.status === 'fulfilled') slips.push(toDocumentOrder(r.value.data, o.orderNumber));
         else failures.push(`${o.orderNumber}: ${r.reason instanceof Error ? r.reason.message : 'failed to load'}`);
       });
     }
     let blocked = false;
-    if (slips.length > 0) blocked = !openPackingSlips(slips, store?.name ?? '', currencySymbol(store?.baseCurrency));
+    if (slips.length > 0) {
+      const fallback = { name: store?.name ?? '', logo: store?.logo ?? null, contactEmail: null, phone: null, currency: store?.baseCurrency ?? null };
+      const docs = cachedOrderDocuments(storeId) ?? await loadOrderDocuments(storeId, fallback);
+      blocked = !openOrderDocuments(kind, slips, docs.settings, docs.store);
+    }
     setBulkBusy(null);
     setBulkProgress('');
     if (blocked) {
@@ -495,9 +500,14 @@ export function StoreOrderList() {
                     {selectedOrders.length > 0 && (
                       <>
                         {canPrint && (
-                          <Button variant="outline" size="sm" onClick={handleBulkPrint} loading={bulkBusy === 'print'} disabled={bulkBusy !== null}>
+                          <>
+                          <Button variant="outline" size="sm" onClick={() => void handleBulkPrint('slip')} loading={bulkBusy === 'print'} disabled={bulkBusy !== null}>
                             <Printer size={13} /> Print packing slips
                           </Button>
+                          <Button variant="outline" size="sm" onClick={() => void handleBulkPrint('invoice')} disabled={bulkBusy !== null}>
+                            <Printer size={13} /> Print invoices
+                          </Button>
+                          </>
                         )}
                         {canFulfill && (
                           <Button

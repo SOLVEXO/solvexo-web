@@ -112,6 +112,12 @@ export interface ThemeStylePreset {
   settings: Partial<StorefrontColors>;
 }
 
+/** Optional header controls a theme chooses to support. The Header settings panel only shows the ones its active theme lists
+ *  (like a Shopify theme's own settings schema), so a control never appears for a theme that would ignore it. */
+export type HeaderOptionKey =
+  | 'logoPosition' | 'menuPosition' | 'menuAlignment' | 'searchBar' | 'searchPosition'
+  | 'sticky' | 'transparent' | 'menuStyle' | 'button' | 'topBar' | 'colours';
+
 export interface ThemeManifest {
   /** Matches this theme's `NEW_THEME_REGISTRY` key / `StoreTheme.themeDefinitionId`. */
   id: string;
@@ -121,6 +127,8 @@ export interface ThemeManifest {
    *  comment on why it isn't theme-scoped data) at all. A theme can
    *  legitimately opt out if its design has no place for a message strip. */
   supportsAnnouncementBar: boolean;
+  /** Which optional header layout/search controls this theme renders. Missing = none of them. */
+  supportedHeaderOptions?: HeaderOptionKey[];
   templates: ThemeTemplateScopeDef[];
   themeSettingsFields: ThemeSettingsFieldDef[];
   /** Every editable setting at the theme's own default: what "Reset to default" applies. */

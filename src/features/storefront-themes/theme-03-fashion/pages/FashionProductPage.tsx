@@ -7,6 +7,9 @@ import type { ProductVariant } from '@/api/services/marketplace';
 import { apiGetProductReviews, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
+import { TokenStorage, isGuestUser } from '@/api/services/auth';
+import { useReviewedProducts } from '../../useReviewedProducts';
+import { ReviewEditDialog } from './account/ReviewEditDialog';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
@@ -66,9 +69,13 @@ function ProductPageInner({ slug }: { slug: string }) {
 
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [qty, setQty] = useState(1);
-  const [imageIndex, setImageIndex] = useState(0);
+  // The gallery position belongs to the chosen variant: picking another variant starts at that variant's own photo.
+  const [gallery, setGallery] = useState<{ vid: string; i: number }>({ vid: '', i: 0 });
   const [zoom, setZoom] = useState(false);
   const [reviews, setReviews] = useState<{ stats: ProductReviewStats; reviews: ProductReviewEntry[] } | null>(null);
+  const [reviewsTick, setReviewsTick] = useState(0);
+  const [writingReview, setWritingReview] = useState(false);
+  const { byProduct: myReviews, reload: reloadMyReviews } = useReviewedProducts();
 
   const optionNames = useMemo(() => Array.from(new Set(variants.flatMap(v => (v.options ?? []).map(o => o.name)))), [variants]);
   const variant: ProductVariant | null = useMemo(() => {
@@ -82,13 +89,26 @@ function ProductPageInner({ slug }: { slug: string }) {
     let off = false;
     apiGetProductReviews(detail.product._id, { limit: 5, sort: 'most_helpful' }).then(r => { if (!off) setReviews({ stats: r.data.stats, reviews: r.data.reviews }); }).catch(() => {});
     return () => { off = true; };
-  }, [detail?.product._id]);
+  }, [detail?.product._id, reviewsTick]);
 
   const images = useMemo(() => {
     const own = variant?.images?.filter(Boolean) ?? [];
     const all = detail?.product.images ?? [];
     return [...own, ...all.filter(i => !own.includes(i))];
   }, [variant, detail?.product.images]);
+  const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
+  const setImageIndex = (i: number) => setGallery({ vid: variant?._id ?? '', i });
+
+  // Fetch every gallery photo up front so switching thumbnails or variants shows the next one at once.
+  useEffect(() => {
+    images.forEach(src => {
+      const p = imgProps(src, [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw');
+      const img = new Image();
+      if ('sizes' in p && p.sizes) img.sizes = p.sizes;
+      if ('srcSet' in p && p.srcSet) img.srcset = p.srcSet;
+      img.src = p.src;
+    });
+  }, [images]);
 
   useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
   useJsonLd('product', product && variant ? {
@@ -213,7 +233,7 @@ function ProductPageInner({ slug }: { slug: string }) {
               {images.length === 0 ? <div style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }} /> : (
                 <div className="flex flex-col gap-4 md:flex-row-reverse">
                   <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
-                    <img {...imgProps(images[imageIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="size-full object-cover" />
+                    <img key={images[imageIndex] ?? images[0]} {...imgProps(images[imageIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="fx-fade size-full object-cover" fetchPriority="high" />
                     <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bg }}><ZoomIn size={18} /></span>
                   </button>
                   {images.length > 1 && (
@@ -242,9 +262,15 @@ function ProductPageInner({ slug }: { slug: string }) {
 
       {t.showReviews && <section id="fx-reviews" style={{ background: t.colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
-          <h2 className="m-0 mb-8 text-[clamp(24px,3vw,36px)] font-semibold tracking-tight">{tr('reviews.title', 'Customer reviews')}</h2>
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="m-0 text-[clamp(24px,3vw,36px)] font-semibold tracking-tight">{tr('reviews.title', 'Customer reviews')}</h2>
+            <button type="button" className="fx-pill cursor-pointer" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, background: 'transparent', borderRadius: t.buttonRadiusPx }}
+              onClick={() => { if (!TokenStorage.isLoggedIn() || isGuestUser()) { navigate('/login'); return; } setWritingReview(true); }}>
+              {myReviews.has(product._id) ? tr('reviews.editYours', 'Edit your review') : tr('reviews.write', 'Write a review')}
+            </button>
+          </div>
           {!reviews || reviews.reviews.length === 0 ? (
-            <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{reviews ? tr('reviews.noneYet', 'No reviews yet. Buyers can leave one from their account after receiving this product.') : tr('reviews.loadingReviews', 'Loading reviews…')}</p>
+            <p className="m-0 text-base" style={{ color: t.colors.inkMuted }}>{reviews ? tr('reviews.noneYet', 'No reviews yet. Be the first to share what you think.') : tr('reviews.loadingReviews', 'Loading reviews…')}</p>
           ) : (
             <div className="grid gap-8 lg:grid-cols-12">
               <div className="lg:col-span-4">
@@ -275,6 +301,10 @@ function ProductPageInner({ slug }: { slug: string }) {
 
       {after.length > 0 && <FashionSectionRenderer sections={after} />}
       {t.stickyBuyBar && <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : tr('product.addToCart', 'Add to cart')} />}
+      {writingReview && (
+        <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
+          onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />
+      )}
       {zoom && <FashionImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>
   );

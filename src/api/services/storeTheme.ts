@@ -174,6 +174,9 @@ export interface StorefrontHeader {
   blocks:        Block[]; // nav_link blocks — the fallback content when no menu is attached
   navAlignment:  'left' | 'center' | 'right';
   headerStyle:   ThemeHeaderStyle;
+  /** Independent layout controls; missing/null = derived from `headerStyle`. */
+  logoPosition?: 'left' | 'center' | 'right' | null;
+  menuPosition?: 'beside' | 'below' | null;
   /** A Menu id to render instead of `blocks` on the real storefront — `blocks` stays as the fallback, untouched. */
   menuId:        string | null;
   // Retailer-controlled chrome. Optional because a store saved before these existed omits them — a missing value means today's look.
@@ -199,6 +202,8 @@ export interface StorefrontHeader {
   navUppercase?:        boolean;
   navHoverStyle?:       'none' | 'underline' | 'pill';
   searchStyle?:         'icon' | 'bar';
+  /** Search box only: next to the icons, or centered on its own row. */
+  searchPosition?:      'icons' | 'center';
   ctaLabel?:            string | null;
   ctaLink?:             string | null;
   topBarEnabled?:       boolean;

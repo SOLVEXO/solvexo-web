@@ -75,16 +75,20 @@ export function FashionNavbar() {
   const scope = 'fx-header';
   const padY = 18 + o.paddingDelta;
 
-  // Seller's "Logo position" choice (Customize > Header > Layout) decides where logo, menu and icons sit on desktop.
+  // Seller's header layout (Customize > Header > Layout): logo position, menu position and menu alignment are independent.
+  const below = o.menuPosition === 'below';
+  const navJustify = o.navAlignment === 'right' ? 'justify-end' : o.navAlignment === 'center' ? 'justify-center' : 'justify-start';
+  // Search box (seller option): next to the icons, or centered on its own row between the logo row and the menu row.
+  const searchBar = o.showSearch && o.searchStyle === 'bar';
+  const centerBar = searchBar && o.searchPosition === 'center';
   const layout = {
-    standard: { grid: 'lg:grid-cols-[auto_1fr_auto]', logo: '', nav: 'lg:col-start-2 lg:row-start-1 lg:pl-6 justify-start' },
-    inline: { grid: 'lg:grid-cols-[1fr_auto_1fr]', logo: '', nav: 'lg:col-start-2 lg:row-start-1 justify-center' },
-    split: { grid: 'lg:grid-cols-[1fr_auto_1fr]', logo: 'lg:col-start-2 lg:justify-center', nav: 'lg:col-start-1 lg:row-start-1 justify-start' },
-    centered: {
-      grid: 'lg:grid-cols-[1fr_auto_1fr] lg:gap-y-1.5', logo: 'lg:col-start-2 lg:justify-center',
-      nav: `lg:col-span-3 lg:col-start-1 lg:row-start-2 ${o.navAlignment === 'left' ? 'justify-start' : o.navAlignment === 'right' ? 'justify-end' : 'justify-center'}`,
-    },
-  }[o.headerStyle];
+    grid: o.logoPosition === 'left' ? 'lg:grid-cols-[auto_1fr_auto]' : o.logoPosition === 'center' ? 'lg:grid-cols-[1fr_auto_1fr]' : 'lg:grid-cols-[1fr_auto_auto]',
+    logo: o.logoPosition === 'left' ? '' : 'lg:col-start-2 lg:justify-center',
+    nav: `${navJustify} ${below
+      ? `lg:col-span-3 lg:col-start-1 lg:pt-2 ${centerBar ? 'lg:row-start-3' : 'lg:row-start-2'}`
+      : o.logoPosition === 'left' ? 'lg:col-start-2 lg:row-start-1 lg:px-6' : 'lg:col-start-1 lg:row-start-1'}`,
+    rows: below || centerBar ? 'lg:gap-y-1.5' : '',
+  };
 
   const openCart = () => (drawerMounted ? openDrawer() : navigate('/cart'));
 
@@ -102,7 +106,7 @@ export function FashionNavbar() {
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <header ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
         <style>{headerNavCss(scope, o)}</style>
-        <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
+        <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
             <Link to="/" className="flex items-center no-underline" aria-label={store.name}>{wordmark}</Link>
@@ -156,10 +160,23 @@ export function FashionNavbar() {
             </nav>
           </div>
 
+          {centerBar && (
+            <div className="hidden lg:col-span-3 lg:col-start-1 lg:row-start-2 lg:block" style={{ color: t.colors.ink }}>
+              <div className="mx-auto w-full max-w-[560px]">
+                <FashionPredictiveSearch inputId="fx-search-bar" placeholder={ts('pg.search_the_collection', 'Search the collection')} maxWidth="100%" />
+              </div>
+            </div>
+          )}
+
           <div className="col-start-3 row-start-1 flex items-center justify-end gap-0.5" style={{ color: fg }}>
             {o.cta && <HeaderCta cta={o.cta} bg={t.colors.accent} color={t.colors.accentInk} radius={t.buttonRadiusPx} fontFamily={t.fonts.body} />}
             <span className="hidden md:block"><FashionLocaleControls /></span>
-            {o.showSearch && <button type="button" className={iconBtn} aria-label={ts('nav.search', 'Search')} onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}
+            {searchBar && !centerBar && (
+              <div className="mr-1 hidden w-[240px] lg:block" style={{ color: t.colors.ink }}>
+                <FashionPredictiveSearch inputId="fx-search-bar" placeholder={ts('pg.search_the_collection', 'Search the collection')} maxWidth="100%" />
+              </div>
+            )}
+            {o.showSearch && <button type="button" className={`${iconBtn}${searchBar ? ' lg:hidden' : ''}`} aria-label={ts('nav.search', 'Search')} onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}
             {o.showAccount && <Link to={accountTo} className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.account', 'Account')} style={{ color: fg }}><User size={20} /></Link>}
             {o.showWishlist && <Link to="/wishlist" className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.wishlist', 'Wishlist')} style={{ color: fg }}><Heart size={20} />{badge(wishlistCount)}</Link>}
             <button type="button" className={iconBtn} aria-label={`Cart, ${cartCount} items`} onClick={openCart} style={{ color: fg }}><ShoppingBag size={20} />{badge(cartCount)}</button>

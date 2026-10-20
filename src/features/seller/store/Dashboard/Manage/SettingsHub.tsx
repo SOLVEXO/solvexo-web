@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
-  Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell, Languages,
+  Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell, Languages, FileText,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -19,6 +19,7 @@ import { MetafieldDefinitionsPage } from './MetafieldDefinitionsPage';
 import { MetaobjectTypesPage } from './Metaobjects/MetaobjectTypesPage';
 import { ActivityLogTab } from './tabs/ActivityLogTab';
 import { NotificationsHub } from './notifications/NotificationsHub';
+import { OrderDocumentsSettings } from './orderDocuments/OrderDocumentsSettings';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 import { MarketsSettings } from '../Operations/MarketsSettings';
 
@@ -33,6 +34,7 @@ const ALL_TABS: Tab[] = [
   { id: 'privacy',       label: 'Privacy',           icon: <ShieldCheck size={13} /> },
   { id: 'markets',       label: 'Markets',           icon: <Languages size={13} /> },
   { id: 'notifications', label: 'Notifications',     icon: <Bell size={13} /> },
+  { id: 'order-documents', label: 'Order documents',  icon: <FileText size={13} /> },
   { id: 'billing',      label: 'Billing',      icon: <CreditCard size={13} /> },
   { id: 'integrations', label: 'Integrations', icon: <Plug size={13} /> },
   { id: 'staff',        label: 'Staff',        icon: <Users size={13} /> },
@@ -135,7 +137,7 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
 const TAB_PERMS: Record<string, string[]> = {
   profile: ['settings.general.manage'], 'product-types': ['settings.general.manage'],
   'payment-methods': ['settings.payments.manage'], domains: ['settings.domains.manage'], privacy: ['settings.general.manage'],
-  markets: ['settings.general.manage'],
+  markets: ['settings.general.manage'], 'order-documents': ['settings.general.manage'],
   billing: ['settings.billing.view', 'settings.billing.manage'], integrations: ['settings.payments.manage', 'settings.shipping.manage'],
   staff: ['staff.manage'], 'custom-fields': ['content.menus.manage', 'content.metaobjects.manage'],
   'content-types': ['content.menus.manage', 'content.metaobjects.manage'], 'activity-log': ['settings.general.manage'],
@@ -278,6 +280,11 @@ export default function SettingsHub() {
         {isVisited('notifications') && (
           <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6'}>
             <NotificationsHub key={storeId} storeId={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />
+          </div>
+        )}
+        {isVisited('order-documents') && (
+          <div className={paneClassName('order-documents') + ' px-4 lg:px-7 py-6'}>
+            <OrderDocumentsSettings key={storeId} storeId={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />
           </div>
         )}
         {isVisited('billing')       && <div className={paneClassName('billing')}><StorePlanBilling embedded /></div>}

@@ -177,7 +177,7 @@ export function ThemeHeaderFooterPage() {
           </div>
 
           {tab === 'header' ? (
-            <HeaderEditor hf={hf} storeId={storeId} onError={msg => flash(false, msg)} />
+            <HeaderEditor hf={hf} storeId={storeId} onError={msg => flash(false, msg)} supports={manifest.supportedHeaderOptions} />
           ) : tab === 'footer' ? (
             <FooterEditor hf={hf} storeId={storeId} onError={msg => flash(false, msg)} />
           ) : (

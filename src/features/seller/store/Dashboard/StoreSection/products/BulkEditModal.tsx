@@ -8,9 +8,9 @@ import {
   type BulkEditProductUpdate, type BulkEditVariantUpdate, type BulkProductStatus,
 } from '@/api/services/productsBulk';
 
-interface VariantRow { id: string; label: string; sku: string; price: string; compare: string; stock: string; unlimited: boolean; len: string; wid: string; hei: string; origin: string; hs: string; taxable: string }
+interface VariantRow { id: string; label: string; sku: string; price: string; compare: string; stock: string; unlimited: boolean; len: string; wid: string; hei: string; origin: string; hs: string; taxable: string; image: string }
 interface ProductRow {
-  id: string; name: string; status: string; tags: string; digital: boolean;
+  id: string; name: string; status: string; tags: string; digital: boolean; images: string[];
   variants: VariantRow[]; loadError?: string;
 }
 
@@ -67,7 +67,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
             const p = data.product;
             out[i] = {
               id: p._id, name: p.name, status: normStatus(p.status), tags: (p.tags ?? []).join(', '),
-              digital: p.type === 'digital',
+              digital: p.type === 'digital', images: (p.images ?? []).filter(Boolean),
               variants: (data.variants ?? []).filter(v => !v.isDelete).map(v => ({
                 id: v._id,
                 label: v.options?.map(o => o.value).join(' / ') || 'Default',
@@ -75,10 +75,11 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                 stock: numStr(v.stock), unlimited: !!v.unlimitedStock,
                 len: numStr(v.length), wid: numStr(v.width), hei: numStr(v.height),
                 origin: v.countryOfOrigin ?? '', hs: v.hsCode ?? '', taxable: v.taxable === false ? 'no' : 'yes',
+                image: v.images?.find(Boolean) ?? '',
               })),
             };
           } catch (e) {
-            out[i] = { id: ids[i], name: 'Unavailable product', status: 'draft', tags: '', digital: true, variants: [],
+            out[i] = { id: ids[i], name: 'Unavailable product', status: 'draft', tags: '', digital: true, images: [], variants: [],
               loadError: e instanceof Error ? e.message : 'Failed to load product.' };
           }
         }
@@ -103,7 +104,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
         m[`v:${v.id}:sku`] = v.sku; m[`v:${v.id}:price`] = v.price;
         m[`v:${v.id}:compare`] = v.compare; m[`v:${v.id}:stock`] = v.stock;
         m[`v:${v.id}:len`] = v.len; m[`v:${v.id}:wid`] = v.wid; m[`v:${v.id}:hei`] = v.hei;
-        m[`v:${v.id}:origin`] = v.origin; m[`v:${v.id}:hs`] = v.hs; m[`v:${v.id}:taxable`] = v.taxable;
+        m[`v:${v.id}:origin`] = v.origin; m[`v:${v.id}:hs`] = v.hs; m[`v:${v.id}:taxable`] = v.taxable; m[`v:${v.id}:image`] = v.image;
       }
     }
     return m;
@@ -162,6 +163,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
         if (`v:${v.id}:origin` in edits) { vu.countryOfOrigin = edits[`v:${v.id}:origin`].trim().toUpperCase(); vt = true; }
         if (`v:${v.id}:hs` in edits)     { vu.hsCode = edits[`v:${v.id}:hs`].trim(); vt = true; }
         if (`v:${v.id}:taxable` in edits) { vu.taxable = edits[`v:${v.id}:taxable`] !== 'no'; vt = true; }
+        if (`v:${v.id}:image` in edits)   { const img = edits[`v:${v.id}:image`]; vu.images = img ? [img] : []; vt = true; }
         if (vt) vs.push(vu);
       }
       if (vs.length) { u.variants = vs; touched = true; }
@@ -203,7 +205,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
             sku: g(`v:${v.id}:sku`, v.sku), price: g(`v:${v.id}:price`, v.price),
             compare: g(`v:${v.id}:compare`, v.compare), stock: g(`v:${v.id}:stock`, v.stock),
             len: g(`v:${v.id}:len`, v.len), wid: g(`v:${v.id}:wid`, v.wid), hei: g(`v:${v.id}:hei`, v.hei),
-            origin: g(`v:${v.id}:origin`, v.origin), hs: g(`v:${v.id}:hs`, v.hs), taxable: g(`v:${v.id}:taxable`, v.taxable),
+            origin: g(`v:${v.id}:origin`, v.origin), hs: g(`v:${v.id}:hs`, v.hs), taxable: g(`v:${v.id}:taxable`, v.taxable), image: g(`v:${v.id}:image`, v.image),
           })),
         };
       }));
@@ -289,6 +291,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                   <th className={TH} style={{ width: 70 }}>Origin</th>
                   <th className={TH} style={{ width: 100 }}>HS code</th>
                   <th className={TH} style={{ width: 60 }}>Taxable</th>
+                  <th className={TH} style={{ width: 110 }}>Image</th>
                 </tr>
               </thead>
               <tbody>
@@ -328,6 +331,12 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                         ))}
                         <td className="px-2 py-1.5 text-center">
                           <input type="checkbox" checked={val(k('taxable')) !== 'no'} onChange={e => setCell(k('taxable'), e.target.checked ? 'yes' : 'no')} aria-label="Charge tax on this product" />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select className={cls(k('image'))} value={val(k('image'))} onChange={e => setCell(k('image'), e.target.value)} aria-label="Variant image" disabled={p.digital || p.images.length === 0}>
+                            <option value="">None</option>
+                            {p.images.map((src, i) => <option key={src + i} value={src}>Image {i + 1}</option>)}
+                          </select>
                         </td>
                       </>
                     );

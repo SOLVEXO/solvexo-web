@@ -30,7 +30,8 @@ import { BuyShippingLabelModal } from './BuyShippingLabelModal';
 import { EditTrackingModal } from './EditTrackingModal';
 import { ReturnLabelModal } from './ReturnLabelModal';
 import { ReturnLinesPanel } from './ReturnLinesPanel';
-import { openPackingSlips, toPackingSlipOrder } from '@/utils/packingSlip';
+import { openOrderDocuments, toDocumentOrder, type DocKind } from '@/utils/orderDocuments';
+import { cachedOrderDocuments, loadOrderDocuments } from '@/api/services/orderDocuments';
 import { FulfilItemsModal } from './FulfilItemsModal';
 import { shippedQuantities, isShippableLine } from './fulfilment';
 
@@ -238,10 +239,15 @@ export function StoreOrderDetail() {
 
   const handleLabelPurchased = () => { setShowLabelModal(false); load(); };
 
-  const handlePrintSlip = () => {
+  // Warm the document settings so a print click can open its window right away (pop-up blockers dislike waiting).
+  useEffect(() => { if (storeId) void loadOrderDocuments(storeId, { name: store?.name ?? 'Store', logo: store?.logo ?? null, contactEmail: null, phone: null, currency: store?.baseCurrency ?? null }); }, [storeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePrint = async (kind: DocKind) => {
     if (!detail) return;
     setSlipError('');
-    const ok = openPackingSlips([toPackingSlipOrder(detail, detail.orderNumber)], store?.name ?? 'Store');
+    const fallback = { name: store?.name ?? 'Store', logo: store?.logo ?? null, contactEmail: null, phone: null, currency: store?.baseCurrency ?? null };
+    const docs = cachedOrderDocuments(storeId) ?? await loadOrderDocuments(storeId, fallback);
+    const ok = openOrderDocuments(kind, [toDocumentOrder(detail, detail.orderNumber)], docs.settings, docs.store);
     if (!ok) setSlipError('Your browser blocked the print window — allow pop-ups for this site and try again.');
   };
 
@@ -622,8 +628,11 @@ export function StoreOrderDetail() {
 
             <Card title="Actions">
               <div className="flex flex-col gap-2">
-                <Button size="sm" variant="outline" onClick={handlePrintSlip} disabled={busy}>
+                <Button size="sm" variant="outline" onClick={() => void handlePrint('slip')} disabled={busy}>
                   <Printer size={13} /> Print packing slip
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => void handlePrint('invoice')} disabled={busy}>
+                  <Printer size={13} /> Print invoice
                 </Button>
                 {slipError && <p role="alert" className="text-[11.5px] text-error">{slipError}</p>}
                 {detail.paymentStatus === 'authorized' && (

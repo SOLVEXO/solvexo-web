@@ -887,6 +887,10 @@ export interface SellerOrderDetail {
   note?:           string;
   /** What the buyer wrote at checkout (Shopify cart note). */
   customerNote?:   string;
+  /** Print-ready money lines (server computed; this store's part of the order). */
+  totals?:         { currency: string; subtotal: number; discount: number; shipping: number | null; tax: number; includedTax: number; total: number; giftCard: number; storeCredit: number; payable: number; couponCode: string | null };
+  /** Seller-defined manual payment method name the buyer picked, if any. */
+  paymentMethodName?: string | null;
 }
 
 export type OrderTimelineType = 'email' | 'placed' | 'exchange' | 'edit' | 'status' | 'payment' | 'cancel' | 'refund' | 'comment' | 'note' | 'address';

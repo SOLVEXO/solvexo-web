@@ -46,6 +46,8 @@ export interface BulkEditVariantUpdate {
   hsCode?:          string | null;
   /** "Charge tax on this product". */
   taxable?:        boolean;
+  /** Photo shown when this variant is chosen: [] clears, else one image URL. */
+  images?:         string[];
 }
 
 export interface BulkEditProductUpdate {

@@ -852,7 +852,7 @@ export function ThemeCustomizePage() {
           ? <ChromeLoadError message={hf.loadError} onRetry={hf.reload} />
           : hf.loading || !hf.headerDraft
             ? <SkeletonBox height={120} rounded="10px" />
-            : isHeader ? <HeaderEditor hf={hf} storeId={storeId} onError={chromeError} /> : <FooterEditor hf={hf} storeId={storeId} onError={chromeError} />}
+            : isHeader ? <HeaderEditor hf={hf} storeId={storeId} onError={chromeError} supports={manifest.supportedHeaderOptions} /> : <FooterEditor hf={hf} storeId={storeId} onError={chromeError} />}
       </ChromeGroupCard>
     );
   };

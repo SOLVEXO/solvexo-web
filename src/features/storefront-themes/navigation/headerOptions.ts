@@ -20,6 +20,9 @@ export interface HeaderOptions {
   blogLabel: string;
   headerStyle: 'standard' | 'centered' | 'split' | 'inline';
   navAlignment: 'left' | 'center' | 'right';
+  /** Where the logo sits and whether the menu shares its row or gets its own row below. */
+  logoPosition: 'left' | 'center' | 'right';
+  menuPosition: 'beside' | 'below';
   bgColor: string | null;
   textColor: string | null;
   /** px added to the theme's own header padding (compact < 0). */
@@ -32,6 +35,7 @@ export interface HeaderOptions {
   navUppercase: boolean;
   navHoverStyle: 'none' | 'underline' | 'pill';
   searchStyle: 'icon' | 'bar';
+  searchPosition: 'icons' | 'center';
   cta: { label: string; link: string } | null;
   topBar: { text: string | null; phone: string | null; email: string | null; bg: string | null; color: string | null } | null;
 }
@@ -69,6 +73,9 @@ const width = (v: unknown, min: number, max: number): number | null =>
 /** @param defaultBlogLabel the theme's own label for the empty-nav fallback link ("Journal" / "Stories"). */
 export function readHeaderOptions(header: Partial<StorefrontHeader> | null | undefined, defaultBlogLabel: string): HeaderOptions {
   const h = header ?? {};
+  const legacy = h.headerStyle === 'centered' || h.headerStyle === 'split' || h.headerStyle === 'inline' ? h.headerStyle : 'standard';
+  const explicit = h.logoPosition != null || h.menuPosition != null;
+  const rawAlign = h.navAlignment === 'center' || h.navAlignment === 'right' ? h.navAlignment : 'left';
   return {
     logoWidth: width(h.logoWidth, 40, 400),
     mobileLogoWidth: width(h.mobileLogoWidth, 24, 240),
@@ -82,7 +89,9 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     showDefaultBlogLink: h.showDefaultBlogLink !== false,
     blogLabel: text(h.blogLinkLabel, defaultBlogLabel),
     headerStyle: h.headerStyle === 'centered' || h.headerStyle === 'split' || h.headerStyle === 'inline' ? h.headerStyle : 'standard',
-    navAlignment: h.navAlignment === 'center' || h.navAlignment === 'right' ? h.navAlignment : 'left',
+    navAlignment: explicit || legacy === 'centered' ? rawAlign : legacy === 'inline' ? 'center' : 'left',
+    logoPosition: h.logoPosition === 'left' || h.logoPosition === 'center' || h.logoPosition === 'right' ? h.logoPosition : legacy === 'centered' || legacy === 'split' ? 'center' : 'left',
+    menuPosition: h.menuPosition === 'beside' || h.menuPosition === 'below' ? h.menuPosition : legacy === 'centered' ? 'below' : 'beside',
     bgColor: hex(h.bgColor),
     textColor: hex(h.textColor),
     paddingDelta: HEADER_PADDING[h.paddingY === 'compact' || h.paddingY === 'spacious' ? h.paddingY : 'normal'],
@@ -94,6 +103,7 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     navUppercase: h.navUppercase === true,
     navHoverStyle: h.navHoverStyle === 'underline' || h.navHoverStyle === 'pill' ? h.navHoverStyle : 'none',
     searchStyle: h.searchStyle === 'bar' ? 'bar' : 'icon',
+    searchPosition: h.searchPosition === 'center' ? 'center' : 'icons',
     cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
       ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,
     topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail)

@@ -12,6 +12,7 @@ import { Card, EmptyState, ErrorState, Notice, PillButton, SkeletonBlock, Status
 import { AccountLayout } from '../ui/AccountLayout';
 import { ConfirmDialog } from '../ui/Dialog';
 import { ReviewEditDialog } from './account/ReviewEditDialog';
+import { PendingReviews } from './account/PendingReviews';
 import { useConfirmAction } from '../../core/account/useConfirmAction';
 
 function Stars({ value }: { value: number }) {
@@ -35,6 +36,7 @@ export function FashionMyReviewsPage() {
 
   return (
     <AccountLayout title="My" accent={ts('pg.word_reviews', 'reviews')} subtitle="What you have said about the products you bought.">
+      <PendingReviews onReviewed={reload} />
       {loading && !reviews ? <div aria-busy="true"><SkeletonBlock h={130} rows={3} /></div>
         : error && !reviews ? <ErrorState message={error} onRetry={reload} />
         : !reviews || reviews.length === 0 ? <EmptyState icon={<Star size={22} aria-hidden />} title={ts('pg.no_reviews_yet', 'No reviews yet')} text={ts('pg.review_a_product_from_one_of_your_orders', 'Review a product from one of your orders.')} action={<Link to="/orders" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.view_your_orders', 'View your orders')}</Link>} />

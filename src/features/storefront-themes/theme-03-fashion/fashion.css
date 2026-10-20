@@ -27,6 +27,8 @@
 @keyframes fx-slide-right { from { transform: translateX(-100%); } to { transform: none; } }
 @keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fx-pop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }
+.fx-fade { animation: fx-fade .22s ease both; }
 @keyframes fx-toast-in { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes fx-toast-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px) scale(.96); } }
 @keyframes fx-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
@@ -38,7 +40,7 @@
 .fx-toast[data-leaving='true'] { animation: fx-toast-out .22s ease both; }
 .fx-toast-bar { transform-origin: left; animation: fx-toast-bar linear both; }
 @media (prefers-reduced-motion: reduce) {
-  .fx-drawer-right, .fx-drawer-left, .fx-backdrop, .fx-pop, .fx-toast, .fx-toast[data-leaving='true'] { animation: none; }
+  .fx-drawer-right, .fx-drawer-left, .fx-backdrop, .fx-pop, .fx-fade, .fx-toast, .fx-toast[data-leaving='true'] { animation: none; }
   .fx-toast[data-leaving='true'] { opacity: 0; }
   .fx-toast-bar { animation: none; }
 }

@@ -11,6 +11,8 @@ import type { PageOption } from './BlockFields';
 const COMMON_SECTION_SCHEMA: FieldSchema[] = [
   { key: 'spacingTop', kind: 'number', label: 'Space above (px)', min: 0, max: 160, step: 4, half: true },
   { key: 'spacingBottom', kind: 'number', label: 'Space below (px)', min: 0, max: 160, step: 4, half: true },
+  { key: 'paddingTop', kind: 'number', label: 'Inner space top (px)', min: 0, max: 160, step: 4, half: true },
+  { key: 'paddingBottom', kind: 'number', label: 'Inner space bottom (px)', min: 0, max: 160, step: 4, half: true },
   {
     key: 'visibility', kind: 'select', label: 'Show on',
     options: [

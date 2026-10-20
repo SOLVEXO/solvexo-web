@@ -8,9 +8,9 @@ describe('readHeaderOptions', () => {
     expect(readHeaderOptions(undefined, 'Journal')).toEqual({
       logoWidth: null, mobileLogoWidth: null, sticky: false, showSearch: true, showAccount: true, showWishlist: true,
       showShopMenu: true, shopLabel: 'Shop', includePagesInNav: true, showDefaultBlogLink: true, blogLabel: 'Journal',
-      headerStyle: 'standard', navAlignment: 'left', bgColor: null, textColor: null, paddingDelta: 0, showDivider: true,
+      headerStyle: 'standard', navAlignment: 'left', logoPosition: 'left', menuPosition: 'beside', bgColor: null, textColor: null, paddingDelta: 0, showDivider: true,
       stickyMode: 'off', transparentOnHome: false, transparentTextColor: '#ffffff', navFontSize: 'md', navUppercase: false,
-      navHoverStyle: 'none', searchStyle: 'icon', cta: null, topBar: null,
+      navHoverStyle: 'none', searchStyle: 'icon', searchPosition: 'icons', cta: null, topBar: null,
     });
     // the old sticky switch still works
     expect(readHeaderOptions({ sticky: true }, 'Journal').stickyMode).toBe('always');

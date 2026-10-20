@@ -10,6 +10,7 @@ import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
 import { AnimatedBellIcon } from './AnimatedBellIcon';
 import { useDropdownPosition } from '@/hooks/useDropdownPosition';
+import { notificationTarget } from '@/utils/notificationTarget';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -109,6 +110,13 @@ export function NotificationBell() {
     }
   };
 
+  const storeFromPath = pathname.match(/^\/store\/([^/]+)/)?.[1] ?? null;
+  const openNotification = (notif: (typeof notifications)[number]) => {
+    if (!notif.isRead) markAsRead(notif._id);
+    const to = notificationTarget(notif, storeFromPath);
+    if (to) { setIsOpen(false); navigate(to); }
+  };
+
   const recentNotifications = notifications.slice(0, 5);
 
   return (
@@ -163,7 +171,7 @@ export function NotificationBell() {
               recentNotifications.map((notif) => (
                 <div
                   key={notif._id}
-                  onClick={() => !notif.isRead && markAsRead(notif._id)}
+                  onClick={() => openNotification(notif)}
                   className={clsx(
                     'p-3 flex gap-3 text-left transition-colors duration-150 relative group cursor-pointer hover:bg-cream/40',
                     !notif.isRead && 'bg-brand-pale-orange/20'
@@ -242,7 +250,9 @@ export function NotificationBell() {
 
       {/* Slide-in real-time push toast overlay */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[9999] bg-carbon text-white rounded-xl border border-charcoal p-3.5 flex gap-3.5 max-w-[340px] animate-slide-in duration-300">
+        <div
+          onClick={() => { const to = notificationTarget(toast, storeFromPath); if (to) { clearToast(); navigate(to); } }}
+          className={clsx('fixed bottom-6 right-6 z-[9999] bg-carbon text-white rounded-xl border border-charcoal p-3.5 flex gap-3.5 max-w-[340px] animate-slide-in duration-300', notificationTarget(toast, storeFromPath) && 'cursor-pointer')}>
           <div className="size-9 rounded-lg bg-dark-active flex items-center justify-center shrink-0 border border-charcoal">
             {getNotificationIcon(toast.type)}
           </div>
@@ -251,7 +261,7 @@ export function NotificationBell() {
             <p className="text-[11.5px] text-slate mt-1 leading-normal">{toast.body}</p>
           </div>
           <button
-            onClick={clearToast}
+            onClick={(e) => { e.stopPropagation(); clearToast(); }}
             className="text-slate hover:text-white bg-transparent border-0 cursor-pointer p-0 shrink-0 self-start mt-0.5"
             aria-label="Dismiss toast"
           >

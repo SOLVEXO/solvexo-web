@@ -72,7 +72,9 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
   return (
     <div style={{ borderBottom: rowBorder }}>
       <div className="flex items-center justify-between" style={{ paddingLeft: tokens.padX, paddingRight: `calc(${tokens.padX} - 12px)` }}>
-        <NavAnchor link={item.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...topStyle, padding: '14px 0' }}>{item.label}</NavAnchor>
+        {item.link.to || item.link.href
+          ? <NavAnchor link={item.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...topStyle, padding: '14px 0' }}>{item.label}</NavAnchor>
+          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} className="flex-1 cursor-pointer border-0 bg-transparent text-left" style={{ ...topStyle, padding: '14px 0' }}>{item.label}</button>}
         <Toggle expanded={open} label={item.label} controls={panelId} onClick={() => setOpen(o => !o)} tokens={tokens} />
       </div>
 
@@ -93,7 +95,9 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
             return (
               <div key={child.id} style={{ borderTop: rowBorder }}>
                 <div className="flex items-center justify-between" style={{ paddingLeft: tokens.padX, paddingRight: `calc(${tokens.padX} - 12px)` }}>
-                  <NavAnchor link={child.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{child.label}</NavAnchor>
+                  {child.link.to || child.link.href
+                    ? <NavAnchor link={child.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{child.label}</NavAnchor>
+                    : <button type="button" onClick={() => setOpenChildId(childOpen ? null : child.id)} aria-expanded={childOpen} aria-controls={childPanelId} className="flex-1 cursor-pointer border-0 bg-transparent text-left" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{child.label}</button>}
                   <Toggle expanded={childOpen} label={child.label} controls={childPanelId} onClick={() => setOpenChildId(childOpen ? null : child.id)} tokens={tokens} />
                 </div>
                 {childOpen && (

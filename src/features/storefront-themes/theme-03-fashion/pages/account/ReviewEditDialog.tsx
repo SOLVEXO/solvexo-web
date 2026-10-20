@@ -2,18 +2,21 @@ import { useRef, useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { ImagePlus, Star, X } from 'lucide-react';
 import { apiUploadPublicFile } from '@/api/upload';
-import { apiEditReview, type MyReviewEntry } from '@/api/services/rating';
+import { apiAddReview, apiEditReview, type MyReviewEntry } from '@/api/services/rating';
 import { reviewText } from '../../../accountUi';
 import { fashionTheme as t } from '../../theme.config';
 import { Dialog } from '../../ui/Dialog';
 import { Field, TextArea, PillButton, Notice } from '../../ui/primitives';
 
 
-/** Edit rating, comment and attached photos (photos can be removed or added, up to 4) of the buyer's own review. */
-export function ReviewEditDialog({ review, onClose, onSaved }: { review: MyReviewEntry; onClose: () => void; onSaved: () => void }) {
-  const [rating, setRating] = useState(review.rating ?? 0);
-  const [comment, setComment] = useState(reviewText(review));
-  const [media, setMedia] = useState<string[]>(review.media ?? []);
+/** What a NEW review is about (the order line or product page it was started from). */
+export interface ReviewTarget { productId: string; productName: string; variantId?: string; orderId?: string }
+
+/** Write a review (`target`) or edit the buyer's own (`review`): rating, comment and up to 4 photos. */
+export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?: MyReviewEntry; target?: ReviewTarget; onClose: () => void; onSaved: () => void }) {
+  const [rating, setRating] = useState(review?.rating ?? 0);
+  const [comment, setComment] = useState(review ? reviewText(review) : '');
+  const [media, setMedia] = useState<string[]>(review?.media ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -34,15 +37,18 @@ export function ReviewEditDialog({ review, onClose, onSaved }: { review: MyRevie
   async function submit() {
     if (rating < 1) { setError('Please select a star rating.'); return; }
     setSaving(true); setError('');
-    try { await apiEditReview(review.reviewId, { rating, comment, media }); onSaved(); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Could not update your review.'); setSaving(false); }
+    try {
+      if (review) await apiEditReview(review.reviewId, { rating, comment, media });
+      else if (target) await apiAddReview({ productId: target.productId, productVariantId: target.variantId, orderId: target.orderId, rating, comment: comment.trim() || undefined, media });
+      onSaved();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not save your review.'); setSaving(false); }
   }
 
   return (
-    <Dialog title={ts('pg.edit_review', 'Edit review')} onClose={onClose}
+    <Dialog title={review ? ts('pg.edit_review', 'Edit review') : ts('pg.write_a_review', 'Write a review')} onClose={onClose}
       footer={<><PillButton variant="outline" className="flex-1" onClick={onClose}>{ts('common.cancel', 'Cancel')}</PillButton><PillButton className="flex-1" loading={saving} disabled={uploading} onClick={submit}>{ts('pg.save_review', 'Save review')}</PillButton></>}>
       <div className="flex flex-col gap-5">
-        {review.product && <p className="m-0 text-[15px] font-semibold">{review.product.name}</p>}
+        {(review?.product?.name ?? target?.productName) && <p className="m-0 text-[15px] font-semibold">{review?.product?.name ?? target?.productName}</p>}
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-2 text-sm font-medium">{ts('pg.rating', 'Rating')}</legend>
           <div className="flex gap-1" role="radiogroup" aria-label={ts('pg.rating', 'Rating')}>

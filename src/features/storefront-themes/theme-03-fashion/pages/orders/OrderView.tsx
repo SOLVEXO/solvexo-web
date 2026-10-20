@@ -1,9 +1,12 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Package } from 'lucide-react';
 import type { OrderDetail } from '@/api/services/orders';
 import { fashionTheme as t } from '../../theme.config';
-import { Card, SectionHeading } from '../../ui/primitives';
+import type { MyReviewEntry } from '@/api/services/rating';
+import { Card, PillButton, SectionHeading } from '../../ui/primitives';
+import { useReviewedProducts } from '../../../useReviewedProducts';
+import { ReviewEditDialog, type ReviewTarget } from '../account/ReviewEditDialog';
 import {
   derivePaymentBadge, formatShippingAddress, isDigitalItem, isPickupOrder, orderDisplaySubtotal, orderSummaryDiscountRows, paymentMethodLabel,
 } from '../../../orderUi';
@@ -17,6 +20,8 @@ import { ExchangeItemLink, ExchangeOrderBanner, OrderDownloadLink, OrderPickupLo
  *  `mode="public"` hides return progress, exchange links and downloads (read-only tracking). */
 export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 'account' | 'public'; actions?: ReactNode }) {
   const account = mode === 'account';
+  const { byProduct, reload: reloadReviews } = useReviewedProducts();
+  const [reviewing, setReviewing] = useState<{ review?: MyReviewEntry; target?: ReviewTarget } | null>(null);
   const money = (n: number) => nativeMoney(n, order.currency);
   const lines = (order.sellerOrders ?? []).flatMap(s => s.items ?? []);
   const addr = formatShippingAddress(order.shippingAddress);
@@ -58,6 +63,18 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
                     {item.status === 'cancelled' && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>{ts('order.cancelled', 'Cancelled')}</p>}
                   </div>
                   <p className="m-0 shrink-0 text-[15px] font-semibold">{money(item.totalPrice)}</p>
+                  {account && ['delivered', 'completed'].includes(String(item.status)) && item.productId && (
+                    <div className="basis-full pl-20 md:pl-[96px]">
+                      {(() => {
+                        const mine = byProduct.get(item.productId);
+                        return (
+                          <PillButton variant="outline" onClick={() => setReviewing(mine ? { review: mine } : { target: { productId: item.productId, productName: item.name, variantId: item.variantId, orderId: order._id } })}>
+                            {mine ? ts('pg.edit_your_review', 'Edit your review') : ts('pg.write_a_review', 'Write a review')}
+                          </PillButton>
+                        );
+                      })()}
+                    </div>
+                  )}
                   {hasExtras && (
                     <div className="flex basis-full flex-col items-start gap-1.5 pl-20 md:pl-[96px]">
                       {account && <ReturnProgress status={item.returnStatus} rejectReason={item.returnRejectReason} />}
@@ -73,6 +90,7 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
         </Card>
         {actions}
       </div>
+      {reviewing && <ReviewEditDialog review={reviewing.review} target={reviewing.target} onClose={() => setReviewing(null)} onSaved={() => { setReviewing(null); reloadReviews(); }} />}
 
       <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24 lg:col-span-4" aria-label={ts('pg.order_details', 'Order details')}>
         <Card tone="soft">

@@ -155,6 +155,7 @@ async function loadPhysicalVariants(productId: string): Promise<{ optionTypes: O
       price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
       sku: v.sku ?? '', barcode: v.barcode ?? '',
       stock: String(v.stock), unlimitedStock: v.unlimitedStock,
+      image: v.images?.find(Boolean) ?? '',
     };
   });
 
@@ -325,6 +326,7 @@ export default function StoreEditProduct() {
                 ...customsPayload(phys),
                 sku: r.sku.trim() || undefined,
                 barcode: r.barcode.trim() || undefined,
+                images: r.image ? [r.image] : [],
               },
             }))
           : [{
@@ -802,6 +804,7 @@ export default function StoreEditProduct() {
                       rows={phys.variantRows}
                       onRowsChange={v => sp('variantRows', v)}
                       currencySymbol={currencySymbol}
+                      productImages={phys.images}
                     />
                     {hasVariants && (
                       <>
