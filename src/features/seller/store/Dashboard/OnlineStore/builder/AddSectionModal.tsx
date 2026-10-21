@@ -187,7 +187,14 @@ export function AddSectionModal({
             {pickable.map(meta => (
               <button
                 key={meta.type}
-                onClick={() => { onPick([{ type: meta.type, settings: { ...meta.defaultSettings }, blocks: [] }]); onClose(); }}
+                onClick={() => {
+                  // A new FAQ starts with sample questions (like Shopify's sample rows) so it is never an invisible empty section.
+                  const sample = meta.type === 'faq' ? [
+                    { type: 'faq_item', settings: { question: 'How long does delivery take?', answer: 'Most orders arrive in 2–5 working days.' } },
+                    { type: 'faq_item', settings: { question: 'What is your return policy?', answer: 'You can return unused items within 7 days of delivery.' } },
+                  ] : [];
+                  onPick([{ type: meta.type, settings: { ...meta.defaultSettings }, blocks: sample } as never]); onClose();
+                }}
                 className="flex items-start gap-3 p-3.5 rounded-xl border border-bone bg-white text-left cursor-pointer transition-colors hover:border-brand-orange/50"
               >
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${meta.color}18` }}>

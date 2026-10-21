@@ -20,14 +20,14 @@ interface Props {
 export function OrderPlaced({ orders, storeName, guestEmail, paymentConfirmed }: Props) {
   const unpaid = orders.some(o => o.isPaid === false);
   const cashOnly = unpaid && orders.filter(o => o.isPaid === false).every(o => o.paymentMethod === 'cash_on_delivery');
-  const unpaidNote = cashOnly ? ' Pay in cash when it arrives.' : ' It will be confirmed once the store receives your payment.';
+  const unpaidNote = cashOnly ? ` ${ts('checkout.payCashOnArrival', 'Pay in cash when it arrives.')}` : ` ${ts('checkout.confirmedOnPayment', 'It will be confirmed once the store receives your payment.')}`;
   return (
     <Page narrow>
       <div role="status" className="flex flex-col items-center gap-3 text-center">
         <span className="grid size-16 place-items-center rounded-full" style={{ background: `color-mix(in srgb, ${t.colors.success} 14%, transparent)`, color: t.colors.success }}><Check size={30} aria-hidden /></span>
         <h1 className="m-0 text-[clamp(28px,4vw,44px)] font-medium leading-[1.1] tracking-tight">{ts('checkout.thankLead', 'Thank you for your')} <span className="fx-serif">{ts('checkout.thankAccent', 'order')}</span></h1>
         <p className="m-0 max-w-[460px] text-base" style={{ color: t.colors.inkMuted }}>
-          {paymentConfirmed ? `Your payment was confirmed and your order at ${storeName} has been placed.` : `Your order at ${storeName} has been placed.`}
+          {paymentConfirmed ? ts('checkout.placedPaid', 'Your payment was confirmed and your order at {{store}} has been placed.', { store: storeName }) : ts('checkout.placed', 'Your order at {{store}} has been placed.', { store: storeName })}
           {unpaid ? unpaidNote : ''}
         </p>
       </div>
@@ -48,7 +48,7 @@ export function OrderPlaced({ orders, storeName, guestEmail, paymentConfirmed }:
             )}
             {o.deliveryAddress?.addressLine1 && (
               <p className="m-0 mt-4 text-sm" style={{ color: t.colors.inkMuted }}>
-                Delivering to {o.deliveryAddress.recipientName}, {o.deliveryAddress.addressLine1}, {o.deliveryAddress.city}
+                {ts('pg.delivering_to_recipient_address_city', 'Delivering to {{recipient}}, {{address}}, {{city}}', { recipient: o.deliveryAddress.recipientName, address: o.deliveryAddress.addressLine1, city: o.deliveryAddress.city })}
               </p>
             )}
           </Card>

@@ -8,6 +8,7 @@ import {
 import { TokenStorage } from '@/api/services/auth';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useToast } from '@/contexts/ToastContext';
+import { ts } from '@/utils/tStatic';
 
 export interface WishlistContextValue {
   wishlistItems:      WishlistListItem[];
@@ -110,14 +111,14 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
             return [...prev, { product: res.data.product, variants: [res.data.variant] }];
           });
         }
-        toast.success('Added to wishlist');
+        toast.success(ts('pg.added_to_wishlist', 'Added to wishlist'));
       } catch (err) {
         setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
-        toast.error(err instanceof Error ? err.message : 'Failed to add to wishlist.');
+        toast.error(err instanceof Error ? err.message : ts('pg.failed_to_add_to_wishlist', 'Failed to add to wishlist.'));
       } finally {
         setWishlisting(null);
       }
-    }, 'Sign in to save items to your wishlist.');
+    }, ts('pg.sign_in_to_save_items_to_your_wishlist', 'Sign in to save items to your wishlist.'));
   }, [requireAuth, toast, storeId]);
 
   const removeFromWishlist = useCallback(async (productId: string, variantId: string) => {
@@ -155,7 +156,7 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
         idMap.current.set(k, wishlistId);
       }
       await apiRemoveFromWishlist(wishlistId, storeId);
-      toast.success('Removed from wishlist');
+      toast.success(ts('pg.removed_from_wishlist', 'Removed from wishlist'));
     } catch (err) {
       // Roll back both pieces of state together, restoring the item as
       // close to its original position as possible.
@@ -169,7 +170,7 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
           return next;
         });
       }
-      toast.error(err instanceof Error ? err.message : 'Failed to remove from wishlist.');
+      toast.error(err instanceof Error ? err.message : ts('pg.failed_to_remove_from_wishlist', 'Failed to remove from wishlist.'));
     } finally {
       setWishlisting(null);
     }
@@ -194,12 +195,12 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
     idMap.current.clear();
     try {
       await apiClearWishlist(storeId);
-      toast.success('Wishlist cleared');
+      toast.success(ts('pg.wishlist_cleared', 'Wishlist cleared'));
     } catch (err) {
       // Rollback
       setWishlistItems(prevItems);
       setWishlistedKeys(prevKeys);
-      toast.error(err instanceof Error ? err.message : 'Failed to clear wishlist.');
+      toast.error(err instanceof Error ? err.message : ts('pg.failed_to_clear_wishlist', 'Failed to clear wishlist.'));
       throw err;
     } finally {
       setClearing(false);

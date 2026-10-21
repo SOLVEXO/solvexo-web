@@ -14,6 +14,7 @@ import { useProductBrowse } from '@/features/storefront/browse/useProductBrowse'
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { fashionTheme as t } from '../../theme.config';
 import { BrowseButton, BrowsePagination, BrowseSkeleton, CheckRow, FilterDrawer, PriceFields, type FacetGroup } from './FashionFilterParts';
+import { ts } from '@/utils/tStatic';
 
 interface Props {
   renderCard: (p: PublicStoreProduct, currency: string) => ReactNode;
@@ -110,7 +111,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
   if (state.minPrice != null || state.maxPrice != null) {
     chips.push({
       key: 'price',
-      label: `${moneyText(state.minPrice ?? 0, currency)} - ${state.maxPrice != null ? moneyText(state.maxPrice, currency) : 'and up'}`,
+      label: `${moneyText(state.minPrice ?? 0, currency)} - ${state.maxPrice != null ? moneyText(state.maxPrice, currency) : ts('pg.and_up', 'and up')}`,
       remove: () => change(s => ({ ...s, minPrice: undefined, maxPrice: undefined })),
     });
   }
@@ -153,7 +154,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
         )}
 
         <div className="ml-auto flex items-center gap-4">
-          {!first && <span className="text-sm" style={{ color: t.colors.inkMuted }} aria-live="polite">{total} product{total !== 1 ? 's' : ''}</span>}
+          {!first && <span className="text-sm" style={{ color: t.colors.inkMuted }} aria-live="polite">{ts('pg.products_count', '{{count}} products', { count: total })}</span>}
           <div className="relative hidden md:block">
             <button type="button" aria-expanded={open === 'sort'} aria-haspopup="listbox" aria-label={tr('browse.sortByAria', 'Sort by')} onClick={() => setOpen(o => (o === 'sort' ? null : 'sort'))} className={pill} style={pillStyle(open === 'sort')}>
               <span style={{ color: t.colors.inkMuted }}>{tr('browse.sortBy', 'Sort by:')}</span> {sortLabel} <ChevronDown size={14} aria-hidden="true" />

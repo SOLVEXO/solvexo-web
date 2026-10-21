@@ -14,7 +14,7 @@ import { WishlistItemCard } from './community/WishlistItemCard';
 /** `/wishlist` - the buyer's saved products for this store (account page, not indexed). */
 export function FashionWishlistPage() {
   const guest = useRequireRealAccount();
-  useStorefrontSeo({ title: 'Wishlist', noindex: true });
+  useStorefrontSeo({ title: ts('nav.wishlist', 'Wishlist'), noindex: true });
   const { wishlistItems, loading, clearWishlist, clearing } = useWishlistContext();
   const [confirmClear, setConfirmClear] = useState(false);
   const [clearError, setClearError] = useState(false);
@@ -26,10 +26,10 @@ export function FashionWishlistPage() {
     try { await clearWishlist(); setConfirmClear(false); } catch { setClearError(true); }
   };
 
-  const subtitle = loading ? 'Loading your saved items' : `${count} ${count === 1 ? 'item' : 'items'} saved`;
+  const subtitle = loading ? ts('pg.loading_your_saved_items', 'Loading your saved items') : ts('wishlist.itemsSaved', '{{count}} items saved', { count });
 
   return (
-    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_wishlist', 'wishlist')} subtitle={signedIn ? subtitle : 'Sign in to see the items you saved.'}
+    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_wishlist', 'wishlist')} subtitle={signedIn ? subtitle : ts('pg.sign_in_to_see_the_items_you_saved', 'Sign in to see the items you saved.')}
       actions={signedIn && count > 0 && !confirmClear ? <PillButton variant="outline" onClick={() => setConfirmClear(true)} style={{ height: 40, padding: '0 20px' }}>{ts('pg.clear_all', 'Clear all')}</PillButton> : undefined}>
       {guest ? null : !signedIn ? (
         <EmptyState icon={<Heart size={24} aria-hidden />} title={ts('pg.sign_in_to_use_your_wishlist', 'Sign in to use your wishlist')} text={ts('pg.save_products_you_love_and_find_them_her', 'Save products you love and find them here on any device.')}
@@ -43,7 +43,7 @@ export function FashionWishlistPage() {
         <>
           {confirmClear && (
             <div role="alertdialog" aria-label={ts('pg.clear_wishlist', 'Clear wishlist')} className="mb-5 flex flex-wrap items-center gap-3 p-4" style={{ borderRadius: 16, background: t.colors.bgAlt }}>
-              <p className="m-0 min-w-[200px] flex-1 text-sm">Remove all {count} saved {count === 1 ? 'item' : 'items'}?{clearError && <span role="alert" style={{ color: t.colors.danger }}> Something went wrong, please try again.</span>}</p>
+              <p className="m-0 min-w-[200px] flex-1 text-sm">{ts('pg.remove_all_saved', 'Remove all {{count}} saved items?', { count })}{clearError && <span role="alert" style={{ color: t.colors.danger }}> {ts('pg.something_went_wrong_please_try_again_2', 'Something went wrong, please try again.')}</span>}</p>
               <PillButton variant="outline" onClick={() => { setConfirmClear(false); setClearError(false); }} style={{ height: 40, padding: '0 18px' }}>{ts('common.cancel', 'Cancel')}</PillButton>
               <PillButton onClick={() => void clearAll()} loading={clearing} style={{ height: 40, padding: '0 18px', background: t.colors.danger, borderColor: t.colors.danger, color: '#fff' }}>{ts('browse.removeAll', 'Remove all')}</PillButton>
             </div>

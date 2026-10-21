@@ -35,11 +35,11 @@ function AddressForm({ book }: { book: Book }) {
         <Field label={ts('checkout.fullName', 'Full name')} required error={errors.recipientName}>
           {p => <TextInput {...p} autoComplete="name" value={form.recipientName} onChange={e => set('recipientName', e.target.value)} invalid={!!errors.recipientName} />}
         </Field>
-        <Field label="Phone" required error={errors.phoneNumber}>
+        <Field label={ts('checkout.phone', 'Phone')} required error={errors.phoneNumber}>
           {p => <TextInput {...p} type="tel" inputMode="tel" autoComplete="tel" value={form.phoneNumber} onChange={e => set('phoneNumber', e.target.value)} invalid={!!errors.phoneNumber} />}
         </Field>
       </div>
-      <Field label="Country" required error={errors.country}>
+      <Field label={ts('addresses.country', 'Country')} required error={errors.country}>
         {p => (
           <SelectInput {...p} autoComplete="country-name" value={form.country ?? ''} onChange={e => set('country', e.target.value)} invalid={!!errors.country}>
             <option value="" disabled>{ts('checkout.selectCountryPrompt', 'Select a country')}</option>
@@ -47,17 +47,17 @@ function AddressForm({ book }: { book: Book }) {
           </SelectInput>
         )}
       </Field>
-      <Field label="Address" required error={errors.addressLine1}>
+      <Field label={ts('checkout.address', 'Address')} required error={errors.addressLine1}>
         {p => <TextInput {...p} autoComplete="address-line1" value={form.addressLine1} onChange={e => set('addressLine1', e.target.value)} invalid={!!errors.addressLine1} />}
       </Field>
-      <Field label="Apartment, suite, etc. (optional)">
+      <Field label={ts('checkout.apartment', 'Apartment, suite, etc. (optional)')}>
         {p => <TextInput {...p} autoComplete="address-line2" value={form.addressLine2 ?? ''} onChange={e => set('addressLine2', e.target.value)} />}
       </Field>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="City" required error={errors.city}>
+        <Field label={ts('checkout.city', 'City')} required error={errors.city}>
           {p => <TextInput {...p} autoComplete="address-level2" value={form.city} onChange={e => set('city', e.target.value)} invalid={!!errors.city} />}
         </Field>
-        <Field label="State / province" required error={errors.state}>
+        <Field label={ts('pg.state_province', 'State / province')} required error={errors.state}>
           {p => <TextInput {...p} autoComplete="address-level1" value={form.state} onChange={e => set('state', e.target.value)} invalid={!!errors.state} />}
         </Field>
         <Field label={ts('checkout.postalCode', 'Postal code')} required error={errors.zipCode}>
@@ -109,7 +109,7 @@ export function AddressStep({ step, book, pickup }: Props) {
         )}
         <div>
           <button type="button" onClick={book.openForm} className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-medium" style={{ color: t.colors.ink }}>
-            <Plus size={15} aria-hidden /> Add a new address
+            <Plus size={15} aria-hidden /> {ts('addresses.add', 'Add a new address')}
           </button>
         </div>
       </div>

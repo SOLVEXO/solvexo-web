@@ -455,8 +455,7 @@ export function StoreFinance() {
   async function handleExport() {
     setExporting(true);
     try {
-      const csv = await apiExportFinanceTransactions(storeId, { type: txType || undefined });
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const blob = await apiExportFinanceTransactions(storeId, { type: txType || undefined });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `transactions-${storeId}.csv`; a.click();

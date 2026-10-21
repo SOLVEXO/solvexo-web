@@ -17,7 +17,7 @@ import { withRedirect } from '../../core/auth/authLinks';
 
 /** `/register` (`?redirect=`). Creates an account scoped to THIS store, then continues at /verify-otp. */
 export function FashionRegisterPage() {
-  useStorefrontSeo({ title: 'Create account', noindex: true });
+  useStorefrontSeo({ title: ts('orders.createAccountBtn', 'Create account'), noindex: true });
   const { store } = useStorefront();
   const [params] = useSearchParams();
   const redirectTo = safeRedirectPath(params.get('redirect')) ?? '/';
@@ -31,13 +31,13 @@ export function FashionRegisterPage() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!form.phone) { setPhoneError('Enter your phone number.'); return; }
+    if (!form.phone) { setPhoneError(ts('pg.enter_your_phone_number_2', 'Enter your phone number.')); return; }
     setPhoneError('');
     void register.execute({ name: form.name.trim(), email: form.email.trim(), password: form.password, phone: form.phone, address: form.address.trim(), role: 'user', storeId: store.storeId });
   };
 
   return (
-    <AuthShell title={ts('pg.create_your', 'Create your')} accent={ts('pg.word_account', 'account')} subtitle={`Join ${store.name} to track orders and check out faster.`}
+    <AuthShell title={ts('pg.create_your', 'Create your')} accent={ts('pg.word_account', 'account')} subtitle={ts('pg.join_store_to_track_orders_and_check', 'Join {{store}} to track orders and check out faster.', { store: store.name })}
       footer={<>{ts('auth.haveAccount', 'Already have an account?')} <Link to={withRedirect('/login', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('auth.signInLink', 'Sign in')}</Link></>}>
       {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
       <form onSubmit={submit} className="flex flex-col gap-4">

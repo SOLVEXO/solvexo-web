@@ -1,12 +1,13 @@
 import { ArrowUp, Mail, Phone, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { scrollRootToTop } from '@/utils/scrollRoot';
 import { NavAnchor } from './NavAnchor';
 import type { HeaderOptions } from './headerOptions';
 
 /** Footer "Back to top" link. */
 export function BackToTop({ color, fontFamily }: { color: string; fontFamily: string }) {
   return (
-    <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    <button type="button" onClick={() => scrollRootToTop('smooth')}
       className="inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer p-0" style={{ color, fontFamily, fontSize: '12px' }}>
       <ArrowUp size={13} /> Back to top
     </button>

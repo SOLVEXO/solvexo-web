@@ -16,13 +16,13 @@ export function FashionOrderStatusPage() {
   const { data, loading, error, retry } = useLoad(() => loadOrderByToken(token), [token]);
   const order = data?.order ?? null;
   const outlineLink = { border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx };
-  useStorefrontSeo({ title: order ? `Order #${order.orderNumber}` : 'Order status', noindex: true });
+  useStorefrontSeo({ title: order ? ts('orders.orderNumber', 'Order #{{number}}', { number: order.orderNumber }) : ts('orders.statusAria', 'Order status'), noindex: true });
 
   return (
     <Page>
       <PageTitle
         accent={order ? `#${order.orderNumber}` : undefined}
-        subtitle={order ? `Placed on ${formatOrderDate(order.createdAt, true)}` : undefined}
+        subtitle={order ? ts('pg.placed_on_date', 'Placed on {{date}}', { date: formatOrderDate(order.createdAt, true) }) : undefined}
         actions={order && <div className="flex flex-wrap gap-2"><OrderPill badge={derivePaymentBadge(order)} /><OrderPill badge={deriveFulfillmentBadge(order)} /></div>}
       >{ts('orders.statusAria', 'Order status')}</PageTitle>
       {loading ? (
@@ -36,7 +36,7 @@ export function FashionOrderStatusPage() {
           <OrderView order={order} mode="public" />
           <Card tone="soft">
             <p className="m-0 text-base font-medium">{ts('pg.want_to_track_all_your_orders_in_one_pla', 'Want to track all your orders in one place?')}</p>
-            <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>Create an account with the same email address and this order will appear in your history.</p>
+            <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.create_an_account_with_the_same_email', 'Create an account with the same email address and this order will appear in your history.')}</p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link to="/register" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('orders.createAccountBtn', 'Create account')}</Link>
               <Link to="/login" className="fx-pill" style={outlineLink}>{ts('auth.signInLink', 'Sign in')}</Link>

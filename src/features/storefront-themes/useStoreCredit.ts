@@ -3,6 +3,7 @@ import { apiApplyStoreCredit, apiRemoveStoreCredit, type Checkout, type ApplySto
 import { apiStoreCreditPayment, type PlacedOrder } from '@/api/services/payment';
 import { apiGetMyStoreCredit } from '@/api/services/storeCredit';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { ts } from '@/utils/tStatic';
 
 interface Options {
   storeId: string | undefined;
@@ -22,6 +23,7 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
   const [fetched, setFetched] = useState<{ checkoutId: string; balance: number; currency: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [msgApplied, setMsgApplied] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState('');
   const placeKeyRef = useRef<string | null>(null);
@@ -57,26 +59,27 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
 
   const apply = async () => {
     if (!checkout) return;
-    setBusy(true); setMsg('');
+    setBusy(true); setMsg(''); setMsgApplied(false);
     try {
       const res = await apiApplyStoreCredit(checkout._id);
       absorb(res.data);
       setMsg(res.data.storeCreditApplied
-        ? `Applied — ${currencySymbol(checkout.currency)}${fmt2(res.data.storeCreditDiscountUSD)} used.`
-        : 'Store credit could not be applied to this order.');
+        ? ts('pg.applied_amount_used_2', 'Applied — {{amount}} used.', { amount: `${currencySymbol(checkout.currency)}${fmt2(res.data.storeCreditDiscountUSD)}` })
+        : ts('pg.store_credit_could_not_be_applied_to', 'Store credit could not be applied to this order.'));
+      setMsgApplied(!!res.data.storeCreditApplied);
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Could not apply store credit.');
+      setMsg(err instanceof Error ? err.message : ts('pg.could_not_apply_store_credit', 'Could not apply store credit.'));
     } finally { setBusy(false); }
   };
 
   const remove = async () => {
     if (!checkout) return;
-    setBusy(true); setMsg('');
+    setBusy(true); setMsg(''); setMsgApplied(false);
     try {
       const res = await apiRemoveStoreCredit(checkout._id);
       absorb(res.data);
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Could not remove store credit.');
+      setMsg(err instanceof Error ? err.message : ts('pg.could_not_remove_store_credit', 'Could not remove store credit.'));
     } finally { setBusy(false); }
   };
 
@@ -88,7 +91,8 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
       const res = await apiApplyStoreCredit(checkout._id);
       absorb(res.data);
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Could not refresh store credit.');
+      setMsgApplied(false);
+      setMsg(err instanceof Error ? err.message : ts('pg.could_not_refresh_store_credit', 'Could not refresh store credit.'));
     }
   };
 
@@ -103,10 +107,10 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
       return res.data.orders;
     } catch (err) {
       placeKeyRef.current = null; // a failed attempt must not replay on retry
-      setPlaceError(err instanceof Error ? err.message : 'Failed to place order.');
+      setPlaceError(err instanceof Error ? err.message : ts('checkout.err.placeOrder', 'Failed to place order.'));
       return null;
     } finally { setPlacing(false); }
   };
 
-  return { balance, balanceCurrency, busy, msg, apply, remove, resync, place, placing, placeError, available: balance > 0 || !!checkout?.storeCreditApplied };
+  return { balance, balanceCurrency, busy, msg, msgApplied, apply, remove, resync, place, placing, placeError, available: balance > 0 || !!checkout?.storeCreditApplied };
 }

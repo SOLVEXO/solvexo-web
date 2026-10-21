@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { handleOf } from '@/utils/activeStoreText';
 import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollections } from '@/api/services/collections';
@@ -13,7 +14,7 @@ export function FashionCollectionsPage() {
   const { store } = useStorefront();
   const localize = useLocalize();
   const { data, loading, error, retry } = useLoad(() => apiGetPublicCollections(store.storeId).then(r => r.data ?? []), [store.storeId]);
-  useStorefrontSeo({ title: 'Collections' });
+  useStorefrontSeo({ title: ts('collections.title', 'Collections') });
 
   if (loading) return <PageSkeleton />;
   if (error) return <ErrorBlock message={ts('pg.we_couldn_t_load_the_collections', 'We couldn\'t load the collections.')} onRetry={retry} />;
@@ -25,7 +26,7 @@ export function FashionCollectionsPage() {
         <ul className="m-0 grid list-none grid-cols-1 gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3">
           {list.map(c => (
             <li key={c._id}>
-              <Link to={`/collections/${c.slug || c._id}`} className="group relative block overflow-hidden no-underline" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
+              <Link to={`/collections/${handleOf(c)}`} className="group relative block overflow-hidden no-underline" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
                 {c.image && <img src={c.image} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-105" />}
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,0) 55%)' }} />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-white"><h2 className="m-0 text-2xl font-medium">{c.name}</h2></div>

@@ -1,5 +1,6 @@
 import type { BlogPostSummary } from '@/api/services/storeBlog';
 import type { Block } from '@/api/services/storefrontTypes';
+import { ts } from '@/utils/tStatic';
 
 export const BLOG_PAGE_SIZE = 12;
 
@@ -57,9 +58,9 @@ export function shareTargets(url: string, title: string): ShareTarget[] {
   const u = encodeURIComponent(url);
   const t = encodeURIComponent(title);
   return [
-    { key: 'x', label: 'Share on X', href: `https://twitter.com/intent/tweet?url=${u}&text=${t}` },
-    { key: 'facebook', label: 'Share on Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
-    { key: 'whatsapp', label: 'Share on WhatsApp', href: `https://wa.me/?text=${t}%20${u}` },
-    { key: 'email', label: 'Share by email', href: `mailto:?subject=${t}&body=${u}` },
+    { key: 'x', label: ts('pg.share_on_x', 'Share on X'), href: `https://twitter.com/intent/tweet?url=${u}&text=${t}` },
+    { key: 'facebook', label: ts('pg.share_on_facebook', 'Share on Facebook'), href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { key: 'whatsapp', label: ts('pg.share_on_whatsapp', 'Share on WhatsApp'), href: `https://wa.me/?text=${t}%20${u}` },
+    { key: 'email', label: ts('pg.share_by_email', 'Share by email'), href: `mailto:?subject=${t}&body=${u}` },
   ];
 }

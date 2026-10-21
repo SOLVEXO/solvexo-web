@@ -19,8 +19,8 @@ export function FashionBlogIndexPage() {
   const feed = useBlogFeed(store.storeId, blogSlug);
   const [topic, setTopic] = useState<string | null>(null);
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-index'), 'blog_post_list');
-  const title = feed.title ?? 'Journal';
-  useStorefrontSeo({ title, description: `Stories, guides and news from ${store.name}.` });
+  const title = feed.title ?? ts('blog.journal', 'Journal');
+  useStorefrontSeo({ title, description: ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name }) });
 
   const topics = topicsOf(feed.posts);
   const activeTopic = topic && topics.includes(topic) ? topic : null;
@@ -31,7 +31,7 @@ export function FashionBlogIndexPage() {
     <>
       {before.length > 0 && <FashionSectionRenderer sections={before} />}
       <Page>
-        <PageTitle accent={feed.title ? undefined : 'stories'} subtitle={`Stories, guides and news from ${store.name}.`}>{feed.title ?? 'The'}</PageTitle>
+        <PageTitle accent={feed.title ? undefined : ts('pg.word_stories', 'stories')} subtitle={ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name })}>{feed.title ?? ts('pg.word_the', 'The')}</PageTitle>
 
         {feed.loading ? (
           <div role="status" aria-label={ts('pg.loading_posts', 'Loading posts')} className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -50,13 +50,13 @@ export function FashionBlogIndexPage() {
                   return (
                     <button key={tag ?? 'all'} type="button" aria-pressed={on} onClick={() => setTopic(tag)} className="shrink-0 rounded-full px-4 py-2 text-sm font-medium"
                       style={{ cursor: 'pointer', border: `1px solid ${on ? t.colors.ink : t.colors.border}`, background: on ? t.colors.ink : 'transparent', color: on ? t.colors.bg : t.colors.ink }}>
-                      {tag ?? 'All'}
+                      {tag ?? ts('pg.word_all', 'All')}
                     </button>
                   );
                 })}
               </div>
             )}
-            <p className="sr-only" role="status">{activeTopic ? `${filtered.length} posts about ${activeTopic}` : ''}</p>
+            <p className="sr-only" role="status">{activeTopic ? ts('pg.count_posts_about_topic', '{{count}} posts about {{topic}}', { count: filtered.length, topic: activeTopic }) : ''}</p>
             {filtered.length === 0 ? (
               <EmptyState title={ts('pg.no_posts_in_this_topic_yet', 'No posts in this topic yet')} action={<PillButton variant="outline" onClick={() => setTopic(null)}>{ts('pg.show_all_posts', 'Show all posts')}</PillButton>} />
             ) : (
@@ -68,7 +68,7 @@ export function FashionBlogIndexPage() {
             {feed.hasMore && (
               <div className="mt-12 grid place-items-center gap-3">
                 {feed.loadMoreFailed && <p role="alert" className="m-0 text-sm" style={{ color: t.colors.danger }}>{ts('pg.we_couldn_t_load_more_posts', 'We couldn\'t load more posts.')}</p>}
-                <PillButton variant="outline" onClick={() => void feed.loadMore()} loading={feed.loadingMore}>{feed.loadMoreFailed ? 'Try again' : 'Load more posts'}</PillButton>
+                <PillButton variant="outline" onClick={() => void feed.loadMore()} loading={feed.loadingMore}>{feed.loadMoreFailed ? ts('checkout.tryAgain', 'Try again') : ts('pg.load_more_posts', 'Load more posts')}</PillButton>
               </div>
             )}
           </>

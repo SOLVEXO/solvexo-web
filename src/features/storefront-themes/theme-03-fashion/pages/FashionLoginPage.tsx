@@ -15,7 +15,7 @@ import { withRedirect } from '../../core/auth/authLinks';
 
 /** `/login` (`?redirect=` return path, `?social_code=` / `?social_error=` come back from Google/Facebook). Always a buyer of THIS store. */
 export function FashionLoginPage() {
-  useStorefrontSeo({ title: 'Sign in', noindex: true });
+  useStorefrontSeo({ title: ts('auth.signInLink', 'Sign in'), noindex: true });
   const { store } = useStorefront();
   const [params] = useSearchParams();
   const redirectTo = safeRedirectPath(params.get('redirect')) ?? '/';
@@ -31,7 +31,7 @@ export function FashionLoginPage() {
   };
 
   return (
-    <AuthShell title={ts('pg.welcome', 'Welcome')} accent={ts('pg.word_back', 'back')} subtitle="Track orders, save your details and check out faster."
+    <AuthShell title={ts('pg.welcome', 'Welcome')} accent={ts('pg.word_back', 'back')} subtitle={ts('pg.track_orders_save_your_details_and', 'Track orders, save your details and check out faster.')}
       footer={<>{ts('auth.newHere', 'New here?')} <Link to={withRedirect('/register', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('auth.createAnAccount', 'Create an account')}</Link></>}>
       {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate={false}>

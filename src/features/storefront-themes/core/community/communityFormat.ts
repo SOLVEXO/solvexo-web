@@ -1,16 +1,17 @@
 ﻿import type { Message, MessageType, SendMessagePayload } from '@/api/services/messaging';
+import { ts } from '@/utils/tStatic';
 
 /** "just now", "5m ago", "3h ago", "2d ago", then a plain date. */
 export function timeAgo(iso: string, now = Date.now()): string {
   const diff = now - new Date(iso).getTime();
   if (!Number.isFinite(diff)) return '';
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return ts('pg.just_now', 'Just now');
+  if (mins < 60) return ts('pg.countm_ago', '{{count}}m ago', { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return ts('pg.counth_ago', '{{count}}h ago', { count: hrs });
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return ts('pg.countd_ago', '{{count}}d ago', { count: days });
   return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -23,8 +24,8 @@ export function dayLabel(iso: string, now = new Date()): string {
   const d = new Date(iso);
   const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
+  if (diffDays === 0) return ts('pg.word_today', 'Today');
+  if (diffDays === 1) return ts('pg.word_yesterday', 'Yesterday');
   return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
@@ -52,15 +53,15 @@ export function attachmentKind(file: File): Extract<MessageType, 'image' | 'vide
 
 /** One-line description of a message, used in reply quotes. */
 export function messagePreview(m: Pick<Message, 'type' | 'text' | 'isDeleted'>): string {
-  if (m.isDeleted) return 'Message deleted';
+  if (m.isDeleted) return ts('pg.message_deleted', 'Message deleted');
   switch (m.type) {
     case 'text': return m.text ?? '';
-    case 'image': return 'Photo';
-    case 'video': return 'Video';
-    case 'voice': return 'Voice message';
-    case 'pdf': return 'PDF document';
-    case 'product_share': return 'Shared a product';
-    default: return 'Attachment';
+    case 'image': return ts('pg.word_photo_2', 'Photo');
+    case 'video': return ts('pg.word_video', 'Video');
+    case 'voice': return ts('pg.voice_message', 'Voice message');
+    case 'pdf': return ts('pg.pdf_document', 'PDF document');
+    case 'product_share': return ts('pg.shared_a_product', 'Shared a product');
+    default: return ts('pg.word_attachment', 'Attachment');
   }
 }
 

@@ -19,10 +19,29 @@ interface Props {
   onClose: () => void;
   headerExtra: ReactNode;
   onDirtyChange: (dirty: boolean) => void;
+  /** The language the store's own email text is written in (left column); default English. */
+  sourceLanguage?: string;
+  /** Machine translation of this email into the language; the text lands in the boxes for review. */
+  onAutoTranslate?: () => Promise<{ subject: string; body: string }>;
 }
 
 /** Write one customer email in another language: the English text on the left (read only), the translation on the right. */
-export function EmailTranslationEditor({ email, locale, translation, builtIn, onSave, onClose, headerExtra, onDirtyChange }: Props) {
+export function EmailTranslationEditor({ email, locale, translation, builtIn, onSave, onClose, headerExtra, onDirtyChange, sourceLanguage = 'en', onAutoTranslate }: Props) {
+  const [translating, setTranslating] = useState(false);
+  const autoTranslate = async () => {
+    if (!onAutoTranslate || translating) return;
+    setTranslating(true);
+    setError('');
+    try {
+      const out = await onAutoTranslate();
+      setSubject(out.subject);
+      setBody(out.body);
+    } catch (err) {
+      setError(errMsg(err, 'Automatic translation failed.'));
+    } finally {
+      setTranslating(false);
+    }
+  };
   const englishSubject = email.subject ?? email.defaultSubject;
   const englishBody = email.body ?? email.defaultBody;
   const [subject, setSubject] = useState(translation?.subject ?? '');
@@ -82,7 +101,7 @@ export function EmailTranslationEditor({ email, locale, translation, builtIn, on
 
       <div className="flex-1 overflow-y-auto grid lg:grid-cols-2 min-h-0">
         <div className="p-5 flex flex-col gap-4 bg-cream/60 lg:border-r border-bone min-w-0">
-          <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">English (what customers get today)</p>
+          <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">{languageName(sourceLanguage)} (what customers get today)</p>
           <div>
             <p className="text-[12px] font-medium text-charcoal mb-1.5">Subject</p>
             <div className="rounded-md bg-white border border-bone px-3 py-2 text-[13px] text-charcoal whitespace-pre-wrap break-words">{englishSubject}</div>
@@ -96,6 +115,7 @@ export function EmailTranslationEditor({ email, locale, translation, builtIn, on
         <div className="p-5 flex flex-col gap-4 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">{languageName(locale)}</p>
+            {onAutoTranslate && <Button size="xs" variant="outline" loading={translating} onClick={() => void autoTranslate()}>Translate automatically</Button>}
             {!translation && <span role="status" className="text-[11px] font-semibold rounded-full bg-cream text-slate px-2 py-0.5">{builtIn ? `Untranslated: using built-in ${languageName(locale)} text` : 'Untranslated: using English'}</span>}
           </div>
           <Input label={`Subject (${languageName(locale)})`} dir={dir} lang={locale} placeholder={builtIn?.subject} value={subject} maxLength={200} onChange={e => setSubject(e.target.value)} />

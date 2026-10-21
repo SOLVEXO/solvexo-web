@@ -30,11 +30,11 @@ function CardFields({ amountText, returnUrl, onConfirmed }: Omit<Props, 'clientS
     locked.current = true; setSubmitting(true); setError('');
     try {
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl }, redirect: 'if_required' });
-      if (confirmError) { setError(confirmError.message ?? 'Payment failed. Please check your details and try again.'); return; }
+      if (confirmError) { setError(confirmError.message ?? ts('checkout.err.cardDetails', 'Payment failed. Please check your details and try again.')); return; }
       if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) { onConfirmed(); return; }
-      setError('Payment did not complete. Please try again.');
+      setError(ts('checkout.err.notComplete', 'Payment did not complete. Please try again.'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
+      setError(err instanceof Error ? err.message : ts('checkout.err.cardFailed', 'Payment failed. Please try again.'));
     } finally {
       locked.current = false; setSubmitting(false);
     }
@@ -44,9 +44,9 @@ function CardFields({ amountText, returnUrl, onConfirmed }: Omit<Props, 'clientS
     <form onSubmit={submit} className="flex flex-col gap-4" aria-label={ts('checkout.cardPaymentAria', 'Card payment')}>
       <PaymentElement />
       {error && <Notice tone="error">{error}</Notice>}
-      <PillButton type="submit" full loading={submitting} disabled={!stripe || !elements}>Pay {amountText}</PillButton>
+      <PillButton type="submit" full loading={submitting} disabled={!stripe || !elements}>{ts('pg.pay_amount', 'Pay {{amount}}', { amount: amountText })}</PillButton>
       <p className="m-0 flex items-center justify-center gap-1.5 text-xs" style={{ color: t.colors.inkMuted }}>
-        <ShieldCheck size={13} aria-hidden /> Payments are encrypted and processed securely by Stripe
+        <ShieldCheck size={13} aria-hidden /> {ts('pg.payments_are_encrypted_and_processed', 'Payments are encrypted and processed securely by Stripe')}
       </p>
     </form>
   );

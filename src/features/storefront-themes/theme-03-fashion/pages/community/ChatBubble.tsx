@@ -27,16 +27,16 @@ function Attachments({ message, onAccent }: { message: Message; onAccent: boolea
         const url = safeUrl(a.url);
         if (!url) return null;
         if (message.type === 'image') return (
-          <a key={i} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${a.fileName || 'photo'}`}>
-            <img src={safeUrl(a.thumbnailUrl) ?? url} alt={a.fileName || 'Photo sent in chat'} loading="lazy" className="block max-h-72 max-w-full object-cover" style={{ borderRadius: 14 }} />
+          <a key={i} href={url} target="_blank" rel="noopener noreferrer" aria-label={ts('pg.open_name', 'Open {{name}}', { name: a.fileName || ts('pg.word_photo', 'photo') })}>
+            <img src={safeUrl(a.thumbnailUrl) ?? url} alt={a.fileName || ts('pg.photo_sent_in_chat', 'Photo sent in chat')} loading="lazy" className="block max-h-72 max-w-full object-cover" style={{ borderRadius: 14 }} />
           </a>
         );
-        if (message.type === 'video') return <video key={i} src={url} controls preload="metadata" className="max-h-72 max-w-full" style={{ borderRadius: 14 }} aria-label={a.fileName || 'Video'}><track kind="captions" /></video>;
-        if (message.type === 'voice') return <audio key={i} src={url} controls preload="metadata" className="max-w-full" aria-label={a.fileName || 'Voice message'}><track kind="captions" /></audio>;
+        if (message.type === 'video') return <video key={i} src={url} controls preload="metadata" className="max-h-72 max-w-full" style={{ borderRadius: 14 }} aria-label={a.fileName || ts('pg.word_video', 'Video')}><track kind="captions" /></video>;
+        if (message.type === 'voice') return <audio key={i} src={url} controls preload="metadata" className="max-w-full" aria-label={a.fileName || ts('pg.voice_message', 'Voice message')}><track kind="captions" /></audio>;
         return (
           <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 no-underline" style={{ padding: '8px 12px', borderRadius: 12, background: onAccent ? 'rgba(255,255,255,.14)' : t.colors.bg, color: 'inherit' }}>
             <FileText size={18} aria-hidden />
-            <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{a.fileName || 'Download file'}</span>{a.fileSize > 0 && <span className="block text-xs opacity-70">{formatBytes(a.fileSize)}</span>}</span>
+            <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{a.fileName || ts('pg.download_file', 'Download file')}</span>{a.fileSize > 0 && <span className="block text-xs opacity-70">{formatBytes(a.fileSize)}</span>}</span>
           </a>
         );
       })}
@@ -51,7 +51,7 @@ function ProductShareCard({ share }: { share: NonNullable<Message['productShare'
       <span className="grid shrink-0 place-items-center overflow-hidden" style={{ width: 56, height: 56, borderRadius: 10, background: t.colors.bgAlt }}>
         {share.image ? <img src={share.image} alt="" loading="lazy" className="size-full object-cover" /> : <ImageOff size={18} aria-hidden style={{ color: t.colors.inkMuted }} />}
       </span>
-      <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{share.title ?? 'Product'}</span>{share.price != null && <span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{money(share.price)}</span>}</span>
+      <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{share.title ?? ts('pg.word_product', 'Product')}</span>{share.price != null && <span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{money(share.price)}</span>}</span>
     </Link>
   );
 }
@@ -93,7 +93,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
             </div>
           )}
           <p className="m-0 mt-1 flex items-center justify-end gap-1 text-[11px] opacity-70">
-            {m.isEdited && !m.isDeleted && <span>edited</span>}
+            {m.isEdited && !m.isDeleted && <span>{ts('pg.word_edited', 'edited')}</span>}
             <time dateTime={m.createdAt}>{clockTime(m.createdAt)}</time>
             {mine && !m._pending && !m._failed && (seen ? <CheckCheck size={13} aria-label={ts('pg.seen', 'Seen')} /> : <Check size={13} aria-label={ts('pg.sent', 'Sent')} />)}
           </p>
@@ -113,7 +113,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
 
       {m._failed && (
         <p role="alert" className="m-0 mt-1 flex items-center gap-2 text-xs" style={{ color: t.colors.danger }}>
-          <AlertCircle size={13} aria-hidden />Not sent.
+          <AlertCircle size={13} aria-hidden />{ts('pg.not_sent', 'Not sent.')}
           <button type="button" onClick={() => onRetry(m)} className="inline-flex items-center gap-1 border-0 bg-transparent p-0 text-xs font-semibold underline" style={{ color: t.colors.danger, cursor: 'pointer' }}><RotateCcw size={12} aria-hidden />{ts('cart.retry', 'Retry')}</button>
         </p>
       )}
@@ -121,7 +121,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
       {open && canAct && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1 p-1.5" style={{ borderRadius: 9999, background: t.colors.bg, border: `1px solid ${t.colors.border}` }}>
           {REACTION_EMOJIS.map(e => (
-            <button key={e} type="button" onClick={() => { onReact(m._id, e); setOpen(false); }} aria-label={`React ${e}`} aria-pressed={mineReaction === e} className="grid size-8 place-items-center rounded-full border-0 text-base" style={{ cursor: 'pointer', background: mineReaction === e ? t.colors.bgAlt : 'transparent' }}>{e}</button>
+            <button key={e} type="button" onClick={() => { onReact(m._id, e); setOpen(false); }} aria-label={ts('pg.react_emoji', 'React {{emoji}}', { emoji: e })} aria-pressed={mineReaction === e} className="grid size-8 place-items-center rounded-full border-0 text-base" style={{ cursor: 'pointer', background: mineReaction === e ? t.colors.bgAlt : 'transparent' }}>{e}</button>
           ))}
           <button type="button" onClick={() => { onReply(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><CornerUpLeft size={13} aria-hidden />{ts('pg.reply', 'Reply')}</button>
           {mine && m.type === 'text' && <button type="button" onClick={() => { onEdit(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><Pencil size={13} aria-hidden />{ts('addresses.edit', 'Edit')}</button>}

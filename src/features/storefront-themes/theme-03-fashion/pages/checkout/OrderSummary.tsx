@@ -58,7 +58,7 @@ export function OrderSummary({ currency, lines, itemCount, storeName, subtotal, 
                 </span>
                 <span aria-hidden className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full px-1 text-[11px] font-semibold" style={{ background: t.colors.ink, color: t.colors.bg, height: 20 }}>{l.quantity}</span>
               </span>
-              <span className="min-w-0 flex-1 text-sm"><span className="line-clamp-2 font-medium">{l.name}</span><span className="sr-only"> quantity {l.quantity}</span></span>
+              <span className="min-w-0 flex-1 text-sm"><span className="line-clamp-2 font-medium">{l.name}</span><span className="sr-only"> {ts('checkout.quantityAria', 'quantity {{count}}', { count: l.quantity })}</span></span>
               <span className="shrink-0 text-sm font-medium">{m(l.amount)}</span>
             </li>
           ))}
@@ -67,21 +67,21 @@ export function OrderSummary({ currency, lines, itemCount, storeName, subtotal, 
         {children && <div className="my-5 border-0 border-t pt-5" style={{ borderTopWidth: 1, borderStyle: 'solid', borderColor: t.colors.border }}>{children}</div>}
 
         <dl className="m-0 mt-5 flex flex-col gap-2.5 text-sm">
-          <Row label={`Subtotal (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`} value={m(subtotal)} />
+          <Row label={ts('checkout.subtotalItems', 'Subtotal ({{count}} items)', { count: itemCount })} value={m(subtotal)} />
           {coupon > 0 && <Row label={ts('checkout.discountCode', 'Discount code')} value={`-${m(coupon)}`} tone="good" />}
           {giftCard > 0 && <Row label={ts('checkout.giftCard', 'Gift card')} value={`-${m(giftCard)}`} tone="good" />}
           {storeCredit > 0 && <Row label={ts('checkout.storeCredit', 'Store credit')} value={`-${m(storeCredit)}`} tone="good" />}
-          {adjustment !== 0 && <Row label={adjustment < 0 ? 'Discounts' : 'Adjustments'} value={adjustment < 0 ? `-${m(-adjustment)}` : m(adjustment)} tone={adjustment < 0 ? 'good' : undefined} />}
-          {shippingText !== null && <Row label="Shipping" value={shippingText} />}
-          {tax > 0 && <Row label="Tax" value={m(tax)} />}
+          {adjustment !== 0 && <Row label={adjustment < 0 ? ts('checkout.discounts', 'Discounts') : ts('checkout.adjustments', 'Adjustments')} value={adjustment < 0 ? `-${m(-adjustment)}` : m(adjustment)} tone={adjustment < 0 ? 'good' : undefined} />}
+          {shippingText !== null && <Row label={ts('checkout.shipping', 'Shipping')} value={shippingText} />}
+          {tax > 0 && <Row label={ts('checkout.tax', 'Tax')} value={m(tax)} />}
         </dl>
 
         <div className="mt-5 flex items-baseline justify-between gap-4 border-0 border-t pt-5" style={{ borderTopWidth: 1, borderStyle: 'solid', borderColor: t.colors.border }}>
           <span className="text-base font-semibold">{estimate ? ts('checkout.estimatedTotal', 'Estimated total') : ts('checkout.total', 'Total')}</span>
           <span className="flex items-baseline gap-2"><span className="text-xs" style={{ color: t.colors.inkMuted }}>{currency}</span><span className="text-2xl font-semibold" aria-live="polite">{m(total)}</span></span>
         </div>
-        {includedTax > 0 && <p className="m-0 mt-2 text-right text-xs" style={{ color: t.colors.inkMuted }}>Including {m(includedTax)} in taxes</p>}
-        <p className="m-0 mt-4 text-xs" style={{ color: t.colors.inkMuted }}>{itemCount} {itemCount === 1 ? 'item' : 'items'} from {storeName}</p>
+        {includedTax > 0 && <p className="m-0 mt-2 text-right text-xs" style={{ color: t.colors.inkMuted }}>{ts('pg.including_amount_in_taxes', 'Including {{amount}} in taxes', { amount: m(includedTax) })}</p>}
+        <p className="m-0 mt-4 text-xs" style={{ color: t.colors.inkMuted }}>{ts('pg.items_from_store', '{{count}} items from {{store}}', { count: itemCount, store: storeName })}</p>
       </div>
     </aside>
   );

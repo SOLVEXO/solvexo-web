@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, Clock, EyeOff, ShieldCheck } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride } from '@/api/services/store';
+import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
+import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
+import { LANGUAGE_OPTIONS } from '@/utils/languages';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
@@ -52,6 +54,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+/** Sample price for the Price format picker, e.g. "Rs 1,235" / "PKR 1,235" / "Rs 1,235 PKR". */
+function moneyPreview(mode: CurrencyDisplay, currency?: string | null): string {
+  const code = (currency || 'USD').toUpperCase();
+  const d = getCurrencyDecimals(code);
+  const body = (1234.5).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+  const sym = currencySymbol(code);
+  const symText = (/^[A-Za-z]/.test(sym) ? sym + ' ' : sym) + body;
+  return mode === 'code' ? code + ' ' + body : mode === 'symbol_code' ? symText + ' ' + code : symText;
 }
 
 const inputCls = "w-full px-3 py-[9px] rounded-lg text-[13px] border border-bone bg-bone text-charcoal outline-none box-border";
@@ -129,7 +141,9 @@ export function StoreProfileTab() {
   const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
   const [showDutiesNotice, setShowDutiesNotice] = useState(true);
   const [timezone, setTimezone] = useState('');
-  const [saving,  setSaving]  = useState(false);
+  const [currencyDisplay, setCurrencyDisplay] = useState<CurrencyDisplay>('symbol');
+  const [defaultLanguage, setDefaultLanguage] = useState('en');
+  const [saving, setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -150,6 +164,8 @@ export function StoreProfileTab() {
     setTaxOverrides(store.taxOverrides ?? []);
     setShowDutiesNotice(store.showDutiesNotice !== false);
     setTimezone(store.timezone ?? '');
+    setCurrencyDisplay(store.currencyDisplay ?? 'symbol');
+    setDefaultLanguage(store.defaultLanguage ?? 'en');
   }, [store]);
 
   const handleSave = async () => {
@@ -157,7 +173,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, currencyDisplay, defaultLanguage, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -175,6 +191,8 @@ export function StoreProfileTab() {
       contactEmail !== (store.contactEmail ?? '') ||
       contactPhone !== (store.contactPhone ?? '') ||
       timezone !== (store.timezone ?? '') ||
+      currencyDisplay !== (store.currencyDisplay ?? 'symbol') ||
+      defaultLanguage !== (store.defaultLanguage ?? 'en') ||
       logo !== (store.logo ?? '') ||
       faviconUrl !== (store.faviconUrl ?? '') ||
       reviewModerationEnabled !== !!store.reviewModerationEnabled ||
@@ -203,20 +221,20 @@ export function StoreProfileTab() {
             <p className="text-[14px] font-semibold text-charcoal">Basic Information</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-            <Field label="Store Logo">
-              <div className="flex items-center gap-3">
-                <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-                <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
-              </div>
-            </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
+              <p className="text-[13px] font-semibold text-charcoal">Store logo</p>
+              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Header, emails &amp; invoices</p>
+              <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+              <p className="mt-3 text-[11px] leading-snug text-slate">PNG, JPG or WebP. A transparent background looks best.</p>
+            </div>
 
-            <Field label="Favicon (browser tab icon)">
-              <div className="flex items-center gap-3">
-                <ImageUpload value={faviconUrl ? [faviconUrl] : []} onChange={urls => setFaviconUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-                <p className="text-[11px] text-slate">Square image works best. Falls back to your logo if not set.</p>
-              </div>
-            </Field>
+            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
+              <p className="text-[13px] font-semibold text-charcoal">Favicon</p>
+              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Browser tab icon</p>
+              <ImageUpload value={faviconUrl ? [faviconUrl] : []} onChange={urls => setFaviconUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+              <p className="mt-3 text-[11px] leading-snug text-slate">Square image, at least 32 × 32 px. Without one, your store's tab shows no icon.</p>
+            </div>
           </div>
 
           <Field label="Store Name *">
@@ -247,6 +265,22 @@ export function StoreProfileTab() {
               {TIME_ZONES.map(z => <option key={z} value={z}>{z.replace(/_/g, ' ')}</option>)}
             </select>
             <p className="text-[11px] text-slate mt-1">Analytics days, "Today" and report dates use this time zone.</p>
+          </Field>
+
+          <Field label="Store language">
+            <select value={defaultLanguage} onChange={e => setDefaultLanguage(e.target.value)} className={inputCls} aria-label="Store language">
+              {LANGUAGE_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+            </select>
+            <p className="text-[11px] text-slate mt-1">The language you write your products, pages and menus in. Customers see it with no language folder in the web address; other languages come from Translate &amp; adapt. Changing it does not translate your content.</p>
+          </Field>
+
+          <Field label="Price format on your storefront">
+            <select value={currencyDisplay} onChange={e => setCurrencyDisplay(e.target.value as CurrencyDisplay)} className={inputCls} aria-label="Price format">
+              <option value="symbol">Symbol only — {moneyPreview('symbol', store?.baseCurrency)}</option>
+              <option value="code">Currency code only — {moneyPreview('code', store?.baseCurrency)}</option>
+              <option value="symbol_code">Symbol and code — {moneyPreview('symbol_code', store?.baseCurrency)}</option>
+            </select>
+            <p className="text-[11px] text-slate mt-1">How prices read for your customers, in every currency they shop in.</p>
           </Field>
         </div>
 
@@ -1012,7 +1046,7 @@ function CustomerPrivacyCard({ storeId, store, refetch }: {
 
       <div className="mt-5 border-t border-bone pt-4">
         <p className="text-[11.5px] text-slate">
-          Your Privacy Policy page's own content is edited from <span className="font-semibold text-charcoal">Online Store → Pages</span> — the footer link above will automatically point to it once you've created and tagged a "Privacy Policy" page there (Page Settings → Policy Type) and turned on "Show in footer".
+          Your Privacy Policy page's own content is written in <span className="font-semibold text-charcoal">Settings → Policies</span> (create it from a template, then edit it) — the footer link above points to it automatically once it is published.
         </p>
       </div>
     </div>

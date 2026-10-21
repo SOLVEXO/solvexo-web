@@ -2,6 +2,7 @@ import { getCurrencyDecimals } from '@/utils/currency';
 import type { AddressPayload } from '@/api/services/address';
 
 import { moneyText } from '../money';
+import { ts } from '@/utils/tStatic';
 export { moneyText };
 
 /** Rounds to the currency's minor unit. */
@@ -71,15 +72,15 @@ export type AddressErrors = Partial<Record<'recipientName' | 'phoneNumber' | 'ad
 
 export function validateAddress(a: AddressPayload): AddressErrors {
   const e: AddressErrors = {};
-  if (!a.recipientName.trim()) e.recipientName = 'Enter the recipient name.';
+  if (!a.recipientName.trim()) e.recipientName = ts('pg.enter_the_recipient_name', 'Enter the recipient name.');
   const digits = a.phoneNumber.replace(/\D/g, '');
-  if (!a.phoneNumber.trim()) e.phoneNumber = 'Enter a phone number.';
-  else if (digits.length < 5) e.phoneNumber = 'Enter a valid phone number.';
-  if (!a.addressLine1.trim()) e.addressLine1 = 'Enter the street address.';
-  if (!a.city.trim()) e.city = 'Enter the city.';
-  if (!a.state.trim()) e.state = 'Enter the state or province.';
-  if (!a.zipCode.trim()) e.zipCode = 'Enter the postal code.';
-  if (!(a.country ?? '').trim()) e.country = 'Select a country.';
+  if (!a.phoneNumber.trim()) e.phoneNumber = ts('pg.enter_a_phone_number', 'Enter a phone number.');
+  else if (digits.length < 5) e.phoneNumber = ts('pg.enter_a_valid_phone_number', 'Enter a valid phone number.');
+  if (!a.addressLine1.trim()) e.addressLine1 = ts('pg.enter_the_street_address', 'Enter the street address.');
+  if (!a.city.trim()) e.city = ts('pg.enter_the_city', 'Enter the city.');
+  if (!a.state.trim()) e.state = ts('pg.enter_the_state_or_province', 'Enter the state or province.');
+  if (!a.zipCode.trim()) e.zipCode = ts('pg.enter_the_postal_code', 'Enter the postal code.');
+  if (!(a.country ?? '').trim()) e.country = ts('pg.select_a_country', 'Select a country.');
   return e;
 }
 

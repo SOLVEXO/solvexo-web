@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { apiAutoTranslateEmail } from '@/api/services/storeNotifications';
+import { useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
 import { Button, Select } from '@/components/comman/ui';
 import { Modal } from '@/components/comman/ui/Modal';
 import { apiListSellerMarkets } from '@/api/services/marketsSeller';
@@ -20,7 +22,8 @@ interface Props {
 /** Opens the English editor, plus a language switcher (languages of the store's markets) that swaps to the translation editor. */
 export function EmailEditorHost({ storeId, email, eventTranslations, defaultTranslations, onClose, onSave, onSaveTranslation }: Props) {
   const [languages, setLanguages] = useState<string[]>([]);
-  const [locale, setLocale] = useState('en');
+  const sourceLanguage = useStoreWorkspaceOptional()?.store?.defaultLanguage ?? 'en';
+  const [locale, setLocale] = useState(sourceLanguage);
   const [pendingLocale, setPendingLocale] = useState<string | null>(null);
   const dirtyRef = useRef(false);
   const onDirtyChange = useCallback((d: boolean) => { dirtyRef.current = d; }, []);
@@ -32,12 +35,13 @@ export function EmailEditorHost({ storeId, email, eventTranslations, defaultTran
       .then(res => {
         if (cancelled) return;
         const set = new Set<string>();
-        (res.data ?? []).forEach(m => m.languages.forEach(l => { if (l && l !== 'en') set.add(l); }));
+        (res.data ?? []).forEach(m => m.languages.forEach(l => { if (l && l !== sourceLanguage) set.add(l); }));
+        if (sourceLanguage !== 'en') set.add('en'); // buyers in English get the built-in English text unless translated
         setLanguages([...set]);
       })
       .catch(() => { /* no switcher */ });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, sourceLanguage]);
 
   const change = (next: string) => {
     if (next === locale) return;
@@ -48,7 +52,7 @@ export function EmailEditorHost({ storeId, email, eventTranslations, defaultTran
   const switcher = languages.length > 0 ? (
     <div className="max-w-[260px]">
       <Select label="Language" value={locale} onChange={e => change(e.target.value)}>
-        <option value="en">English</option>
+        <option value={sourceLanguage}>{languageName(sourceLanguage)}</option>
         {languages.map(l => <option key={l} value={l}>{languageName(l)}{eventTranslations?.[email.key]?.[l] ? '' : ' (untranslated)'}</option>)}
       </Select>
     </div>
@@ -56,7 +60,7 @@ export function EmailEditorHost({ storeId, email, eventTranslations, defaultTran
 
   return (
     <>
-      {locale === 'en' ? (
+      {locale === sourceLanguage ? (
         <EmailEditorPanel storeId={storeId} email={email} onClose={onClose} onSave={onSave} headerExtra={switcher} onDirtyChange={onDirtyChange} />
       ) : (
         <EmailTranslationEditor
@@ -67,6 +71,8 @@ export function EmailEditorHost({ storeId, email, eventTranslations, defaultTran
           builtIn={defaultTranslations?.[locale]?.[email.key]}
           onSave={onSaveTranslation}
           onClose={onClose}
+          sourceLanguage={sourceLanguage}
+          onAutoTranslate={() => apiAutoTranslateEmail(storeId, { event: email.key, locale }).then(r => r.data)}
           headerExtra={switcher}
           onDirtyChange={onDirtyChange}
         />

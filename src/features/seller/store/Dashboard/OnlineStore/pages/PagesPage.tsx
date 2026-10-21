@@ -81,7 +81,10 @@ export function PagesPage() {
       .then(res => {
         setPages(res.data);
         const home = res.data.find(p => p.type === 'home');
-        setSelectedPageId(prev => prev ?? home?._id ?? res.data[0]?._id ?? null);
+        // `?page=<id>` (e.g. from Settings → Policies) opens that page first.
+        const requested = new URLSearchParams(window.location.search).get('page');
+        const wanted = requested ? res.data.find(p => p._id === requested)?._id : undefined;
+        setSelectedPageId(prev => wanted ?? prev ?? home?._id ?? res.data[0]?._id ?? null);
       })
       .catch(err => flash(false, err instanceof Error ? err.message : 'Could not load your pages. Refresh to try again.'))
       .finally(() => setPagesLoading(false));

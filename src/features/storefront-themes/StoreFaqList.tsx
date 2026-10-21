@@ -1,7 +1,9 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Minus, Plus } from 'lucide-react';
 import { apiListPublicStoreFaqs, type PublicStoreFaq } from '@/api/services/storeFaq';
+import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
+import { localizeFields } from '@/utils/storeText';
 
 interface FaqTokens {
   fonts: { display: string; body: string };
@@ -12,7 +14,9 @@ interface FaqTokens {
  *  schema.org FAQPage data so the questions can appear in search results. */
 export function StoreFaqList({ storeId, tokens }: { storeId: string; tokens: FaqTokens }) {
   const { t: tr } = useTranslation('storefront');
-  const [faqs, setFaqs] = useState<PublicStoreFaq[] | null>(null);
+  const [source, setFaqs] = useState<PublicStoreFaq[] | null>(null);
+  const textIndex = useStoreTextIndex();
+  const faqs = useMemo(() => (source ? source.map(f => localizeFields(f, `faq:${f._id}`, textIndex)) : source), [source, textIndex]);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const uid = useId();

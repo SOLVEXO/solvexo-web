@@ -8,7 +8,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { useToast } from '@/contexts/ToastContext';
 import { apiGetEnabledCurrencies } from '@/api/services/store';
 import {
-  apiCreateSellerMarket, apiDeleteSellerMarket, apiListSellerMarkets, apiUpdateSellerMarket,
+  apiCreateSellerMarket, apiDeleteSellerMarket, apiWarmUiLocales, apiListSellerMarkets, apiUpdateSellerMarket,
   type SellerMarket, type SellerMarketPayload,
 } from '@/api/services/marketsSeller';
 import { languageName } from '@/utils/languages';
@@ -57,6 +57,7 @@ export function MarketsSettings({ embedded = false }: { embedded?: boolean }) {
   const save = async (payload: SellerMarketPayload) => {
     if (editing && editing !== 'new') await apiUpdateSellerMarket(storeId, editing._id, payload);
     else await apiCreateSellerMarket(storeId, payload);
+    apiWarmUiLocales(payload.languages ?? []);
     toast.success(editing && editing !== 'new' ? 'Market saved.' : 'Market added.');
     setEditing(null);
     load();
@@ -153,6 +154,7 @@ export function MarketsSettings({ embedded = false }: { embedded?: boolean }) {
           market={editing === 'new' ? null : editing}
           currencies={currencies.length ? currencies : ['USD']}
           storeCurrency={store?.baseCurrency ?? 'USD'}
+          storeLanguage={store?.defaultLanguage ?? 'en'}
           onClose={() => setEditing(null)}
           onSave={save}
         />

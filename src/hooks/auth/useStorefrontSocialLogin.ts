@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { apiExchangeSocialCode, TokenStorage, LastRolePreference } from '@/api/services/auth';
 import { apiGetStoreSocialProviders, customerSocialStartUrl, type SocialProviderKey } from '@/api/services/customerSocialLogin';
 import { safeRedirectPath } from '@/utils/safeRedirect';
+import { ts } from '@/utils/tStatic';
 
 const REDIRECT_KEY = 'solvexo.storefrontSocialRedirect';
 
@@ -65,7 +66,7 @@ export function useStorefrontSocialLogin(storeId: string | undefined, redirectTo
         window.location.replace(takeRedirect());
       })
       .catch(err => {
-        setError(err instanceof Error ? err.message : 'Sign-in failed. Please try again.');
+        setError(err instanceof Error ? err.message : ts('pg.sign_in_failed_please_try_again', 'Sign-in failed. Please try again.'));
         setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('social_code'); return next; }, { replace: true });
         setLoading(false);
       });

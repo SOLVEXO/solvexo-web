@@ -58,13 +58,13 @@ export function DiscountPanel({ checkout, discounts: d, credit, currency, storeC
             <span>
               {checkout.storeCreditApplied
                 ? <>{ts('checkout.storeCredit', 'Store credit')} <strong>-{moneyText(storeCreditShown, currency)}</strong> {ts('checkout.applied', 'applied')}</>
-                : <>Store credit available: <strong>{moneyText(credit.balance, credit.balanceCurrency)}</strong></>}
+                : <>{ts('checkout.storeCreditAvailable', 'Store credit available:')} <strong>{moneyText(credit.balance, credit.balanceCurrency)}</strong></>}
             </span>
             {checkout.storeCreditApplied
               ? <TextLinkButton danger onClick={credit.remove} disabled={credit.busy}>{ts('checkout.remove', 'Remove')}</TextLinkButton>
               : <PillButton variant="outline" onClick={credit.apply} loading={credit.busy} style={{ height: 40, padding: '0 18px' }}>{ts('checkout.apply', 'Apply')}</PillButton>}
           </div>
-          {credit.msg && !(checkout.storeCreditApplied && credit.msg.startsWith('Applied')) && <p role="status" className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{credit.msg}</p>}
+          {credit.msg && !(checkout.storeCreditApplied && credit.msgApplied) && <p role="status" className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{credit.msg}</p>}
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import { imageFit } from '../../imageFit';
 import { fashionTheme as t, type FashionColors } from '../theme.config';
 import { registerFashionSection } from './sectionRegistry';
 import { SectionShell } from './SectionShell';
+import { ts } from '@/utils/tStatic';
 
 /**
  * Sections only Maison has. Each is declared in `theme.manifest.ts` (`customSections`) and stored as a `theme_section`
@@ -77,7 +78,7 @@ function SizeGuide({ section, colors }: { section: Section; colors: FashionColor
     <SectionShell colors={colors} heading={text(section.settings.heading)} align="center">
       <div className="mx-auto max-w-[760px]">
         {section.settings.showUnitToggle !== false && (
-          <div className="mb-4 flex justify-center gap-2" role="group" aria-label="Measurement unit">
+          <div className="mb-4 flex justify-center gap-2" role="group" aria-label={ts('pg.measurement_unit', 'Measurement unit')}>
             {(['cm', 'in'] as const).map(u => (
               <button key={u} type="button" aria-pressed={unit === u} onClick={() => setUnit(u)} className="cursor-pointer px-4 py-1.5 text-sm"
                 style={{ borderRadius: t.buttonRadiusPx, border: `1px solid ${unit === u ? colors.ink : colors.border}`, background: unit === u ? colors.ink : 'transparent', color: unit === u ? colors.bg : colors.ink }}>{u}</button>

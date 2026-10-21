@@ -6,6 +6,11 @@
  */
 const entries = new Map<string, { promise: Promise<unknown>; at: number }>();
 
+/** Pre-fill a key with a value already in hand (e.g. from a bundled response), so the next dedupedGet for it makes no request. */
+export function seedDedupedGet<T>(key: string, value: T, ttlMs = 5000): void {
+  entries.set(key, { promise: Promise.resolve(value), at: Date.now() - 5000 + ttlMs });
+}
+
 export function dedupedGet<T>(key: string, load: () => Promise<T>, ttlMs = 5000): Promise<T> {
   const hit = entries.get(key);
   if (hit && Date.now() - hit.at < ttlMs) return hit.promise as Promise<T>;

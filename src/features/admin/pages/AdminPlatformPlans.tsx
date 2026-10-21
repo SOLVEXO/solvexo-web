@@ -408,7 +408,6 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                   label="Uptime guarantee % (optional)" type="number" step="0.1" min={0} max={100}
                   value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', e.target.value === '' ? undefined : Number(e.target.value))}
                 />
-                <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
                 <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
                 <Input label="Max markets / currencies (-1=∞)" type="number" min={-1} value={limits.maxMarkets ?? ''} onChange={e => setLimit('maxMarkets', Number(e.target.value))} />
                 <Input label="Grace period (days)" type="number" min={0} value={gracePeriodDays} onChange={e => setGracePeriodDays(e.target.value)} />

@@ -23,13 +23,13 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
       setPoints(res.data.remainingBalance);
       setCopied(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'We could not redeem this reward.');
+      setError(err instanceof Error ? err.message : ts('pg.we_could_not_redeem_this_reward', 'We could not redeem this reward.'));
     } finally { setRedeeming(null); }
   };
 
   const copy = async () => {
     if (!voucher) return;
-    try { await navigator.clipboard.writeText(voucher.code); setCopied(true); } catch { setError('Copy is not available here. Select the code instead.'); }
+    try { await navigator.clipboard.writeText(voucher.code); setCopied(true); } catch { setError(ts('pg.copy_is_not_available_here_select_the', 'Copy is not available here. Select the code instead.')); }
   };
 
   return (
@@ -38,17 +38,17 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.your_balance', 'Your balance')}</p>
-            <p className="m-0 mt-1 text-4xl font-medium tracking-tight" aria-live="polite">{current.toLocaleString()} <span className="text-base font-normal" style={{ color: t.colors.inkMuted }}>points</span></p>
+            <p className="m-0 mt-1 text-4xl font-medium tracking-tight" aria-live="polite">{current.toLocaleString()} <span className="text-base font-normal" style={{ color: t.colors.inkMuted }}>{ts('pg.word_points', 'points')}</span></p>
           </div>
           {balance?.currentTier && <span className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}` }}><Award size={15} aria-hidden />{balance.currentTier}</span>}
         </div>
-        {balance?.nextTier && <p className="m-0 mt-4 text-sm" style={{ color: t.colors.inkMuted }}>{balance.nextTier.pointsNeeded.toLocaleString()} more points to reach <strong style={{ color: t.colors.ink }}>{balance.nextTier.name}</strong></p>}
+        {balance?.nextTier && <p className="m-0 mt-4 text-sm" style={{ color: t.colors.inkMuted }}>{balance.nextTier.pointsNeeded.toLocaleString()} {ts('pg.more_points_to_reach', 'more points to reach')} <strong style={{ color: t.colors.ink }}>{balance.nextTier.name}</strong></p>}
       </Card>
 
       {error && <Notice tone="error">{error}</Notice>}
       {voucher && (
-        <Notice tone="success" action={<PillButton variant="outline" onClick={() => void copy()} style={{ height: 40, padding: '0 16px' }}>{copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}{copied ? 'Copied' : 'Copy code'}</PillButton>}>
-          <p className="m-0">Redeemed {voucher.name}. Use this code in the promo field at checkout.</p>
+        <Notice tone="success" action={<PillButton variant="outline" onClick={() => void copy()} style={{ height: 40, padding: '0 16px' }}>{copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}{copied ? ts('pg.word_copied', 'Copied') : ts('pg.copy_code', 'Copy code')}</PillButton>}>
+          <p className="m-0">{ts('pg.redeemed_name', 'Redeemed {{name}}.', { name: voucher.name })} {ts('pg.use_this_code_in_the_promo_field_at', 'Use this code in the promo field at checkout.')}</p>
           <p className="m-0 mt-1 font-mono text-base font-semibold">{voucher.code}</p>
         </Notice>
       )}
@@ -66,10 +66,10 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
                     <div className="min-w-0">
                       <p className="m-0 text-[15px] font-medium">{r.name}</p>
                       {r.description && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{r.description}</p>}
-                      <p className="m-0 text-[13px] font-semibold">{r.pointsCost.toLocaleString()} points</p>
+                      <p className="m-0 text-[13px] font-semibold">{r.pointsCost.toLocaleString()} {ts('pg.word_points', 'points')}</p>
                     </div>
                   </div>
-                  <PillButton disabled={!can} loading={redeeming === r._id} onClick={() => void redeem(r)} aria-label={can ? `Redeem ${r.name}` : `Not enough points to redeem ${r.name}`}>{can ? 'Redeem' : 'Not enough points'}</PillButton>
+                  <PillButton disabled={!can} loading={redeeming === r._id} onClick={() => void redeem(r)} aria-label={can ? ts('pg.redeem_name', 'Redeem {{name}}', { name: r.name }) : ts('pg.not_enough_points_to_redeem_name', 'Not enough points to redeem {{name}}', { name: r.name })}>{can ? ts('pg.word_redeem', 'Redeem') : ts('pg.not_enough_points', 'Not enough points')}</PillButton>
                 </li>
               );
             })}

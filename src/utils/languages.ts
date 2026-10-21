@@ -1,19 +1,11 @@
-/** Languages a store can offer on a market (ISO 639-1). `en` is the store's own language and is never translated. */
+import { LANGUAGE_DATA } from '@/i18n/languageData';
+
+/** Languages a store can publish in (ISO 639-1). The language the store is written in is the source and is never translated. */
 export interface LanguageOption { code: string; name: string }
 
-export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: 'en', name: 'English' }, { code: 'ur', name: 'Urdu' }, { code: 'ar', name: 'Arabic' },
-  { code: 'bn', name: 'Bengali' }, { code: 'de', name: 'German' }, { code: 'es', name: 'Spanish' },
-  { code: 'fa', name: 'Persian' }, { code: 'fr', name: 'French' }, { code: 'he', name: 'Hebrew' },
-  { code: 'hi', name: 'Hindi' }, { code: 'id', name: 'Indonesian' }, { code: 'it', name: 'Italian' },
-  { code: 'ja', name: 'Japanese' }, { code: 'ko', name: 'Korean' }, { code: 'ms', name: 'Malay' },
-  { code: 'nl', name: 'Dutch' }, { code: 'pa', name: 'Punjabi' }, { code: 'pl', name: 'Polish' },
-  { code: 'pt', name: 'Portuguese' }, { code: 'ru', name: 'Russian' }, { code: 'sv', name: 'Swedish' },
-  { code: 'ta', name: 'Tamil' }, { code: 'th', name: 'Thai' }, { code: 'tr', name: 'Turkish' },
-  { code: 'vi', name: 'Vietnamese' }, { code: 'zh', name: 'Chinese' },
-];
+export const LANGUAGE_OPTIONS: LanguageOption[] = LANGUAGE_DATA.map(l => ({ code: l.code, name: l.name }));
 
-const RTL = new Set(['ur', 'ar', 'he', 'fa']);
+const RTL = new Set(LANGUAGE_DATA.filter(l => l.rtl).map(l => l.code));
 
 export function isRtlLanguage(code: string | null | undefined): boolean {
   return !!code && RTL.has(code.toLowerCase());

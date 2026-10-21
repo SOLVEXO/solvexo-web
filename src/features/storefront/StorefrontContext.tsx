@@ -212,6 +212,7 @@ function resolveLinkTarget(link: StorefrontLinkSettings): { to?: string; href?: 
   if (link.linkType === 'phone' && link.url) return { href: `tel:${link.url.replace(/[^\d+]/g, '')}` };
   if (link.linkType === 'cart') return { to: `/cart` };
   if (link.linkType === 'account') return { to: `/account` };
+  if (link.linkType === 'faqs') return { to: `/faqs` };
   if (link.linkType === 'blog') return { to: `/blog` };
   if (link.linkType === 'search') return { to: `/search` };
   if (link.linkType === 'page' && link.pageSlug) return { to: `/${link.pageSlug}` };

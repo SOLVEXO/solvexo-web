@@ -26,8 +26,11 @@ export const IS_STOREFRONT_HOST: boolean =
  * path prefix (`/ur/...`), no prefix = the default language. Seller/admin/marketing
  * apps always stay English (the browser language must never flip them to RTL).
  */
-export const BOOT_LOCALE: string =
-  (IS_STOREFRONT_HOST && typeof window !== 'undefined' ? localeFromPathname(window.location.pathname) : null) ?? DEFAULT_LOCALE;
+const BOOT_PREFIX: string | null =
+  IS_STOREFRONT_HOST && typeof window !== 'undefined' ? localeFromPathname(window.location.pathname) : null;
+/** True when the URL carries a language folder (`/ur/...`); without one the language is the store's own default. */
+export const BOOT_HAS_PREFIX: boolean = BOOT_PREFIX !== null;
+export const BOOT_LOCALE: string = BOOT_PREFIX ?? DEFAULT_LOCALE;
 
 // `translation` = app-wide strings; `storefront` = buyer-facing storefront UI (shared bundle);
 // `theme` = the active theme's own locale files (registerThemeTranslations), used as the fallback layer.
@@ -54,13 +57,77 @@ const lazyStorefront = import.meta.glob('./locales/storefront.*.json', { import:
 export async function ensureBundle(lang: string): Promise<void> {
   if (i18n.hasResourceBundle(lang, 'storefront')) return;
   const load = lazyStorefront[`./locales/storefront.${lang}.json`];
-  if (!load) return;
-  i18n.addResourceBundle(lang, 'storefront', await load(), true, true);
+  if (load) {
+    i18n.addResourceBundle(lang, 'storefront', await load(), true, true);
+    return;
+  }
+  // No file ships for this language: the API serves a bundle it translated once (and starts that the first time a language is used).
+  const strings = await fetchGeneratedBundle(lang);
+  if (strings) i18n.addResourceBundle(lang, 'storefront', strings, true, true);
+}
+
+/** Plural variants (key_one / key_other...) are per language, not missing text. */
+const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
+const FILL_TTL_MS = 24 * 60 * 60_000;
+
+function flatKeys(obj: unknown, prefix = '', out: string[] = []): string[] {
+  if (!obj || typeof obj !== 'object') return out;
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    const key = prefix ? `${prefix}.${k}` : k;
+    if (typeof v === 'string') out.push(key); else flatKeys(v, key, out);
+  }
+  return out;
+}
+
+/**
+ * Labels added to the storefront after a language's bundle was written exist only in English there. Ask the API for just
+ * those (translated once, then stored) and lay them over the bundle. Best effort and cached for a day.
+ */
+export async function fillMissingKeys(lang: string): Promise<void> {
+  if (lang === DEFAULT_LOCALE) return;
+  try {
+    const missing = flatKeys(storefrontEn).filter(k => !PLURAL_SUFFIX.test(k) && !i18n.exists(k, { lng: lang, ns: 'storefront', fallbackLng: [] }));
+    if (!missing.length) return;
+    const cacheKey = `solvexo_uifill_${lang}`;
+    let cached: { t: number; strings: Record<string, string>; tried: string[] } = { t: 0, strings: {}, tried: [] };
+    try { const raw = JSON.parse(localStorage.getItem(cacheKey) ?? 'null'); if (raw && Date.now() - raw.t < FILL_TTL_MS) cached = raw; } catch { /* optional */ }
+    const fresh = missing.filter(k => !(k in cached.strings) && !cached.tried.includes(k)).slice(0, 60);
+    if (fresh.length) {
+      const { default: client } = await import('@/api/client');
+      const res = await client.post<never, { data?: { strings?: Record<string, string> } }>(`/api/public/ui-locale/${lang}/fill`, { keys: fresh });
+      Object.assign(cached.strings, res.data?.strings ?? {});
+      cached.tried.push(...fresh.filter(k => !(k in cached.strings)));
+      cached.t = cached.t || Date.now();
+      try { localStorage.setItem(cacheKey, JSON.stringify(cached)); } catch { /* quota */ }
+    }
+    for (const [key, value] of Object.entries(cached.strings)) i18n.addResource(lang, 'storefront', key, value);
+    if (Object.keys(cached.strings).length) await i18n.changeLanguage(i18n.language);
+  } catch { /* English stays for those labels */ }
+}
+
+const GENERATED_TTL_MS = 24 * 60 * 60_000;
+
+async function fetchGeneratedBundle(lang: string): Promise<Record<string, unknown> | null> {
+  const key = `solvexo_ui_${lang}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem(key) ?? 'null') as { t: number; strings: Record<string, unknown> } | null;
+    if (cached && Date.now() - cached.t < GENERATED_TTL_MS) return cached.strings;
+  } catch { /* the cache is optional */ }
+  try {
+    const { default: client } = await import('@/api/client'); // lazy: i18n boots before the API client is needed
+    const res = await client.get<never, { data?: { status: string; strings?: Record<string, unknown> } }>(`/api/public/ui-locale/${lang}`);
+    const data = res.data;
+    if (data?.status !== 'ready' || !data.strings) return null; // still being generated (or unavailable): English text for now
+    try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), strings: data.strings })); } catch { /* quota */ }
+    return data.strings;
+  } catch {
+    return null;
+  }
 }
 
 /** Resolves once the boot language's storefront bundle is registered (main.tsx awaits it before rendering). */
 export const i18nReady: Promise<void> = ensureBundle(uiLanguageFor(BOOT_LOCALE))
-  .then(() => { void i18n.changeLanguage(uiLanguageFor(BOOT_LOCALE)); })
+  .then(() => { void i18n.changeLanguage(uiLanguageFor(BOOT_LOCALE)).then(() => fillMissingKeys(uiLanguageFor(BOOT_LOCALE))); })
   .catch(() => undefined);
 
 /** Applies <html lang/dir> + script fonts for the CONTENT language (may be one with no UI strings, e.g. fr). */
@@ -71,10 +138,32 @@ export function applyDocumentLanguage(lang: string): void {
 
 if (typeof document !== 'undefined' && IS_STOREFRONT_HOST) applyDocumentLanguage(BOOT_LOCALE);
 
+/** Loads the UI bundle of `lang` and switches to it (a store whose own language is not English opens in it). */
+export async function activateLanguage(lang: string): Promise<void> {
+  const ui = uiLanguageFor(lang);
+  await ensureBundle(ui).catch(() => undefined);
+  await i18n.changeLanguage(ui);
+  void fillMissingKeys(ui);
+  if (IS_STOREFRONT_HOST) applyDocumentLanguage(lang);
+}
+
+/**
+ * The seller's own wording of built-in buttons / labels (`ui#<key>` entries of Translate & adapt → Buttons & labels)
+ * laid over the language's bundle. The bundle is loaded first so the override never hides it.
+ */
+export async function applyUiOverrides(lang: string, strings: Record<string, string>): Promise<void> {
+  const entries = Object.entries(strings).filter(([k, v]) => k.startsWith('ui#') && v);
+  if (!entries.length) return;
+  const ui = uiLanguageFor(lang);
+  await ensureBundle(ui).catch(() => undefined);
+  for (const [key, value] of entries) i18n.addResource(ui, 'storefront', key.slice(3), value);
+  await i18n.changeLanguage(i18n.language); // re-render what is already on screen
+}
+
 /** Switches the active content language without a reload (UI strings fall back to English when missing). */
 export function setActiveLanguage(lang: string): void {
   const ui = uiLanguageFor(lang);
-  void ensureBundle(ui).then(() => i18n.changeLanguage(ui));
+  void ensureBundle(ui).then(() => i18n.changeLanguage(ui)).then(() => fillMissingKeys(ui));
   if (IS_STOREFRONT_HOST) applyDocumentLanguage(lang);
 }
 
@@ -103,6 +192,6 @@ export default i18n;
 /** Prefixes an in-app absolute path with the active language folder (/login -> /ur/login) for hard links
  *  (a href, window.location, payment return URLs) that bypass the router basename. */
 export function localePath(path: string): string {
-  if (!IS_STOREFRONT_HOST || BOOT_LOCALE === DEFAULT_LOCALE) return path;
+  if (!IS_STOREFRONT_HOST || !BOOT_HAS_PREFIX) return path;
   return `/${BOOT_LOCALE}${path.startsWith("/") ? path : `/${path}`}`;
 }

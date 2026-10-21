@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
 import { apiGetMyReviews, type MyReviewEntry } from '@/api/services/rating';
 import { sortAddresses } from './accountUi';
+import { ts } from '@/utils/tStatic';
 
 /** Loads the buyer's saved addresses; `reload` refetches (old rows stay on screen meanwhile). */
 export function useMyAddresses() {
@@ -15,7 +16,7 @@ export function useMyAddresses() {
     let cancelled = false;
     apiGetMyAddresses()
       .then(res => { if (!cancelled) { setAddresses(sortAddresses(res.data ?? [])); setDone({ attempt, error: '' }); } })
-      .catch(err => { if (!cancelled) setDone({ attempt, error: err instanceof Error ? err.message : 'Could not load your addresses.' }); });
+      .catch(err => { if (!cancelled) setDone({ attempt, error: err instanceof Error ? err.message : ts('pg.could_not_load_your_addresses', 'Could not load your addresses.') }); });
     return () => { cancelled = true; };
   }, [attempt]);
 
@@ -42,7 +43,7 @@ export function useMyReviews() {
         setTotalPages(Math.max(1, res.data.pagination?.totalPages ?? 1));
         setDone({ key, error: '' });
       })
-      .catch(err => { if (!cancelled) setDone({ key, error: err instanceof Error ? err.message : 'Could not load your reviews.' }); });
+      .catch(err => { if (!cancelled) setDone({ key, error: err instanceof Error ? err.message : ts('pg.could_not_load_your_reviews', 'Could not load your reviews.') }); });
     return () => { cancelled = true; };
   }, [page, key]);
 

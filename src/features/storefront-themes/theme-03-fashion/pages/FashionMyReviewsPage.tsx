@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { apiDeleteReview, type MyReviewEntry } from '@/api/services/rating';
-import { REVIEW_STATUS_LABEL, formatAccountDate, reviewText } from '../../accountUi';
+import { reviewStatusLabel, formatAccountDate, reviewText } from '../../accountUi';
 import { useMyReviews } from '../../useAccountLists';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { fashionTheme as t } from '../theme.config';
@@ -17,7 +17,7 @@ import { useConfirmAction } from '../../core/account/useConfirmAction';
 
 function Stars({ value }: { value: number }) {
   return (
-    <span className="inline-flex gap-0.5" role="img" aria-label={`${value} out of 5 stars`}>
+    <span className="inline-flex gap-0.5" role="img" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value })}>
       {[1, 2, 3, 4, 5].map(i => <Star key={i} size={15} aria-hidden style={{ color: t.colors.ink, fill: i <= value ? t.colors.ink : 'transparent' }} />)}
     </span>
   );
@@ -26,7 +26,7 @@ function Stars({ value }: { value: number }) {
 /** `/reviews`: the buyer's own product reviews (paged) with edit and delete. */
 export function FashionMyReviewsPage() {
   const guest = useRequireRealAccount();
-  useStorefrontSeo({ title: 'My reviews', noindex: true });
+  useStorefrontSeo({ title: ts('pg.my_reviews', 'My reviews'), noindex: true });
   const { reviews, totalPages, page, setPage, loading, error, reload } = useMyReviews();
   const [editing, setEditing] = useState<MyReviewEntry | null>(null);
   const del = useConfirmAction<MyReviewEntry>(r => apiDeleteReview(r.reviewId).then(() => undefined), reload);
@@ -35,7 +35,7 @@ export function FashionMyReviewsPage() {
   const link = 'cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold underline';
 
   return (
-    <AccountLayout title="My" accent={ts('pg.word_reviews', 'reviews')} subtitle="What you have said about the products you bought.">
+    <AccountLayout title={ts('pg.word_my', 'My')} accent={ts('pg.word_reviews', 'reviews')} subtitle={ts('pg.what_you_have_said_about_the_products', 'What you have said about the products you bought.')}>
       <PendingReviews onReviewed={reload} />
       {loading && !reviews ? <div aria-busy="true"><SkeletonBlock h={130} rows={3} /></div>
         : error && !reviews ? <ErrorState message={error} onRetry={reload} />
@@ -49,11 +49,11 @@ export function FashionMyReviewsPage() {
                   <div className="flex gap-4">
                     {r.product?.image && <img src={r.product.image} alt="" className="size-16 shrink-0 object-cover" style={{ borderRadius: 12 }} />}
                     <div className="min-w-0 flex-1">
-                      <p className="m-0 text-base font-semibold">{r.product?.name ?? 'Product no longer available'}</p>
+                      <p className="m-0 text-base font-semibold">{r.product?.name ?? ts('pg.product_no_longer_available', 'Product no longer available')}</p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <Stars value={r.rating ?? 0} />
                         <span className="text-[13px]" style={{ color: t.colors.inkMuted }}>{formatAccountDate(r.createdAt)}</span>
-                        <StatusPill tone={r.status === 'rejected' ? 'bad' : r.status === 'published' ? 'good' : 'warn'}>{REVIEW_STATUS_LABEL[r.status] ?? r.status}</StatusPill>
+                        <StatusPill tone={r.status === 'rejected' ? 'bad' : r.status === 'published' ? 'good' : 'warn'}>{reviewStatusLabel(r.status) ?? r.status}</StatusPill>
                       </div>
                     </div>
                   </div>
@@ -75,14 +75,14 @@ export function FashionMyReviewsPage() {
             {totalPages > 1 && (
               <nav aria-label={ts('pg.reviews_pages', 'Reviews pages')} className="mt-6 flex items-center justify-between gap-3 text-sm" style={{ color: t.colors.inkMuted }}>
                 <PillButton variant="outline" disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)}>{ts('orders.previous', 'Previous')}</PillButton>
-                <span>Page {page} of {totalPages}</span>
+                <span>{ts('pg.page_page_of_total', 'Page {{page}} of {{total}}', { page, total: totalPages })}</span>
                 <PillButton variant="outline" disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)}>{ts('orders.next', 'Next')}</PillButton>
               </nav>
             )}
           </>
         )}
       {editing && <ReviewEditDialog key={editing.reviewId} review={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
-      {del.target && <ConfirmDialog title={ts('reviews.deleteTitle', 'Delete review')} confirmLabel="Delete" busy={del.busy} error={del.error} onClose={del.close} onConfirm={() => void del.confirm()} message={ts('pg.are_you_sure_you_want_to_delete_this_rev', 'Are you sure you want to delete this review? This cannot be undone.')} />}
+      {del.target && <ConfirmDialog title={ts('reviews.deleteTitle', 'Delete review')} confirmLabel={ts('addresses.delete', 'Delete')} busy={del.busy} error={del.error} onClose={del.close} onConfirm={() => void del.confirm()} message={ts('pg.are_you_sure_you_want_to_delete_this_rev', 'Are you sure you want to delete this review? This cannot be undone.')} />}
     </AccountLayout>
   );
 }

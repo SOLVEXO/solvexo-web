@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { localizeCategory } from '../../utils/activeStoreText';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -68,11 +69,13 @@ export function apiGetCategoryTree(id?: string) {
  *  created, each with its own nested children. Entirely separate from the
  *  legacy global tree above; never mixes with another store's categories. */
 export function apiGetStoreCategoryTree(storeId: string) {
-  return client.get<never, CategoryTreeListResponse>(`${ENDPOINTS.CATEGORIES.TREE}?storeId=${storeId}`);
+  return client.get<never, CategoryTreeListResponse>(`${ENDPOINTS.CATEGORIES.TREE}?storeId=${storeId}`)
+    .then(res => (Array.isArray(res.data) ? { ...res, data: res.data.map(localizeCategory) } : res));
 }
 
 export function apiGetCategoryById(id: string) {
-  return client.get<never, CategoryWithChildrenResponse>(ENDPOINTS.CATEGORIES.GET_BY_ID(id));
+  return client.get<never, CategoryWithChildrenResponse>(ENDPOINTS.CATEGORIES.GET_BY_ID(id))
+    .then(res => (res.data?.category ? { ...res, data: { category: localizeCategory(res.data.category), children: (res.data.children ?? []).map(localizeCategory) } } : res));
 }
 
 // Legacy global taxonomy: main categories (no parentId) are admin-only

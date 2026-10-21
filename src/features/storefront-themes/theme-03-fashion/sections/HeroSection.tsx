@@ -112,11 +112,11 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
           {pagination === 'counter'
             ? <span className="text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
             : slides.map((_, k) => (
-              <button key={k} type="button" aria-label={`Go to slide ${k + 1}`} aria-current={k === cur} onClick={() => setI(k)} className="h-[3px] cursor-pointer border-0 p-0 transition-all"
+              <button key={k} type="button" aria-label={ts('sections.goToSlide', 'Go to slide {{n}}', { n: k + 1 })} aria-current={k === cur} onClick={() => setI(k)} className="h-[3px] cursor-pointer border-0 p-0 transition-all"
                 style={{ width: k === cur ? 36 : 20, background: k === cur ? '#fff' : 'rgba(255,255,255,.5)' }} />
             ))}
           {settings.autoplay !== false && settings.showPauseButton === true && (
-            <button type="button" aria-label={paused ? 'Play slideshow' : 'Pause slideshow'} onClick={() => setPaused(p => !p)} className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black">
+            <button type="button" aria-label={paused ? ts('sections.playSlideshow', 'Play slideshow') : ts('sections.pauseSlideshow', 'Pause slideshow')} onClick={() => setPaused(p => !p)} className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black">
               {paused ? <Play size={12} /> : <Pause size={12} />}
             </button>
           )}

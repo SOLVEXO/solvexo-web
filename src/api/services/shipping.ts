@@ -1,4 +1,5 @@
 import client from '../client';
+import { localizeShippingZone } from '../../utils/activeStoreText';
 import { ENDPOINTS } from '../endpoints';
 
 export type ShippingZoneType = 'shipping' | 'local_delivery' | 'pickup';
@@ -101,7 +102,8 @@ export function apiGetShippingZones(storeId?: string, currency?: string) {
   if (currency) params.set('currency', currency);
   const qs = params.toString();
   const url = qs ? `${ENDPOINTS.SHIPPING.GET_SHIPPING_ZONES}?${qs}` : ENDPOINTS.SHIPPING.GET_SHIPPING_ZONES;
-  return client.get<never, ShippingZonesResponse>(url);
+  return client.get<never, ShippingZonesResponse>(url)
+    .then(res => (Array.isArray(res.data) ? { ...res, data: res.data.map(localizeShippingZone) } : res));
 }
 
 // ── Seller's own store-scoped zones (management view — every status, both

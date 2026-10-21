@@ -89,8 +89,8 @@ export function apiGetActivityTimeline(storeId: string, targetId: string) {
 
 /** GET /api/activity-log/:storeId/export — triggers a CSV file download */
 export async function apiExportActivityLog(storeId: string, storeName: string) {
-  const csv = await client.get<never, string>(ENDPOINTS.ACTIVITY_LOG.EXPORT(storeId), { responseType: 'text' });
-  const blob = new Blob([csv], { type: 'text/csv' });
+  // A Blob, not 'text': the response interceptor rejects any non-object body.
+  const blob = await client.get<never, Blob>(ENDPOINTS.ACTIVITY_LOG.EXPORT(storeId), { responseType: 'blob' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -169,8 +169,7 @@ export function apiGetAdminActivityTimeline(targetId: string) {
 
 /** GET /api/admin/activity-log/export — triggers a CSV file download */
 export async function apiExportAdminActivityLog(query: AdminActivityLogQuery = {}) {
-  const csv = await client.get<never, string>(ENDPOINTS.ADMIN_ACTIVITY_LOG.EXPORT, { params: query, responseType: 'text' });
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = await client.get<never, Blob>(ENDPOINTS.ADMIN_ACTIVITY_LOG.EXPORT, { params: query, responseType: 'blob' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

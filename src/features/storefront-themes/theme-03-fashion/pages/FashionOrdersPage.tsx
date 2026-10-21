@@ -32,9 +32,9 @@ function OrderRow({ o }: { o: OrderSummary }) {
             {items.length > shown.length && <span className="grid size-12 place-items-center text-xs font-medium" style={{ background: t.colors.bgAlt, borderRadius: 12, border: `2px solid ${t.colors.bg}` }}>+{items.length - shown.length}</span>}
           </div>
           <div className="min-w-[160px] flex-1">
-            <Link to={`/orders/${o.orderId}`} className="text-base font-semibold no-underline" style={{ color: t.colors.ink }}>Order #{o.orderNumber}</Link>
+            <Link to={`/orders/${o.orderId}`} className="text-base font-semibold no-underline" style={{ color: t.colors.ink }}>{ts('orders.orderNumber', 'Order #{{number}}', { number: o.orderNumber })}</Link>
             <p className="m-0 mt-0.5 text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(o.createdAt)} · {items.length} {items.length === 1 ? 'item' : 'items'}</p>
-            {pickup && <p className="m-0 mt-0.5 text-[13px]" style={{ color: t.colors.inkMuted }}>Pickup: {pickup}</p>}
+            {pickup && <p className="m-0 mt-0.5 text-[13px]" style={{ color: t.colors.inkMuted }}>{ts('pg.pickup_location', 'Pickup: {{location}}', { location: pickup })}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <OrderPill badge={derivePaymentBadge(o)} />
@@ -42,7 +42,7 @@ function OrderRow({ o }: { o: OrderSummary }) {
           </div>
           <div className="flex items-center gap-4 sm:ml-auto">
             <p className="m-0 text-base font-semibold">{nativeMoney(o.totalAmount, o.currency)}</p>
-            <Link to={`/orders/${o.orderId}`} aria-label={`View order ${o.orderNumber}`} className="grid size-10 place-items-center rounded-full no-underline" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink }}><ArrowUpRight size={18} aria-hidden /></Link>
+            <Link to={`/orders/${o.orderId}`} aria-label={ts('pg.view_order_number', 'View order {{number}}', { number: o.orderNumber })} className="grid size-10 place-items-center rounded-full no-underline" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink }}><ArrowUpRight size={18} aria-hidden /></Link>
           </div>
         </div>
       </Card>
@@ -51,14 +51,14 @@ function OrderRow({ o }: { o: OrderSummary }) {
 }
 
 function OrdersList() {
-  useStorefrontSeo({ title: 'Orders', noindex: true });
+  useStorefrontSeo({ title: ts('account.orders', 'Orders'), noindex: true });
   const [page, setPage] = useState(1);
   const { data, loading, error, retry } = useLoad(() => apiGetMyOrders({ page, limit: LIMIT }), [page]);
   const orders = data?.data.orders ?? [];
   const totalPages = Math.max(1, data?.data.pagination?.totalPages ?? 1);
 
   return (
-    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_orders', 'orders')} subtitle="Track deliveries, download receipts and buy your favourites again.">
+    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_orders', 'orders')} subtitle={ts('pg.track_deliveries_download_receipts_and', 'Track deliveries, download receipts and buy your favourites again.')}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_orders', 'Loading orders')}><SkeletonBlock h={92} rows={3} /></div>
       ) : error ? (

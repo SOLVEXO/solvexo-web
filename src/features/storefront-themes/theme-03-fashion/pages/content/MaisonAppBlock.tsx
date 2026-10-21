@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { Star } from 'lucide-react';
 import { fashionTheme as t } from '../../theme.config';
+import { ts } from '@/utils/tStatic';
 
 type Settings = Record<string, unknown>;
 
@@ -13,7 +14,7 @@ const REGISTRY: Record<string, (s: Settings) => ReactNode> = {
           {[1, 2, 3, 4, 5].map(i => <Star key={i} size={13} fill={t.colors.ink} color={t.colors.ink} />)}
         </span>
       )}
-      <span className="text-[13px]">{typeof s.text === 'string' && s.text ? s.text : 'Trusted by our customers'}</span>
+      <span className="text-[13px]">{typeof s.text === 'string' && s.text ? s.text : ts('pg.trusted_by_our_customers', 'Trusted by our customers')}</span>
     </div>
   ),
 };

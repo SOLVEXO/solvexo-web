@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from 'react';
+import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
@@ -14,7 +15,7 @@ import { FashionQuickView } from './product/FashionQuickView';
 /** Card for every real product grid (collection, search, featured): wires cart, wishlist and currency into the view. */
 export function FashionProductCard({ product, currency }: { product: PublicStoreProduct; currency: string }) {
   const { store } = useStorefront();
-  const { convert } = useCurrencyPreference();
+  const { convert, canConvert } = useCurrencyPreference();
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
@@ -38,7 +39,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   const compare = product.compareAtPrice;
   const percentOff = price != null && compare != null && compare > price ? Math.round((1 - price / compare) * 100) : 0;
   const soldOut = product.inStock === false;
-  const show = (n: number) => moneyText(convert(n, base), currency);
+  const show = (n: number) => (canConvert(base, currency) ? moneyText(convert(n, base), currency) : '—');
   const hasVariant = !!product.variantId;
 
   const add = async (e: MouseEvent) => {
@@ -56,7 +57,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   return (
     <>
     <FashionProductCardView
-      to={`/product/${product.slug || product._id}`}
+      to={`/product/${handleOf(product)}`}
       name={p.name}
       image={hoverImage ?? product.images?.[0]}
       swatches={swatches}

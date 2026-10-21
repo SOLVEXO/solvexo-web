@@ -3,6 +3,9 @@ import path from 'node:path';
 
 const API_ORIGIN = (process.env.SOLVEXO_API_URL || process.env.VITE_API_URL || 'https://api.solvexo.store').replace(/\/$/, '');
 
+// A store without its own favicon shows no icon at all (never the platform's).
+const BLANK_ICON = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
@@ -12,7 +15,8 @@ function injectMetadata(html, meta) {
     `<title>${escapeHtml(meta.title || 'Online Store')}</title>`,
     meta.description ? `<meta name="description" content="${escapeHtml(meta.description)}">` : '',
     meta.canonicalUrl ? `<link rel="canonical" href="${escapeHtml(meta.canonicalUrl)}">` : '',
-    meta.favicon || meta.ogImage ? `<link rel="icon" href="${escapeHtml(meta.favicon || meta.ogImage)}">` : '',
+    ...(Array.isArray(meta.alternates) ? meta.alternates.map((a) => `<link rel="alternate" hreflang="${escapeHtml(a.hreflang)}" href="${escapeHtml(a.href)}">`) : []),
+    `<link rel="icon" href="${meta.favicon ? escapeHtml(meta.favicon) : BLANK_ICON}">`,
     `<meta name="robots" content="${meta.noindex ? 'noindex, nofollow' : 'index, follow'}">`,
     `<meta property="og:type" content="website">`,
     `<meta property="og:title" content="${escapeHtml(meta.ogTitle || meta.title || '')}">`,
@@ -28,10 +32,12 @@ function injectMetadata(html, meta) {
   const withoutOldSeo = html
     .replace(/<title>[\s\S]*?<\/title>/i, '')
     .replace(/<link\s+rel=["']canonical["'][^>]*>/ig, '')
+    .replace(/<link\s+rel=["']alternate["'][^>]*hreflang[^>]*>/ig, '')
     .replace(/<link\s+rel=["'](?:icon|shortcut icon)["'][^>]*>/ig, '')
     .replace(/<meta\s+(?:name|property)=["'](?:description|robots|og:[^"']+|twitter:[^"']+)["'][^>]*>/ig, '')
     .replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/ig, '');
-  return withoutOldSeo.replace('</head>', `    ${tags}\n  </head>`);
+  const withLang = /^[a-z]{2,3}$/i.test(String(meta.lang ?? '')) ? withoutOldSeo.replace(/<html([^>]*?)\slang="[^"]*"/i, `<html$1 lang="${meta.lang}"`) : withoutOldSeo;
+  return withLang.replace('</head>', `    ${tags}\n  </head>`);
 }
 
 async function sendStorefrontShell(response, status = 200) {

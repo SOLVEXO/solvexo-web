@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ts } from '@/utils/tStatic';
+import { scrollRootToTop } from '@/utils/scrollRoot';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -24,7 +25,7 @@ export function FashionCheckoutPage() {
   useStorefrontSeo({ title: placed ? ts('checkout.orderConfirmed', 'Order confirmed') : ts('checkout.title', 'Checkout'), noindex: true });
   // The confirmation replaces a long, scrolled page: show it from the top.
   const isPlaced = !!placed;
-  useEffect(() => { if (isPlaced) window.scrollTo({ top: 0 }); }, [isPlaced]);
+  useEffect(() => { if (isPlaced) scrollRootToTop(); }, [isPlaced]);
 
   // "Buy it now" (?buyNow=productId:variantId): only that line is checked out, and only if it is really in the cart.
   const wanted = parseBuyNow(params.get('buyNow'));

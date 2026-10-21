@@ -26,6 +26,7 @@ import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { AnimatePresence } from 'motion/react';
+import { COUNTRY_OPTIONS } from '@/utils/countries';
 
 const ONBOARDING_HIGHLIGHTS = [
   { Icon: Store,     text: 'A store built around how you sell' },
@@ -140,6 +141,9 @@ interface StoreForm {
    *  backend as part of store creation. Locked forever once the store has
    *  its first product (see CreateStorePayload.baseCurrency). */
   baseCurrency: SupportedCurrency;
+  /** Store country (ISO-3166 alpha-2): decides which payment providers the store can use (Shopify reads the store
+   *  address). Optional only because drafts saved before this field existed lack it. */
+  country?: string;
   // Set only if the seller explicitly picks a real plan on Step 2 instead of
   // starting the trial (see Step2Payment) — null means "start the trial",
   // exactly like today. Never sent as part of store creation itself; applied
@@ -202,7 +206,8 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void;
 }) {
   const [preview, setPreview] = useState('');
-  const canProceed = form.storeName.trim().length > 0;
+  const canProceed = form.storeName.trim().length > 0 && !!form.country;
+  const [countryTouched, setCountryTouched] = useState(false);
   const { upload: uploadLogo, uploadUrl: uploadLogoUrl, uploading: logoUploading } = useUpload('public');
   const [currencyOptions, setCurrencyOptions] = useState<string[]>([]);
   // Tracks whether the seller has manually touched the currency picker —
@@ -213,9 +218,10 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   // both fire once on mount and may resolve after the seller has already
   // started typing other fields, so they must never merge against a stale
   // closure of `form` and clobber it.
-  const latestRef = useRef({ form, currencyTouched });
+  const latestRef = useRef({ form, currencyTouched, countryTouched });
   latestRef.current.form = form;
   latestRef.current.currencyTouched = currencyTouched;
+  latestRef.current.countryTouched = countryTouched;
 
   useEffect(() => {
     apiGetEnabledCurrencies()
@@ -236,10 +242,13 @@ function Step1StoreInfo({ form, setForm, onNext }: {
     apiSuggestLocation()
       .then(res => {
         const suggested = res.data.suggestedCurrency;
-        const { form: f, currencyTouched: touched } = latestRef.current;
-        if (suggested && !touched) {
-          setForm({ ...f, baseCurrency: suggested });
-        }
+        const detectedCountry = res.data.country;
+        const { form: f, currencyTouched: touched, countryTouched: cTouched } = latestRef.current;
+        const next = { ...f };
+        if (suggested && !touched) next.baseCurrency = suggested;
+        // Pre-fill only; the seller confirms or changes it (an IP guess must never silently decide payments).
+        if (detectedCountry && !cTouched && !f.country) next.country = detectedCountry;
+        setForm(next);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -307,6 +316,19 @@ function Step1StoreInfo({ form, setForm, onNext }: {
           <textarea id="onboard-description" placeholder="Tell buyers what makes your store special..."
             rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="onboard-country" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Country <span className="text-brand-orange">*</span></label>
+          <select id="onboard-country" value={form.country ?? ''}
+            onChange={e => { setCountryTouched(true); setForm({ ...form, country: e.target.value }); }}
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            <option value="">Select your country</option>
+            {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+          </select>
+          <p className="text-[11px] text-slate mt-[5px]">
+            Where your business is based. It decides which payment providers you can connect (for example Stripe or local gateways). Disconnect your payment providers before changing it later.
+          </p>
         </div>
 
         <div className="mb-6">
@@ -641,6 +663,7 @@ export function OnboardingPage() {
         description:  form.description,
         productTypes: [],
         baseCurrency: form.baseCurrency,
+        country:      form.country || undefined,
       });
       if (!store) throw new Error('We could not create your store. Please try again.');
       storeId = store._id;
@@ -685,6 +708,7 @@ export function OnboardingPage() {
           sellerType:   form.sellerType as SellerType,
           productTypes: [...new Set(form.productTypes)],
           baseCurrency: form.baseCurrency,
+          country:      form.country || undefined,
         });
         if (!store) { setSubmitError(createStore.error || 'Failed to create store. Please try again.'); return; }
         const freePlan = plans.find(p => p._id === form.selectedPlanId && p.isFree);

@@ -25,17 +25,17 @@ export function NotificationRow({ item, onRead, onDelete }: { item: Notification
         {link
           ? <Link to={link} onClick={open} className="block no-underline" style={{ color: t.colors.ink }}>{title}</Link>
           : title}
-        {!item.isRead && <span className="sr-only"> (unread)</span>}
+        {!item.isRead && <span className="sr-only">{` (${ts('pg.word_unread_2', 'unread')})`}</span>}
         {item.body && <p className="m-0 mt-1 text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>{item.body}</p>}
         <p className="m-0 mt-1.5 text-xs" style={{ color: t.colors.inkMuted }}><time dateTime={item.createdAt}>{timeAgo(item.createdAt)}</time></p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {!item.isRead && (
-          <button type="button" onClick={() => onRead(item._id)} aria-label={`Mark "${item.title}" as read`} title={ts('pg.mark_as_read', 'Mark as read')} className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.ink, cursor: 'pointer' }}>
+          <button type="button" onClick={() => onRead(item._id)} aria-label={ts('pg.mark_title_as_read', 'Mark "{{title}}" as read', { title: item.title })} title={ts('pg.mark_as_read', 'Mark as read')} className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.ink, cursor: 'pointer' }}>
             <Check size={16} aria-hidden />
           </button>
         )}
-        <button type="button" onClick={() => onDelete(item._id)} aria-label={`Delete "${item.title}"`} title={ts('addresses.delete', 'Delete')} className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
+        <button type="button" onClick={() => onDelete(item._id)} aria-label={ts('pg.delete_title', 'Delete "{{title}}"', { title: item.title })} title={ts('addresses.delete', 'Delete')} className="grid size-9 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
           <Trash2 size={16} aria-hidden />
         </button>
       </div>

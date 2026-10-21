@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRegister, AuthContext, LastRolePreference, RememberedAccount, type RegisterPayload } from '@/api/services/auth';
+import { ts } from '@/utils/tStatic';
 
 export function useRegister() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export function useRegister() {
       RememberedAccount.set({ name: payload.name, email: payload.email, role: payload.role, image: null });
       navigate('/verify-otp');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(err instanceof Error ? err.message : ts('common.somethingWrong', 'Something went wrong.'));
     } finally {
       setLoading(false);
     }

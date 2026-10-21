@@ -1,9 +1,10 @@
 ﻿import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
-import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
+import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/services/storeTheme';
+import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import { readHeaderOptions } from '@/features/storefront-themes/navigation/headerOptions';
-import type { HeaderChoice, HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
+import type { FooterOptionKey, HeaderChoice, HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
 
 const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const INPUT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -264,74 +265,137 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
 }
 
 /** Footer section settings: logo (used by the Brand block), colours and the built-in columns. */
-export function FooterSettingsPanel({ footer, onChange, storeId }: { footer: StorefrontFooter; onChange: (next: StorefrontFooter) => void; storeId: string }) {
+export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, supports }: {
+  footer: StorefrontFooter; onChange: (next: StorefrontFooter) => void; storeId: string; pageOptions: { slug: string; title: string }[];
+  /** Optional controls the active theme actually renders (its manifest's `supportedFooterOptions`). Missing = all. */
+  supports?: FooterOptionKey[];
+}) {
   const set = (patch: Partial<StorefrontFooter>) => onChange({ ...footer, ...patch });
   const source = footer.logoSource ?? 'none';
+  const can = (k: FooterOptionKey) => !supports || supports.includes(k);
+  const anyLayout = can('layout') || can('spacing') || can('alignment') || can('newsletterTop') || can('mobileAccordion');
+  const anyBottom = can('policyLinks') || can('currency') || can('backToTop');
   return (
     <>
+      {anyLayout && (
       <Group title="Layout">
-        <select className={SELECT} value={footer.footerStyle ?? 'columns'} aria-label="Footer layout" onChange={e => set({ footerStyle: e.target.value as StorefrontFooter['footerStyle'] })}>
-          <option value="columns">Columns</option>
-          <option value="minimal">Compact (wider columns, less space)</option>
-        </select>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-[11.5px] text-charcoal">Spacing</span>
-            <select className={SELECT} value={footer.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontFooter['paddingY'] })}>
-              <option value="compact">Compact</option>
-              <option value="normal">Normal</option>
-              <option value="spacious">Spacious</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[11.5px] text-charcoal">Alignment</span>
-            <select className={SELECT} value={footer.align ?? 'left'} onChange={e => set({ align: e.target.value as StorefrontFooter['align'] })}>
-              <option value="left">Left</option>
-              <option value="center">Centred</option>
-            </select>
-          </label>
-        </div>
-        <SwitchRow label="Email sign-up as a wide strip on top" hint="Uses your Email sign-up block; add one if you have none."
-          checked={footer.newsletterTop === true} onChange={v => set({ newsletterTop: v })} />
-        <SwitchRow label="Fold columns on phones" hint="Shoppers tap a heading to open its links." checked={footer.mobileAccordion !== false} onChange={v => set({ mobileAccordion: v })} />
-      </Group>
-
-      <Group title="Colours and background">
-        <div className="grid grid-cols-2 gap-3">
-          <ColorField label="Background" value={footer.bgColor} fallback="#161412" onChange={v => set({ bgColor: v })} />
-          <ColorField label="Text" value={footer.textColor} fallback="#ede9e1" onChange={v => set({ textColor: v })} />
-        </div>
-        <span className="text-[11.5px] text-charcoal">Background image (optional)</span>
-        <ImageUpload value={footer.bgImageUrl ? [footer.bgImageUrl] : []} onChange={urls => set({ bgImageUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
-        {footer.bgImageUrl && (
-          <label className="flex flex-col gap-1">
-            <span className="text-[11.5px] text-charcoal">Darken the image: {footer.bgOverlay ?? 50}%</span>
-            <input type="range" min={0} max={85} step={5} value={footer.bgOverlay ?? 50} onChange={e => set({ bgOverlay: Number(e.target.value) })} />
-            <span className="text-[10.5px] text-slate">Keeps your text readable on a busy photo.</span>
-          </label>
+        {can('layout') && (
+          <select className={SELECT} value={footer.footerStyle ?? 'columns'} aria-label="Footer layout" onChange={e => set({ footerStyle: e.target.value as StorefrontFooter['footerStyle'] })}>
+            <option value="columns">Columns</option>
+            <option value="minimal">Compact (wider columns, less space)</option>
+          </select>
+        )}
+        {(can('spacing') || can('alignment')) && (
+          <div className="grid grid-cols-2 gap-3">
+            {can('spacing') && (
+              <label className="flex flex-col gap-1">
+                <span className="text-[11.5px] text-charcoal">Spacing</span>
+                <select className={SELECT} value={footer.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontFooter['paddingY'] })}>
+                  <option value="compact">Compact</option>
+                  <option value="normal">Normal</option>
+                  <option value="spacious">Spacious</option>
+                </select>
+              </label>
+            )}
+            {can('alignment') && (
+              <label className="flex flex-col gap-1">
+                <span className="text-[11.5px] text-charcoal">Alignment</span>
+                <select className={SELECT} value={footer.align ?? 'left'} onChange={e => set({ align: e.target.value as StorefrontFooter['align'] })}>
+                  <option value="left">Left</option>
+                  <option value="center">Centred</option>
+                </select>
+              </label>
+            )}
+          </div>
+        )}
+        {can('newsletterTop') && (
+          <SwitchRow label="Email sign-up as a wide strip on top" hint="Uses your Email sign-up block; add one if you have none."
+            checked={footer.newsletterTop === true} onChange={v => set({ newsletterTop: v })} />
+        )}
+        {can('mobileAccordion') && (
+          <SwitchRow label="Fold columns on phones" hint="Shoppers tap a heading to open its links." checked={footer.mobileAccordion !== false} onChange={v => set({ mobileAccordion: v })} />
         )}
       </Group>
+      )}
 
-      <Group title="Headings and social icons">
-        <SwitchRow label="Column headings in capital letters" checked={footer.headingUppercase !== false} onChange={v => set({ headingUppercase: v })} />
-        <label className="flex flex-col gap-1">
-          <span className="text-[11.5px] text-charcoal">Social icon style</span>
-          <select className={SELECT} value={footer.socialStyle ?? ''} onChange={e => set({ socialStyle: (e.target.value || null) as StorefrontFooter['socialStyle'] })}>
-            <option value="">Theme default</option>
-            <option value="plain">Plain icons</option>
-            <option value="circle">Round buttons</option>
-            <option value="square">Square buttons</option>
-          </select>
-        </label>
+      {(can('colours') || can('backgroundImage')) && (
+      <Group title="Colours and background">
+        {can('colours') && (
+          <div className="grid grid-cols-2 gap-3">
+            <ColorField label="Background" value={footer.bgColor} fallback="#161412" onChange={v => set({ bgColor: v })} />
+            <ColorField label="Text" value={footer.textColor} fallback="#ede9e1" onChange={v => set({ textColor: v })} />
+          </div>
+        )}
+        {can('backgroundImage') && (
+          <>
+            <span className="text-[11.5px] text-charcoal">Background image (optional)</span>
+            <ImageUpload value={footer.bgImageUrl ? [footer.bgImageUrl] : []} onChange={urls => set({ bgImageUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
+            {footer.bgImageUrl && (
+              <label className="flex flex-col gap-1">
+                <span className="text-[11.5px] text-charcoal">Darken the image: {footer.bgOverlay ?? 50}%</span>
+                <input type="range" min={0} max={85} step={5} value={footer.bgOverlay ?? 50} onChange={e => set({ bgOverlay: Number(e.target.value) })} />
+                <span className="text-[10.5px] text-slate">Keeps your text readable on a busy photo.</span>
+              </label>
+            )}
+          </>
+        )}
       </Group>
+      )}
 
+      {(can('headings') || can('socialStyle') || can('socialColour') || can('socialSize')) && (
+      <Group title="Headings and social icons">
+        {can('headings') && (
+          <SwitchRow label="Column headings in capital letters" checked={footer.headingUppercase !== false} onChange={v => set({ headingUppercase: v })} />
+        )}
+        {can('socialStyle') && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Social icon style</span>
+            <select className={SELECT} value={footer.socialStyle ?? ''} onChange={e => set({ socialStyle: (e.target.value || null) as StorefrontFooter['socialStyle'] })}>
+              <option value="">Theme default</option>
+              <option value="plain">Plain icons</option>
+              <option value="circle">Round buttons</option>
+              <option value="square">Square buttons</option>
+            </select>
+          </label>
+        )}
+        {can('socialColour') && (
+          <>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11.5px] text-charcoal">Social icon colour</span>
+              <select className={SELECT} value={footer.socialColor ?? ''} onChange={e => set({ socialColor: (e.target.value || null) as StorefrontFooter['socialColor'] })}>
+                <option value="">Theme default</option>
+                <option value="brand">Each platform's own colour</option>
+                <option value="custom">One colour I choose</option>
+              </select>
+              {footer.socialColor === 'brand' && <span className="text-[10.5px] text-slate">Facebook blue, Instagram pink, WhatsApp green, YouTube red and so on. X and TikTok are black, so they keep your footer text colour to stay visible.</span>}
+            </label>
+            {footer.socialColor === 'custom' && (
+              <ColorField label="Icon colour" value={footer.socialCustomColor} fallback="#ffffff" onChange={v => set({ socialCustomColor: v })} />
+            )}
+            {footer.socialColor && (
+              <SwitchRow label="Solid colour background" checked={footer.socialFilled === true} onChange={v => set({ socialFilled: v })}
+                hint={footer.socialStyle === 'plain' ? 'Needs “Round buttons” or “Square buttons” above: plain icons have no background.' : 'Fills the whole button with the colour (Instagram gets its real gradient) and shows a white icon.'} />
+            )}
+          </>
+        )}
+        {can('socialSize') && (
+          <SizeField label="Icon width and height (px)" value={footer.socialSize} min={24} max={72} onChange={v => set({ socialSize: v })} hint="24–72, default 40. The icon inside grows with it." />
+        )}
+      </Group>
+      )}
+
+      {anyBottom && (
       <Group title="Bottom bar">
-        <SwitchRow label="Policy links" hint="Pages you marked “Show in footer”." checked={footer.showPolicyLinks !== false} onChange={v => set({ showPolicyLinks: v })} />
-        <SwitchRow label="Currency selector" checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />
-        <SwitchRow label="“Back to top” link" checked={footer.showBackToTop === true} onChange={v => set({ showBackToTop: v })} />
+        {can('policyLinks') && (
+          <SwitchRow label="Policy links" hint="Links to your Privacy, Refund, Shipping and Terms pages." checked={footer.showPolicyLinks !== false} onChange={v => set({ showPolicyLinks: v })} />
+        )}
+        {can('currency') && <SwitchRow label="Currency selector" checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />}
+        {can('backToTop') && <SwitchRow label="“Back to top” link" checked={footer.showBackToTop === true} onChange={v => set({ showBackToTop: v })} />}
         <p className="text-[10.5px] text-slate">Copyright and payment icons are blocks — add or edit them in Footer blocks.</p>
       </Group>
+      )}
 
+      {can('logo') && (
       <Group title="Logo (Brand block)">
         <select className={SELECT} value={source} aria-label="Footer logo" onChange={e => set({ logoSource: e.target.value as StorefrontFooter['logoSource'] })}>
           <option value="none">Store name only</option>
@@ -344,8 +408,17 @@ export function FooterSettingsPanel({ footer, onChange, storeId }: { footer: Sto
         {source !== 'none' && (
           <SizeField label="Logo width (px)" value={footer.logoWidth} min={40} max={400} onChange={v => set({ logoWidth: v })} hint="40–400, default 140" />
         )}
+        {source !== 'none' && (
+          <>
+            <p className="text-[11px] text-slate mt-2 mb-1">Logo link — where customers go when they click the logo.</p>
+            <LinkTargetFields value={(footer.logoLink as LinkTarget | null | undefined) ?? { linkType: 'home' }}
+              onChange={next => set({ logoLink: next as LogoLink })} pageOptions={pageOptions} storeId={storeId} />
+          </>
+        )}
       </Group>
+      )}
 
+      {can('defaultColumns') && (
       <Group title="Default Shop and Account columns">
         <SwitchRow label="Show them" hint="Only while you have no Link column blocks of your own." checked={footer.showDefaultColumns !== false} onChange={v => set({ showDefaultColumns: v })} />
         {footer.showDefaultColumns !== false && (
@@ -358,6 +431,7 @@ export function FooterSettingsPanel({ footer, onChange, storeId }: { footer: Sto
           </>
         )}
       </Group>
+      )}
     </>
   );
 }

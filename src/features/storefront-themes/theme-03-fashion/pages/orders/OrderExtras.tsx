@@ -84,7 +84,7 @@ export function ExchangeItemLink({ orderId, orderNumber }: { orderId: string | n
   if (!orderId) return null;
   return (
     <Link to={`/orders/${orderId}`} className="inline-flex items-center gap-1.5 text-[13px] font-semibold underline" style={{ color: t.colors.ink }}>
-      <RefreshCw size={12} aria-hidden /> Exchange order{orderNumber ? ` #${orderNumber}` : ''}
+      <RefreshCw size={12} aria-hidden /> {ts('pg.exchange_order', 'Exchange order')}{orderNumber ? ` #${orderNumber}` : ''}
     </Link>
   );
 }

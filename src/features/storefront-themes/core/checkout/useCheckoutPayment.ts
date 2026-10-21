@@ -12,6 +12,7 @@ import { buildPayOptions, resolveSelected, type PayOption } from './payOptions';
 import { isStripeReady } from './stripeLoader';
 import type { CardOrCod } from './useCheckoutCreation';
 import { usePaymentStatus } from './usePaymentStatus';
+import { ts } from '@/utils/tStatic';
 
 interface Args {
   checkout: Checkout | null;
@@ -53,7 +54,7 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
     if (!cardKey || !checkoutId) return;
     apiInitiatePayment({ checkoutId, paymentMode: 'full' })
       .then(res => setCard({ key: cardKey, secret: res.data.clientSecret, amount: res.data.amount }))
-      .catch(err => setCard({ key: cardKey, error: err instanceof Error ? err.message : 'Failed to start card payment.' }));
+      .catch(err => setCard({ key: cardKey, error: err instanceof Error ? err.message : ts('checkout.err.card', 'Failed to start card payment.') }));
   }, [cardKey, checkoutId]);
   const cardView = !cardKey ? null : card && card.key === cardKey ? card : null;
   const cardLoading = !!cardKey && !cardView;
@@ -92,7 +93,7 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
     if (lock.current) return;
     lock.current = true; staysLocked.current = false; setBusy(true); setError(null);
     try { await fn(); }
-    catch (err) { delete keys.current[name]; fail(err, 'Something went wrong. Please try again.'); }
+    catch (err) { delete keys.current[name]; fail(err, ts('pg.something_went_wrong_please_try_again', 'Something went wrong. Please try again.')); }
     finally { if (!staysLocked.current) { lock.current = false; setBusy(false); } }
   };
 
@@ -130,7 +131,7 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
       navigate(`/checkout/${checkoutId}/return?wallet=easypaisa`);
       return;
     }
-    throw new Error('This payment method could not be started.');
+    throw new Error(ts('pg.this_payment_method_could_not_be_started', 'This payment method could not be started.'));
   });
 
   const { start: startPolling, reset: resetPolling } = poll;

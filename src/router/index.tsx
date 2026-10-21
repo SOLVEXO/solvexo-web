@@ -147,7 +147,6 @@ const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/O
 // hardcoded-theme bug, just in a different corner of the app.
 const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
-const StoreBanners = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreBanners'));
 const ContactMessages = lazy(() => import('@/features/seller/store/Dashboard/Manage/ContactMessages'));
 const OnlineStorePreferences = lazy(() => import('@/features/seller/store/Dashboard/Manage/OnlineStorePreferences'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
@@ -424,7 +423,6 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/translations',         element: <TranslationsPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'online-store/apps',                 element: <AppsPage /> },
-          { path: 'online-store/banners',              element: <StoreBanners /> },
           // Edited in Themes → Customize now (Header group / Featured products section).
           { path: 'online-store/announcement-bar',     element: <Navigate to="../online-store/themes" replace /> },
           { path: 'online-store/contact-messages',     element: <ContactMessages /> },

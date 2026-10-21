@@ -228,16 +228,21 @@ export function ActionMenu({
       if (!insideBtn && !insidePortal) close();
     };
 
-    const onScrollOrResize = () => close();
+    const onResize = () => close();
+    // The page moved under the trigger, so close. Scrolling the menu's own list must not close it.
+    const onScroll = (e: Event) => {
+      if (e.target instanceof Node && portalRef.current?.contains(e.target)) return;
+      close();
+    };
 
     document.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('scroll',  onScrollOrResize, true);
-    window.addEventListener('resize',  onScrollOrResize);
+    window.addEventListener('scroll',  onScroll, true);
+    window.addEventListener('resize',  onResize);
 
     return () => {
       document.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('scroll',  onScrollOrResize, true);
-      window.removeEventListener('resize',  onScrollOrResize);
+      window.removeEventListener('scroll',  onScroll, true);
+      window.removeEventListener('resize',  onResize);
     };
   }, [open, calcPos, close]);
 

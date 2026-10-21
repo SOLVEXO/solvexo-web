@@ -20,7 +20,7 @@ export function BuyAgainBar({ order }: { order: OrderDetail }) {
       </div>
       <div aria-live="polite" className="flex flex-col gap-2">
         {res && res.added > 0 && (
-          <Notice tone="success">{res.added} {res.added === 1 ? 'item' : 'items'} added to your cart. <Link to="/cart" className="font-medium underline" style={{ color: 'inherit' }}>{ts('orders.goToCart', 'Go to cart')}</Link></Notice>
+          <Notice tone="success">{ts('pg.items_added_to_cart', '{{count}} items added to your cart.', { count: res.added })} <Link to="/cart" className="font-medium underline" style={{ color: 'inherit' }}>{ts('orders.goToCart', 'Go to cart')}</Link></Notice>
         )}
         {res && res.added === 0 && res.errors.length === 0 && <Notice>{ts('orders.nothingToReorder', 'Nothing in this order can be added to your cart again.')}</Notice>}
         {res?.errors.map(e => <Notice key={e} tone="error">{e}</Notice>)}

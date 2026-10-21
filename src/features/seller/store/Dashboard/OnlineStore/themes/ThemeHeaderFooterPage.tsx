@@ -179,7 +179,7 @@ export function ThemeHeaderFooterPage() {
           {tab === 'header' ? (
             <HeaderEditor hf={hf} storeId={storeId} onError={msg => flash(false, msg)} supports={manifest.supportedHeaderOptions} choices={manifest.headerOptionChoices} />
           ) : tab === 'footer' ? (
-            <FooterEditor hf={hf} storeId={storeId} onError={msg => flash(false, msg)} />
+            <FooterEditor hf={hf} storeId={storeId} onError={msg => flash(false, msg)} supports={manifest.supportedFooterOptions} />
           ) : (
             <AnnouncementForm value={hf.announcementForm ?? DEFAULT_ANNOUNCEMENT} onChange={hf.setAnnouncementForm} />
           )}

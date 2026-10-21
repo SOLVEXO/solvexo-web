@@ -30,18 +30,18 @@ export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?
     try {
       const urls = await Promise.all(picked.map(f => apiUploadPublicFile(f).then(r => r.data.url)));
       setMedia(m => [...m, ...urls].slice(0, 4));
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not upload the photo.'); }
+    } catch (err) { setError(err instanceof Error ? err.message : ts('reviews.err.upload', 'Could not upload the photo.')); }
     finally { setUploading(false); }
   }
 
   async function submit() {
-    if (rating < 1) { setError('Please select a star rating.'); return; }
+    if (rating < 1) { setError(ts('reviews.err.rating', 'Please select a star rating.')); return; }
     setSaving(true); setError('');
     try {
       if (review) await apiEditReview(review.reviewId, { rating, comment, media });
       else if (target) await apiAddReview({ productId: target.productId, productVariantId: target.variantId, orderId: target.orderId, rating, comment: comment.trim() || undefined, media });
       onSaved();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not save your review.'); setSaving(false); }
+    } catch (err) { setError(err instanceof Error ? err.message : ts('reviews.err.save', 'Could not save your review.')); setSaving(false); }
   }
 
   return (
@@ -53,7 +53,7 @@ export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?
           <legend className="mb-2 text-sm font-medium">{ts('pg.rating', 'Rating')}</legend>
           <div className="flex gap-1" role="radiogroup" aria-label={ts('pg.rating', 'Rating')}>
             {[1, 2, 3, 4, 5].map(i => (
-              <button key={i} type="button" role="radio" aria-checked={rating === i} aria-label={`${i} star${i > 1 ? 's' : ''}`} onClick={() => { setRating(i); setError(''); }} className="cursor-pointer border-0 bg-transparent p-1">
+              <button key={i} type="button" role="radio" aria-checked={rating === i} aria-label={ts('reviews.starsAria', '{{count}} stars', { count: i })} onClick={() => { setRating(i); setError(''); }} className="cursor-pointer border-0 bg-transparent p-1">
                 <Star size={28} aria-hidden style={{ color: t.colors.ink, fill: i <= rating ? t.colors.ink : 'transparent' }} />
               </button>
             ))}
@@ -63,7 +63,7 @@ export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?
         <div>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={e => addPhotos(e.target.files)} aria-label={ts('pg.add_photos', 'Add photos')} />
           {media.length < 4 && (
-            <PillButton variant="outline" loading={uploading} onClick={() => fileRef.current?.click()}><ImagePlus size={16} aria-hidden /> Add photos</PillButton>
+            <PillButton variant="outline" loading={uploading} onClick={() => fileRef.current?.click()}><ImagePlus size={16} aria-hidden /> {ts('pg.add_photos', 'Add photos')}</PillButton>
           )}
         </div>
         {media.length > 0 && (

@@ -59,7 +59,7 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
                     <p className="m-0 text-[15px] font-medium">{item.name}</p>
                     {item.options && item.options.length > 0 && <p className="m-0 mt-0.5 text-[13px]" style={muted}>{item.options.map(o => `${o.name}: ${o.value}`).join(' / ')}</p>}
                     <p className="m-0 mt-0.5 text-[13px]" style={muted}>{money(item.price)} x {item.quantity}</p>
-                    {(item.refundedAmount ?? 0) > 0 && !(account && item.exchangeOrderId) && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>Refunded {money(item.refundedAmount ?? 0)}</p>}
+                    {(item.refundedAmount ?? 0) > 0 && !(account && item.exchangeOrderId) && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>{ts('pg.refunded_amount', 'Refunded {{amount}}', { amount: money(item.refundedAmount ?? 0) })}</p>}
                     {item.status === 'cancelled' && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.danger }}>{ts('order.cancelled', 'Cancelled')}</p>}
                   </div>
                   <p className="m-0 shrink-0 text-[15px] font-semibold">{money(item.totalPrice)}</p>
@@ -96,15 +96,15 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
         <Card tone="soft">
           <SectionHeading>{ts('cart.summaryTitle', 'Order summary')}</SectionHeading>
           <dl className="m-0 flex flex-col gap-2.5">
-            {row('Subtotal', money(orderDisplaySubtotal(order)))}
-            {promoSavings > 0 && <p className="m-0 text-xs" style={muted}>Includes {money(promoSavings)} in promotional savings</p>}
+            {row(ts('checkout.subtotal', 'Subtotal'), money(orderDisplaySubtotal(order)))}
+            {promoSavings > 0 && <p className="m-0 text-xs" style={muted}>{ts('pg.includes_amount_in_promotional_savings', 'Includes {{amount}} in promotional savings', { amount: money(promoSavings) })}</p>}
             {discounts.map(d => row(d.label, `-${money(d.amount)}`))}
-            {row('Shipping', money(order.shippingFee))}
-            {row('Tax', money(order.taxAmount))}
-            {(order.includedTaxAmount ?? 0) > 0 && row('Including taxes', money(order.includedTaxAmount ?? 0))}
+            {row(ts('checkout.shipping', 'Shipping'), money(order.shippingFee))}
+            {row(ts('checkout.tax', 'Tax'), money(order.taxAmount))}
+            {(order.includedTaxAmount ?? 0) > 0 && row(ts('checkout.includingTaxes', 'Including taxes'), money(order.includedTaxAmount ?? 0))}
           </dl>
           <div className="my-4" style={{ borderTop: `1px solid ${t.colors.border}` }} />
-          <dl className="m-0">{row('Total', money(order.totalAmount), true)}</dl>
+          <dl className="m-0">{row(ts('checkout.total', 'Total'), money(order.totalAmount), true)}</dl>
         </Card>
 
         {isPickupOrder(order) ? <OrderPickupLocation order={order} /> : (

@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { getActiveStoreLocale } from '../utils/activeStoreText';
 // Cookie-backed (not localStorage) so the token is visible from any seller
 // storefront subdomain, not just the exact origin it was issued on — see
 // `utils/authCookie.ts`. Imported directly (not via `services/auth.ts`'s
@@ -56,6 +57,11 @@ client.interceptors.request.use(
         new Error('The app is misconfigured (missing API URL). Please contact support.'),
         { isNetworkError: false, status: undefined },
       ));
+    }
+    // Storefront lookups by URL handle also match the handle translated into the visitor's language (the server caches per URL, so it travels in it).
+    const language = getActiveStoreLocale();
+    if (language && config.method === 'get' && config.url && /\/api\/(public\/(collections|store-pages|store-blog)\/|products\/getProductById\/)/.test(config.url) && !/[?&]locale=/.test(config.url)) {
+      config.params = { ...(config.params ?? {}), locale: language };
     }
     const token = getAuthCookie('accessToken');
     if (token && config.headers) {

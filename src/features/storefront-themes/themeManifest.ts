@@ -139,6 +139,12 @@ export type HeaderOptionKey =
   | 'logoPosition' | 'menuPosition' | 'menuAlignment' | 'searchBar' | 'searchPosition'
   | 'sticky' | 'transparent' | 'menuStyle' | 'button' | 'topBar' | 'colours';
 
+/** Optional footer controls a theme chooses to support. The Footer settings panel only shows the ones its active theme lists,
+ *  so a switch never appears for a theme that would ignore it. A theme with no list shows all of them (older themes keep working). */
+export type FooterOptionKey =
+  | 'layout' | 'spacing' | 'alignment' | 'newsletterTop' | 'mobileAccordion' | 'colours' | 'backgroundImage'
+  | 'headings' | 'socialStyle' | 'socialColour' | 'socialSize' | 'policyLinks' | 'currency' | 'backToTop' | 'logo' | 'defaultColumns';
+
 /** One choice a theme offers for a header option (shown in the Header panel in this order). */
 export interface HeaderChoice {
   /** Short slug saved on the store (lowercase letters, digits, - and _). The theme itself interprets it. */
@@ -193,6 +199,8 @@ export interface ThemeManifest {
   supportsAnnouncementBar: boolean;
   /** Which optional header layout/search controls this theme renders. Missing = none of them. */
   supportedHeaderOptions?: HeaderOptionKey[];
+  /** Which optional footer controls this theme renders. Missing = all of them. */
+  supportedFooterOptions?: FooterOptionKey[];
   /** The values this theme offers for options that vary per theme. The first one is the default. */
   headerOptionChoices?: { searchPosition?: HeaderChoice[] };
   /** Sections only this theme offers (shown in Add section, edited with the generic form). */

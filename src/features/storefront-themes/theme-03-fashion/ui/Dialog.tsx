@@ -70,7 +70,7 @@ interface ConfirmProps {
   onClose: () => void;
 }
 
-export function ConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'default', busy = false, error, onConfirm, onClose }: ConfirmProps) {
+export function ConfirmDialog({ title, message, confirmLabel = ts('pg.word_confirm', 'Confirm'), cancelLabel = ts('common.cancel', 'Cancel'), tone = 'default', busy = false, error, onConfirm, onClose }: ConfirmProps) {
   const bg = tone === 'destructive' ? t.colors.danger : t.colors.accent;
   const fg = tone === 'destructive' ? '#FFFFFF' : t.colors.accentInk;
   return (

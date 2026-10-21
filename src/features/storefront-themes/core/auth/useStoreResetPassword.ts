@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiResetPassword, AuthContext } from '@/api/services/auth';
+import { ts } from '@/utils/tStatic';
 
 /**
  * Password reset for a buyer of THIS store. Same call as the shared hook, but it also sends the store id kept in
@@ -13,14 +14,14 @@ export function useStoreResetPassword() {
 
   async function execute(otp: string, newPassword: string) {
     const ctx = AuthContext.get();
-    if (!ctx?.email) { setError('Session expired. Please start again.'); return; }
+    if (!ctx?.email) { setError(ts('pg.session_expired_please_start_again', 'Session expired. Please start again.')); return; }
     setError(''); setLoading(true);
     try {
       await apiResetPassword({ email: ctx.email, role: ctx.role, otp, newPassword, storeId: ctx.storeId });
       AuthContext.clear();
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
+      setError(err instanceof Error ? err.message : ts('pg.invalid_or_expired_code_please_try_again', 'Invalid or expired code. Please try again.'));
     } finally { setLoading(false); }
   }
 

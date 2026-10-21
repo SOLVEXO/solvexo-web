@@ -16,7 +16,7 @@ export function OrderTimeline({ order }: { order: OrderDetail }) {
           <li key={step.label} aria-current={step.done && !steps[i + 1]?.done ? 'step' : undefined} className="min-w-0">
             <span aria-hidden className="mb-2.5 block h-1.5 rounded-full" style={{ background: color }} />
             <p className="m-0 text-[13px] font-semibold leading-tight" style={{ color: bad ? t.colors.danger : step.done ? t.colors.ink : t.colors.inkMuted }}>
-              {step.label}<span className="sr-only">{step.done ? ' (done)' : ' (not yet)'}</span>
+              {step.label}<span className="sr-only">{step.done ? ` (${ts('pg.word_done', 'done')})` : ` (${ts('pg.not_yet', 'not yet')})`}</span>
             </p>
             {step.date && <p className="m-0 mt-0.5 text-xs" style={{ color: t.colors.inkMuted }}>{step.date}</p>}
           </li>

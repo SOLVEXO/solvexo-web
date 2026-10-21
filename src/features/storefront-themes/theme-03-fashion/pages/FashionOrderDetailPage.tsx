@@ -16,13 +16,13 @@ function OrderDetail() {
   const { orderId = '' } = useParams<{ orderId: string }>();
   const { data, loading, error, retry } = useLoad(() => loadOrder(orderId), [orderId]);
   const order = data?.order ?? null;
-  useStorefrontSeo({ title: order ? `Order #${order.orderNumber}` : 'Order', noindex: true });
+  useStorefrontSeo({ title: order ? ts('orders.orderNumber', 'Order #{{number}}', { number: order.orderNumber }) : ts('checkout.orderLabel', 'Order'), noindex: true });
 
   return (
     <AccountLayout
       title={ts('checkout.orderLabel', 'Order')}
       accent={order ? `#${order.orderNumber}` : undefined}
-      subtitle={order ? `Placed on ${formatOrderDate(order.createdAt, true)}` : undefined}
+      subtitle={order ? ts('pg.placed_on_date', 'Placed on {{date}}', { date: formatOrderDate(order.createdAt, true) }) : undefined}
       actions={order && <div className="flex flex-wrap gap-2"><OrderPill badge={derivePaymentBadge(order)} /><OrderPill badge={deriveFulfillmentBadge(order)} /></div>}
     >
       <BackLink to="/orders">{ts('pg.all_orders', 'All orders')}</BackLink>

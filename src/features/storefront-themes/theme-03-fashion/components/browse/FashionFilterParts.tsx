@@ -7,6 +7,7 @@ import { SORT_OPTIONS, type BrowseState } from '@/features/storefront/browse/bro
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { fashionTheme as t } from '../../theme.config';
 import { useDialogFocus } from '../../../core/hooks/useDialogFocus';
+import { ts } from '@/utils/tStatic';
 
 export interface FacetGroup { id: string; label: string; body: ReactNode; count: number }
 
@@ -57,7 +58,7 @@ export function BrowsePagination({ page, totalPages, onPage }: { page: number; t
       <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={tr('browse.prevPage', 'Previous page')} className={`${cell} disabled:cursor-not-allowed disabled:opacity-40`} style={idle}>{tr('orders.previous', 'Previous')}</button>
       {nums.map((n, i) => n === '…'
         ? <span key={`e${i}`} className="grid h-11 min-w-8 place-items-center text-sm" style={{ color: t.colors.inkMuted }}>…</span>
-        : <button key={n} type="button" onClick={() => onPage(n)} aria-label={`Page ${n}`} aria-current={n === page ? 'page' : undefined} className={cell}
+        : <button key={n} type="button" onClick={() => onPage(n)} aria-label={ts('pg.page_n', 'Page {{n}}', { n })} aria-current={n === page ? 'page' : undefined} className={cell}
             style={n === page ? { ...idle, background: t.colors.accent, color: t.colors.accentInk, borderColor: t.colors.accent } : idle}>{n}</button>)}
       <button type="button" disabled={page >= totalPages} onClick={() => onPage(page + 1)} aria-label={tr('browse.nextPage', 'Next page')} className={`${cell} disabled:cursor-not-allowed disabled:opacity-40`} style={idle}>{tr('orders.next', 'Next')}</button>
     </nav>
@@ -82,13 +83,13 @@ export function PriceFields({ symbol, currency, highest, lowest, minPrice, maxPr
     <div className="flex flex-col gap-3 px-3.5 py-2.5">
       {highest != null && (
         <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>
-          The highest price is {moneyText(highest, currency)}{lowest != null ? `, lowest ${moneyText(lowest, currency)}` : ''}
+          {lowest != null ? ts('pg.the_highest_price_is_highest_lowest', 'The highest price is {{highest}}, lowest {{lowest}}', { highest: moneyText(highest, currency), lowest: moneyText(lowest, currency) }) : ts('pg.the_highest_price_is_highest', 'The highest price is {{highest}}', { highest: moneyText(highest, currency) })}
         </p>
       )}
       <div className="flex items-center gap-2">
         {[{ id: idLo, label: tr('browse.from', 'From'), v: lo, set: setLo }, { id: idHi, label: tr('browse.to', 'To'), v: hi, set: setHi }].map(f => (
           <label key={f.id} htmlFor={f.id} className="flex flex-1 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.inkMuted }}>
-            <span className="sr-only">{f.label} price</span>{symbol}
+            <span className="sr-only">{ts('pg.label_price', '{{label}} price', { label: f.label })}</span>{symbol}
             <input id={f.id} type="number" min={0} inputMode="decimal" value={f.v} placeholder={f.label} onChange={e => f.set(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') apply(); }} className="w-full min-w-0 border-0 bg-transparent outline-none" style={{ color: t.colors.ink }} />
           </label>
@@ -142,7 +143,7 @@ export function FilterDrawer({ onClose, total, active, onClear, groups, sort, on
         <div className="flex items-center gap-4 px-6 py-4" style={{ borderTop: `1px solid ${t.colors.border}` }}>
           {active && <button type="button" onClick={onClear} className="cursor-pointer border-0 bg-transparent p-0 text-sm underline" style={{ color: t.colors.ink }}>{tr('browse.removeAll', 'Remove all')}</button>}
           <button type="button" onClick={onClose} className="fx-pill flex-1" style={{ background: t.colors.accent, color: t.colors.accentInk, border: `1px solid ${t.colors.accent}` }}>
-            Show {total} product{total !== 1 ? 's' : ''}
+            {ts('pg.show_products', 'Show {{count}} products', { count: total })}
           </button>
         </div>
       </div>

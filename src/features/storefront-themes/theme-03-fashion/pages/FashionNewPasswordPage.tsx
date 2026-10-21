@@ -13,7 +13,7 @@ import { useStoreResetPassword } from '../../core/auth/useStoreResetPassword';
 
 /** `/new-password`: last step of password reset. Needs the code carried in `AuthContext` from /verify-otp, otherwise goes back to /forgot-password. */
 export function FashionNewPasswordPage() {
-  useStorefrontSeo({ title: 'Reset password', noindex: true });
+  useStorefrontSeo({ title: ts('pg.reset_password', 'Reset password'), noindex: true });
   const navigate = useNavigate();
   const { store } = useStorefront();
   const reset = useStoreResetPassword();
@@ -26,7 +26,7 @@ export function FashionNewPasswordPage() {
 
   if (reset.success) {
     return (
-      <AuthShell title={ts('auth.password', 'Password')} accent={ts('pg.word_updated', 'updated')} subtitle={`You can now sign back in to ${store.name} with your new password.`}>
+      <AuthShell title={ts('auth.password', 'Password')} accent={ts('pg.word_updated', 'updated')} subtitle={ts('pg.you_can_now_sign_back_in_to_store_with', 'You can now sign back in to {{store}} with your new password.', { store: store.name })}>
         <div className="mb-6 grid place-items-center"><span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><CheckCircle2 size={28} style={{ color: t.colors.success }} aria-hidden /></span></div>
         <PillButton full onClick={() => navigate('/login')}>{ts('auth.signInLink', 'Sign in')}</PillButton>
       </AuthShell>
@@ -36,19 +36,19 @@ export function FashionNewPasswordPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError('');
-    if (password.length < 8) { setFormError('Password must be at least 8 characters.'); return; }
-    if (password !== confirm) { setFormError('Passwords do not match.'); return; }
+    if (password.length < 8) { setFormError(ts('auth.err.pw8', 'Password must be at least 8 characters.')); return; }
+    if (password !== confirm) { setFormError(ts('auth.err.pwMismatch', 'Passwords do not match.')); return; }
     await reset.execute(otp, password);
   };
   const error = formError || reset.error;
 
   return (
-    <AuthShell title={ts('pg.choose_a_new', 'Choose a new')} accent={ts('pg.word_password', 'password')} subtitle="Almost done. Set a new password to finish resetting your account.">
+    <AuthShell title={ts('pg.choose_a_new', 'Choose a new')} accent={ts('pg.word_password', 'password')} subtitle={ts('pg.almost_done_set_a_new_password_to', 'Almost done. Set a new password to finish resetting your account.')}>
       {error && (
         <div className="mb-5"><Notice tone="error" action={reset.error ? <button type="button" onClick={() => navigate('/verify-otp')} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline">{ts('pg.re_enter_code', 'Re-enter code')}</button> : undefined}>{error}</Notice></div>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label={ts('pg.new_password', 'New password')} hint="At least 8 characters." required>{p => <PasswordInput {...p} required autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} />}</Field>
+        <Field label={ts('pg.new_password', 'New password')} hint={ts('account.pwHint', 'At least 8 characters.')} required>{p => <PasswordInput {...p} required autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} />}</Field>
         <Field label={ts('pg.confirm_password', 'Confirm password')} required>{p => <PasswordInput {...p} required autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} />}</Field>
         <PillButton type="submit" full loading={reset.loading}>{ts('pg.reset_password', 'Reset password')}</PillButton>
       </form>

@@ -32,13 +32,13 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
       const res = await apiCreateGiftCardPurchaseIntent(storeId, { amount, recipientEmail: email.trim(), recipientName: name.trim() || undefined, message: message.trim() || undefined });
       setSecret(res.data.clientSecret);
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'We could not start your purchase.');
+      setApiError(err instanceof Error ? err.message : ts('pg.we_could_not_start_your_purchase', 'We could not start your purchase.'));
     } finally { setCreating(false); }
   };
 
   if (done) {
     return (
-      <EmptyState icon={<CheckCircle2 size={26} style={{ color: t.colors.success }} />} title={ts('gift.paymentReceived', 'Payment received')} text={`The gift card code is being emailed to ${email.trim()}.`}
+      <EmptyState icon={<CheckCircle2 size={26} style={{ color: t.colors.success }} />} title={ts('gift.paymentReceived', 'Payment received')} text={ts('pg.the_gift_card_code_is_being_emailed_to', 'The gift card code is being emailed to {{email}}.', { email: email.trim() })}
         action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.keep_shopping', 'Keep shopping')}</Link>} />
     );
   }
@@ -61,7 +61,7 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
       <Card>
         {secret ? (
           <div className="flex flex-col gap-5">
-            <p className="m-0 text-lg font-semibold">Pay {amount ? nativeMoneyShort(amount, settings.currency) : ''}</p>
+            <p className="m-0 text-lg font-semibold">{ts('pg.pay_amount', 'Pay {{amount}}', { amount: amount ? nativeMoneyShort(amount, settings.currency) : '' })}</p>
             {isStripeReady()
               ? <MaisonCardForm clientSecret={secret} amountText={amount ? nativeMoneyShort(amount, settings.currency) : ''} returnUrl={window.location.href} onConfirmed={() => setDone(true)} />
               : <Notice tone="error">{ts('pg.card_payments_are_not_configured_yet', 'Card payments are not configured yet.')}</Notice>}

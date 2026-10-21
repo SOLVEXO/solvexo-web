@@ -7,7 +7,7 @@ import { Field } from './primitives';
 
 /** Maison phone field: country picker + number in one pill-rounded control. Emits E.164 (+923001234567).
  *  defaultCountry (ISO alpha-2) only seeds the initial flag; a country the visitor picked is never overridden. */
-export function PhoneField({ label = 'Phone number', value, onChange, defaultCountry, error, required, disabled, name }: {
+export function PhoneField({ label = ts('checkout.phoneNumber', 'Phone number'), value, onChange, defaultCountry, error, required, disabled, name }: {
   label?: string; value: string; onChange: (value: string) => void; defaultCountry?: string | null; error?: string | null; required?: boolean; disabled?: boolean; name?: string;
 }) {
   const seed: Country | undefined = defaultCountry && isSupportedCountry(defaultCountry) ? (defaultCountry as Country) : undefined;

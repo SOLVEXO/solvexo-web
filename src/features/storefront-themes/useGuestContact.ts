@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiSetGuestContact, isGuestUser, TokenStorage } from '@/api/services/auth';
 import { ensureGuestSession } from '@/utils/guestSession';
+import { ts } from '@/utils/tStatic';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -42,13 +43,13 @@ export function useGuestContact(active: boolean) {
 
   const commit = useCallback(async (name?: string): Promise<boolean> => {
     if (!active) return true;
-    if (!EMAIL_RE.test(trimmed)) { setError('Enter a valid email address.'); return false; }
+    if (!EMAIL_RE.test(trimmed)) { setError(ts('pg.enter_a_valid_email_address', 'Enter a valid email address.')); return false; }
     if (trimmed === committed) return true;
     if (inFlight.current) return inFlight.current;
     setSaving(true); setError('');
     const p = apiSetGuestContact({ email: trimmed, ...(name?.trim() ? { name: name.trim() } : {}) })
       .then(() => { setCommitted(trimmed); return true; })
-      .catch(err => { setError(err instanceof Error ? err.message : 'Could not save your email.'); return false; })
+      .catch(err => { setError(err instanceof Error ? err.message : ts('pg.could_not_save_your_email', 'Could not save your email.')); return false; })
       .finally(() => { setSaving(false); inFlight.current = null; });
     inFlight.current = p;
     return p;

@@ -5,7 +5,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { useCurrencyPreference, CURRENCY_STORAGE_KEY } from '@/contexts/CurrencyPreferenceContext';
 import { setStorefrontLocaleInfo } from '@/utils/currentStorefront';
 import { COUNTRY_STORAGE_KEY, StorefrontMarketCtx, type StorefrontMarketValue } from './storefrontMarket';
-import { BOOT_LOCALE, DEFAULT_LOCALE, rememberLanguage, savedLanguage, switchLocalePath, localeFromPathname } from '@/i18n';
+import { BOOT_HAS_PREFIX, BOOT_LOCALE, DEFAULT_LOCALE, rememberLanguage, savedLanguage, switchLocalePath, localeFromPathname } from '@/i18n';
 
 function readSavedCountry(): string | null {
   try {
@@ -15,10 +15,14 @@ function readSavedCountry(): string | null {
 }
 
 /** Markets + country + language for one storefront. Mount inside CurrencyPreferenceProvider. */
-export function StorefrontMarketProvider({ storeId, allowedCurrencies, children }: {
+export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurrency, sourceLanguage, children }: {
   storeId: string;
   /** The store's own restriction (Store.enabledCurrencies), null = platform list. */
   allowedCurrencies?: string[] | null;
+  /** The store's own currency: the default for a first visit when no market or location says otherwise. */
+  baseCurrency?: string | null;
+  /** The language the store's content is written in (the store record knows it before the markets arrive). */
+  sourceLanguage?: string | null;
   children: ReactNode;
 }) {
   const { setCurrencyAuto, setMarketPricing, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
@@ -48,7 +52,7 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, children 
   }, [storeId]);
 
   const markets = useMemo(() => data?.markets ?? [], [data]);
-  const defaultLanguage = data?.defaultLanguage ?? DEFAULT_LOCALE;
+  const defaultLanguage = data?.defaultLanguage ?? sourceLanguage ?? DEFAULT_LOCALE;
   const languages = useMemo(() => {
     const set = new Set<string>([defaultLanguage, ...(data?.languages ?? [])]);
     return Array.from(set);
@@ -84,10 +88,12 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, children 
     let hasSaved = false;
     try { hasSaved = !!localStorage.getItem(CURRENCY_STORAGE_KEY); } catch { /* ignore */ }
     const suggested = detected?.suggestedCurrency;
-    if (!hasSaved && suggested) setCurrencyAuto(suggested);
-  }, [loaded, locationDone, market, detected, enabledCurrencies, allowedCurrencies, hasExplicitCurrency, accountHasCurrency, setCurrencyAuto]);
+    if (!hasSaved && suggested && allowed(suggested)) { setCurrencyAuto(suggested); return; }
+    // Nothing else decided: a first-time visitor sees the store's own currency, never a platform-wide guess.
+    if (!hasSaved && baseCurrency && allowed(baseCurrency)) setCurrencyAuto(baseCurrency);
+  }, [loaded, locationDone, market, detected, baseCurrency, enabledCurrencies, allowedCurrencies, hasExplicitCurrency, accountHasCurrency, setCurrencyAuto]);
 
-  const language = BOOT_LOCALE;
+  const language = BOOT_HAS_PREFIX ? BOOT_LOCALE : defaultLanguage;
   const redirected = useRef(false);
   // Keep the URL honest: a prefix the store does not offer is dropped; a remembered language gets its prefix.
   useEffect(() => {
@@ -95,23 +101,24 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, children 
     const { pathname, search, hash } = window.location;
     const current = localeFromPathname(pathname);
     let target: string | null = null;
-    if (current && !languages.includes(current)) target = DEFAULT_LOCALE;
+    // A folder the store does not offer, or the store's own language (which has no folder), goes back to the plain URL.
+    if (current && (!languages.includes(current) || current === defaultLanguage)) target = defaultLanguage;
     else if (!current) {
       const saved = savedLanguage();
-      if (saved && saved !== DEFAULT_LOCALE && languages.includes(saved)) target = saved;
+      if (saved && saved !== defaultLanguage && languages.includes(saved)) target = saved;
     }
     if (target) {
       redirected.current = true;
-      if (target === DEFAULT_LOCALE) rememberLanguage(DEFAULT_LOCALE);
-      window.location.replace(switchLocalePath(pathname, search, hash, target));
+      if (target === defaultLanguage) rememberLanguage(defaultLanguage);
+      window.location.replace(switchLocalePath(pathname, search, hash, target, defaultLanguage));
     }
-  }, [loaded, data, languages]);
+  }, [loaded, data, languages, defaultLanguage]);
 
   const setLanguage = useCallback((code: string) => {
     rememberLanguage(code);
     const { pathname, search, hash } = window.location;
-    window.location.assign(switchLocalePath(pathname, search, hash, code));
-  }, []);
+    window.location.assign(switchLocalePath(pathname, search, hash, code, defaultLanguage));
+  }, [defaultLanguage]);
 
   useEffect(() => {
     setStorefrontLocaleInfo({ country, locale: language });

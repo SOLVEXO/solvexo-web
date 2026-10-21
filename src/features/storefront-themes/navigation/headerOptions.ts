@@ -147,6 +147,12 @@ export interface FooterOptions {
   align: 'left' | 'center';
   headingUppercase: boolean;
   socialStyle: 'plain' | 'circle' | 'square' | null;
+  /** null = the theme's own colour. */
+  socialColor: 'brand' | 'custom' | null;
+  socialCustomColor: string | null;
+  socialFilled: boolean;
+  /** Width and height of one social icon button in px; null = the theme's own size. */
+  socialSize: number | null;
   newsletterTop: boolean;
   mobileAccordion: boolean;
   showPolicyLinks: boolean;
@@ -189,6 +195,10 @@ export function readFooterOptions(footer: Partial<StorefrontFooter> | null | und
     align: f.align === 'center' ? 'center' : 'left',
     headingUppercase: f.headingUppercase !== false,
     socialStyle: f.socialStyle === 'plain' || f.socialStyle === 'circle' || f.socialStyle === 'square' ? f.socialStyle : null,
+    socialColor: f.socialColor === 'brand' || f.socialColor === 'custom' ? f.socialColor : null,
+    socialCustomColor: hex(f.socialCustomColor),
+    socialFilled: f.socialFilled === true,
+    socialSize: width(f.socialSize, 24, 72),
     newsletterTop: f.newsletterTop === true,
     mobileAccordion: f.mobileAccordion !== false,
     showPolicyLinks: f.showPolicyLinks !== false,

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { handleOf } from '@/utils/activeStoreText';
 import { ImageOff } from 'lucide-react';
 import type { BlogPostSummary } from '@/api/services/storeBlog';
 import { fashionTheme as t } from '../../theme.config';
@@ -7,7 +8,7 @@ import { blogPostPath, formatPostDate } from '../../../core/content/blogUtils';
 
 /** Journal card: rounded cover, tags, title, excerpt and date. `featured` makes a wide two-column card. */
 export function BlogPostCard({ post, blogSlug, featured }: { post: BlogPostSummary; blogSlug?: string; featured?: boolean }) {
-  const href = blogPostPath(blogSlug, post.slug);
+  const href = blogPostPath(blogSlug, handleOf(post));
   const date = formatPostDate(post.publishedAt);
   return (
     <article className={featured ? 'grid items-center gap-5 md:grid-cols-2 md:gap-10' : 'flex flex-col'}>

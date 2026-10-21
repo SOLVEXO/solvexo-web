@@ -86,12 +86,12 @@ function useCountdown(endAt: string | null | undefined): string | null {
 function CouponButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button type="button" aria-label={`Copy code ${code}`}
+    <button type="button" aria-label={ts('pg.copy_code_code', 'Copy code {{code}}', { code })}
       onClick={() => { void navigator.clipboard?.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }); }}
       className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-transparent px-3 py-0.5"
       style={{ border: '1px dashed currentColor', color: 'inherit', font: 'inherit', fontWeight: 600, letterSpacing: '0.04em' }}>
       {code} {copied ? <Check size={12} /> : <Copy size={12} />}
-      <span className="sr-only" aria-live="polite">{copied ? 'Copied' : ''}</span>
+      <span className="sr-only" aria-live="polite">{copied ? ts('pg.word_copied', 'Copied') : ''}</span>
     </button>
   );
 }
@@ -175,7 +175,7 @@ export function FashionAnnouncementBar({
           <span key={index} className="fx-ann-anim inline-flex flex-wrap items-center gap-2.5" style={count > 1 ? { animation: `${animation === 'fade' ? 'fx-ann-fade' : 'fx-ann-slide'} .45s ease` } : undefined}>
             {renderMessage(current)}
           </span>
-          {countdown && <span className="rounded-full px-3 py-0.5 font-bold tabular-nums" style={{ background: 'rgba(255,255,255,0.18)' }} aria-label={`Ends in ${countdown}`}>{countdown}</span>}
+          {countdown && <span className="rounded-full px-3 py-0.5 font-bold tabular-nums" style={{ background: 'rgba(255,255,255,0.18)' }} aria-label={ts('pg.ends_in_time', 'Ends in {{time}}', { time: countdown })}>{countdown}</span>}
         </div>
       )}
       {!marquee && count > 1 && <button type="button" aria-label={ts('pg.next_announcement', 'Next announcement')} onClick={() => setIndex(i => (i + 1) % count)} className={step} style={{ color: 'inherit' }}><ChevronRight size={15} /></button>}

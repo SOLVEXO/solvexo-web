@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiForgotPassword, AuthContext, type AppRole } from '@/api/services/auth';
+import { ts } from '@/utils/tStatic';
 
 export function useForgotPassword() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function useForgotPassword() {
       AuthContext.set({ email, role, flow: 'forgot', storeId });
       navigate('/verify-otp');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : ts('pg.something_went_wrong_please_try_again', 'Something went wrong. Please try again.'));
     } finally {
       setLoading(false);
     }

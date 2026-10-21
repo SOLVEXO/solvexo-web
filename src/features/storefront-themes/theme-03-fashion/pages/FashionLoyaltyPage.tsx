@@ -10,18 +10,18 @@ import { loadLoyalty } from '../../core/money/loyaltyLoad';
 import { LoyaltyRewards } from './money/LoyaltyRewards';
 
 function Loyalty() {
-  useStorefrontSeo({ title: 'Loyalty & rewards', noindex: true });
+  useStorefrontSeo({ title: ts('pg.loyalty_rewards', 'Loyalty & rewards'), noindex: true });
   const { store } = useStorefront();
   const { data, loading, error, retry } = useLoad(() => loadLoyalty(store.storeId), [store.storeId]);
 
   return (
-    <AccountLayout title={ts('pg.loyalty', 'Loyalty &')} accent={ts('pg.word_rewards', 'rewards')} subtitle={`Earn points on every order at ${store.name} and trade them for rewards.`}>
+    <AccountLayout title={ts('pg.loyalty', 'Loyalty &')} accent={ts('pg.word_rewards', 'rewards')} subtitle={ts('pg.earn_points_on_every_order_at_store_and', 'Earn points on every order at {{store}} and trade them for rewards.', { store: store.name })}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_rewards', 'Loading rewards')}><SkeletonBlock h={120} rows={2} /></div>
       ) : error ? (
         <ErrorState message={ts('pg.we_could_not_load_your_rewards', 'We could not load your rewards.')} onRetry={retry} />
       ) : !data || data.unavailable ? (
-        <EmptyState icon={<Award size={24} />} title={ts('pg.no_loyalty_program_yet', 'No loyalty program yet')} text={`${store.name} has not set up a rewards program. Check back later.`} />
+        <EmptyState icon={<Award size={24} />} title={ts('pg.no_loyalty_program_yet', 'No loyalty program yet')} text={ts('pg.store_has_not_set_up_a_rewards_program', '{{store}} has not set up a rewards program. Check back later.', { store: store.name })} />
       ) : (
         <LoyaltyRewards key={store.storeId} storeId={store.storeId} balance={data.balance} rewards={data.rewards} />
       )}

@@ -160,7 +160,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
         return (
           <>
             {footerLogo
-              ? <img src={footerLogo} alt={store.name} style={{ width: opts.logoWidth, maxWidth: '100%', height: 'auto', marginBottom: '10px', marginInline: center ? 'auto' : undefined }} />
+              ? <NavAnchor link={resolveLink(footer?.logoLink ?? { linkType: 'home' })} className="block" style={{ width: opts.logoWidth, maxWidth: '100%', marginBottom: '10px', marginInline: center ? 'auto' : undefined }}><img src={footerLogo} alt={store.name} style={{ width: '100%', height: 'auto', display: 'block' }} /></NavAnchor>
               : <p style={{ fontFamily: k.fontDisplay, fontSize: '20px', fontWeight: k.brandWeight, marginBottom: '10px', color: k.fg }}>{store.name}</p>}
             {s.showTagline !== false && store.tagline && <p style={body}>{store.tagline}</p>}
             {s.text && <p style={{ ...body, marginTop: '10px', whiteSpace: 'pre-line' }}>{s.text}</p>}
@@ -175,13 +175,18 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
         return fold(id, s.heading, <p style={{ ...body, whiteSpace: 'pre-line' }}>{s.text}</p>);
       case 'footer_contact':
         return fold(id, s.heading || 'Contact', <FooterContact settings={s} tokens={parts} />);
-      case 'footer_image':
-        return s.imageUrl ? (
+      case 'footer_image': {
+        if (!s.imageUrl) return null;
+        const px = typeof s.imageWidth === 'number' ? s.imageWidth : typeof s.width === 'number' ? s.width : 160; // legacy blocks stored the pixel width in `width`
+        return (
           <>
             {s.heading && <p style={heading}>{s.heading}</p>}
-            <img src={s.imageUrl} alt={s.alt || ''} style={{ width: typeof s.width === 'number' ? s.width : 160, maxWidth: '100%', height: 'auto', marginInline: center ? 'auto' : undefined }} />
+            <NavAnchor link={resolveLink(s.link ?? { linkType: 'home' })} className="block" style={{ width: px, maxWidth: '100%', marginInline: center ? 'auto' : undefined }}>
+              <img src={s.imageUrl} alt={s.alt || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </NavAnchor>
           </>
-        ) : null;
+        );
+      }
       case 'footer_newsletter':
         if (opts.newsletterTop) return null;
         return (

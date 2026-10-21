@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
+import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 import { scrollRootRef, scrollRootToTop, lenisRef } from '@/utils/scrollRoot';
 import { SmoothScroll } from '@/components/comman/motion/SmoothScroll';
@@ -7,7 +8,11 @@ import { AuthGateModal } from '@/components/comman/ui/AuthGateModal';
 import { ToastContainer } from '@/components/comman/ui/ToastContainer';
 import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
 
+// A store's own host must never show the platform's orange loader: its visitors never signed up to Solvexo.
+const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate());
+
 function PageSpinner() {
+  if (ON_STORE_HOST) return <div className="min-h-[55vh]" aria-busy="true" />;
   return (
     <div className="flex items-center justify-center min-h-[55vh]">
       <div className="w-5 h-5 rounded-full border-2 border-brand-orange border-t-transparent animate-spin" />
@@ -20,7 +25,7 @@ function PageSpinner() {
 // it for a centered spinner, so navigation feels continuous rather than blocked.
 function TopProgressBar() {
   const navigation = useNavigation();
-  if (navigation.state === 'idle') return null;
+  if (navigation.state === 'idle' || ON_STORE_HOST) return null;
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999] h-[3px] bg-transparent overflow-hidden">
       <div className="h-full w-1/3 bg-brand-orange animate-[top-progress_1s_ease-in-out_infinite]" />

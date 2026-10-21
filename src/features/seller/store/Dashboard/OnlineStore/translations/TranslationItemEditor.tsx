@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/comman/ui';
+import { TextTranslationsPanel } from './TextTranslationsPanel';
 import { Modal } from '@/components/comman/ui/Modal';
 import {
   apiDeleteTranslation, apiSaveTranslation,
@@ -42,6 +43,7 @@ export function TranslationItemEditor({ storeId, resource, item, locale, onSaved
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [bodyDirty, setBodyDirty] = useState(false);
   const [removing, setRemoving] = useState(false);
 
   const rtl = isRtlLanguage(locale);
@@ -52,7 +54,7 @@ export function TranslationItemEditor({ storeId, resource, item, locale, onSaved
     return FIELDS.some(f => values[f.key] !== (saved?.[f.key] ?? ''));
   }, [isMenu, item.menuItems, labels, values, saved, locale]);
 
-  useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => { onDirtyChange(dirty || bodyDirty); }, [dirty, bodyDirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
   const hasSaved = isMenu
@@ -143,17 +145,18 @@ export function TranslationItemEditor({ storeId, resource, item, locale, onSaved
         ) : (
           FIELDS.map(f => {
             const id = `tr-${f.key}`;
+            const fieldLabel = resource === 'blog_posts' && f.key === 'description' ? 'Excerpt' : f.label;
             const src = f.key === 'metaTitle' || f.key === 'metaDescription' ? '' : (item.source[f.key as 'title' | 'description' | 'handle'] ?? '');
             const untranslated = missing.includes(f.key);
             return (
               <div key={f.key} className="grid lg:grid-cols-2 gap-3 lg:gap-4">
                 <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-charcoal mb-1.5">{f.label} <span className="text-slate font-normal">(English)</span></p>
+                  <p className="text-[12px] font-medium text-charcoal mb-1.5">{fieldLabel} <span className="text-slate font-normal">(English)</span></p>
                   <div className="min-h-[38px] whitespace-pre-wrap break-words rounded-md bg-cream px-3 py-2 text-[13px] text-charcoal">{src || <span className="text-slate">Nothing to translate</span>}</div>
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <label htmlFor={id} className="text-[12px] font-medium text-charcoal">{f.label} <span className="text-slate font-normal">({languageName(locale)})</span></label>
+                    <label htmlFor={id} className="text-[12px] font-medium text-charcoal">{fieldLabel} <span className="text-slate font-normal">({languageName(locale)})</span></label>
                     {untranslated && <span className="text-[10.5px] font-semibold rounded-full bg-cream text-slate px-2 py-0.5">Untranslated</span>}
                   </div>
                   {f.multiline
@@ -166,6 +169,14 @@ export function TranslationItemEditor({ storeId, resource, item, locale, onSaved
           })
         )}
       </div>
+
+      {resource === 'blog_posts' && (
+        <div className="px-4 pb-4">
+          <h3 className="m-0 text-[13px] font-bold text-carbon">Article text</h3>
+          <p className="m-0 mt-0.5 text-[11.5px] text-slate">The paragraphs, headings, quotes and captions of the article. Saved on its own, with the button in this part.</p>
+          <TextTranslationsPanel key={`${item.id}|${locale}`} storeId={storeId} locale={locale} scope={`bp:${item.id}`} onDirtyChange={setBodyDirty} />
+        </div>
+      )}
 
       {confirmRemove && (
         <Modal

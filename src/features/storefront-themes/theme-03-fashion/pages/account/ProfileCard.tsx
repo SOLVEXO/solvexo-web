@@ -23,7 +23,7 @@ export function ProfileCard({ profile }: { profile: ProfileData }) {
         {error && <div className="sm:col-span-2"><Notice tone="error">{error}</Notice></div>}
         <div className="flex items-center gap-3 sm:col-span-2">
           <PillButton type="submit" loading={loading}>{ts('pg.save_changes', 'Save changes')}</PillButton>
-          <span aria-live="polite" className="flex items-center gap-1 text-sm font-medium" style={{ color: t.colors.success }}>{success && <><Check size={15} aria-hidden /> Saved</>}</span>
+          <span aria-live="polite" className="flex items-center gap-1 text-sm font-medium" style={{ color: t.colors.success }}>{success && <><Check size={15} aria-hidden /> {ts('account.saved', 'Saved')}</>}</span>
         </div>
       </form>
     </Card>

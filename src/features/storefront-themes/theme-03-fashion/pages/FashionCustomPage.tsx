@@ -10,8 +10,9 @@ import { ErrorBlock, PageSkeleton } from './pageParts';
 import { useLoad } from '../../core/pageHooks';
 
 /** Any seller page (About, Contact, policies...) at `/:pageSlug`; an unknown slug falls through to the 404 page. */
-export function FashionCustomPage() {
-  const { pageSlug = '' } = useParams();
+export function FashionCustomPage({ slug }: { slug?: string } = {}) {
+  const params = useParams();
+  const pageSlug = slug ?? params.pageSlug ?? '';
   const { store } = useStorefront();
   const localize = useLocalize();
   const { data, loading, error, retry } = useLoad(

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { apiAddAddress, apiGetMyAddresses, type Address, type AddressPayload } from '@/api/services/address';
 import { useLoad } from '../pageHooks';
+import { ts } from '@/utils/tStatic';
 
 export const EMPTY_ADDRESS: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '', addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '', country: '', isDefault: true,
@@ -28,7 +29,7 @@ export function useAddressBook(active: boolean) {
       setWantsForm(false);
       return true;
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save the address.');
+      setSaveError(err instanceof Error ? err.message : ts('pg.failed_to_save_the_address', 'Failed to save the address.'));
       return false;
     } finally { setSaving(false); }
   }, []);

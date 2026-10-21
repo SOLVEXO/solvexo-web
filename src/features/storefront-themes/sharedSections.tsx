@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
-import { tt } from '@/utils/tStatic';
+import { handleOf } from '@/utils/activeStoreText';
+import { tt, ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -203,7 +204,7 @@ function CollectionTile({ c, colors, theme, ratio, showDescription }: {
   const [errored, setErrored] = useState(false);
   const fit = imageFit(ratio, '4 / 3');
   return (
-    <Link to={`/collections/${c.slug}`} className="no-underline block" style={{ color: colors.ink }}>
+    <Link to={`/collections/${handleOf(c)}`} className="no-underline block" style={{ color: colors.ink }}>
       <div style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', marginBottom: '14px', display: c.image && !errored ? undefined : 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {c.image && !errored
           ? <img src={c.image} alt={c.name} loading="lazy" onError={() => setErrored(true)} style={fit.img} />
@@ -335,7 +336,7 @@ export function ContactFormSection({ section, colors, theme }: Props) {
       });
       setStatus('done');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'We could not send your message. Please try again.');
+      setError(err instanceof Error ? err.message : ts('pg.we_could_not_send_your_message_please', 'We could not send your message. Please try again.'));
       setStatus('error');
     }
   }
@@ -347,7 +348,7 @@ export function ContactFormSection({ section, colors, theme }: Props) {
         {s.intro && <p style={{ fontFamily: theme.fonts.body, fontSize: '14.5px', color: colors.inkMuted, textAlign: 'center', lineHeight: 1.7, margin: '-12px 0 24px' }}>{s.intro}</p>}
         {status === 'done' ? (
           <p role="status" style={{ fontFamily: theme.fonts.body, fontSize: '15px', color: colors.ink, textAlign: 'center', padding: '28px', border: `1px solid ${colors.border}`, borderRadius: theme.imageRadiusPx }}>
-            {s.successMessage || 'Thanks — we got your message and will reply soon.'}
+            {s.successMessage || ts('pg.thanks_we_got_your_message_and_will', 'Thanks — we got your message and will reply soon.')}
           </p>
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4">
@@ -361,7 +362,7 @@ export function ContactFormSection({ section, colors, theme }: Props) {
             <div><label htmlFor="cf-message" style={label}>{copyText(s, 'messageLabel', 'Message')}</label><textarea id="cf-message" required rows={6} maxLength={3000} value={values.message} onChange={set('message')} style={{ ...field, resize: 'vertical' }} /></div>
             {/* Bot trap: invisible to people, so only automated fills reach it. */}
             <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
-              <label htmlFor="cf-website">Website</label>
+              <label htmlFor="cf-website">{ts('pg.website', 'Website')}</label>
               <input id="cf-website" tabIndex={-1} autoComplete="off" value={values.website} onChange={set('website')} />
             </div>
             {status === 'error' && <p role="alert" style={{ fontFamily: theme.fonts.body, fontSize: '13px', color: '#B3413A', margin: 0 }}>{error}</p>}

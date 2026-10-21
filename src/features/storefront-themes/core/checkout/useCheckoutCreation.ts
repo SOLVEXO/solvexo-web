@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { ts } from '@/utils/tStatic';
 import {
   apiAddShippingToCheckout, apiCreateCheckout, type Checkout, type CheckoutSummary, type ShippingSelectionPayload,
 } from '@/api/services/checkout';
@@ -60,7 +61,7 @@ export function useCheckoutCreation(input: CreationInput) {
     void (async () => {
       try {
         // A guest's email must reach the backend BEFORE any payment can start (the confirmation goes there).
-        if (p.guest && !(await p.commitGuest())) throw new Error('Enter a valid email address to continue.');
+        if (p.guest && !(await p.commitGuest())) throw new Error(ts('pg.enter_a_valid_email_address_to_continue', 'Enter a valid email address to continue.'));
         const res = await apiCreateCheckout({
           addressId: p.isDigital || p.pickup ? undefined : (p.addressId ?? undefined),
           ...(p.multiGroup && !p.isDigital
@@ -95,7 +96,7 @@ export function useCheckoutCreation(input: CreationInput) {
         p.onCurrency?.(checkout.currency);
         setLive({ key: runKey, checkout, summary, allowed: p.isDigital ? methods.filter(m => m === 'stripe') : methods });
       } catch (err) {
-        setFailure({ key: runKey, message: err instanceof Error ? err.message : 'Failed to start checkout.' });
+        setFailure({ key: runKey, message: err instanceof Error ? err.message : ts('pg.failed_to_start_checkout', 'Failed to start checkout.') });
       }
     })();
   }, [runKey]);

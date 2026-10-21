@@ -49,7 +49,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
     if (editing) {
       const id = editing._id;
       setEditing(null);
-      chat.edit(id, text).catch(() => setNotice('We could not save your edit. Please try again.'));
+      chat.edit(id, text).catch(() => setNotice(ts('pg.we_could_not_save_your_edit_please_try', 'We could not save your edit. Please try again.')));
       return;
     }
     const payload = { type: 'text' as const, text, ...(replyTo ? { replyTo: { messageId: replyTo._id, text: replyTo.text, type: replyTo.type, senderId: replyTo.senderId, senderRole: replyTo.senderRole } } : {}) };
@@ -65,11 +65,11 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
       const attachment = await apiUploadAttachment(conversation._id, file, setProgress);
       await chat.send({ type: attachmentKind(file), attachments: [attachment] });
     } catch (err) {
-      setNotice(err instanceof Error && err.message ? err.message : 'The file could not be uploaded.');
+      setNotice(err instanceof Error && err.message ? err.message : ts('pg.the_file_could_not_be_uploaded', 'The file could not be uploaded.'));
     } finally { setUploading(false); }
   };
 
-  const subtitle = chat.otherTyping ? 'typing...' : chat.otherOnline ? 'Online' : 'We reply as soon as we can';
+  const subtitle = chat.otherTyping ? ts('pg.word_typing', 'typing...') : chat.otherOnline ? ts('pg.word_online', 'Online') : ts('pg.we_reply_as_soon_as_we_can', 'We reply as soon as we can');
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: 'min(700px, calc(100dvh - 230px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: 24, background: t.colors.bg }}>
@@ -90,10 +90,10 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
         </div>
       )}
 
-      <div ref={scroller} role="log" aria-live="polite" aria-label={`Conversation with ${storeName}`} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+      <div ref={scroller} role="log" aria-live="polite" aria-label={ts('pg.conversation_with_store', 'Conversation with {{store}}', { store: storeName })} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
         {chat.hasMore && (
           <button type="button" onClick={() => void chat.loadMore()} disabled={chat.loadingMore} className="mx-auto inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-medium" style={{ background: t.colors.bgAlt, border: 'none', color: t.colors.ink, cursor: 'pointer' }}>
-            {chat.loadingMore && <Loader2 size={14} className="animate-spin" aria-hidden />}Load earlier messages
+            {chat.loadingMore && <Loader2 size={14} className="animate-spin" aria-hidden />}{ts('pg.load_earlier_messages', 'Load earlier messages')}
           </button>
         )}
         {chat.loading && chat.messages.length === 0 ? (
@@ -103,8 +103,8 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
         ) : chat.messages.length === 0 ? (
           <div className="m-auto grid place-items-center gap-3 text-center">
             <span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><MessageCircle size={24} aria-hidden /></span>
-            <p className="m-0 text-lg font-semibold">Say hello to {storeName}</p>
-            <p className="m-0 max-w-[320px] text-sm" style={{ color: t.colors.inkMuted }}>Ask about a product, an order or anything else. You can attach photos and files too.</p>
+            <p className="m-0 text-lg font-semibold">{ts('pg.say_hello_to_store', 'Say hello to {{store}}', { store: storeName })}</p>
+            <p className="m-0 max-w-[320px] text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.ask_about_a_product_an_order_or', 'Ask about a product, an order or anything else. You can attach photos and files too.')}</p>
           </div>
         ) : chat.messages.map((m, i) => {
           const prev = chat.messages[i - 1];
@@ -112,7 +112,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
             <Fragment key={m._id}>
               {(!prev || !sameDay(prev.createdAt, m.createdAt)) && <p className="m-0 my-1 text-center text-xs font-medium" style={{ color: t.colors.inkMuted }}>{dayLabel(m.createdAt)}</p>}
               <ChatBubble message={m} mine={isMine(m)} myId={myId} storeName={storeName} onReply={setReplyTo} onEdit={msg => { setEditing(msg); setReplyTo(null); }}
-                onDelete={id => { chat.remove(id).catch(() => setNotice('We could not delete that message.')); }} onRetry={msg => { const payload = retryPayload(msg); if (payload && msg._tempId) void chat.retry(msg._tempId, payload); }}
+                onDelete={id => { chat.remove(id).catch(() => setNotice(ts('pg.we_could_not_delete_that_message', 'We could not delete that message.'))); }} onRetry={msg => { const payload = retryPayload(msg); if (payload && msg._tempId) void chat.retry(msg._tempId, payload); }}
                 onReact={(id, emoji) => void chat.react(id, emoji, myId ?? null)} />
             </Fragment>
           );
@@ -122,7 +122,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
       <ChatComposer key={editing?._id ?? 'new'} initialText={editing?.text ?? ''} editing={!!editing} replyTo={replyTo} sending={chat.sending} uploading={uploading} uploadProgress={progress}
         onSubmit={sendText} onAttach={file => void upload(file)} onShareProduct={() => setSharing(true)} onTyping={chat.sendTyping}
         onCancelReply={() => setReplyTo(null)} onCancelEdit={() => setEditing(null)}
-        onFileTooLarge={file => setNotice(`"${file.name}" is too large. The limit is ${formatBytes(MAX_UPLOAD_BYTES)}.`)} />
+        onFileTooLarge={file => setNotice(ts('pg.name_is_too_large_the_limit_is_size', '"{{name}}" is too large. The limit is {{size}}.', { name: file.name, size: formatBytes(MAX_UPLOAD_BYTES) }))} />
 
       {sharing && <ProductSharePicker storeId={storeId} onClose={() => setSharing(false)} onPick={id => { setSharing(false); void chat.send({ type: 'product_share', productShare: { productId: id } }); }} />}
     </div>

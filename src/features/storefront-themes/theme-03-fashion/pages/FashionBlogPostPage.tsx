@@ -37,7 +37,7 @@ export function FashionBlogPostPage() {
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-article'), 'article_content');
 
   const post = data?.post ?? null;
-  useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : 'Journal', description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
+  useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : ts('blog.journal', 'Journal'), description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
 
   if (loading) return <PageSkeleton hero />;
   if (error) return <PageBox><ErrorState message={ts('pg.we_couldn_t_load_this_article', 'We couldn\'t load this article.')} onRetry={retry} /></PageBox>;
@@ -67,8 +67,8 @@ export function FashionBlogPostPage() {
           <h1 className="m-0 text-[clamp(32px,5.2vw,58px)] font-medium leading-[1.06] tracking-tight" style={{ fontFamily: t.fonts.display }}>{post.title}</h1>
           {post.excerpt && <p className="m-0 mt-5 text-lg leading-relaxed" style={{ color: t.colors.inkMuted }}>{post.excerpt}</p>}
           <p className="m-0 mt-5 text-sm" style={{ color: t.colors.inkMuted }}>
-            {post.authorName && <>By <span className="font-semibold" style={{ color: t.colors.ink }}>{post.authorName}</span> · </>}
-            {date && <><time dateTime={post.publishedAt ?? undefined}>{date}</time> · </>}{minutes} min read
+            {post.authorName && <>{ts('pg.word_by', 'By')} <span className="font-semibold" style={{ color: t.colors.ink }}>{post.authorName}</span> · </>}
+            {date && <><time dateTime={post.publishedAt ?? undefined}>{date}</time> · </>}{ts('pg.minutes_min_read', '{{minutes}} min read', { minutes })}
           </p>
         </PageBox>
         {cover && (

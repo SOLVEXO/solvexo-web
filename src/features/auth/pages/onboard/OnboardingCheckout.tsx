@@ -296,7 +296,6 @@ const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) =>
   { group: 'Online store', rows: [
     { label: 'Themes & theme editor', get: ALL },
     { label: 'Pages, blog & menus', get: ALL },
-    { label: 'Store banners', get: p => num(p.limits.maxActiveStoreBanners) },
     { label: 'Custom domain', get: p => flag(p.limits.customDomainAllowed) },
     { label: 'White-label branding', get: p => flag(p.limits.whiteLabelAllowed) },
   ] },

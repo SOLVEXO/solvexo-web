@@ -60,7 +60,6 @@ const GROUPS: Group[] = [
     { label: 'Email campaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
     { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
     { label: 'Active promotions', get: p => count(p.limits.maxActivePromotions) },
-    { label: 'Active store banners', get: p => count(p.limits.maxActiveStoreBanners) },
   ] },
   { title: 'SEO', rows: [
     { label: 'Built-in SEO features', get: () => true },

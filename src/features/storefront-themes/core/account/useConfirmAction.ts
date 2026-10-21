@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { ts } from '@/utils/tStatic';
 
 /** State for a "confirm, then run an async action" dialog: pick a target, confirm, error stays in the dialog. */
 export function useConfirmAction<T>(run: (target: T) => Promise<void>, onDone: () => void) {
@@ -10,7 +11,7 @@ export function useConfirmAction<T>(run: (target: T) => Promise<void>, onDone: (
   const confirm = async () => {
     if (!target) return;
     setBusy(true); setError('');
-    try { await run(target); setTarget(null); onDone(); } catch (err) { setError(err instanceof Error ? err.message : 'Something went wrong.'); } finally { setBusy(false); }
+    try { await run(target); setTarget(null); onDone(); } catch (err) { setError(err instanceof Error ? err.message : ts('common.somethingWrong', 'Something went wrong.')); } finally { setBusy(false); }
   };
   return { target, busy, error, open, close, confirm };
 }

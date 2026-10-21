@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { ts } from '@/utils/tStatic';
 
 interface Props {
   email: string;
@@ -26,10 +27,10 @@ export function GuestContactSection({
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-3 flex-wrap" style={{ fontFamily, fontSize: '12.5px' }}>
-        <label htmlFor="guest-checkout-email" style={{ color: textColor, fontWeight: 600 }}>Email</label>
+        <label htmlFor="guest-checkout-email" style={{ color: textColor, fontWeight: 600 }}>{ts('auth.email', 'Email')}</label>
         <span style={{ color: mutedColor }}>
-          Already have an account?{' '}
-          <Link to={`/login?redirect=${encodeURIComponent(returnPath)}`} style={{ color: accentColor, fontWeight: 600 }}>Log in</Link>
+          {ts('auth.haveAccount', 'Already have an account?')}{' '}
+          <Link to={`/login?redirect=${encodeURIComponent(returnPath)}`} style={{ color: accentColor, fontWeight: 600 }}>{ts('checkout.logIn', 'Log in')}</Link>
         </span>
       </div>
       <input
@@ -38,7 +39,7 @@ export function GuestContactSection({
         autoComplete="email"
         required
         aria-invalid={!!error}
-        placeholder="you@example.com"
+        placeholder={ts('common.emailPlaceholder', 'you@example.com')}
         style={inputStyle}
         value={email}
         onChange={e => onEmailChange(e.target.value)}
@@ -50,7 +51,7 @@ export function GuestContactSection({
           <AlertCircle size={13} className="mt-[1px] shrink-0" /> {error}
         </p>
       )}
-      <p style={{ fontFamily, fontSize: '11.5px', color: mutedColor }}>Your order confirmation and updates are sent to this email.</p>
+      <p style={{ fontFamily, fontSize: '11.5px', color: mutedColor }}>{ts('checkout.emailHint', 'Your order confirmation and updates are sent to this email.')}</p>
     </div>
   );
 }

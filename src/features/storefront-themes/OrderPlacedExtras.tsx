@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiGetOrderStatusLink } from '@/api/services/orders';
+import { ts } from '@/utils/tStatic';
 
 interface Props {
   orderId: string | undefined;
@@ -27,7 +28,7 @@ export function OrderPlacedExtras({ orderId, guestEmail, fontFamily, textColor, 
       const res = await apiGetOrderStatusLink(orderId);
       navigate(`/order-status/${encodeURIComponent(res.data.token)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open the order status page.');
+      setError(err instanceof Error ? err.message : ts('checkout.orderStatusOpenError', 'Could not open the order status page.'));
     } finally { setBusy(false); }
   };
 
@@ -35,13 +36,13 @@ export function OrderPlacedExtras({ orderId, guestEmail, fontFamily, textColor, 
     <div className="flex flex-col items-center gap-3" style={{ marginBottom: '20px' }}>
       {guestEmail !== null && (
         <p style={{ fontFamily, fontSize: '12.5px', color: mutedColor, lineHeight: 1.6 }}>
-          {guestEmail ? <>A confirmation was sent to <strong style={{ color: textColor }}>{guestEmail}</strong>. </> : null}
-          <Link to="/register" style={{ color: accentColor, fontWeight: 600 }}>Create an account</Link> with this email to track all your orders.
+          {guestEmail ? <>{ts('checkout.confirmationSentTo', 'A confirmation was sent to')} <strong style={{ color: textColor }}>{guestEmail}</strong>. </> : null}
+          <Link to="/register" style={{ color: accentColor, fontWeight: 600 }}>{ts('checkout.createAccount', 'Create an account')}</Link> {ts('checkout.createAccountRest', 'with this email to track all your orders.')}
         </p>
       )}
       {orderId && (
         <button type="button" onClick={open} disabled={busy} className="cursor-pointer" style={{ ...buttonStyle, opacity: busy ? 0.7 : 1 }}>
-          {busy ? 'Opening…' : 'View order status'}
+          {busy ? ts('checkout.opening', 'Opening…') : ts('checkout.viewOrderStatus', 'View order status')}
         </button>
       )}
       {error && <p role="alert" style={{ fontFamily, fontSize: '12px', color: dangerColor }}>{error}</p>}

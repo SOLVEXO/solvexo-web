@@ -1,4 +1,5 @@
 import client from '../client';
+import { localizePaymentMethod } from '../../utils/activeStoreText';
 import { ENDPOINTS } from '../endpoints';
 
 // ── Types — mirror solvexo-api's `src/integrations` module exactly ─────────
@@ -26,6 +27,10 @@ export interface StoreIntegrationView {
   /** Stripe only — it has no `StoreIntegration` row of its own; manage it
    *  via the existing Stripe Connect endpoints instead of this module. */
   manageVia?: { statusUrl: string; connectUrl: string };
+  /** Payment providers only: false when the store's country cannot use this provider (Shopify-style availability). */
+  available?: boolean;
+  /** Plain-language reason shown to the seller when `available` is false. */
+  unavailableReason?: string | null;
 }
 
 export interface ManualPaymentMethodView { id: string; name: string; instructions: string; isActive: boolean; sortOrder: number }
@@ -225,7 +230,7 @@ export async function apiGetCheckoutPaymentMethods(checkoutId: string): Promise<
   );
   const raw = res.data as any;
   const methods: PublicPaymentMethod[] = Array.isArray(raw) ? raw : Array.isArray(raw?.methods) ? raw.methods : [];
-  return { ...(res as any), data: methods };
+  return { ...(res as any), data: methods.map(localizePaymentMethod) };
 }
 
 export interface PaymentSession {

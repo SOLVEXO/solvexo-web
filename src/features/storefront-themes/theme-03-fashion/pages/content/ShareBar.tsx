@@ -12,7 +12,7 @@ export function ShareBar({ url, title }: { url: string; title: string }) {
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 2200); } catch { window.prompt('Copy this link', url); }
+    try { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 2200); } catch { window.prompt(ts('pg.copy_this_link', 'Copy this link'), url); }
   };
   const nativeShare = () => { navigator.share({ title, url }).catch(() => { /* dismissed */ }); };
   const chip = { width: 40, height: 40, borderRadius: 9999, border: `1px solid ${t.colors.border}`, background: 'transparent', color: t.colors.ink, cursor: 'pointer' } as const;
@@ -30,7 +30,7 @@ export function ShareBar({ url, title }: { url: string; title: string }) {
           </a>
         );
       })}
-      <span className="sr-only" role="status">{copied ? 'Link copied' : ''}</span>
+      <span className="sr-only" role="status">{copied ? ts('product.linkCopied', 'Link copied') : ''}</span>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
+import { ts } from '@/utils/tStatic';
 
 /** Social glyphs drawn on a 24px grid (lucide-react ships no brand icons in this version). */
 export function SocialIcon({ platform, size = 16 }: { platform: string; size?: number }) {
@@ -25,6 +26,18 @@ export function SocialIcon({ platform, size = 16 }: { platform: string; size?: n
   }
 }
 
+/** Each platform's own brand colour. X and TikTok are black, which would vanish on a dark footer, so they return `fallback`. */
+export function socialBrandColor(platform: string, fallback: string): string {
+  switch (platform) {
+    case 'facebook': return '#1877F2';
+    case 'instagram': return '#E4405F';
+    case 'youtube': return '#FF0000';
+    case 'linkedin': return '#0A66C2';
+    case 'whatsapp': return '#25D366';
+    default: return fallback; // x, tiktok and any other link
+  }
+}
+
 interface PartTokens { fontFamily: string; color: string; muted: string; fontSize: string }
 
 /** Address / phone / email / hours the retailer typed into a "Contact" footer block. */
@@ -42,7 +55,7 @@ export function FooterContact({ settings, tokens }: { settings: { email?: string
 
 const PAYMENT_LABELS: Record<string, string> = {
   visa: 'VISA', mastercard: 'Mastercard', amex: 'Amex', paypal: 'PayPal', applepay: 'Apple Pay',
-  googlepay: 'Google Pay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', cod: 'Cash on delivery',
+  googlepay: 'Google Pay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa',
 };
 
 /** Pill badges for the payment methods the retailer accepts (text only, no third-party logo artwork). */
@@ -53,7 +66,7 @@ export function PaymentBadges({ icons, tokens, border }: { icons: string[]; toke
     <ul className="m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0" aria-label={tr('footer.paymentMethods', 'Accepted payment methods')}>
       {icons.map(icon => (
         <li key={icon} className="rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide" style={{ fontFamily: tokens.fontFamily, color: tokens.muted, border: `1px solid ${border}` }}>
-          {PAYMENT_LABELS[icon] ?? icon}
+          {icon === 'cod' ? ts('order.method.cod', 'Cash on delivery') : PAYMENT_LABELS[icon] ?? icon}
         </li>
       ))}
     </ul>

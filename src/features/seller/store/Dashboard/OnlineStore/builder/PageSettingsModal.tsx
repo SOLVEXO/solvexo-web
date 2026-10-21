@@ -131,10 +131,17 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
                 <span className="text-[12.5px] font-medium text-charcoal">Show in navigation menu</span>
                 <Toggle checked={showInNav} onChange={setShowInNav} ariaLabel="Show in navigation menu" />
               </label>
-              <label className="flex items-center justify-between gap-3 cursor-pointer">
-                <span className="text-[12.5px] font-medium text-charcoal">Show in footer</span>
-                <Toggle checked={showInFooter} onChange={setShowInFooter} ariaLabel="Show in footer" />
-              </label>
+              {/* Shopify has no per-page footer switch: footer links live in the footer menu. Only pages that already
+                  had this on keep the (older) switch, so turning it off here is the last step of moving to the menu. */}
+              {page.showInFooter && (
+                <div>
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-[12.5px] font-medium text-charcoal">Show in footer (older option)</span>
+                    <Toggle checked={showInFooter} onChange={setShowInFooter} ariaLabel="Show in footer" />
+                  </label>
+                  <p className="mt-1 mb-0 text-[11px] text-slate">Add this page to your footer menu instead (Online Store → Menus, then Customize → Footer → Menu column), then turn this off.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

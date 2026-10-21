@@ -16,7 +16,7 @@ import { useConfirmAction } from '../../core/account/useConfirmAction';
 /** `/addresses`: the buyer's saved addresses (add, edit, delete, set default). */
 export function FashionAddressesPage() {
   const guest = useRequireRealAccount();
-  useStorefrontSeo({ title: 'Addresses', noindex: true });
+  useStorefrontSeo({ title: ts('account.addresses', 'Addresses'), noindex: true });
   const { addresses, loading, error, reload } = useMyAddresses();
   const [editing, setEditing] = useState<Address | 'new' | null>(null);
   const [busyId, setBusyId] = useState('');
@@ -28,15 +28,15 @@ export function FashionAddressesPage() {
   async function makeDefault(a: Address) {
     setBusyId(a._id); setActionError('');
     try { await apiSetDefaultAddress(a._id); reload(); }
-    catch (err) { setActionError(err instanceof Error ? err.message : 'Could not update your default address.'); }
+    catch (err) { setActionError(err instanceof Error ? err.message : ts('addresses.err.default', 'Could not update your default address.')); }
     finally { setBusyId(''); }
   }
 
-  const add = <PillButton onClick={() => setEditing('new')}><Plus size={16} aria-hidden /> Add a new address</PillButton>;
+  const add = <PillButton onClick={() => setEditing('new')}><Plus size={16} aria-hidden /> {ts('addresses.add', 'Add a new address')}</PillButton>;
   const link = 'cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold underline disabled:opacity-40';
 
   return (
-    <AccountLayout title="My" accent={ts('pg.word_addresses', 'addresses')} subtitle="Where we send your orders." actions={addresses && addresses.length > 0 ? add : undefined}>
+    <AccountLayout title={ts('pg.word_my', 'My')} accent={ts('pg.word_addresses', 'addresses')} subtitle={ts('pg.where_we_send_your_orders', 'Where we send your orders.')} actions={addresses && addresses.length > 0 ? add : undefined}>
       {actionError && <div className="mb-4"><Notice tone="error">{actionError}</Notice></div>}
       {loading && !addresses ? <div aria-busy="true"><SkeletonBlock h={140} rows={2} /></div>
         : error && !addresses ? <ErrorState message={error} onRetry={reload} />
@@ -51,7 +51,7 @@ export function FashionAddressesPage() {
                 <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
                   <button type="button" onClick={() => setEditing(a)} className={link} style={{ color: t.colors.ink }}>{ts('addresses.edit', 'Edit')}</button>
                   <button type="button" onClick={() => del.open(a)} className={link} style={{ color: t.colors.ink }}>{ts('addresses.delete', 'Delete')}</button>
-                  {!a.isDefault && <button type="button" disabled={busyId === a._id} onClick={() => void makeDefault(a)} className={link} style={{ color: t.colors.ink }}>{busyId === a._id ? 'Saving...' : 'Set as default'}</button>}
+                  {!a.isDefault && <button type="button" disabled={busyId === a._id} onClick={() => void makeDefault(a)} className={link} style={{ color: t.colors.ink }}>{busyId === a._id ? ts('pg.word_saving', 'Saving...') : ts('addresses.setDefault', 'Set as default')}</button>}
                 </div>
               </Card>
             ))}
@@ -59,8 +59,8 @@ export function FashionAddressesPage() {
         )}
       {editing && <AddressFormDialog address={editing === 'new' ? undefined : editing} isFirst={!addresses || addresses.length === 0} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
       {del.target && (
-        <ConfirmDialog title={ts('addresses.deleteTitle', 'Delete address')} confirmLabel="Delete" busy={del.busy} error={del.error} onClose={del.close} onConfirm={() => void del.confirm()}
-          message={del.target.isDefault ? 'This is your default address. Are you sure you want to delete it?' : 'Are you sure you want to delete this address?'} />
+        <ConfirmDialog title={ts('addresses.deleteTitle', 'Delete address')} confirmLabel={ts('addresses.delete', 'Delete')} busy={del.busy} error={del.error} onClose={del.close} onConfirm={() => void del.confirm()}
+          message={del.target.isDefault ? ts('addresses.deleteDefaultMsg', 'This is your default address. Are you sure you want to delete it?') : ts('addresses.deleteMsg', 'Are you sure you want to delete this address?')} />
       )}
     </AccountLayout>
   );

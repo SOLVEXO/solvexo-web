@@ -60,9 +60,19 @@ describe('readFooterOptions / expandCopyright', () => {
       logoSource: 'none', logoUrl: null, logoWidth: 140, showNewsletter: true, newsletterHeading: null, newsletterText: null,
       showDefaultColumns: true, shopColumnHeading: 'Shop', accountColumnHeading: 'Account', blogLabel: 'Stories',
       bgColor: null, textColor: null, padding: { columns: 56, compact: 32 }, bgImageUrl: null, bgOverlay: 50, align: 'left',
-      headingUppercase: true, socialStyle: null, newsletterTop: false, mobileAccordion: true, showPolicyLinks: true,
+      headingUppercase: true, socialStyle: null, socialColor: null, socialCustomColor: null, socialFilled: false, socialSize: null,
+      newsletterTop: false, mobileAccordion: true, showPolicyLinks: true,
       showCurrency: false, showBackToTop: false,
     });
+  });
+  it('reads the social icon colour and size, clamping the size to 24–72 px', () => {
+    const o = (f: Partial<StorefrontFooter>) => readFooterOptions(f, 'Journal');
+    expect(o({ socialColor: 'brand', socialSize: 56 })).toMatchObject({ socialColor: 'brand', socialSize: 56 });
+    expect(o({ socialColor: 'custom', socialCustomColor: '#aa5500' })).toMatchObject({ socialColor: 'custom', socialCustomColor: '#aa5500' });
+    expect(o({ socialSize: 500 }).socialSize).toBe(72);
+    expect(o({ socialSize: 3 }).socialSize).toBe(24);
+    expect(o({ socialColor: 'weird' as never, socialCustomColor: 'red' }).socialColor).toBeNull();
+    expect(o({ socialCustomColor: 'red' }).socialCustomColor).toBeNull();
   });
   it('reads the premium footer settings and ignores unsafe images', () => {
     const o = readFooterOptions({ paddingY: 'spacious', bgImageUrl: 'http://x/y.png', bgOverlay: 200, align: 'center', socialStyle: 'square' } as Partial<StorefrontFooter>, 'Journal');

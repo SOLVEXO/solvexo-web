@@ -26,16 +26,16 @@ export function ResendTimer({ email, storeId, isForgot }: { email: string; store
       if (isForgot) await apiForgotPassword({ email, role: 'user', storeId });
       else await apiResendOtp({ email, role: 'user', storeId });
       setSeconds(WAIT); setRound(r => r + 1);
-      toast.success('Code resent');
+      toast.success(ts('otp.resent', 'Code resent'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend code.');
+      setError(err instanceof Error ? err.message : ts('otp.err.resend', 'Failed to resend code.'));
     } finally { setSending(false); }
   };
 
   if (seconds > 0) return <span className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.resend_in', 'Resend in')} <b style={{ color: t.colors.ink }}>{seconds}s</b></span>;
   return (
     <span className="flex flex-col items-center gap-1">
-      <button type="button" onClick={resend} disabled={sending} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline disabled:opacity-50" style={{ color: t.colors.ink }}>{sending ? 'Sending...' : 'Resend code'}</button>
+      <button type="button" onClick={resend} disabled={sending} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline disabled:opacity-50" style={{ color: t.colors.ink }}>{sending ? ts('otp.sending', 'Sending...') : ts('otp.resendCode', 'Resend code')}</button>
       {error && <span role="alert" className="text-[13px]" style={{ color: t.colors.danger }}>{error}</span>}
     </span>
   );

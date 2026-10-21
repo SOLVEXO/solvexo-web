@@ -10,6 +10,7 @@ import {
 } from '@/utils/guestCart';
 import { useToast } from '@/contexts/ToastContext';
 import { trackPixelEvent } from '@/utils/trackingPixels';
+import { ts } from '@/utils/tStatic';
 
 // ── localStorage: variantId → type map ────────────────────────────────────────
 const TYPES_KEY = 'solvexo_cart_types';
@@ -207,7 +208,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       addGuestCartItem(productId, productVariantId, type, quantity);
       await refreshGuestCartDisplay();
       setAdding(null);
-      toast.success('Added to cart');
+      toast.success(ts('pg.added_to_cart', 'Added to cart'));
       trackPixelEvent('AddToCart', { contentIds: [productId] });
       return true;
     }
@@ -217,7 +218,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     try {
       const res = await apiAddToCart(productId, productVariantId, storeId, quantity);
       setCart(mergeTypes(res.data));
-      toast.success('Added to cart');
+      toast.success(ts('pg.added_to_cart', 'Added to cart'));
       trackPixelEvent('AddToCart', { contentIds: [productId] });
       return true;
     } catch (err) {
@@ -259,7 +260,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       await apiUpdateCartQuantity(productId, productVariantId, action, storeId);
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update quantity.';
+      const message = err instanceof Error ? err.message : ts('pg.failed_to_update_quantity', 'Failed to update quantity.');
       setError(message);
       toast.error(message);
       return false;
@@ -291,7 +292,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       await apiSetCartQuantity(productId, productVariantId, quantity, storeId);
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to set cart quantity.';
+      const message = err instanceof Error ? err.message : ts('pg.failed_to_set_cart_quantity', 'Failed to set cart quantity.');
       setError(message);
       toast.error(message);
       return false;
@@ -306,7 +307,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     if (!TokenStorage.isLoggedIn()) {
       removeGuestCartItem(productVariantId);
       await refreshGuestCartDisplay();
-      toast.success('Removed from cart');
+      toast.success(ts('pg.removed_from_cart', 'Removed from cart'));
       return true;
     }
 
@@ -323,10 +324,10 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     setError(null);
     try {
       await apiRemoveCartItem(productId, productVariantId, storeId);
-      toast.success('Removed from cart');
+      toast.success(ts('pg.removed_from_cart', 'Removed from cart'));
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to remove item.';
+      const message = err instanceof Error ? err.message : ts('pg.failed_to_remove_item', 'Failed to remove item.');
       setError(message);
       toast.error(message);
       return false;
@@ -341,7 +342,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       clearGuestCart();
       clearTypes();
       setCart(null);
-      if (!silent) toast.success('Cart cleared');
+      if (!silent) toast.success(ts('pg.cart_cleared', 'Cart cleared'));
       return;
     }
     // Was `!cart?._id` — the backend's getCart response never included `_id`
@@ -358,9 +359,9 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     setError(null);
     try {
       await apiClearCart(cart?._id ?? '', storeId);
-      if (!silent) toast.success('Cart cleared');
+      if (!silent) toast.success(ts('pg.cart_cleared', 'Cart cleared'));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to clear cart.';
+      const message = err instanceof Error ? err.message : ts('pg.failed_to_clear_cart', 'Failed to clear cart.');
       setError(message);
       if (!silent) toast.error(message);
       syncCart(storeId, c => setCart(c));

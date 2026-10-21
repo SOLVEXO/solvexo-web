@@ -44,7 +44,7 @@ function methodIcon(o: PayOption) {
 function ErrorWithRestart({ message, stale, restart }: { message: string; stale: boolean; restart: () => void }) {
   return (
     <Notice tone="error" action={stale ? <TextLinkButton onClick={restart}>{ts('checkout.startOver', 'Start over')}</TextLinkButton> : undefined}>
-      {message}{stale ? ' Your checkout is no longer valid - start over to continue.' : ''}
+      {message}{stale ? ` ${ts('checkout.staleNotice', 'Your checkout is no longer valid - start over to continue.')}` : ''}
     </Notice>
   );
 }
@@ -53,7 +53,7 @@ function Consent({ value, onChange, storeName }: { value: boolean; onChange: (v:
   return (
     <label className="flex cursor-pointer items-center gap-3 text-sm">
       <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} className="size-4" style={{ accentColor: t.colors.accent }} />
-      Email me with news and offers from {storeName}
+      {ts('pg.email_me_with_news_and_offers_from_store', 'Email me with news and offers from {{store}}', { store: storeName })}
     </label>
   );
 }
@@ -106,14 +106,14 @@ function MethodPanel({ p, pay, currency, total, checkoutId }: { p: PayOption; pa
     <div className="flex flex-col gap-3">
       <p className="m-0 whitespace-pre-line text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>
         {manual
-          ? (p.instructions || 'Place your order, then pay the store directly as described by them. Your order is confirmed once they receive your payment.')
+          ? (p.instructions || ts('checkout.manualInstructions', 'Place your order, then pay the store directly as described by them. Your order is confirmed once they receive your payment.'))
           : easypaisa
-            ? 'You will get a payment request in your Easypaisa app. Approve it there to place your order.'
-            : `You will be taken to ${p.label} to complete your payment securely, then brought back here.`}
+            ? ts('checkout.easypaisaNotice', 'You will get a payment request in your Easypaisa app. Approve it there to place your order.')
+            : ts('checkout.redirectNotice', 'You will be taken to {{name}} to complete your payment securely, then brought back here.', { name: p.label })}
       </p>
       {easypaisa && (
         <Field label={ts('checkout.easypaisaAria', 'Easypaisa account number')} hint={ts('checkout.easypaisaFieldHint', 'Leave empty to use your delivery phone number.')}>
-          {f => <TextInput {...f} type="tel" inputMode="tel" autoComplete="tel" placeholder="03XXXXXXXXX" value={pay.walletAccount} onChange={e => pay.setWalletAccount(e.target.value)} />}
+          {f => <TextInput {...f} type="tel" inputMode="tel" autoComplete="tel" placeholder={ts('checkout.walletPlaceholder', '03XXXXXXXXX')} value={pay.walletAccount} onChange={e => pay.setWalletAccount(e.target.value)} />}
         </Field>
       )}
       <PillButton full loading={pay.busy} onClick={() => (manual && p.methodId ? pay.placeManual(p.methodId) : pay.payWithGateway(p.provider ?? ''))}>
@@ -151,15 +151,15 @@ export function PaymentStep(props: PaymentStepProps) {
   } else if (pay.options.length === 0) {
     body = (
       <div className="flex flex-col gap-3">
-        {pay.extrasError && <Notice tone="error" action={<TextLinkButton onClick={pay.retryExtras}>Retry</TextLinkButton>}>Some payment methods could not be loaded.</Notice>}
-        {pay.extrasLoading ? <SkeletonBlock h={64} /> : <Hint>No payment methods are available for this order yet.</Hint>}
+        {pay.extrasError && <Notice tone="error" action={<TextLinkButton onClick={pay.retryExtras}>{ts('cart.retry', 'Retry')}</TextLinkButton>}>{ts('checkout.extrasError', 'Some payment methods could not be loaded.')}</Notice>}
+        {pay.extrasLoading ? <SkeletonBlock h={64} /> : <Hint>{ts('checkout.noPaymentMethods', 'No payment methods are available for this order yet.')}</Hint>}
       </div>
     );
   } else {
     body = (
       <div className="flex flex-col gap-4">
-        {pay.extrasError && <Notice tone="error" action={<TextLinkButton onClick={pay.retryExtras}>Retry</TextLinkButton>}>Some payment methods could not be loaded.</Notice>}
-        <div role="radiogroup" aria-label="Payment method" className="flex flex-col gap-3">
+        {pay.extrasError && <Notice tone="error" action={<TextLinkButton onClick={pay.retryExtras}>{ts('cart.retry', 'Retry')}</TextLinkButton>}>{ts('checkout.extrasError', 'Some payment methods could not be loaded.')}</Notice>}
+        <div role="radiogroup" aria-label={ts('checkout.paymentMethodAria', 'Payment method')} className="flex flex-col gap-3">
           {pay.options.map(o => (
             <RadioRow key={o.key} name="payment-method" checked={pay.selected?.key === o.key} onChange={() => pay.choose(o.key)} label={o.label}>
               <div className="flex items-center gap-3">
@@ -183,5 +183,5 @@ export function PaymentStep(props: PaymentStepProps) {
     );
   }
 
-  return <StepCard step={step} title="Payment">{body}</StepCard>;
+  return <StepCard step={step} title={ts('checkout.paymentTitle', 'Payment')}>{body}</StepCard>;
 }

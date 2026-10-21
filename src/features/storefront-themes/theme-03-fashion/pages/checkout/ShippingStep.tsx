@@ -64,7 +64,7 @@ export function ShippingStep({ step, ship, priceText, dutiesNotice, addressReady
           const options = ship.options.filter(o => o.groupKey === g.groupKey);
           return (
             <div key={g.groupKey} className="flex flex-col gap-3">
-              <h3 className="m-0 text-sm font-semibold">Shipping: {g.name}</h3>
+              <h3 className="m-0 text-sm font-semibold">{ts('pg.shipping_name', 'Shipping: {{name}}', { name: g.name })}</h3>
               {options.length === 0
                 ? <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.noDeliveryForItems', 'No delivery option is available for these items to your address.')}</p>
                 : <ShipRows name={`shipping-${g.groupKey}`} options={options} current={ship.picks[g.groupKey]} onPick={id => ship.setPick(g.groupKey, id)} priceText={priceText} />}
@@ -75,7 +75,7 @@ export function ShippingStep({ step, ship, priceText, dutiesNotice, addressReady
     );
   }
   return (
-    <StepCard step={step} title="Delivery" done={ship.chosen && addressReady}>
+    <StepCard step={step} title={ts('checkout.deliveryTitle', 'Delivery')} done={ship.chosen && addressReady}>
       <div className="flex flex-col gap-4" aria-live="polite">
         {body}
         {ship.liveLoading && ship.options.length > 0 && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{ts('checkout.checkingRates', 'Checking carrier rates...')}</p>}

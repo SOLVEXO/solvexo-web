@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiLogin, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type LoginPayload, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { useToast } from '@/contexts/ToastContext';
+import { ts } from '@/utils/tStatic';
 
 export function useLogin() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export function useLogin() {
       const serverRole = (user.role ?? payload.role) as AppRole;
       LastRolePreference.set(serverRole);
       RememberedAccount.set({ name: user.name, email: user.email, role: serverRole, image: user.image ?? null, authMethod: 'password' });
-      toast.success('Logged in successfully');
+      toast.success(ts('pg.logged_in_successfully', 'Logged in successfully'));
       if (redirectTo) {
         navigate(redirectTo, { replace: true });
         return;
@@ -41,7 +42,7 @@ export function useLogin() {
       const destination = serverRole === 'seller' ? await resolveSellerDestinationRemote() : getRoleRedirect(serverRole);
       navigate(destination, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.');
+      setError(err instanceof Error ? err.message : ts('pg.invalid_credentials_please_try_again', 'Invalid credentials. Please try again.'));
     } finally {
       setLoading(false);
     }

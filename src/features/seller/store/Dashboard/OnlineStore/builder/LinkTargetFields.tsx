@@ -6,7 +6,7 @@ import { apiGetCollection } from '@/api/services/collections';
 import { apiGetMyProductById } from '@/api/services/product';
 
 export interface LinkTarget {
-  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'email' | 'phone' | 'none';
+  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'faqs' | 'email' | 'phone' | 'none';
   pageSlug?: string;
   url?: string;
   categoryId?: string;
@@ -64,6 +64,7 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
           <option value="collection">A collection…</option>
           <option value="cart">Cart</option>
           <option value="account">Account page</option>
+          <option value="faqs">FAQs page</option>
           <option value="email">Email address</option>
           <option value="phone">Phone number</option>
           <option value="external">External URL</option>

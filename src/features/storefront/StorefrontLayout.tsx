@@ -3,15 +3,21 @@ import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
 import { Store } from 'lucide-react';
-import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
+import { apiGetPublicStore, apiGetStorefrontBootstrap, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
+import { seedDedupedGet } from '@/utils/dedupedGet';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
 import { StorefrontMarketProvider } from './StorefrontMarketContext';
-import { registerThemeTranslations } from '@/i18n';
+import { setCurrencyDisplay } from '@/features/storefront-themes/core/money';
+import { BOOT_HAS_PREFIX, BOOT_LOCALE, DEFAULT_LOCALE, activateLanguage, applyUiOverrides, registerThemeTranslations } from '@/i18n';
+import { apiGetPublicTextStrings } from '@/api/services/storeTextTranslations';
+import { indexTextStrings, localizeStoreText, localizeThemeText, type TextStrings } from '@/utils/storeText';
+import { StoreTextCtx } from './storeTextContext';
+import { setActiveStoreText } from '@/utils/activeStoreText';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
-import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID, prefetchLikelyStorefrontPages } from '@/features/storefront-themes/registry';
 import { apiGetPublicHomePage, apiListPublicStorePages } from '@/api/services/storePages';
 import { apiGetPublicCollections } from '@/api/services/collections';
 import { apiGetPublicStoreMarkets } from '@/api/services/markets';
@@ -76,6 +82,8 @@ export function StorefrontLayout() {
   const boot = useRef(readBootSnapshot());
   const [store, setStore] = useState<PublicStoreData | null>(() => boot.current?.store ?? null);
   const [theme, setTheme] = useState<StoreThemeData | null>(() => boot.current?.theme ?? null);
+  // Set while rendering (not in an effect) so the very first price already follows the seller's format.
+  setCurrencyDisplay(store?.currencyDisplay);
   const [loading, setLoading] = useState(() => boot.current === null);
   const [error, setError] = useState('');
   // Real Shopify-style storefront gate (`Store.privacyMode`) — a per-tab
@@ -111,7 +119,15 @@ export function StorefrontLayout() {
     let cancelled = false;
     if (!boot.current) setLoading(true);
     setError('');
-    const load = slug ? apiGetPublicStore(slug) : apiResolveStoreByDomain(window.location.hostname);
+    // One request for store + theme + home page; an older API without it falls back to the separate calls.
+    const load = apiGetStorefrontBootstrap(slug ? { slug } : { host: window.location.hostname })
+      .then(b => {
+        const id = b.data.store.storeId;
+        if (b.data.theme) seedDedupedGet(`theme:${id}`, { success: true, data: b.data.theme });
+        if (b.data.home) seedDedupedGet(`home:${id}`, { success: true, data: b.data.home });
+        return { ...b, data: b.data.store };
+      })
+      .catch(() => (slug ? apiGetPublicStore(slug) : apiResolveStoreByDomain(window.location.hostname)));
     load
       .then(res => {
         if (cancelled) return;
@@ -192,7 +208,7 @@ export function StorefrontLayout() {
     setCookieConsent(consent);
   };
 
-  useFavicon(store?.faviconUrl, store?.logo);
+  useFavicon(store?.faviconUrl, null, { blankWhenMissing: true });
 
   // Shopify-style: every non-primary domain redirects to the primary one.
   const redirectUrl = store ? canonicalRedirectUrl(store.canonicalHost) : null;
@@ -215,17 +231,52 @@ export function StorefrontLayout() {
     document.cookie = '_solvexo_s=1; path=/; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
   }, [store, activeThemeId]);
 
+  // Seller-translated storefront text (store details, announcement, header, footer, sections, FAQs) for a non-default language.
+  // The language of this page: the URL folder when there is one, else the language the store is written in.
+  const sourceLanguage = store?.defaultLanguage ?? DEFAULT_LOCALE;
+  const language = BOOT_HAS_PREFIX ? BOOT_LOCALE : sourceLanguage;
+  const wantsTexts = !!store && language !== sourceLanguage;
+  const [uiDone, setUiDone] = useState<string | null>(null);
+  useEffect(() => {
+    if (!store || BOOT_HAS_PREFIX || sourceLanguage === DEFAULT_LOCALE) return;
+    let cancelled = false;
+    void activateLanguage(sourceLanguage).finally(() => { if (!cancelled) setUiDone(sourceLanguage); });
+    return () => { cancelled = true; };
+  }, [store, sourceLanguage]);
+  const uiReady = !store || BOOT_HAS_PREFIX || sourceLanguage === DEFAULT_LOCALE || uiDone === sourceLanguage;
+  const [textState, setTextState] = useState<{ storeId: string; strings: TextStrings } | null>(null);
+  useEffect(() => {
+    const id = store?.storeId;
+    if (!id) return; // also in the store's own language: the seller may have reworded built-in labels
+    let cancelled = false;
+    apiGetPublicTextStrings(id, language)
+      .then(res => { if (!cancelled) setTextState({ storeId: id, strings: res.data?.strings ?? {} }); })
+      .catch(() => { if (!cancelled) setTextState({ storeId: id, strings: {} }); }); // fail open: the original text
+    return () => { cancelled = true; };
+  }, [store?.storeId, language]);
+  const textsReady = !wantsTexts || !store || textState?.storeId === store.storeId;
+  const ownStrings = textState?.storeId === store?.storeId ? textState?.strings ?? null : null;
+  const textIndex = useMemo(() => indexTextStrings(wantsTexts ? ownStrings : null), [wantsTexts, ownStrings]);
+  useEffect(() => { if (ownStrings) void applyUiOverrides(language, ownStrings); }, [ownStrings, language]);
+  // Blog / category fetchers (outside React) read the same language + strings.
+  setActiveStoreText(wantsTexts ? language : '', textIndex);
+  const localizedStore = useMemo(() => (store ? localizeStoreText(store, textIndex) : store), [store, textIndex]);
+  const localizedTheme = useMemo(() => localizeThemeText(theme, textIndex), [theme, textIndex]);
+
   const contextValue: StorefrontContextValue | null = useMemo(() => {
-    if (!store) return null;
+    if (!localizedStore) return null;
     return {
-      store,
-      theme,
+      store: localizedStore,
+      theme: localizedTheme,
       cfg,
       resolveLink: resolveStorefrontLink,
     };
-  }, [store, theme, cfg, slug]);
+  }, [localizedStore, localizedTheme, cfg, slug]);
 
-  if (loading || redirectUrl) {
+  const themeReady = !!theme;
+  useEffect(() => { if (themeReady) prefetchLikelyStorefrontPages(); }, [themeReady]);
+
+  if (loading || redirectUrl || !textsReady || !uiReady) {
     return (
       <div className="min-h-screen bg-white">
         <div className="h-[64px] flex items-center gap-3 px-4 sm:px-6 lg:px-10 border-b border-bone">
@@ -269,8 +320,8 @@ export function StorefrontLayout() {
   if (store.privacyMode !== 'public' && !unlocked) {
     const Gate = impl.GatePage;
     return (
-      <StorefrontProvider value={contextValue}>
-       <StorefrontMarketProvider storeId={store.storeId} allowedCurrencies={store.enabledCurrencies}>
+      <StoreTextCtx.Provider value={textIndex}><StorefrontProvider value={contextValue}>
+       <StorefrontMarketProvider storeId={store.storeId} allowedCurrencies={store.enabledCurrencies} baseCurrency={store.baseCurrency} sourceLanguage={sourceLanguage}>
         <Gate
           store={store}
           onUnlocked={() => {
@@ -279,12 +330,12 @@ export function StorefrontLayout() {
           }}
         />
        </StorefrontMarketProvider>
-      </StorefrontProvider>
+      </StorefrontProvider></StoreTextCtx.Provider>
     );
   }
   return (
-    <StorefrontProvider value={contextValue}>
-     <StorefrontMarketProvider storeId={store.storeId} allowedCurrencies={store.enabledCurrencies}>
+    <StoreTextCtx.Provider value={textIndex}><StorefrontProvider value={contextValue}>
+     <StorefrontMarketProvider storeId={store.storeId} allowedCurrencies={store.enabledCurrencies} baseCurrency={store.baseCurrency} sourceLanguage={sourceLanguage}>
       <CartProvider storeId={store.storeId}>
         <WishlistProvider storeId={store.storeId}>
           {theme?.sourcePackageVersion != null && liquidRoute
@@ -302,6 +353,6 @@ export function StorefrontLayout() {
         </WishlistProvider>
       </CartProvider>
      </StorefrontMarketProvider>
-    </StorefrontProvider>
+    </StorefrontProvider></StoreTextCtx.Provider>
   );
 }

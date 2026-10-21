@@ -22,7 +22,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
 }) {
   const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
-  const { currency, convert } = useCurrencyPreference();
+  const { currency, convert, canConvert } = useCurrencyPreference();
   const navigate = useNavigate();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -67,13 +67,13 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
     data.queries.forEach(x => list.push({ id: `q:${x}`, group: tr('browse.suggestionsGroup', 'Suggestions'), label: x, to: `/search?q=${encodeURIComponent(x)}` }));
     data.products.forEach(p => list.push({
       id: `p:${p.id}`, group: tr('browse.products', 'Products'), label: p.name, image: p.image, to: `/product/${p.slug}`,
-      sub: p.price != null ? moneyText(convert(p.price, baseCurrency), currency) : undefined,
+      sub: p.price != null ? (canConvert(baseCurrency, currency) ? moneyText(convert(p.price, baseCurrency), currency) : '—') : undefined,
     }));
     data.collections.forEach(c => list.push({ id: `c:${c.id}`, group: tr('nav.collections', 'Collections'), label: c.name, image: c.image, to: `/collections/${c.slug}` }));
     data.articles.forEach(a => list.push({ id: `a:${a.id}`, group: tr('browse.articles', 'Articles'), label: a.title, image: a.image, to: `/blog/${a.slug}` }));
     data.pages.forEach(p => list.push({ id: `g:${p.id}`, group: tr('browse.pages', 'Pages'), label: p.title, to: `/${p.slug}` }));
     return list;
-  }, [tr, data, convert, baseCurrency, currency]);
+  }, [tr, data, convert, canConvert, baseCurrency, currency]);
   // The trailing "Search for ..." row is the last keyboard stop.
   const total = options.length + (ready ? 1 : 0);
 
@@ -112,7 +112,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
       </form>
 
       <div className="sr-only" role="status" aria-live="polite">
-        {showPanel && !loading ? (failed ? 'Suggestions are unavailable' : `${options.length} suggestion${options.length === 1 ? '' : 's'} available`) : ''}
+        {showPanel && !loading ? (failed ? ts('pg.suggestions_are_unavailable', 'Suggestions are unavailable') : ts('pg.suggestions_available', '{{count}} suggestions available', { count: options.length })) : ''}
       </div>
 
       {showPanel && (
@@ -144,7 +144,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
             <li id={`${listId}-${options.length}`} role="option" aria-selected={active === options.length}
               onMouseDown={e => e.preventDefault()} onClick={() => go(fullResults)} onMouseEnter={() => setActive(options.length)}
               className="mt-1 flex cursor-pointer items-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-medium" style={{ background: active === options.length ? t.colors.bgAlt : 'transparent' }}>
-              <span className="min-w-0 flex-1 truncate">Search for &quot;{term}&quot; — view all results</span>
+              <span className="min-w-0 flex-1 truncate">{ts('pg.search_for_term_view_all_results', 'Search for "{{term}}" — view all results', { term })}</span>
               <ArrowRight size={16} aria-hidden="true" />
             </li>
           </ul>

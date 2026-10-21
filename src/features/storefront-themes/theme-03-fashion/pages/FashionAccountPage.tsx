@@ -16,7 +16,7 @@ import { RecentOrders } from './account/RecentOrders';
 /** `/account`: profile, password and recent orders. Guest sessions are sent to /login?redirect=/account. */
 export function FashionAccountPage() {
   const guest = useRequireRealAccount();
-  useStorefrontSeo({ title: 'My account', noindex: true });
+  useStorefrontSeo({ title: ts('pg.my_account', 'My account'), noindex: true });
   const { store } = useStorefront();
   const logout = useLogout();
   const { profile, loading, error, refetch } = useGetProfile();
@@ -26,11 +26,11 @@ export function FashionAccountPage() {
 
   return (
     <>
-      <AccountLayout title="My" accent={ts('pg.word_account', 'account')} subtitle={`Your account at ${store.name}.`}
-        actions={<PillButton variant="outline" onClick={() => void logout('/')}><LogOut size={16} aria-hidden /> Log out</PillButton>}>
+      <AccountLayout title={ts('pg.word_my', 'My')} accent={ts('pg.word_account', 'account')} subtitle={ts('pg.your_account_at_store', 'Your account at {{store}}.', { store: store.name })}
+        actions={<PillButton variant="outline" onClick={() => void logout('/')}><LogOut size={16} aria-hidden /> {ts('account.logout', 'Log out')}</PillButton>}>
         <div className="flex flex-col gap-6">
           {loading && !profile ? <SkeletonBlock h={220} />
-            : !profile ? <ErrorState message={error ? 'Could not load your profile.' : 'Your profile is not available.'} onRetry={refetch} />
+            : !profile ? <ErrorState message={error ? ts('pg.could_not_load_your_profile', 'Could not load your profile.') : ts('pg.your_profile_is_not_available', 'Your profile is not available.')} onRetry={refetch} />
             : <ProfileCard key={profile._id} profile={profile} />}
           <PasswordCard />
           <RecentOrders />

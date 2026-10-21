@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { handleOf } from '@/utils/activeStoreText';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -13,7 +14,7 @@ function Tile({ c, colors, ratio, showDescription }: { c: PublicCollectionSummar
   const fit = imageFit(ratio, '4 / 5');
   const hasImage = !!c.image && !errored;
   return (
-    <Link to={`/collections/${c.slug}`} className="group block no-underline" style={{ color: colors.ink }}>
+    <Link to={`/collections/${handleOf(c)}`} className="group block no-underline" style={{ color: colors.ink }}>
       <div className="relative overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx, display: hasImage ? undefined : 'grid', placeItems: 'center' }}>
         {hasImage
           ? <img src={c.image ?? undefined} alt={c.name} loading="lazy" onError={() => setErrored(true)} className="transition-transform duration-700 group-hover:scale-105" style={fit.img} />

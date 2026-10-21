@@ -131,6 +131,11 @@ export function apiRestoreStorePageVersion(storeId: string, pageId: string, vers
 }
 
 /** A draft copy of a custom page (new link, hidden from navigation). */
+/** Settings → Policies: creates + publishes the store's policy page from a ready-made text (an existing one is returned as is). */
+export function apiCreatePolicyFromTemplate(storeId: string, policyType: StorePagePolicyType) {
+  return client.post<never, ApiResponse<StorePageData> & { created: boolean }>(ENDPOINTS.STORE_PAGES.POLICY_TEMPLATE(storeId, policyType));
+}
+
 export function apiDuplicateStorePage(storeId: string, pageId: string) {
   return client.post<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.DUPLICATE(storeId, pageId));
 }

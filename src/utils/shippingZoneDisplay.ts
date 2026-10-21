@@ -1,4 +1,5 @@
 import type { ShippingZone } from '@/api/services/shipping';
+import { ts } from '@/utils/tStatic';
 
 const norm = (v?: string | null) => (v ?? '').trim().toLowerCase();
 
@@ -43,8 +44,8 @@ export function zoneMatchesAddress(
 /** Buyer-facing option label: custom name first, then pickup / area / city. */
 export function zoneLabel(z: ShippingZone): string {
   if (z.name) return z.name;
-  if (z.zoneType === 'pickup') return 'Local pickup';
-  if (z.zoneType === 'local_delivery') return `Local delivery · ${z.city ?? ''}`;
+  if (z.zoneType === 'pickup') return ts('pg.local_pickup', 'Local pickup');
+  if (z.zoneType === 'local_delivery') return ts('pg.local_delivery_city', 'Local delivery · {{city}}', { city: z.city ?? '' });
   return [z.city, z.province].filter(Boolean).join(', ') || z.country;
 }
 
@@ -59,7 +60,7 @@ export function zoneArrivalRange(z: Pick<ShippingZone, 'minDays' | 'maxDays' | '
   if (min == null || max == null) return null;
   const a = fmtDay(new Date(today.getTime() + min * DAY_MS));
   const b = fmtDay(new Date(today.getTime() + max * DAY_MS));
-  return a === b ? `Arrives ${a}` : `Arrives ${a} - ${b}`;
+  return a === b ? ts('product.arrivesOn', 'Arrives {{date}}', { date: a }) : ts('product.arrivesRange', 'Arrives {{from}} - {{to}}', { from: a, to: b });
 }
 
 export interface ZoneRegion { key: string; label: string; country: string; province: string; regionName: string; zones: ShippingZone[] }

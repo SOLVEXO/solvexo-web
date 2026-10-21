@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { apiGetAutomationPublicConfig, apiRequestBackInStock } from '@/api/services/marketingAutomations';
+import { ts } from '@/utils/tStatic';
 
 // One lookup per store per page load — the setting rarely changes and every
 // product page on the store needs the same answer.
@@ -52,14 +53,14 @@ export function useBackInStock(storeId: string | undefined, productId: string | 
       const res = await apiRequestBackInStock({ storeId, productId, variantId, email: email.trim() });
       if (res.data?.inStock) {
         setStatus('available');
-        setMessage(res.message || 'Good news — this item is in stock right now. Refresh the page to buy it.');
+        setMessage(res.message || ts('pg.good_news_this_item_is_in_stock_right', 'Good news — this item is in stock right now. Refresh the page to buy it.'));
       } else {
         setStatus('done');
-        setMessage(`We'll email you at ${email.trim()} when it's back in stock.`);
+        setMessage(ts('pg.we_ll_email_you_at_email_when_it_s_back', "We'll email you at {{email}} when it's back in stock.", { email: email.trim() }));
       }
     } catch (err) {
       setStatus('error');
-      setMessage(err instanceof Error && err.message ? err.message : 'Something went wrong — please try again.');
+      setMessage(err instanceof Error && err.message ? err.message : ts('pg.something_went_wrong_please_try_again_3', 'Something went wrong — please try again.'));
     }
   };
 

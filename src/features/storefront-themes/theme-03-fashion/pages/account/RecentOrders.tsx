@@ -9,7 +9,7 @@ import { fashionTheme as t } from '../../theme.config';
 import { Card, EmptyState, ErrorState, SectionHeading, SkeletonBlock, StatusPill } from '../../ui/primitives';
 import { useLoad } from '../../../core/pageHooks';
 
-const LABEL: Record<OrderStatus, string> = { pending: 'Pending', processing: 'Processing', shipped: 'Shipped', delivered: 'Delivered', completed: 'Completed', cancelled: 'Cancelled' };
+const statusLabel = (s: OrderStatus): string | undefined => ({ pending: ts('order.pending', 'Pending'), processing: ts('order.processing', 'Processing'), shipped: ts('order.shipped', 'Shipped'), delivered: ts('order.delivered', 'Delivered'), completed: ts('order.completed', 'Completed'), cancelled: ts('order.cancelled', 'Cancelled') } as Record<OrderStatus, string>)[s];
 const TONE: Record<OrderStatus, 'neutral' | 'good' | 'warn' | 'bad'> = { pending: 'warn', processing: 'neutral', shipped: 'neutral', delivered: 'good', completed: 'good', cancelled: 'bad' };
 
 function DownloadLink({ orderId, productId }: { orderId: string; productId: string }) {
@@ -24,7 +24,7 @@ function DownloadLink({ orderId, productId }: { orderId: string; productId: stri
   };
   return (
     <button type="button" onClick={go} disabled={busy} className="inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent text-[13px] font-semibold underline" style={{ color: failed ? t.colors.danger : t.colors.ink }}>
-      {busy ? <Loader2 size={13} className="animate-spin" aria-hidden /> : <Download size={13} aria-hidden />}{failed ? 'Failed, retry' : 'Download'}
+      {busy ? <Loader2 size={13} className="animate-spin" aria-hidden /> : <Download size={13} aria-hidden />}{failed ? ts('orders.downloadFailed', 'Failed, retry') : ts('orders.download', 'Download')}
     </button>
   );
 }
@@ -36,9 +36,9 @@ function OrderRow({ order }: { order: OrderSummary }) {
   return (
     <div style={{ border: `1px solid ${t.colors.border}`, borderRadius: 16, overflow: 'hidden' }}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-4 py-4 text-left" style={{ color: t.colors.ink }}>
-        <span className="min-w-0"><span className="block text-sm font-semibold">Order #{order.orderNumber}</span><span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(order.createdAt)}</span></span>
+        <span className="min-w-0"><span className="block text-sm font-semibold">{ts('orders.orderNumber', 'Order #{{number}}', { number: order.orderNumber })}</span><span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(order.createdAt)}</span></span>
         <span className="flex shrink-0 items-center gap-3">
-          <StatusPill tone={TONE[order.orderStatus] ?? 'neutral'}>{LABEL[order.orderStatus] ?? order.orderStatus}</StatusPill>
+          <StatusPill tone={TONE[order.orderStatus] ?? 'neutral'}>{statusLabel(order.orderStatus) ?? order.orderStatus}</StatusPill>
           <span className="text-sm font-semibold">{money(order.totalAmount, order.currency)}</span>
           <ChevronDown size={16} aria-hidden style={{ color: t.colors.inkMuted, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
         </span>

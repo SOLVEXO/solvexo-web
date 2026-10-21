@@ -5,6 +5,7 @@ import type { OrderDetail } from '@/api/services/orders';
 import { useCartContext } from '@/contexts/CartContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { isDigitalItem } from './orderUi';
+import { ts } from '@/utils/tStatic';
 
 export interface BuyAgainResult { added: number; errors: string[]; skippedDigital: number }
 
@@ -28,7 +29,7 @@ export function useBuyAgain() {
     const items = (order.sellerOrders ?? []).flatMap(s => s.items ?? []).filter(i => i.status !== 'cancelled');
     for (const item of items) {
       if (isDigitalItem(item)) { skippedDigital += 1; continue; }
-      if (!item.productId || !item.variantId) { errors.push(`${item.name}: no longer available`); continue; }
+      if (!item.productId || !item.variantId) { errors.push(ts('pg.name_no_longer_available', '{{name}}: no longer available', { name: item.name })); continue; }
       try {
         await apiAddToCart(item.productId, item.variantId, store.storeId);
         for (let i = 1; i < item.quantity; i++) {
@@ -36,7 +37,7 @@ export function useBuyAgain() {
         }
         added += 1;
       } catch (err) {
-        errors.push(`${item.name}: ${err instanceof Error ? err.message : 'could not be added'}`);
+        errors.push(`${item.name}: ${err instanceof Error ? err.message : ts('pg.could_not_be_added', 'could not be added')}`);
       }
     }
     refetch();

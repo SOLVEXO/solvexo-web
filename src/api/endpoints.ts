@@ -202,6 +202,7 @@ export const ENDPOINTS = {
     DOMAIN_VERIFY:   (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}/verify`,
     DOMAIN_GUIDE:    (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}/guide`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
+    PUBLIC_BOOTSTRAP: '/api/store/public/bootstrap',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,
     PRIVACY_REQUEST_SUBMIT:   (storeId: string) => `/api/store/public/${storeId}/privacy-requests`,
@@ -319,6 +320,7 @@ export const ENDPOINTS = {
     UNPUBLISH:        (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/unpublish`,
     REVERT_DRAFT:     (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/revert-draft`,
     DUPLICATE:        (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/duplicate`,
+    POLICY_TEMPLATE:  (storeId: string, policyType: string) => `/api/store-pages/${storeId}/policies/${policyType}/template`,
     DELETE:           (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}`,
     VERSIONS:         (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/versions`,
     RESTORE_VERSION:  (storeId: string, pageId: string, versionId: string) => `/api/store-pages/${storeId}/${pageId}/versions/${versionId}/restore`,
@@ -1479,6 +1481,12 @@ export const ENDPOINTS = {
   MARKETS_SELLER: {
     LIST: (storeId: string) => `/api/stores/${storeId}/markets`,
     ONE:  (storeId: string, marketId: string) => `/api/stores/${storeId}/markets/${marketId}`,
+  },
+  STORE_TEXT_TRANSLATIONS: {
+    SOURCES: (storeId: string) => `/api/store-text-translations/${storeId}/sources`,
+    LOCALE:  (storeId: string, locale: string) => `/api/store-text-translations/${storeId}/${locale}`,
+    AUTO:    (storeId: string, locale: string) => `/api/store-text-translations/${storeId}/${locale}/auto-translate`,
+    PUBLIC:  (storeId: string, locale: string) => `/api/public/store-text-translations/${storeId}/${locale}`,
   },
   TRANSLATIONS: {
     LIST: (storeId: string, resource: string) => `/api/translations/${storeId}/${resource}`,

@@ -1,7 +1,8 @@
 ﻿import { useState } from 'react';
 import { Plus, Eye, EyeOff, Copy } from 'lucide-react';
 import { ImageUpload } from '@/components/comman/ui';
-import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
+import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/services/storeTheme';
+import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import type { Block } from '@/api/services/storefrontTypes';
 import { BlockFields, type PageOption } from '../builder/BlockFields';
 import { SortableList } from '../builder/Sortable';
@@ -11,7 +12,7 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { HeaderSettingsPanel, FooterSettingsPanel, Group } from './HeaderFooterSettingsPanels';
 import { footerLayoutBlocks } from '@/features/storefront-themes/navigation/headerOptions';
 import type { HeaderFooterDraftState } from './useHeaderFooterDraft';
-import type { HeaderOptionKey, ThemeManifest } from '@/features/storefront-themes/themeManifest';
+import type { FooterOptionKey, HeaderOptionKey, ThemeManifest } from '@/features/storefront-themes/themeManifest';
 
 const ADMIN_ACCENT = '#D97757';
 const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -166,6 +167,9 @@ export function HeaderEditor({ hf, storeId, onError, supports, choices }: { hf: 
           {headerDraft.logoSource === 'custom' && (
             <ImageUpload value={headerDraft.customLogoUrl ? [headerDraft.customLogoUrl] : []} onChange={urls => setHeader({ ...headerDraft, customLogoUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
           )}
+          <p className="text-[11px] text-slate mt-2 mb-1">Logo link — where customers go when they click the logo.</p>
+          <LinkTargetFields value={(headerDraft.logoLink as LinkTarget | null | undefined) ?? { linkType: 'home' }}
+            onChange={next => setHeader({ ...headerDraft, logoLink: next as LogoLink })} pageOptions={pageOptions} storeId={storeId} />
         </>
       )} />
     </div>
@@ -173,7 +177,7 @@ export function HeaderEditor({ hf, storeId, onError, supports, choices }: { hf: 
 }
 
 /** Footer: an ordered list of blocks (each one a column, in this order on the store) plus the section's settings. */
-export function FooterEditor({ hf, storeId, onError }: { hf: HeaderFooterDraftState; storeId: string; onError: (msg: string) => void }) {
+export function FooterEditor({ hf, storeId, onError, supports }: { hf: HeaderFooterDraftState; storeId: string; onError: (msg: string) => void; supports?: FooterOptionKey[] }) {
   const { headerDraft, footerDraft, editor, menus, pageOptions } = hf;
   if (!headerDraft || !footerDraft) return null;
   const setFooter = (footer: StorefrontFooter) => editor.edit(prev => ({ ...prev!, footer }));
@@ -221,7 +225,7 @@ export function FooterEditor({ hf, storeId, onError }: { hf: HeaderFooterDraftSt
           onChange={next => setFooter({ ...footerDraft, sections: next })}
           onPersist={next => void hf.persistRemoval({ header: headerDraft, footer: { ...footerDraft, sections: next } }, onError)} />
       </Group>
-      <FooterSettingsPanel footer={footerDraft} storeId={storeId} onChange={setFooter} />
+      <FooterSettingsPanel footer={footerDraft} storeId={storeId} pageOptions={pageOptions} onChange={setFooter} supports={supports} />
     </div>
   );
 }

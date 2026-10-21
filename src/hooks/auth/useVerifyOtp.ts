@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiVerifyOtp, AuthContext, TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
+import { ts } from '@/utils/tStatic';
 
 export function useVerifyOtp() {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ export function useVerifyOtp() {
 
   async function execute(otp: string) {
     const ctx = AuthContext.get();
-    if (!ctx?.email) { setError('Session expired. Please register again.'); return; }
+    if (!ctx?.email) { setError(ts('pg.session_expired_please_register_again', 'Session expired. Please register again.')); return; }
 
     setError('');
     setLoading(true);
@@ -42,7 +43,7 @@ export function useVerifyOtp() {
       const destination = role === 'seller' ? await resolveSellerDestinationRemote() : getRoleRedirect(role);
       navigate(destination, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
+      setError(err instanceof Error ? err.message : ts('pg.invalid_or_expired_code_please_try_again', 'Invalid or expired code. Please try again.'));
     } finally {
       setLoading(false);
     }

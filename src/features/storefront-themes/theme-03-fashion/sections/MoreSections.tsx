@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
 import { copyText, showEyebrow } from '../../sectionCopy';
@@ -18,6 +18,7 @@ import { GalleryGridSection } from './shared/GalleryGridSection';
 import { StoreLocationsSection } from './shared/StoreLocationsSection';
 import { ContactFormSection } from './shared/ContactFormSection';
 import { RelatedProductsSection } from './shared/RelatedProductsSection';
+import { ts } from '@/utils/tStatic';
 
 registerFashionSection('multicolumn', (section, blocks, colors) => <MulticolumnSection section={section} blocks={blocks} colors={colors} />);
 registerFashionSection('logo_list', (section, blocks, colors) => <LogoListSection section={section} blocks={blocks} colors={colors} />);
@@ -55,7 +56,7 @@ registerFashionSection('video', (section, _b, colors) => {
   return (
     <SectionShell colors={colors} heading={s.heading}>
       <div className="mx-auto max-w-[960px] overflow-hidden" style={{ aspectRatio: ratio, borderRadius: 24, background: colors.bgAlt }}>
-        {embed ? <iframe src={embed} title={s.heading || 'Video'} className="size-full border-0" allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen loading="lazy" />
+        {embed ? <iframe src={embed} title={s.heading || ts('pg.word_video', 'Video')} className="size-full border-0" allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen loading="lazy" />
           : <video src={src} controls playsInline preload="metadata" className="size-full object-cover"><track kind="captions" /></video>}
       </div>
     </SectionShell>
@@ -69,21 +70,25 @@ function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; b
   const fromStore = useStoreFaqBlocks(s.source === 'store');
   const items = (s.source === 'store' ? fromStore : blocks).filter(b => b.type === 'faq_item');
   const [open, setOpen] = useState<string | null>(null);
-  if (items.length === 0) return null;
+  // Like Shopify, an empty accordion still shows its heading (so the seller sees the section exists) instead of vanishing.
+  if (items.length === 0 && !s.heading) return null;
   return (
     <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'Good to know') : undefined} align="center">
+      {items.length === 0 && <p className="m-0 text-center text-sm" style={{ color: colors.inkMuted }}>{ts('pg.no_questions_added_yet', 'No questions added yet.')}</p>}
       <ul className="mx-auto m-0 flex max-w-[780px] list-none flex-col gap-3 p-0">
         {items.map((b, i) => {
           const id = b._id ?? String(i);
           const isOpen = open === id;
           return (
             <li key={id}><PreviewBlock blockId={id}>
-              <div style={{ border: `1px solid ${colors.border}`, borderRadius: 16, background: colors.bg }}>
+              {/* Same look as the /faqs page accordion: grey card when open, round +/x button. */}
+              <div style={{ borderRadius: 20, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
                 <button type="button" aria-expanded={isOpen} aria-controls={`fx-faq-${id}`} onClick={() => setOpen(isOpen ? null : id)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent px-6 py-5 text-left text-base font-medium" style={{ color: colors.ink, fontFamily: t.fonts.body }}>
-                  {b.settings.question}<ChevronDown size={18} style={{ transform: isOpen ? 'rotate(180deg)' : undefined, transition: 'transform .2s', flexShrink: 0 }} />
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: colors.ink, borderRadius: 20 }}>
+                  <span>{b.settings.question}</span>
+                  <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: isOpen ? colors.ink : colors.bgAlt, color: isOpen ? colors.bg : colors.ink, transition: 'transform .25s, background-color .2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}><Plus size={16} /></span>
                 </button>
-                {isOpen && <div id={`fx-faq-${id}`} role="region" className="px-6 pb-5 text-[15px] leading-[1.75]" style={{ color: colors.inkMuted }}>{renderRichText(b.settings.answer)}</div>}
+                {isOpen && <div id={`fx-faq-${id}`} role="region" className="whitespace-pre-line text-[15px] leading-[1.75]" style={{ padding: '0 22px 20px', color: colors.inkMuted }}>{renderRichText(b.settings.answer)}</div>}
               </div>
             </PreviewBlock></li>
           );

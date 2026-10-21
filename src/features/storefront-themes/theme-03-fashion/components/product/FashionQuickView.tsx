@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { handleOf } from '@/utils/activeStoreText';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { Minus, Plus } from 'lucide-react';
@@ -21,7 +22,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
   const { store } = useStorefront();
   const { addToCart, adding } = useCartContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
-  const { currency, convert } = useCurrencyPreference();
+  const { currency, convert, canConvert } = useCurrencyPreference();
   const localize = useLocalize();
   const { detail, loading, error, refetch } = useProductById(slug);
   const [picked, setPicked] = useState<Record<string, string>>({});
@@ -46,7 +47,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
     body = <div className="flex flex-col gap-4"><Notice tone="error">{ts('product.loadError', 'We couldn\'t load this product.')}</Notice><PillButton variant="outline" onClick={refetch}>{ts('checkout.tryAgain', 'Try again')}</PillButton></div>;
   } else {
     const base = String(variant.currency ?? store.baseCurrency ?? currency);
-    const show = (n: number) => moneyText(convert(n, base), currency);
+    const show = (n: number) => (canConvert(base, currency) ? moneyText(convert(n, base), currency) : '—');
     const state = stockState(variant, isDigital, store.lowStockThreshold);
     const canBuy = variantCanBuy(variant, isDigital);
     const max = variantMaxQty(variant, isDigital);
@@ -94,7 +95,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
             );
           })}
           <p className="m-0 text-sm" style={{ color: state === 'in_stock' || state === 'backorder' ? t.colors.success : t.colors.danger }}>
-            {state === 'sold_out' ? 'Sold out' : state === 'low' ? 'Low stock' : state === 'backorder' ? 'Available on backorder' : 'In stock'}
+            {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('pg.low_stock', 'Low stock') : state === 'backorder' ? ts('product.backorder', 'Available on backorder') : ts('browse.inStock', 'In stock')}
           </p>
           <div className="mt-auto flex flex-col gap-3">
             <div className="flex items-center gap-3">
@@ -103,9 +104,9 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
                 <span className="w-8 text-center text-sm" aria-live="polite">{safeQty}</span>
                 <button type="button" aria-label={ts('product.increaseQty', 'Increase quantity')} disabled={safeQty + rules.step > rules.max} onClick={() => setQty(safeQty + rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} aria-hidden /></button>
               </div>
-              <PillButton className="flex-1" loading={busy} disabled={!canBuy} onClick={add}>{canBuy ? 'Add to cart' : 'Sold out'}</PillButton>
+              <PillButton className="flex-1" loading={busy} disabled={!canBuy} onClick={add}>{canBuy ? ts('pg.add_to_cart', 'Add to cart') : ts('product.soldOut', 'Sold out')}</PillButton>
             </div>
-            <Link to={`/product/${detail.product.slug || detail.product._id}`} onClick={onClose} className="text-sm underline" style={{ color: t.colors.ink }}>{ts('pg.view_full_details', 'View full details')}</Link>
+            <Link to={`/product/${handleOf(detail.product)}`} onClick={onClose} className="text-sm underline" style={{ color: t.colors.ink }}>{ts('pg.view_full_details', 'View full details')}</Link>
           </div>
         </div>
       </div>

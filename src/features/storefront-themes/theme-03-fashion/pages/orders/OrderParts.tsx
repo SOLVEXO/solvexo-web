@@ -32,7 +32,7 @@ export function Pager({ page, totalPages, onChange, busy }: { page: number; tota
   return (
     <nav aria-label={ts('pg.pagination', 'Pagination')} className="mt-6 flex items-center justify-between gap-3">
       <PillButton variant="outline" disabled={page <= 1 || busy} onClick={() => onChange(page - 1)}>{ts('orders.previous', 'Previous')}</PillButton>
-      <span aria-live="polite" className="text-sm" style={{ color: t.colors.inkMuted }}>Page {page} of {totalPages}</span>
+      <span aria-live="polite" className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.page_page_of_total', 'Page {{page}} of {{total}}', { page, total: totalPages })}</span>
       <PillButton variant="outline" disabled={page >= totalPages || busy} onClick={() => onChange(page + 1)}>{ts('orders.next', 'Next')}</PillButton>
     </nav>
   );

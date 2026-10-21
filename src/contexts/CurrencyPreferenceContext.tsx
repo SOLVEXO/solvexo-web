@@ -71,6 +71,8 @@ interface CurrencyPreferenceContextValue {
    *  enabled Markets — see CheckoutService.resolveStoreCurrency). */
   convertTo: (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => number;
   ratesLoaded: boolean;
+  /** False when `from` can't be turned into the display currency (rates not loaded, or no rate for one of the two currencies): show a dash, never the native number under another symbol. */
+  canConvert: (fromCurrency?: string | null, toCurrency?: string) => boolean;
   /** The platform's real, dynamic Markets currency list — the navbar
    *  switcher renders from this, never a hardcoded 2-entry array. */
   enabledCurrencies: string[];
@@ -157,9 +159,18 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
     [rates, marketPricing],
   );
 
+  const canConvert = useCallback((fromCurrency?: string | null, toCurrency?: string) => {
+    const from = fromCurrency ?? currency;
+    const to = toCurrency ?? currency;
+    if (!from || from === to) return true;
+    if (!ratesLoaded) return false;
+    const has = (c: string) => c === 'USD' || !!rates[c]?.ratePerUSD;
+    return has(from) && has(to);
+  }, [currency, rates, ratesLoaded]);
+
   const value = useMemo<CurrencyPreferenceContextValue>(
-    () => ({ currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, enabledCurrencies }),
-    [currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, enabledCurrencies],
+    () => ({ currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, canConvert, enabledCurrencies }),
+    [currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, canConvert, enabledCurrencies],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

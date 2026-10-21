@@ -1,6 +1,7 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 import type { Block } from './storefrontTypes';
+import { localizeBlogPost } from '../../utils/activeStoreText';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -18,6 +19,8 @@ export interface BlogPostData {
   slug:        string;
   coverImage:  string | null;
   excerpt:     string;
+  /** Per-language title / excerpt / SEO (locale -> values), as saved in Translate & adapt. */
+  translations?: Record<string, { title?: string; description?: string | null; handle?: string | null; metaTitle?: string | null; metaDescription?: string | null }> | null;
   /** Shown as the article's byline. Empty string = not set. */
   authorName:  string;
   /** Search-engine listing overrides — null falls back to `title`/`excerpt` on render, same convention as StorePage's `seo` block. */
@@ -34,6 +37,8 @@ export interface BlogPostData {
 }
 
 export interface BlogPostSummary {
+  _id?:        string;
+  translations?: BlogPostData['translations'];
   title:       string;
   slug:        string;
   coverImage:  string | null;
@@ -144,11 +149,13 @@ export function apiDeleteBlogComment(storeId: string, commentId: string) {
 export function apiListPublicBlogPosts(storeId: string, blogSlug?: string, page = 1, limit = 10) {
   const base = ENDPOINTS.STORE_BLOG.PUBLIC_LIST(storeId, blogSlug);
   const sep = base.includes('?') ? '&' : '?';
-  return client.get<never, ApiResponse<PaginatedBlogPosts>>(`${base}${sep}page=${page}&limit=${limit}`);
+  return client.get<never, ApiResponse<PaginatedBlogPosts>>(`${base}${sep}page=${page}&limit=${limit}`)
+    .then(res => (res.data?.posts ? { ...res, data: { ...res.data, posts: res.data.posts.map(localizeBlogPost) } } : res));
 }
 
 export function apiGetPublicBlogPost(storeId: string, slug: string) {
-  return client.get<never, ApiResponse<BlogPostData & { commentsEnabled: boolean }>>(ENDPOINTS.STORE_BLOG.PUBLIC_POST(storeId, slug));
+  return client.get<never, ApiResponse<BlogPostData & { commentsEnabled: boolean }>>(ENDPOINTS.STORE_BLOG.PUBLIC_POST(storeId, slug))
+    .then(res => (res.data ? { ...res, data: localizeBlogPost(res.data) } : res));
 }
 
 export function apiListPublicBlogComments(storeId: string, postId: string) {

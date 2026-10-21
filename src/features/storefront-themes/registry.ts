@@ -131,3 +131,16 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
 export function listNewThemeEntries() {
   return Object.entries(NEW_THEME_REGISTRY).map(([id, impl]) => ({ id, ...impl.display, installDefaults: impl.installDefaults }));
 }
+
+/** After the first page is on screen, fetch the chunks a shopper opens next (login, checkout, account) while the browser is idle. */
+export function prefetchLikelyStorefrontPages(): void {
+  const run = () => {
+    for (const load of [
+      () => import('./theme-03-fashion/pages/FashionCheckoutPage'),
+      () => import('./theme-03-fashion/pages/FashionLoginPage'),
+      () => import('./theme-03-fashion/pages/FashionAccountPage'),
+    ]) void load().catch(() => {});
+  };
+  const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+  if (w.requestIdleCallback) w.requestIdleCallback(run, { timeout: 6000 }); else setTimeout(run, 3000);
+}

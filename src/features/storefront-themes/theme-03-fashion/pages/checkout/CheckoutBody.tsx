@@ -136,13 +136,13 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
 
   const priceText = (o: ShipOption) => {
     const amount = o.priceCurrency === currency ? o.price : convertTo(o.price, o.priceCurrency, currency);
-    return amount === 0 ? 'Free' : moneyText(amount, currency);
+    return amount === 0 ? ts('checkout.free', 'Free') : moneyText(amount, currency);
   };
 
   const waitingFor = guest && guestContact.dirty && !creation.creating
-    ? 'Enter and confirm your email above to continue to payment.'
+    ? ts('checkout.confirmEmail', 'Enter and confirm your email above to continue to payment.')
     : !checkout && !creation.creating && !creation.error && !ready
-      ? (!guestReady ? 'Enter your email above to continue to payment.' : !shippingOk ? 'Choose a delivery option to continue to payment.' : 'Save your delivery address to continue to payment.')
+      ? (!guestReady ? ts('checkout.enterEmail', 'Enter your email above to continue to payment.') : !shippingOk ? ts('checkout.chooseDelivery', 'Choose a delivery option to continue to payment.') : ts('checkout.saveAddressFirst', 'Save your delivery address to continue to payment.'))
       : null;
 
   let step = 1;
@@ -157,7 +157,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
         <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1">
           {checkout && checkout.currency !== displayCurrency && (
-            <Notice>This store charges in {checkout.currency}, so the amounts at checkout are shown in {checkout.currency}.</Notice>
+            <Notice>{ts('pg.this_store_charges_in_currency_so_the', 'This store charges in {{currency}}, so the amounts at checkout are shown in {{currency}}.', { currency: checkout.currency })}</Notice>
           )}
           {guest && (
             <ContactStep
@@ -178,9 +178,9 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
           />
           {(privacy || terms) && (
             <p className="m-0 text-center text-xs" style={{ color: t.colors.inkMuted }}>
-              By placing your order, you agree to our{' '}
+              {ts('checkout.agreePrefix', 'By placing your order, you agree to our')}{' '}
               {privacy && <Link to={`/${privacy.slug}`} style={{ color: 'inherit' }}>{ts('checkout.privacyPolicy', 'Privacy Policy')}</Link>}
-              {privacy && terms && ' and '}
+              {privacy && terms && ` ${ts('checkout.and', 'and')} `}
               {terms && <Link to={`/${terms.slug}`} style={{ color: 'inherit' }}>{ts('checkout.terms', 'Terms of Service')}</Link>}.
             </p>
           )}

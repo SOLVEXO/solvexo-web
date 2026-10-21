@@ -5,6 +5,7 @@ import {
   type Message, type SendMessagePayload, type MessageReaction,
 } from '@/api/services/messaging';
 import { acquireMessagingSocket, releaseMessagingSocket, getMessagingSocket } from '@/api/messagingSocket';
+import { ts } from '@/utils/tStatic';
 
 export type OptimisticMessage = Message & { _tempId?: string; _pending?: boolean; _failed?: boolean };
 
@@ -34,7 +35,7 @@ export function useMessages(conversationId: string | null) {
         setNextCursor(res.nextCursor ?? null);
         setHasMore(res.hasMore ?? false);
       })
-      .catch((err: unknown) => { if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : 'Failed to load messages.'); })
+      .catch((err: unknown) => { if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : ts('pg.failed_to_load_messages', 'Failed to load messages.')); })
       .finally(() => { if (requestId.current === thisRequest) setLoading(false); });
   }, [conversationId]);
 
@@ -58,7 +59,7 @@ export function useMessages(conversationId: string | null) {
     // Previously had no listener at all, so this failed completely silently:
     // no messaging:joined ever arrived, but nothing told the user why.
     function handleMessagingError(message: string) {
-      setError(message || 'You no longer have access to this conversation.');
+      setError(message || ts('pg.you_no_longer_have_access_to_this', 'You no longer have access to this conversation.'));
     }
 
     function handleNew(message: Message) {
@@ -151,7 +152,7 @@ export function useMessages(conversationId: string | null) {
       setNextCursor(res.nextCursor ?? null);
       setHasMore(res.hasMore ?? false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load more messages.');
+      setError(err instanceof Error ? err.message : ts('pg.failed_to_load_more_messages', 'Failed to load more messages.'));
     } finally {
       setLoadingMore(false);
     }
@@ -206,7 +207,7 @@ export function useMessages(conversationId: string | null) {
       });
       return res;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message.');
+      setError(err instanceof Error ? err.message : ts('pg.failed_to_send_message', 'Failed to send message.'));
       setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _pending: false, _failed: true } : m));
       return null;
     } finally {
@@ -299,7 +300,7 @@ export function useSearchMessages(conversationId: string | null) {
       const res = await apiSearchMessages(conversationId, { q });
       if (requestId.current === thisRequest) setResults(res ?? []);
     } catch (err) {
-      if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : 'Search failed.');
+      if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : ts('pg.search_failed', 'Search failed.'));
     } finally {
       if (requestId.current === thisRequest) setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { handleOf } from '@/utils/activeStoreText';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { Bell, ImageOff, Loader2, ShoppingBag, Trash2 } from 'lucide-react';
@@ -29,7 +30,7 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
   const back = useBackInStock(store.storeId, product._id, variant?._id, soldOut);
   if (!variant) return null;
 
-  const href = `/product/${product.slug || product._id}`;
+  const href = `/product/${handleOf(product)}`;
   const busy = wishlisting === variant._id;
   const isAdding = adding === variant._id;
   const options = (variant.options ?? []).filter(o => o.value && o.value.toLowerCase() !== 'default title').map(o => `${o.name}: ${o.value}`).join(' · ');
@@ -61,16 +62,16 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
           <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
             <PillButton onClick={add} disabled={soldOut} loading={isAdding} style={{ height: 40, padding: '0 20px' }}>
               {!isAdding && <ShoppingBag size={15} aria-hidden />}
-              {soldOut ? 'Unavailable' : added ? 'Added to bag' : 'Add to bag'}
+              {soldOut ? ts('pg.word_unavailable', 'Unavailable') : added ? ts('pg.added_to_bag', 'Added to bag') : ts('pg.add_to_bag', 'Add to bag')}
             </PillButton>
-            <button type="button" onClick={() => void removeFromWishlist(product._id, variant._id)} disabled={busy} aria-label={`Remove ${product.name} from wishlist`}
+            <button type="button" onClick={() => void removeFromWishlist(product._id, variant._id)} disabled={busy} aria-label={ts('pg.remove_name_from_wishlist', 'Remove {{name}} from wishlist', { name: product.name })}
               className="inline-flex h-10 items-center gap-1.5 rounded-full border-0 bg-transparent px-3 text-[13px] font-medium disabled:opacity-50" style={{ color: t.colors.inkMuted, cursor: busy ? 'default' : 'pointer' }}>
-              {busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Trash2 size={14} aria-hidden />}Remove
+              {busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Trash2 size={14} aria-hidden />}{ts('checkout.remove', 'Remove')}
             </button>
           </div>
         </div>
       </div>
-      <span className="sr-only" role="status">{added ? `${product.name} added to your bag` : ''}</span>
+      <span className="sr-only" role="status">{added ? ts('pg.name_added_to_your_bag', '{{name}} added to your bag', { name: product.name }) : ''}</span>
 
       {back.show && (
         <form onSubmit={back.submit} className="flex flex-col gap-2 p-3" style={{ borderRadius: 14, background: t.colors.bgAlt }}>
@@ -78,7 +79,7 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
           {back.status !== 'done' && back.status !== 'available' && (
             <div className="flex flex-wrap gap-2">
               <div className="min-w-[180px] flex-1">
-                <TextInput id={`bis-${variant._id}`} type="email" required autoComplete="email" placeholder="you@example.com" value={back.email} onChange={e => back.setEmail(e.target.value)} style={{ minHeight: 40, padding: '8px 14px' }} />
+                <TextInput id={`bis-${variant._id}`} type="email" required autoComplete="email" placeholder={ts('common.emailPlaceholder', 'you@example.com')} value={back.email} onChange={e => back.setEmail(e.target.value)} style={{ minHeight: 40, padding: '8px 14px' }} />
               </div>
               <PillButton type="submit" loading={back.status === 'loading'} style={{ height: 40, padding: '0 18px' }}>{ts('product.notifyMe', 'Notify me')}</PillButton>
             </div>

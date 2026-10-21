@@ -612,7 +612,8 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60 },
     { key: 'alt', kind: 'text', label: 'Image description (alt text)', maxLength: 120 },
-    { key: 'width', kind: 'number', label: 'Width (px)', min: 40, max: 400, step: 10 },
+    { key: 'link', kind: 'link', label: 'Image link', hint: 'Where customers go when they click the image. Home page by default.' },
+    { key: 'imageWidth', kind: 'number', label: 'Width (px)', min: 40, max: 400, step: 10 },
   ],
   footer_contact: [
     { key: 'width', kind: 'select', label: 'Column width', options: FOOTER_WIDTH_OPTIONS },

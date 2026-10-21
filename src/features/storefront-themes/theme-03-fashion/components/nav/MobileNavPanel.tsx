@@ -7,6 +7,7 @@ import type { ResolvedStorefrontNavItem } from '@/features/storefront/Storefront
 import { fashionTheme as t } from '../../theme.config';
 import { useDialogFocus } from '../../../core/hooks/useDialogFocus';
 import { MobileNavItem } from './MobileNavItem';
+import { ts } from '@/utils/tStatic';
 
 interface ShopLink { id: string; label: string; to: string }
 interface ShopGroupData { label: string; categories: ShopLink[]; collections: ShopLink[] }
@@ -48,7 +49,7 @@ function Panel({ onClose, storeName, brand, items, shop, showSearch, onSearch, s
   };
 
   return (
-    <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label={`${storeName} menu`}>
+    <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label={ts('pg.store_menu', '{{store}} menu', { store: storeName })}>
       <button type="button" aria-label={tr('nav.closeMenu', 'Close menu')} onClick={onClose} className="fx-backdrop absolute inset-0 cursor-default border-0" style={{ background: 'rgba(9,9,11,0.45)' }} />
       <div ref={ref} tabIndex={-1} className="fx-drawer-left absolute bottom-0 left-0 top-0 flex w-[min(90vw,400px)] flex-col overflow-y-auto outline-none"
         style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: '0 28px 28px 0', boxShadow: '0 0 48px rgba(0,0,0,.25)' }}>

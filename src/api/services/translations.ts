@@ -3,7 +3,7 @@ import { ENDPOINTS } from '../endpoints';
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
-export type TranslationResource = 'products' | 'collections' | 'pages' | 'menus';
+export type TranslationResource = 'products' | 'collections' | 'pages' | 'menus' | 'blog_posts';
 
 export interface TranslationValues {
   title?: string;

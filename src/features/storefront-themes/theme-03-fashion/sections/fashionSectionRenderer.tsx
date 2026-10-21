@@ -4,6 +4,8 @@ import { resolveSectionColors, fashionTypographyCss } from '../theme.config';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { registry } from './sectionRegistry';
+import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
+import { localizeSections } from '@/utils/storeText';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
 
 interface Props {
@@ -33,8 +35,11 @@ const EDITOR_CSS = `
 
 /** Renders a store's authored `Section[]` through this theme's own section components.
  *  Types the theme has no renderer for, and `enabled:false` sections, are skipped. */
-export function FashionSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, selectedBlockId, onSelectBlock, dynamicSourceValues, previewContext, onEditText }: Props) {
+export function FashionSectionRenderer({ sections: authored, selectable, selectedSectionId, onSelectSection, selectedBlockId, onSelectBlock, dynamicSourceValues, previewContext, onEditText }: Props) {
   const { theme } = useStorefront();
+  // Visitors in another language see the seller's translations; the editor always shows the source text.
+  const textIndex = useStoreTextIndex();
+  const sections = selectable ? authored : localizeSections(authored, textIndex);
   const schemes = theme?.theme?.colorSchemes;
   const dynamic = dynamicSourceValues ?? {};
 

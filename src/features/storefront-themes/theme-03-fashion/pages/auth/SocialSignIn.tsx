@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import type { SocialProviderKey } from '@/api/services/customerSocialLogin';
 import { fashionTheme as t } from '../../theme.config';
+import { ts } from '@/utils/tStatic';
 
 function GoogleMark() {
   return (
@@ -40,7 +41,7 @@ export function SocialSignIn({ providers, onStart, loading, disabled, dividerTex
             className="flex w-full items-center justify-center gap-2.5 px-5 text-sm font-medium"
             style={{ minHeight: 48, border: `1px solid ${t.colors.border}`, borderRadius: t.buttonRadiusPx, background: 'transparent', color: t.colors.ink, cursor: blocked ? 'not-allowed' : 'pointer', opacity: blocked ? 0.6 : 1 }}>
             {loading ? <Loader2 size={16} className="animate-spin" aria-hidden /> : p === 'google' ? <GoogleMark /> : <FacebookMark />}
-            Continue with {p === 'google' ? 'Google' : 'Facebook'}
+            {ts('pg.continue_with_provider', 'Continue with {{provider}}', { provider: p === 'google' ? 'Google' : 'Facebook' })}
           </button>
         ))}
       </div>

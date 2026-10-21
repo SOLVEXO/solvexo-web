@@ -98,7 +98,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   );
 }
 
-export function Spinner({ label = 'Loading' }: { label?: string }) {
+export function Spinner({ label = ts('pg.loading', 'Loading') }: { label?: string }) {
   return <div role="status" aria-label={label} className="grid place-items-center py-16"><Loader2 size={26} className="animate-spin" style={{ color: t.colors.inkMuted }} /></div>;
 }
 

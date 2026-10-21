@@ -159,6 +159,13 @@ function StatusPill({ status }: { status: StoreIntegrationView['status'] }) {
 // Safepay/WhatsApp, where `error` really does mean something broke) reads as
 // alarming and wrong here, so this one combination gets its own honest label.
 function PaymentStatusPill({ integration }: { integration: StoreIntegrationView }) {
+  if (integration.available === false) {
+    return (
+      <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 bg-cream text-slate">
+        Not available
+      </span>
+    );
+  }
   if (integration.provider === 'stripe' && integration.status === 'error') {
     return (
       <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0" style={{ background: '#FDF3E7', color: '#9A6A17' }}>
@@ -583,7 +590,12 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
         <PaymentStatusPill integration={integration} />
       </div>
 
-      {isStripe ? (
+      {integration.available === false ? (
+        <p className="flex items-start gap-1.5 text-[12.5px] text-slate" role="status">
+          <AlertTriangle size={13} className="shrink-0 mt-[2px]" />
+          <span>{integration.unavailableReason ?? 'This payment option is not available for your store country.'}</span>
+        </p>
+      ) : isStripe ? (
         <StripeConnectSection integration={integration} storeId={storeId} onChanged={onChanged} />
       ) : integration.status === 'not_connected' || integration.status === 'disabled' ? (
         <>

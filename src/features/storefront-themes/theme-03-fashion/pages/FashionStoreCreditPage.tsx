@@ -16,7 +16,7 @@ import { Pager, RequireAccount } from './orders/OrderParts';
 const LIMIT = 10;
 
 function StoreCredit() {
-  useStorefrontSeo({ title: 'Store credit', noindex: true });
+  useStorefrontSeo({ title: ts('checkout.storeCredit', 'Store credit'), noindex: true });
   const { store } = useStorefront();
   const { money } = useMoney();
   const [page, setPage] = useState(1);
@@ -27,7 +27,7 @@ function StoreCredit() {
   const totalPages = txs ? Math.max(1, Math.ceil(txs.total / (txs.limit || LIMIT))) : 1;
 
   return (
-    <AccountLayout title={ts('pg.store', 'Store')} accent={ts('pg.word_credit', 'credit')} subtitle={`Credit from refunds and gifts at ${store.name}. It is applied at checkout.`}>
+    <AccountLayout title={ts('pg.store', 'Store')} accent={ts('pg.word_credit', 'credit')} subtitle={ts('pg.credit_from_refunds_and_gifts_at_store', 'Credit from refunds and gifts at {{store}}. It is applied at checkout.', { store: store.name })}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_store_credit', 'Loading store credit')}><SkeletonBlock h={150} /><div className="mt-6"><SkeletonBlock h={64} rows={3} /></div></div>
       ) : error ? (
@@ -37,14 +37,14 @@ function StoreCredit() {
           <Card tone="soft" style={{ background: t.colors.ink, color: t.colors.bg }}>
             <p className="m-0 text-sm" style={{ opacity: 0.7 }}>{ts('credit.available', 'Available balance')}</p>
             <p className="m-0 mt-1 text-[clamp(36px,6vw,56px)] font-medium leading-none tracking-tight" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
-            {data?.nextExpiry && <p className="m-0 mt-4 text-sm" style={{ opacity: 0.75 }}>{money(data.nextExpiry.amount, from)} expires on {formatStoreCreditDate(data.nextExpiry.expiresAt)}</p>}
+            {data?.nextExpiry && <p className="m-0 mt-4 text-sm" style={{ opacity: 0.75 }}>{ts('pg.amount_expires_on_date', '{{amount}} expires on {{date}}', { amount: money(data.nextExpiry.amount, from), date: formatStoreCreditDate(data.nextExpiry.expiresAt) })}</p>}
             <Link to="/cart" className="fx-pill mt-6" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.goToCart', 'Go to cart')}</Link>
           </Card>
 
           <section aria-labelledby="credit-history">
             <SectionHeading><span id="credit-history">{ts('credit.history', 'History')}</span></SectionHeading>
             {!txs || txs.items.length === 0 ? (
-              <EmptyState icon={<Wallet size={24} />} title={ts('credit.none', 'No store credit activity yet')} text={`Credit from refunds or ${store.name} will show up here.`} />
+              <EmptyState icon={<Wallet size={24} />} title={ts('credit.none', 'No store credit activity yet')} text={ts('pg.credit_from_refunds_or_store_will_show', 'Credit from refunds or {{store}} will show up here.', { store: store.name })} />
             ) : (
               <>
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -60,8 +60,8 @@ function StoreCredit() {
                           <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{formatStoreCreditDate(tx.createdAt)}</p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <p className="m-0 text-[15px] font-semibold" style={{ color: up ? t.colors.success : t.colors.danger }}><span className="sr-only">{up ? 'Added ' : 'Used '}</span>{up ? '+' : '-'}{money(Math.abs(tx.amount), from)}</p>
-                          <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>Balance {money(tx.balanceAfter, from)}</p>
+                          <p className="m-0 text-[15px] font-semibold" style={{ color: up ? t.colors.success : t.colors.danger }}><span className="sr-only">{up ? ts('pg.word_added', 'Added') : ts('pg.word_used', 'Used')}{' '}</span>{up ? '+' : '-'}{money(Math.abs(tx.amount), from)}</p>
+                          <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{ts('pg.balance_amount', 'Balance {{amount}}', { amount: money(tx.balanceAfter, from) })}</p>
                         </div>
                       </li>
                     );

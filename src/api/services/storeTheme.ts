@@ -168,11 +168,24 @@ export interface SectionGroupLike {
   settings: Record<string, unknown>;
 }
 
+/** Where a logo or footer image goes when clicked (same shape as a menu link target). */
+export interface LogoLink {
+  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'faqs' | 'email' | 'phone';
+  pageSlug?: string;
+  url?: string;
+  categoryId?: string;
+  collectionId?: string;
+  productId?: string;
+  newTab?: boolean;
+}
+
 export interface StorefrontHeader {
   /** Extra full-width sections shown under the header bar. */
   sections?:     Section[];
   logoSource:    'store' | 'custom';
   customLogoUrl: string | null;
+  /** Where clicking the logo goes; missing/null = the home page. */
+  logoLink?:     LogoLink | null;
   blocks:        Block[]; // nav_link blocks — the fallback content when no menu is attached
   navAlignment:  'left' | 'center' | 'right';
   headerStyle:   ThemeHeaderStyle;
@@ -230,6 +243,7 @@ export interface StorefrontFooter {
   menuId:      string | null;
   logoSource?:           'none' | 'store' | 'custom';
   logoUrl?:              string | null;
+  logoLink?:             LogoLink | null;
   logoWidth?:            number | null;
   showNewsletter?:       boolean;
   newsletterHeading?:    string | null;
@@ -248,6 +262,13 @@ export interface StorefrontFooter {
   align?:                'left' | 'center';
   headingUppercase?:     boolean;
   socialStyle?:          'plain' | 'circle' | 'square' | null;
+  /** null = theme colour, 'brand' = each platform's own colour, 'custom' = `socialCustomColor`. */
+  socialColor?:          'brand' | 'custom' | null;
+  socialCustomColor?:    string | null;
+  /** Fill the buttons with the full colour (icon white/dark) instead of a soft tint. */
+  socialFilled?:         boolean;
+  /** Width and height of one social icon button in px (24–72); null = theme size. */
+  socialSize?:           number | null;
   newsletterTop?:        boolean;
   mobileAccordion?:      boolean;
   showPolicyLinks?:      boolean;
@@ -258,8 +279,8 @@ export interface StorefrontFooter {
 
 /** The footer settings the editor can save alongside its blocks. */
 export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
-  'logoSource' | 'logoUrl' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
-  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout' | 'paddingY' | 'bgImageUrl' | 'bgOverlay' | 'align' | 'headingUppercase' | 'socialStyle' |
+  'logoSource' | 'logoUrl' | 'logoLink' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
+  'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout' | 'paddingY' | 'bgImageUrl' | 'bgOverlay' | 'align' | 'headingUppercase' | 'socialStyle' | 'socialColor' | 'socialCustomColor' | 'socialFilled' | 'socialSize' |
   'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'preset' | 'sections'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';

@@ -85,3 +85,8 @@ export function apiSendTestCustomerEmail(storeId: string, payload: { event: stri
 
 /** Per-language subject/body of each customer email, keyed event -> locale (plain text + {{tags}}, same rules as English). */
 export type EventTranslations = Record<string, Record<string, { subject: string; body: string }>>;
+
+/** Machine translation of one email into a language; returns text for the seller to review (nothing is saved). */
+export function apiAutoTranslateEmail(storeId: string, payload: { event: string; locale: string }) {
+  return client.post<never, { success: boolean; data: { subject: string; body: string } }>(`/api/store-notifications/${storeId}/auto-translate-email`, payload);
+}

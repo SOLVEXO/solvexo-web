@@ -53,7 +53,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   const { t: tr } = useTranslation('storefront');
   const { addToCart, adding } = useCartContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
-  const { currency, convert } = useCurrencyPreference();
+  const { currency, convert, canConvert } = useCurrencyPreference();
   const localize = useLocalize();
   const { detail, loading, error, refetch } = useProductById(slug);
   const product = detail ? localize.product(detail.product) : null;
@@ -128,7 +128,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   if (!detail || !product || !variant) return <FashionNotFoundPage />;
 
   const base = String(variant.currency ?? store.baseCurrency ?? currency);
-  const show = (n: number) => moneyText(convert(n, base), currency);
+  const show = (n: number) => (canConvert(base, currency) ? moneyText(convert(n, base), currency) : '—');
   const state = stockState(variant, isDigital, store.lowStockThreshold);
   const canBuy = variantCanBuy(variant, isDigital);
   const rules = resolveQtyRules(detail.product, Number.isFinite(variantMaxQty(variant, isDigital)) ? variantMaxQty(variant, isDigital) : 999);

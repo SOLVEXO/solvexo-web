@@ -75,6 +75,8 @@ export interface CreateStorePayload {
    *  required, and locked forever the moment the store has its first
    *  product (see backend StoreService.createStore's comment). */
   baseCurrency: SupportedCurrency;
+  /** Store country (ISO-3166 alpha-2) — decides which payment providers the store can use. */
+  country?: string;
   /** Which PlatformPlan to trial for 3 days — omitted falls back to the
    *  cheapest real paid plan (see backend ensureDefaultSubscription). */
   platformPlanId?: string;
@@ -84,6 +86,10 @@ export interface UpdateStorePayload {
   storeId:      string;
   /** IANA time zone for reports (Shopify Settings > General). Null = automatic from the store country. */
   timezone?:    string | null;
+  /** How prices read on the storefront: symbol (Rs 1,200), code (PKR 1,200) or both. */
+  currencyDisplay?: CurrencyDisplay;
+  /** The language the store's content is written in (no URL prefix); other languages are translations. */
+  defaultLanguage?: string;
   name?:        string;
   logo?:        string;
   faviconUrl?:  string | null;
@@ -162,6 +168,9 @@ export interface StoreData {
   baseCurrency: SupportedCurrency;
   /** Report time zone (IANA). Null/absent = automatic from the store country. */
   timezone?: string | null;
+  currencyDisplay?: CurrencyDisplay;
+  /** The language the store's content is written in (no URL prefix); other languages are translations. */
+  defaultLanguage?: string;
   /** "Markets" — real, seller-configurable subset of `SUPPORTED_CURRENCIES`
    *  a buyer may check out in on this store. Null/absent (a pre-existing
    *  store that never touched this setting) means every supported currency
@@ -365,6 +374,11 @@ export function apiResolveStoreByDomain(host: string) {
   return client.get<never, ApiResponse<PublicStoreData>>(ENDPOINTS.STORE.RESOLVE_DOMAIN, { params: { host } });
 }
 
+/** GET /api/store/public/bootstrap - store + live theme + home page in one request (theme/home are null for a gated store). */
+export function apiGetStorefrontBootstrap(params: { slug?: string | null; host?: string }) {
+  return client.get<never, ApiResponse<{ store: PublicStoreData; theme: unknown; home: unknown }>>(ENDPOINTS.STORE.PUBLIC_BOOTSTRAP, { params });
+}
+
 export type StorePrivacyMode = 'public' | 'password' | 'coming_soon';
 
 export interface StorePrivacyRequest {
@@ -503,7 +517,12 @@ export function apiGetBuilderConfig(storeId: string) {
 
 // ── Public Storefront ─────────────────────────────────────────────────────────
 
+export type CurrencyDisplay = 'symbol' | 'code' | 'symbol_code';
+
 export interface PublicStoreData {
+  currencyDisplay?: CurrencyDisplay;
+  /** The language the store's content is written in (no URL prefix); other languages are translations. */
+  defaultLanguage?: string;
   storeId:        string;
   sellerId:       string;
   name:           string;

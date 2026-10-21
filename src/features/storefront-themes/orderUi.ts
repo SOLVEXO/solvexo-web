@@ -1,4 +1,4 @@
-import { tt } from '@/utils/tStatic';
+import { tt, ts } from '@/utils/tStatic';
 import type { OrderDetail, OrderLineItem, OrderStatus, OrderSummary } from '@/api/services/orders';
 
 /** Shared (theme-agnostic) helpers for the buyer "Orders" / "Order" pages. */
@@ -184,7 +184,7 @@ export function collectShipments(order: Pick<OrderDetail, 'sellerOrders'>): Buye
           key: sh._id ?? `${si}-${i}`,
           items: (sh.items ?? []).map(l => {
             const item = (s.items ?? []).find(it => (it.itemId ?? it._id) === l.itemId);
-            return `${l.quantity} × ${item?.name ?? 'Item'}`;
+            return `${l.quantity} × ${item?.name ?? ts('pg.word_item', 'Item')}`;
           }),
           carrier: sh.tracking?.carrier ?? null,
           trackingNumber: sh.tracking?.trackingNumber ?? null,

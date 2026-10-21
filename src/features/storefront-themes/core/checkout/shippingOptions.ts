@@ -1,5 +1,6 @@
 import type { LiveShippingRate, ShippingZone } from '@/api/services/shipping';
 import { zoneArrivalRange, zoneLabel, zoneMatchesAddress } from '@/utils/shippingZoneDisplay';
+import { ts } from '@/utils/tStatic';
 
 /** One selectable delivery option: a live carrier rate or one of the store's own zone rates. */
 export interface ShipOption {
@@ -38,9 +39,9 @@ interface BuildArgs {
  */
 export function buildShipOptions({ zones, liveRates, address, zoneCurrency, sameCountry }: BuildArgs): { options: ShipOption[]; noMatching: boolean } {
   const live: ShipOption[] = liveRates.map(r => ({
-    _id: r.rateId, kind: 'live', label: [r.carrier, r.service].filter(Boolean).join(' - ') || 'Carrier rate',
+    _id: r.rateId, kind: 'live', label: [r.carrier, r.service].filter(Boolean).join(' - ') || ts('pg.carrier_rate', 'Carrier rate'),
     price: r.amount, priceCurrency: r.currency,
-    eta: r.estimatedDays ? `${r.estimatedDays} business day${r.estimatedDays === 1 ? '' : 's'}` : 'Varies',
+    eta: r.estimatedDays ? ts('checkout.businessDays', '{{count}} business days', { count: r.estimatedDays }) : ts('checkout.varies', 'Varies'),
     arrival: null, zoneType: 'shipping',
   }));
 

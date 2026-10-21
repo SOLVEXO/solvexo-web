@@ -1,16 +1,18 @@
 import { ArrowUp, Mail, Phone, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { scrollRootToTop } from '@/utils/scrollRoot';
 import { NavAnchor } from '../../../navigation/NavAnchor';
 import type { HeaderOptions } from '../../../navigation/headerOptions';
 import { fashionTheme as t } from '../../theme.config';
+import { ts } from '@/utils/tStatic';
 
 /** Footer "Back to top" pill. */
 export function BackToTop({ color, fontFamily }: { color: string; fontFamily: string }) {
   return (
-    <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    <button type="button" onClick={() => scrollRootToTop('smooth')}
       className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border bg-transparent px-3.5 py-1.5 text-xs font-medium transition-opacity hover:opacity-70"
       style={{ color, fontFamily, borderColor: `color-mix(in srgb, ${color} 25%, transparent)` }}>
-      <ArrowUp size={13} /> Back to top
+      <ArrowUp size={13} /> {ts('pg.back_to_top', 'Back to top')}
     </button>
   );
 }

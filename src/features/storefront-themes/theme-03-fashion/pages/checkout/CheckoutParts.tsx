@@ -2,6 +2,7 @@ import { useId, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { fashionTheme as t } from '../../theme.config';
 import { Card } from '../../ui/primitives';
+import { ts } from '@/utils/tStatic';
 
 /** Numbered step card: rounded surface, step badge (turns into a check when done), heading, content. */
 export function StepCard({ step, title, done, aside, children }: { step: number; title: string; done?: boolean; aside?: ReactNode; children: ReactNode }) {
@@ -16,7 +17,7 @@ export function StepCard({ step, title, done, aside, children }: { step: number;
               {done ? <Check size={16} /> : step}
             </span>
             <h2 id={id} className="m-0 text-lg font-semibold tracking-tight">{title}</h2>
-            {done && <span className="sr-only">(completed)</span>}
+            {done && <span className="sr-only">{ts('pg.word_completed_2', '(completed)')}</span>}
           </div>
           {aside}
         </div>

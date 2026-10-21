@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components -- this module registers renderers as a side effect */
 import { useEffect, useState } from 'react';
+import { handleOf } from '@/utils/activeStoreText';
 import { Link } from 'react-router-dom';
 import { ImageOff } from 'lucide-react';
-import { tt } from '@/utils/tStatic';
+import { tt, ts } from '@/utils/tStatic';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { apiListPublicBlogPosts, type BlogPostSummary } from '@/api/services/storeBlog';
 import { apiGetPublicMetaobjectEntriesByType, type MetaobjectEntry } from '@/api/services/metaobjects';
@@ -51,7 +52,7 @@ function BlogPostsSection({ section, colors }: { section: Section; colors: Fashi
     <SectionShell colors={colors} heading={section.settings.heading} action={<TextLink to="/blog" color={colors.ink}>{copyText(section.settings, 'viewAllLabel', 'View all')}</TextLink>}>
       <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map(post => (
-          <Link key={post.slug} to={`/blog/${post.slug}`} className="block no-underline" style={{ color: colors.ink }}>
+          <Link key={post.slug} to={`/blog/${handleOf(post)}`} className="block no-underline" style={{ color: colors.ink }}>
             {post.coverImage ? (
               <div style={{ ...fit.box, overflow: 'hidden', borderRadius: t.imageRadiusPx }}><img src={post.coverImage} alt={post.title} loading="lazy" style={fit.img} /></div>
             ) : (
@@ -144,7 +145,7 @@ function DropCountdownSection({ section }: { section: Section }) {
         {now.done ? (
           <p className="m-0 text-2xl" style={{ fontFamily: t.fonts.display }}>{copyText(s, 'endedText', 'Dropped!')}</p>
         ) : (
-          <div className="flex items-center gap-6 sm:gap-10" role="timer" aria-label={s.heading || 'Countdown'}>
+          <div className="flex items-center gap-6 sm:gap-10" role="timer" aria-label={s.heading || ts('pg.word_countdown', 'Countdown')}>
             {units.map(([value, label]) => (
               <div key={label} className="flex flex-col items-center gap-1">
                 <span className="text-[clamp(30px,5vw,52px)] font-semibold leading-none" style={{ fontFamily: t.fonts.display, fontVariantNumeric: 'tabular-nums' }}>{String(value).padStart(2, '0')}</span>

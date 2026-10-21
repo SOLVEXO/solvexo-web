@@ -10,7 +10,7 @@ import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import type { Block } from '@/api/services/storefrontTypes';
 import { NavAnchor } from '../../../navigation/NavAnchor';
 import { readFooterOptions, visibleFooterBlocks, footerColumnFlex, FOOTER_COLUMN_TYPES } from '../../../navigation/headerOptions';
-import { SocialIcon, FooterContact } from './FooterParts';
+import { SocialIcon, FooterContact, socialBrandColor } from './FooterParts';
 
 /** Colors and fonts for the footer, resolved by FashionFooter (the merchant can recolor the footer panel). */
 export interface FooterColumnTokens {
@@ -86,19 +86,61 @@ export function FooterNewsletterStrip({ tokens: k, maxWidth, padX, line }: { tok
   );
 }
 
-export function SocialRow({ socials, k, look, center }: { socials: Block[]; k: Pick<FooterColumnTokens, 'fg' | 'muted'>; look?: SocialLook | null; center?: boolean }) {
+/** Instagram's real brand fill. */
+const INSTAGRAM_GRADIENT = 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)';
+
+/** White or near-black, whichever reads on this #rrggbb background. */
+function readableOn(bg: string | null): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(bg ?? '');
+  if (!m) return '#fff';
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62 ? '#111' : '#fff';
+}
+
+export function SocialRow({ socials, k, look, center, color, customColor, filled, size }: {
+  socials: Block[]; k: Pick<FooterColumnTokens, 'fg' | 'muted'>; look?: SocialLook | null; center?: boolean;
+  /** null/undefined = the theme's own colour; 'brand' = each platform's real colour; 'custom' = `customColor`. */
+  color?: 'brand' | 'custom' | null; customColor?: string | null;
+  /** The button is filled with the full colour (icon white/dark) instead of a soft tint. Needs a button style (not plain). */
+  filled?: boolean;
+  /** Width and height of one icon button in px; null/undefined = the theme's own size. */
+  size?: number | null;
+}) {
   const style = look ?? 'circle';
-  const box: CSSProperties = style === 'plain'
-    ? { color: k.muted }
-    : { color: k.fg, width: 40, height: 40, borderRadius: style === 'circle' ? 9999 : 12, background: `color-mix(in srgb, ${k.fg} 10%, transparent)` };
+  const boxSize = size ?? (style === 'plain' ? undefined : 40);
+  // The glyph is a bit less than half the button; defaults keep the original 18 (plain) / 17 (button) px.
+  const glyph = size ? Math.max(12, Math.round(size * 0.45)) : style === 'plain' ? 18 : 17;
+  const toneOf = (platform: string) => {
+    if (color === 'custom' && customColor) return customColor;
+    if (color === 'brand') return socialBrandColor(platform, k.fg);
+    return null;
+  };
   return (
     <div className={`mt-5 flex flex-wrap items-center gap-2.5 ${center ? 'justify-center' : ''}`}>
-      {socials.map((b, i) => (
-        <a key={b._id ?? i} href={b.settings.url as string} target="_blank" rel="noopener noreferrer" aria-label={b.settings.platform as string}
-          className="grid place-items-center transition-opacity hover:opacity-70" style={box}>
-          <SocialIcon platform={b.settings.platform as string} size={style === 'plain' ? 18 : 17} />
-        </a>
-      ))}
+      {socials.map((b, i) => {
+        const platform = b.settings.platform as string;
+        const tone = toneOf(platform);
+        const radius = style === 'circle' ? 9999 : Math.round((boxSize ?? 40) * 0.3);
+        // Solid: the platform's real button (X and TikTok are black, so they get a thin light edge to stay visible on a dark footer).
+        const solid = !!tone && !!filled && style !== 'plain';
+        const brandBlack = color === 'brand' && tone === k.fg;
+        const box: CSSProperties = style === 'plain'
+          ? { color: tone ?? k.muted, ...(boxSize ? { width: boxSize, height: boxSize } : {}) }
+          : solid
+            ? {
+              color: brandBlack ? '#fff' : readableOn(tone),
+              width: boxSize, height: boxSize, borderRadius: radius,
+              background: brandBlack ? '#000' : color === 'brand' && platform === 'instagram' ? INSTAGRAM_GRADIENT : tone,
+              ...(brandBlack ? { boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${k.fg} 35%, transparent)` } : {}),
+            }
+            : { color: tone ?? k.fg, width: boxSize, height: boxSize, borderRadius: radius, background: `color-mix(in srgb, ${tone ?? k.fg} ${tone ? 16 : 10}%, transparent)` };
+        return (
+          <a key={b._id ?? i} href={b.settings.url as string} target="_blank" rel="noopener noreferrer" aria-label={platform}
+            className="grid place-items-center transition-opacity hover:opacity-70" style={box}>
+            <SocialIcon platform={platform} size={glyph} />
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -161,11 +203,11 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
         return (
           <>
             {footerLogo
-              ? <img src={footerLogo} alt={store.name} style={{ width: opts.logoWidth, maxWidth: '100%', height: 'auto', marginBottom: 14, marginInline: center ? 'auto' : undefined }} />
+              ? <NavAnchor link={resolveLink(footer?.logoLink ?? { linkType: 'home' })} className="block" style={{ width: opts.logoWidth, maxWidth: '100%', marginBottom: 14, marginInline: center ? 'auto' : undefined }}><img src={footerLogo} alt={store.name} style={{ width: '100%', height: 'auto', display: 'block' }} /></NavAnchor>
               : <p className="m-0 mb-3.5 text-2xl font-semibold tracking-tight" style={{ fontFamily: k.fontDisplay, color: k.fg }}>{store.name}</p>}
             {s.showTagline !== false && store.tagline && <p style={body}>{store.tagline}</p>}
             {s.text && <p style={{ ...body, marginTop: 10, whiteSpace: 'pre-line' }}>{s.text}</p>}
-            {s.showSocial !== false && socials.length > 0 && <SocialRow socials={socials} k={k} look={opts.socialStyle} center={center} />}
+            {s.showSocial !== false && socials.length > 0 && <SocialRow socials={socials} k={k} look={opts.socialStyle} center={center} color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} />}
           </>
         );
       case 'footer_column':
@@ -176,13 +218,18 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
         return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, <p style={{ ...body, whiteSpace: 'pre-line' }}>{s.text}</p>);
       case 'footer_contact':
         return fold(id, s.heading || 'Contact', <FooterContact settings={s} tokens={parts} />);
-      case 'footer_image':
-        return s.imageUrl ? (
+      case 'footer_image': {
+        if (!s.imageUrl) return null;
+        const px = typeof s.imageWidth === 'number' ? s.imageWidth : typeof s.width === 'number' ? s.width : 160; // legacy blocks stored the pixel width in `width`
+        return (
           <>
             {s.heading && <p style={heading}>{s.heading}</p>}
-            <img src={s.imageUrl} alt={s.alt || ''} style={{ width: typeof s.width === 'number' ? s.width : 160, maxWidth: '100%', height: 'auto', borderRadius: 16, marginInline: center ? 'auto' : undefined }} />
+            <NavAnchor link={resolveLink(s.link ?? { linkType: 'home' })} className="block" style={{ width: px, maxWidth: '100%', marginInline: center ? 'auto' : undefined }}>
+              <img src={s.imageUrl} alt={s.alt || ''} style={{ width: '100%', height: 'auto', borderRadius: 16, display: 'block' }} />
+            </NavAnchor>
           </>
-        ) : null;
+        );
+      }
       case 'footer_newsletter':
         if (opts.newsletterTop) return null;
         return (

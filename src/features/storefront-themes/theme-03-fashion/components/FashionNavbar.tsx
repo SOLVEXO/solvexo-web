@@ -65,7 +65,7 @@ export function FashionNavbar() {
   const [pages, setPages] = useState<PublicPageSummary[]>([]);
 
   const header = theme?.header;
-  const o = readHeaderOptions(header, 'Journal');
+  const o = readHeaderOptions(header, ts('blog.journal', 'Journal'));
   const transparent = o.transparentOnHome && pathname === '/';
   const scroll = useHeaderScroll(o.stickyMode, transparent);
 
@@ -139,7 +139,7 @@ export function FashionNavbar() {
         <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
-            <Link to="/" className="flex items-center no-underline" aria-label={store.name}>{wordmark}</Link>
+            <NavAnchor link={resolveLink(header?.logoLink ?? { linkType: 'home' })} className="flex items-center no-underline" aria-label={store.name}>{wordmark}</NavAnchor>
           </div>
 
           <div className={`hidden min-w-0 lg:flex ${layout.nav}`}>
@@ -150,15 +150,15 @@ export function FashionNavbar() {
                   <div className={`inline-flex items-center rounded-full transition-colors ${o.navHoverStyle !== 'underline' ? 'group-hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[open=true]:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[dismissed=true]:bg-transparent!' : ''}`}>
                   <NavAnchor link={item.link} className={`inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`} style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}</NavAnchor>
                   {item.children.length > 0 && (
-                    <button type="button" aria-expanded={openMenu === item.id} aria-label={`${openMenu === item.id ? 'Close' : 'Open'} ${item.label} menu`} onPointerDown={e => { lastPointer.current = e.pointerType; }} onClick={e => toggleMenu(item.id, e.currentTarget)}
+                    <button type="button" aria-expanded={openMenu === item.id} aria-label={openMenu === item.id ? ts('pg.close_label_menu', 'Close {{label}} menu', { label: item.label }) : ts('pg.open_label_menu', 'Open {{label}} menu', { label: item.label })} onPointerDown={e => { lastPointer.current = e.pointerType; }} onClick={e => toggleMenu(item.id, e.currentTarget)}
                       className="mr-2 inline-grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 align-middle" style={{ color: fg }}>
-                      <ChevronDown size={14} aria-hidden className="transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180 group-data-[open=true]:rotate-180 group-data-[dismissed=true]:rotate-0!" />
+                      <ChevronDown size={14} aria-hidden className="transition-transform duration-200 group-hover:rotate-180 group-has-[:focus-visible]:rotate-180 group-data-[open=true]:rotate-180 group-data-[dismissed=true]:rotate-0!" />
                     </button>
                   )}
                   </div>
                   {isMegaItem(item) && (
-                    <div data-nav-panel className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
-                      <div className="grid gap-x-8 gap-y-6 p-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
+                    <div data-nav-panel className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
+                      <div className="grid gap-x-8 gap-y-6 p-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20 }}>
                         {item.children.map(c => (
                           <div key={c.id}>
                             {c.imageUrl && (
@@ -181,8 +181,8 @@ export function FashionNavbar() {
                     </div>
                   )}
                   {item.children.length > 0 && !isMegaItem(item) && (
-                    <div data-nav-panel className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
-                      <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16, boxShadow: '0 18px 40px rgba(0,0,0,.10)' }}>
+                    <div data-nav-panel className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
+                      <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
                         {item.children.map(c => (
                           <li key={c.id}>
                             <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
@@ -226,7 +226,7 @@ export function FashionNavbar() {
             {o.showSearch && <button type="button" className={`${iconBtn}${searchBar ? ' lg:hidden' : ''}`} aria-label={ts('nav.search', 'Search')} onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}
             {o.showAccount && <Link to={accountTo} className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.account', 'Account')} style={{ color: fg }}><User size={20} /></Link>}
             {o.showWishlist && <Link to="/wishlist" className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.wishlist', 'Wishlist')} style={{ color: fg }}><Heart size={20} />{badge(wishlistCount)}</Link>}
-            <button type="button" className={iconBtn} aria-label={`Cart, ${cartCount} items`} onClick={openCart} style={{ color: fg }}><ShoppingBag size={20} />{badge(cartCount)}</button>
+            <button type="button" className={iconBtn} aria-label={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} onClick={openCart} style={{ color: fg }}><ShoppingBag size={20} />{badge(cartCount)}</button>
           </div>
         </div>
 

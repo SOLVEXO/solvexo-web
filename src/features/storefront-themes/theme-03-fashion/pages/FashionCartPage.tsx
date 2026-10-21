@@ -12,6 +12,7 @@ import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { fashionTheme as t } from '../theme.config';
 import { PageBox } from './pageParts';
 import { splitAround, useTemplateSections } from '../../core/pageHooks';
+import { ts } from '@/utils/tStatic';
 
 /** `/cart` — line items with quantity steppers on the left, order summary on the right. */
 export function FashionCartPage() {
@@ -19,18 +20,18 @@ export function FashionCartPage() {
   const { store } = useStorefront();
   const navigate = useNavigate();
   const { cart, loading, error, setQty, removeItem, adding, refetch } = useCartContext();
-  const { currency, convert, ratesLoaded } = useCurrencyPreference();
+  const { currency, convert, canConvert } = useCurrencyPreference();
   const split = splitAround(useTemplateSections(store.storeId, 'page', 'cart'), 'cart_items');
   // This page draws the order summary itself; the template's `cart_summary` section is an editor-only placeholder.
   const before = split.before.filter(s => s.type !== 'cart_summary');
   const after = split.after.filter(s => s.type !== 'cart_summary');
-  useStorefrontSeo({ title: 'Cart', noindex: true });
+  useStorefrontSeo({ title: ts('footer.cart', 'Cart'), noindex: true });
 
   const items = cart?.items ?? [];
   const base = String(store.baseCurrency ?? currency);
   const unit = (i: (typeof items)[number]) => i.unitPrice ?? i.price ?? 0;
   // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
-  const ratesOk = ratesLoaded || items.every(i => !(i.currency ?? base) || (i.currency ?? base) === currency);
+  const ratesOk = items.every(i => canConvert(i.currency ?? base, currency));
   const fmt = (n: number) => (ratesOk ? moneyText(n, currency) : '—');
   const show = (n: number, from?: string | null) => fmt(convert(n, from ?? base));
   const subtotal = items.reduce((sum, i) => sum + convert(unit(i) * i.quantity, i.currency ?? base), 0);

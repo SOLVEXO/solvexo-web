@@ -86,7 +86,7 @@ registerFashionSection('testimonials', (section, blocks, colors) => {
             <li key={bid(b, i)}>
               <PreviewBlock blockId={bid(b, i)}>
                 <figure className="m-0 flex h-full flex-col gap-5 p-8" style={{ background: colors.bgAlt }}>
-                  {rating > 0 && <div className="flex gap-0.5" aria-label={`${rating} out of 5`}>{Array.from({ length: 5 }).map((_, k) => <Star key={k} size={15} fill={k < rating ? colors.ink : 'none'} stroke={colors.ink} />)}</div>}
+                  {rating > 0 && <div className="flex gap-0.5" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: rating })}>{Array.from({ length: 5 }).map((_, k) => <Star key={k} size={15} fill={k < rating ? colors.ink : 'none'} stroke={colors.ink} />)}</div>}
                   <blockquote className="m-0 flex-1 text-[19px] leading-[1.5]" style={{ fontFamily: t.fonts.display }}>“{s.quote}”</blockquote>
                   <figcaption className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.inkMuted }}>{s.authorName}{s.role ? ` · ${s.role}` : ''}</figcaption>
                 </figure>
@@ -133,7 +133,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
     setState('loading');
     try {
       const res = await apiSubscribeNewsletter(email.trim(), { storeId: store.storeId, source: 'store_section' });
-      setMessage(res.data?.pendingConfirmation ? (res.message || 'Almost done - check your inbox to confirm.') : copyText(s, 'successMessage', "Thank you — you're subscribed."));
+      setMessage(res.data?.pendingConfirmation ? (res.message || ts('pg.almost_done_check_your_inbox_to_confirm', 'Almost done - check your inbox to confirm.')) : copyText(s, 'successMessage', "Thank you — you're subscribed."));
       setState('done');
     } catch { setState('error'); }
   };
@@ -141,7 +141,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
     <section style={{ background: colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto max-w-[620px] text-center">
         {showEyebrow(s) && <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: colors.inkMuted }}>{copyText(s, 'eyebrow', 'Private notes')}</p>}
-        <h2 className="m-0 mb-4 text-[clamp(28px,3.6vw,44px)] leading-[1.1]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{s.heading || 'Stay in the loop'}</h2>
+        <h2 className="m-0 mb-4 text-[clamp(28px,3.6vw,44px)] leading-[1.1]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{s.heading || ts('pg.stay_in_the_loop', 'Stay in the loop')}</h2>
         {s.subtext && <p className="m-0 mb-8 text-[15px] leading-[1.7]" style={{ color: colors.inkMuted }}>{s.subtext}</p>}
         {state === 'done' ? <p role="status" className="m-0 text-[15px]" style={{ color: t.colors.success }}>{message}</p> : (
           <form onSubmit={submit} className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -150,7 +150,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
               className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm outline-none" style={{ border: `1px solid ${colors.ink}`, color: colors.ink, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }} />
             <button type="submit" disabled={state === 'loading'} className="cursor-pointer px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] disabled:opacity-60"
               style={{ background: colors.ink, color: colors.bg, border: `1px solid ${colors.ink}`, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>
-              {state === 'loading' ? 'Subscribing…' : copyText(s, 'buttonLabel', 'Subscribe')}
+              {state === 'loading' ? ts('pg.word_subscribing', 'Subscribing…') : copyText(s, 'buttonLabel', 'Subscribe')}
             </button>
           </form>
         )}

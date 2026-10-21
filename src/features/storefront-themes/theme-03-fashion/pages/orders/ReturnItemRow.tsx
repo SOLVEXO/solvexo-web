@@ -23,13 +23,13 @@ export function ReturnItemRow({ orderId, item }: { orderId: string; item: OrderL
   const label = item.returnLabel?.labelUrl && /^https?:\/\//i.test(item.returnLabel.labelUrl) ? item.returnLabel : null;
 
   const submit = async () => {
-    if (!reason.trim()) { setFieldError('Please describe the issue.'); return; }
+    if (!reason.trim()) { setFieldError(ts('returns.err.describe', 'Please describe the issue.')); return; }
     setFieldError(''); setSubmitError(''); setSubmitting(true);
     try {
       await apiRequestReturn(orderId, { reason: reason.trim(), itemIds: [item.itemId] });
       setSubmitted(true); setOpen(false); setReason('');
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'We could not submit your return request.');
+      setSubmitError(err instanceof Error ? err.message : ts('pg.we_could_not_submit_your_return_request', 'We could not submit your return request.'));
     } finally { setSubmitting(false); }
   };
 
@@ -42,13 +42,13 @@ export function ReturnItemRow({ orderId, item }: { orderId: string; item: OrderL
           </span>
           <div className="min-w-0">
             <p className="m-0 truncate text-[15px] font-medium">{item.name}</p>
-            <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>Quantity {item.quantity}</p>
+            <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{ts('pg.quantity_quantity', 'Quantity {{quantity}}', { quantity: item.quantity })}</p>
           </div>
         </div>
         {hasReturn ? (
           <span className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: status === 'rejected' ? t.colors.danger : t.colors.success }}>{status === 'rejected' ? <X size={15} aria-hidden /> : <Check size={15} aria-hidden />}{buyerReturnText(status)}</span>
         ) : (
-          <PillButton variant="outline" aria-expanded={open} onClick={() => { setOpen(o => !o); setFieldError(''); setSubmitError(''); }}>{open ? 'Cancel' : 'Request return'}</PillButton>
+          <PillButton variant="outline" aria-expanded={open} onClick={() => { setOpen(o => !o); setFieldError(''); setSubmitError(''); }}>{open ? ts('common.cancel', 'Cancel') : ts('pg.request_return', 'Request return')}</PillButton>
         )}
       </div>
 

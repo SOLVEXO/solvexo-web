@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
+import { localizeFields } from '@/utils/storeText';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { HelpCircle, Search } from 'lucide-react';
@@ -9,13 +11,30 @@ import { fashionTheme as t } from '../theme.config';
 import { EmptyState, ErrorState, Field, Page, PageTitle, SkeletonBlock, TextInput } from '../ui/primitives';
 import { FaqAccordion } from './content/FaqAccordion';
 import { useLoad } from '../../core/pageHooks';
+import { apiGetPublicStorePage } from '@/api/services/storePages';
+import { FashionCustomPage } from './FashionCustomPage';
+import { PageSkeleton } from './pageParts';
 
-/** `/faqs` - the questions the seller manages under Online Store > FAQs, searchable, with FAQPage structured data. */
+/** `/faqs` - a seller-built page with slug `faqs` wins; otherwise the built-in list of questions. */
 export function FashionFaqsPage() {
   const { store } = useStorefront();
+  const { data, loading } = useLoad(
+    () => apiGetPublicStorePage(store.storeId, 'faqs').then(r => r.data ?? null).catch(() => null),
+    [store.storeId],
+  );
+  if (loading) return <PageSkeleton />;
+  if (data) return <FashionCustomPage slug="faqs" />;
+  return <BuiltInFaqs />;
+}
+
+/** The questions the seller manages under Online Store > FAQs, searchable, with FAQPage structured data. */
+function BuiltInFaqs() {
+  const { store } = useStorefront();
   const [query, setQuery] = useState('');
-  useStorefrontSeo({ title: 'Frequently asked questions', description: `Answers to common questions about shopping at ${store.name}.` });
-  const { data, loading, error, retry } = useLoad(() => apiListPublicStoreFaqs(store.storeId).then(r => r.data ?? []), [store.storeId]);
+  useStorefrontSeo({ title: ts('faq.title', 'Frequently asked questions'), description: ts('pg.answers_to_common_questions_about', 'Answers to common questions about shopping at {{store}}.', { store: store.name }) });
+  const { data: source, loading, error, retry } = useLoad(() => apiListPublicStoreFaqs(store.storeId).then(r => r.data ?? []), [store.storeId]);
+  const textIndex = useStoreTextIndex();
+  const data = useMemo(() => (source ? source.map(f => localizeFields(f, `faq:${f._id}`, textIndex)) : source), [source, textIndex]);
 
   const q = query.trim().toLowerCase();
   const shown = (data ?? []).filter(f => !q || f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
@@ -26,7 +45,7 @@ export function FashionFaqsPage() {
 
   return (
     <Page narrow>
-      <PageTitle accent={ts('pg.word_questions', 'questions')} subtitle={`Quick answers about orders, delivery and shopping at ${store.name}.`}>{ts('pg.frequently_asked', 'Frequently asked')}</PageTitle>
+      <PageTitle accent={ts('pg.word_questions', 'questions')} subtitle={ts('pg.quick_answers_about_orders_delivery_and', 'Quick answers about orders, delivery and shopping at {{store}}.', { store: store.name })}>{ts('pg.frequently_asked', 'Frequently asked')}</PageTitle>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
       {loading ? <div role="status" aria-label={ts('pg.loading_questions', 'Loading questions')}><SkeletonBlock h={68} rows={5} /></div>
         : error ? <ErrorState message={ts('pg.we_couldn_t_load_the_questions_right_now', 'We couldn\'t load the questions right now.')} onRetry={retry} />

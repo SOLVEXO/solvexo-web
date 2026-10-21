@@ -58,3 +58,10 @@ export function apiUpdateSellerMarket(storeId: string, marketId: string, payload
 export function apiDeleteSellerMarket(storeId: string, marketId: string) {
   return client.delete<never, { success: boolean; message?: string }>(ENDPOINTS.MARKETS_SELLER.ONE(storeId, marketId));
 }
+
+/** Languages with no bundled UI text get their buttons/labels translated the first time they are asked for; asking right
+ *  after a market is saved means buyers find them ready. Best effort: a failure here changes nothing for the seller. */
+export function apiWarmUiLocales(languages: string[]): void {
+  const bundled = new Set(['en', 'ur', 'ar', 'fr', 'de', 'es', 'it', 'pt', 'nl', 'tr', 'hi', 'fa', 'id', 'ru', 'zh', 'ja', 'ko', 'ms', 'pl', 'sv', 'th', 'vi']);
+  languages.filter(l => l && !bundled.has(l)).forEach(l => { void client.get(`/api/public/ui-locale/${l}`).catch(() => undefined); });
+}

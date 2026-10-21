@@ -33,17 +33,19 @@ interface Props {
   currencies: string[];
   storeCurrency: string;
   onClose: () => void;
+  /** The language the store is written in; a new market starts with it. */
+  storeLanguage?: string;
   /** Rejects with the server message. */
   onSave: (payload: SellerMarketPayload) => Promise<void>;
 }
 
 const numOrEmpty = (v: number | null | undefined) => (v === null || v === undefined ? '' : String(v));
 
-export function MarketEditorModal({ market, currencies, storeCurrency, onClose, onSave }: Props) {
+export function MarketEditorModal({ market, currencies, storeCurrency, storeLanguage = 'en', onClose, onSave }: Props) {
   const [name, setName] = useState(market?.name ?? '');
   const [countries, setCountries] = useState<string[]>(market?.countries ?? []);
   const [currency, setCurrency] = useState(market?.currency ?? currencies.find(c => c !== storeCurrency) ?? currencies[0] ?? 'USD');
-  const [languages, setLanguages] = useState<string[]>(market?.languages ?? ['en']);
+  const [languages, setLanguages] = useState<string[]>(market?.languages ?? [storeLanguage]);
   const [domainType, setDomainType] = useState<'primary' | 'subdomain' | 'subfolder'>(market?.domainType ?? 'primary');
   const [domain, setDomain] = useState(market?.domain ?? '');
   const [subfolder, setSubfolder] = useState(market?.subfolder ?? '');

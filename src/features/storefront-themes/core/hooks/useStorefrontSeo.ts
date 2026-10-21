@@ -1,9 +1,16 @@
 import { useEffect } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { useStorefrontMarketOptional } from '@/features/storefront/storefrontMarket';
+import { DEFAULT_LOCALE } from '@/i18n/localeConfig';
+import { applyHreflangLinks, buildHreflangLinks } from '@/utils/storefrontSeoLinks';
 
 /** Shopify-style tab title ("Page – Store", home = the store's own title) plus description / social tags / noindex. */
 export function useStorefrontSeo({ title, description, image, noindex }: { title?: string; description?: string | null; image?: string | null; noindex?: boolean }) {
   const { store } = useStorefront();
+  const market = useStorefrontMarketOptional();
+  const languagesKey = (market?.languages ?? []).join(',');
+  const sourceLanguage = market?.defaultLanguage ?? DEFAULT_LOCALE;
+  const contentLanguage = market?.language ?? DEFAULT_LOCALE;
   const storeName = store.name;
   const fallbackDescription = store.description ?? store.tagline ?? '';
 
@@ -40,6 +47,12 @@ export function useStorefrontSeo({ title, description, image, noindex }: { title
     if (!canon) { canon = document.createElement('link'); canon.rel = 'canonical'; document.head.appendChild(canon); }
     canon.href = `${window.location.origin}${window.location.pathname}`;
     restore.push(() => { if (canonCreated) canon!.remove(); else if (canonBefore !== null) canon!.href = canonBefore; });
+    // The same page in every language the store offers (hreflang + x-default = the unprefixed URL, in the store's own language).
+    if (!noindex) {
+      applyHreflangLinks(buildHreflangLinks(window.location.origin, window.location.pathname, languagesKey ? languagesKey.split(',') : [], sourceLanguage));
+      restore.push(() => applyHreflangLinks([]));
+    }
+    meta('property', 'og:locale', contentLanguage);
     return () => { document.title = previousTitle; restore.forEach(fn => fn()); };
-  }, [title, description, image, noindex, storeName, fallbackDescription, store.logo]);
+  }, [title, description, image, noindex, storeName, fallbackDescription, store.logo, languagesKey, contentLanguage, sourceLanguage]);
 }

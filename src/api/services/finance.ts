@@ -214,8 +214,9 @@ export function apiGetFinanceTransactions(storeId: string, query: TransactionsQu
 }
 
 export function apiExportFinanceTransactions(storeId: string, query: TransactionsQuery = {}) {
-  return client.get<never, string>(`${ENDPOINTS.FINANCE.SELLER.TRANSACTIONS_EXPORT(storeId)}${qs(query)}`, {
-    responseType: 'text',
+  // A Blob (not 'text'): the response interceptor rejects any non-object body as "Unexpected response from server".
+  return client.get<never, Blob>(`${ENDPOINTS.FINANCE.SELLER.TRANSACTIONS_EXPORT(storeId)}${qs(query)}`, {
+    responseType: 'blob',
   });
 }
 

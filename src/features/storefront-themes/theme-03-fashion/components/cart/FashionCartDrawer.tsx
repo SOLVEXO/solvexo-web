@@ -53,12 +53,12 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const { t: tr } = useTranslation('storefront');
   const { cart, loading, updateQty, removeItem, error } = useCartContext();
-  const { currency: displayCurrency, convert, ratesLoaded } = useCurrencyPreference();
+  const { currency: displayCurrency, convert, canConvert } = useCurrencyPreference();
   const [busy, setBusy] = useState<string | null>(null);
   const items = cart?.items ?? [];
   const count = items.reduce((s, i) => s + i.quantity, 0);
   // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
-  const ratesOk = ratesLoaded || items.every(i => !i.currency || i.currency === displayCurrency);
+  const ratesOk = items.every(i => canConvert(i.currency, displayCurrency));
   const money = (n: number) => (ratesOk ? `${currencySymbol(displayCurrency)}${fmt2(n)}` : '—');
   const subtotal = items.reduce((s, i) => s + convert(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency), 0);
   const run = (key: string, fn: () => Promise<void | boolean>) => { setBusy(key); fn().finally(() => setBusy(null)); };
@@ -121,7 +121,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                         <p className="m-0 shrink-0 text-sm font-semibold">{money(line)}</p>
                       </div>
                       {(item.options?.length ?? 0) > 0 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{item.options?.map(o => o.value).join(' / ')}</p>}
-                      {item.quantity > 1 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{money(unit)} each</p>}
+                      {item.quantity > 1 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{money(unit)} {ts('cart.each', 'each')}</p>}
                       {item.type === 'digital' && (
                         <span className="inline-flex items-center gap-1 self-start rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: t.colors.bgAlt, color: t.colors.inkMuted }}>
                           <Download size={11} /> {tr('cart.digital', 'Digital')}

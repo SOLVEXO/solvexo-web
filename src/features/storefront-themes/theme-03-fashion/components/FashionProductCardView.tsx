@@ -53,7 +53,7 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
           <button type="button" onClick={onQuickView} className="fx-pill absolute inset-x-4 bottom-4 translate-y-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100" style={{ ...buttonLook('outline'), background: t.colors.bg, height: 40 }}>{ts('pg.quick_view', 'Quick view')}</button>
         )}
         {wished !== null && t.cardWishlist && (
-          <button type="button" onClick={onWish} aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'} aria-pressed={wished}
+          <button type="button" onClick={onWish} aria-label={wished ? ts('wishlist.removeAria', 'Remove from wishlist') : ts('product.addToWishlist', 'Add to wishlist')} aria-pressed={wished}
             className="absolute right-4 top-4 flex size-9 cursor-pointer items-center justify-center rounded-full border-0 transition-transform hover:scale-110" style={{ background: t.colors.bg, color: t.colors.ink }}>
             <Heart size={16} fill={wished ? t.colors.danger : 'none'} stroke={wished ? t.colors.danger : 'currentColor'} />
           </button>
@@ -65,7 +65,7 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
           {tag && t.cardTag && <span className="text-xs capitalize" style={{ color: t.colors.inkMuted }}>{tag}</span>}
           <Link to={to} className="no-underline" style={{ color: t.colors.ink }}><h3 className="m-0 line-clamp-1 text-base font-medium md:text-lg">{name}</h3></Link>
           {stars > 0 && t.cardRating && (
-            <div className="flex items-center gap-1.5" aria-label={`${stars} out of 5`}>
+            <div className="flex items-center gap-1.5" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: stars })}>
               <span className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={13} fill={i < stars ? t.colors.star : 'none'} stroke="#FB923C" />)}</span>
               <small className="text-xs">{rating.toFixed(1)}</small>
             </div>
@@ -91,11 +91,11 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
         </div>
         {t.cardButton && <div className="mt-auto flex gap-2">
           {onAdd ? (
-            <button type="button" onClick={onAdd} disabled={adding} className="fx-pill min-w-0 flex-1 whitespace-nowrap" style={{ ...buttonLook('primary'), height: 42, padding: '0 12px' }}>{adding ? 'Adding…' : 'Add to cart'}</button>
+            <button type="button" onClick={onAdd} disabled={adding} className="fx-pill min-w-0 flex-1 whitespace-nowrap" style={{ ...buttonLook('primary'), height: 42, padding: '0 12px' }}>{adding ? ts('product.adding', 'Adding…') : ts('pg.add_to_cart', 'Add to cart')}</button>
           ) : (
-            <Link to={to} className="fx-pill min-w-0 flex-1 whitespace-nowrap" style={{ ...buttonLook('outline'), height: 42, padding: '0 12px' }}>{soldOut ? 'View product' : 'Choose options'}</Link>
+            <Link to={to} className="fx-pill min-w-0 flex-1 whitespace-nowrap" style={{ ...buttonLook('outline'), height: 42, padding: '0 12px' }}>{soldOut ? ts('sections.viewProduct', 'View product') : ts('pg.choose_options', 'Choose options')}</Link>
           )}
-          {t.cardViewLink && <span className="hidden sm:block"><Link to={to} aria-label={`View ${name}`} className="fx-pill" style={{ ...buttonLook('outline'), width: 42, height: 42, padding: 0 }}><ArrowUpRight size={16} /></Link></span>}
+          {t.cardViewLink && <span className="hidden sm:block"><Link to={to} aria-label={ts('pg.view_name', 'View {{name}}', { name })} className="fx-pill" style={{ ...buttonLook('outline'), width: 42, height: 42, padding: 0 }}><ArrowUpRight size={16} /></Link></span>}
         </div>}
       </div>
     </article>
