@@ -68,8 +68,11 @@ export function apiGetCategoryTree(id?: string) {
 /** A store's own private category tree — every root category that store has
  *  created, each with its own nested children. Entirely separate from the
  *  legacy global tree above; never mixes with another store's categories. */
-export function apiGetStoreCategoryTree(storeId: string) {
-  return client.get<never, CategoryTreeListResponse>(`${ENDPOINTS.CATEGORIES.TREE}?storeId=${storeId}`)
+export function apiGetStoreCategoryTree(storeId: string, includeHidden = false) {
+  // `includeHidden` (seller Categories page only) uses the authenticated
+  // endpoint that also returns hidden categories, so they can be un-hidden.
+  const url = includeHidden ? ENDPOINTS.CATEGORIES.SELLER_TREE(storeId) : `${ENDPOINTS.CATEGORIES.TREE}?storeId=${storeId}`;
+  return client.get<never, CategoryTreeListResponse>(url)
     .then(res => (Array.isArray(res.data) ? { ...res, data: res.data.map(localizeCategory) } : res));
 }
 

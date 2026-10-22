@@ -82,7 +82,7 @@ export interface FieldSchema {
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[80px]`;
 
-function EntityPickerField({ mode, multiple, value, onPick, label, storeId }: {
+export function EntityPickerField({ mode, multiple, value, onPick, label, storeId }: {
   mode: EntityPickerMode;
   multiple: boolean;
   value: string | string[] | undefined;

@@ -199,7 +199,6 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
         { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
       ] },
-      { key: 'imageRatio', kind: 'select', label: 'Image ratio', hint: 'Default is square tiles.', options: IMAGE_RATIO_OPTIONS },
     ]),
   },
   {
@@ -417,12 +416,24 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
-    type: 'related_products', label: 'Related Products', description: 'Other products from the same category as the one being viewed. Place it on your Product template.',
+    type: 'related_products', label: 'Product Recommendations', description: 'Products shown with the one being viewed — related (same category), complementary (you pick them per product), or a fixed list. Place it on your Product template.',
     Icon: ShoppingBag, color: '#E11D48',
-    defaultSettings: { heading: 'You may also like', columns: 4, limit: 4 },
+    defaultSettings: { heading: 'You may also like', source: 'related', columns: 4, limit: 4 },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
+      { key: 'source', kind: 'select', label: 'Show', clears: ['categoryId', 'collectionId'],
+        hint: 'Related and Complementary only appear on a product page. For Complementary, pick the products on each product\'s edit page → "Complementary products"; a product with none shows nothing here.',
+        options: [
+          { value: 'related', label: 'Related products (same category, automatic)' },
+          { value: 'complementary', label: 'Complementary products (I pick them per product)' },
+          { value: 'category', label: 'A specific category' },
+          { value: 'collection', label: 'A collection' },
+          { value: 'manual', label: 'Hand-picked products (same on every product page)' },
+        ] },
+      { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: s => s.source === 'category' },
+      { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' },
+      { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual', hint: 'Shown in this order, up to 24.' },
       { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
       { key: 'limit', kind: 'number', label: 'How many products', min: 2, max: 12, step: 1 },
     ]),
@@ -748,7 +759,6 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'addToCartLabel', kind: 'text', label: '"Add to cart" text', maxLength: 30, placeholder: 'Add to Cart', half: true },
     { key: 'soldOutLabel', kind: 'text', label: '"Sold out" text', maxLength: 30, placeholder: 'Sold out', half: true },
     { key: 'preorderLabel', kind: 'text', label: '"Pre-order" text', maxLength: 30, placeholder: 'Pre-order', half: true },
-    { key: 'addedLabel', kind: 'text', label: 'Text after adding', maxLength: 30, placeholder: 'Added to Cart', half: true },
   ],
   product_description: [
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 40, placeholder: 'Description' },

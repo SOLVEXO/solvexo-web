@@ -6,9 +6,9 @@ import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiSubmitContactMessage } from '@/api/services/storeContact';
-import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
+import type { PublicStoreProduct } from '@/api/services/store';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { useProductPage } from './productContext';
+import { useRecommendedProducts } from './useRecommendedProducts';
 import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { PreviewBlock } from './previewInspector';
@@ -379,26 +379,12 @@ export function ContactFormSection({ section, colors, theme }: Props) {
 
 // ── Related products (other products of the viewed product's category) ─────
 export function RelatedProductsSection({ section, colors, theme }: Props) {
-  const { store } = useStorefront();
-  const product = useProductPage();
   const { currency } = useCurrencyPreference();
-  const [items, setItems] = useState<PublicStoreProduct[] | null>(null);
-  const limit = Math.min(12, Math.max(2, Number(section.settings.limit) || 4));
+  const { items } = useRecommendedProducts(section.settings);
   const Card = theme.ProductCard;
-  const productId = product?.productId;
-  const categoryId = product?.categoryId ?? undefined;
 
-  useEffect(() => {
-    if (!productId) return;
-    let off = false;
-    apiGetPublicStoreProducts(store.storeId, { categoryId, limit: limit + 1, sort: 'best_selling' })
-      .then(res => { if (!off) setItems((res.data?.products ?? []).filter(p => p._id !== productId).slice(0, limit)); })
-      .catch(() => { if (!off) setItems([]); });
-    return () => { off = true; };
-  }, [store.storeId, productId, categoryId, limit]);
-
-  // Only meaningful on a product page; elsewhere (or with nothing to show) it simply does not render.
-  if (!Card || !productId || !items || items.length === 0) return null;
+  // Nothing to show (or not on a product page, for related/complementary) → it simply does not render.
+  if (!Card || !items || items.length === 0) return null;
   const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 4;
   return (
     <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>

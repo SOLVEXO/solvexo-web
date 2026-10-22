@@ -164,12 +164,28 @@ function ProductPageInner({ slug }: { slug: string }) {
         {onSale && <><span className="text-xl line-through opacity-50">{show(variant.compareAtPrice as number)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>{tr('product.savePercent', 'Save {{percent}}%', { percent: percentOff })}</span></>}
       </div>
     ),
-    product_description: () => product.description ? <div className="text-base leading-[1.75]" style={{ color: t.colors.inkMuted }}>{renderRichText(product.description)}</div> : null,
-    product_variant_picker: () => optionNames.length === 0 ? null : (
+    product_description: s => product.description ? (
+      <div>
+        {typeof s.heading === 'string' && s.heading.trim() && <h2 className="m-0 mb-3 text-lg font-semibold">{s.heading}</h2>}
+        <div className="text-base leading-[1.75]" style={{ color: t.colors.inkMuted }}>{renderRichText(product.description)}</div>
+      </div>
+    ) : null,
+    product_variant_picker: s => optionNames.length === 0 ? null : (
       <div className="flex flex-col gap-5">
         {optionNames.map(name => {
           const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
           const current = variant.options?.find(o => o.name === name)?.value;
+          if (s.pickerStyle === 'dropdown') {
+            return (
+              <label key={name} className="flex flex-col gap-2 text-sm font-medium">
+                {name}
+                <select value={current ?? ''} onChange={e => setPicked(p => ({ ...p, [name]: e.target.value }))}
+                  className="cursor-pointer bg-transparent px-4 py-3 text-sm font-normal" style={{ borderRadius: 9999, border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>
+                  {values.map(v => <option key={v} value={v}>{v}{optionValueAvailable(variants, variant, name, v, isDigital) ? '' : ` — ${tr('product.soldOut', 'Sold out')}`}</option>)}
+                </select>
+              </label>
+            );
+          }
           return (
             <fieldset key={name} className="m-0 border-0 p-0">
               <legend className="mb-3 p-0 text-sm font-medium">{name}: <span style={{ color: t.colors.inkMuted }}>{current}</span></legend>
@@ -205,12 +221,16 @@ function ProductPageInner({ slug }: { slug: string }) {
         {qtyRuleHint(rules) && <p className="m-0 mt-2 text-xs" style={{ color: t.colors.inkMuted }}>{qtyRuleHint(rules)}</p>}
       </div>
     ),
-    product_buy_buttons: () => (
-      <div id="fx-buy" className="flex flex-col gap-3">
-        {pre && <p className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
-        <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : busy ? tr('product.adding', 'Adding…') : tr('product.addToCart', 'Add to cart')}</FashionButton>
-      </div>
-    ),
+    product_buy_buttons: s => {
+      // The seller's own button wording wins; blank keeps the theme's (translated) text.
+      const own = (k: string) => (typeof s[k] === 'string' && (s[k] as string).trim() ? (s[k] as string).trim() : null);
+      return (
+        <div id="fx-buy" className="flex flex-col gap-3">
+          {pre && <p className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
+          <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? (own('soldOutLabel') ?? tr('product.soldOut', 'Sold out')) : pre ? (own('preorderLabel') ?? tr('product.preorder', 'Pre-order')) : busy ? tr('product.adding', 'Adding…') : (own('addToCartLabel') ?? tr('product.addToCart', 'Add to cart'))}</FashionButton>
+        </div>
+      );
+    },
     product_buy_now: s => <ProductBuyNowButton settings={s} disabled={!canBuy} loading={busy} onBuy={() => add(true)} />,
     product_wishlist: () => <ProductWishlistButton productId={detail.product._id} variantId={variant._id} />,
     product_share: () => <ProductShareButton title={product.name} />,
@@ -221,7 +241,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   };
 
   return (
-    <ProductPageContext.Provider value={{ productId: detail.product._id, categoryId: detail.product.categoryId ?? null }}>
+    <ProductPageContext.Provider value={{ productId: detail.product._id, categoryId: detail.product.categoryId ?? null, subCategoryId: detail.product.subCategoryId ?? null, complementaryProductIds: detail.product.complementaryProductIds ?? [] }}>
       {before.length > 0 && <FashionSectionRenderer sections={before} />}
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `clamp(20px, 3vw, 40px) ${t.layout.containerPadX} clamp(40px, 6vw, 88px)` }}>
         {t.showBreadcrumbs && <nav aria-label={tr('product.breadcrumb', 'Breadcrumb')} className="mb-6 text-sm" style={{ color: t.colors.inkMuted }}>

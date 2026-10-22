@@ -240,7 +240,7 @@ function CategoryCard({ category, subs, searching, busy, readOnly, onAddSub, onE
 export default function StoreCategories() {
   const { store } = useStoreWorkspace();
   const toast = useToast();
-  const { tree, loading, error, refetch } = useStoreCategoryTree(store?._id);
+  const { tree, loading, error, refetch } = useStoreCategoryTree(store?._id, true);
   // undefined = closed, null = adding a root category, string = adding a
   // subcategory under that root's id.
   const [adding, setAdding] = useState<string | null | undefined>(undefined);

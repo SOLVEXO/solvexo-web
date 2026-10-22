@@ -22,9 +22,23 @@ function AccentHeading({ text }: { text: string }) {
   return <>{words.join(' ')} <span className="fx-serif" style={{ fontSize: '1.08em' }}>{last}</span></>;
 }
 
-function Slide({ block, height, active, eager }: { block: Block; height: string | undefined; active: boolean; eager: boolean }) {
+/** The slide's heading / text / button. Used over the image, and again under it on phones when the seller picks "Below image". */
+function SlideText({ block, color, onImage }: { block: Block; color: string; onImage: boolean }) {
   const s = block.settings;
   const editing = useInlineEditActive();
+  return (
+    <div className={`${onImage ? 'fx-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
+      {s.heading && <h1 className="fx-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
+      {s.subheading && <p className="fx-up fx-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
+      <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} />
+    </div>
+  );
+}
+
+const hasText = (b: Block) => !!(b.settings.heading || b.settings.subheading || b.settings.ctaText);
+
+function Slide({ block, height, active, eager, below }: { block: Block; height: string | undefined; active: boolean; eager: boolean; below: boolean }) {
+  const s = block.settings;
   const adapt = !height;
   return (
     <div className="relative w-full shrink-0 overflow-hidden" style={{ height, background: '#1b1b1b' }} aria-hidden={!active}>
@@ -34,14 +48,11 @@ function Slide({ block, height, active, eager }: { block: Block; height: string 
           style={adapt ? undefined : { objectPosition: focalOf(s.focalPoint) }} />
       )}
       <div className="absolute inset-0" style={{ background: typeof s.overlayOpacity === 'number' ? `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` : 'linear-gradient(90deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 100%)' }} />
-      {(s.heading || s.subheading || s.ctaText) && (
-        <div className="absolute inset-0 flex items-end md:items-center">
+      {hasText(block) && (
+        // "Below image" on phones: no text over the picture there (it appears under it instead, see Hero).
+        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end md:items-center`}>
           <div className="mx-auto w-full" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX} 72px`, textAlign: s.contentAlign === 'center' || s.contentAlign === 'right' ? s.contentAlign : 'left' }}>
-            <div className={`fx-on-image max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color: typeof s.textColor === 'string' && s.textColor ? s.textColor : '#fff' }}>
-              {s.heading && <h1 className="fx-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
-              {s.subheading && <p className="fx-up fx-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
-              <LinkButton text={s.ctaText} link={s.ctaLink} variant="light" />
-            </div>
+            <SlideText block={block} onImage color={typeof s.textColor === 'string' && s.textColor ? s.textColor : '#fff'} />
           </div>
         </div>
       )}
@@ -74,6 +85,18 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const hm = mob === 'adapt' ? undefined : HEIGHT[(mob ?? 'medium') as Exclude<HeightPreset, 'adapt'>];
   const go = (d: number) => setI(v => (v + d + n) % n);
   const pagination = settings.pagination ?? 'dots';
+  const below = settings.mobileTextLayout === 'below';
+  // One slide = the image box + (phones, "Below image" only) its text underneath.
+  const slideBody = (b: Block, k: number) => (
+    <>
+      <PreviewBlock blockId={b._id ?? String(k)}><div className="fx-h"><Slide block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} below={below} /></div></PreviewBlock>
+      {below && hasText(b) && (
+        <div className="md:hidden" style={{ padding: '24px 20px 8px', textAlign: b.settings.contentAlign === 'center' || b.settings.contentAlign === 'right' ? b.settings.contentAlign : 'left' }}>
+          <SlideText block={b} onImage={false} color={t.colors.ink} />
+        </div>
+      )}
+    </>
+  );
 
   return (
     <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: `12px ${t.layout.containerPadX} 0` }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
@@ -85,7 +108,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
           <div className="relative">
             {slides.map((b, k) => (
               <div key={b._id ?? k} style={{ position: k === 0 ? 'relative' : 'absolute', inset: 0, opacity: k === cur ? 1 : 0, transition: 'opacity .8s ease', pointerEvents: k === cur ? 'auto' : 'none' }}>
-                <PreviewBlock blockId={b._id ?? String(k)}><div className="fx-h"><Slide block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} /></div></PreviewBlock>
+                {slideBody(b, k)}
               </div>
             ))}
           </div>
@@ -93,7 +116,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
           <div className="flex" style={{ transform: `translateX(-${cur * 100}%)`, transition: 'transform .7s cubic-bezier(.22,.61,.36,1)' }}>
             {slides.map((b, k) => (
               <div key={b._id ?? k} className="w-full shrink-0">
-                <PreviewBlock blockId={b._id ?? String(k)}><div className="fx-h"><Slide block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} /></div></PreviewBlock>
+                {slideBody(b, k)}
               </div>
             ))}
           </div>

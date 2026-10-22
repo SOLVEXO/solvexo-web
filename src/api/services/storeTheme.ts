@@ -468,6 +468,34 @@ export function apiCreateColorScheme(storeId: string, payload: { name: string; b
 export function apiDeleteColorScheme(storeId: string, schemeId: string, installedThemeId?: string) {
   return client.delete<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.DELETE_COLOR_SCHEME(storeId, schemeId), installedThemeId));
 }
+// ── Brand Kit — store-level brand colors that survive a theme change ────
+export interface BrandKit {
+  primaryColor: string;
+  accentColor:  string;
+  bgColor:      string | null;
+  textColor:    string | null;
+  saleColor:    string | null;
+  /** When true, installing/activating/applying any theme keeps these colors. */
+  locked:       boolean;
+}
+/** The theme colour fields a Brand Kit drives (optional roles only when the seller set them) — the same set the backend overlays onto a theme. */
+export function brandKitColors(kit: BrandKit): Partial<StorefrontColors> {
+  const colors: Partial<StorefrontColors> = { primaryColor: kit.primaryColor, accentColor: kit.accentColor };
+  if (kit.bgColor) colors.bgColor = kit.bgColor;
+  if (kit.textColor) colors.textColor = kit.textColor;
+  if (kit.saleColor) colors.saleColor = kit.saleColor;
+  return colors;
+}
+export function apiGetBrandKit(storeId: string) {
+  return client.get<never, ApiResponse<BrandKit | null>>(ENDPOINTS.STORE_THEME.BRAND_KIT(storeId));
+}
+export function apiSaveBrandKit(storeId: string, payload: BrandKit, installedThemeId?: string) {
+  return client.put<never, ApiResponse<{ brandKit: BrandKit; theme: StoreThemeData }>>(withInstance(ENDPOINTS.STORE_THEME.BRAND_KIT(storeId), installedThemeId), payload);
+}
+/** Flips only the lock flag of an already-saved kit; never touches any theme colours. */
+export function apiSetBrandKitLocked(storeId: string, locked: boolean) {
+  return client.patch<never, ApiResponse<{ locked: boolean }>>(ENDPOINTS.STORE_THEME.BRAND_KIT_LOCK(storeId), { locked });
+}
 export function apiApplyColorScheme(storeId: string, schemeId: string, installedThemeId?: string) {
   return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.APPLY_COLOR_SCHEME(storeId, schemeId), installedThemeId));
 }

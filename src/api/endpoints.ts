@@ -181,6 +181,7 @@ export const ENDPOINTS = {
   CATEGORIES: {
     ADD:       '/api/categories/add-category',
     TREE:      '/api/categories/category-tree',
+    SELLER_TREE: (storeId: string) => `/api/categories/store/${storeId}/category-tree`,
     GET_BY_ID: (id: string) => `/api/categories/category/${id}`,
     UPDATE:    (id: string) => `/api/categories/category/${id}`,
     DELETE:    (id: string) => `/api/categories/category/${id}`,
@@ -283,6 +284,8 @@ export const ENDPOINTS = {
     COLOR_SCHEMES:       (storeId: string) => `/api/store-theme/${storeId}/color-schemes`,
     DELETE_COLOR_SCHEME: (storeId: string, schemeId: string) => `/api/store-theme/${storeId}/color-schemes/${schemeId}`,
     APPLY_COLOR_SCHEME:  (storeId: string, schemeId: string) => `/api/store-theme/${storeId}/color-schemes/${schemeId}/apply`,
+    BRAND_KIT:           (storeId: string) => `/api/store-theme/${storeId}/brand-kit`,
+    BRAND_KIT_LOCK:      (storeId: string) => `/api/store-theme/${storeId}/brand-kit/lock`,
     PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
     // ── Theme Library (installed theme instances) ──
     LIST_INSTALLED: (storeId: string) => `/api/store-theme/${storeId}/installed`,

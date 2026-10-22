@@ -12,6 +12,7 @@ import type { Section, CoreSectionPreviewContext } from '@/api/services/storefro
 import { apiListMenus, type Menu } from '@/api/services/menus';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { ROLE_SELECTORS, pickColorRole, roleFromElement, subscribeHoveredColorRole, type ColorRole } from './colorRoleBridge';
 
 /** Render the preview in its own browsing context. Besides making responsive
  *  breakpoints use the selected device width (instead of the dashboard
@@ -163,8 +164,12 @@ export type AnnouncementBarPreviewValue = Omit<StoreAnnouncementBarValue, 'isAct
  *  in that section's markup can fire, and reports the section id instead. */
 export function ThemeLivePreview({
   sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
-  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText,
+  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText, colorPick,
 }: {
+  /** Theme Settings → Colors mode: hovering a color field outlines its part
+   *  of the preview, and clicking a part of the preview jumps to its color
+   *  field (see `colorRoleBridge.ts`). Nothing in the preview ever navigates. */
+  colorPick?: boolean;
   /** Click-to-type headlines in the preview (editor only). */
   onEditText?: (sectionId: string, blockId: string | null, key: string, value: string) => void;
   /** Which header/footer part is selected (editor only). */
@@ -234,6 +239,22 @@ export function ThemeLivePreview({
     el?.setAttribute('data-editor-hover', '1');
     return () => { el?.removeAttribute('data-editor-hover'); };
   }, [hoverSectionId]);
+
+  // Color field hover (Theme Settings) → dashed outline on that part of the preview.
+  useEffect(() => {
+    if (!colorPick) return;
+    let outlined: HTMLElement[] = [];
+    const clear = () => { outlined.forEach(el => el.removeAttribute('data-editor-hover')); outlined = []; };
+    const unsubscribe = subscribeHoveredColorRole((role: ColorRole | null) => {
+      clear();
+      const root = rootRef.current;
+      if (!root || !role) return;
+      const targets = role === 'page' ? [root] : Array.from(root.querySelectorAll<HTMLElement>(ROLE_SELECTORS[role])).slice(0, 60);
+      targets.forEach(el => el.setAttribute('data-editor-hover', '1'));
+      outlined = targets;
+    });
+    return () => { unsubscribe(); clear(); };
+  }, [colorPick]);
 
   useEffect(() => {
     if (!workspaceStore?.slug) return;
@@ -363,12 +384,16 @@ export function ThemeLivePreview({
 
   const body = (
     <StorefrontProvider value={contextValue}>
-      <div ref={rootRef} style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: 'none' }}>
-        {chromeSelectable && <style>{CHROME_CSS}</style>}
+      <div
+        ref={rootRef}
+        style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: colorPick ? 'auto' : 'none', cursor: colorPick ? 'crosshair' : undefined }}
+        onClickCapture={colorPick ? (e => { e.preventDefault(); e.stopPropagation(); pickColorRole(roleFromElement(e.target as Element)); }) : undefined}
+      >
+        {(chromeSelectable || colorPick) && <style>{CHROME_CSS}</style>}
         {showChrome && announcementBar?.placement === 'above' && chrome('announcement', previewAnnouncement)}
         {showChrome && chrome('header', withEdit('header', <Navbar />))}
         {showChrome && announcementBar?.placement !== 'above' && chrome('announcement', previewAnnouncement)}
-        <div style={{ pointerEvents: interactive ? 'auto' : 'none' }}>
+        <div style={{ pointerEvents: interactive || colorPick ? 'auto' : 'none' }}>
           <SectionRenderer
             sections={sections}
             selectable={interactive}
