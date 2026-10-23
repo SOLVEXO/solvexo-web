@@ -1164,7 +1164,9 @@
     "pending_reviews_hint": "شاركنا رأيك فيما استلمته ليستفيد المتسوقون الآخرون.",
     "show_fewer": "عرض أقل",
     "waiting_for_your_review": "بانتظار تقييمك",
-    "write_a_review": "اكتب تقييمًا"
+    "write_a_review": "اكتب تقييمًا",
+    "complete_the_look": "أكمل الإطلالة",
+    "you_may_also_like": "قد يعجبك أيضًا"
   },
   "product": {
     "addToCart": "أضف إلى السلة",

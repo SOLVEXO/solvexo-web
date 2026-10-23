@@ -26,7 +26,7 @@ function ShipRows({ name, options, current, onPick, priceText }: RowsProps) {
               <p className="m-0 flex items-center gap-2 text-sm font-medium">
                 {o.zoneType === 'pickup' ? <Store size={15} aria-hidden /> : <Truck size={15} aria-hidden />}<span className="truncate">{o.label}</span>
               </p>
-              {(o.eta || o.arrival) && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{[o.eta, o.arrival].filter(Boolean).join(' - ')}</p>}
+              {(o.eta || o.arrival) && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}><bdi>{[o.eta, o.arrival].filter(Boolean).join(' - ')}</bdi></p>}
               {o.zoneType === 'pickup' && (o.pickupAddress || o.pickupInstructions) && (
                 <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{[o.pickupAddress, o.pickupInstructions].filter(Boolean).join(' - ')}</p>
               )}
