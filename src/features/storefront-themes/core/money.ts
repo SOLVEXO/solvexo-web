@@ -1,4 +1,5 @@
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
+import { activeLocale } from './locale';
 
 export type CurrencyDisplay = 'symbol' | 'code' | 'symbol_code';
 
@@ -11,7 +12,7 @@ export function moneyText(amount: number | null | undefined, currency?: string |
   if (amount == null || !Number.isFinite(amount)) return '';
   const d = getCurrencyDecimals(currency);
   const symbol = currencySymbol(currency);
-  const body = Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+  const body = Math.abs(amount).toLocaleString(activeLocale(), { minimumFractionDigits: d, maximumFractionDigits: d });
   const code = String(currency ?? '').toUpperCase();
   const sign = amount < 0 ? '-' : '';
   if (display === 'code' && code) return `${sign}${code} ${body}`;

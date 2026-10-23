@@ -19,7 +19,7 @@ function Tile({ c, colors, ratio, showDescription }: { c: PublicCollectionSummar
         {hasImage
           ? <img src={c.image ?? undefined} alt={c.name} loading="lazy" onError={() => setErrored(true)} className="transition-transform duration-700 group-hover:scale-105" style={fit.img} />
           : <span className="fx-serif p-4 text-center text-2xl" style={{ color: colors.inkMuted }}>{c.name}</span>}
-        <span className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-full transition-transform duration-300 group-hover:rotate-45" style={{ background: colors.bg, color: colors.ink }}><ArrowUpRight size={16} aria-hidden /></span>
+        <span className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-full transition-transform duration-300 group-hover:rotate-45" style={{ background: colors.bg, color: colors.ink }}><ArrowUpRight size={16} className="fx-flip-rtl" aria-hidden /></span>
       </div>
       <h3 className="m-0 mt-4 text-lg font-semibold tracking-tight" style={{ fontFamily: t.fonts.display }}>{c.name}</h3>
       {showDescription && c.description && <p className="m-0 mt-1.5 line-clamp-2 text-sm leading-relaxed" style={{ color: colors.inkMuted }}>{c.description}</p>}

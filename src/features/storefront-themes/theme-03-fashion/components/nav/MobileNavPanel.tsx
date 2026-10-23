@@ -44,15 +44,15 @@ function Panel({ onClose, storeName, brand, items, shop, showSearch, onSearch, s
   useDialogFocus(ref, onClose);
 
   const quick: CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', textDecoration: 'none',
+    display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'start', border: 'none', cursor: 'pointer', textDecoration: 'none',
     padding: '13px 18px', borderRadius: 9999, background: t.colors.bgAlt, color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 15, fontWeight: 500,
   };
 
   return (
     <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label={ts('pg.store_menu', '{{store}} menu', { store: storeName })}>
       <button type="button" aria-label={tr('nav.closeMenu', 'Close menu')} onClick={onClose} className="fx-backdrop absolute inset-0 cursor-default border-0" style={{ background: 'rgba(9,9,11,0.45)' }} />
-      <div ref={ref} tabIndex={-1} className="fx-drawer-left absolute bottom-0 left-0 top-0 flex w-[min(90vw,400px)] flex-col overflow-y-auto outline-none"
-        style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: '0 28px 28px 0', boxShadow: '0 0 48px rgba(0,0,0,.25)' }}>
+      <div ref={ref} tabIndex={-1} className="fx-drawer-left absolute bottom-0 start-0 top-0 flex w-[min(90vw,400px)] flex-col overflow-y-auto outline-none"
+        style={{ background: t.colors.bg, color: t.colors.ink, borderStartEndRadius: 28, borderEndEndRadius: 28, boxShadow: '0 0 48px rgba(0,0,0,.25)' }}>
         <div className="flex items-center justify-between gap-3 px-5 py-4">
           <div className="min-w-0">{brand}</div>
           <button type="button" onClick={onClose} aria-label={tr('nav.closeMenu', 'Close menu')} className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0" style={{ background: t.colors.bgAlt, color: t.colors.ink }}>
@@ -75,11 +75,11 @@ function Panel({ onClose, storeName, brand, items, shop, showSearch, onSearch, s
 
         {(showAccount || showWishlist) && (
           <div className="mt-5 flex flex-col gap-2.5 px-5">
-            {showAccount && <Link to={accountTo} onClick={onClose} style={quick}><User size={17} /> {tr('nav.account', 'Account')}<ChevronRight size={16} className="ml-auto opacity-50" /></Link>}
+            {showAccount && <Link to={accountTo} onClick={onClose} style={quick}><User size={17} /> {tr('nav.account', 'Account')}<ChevronRight size={16} className="fx-flip-rtl ms-auto opacity-50" /></Link>}
             {showWishlist && (
               <Link to="/wishlist" onClick={onClose} style={quick}>
                 <Heart size={17} /> {tr('nav.wishlist', 'Wishlist')}{wishlistCount > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-semibold" style={{ background: t.colors.accent, color: t.colors.accentInk }}>{wishlistCount}</span>}
-                <ChevronRight size={16} className="ml-auto opacity-50" />
+                <ChevronRight size={16} className="fx-flip-rtl ms-auto opacity-50" />
               </Link>
             )}
           </div>
@@ -105,7 +105,7 @@ function ShopGroup({ shop, onNavigate }: { shop: ShopGroupData; onNavigate: () =
   return (
     <div style={{ borderBottom: `1px solid ${t.colors.border}` }}>
       <button type="button" onClick={() => setExpanded(e => !e)} aria-expanded={expanded} aria-controls={regionId}
-        className="flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-transparent py-4 pl-1 text-left" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
+        className="flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-transparent py-4 ps-1 text-start" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
         <span>{shop.label}</span>
         <span className="grid size-10 place-items-center rounded-full" style={{ background: expanded ? t.colors.selected : t.colors.bgAlt, color: expanded ? t.colors.selectedInk : t.colors.ink }}>{expanded ? <Minus size={15} /> : <Plus size={15} />}</span>
       </button>

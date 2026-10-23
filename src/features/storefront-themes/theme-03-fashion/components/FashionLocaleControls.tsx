@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, Globe, Languages, MapPin, Search } from 'lucide-react';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefrontMarketOptional } from '@/features/storefront/storefrontMarket';
-import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { localizedCountryOptions } from '../../core/countryOptions';
+import { activeLocale } from '../../core/locale';
 import { LOCALE_NAMES } from '@/i18n';
 import { fashionTheme as t } from '../theme.config';
 
@@ -127,8 +128,8 @@ export function FashionCountrySelector() {
   const { t: tr } = useTranslation('storefront');
   const market = useStorefrontMarketOptional();
   const options = useMemo<Option[]>(() => (market?.countries ?? [])
-    .map(code => { const name = COUNTRY_OPTIONS.find(c => c.code === code)?.name ?? code; return { value: code, label: name, hint: code, search: `${code} ${name}` }; })
-    .sort((a, b) => a.label.localeCompare(b.label)), [market?.countries]);
+    .map(code => { const name = localizedCountryOptions().find(c => c.code === code)?.label ?? code; return { value: code, label: name, hint: code, search: `${code} ${name}` }; })
+    .sort((a, b) => a.label.localeCompare(b.label, activeLocale())), [market?.countries]);
   if (!market || options.length === 0) return null;
   const active = options.find(o => o.value === market.country);
   return (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { apiAddAddress, apiUpdateAddress, type Address, type AddressPayload } from '@/api/services/address';
-import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { localizedCountryOptions } from '../../../core/countryOptions';
 import { EMPTY_ADDRESS_FORM, addressToForm, validateAddressForm } from '../../../accountUi';
 import { fashionTheme as t } from '../../theme.config';
 import { Dialog } from '../../ui/Dialog';
@@ -42,7 +42,7 @@ export function AddressFormDialog({ address, isFirst, onClose, onSaved }: { addr
         <Field label={ts('addresses.country', 'Country')} required>
           {p => <SelectInput {...p} autoComplete="country-name" value={form.country ?? ''} onChange={e => set({ country: e.target.value })}>
             <option value="" disabled>{ts('checkout.selectCountry', 'Select country')}</option>
-            {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+            {localizedCountryOptions().map(c => <option key={c.code} value={c.name}>{c.label}</option>)}
           </SelectInput>}
         </Field>
         {!address?.isDefault && (

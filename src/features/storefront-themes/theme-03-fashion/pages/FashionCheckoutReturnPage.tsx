@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { AccentText } from '../ui/AccentText';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -57,7 +58,7 @@ export function FashionCheckoutReturnPage() {
       <Page narrow>
         <div role="alert" className="flex flex-col items-center gap-4 text-center">
           <span className="grid size-16 place-items-center rounded-full" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}><XCircle size={30} aria-hidden /></span>
-          <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-medium leading-[1.1] tracking-tight">{ts('pg.payment_wasn_t', 'Payment wasn\'t')} <span className="fx-serif">{ts('pg.word_completed', 'completed')}</span></h1>
+          <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-medium leading-[1.1] tracking-tight"><AccentText text={ts('h.payment_not_completed', 'Payment wasn\'t *completed*')} size="1em" /></h1>
           <p className="m-0 max-w-[440px] text-base" style={{ color: t.colors.inkMuted }}>{ts('pg.nothing_was_charged_for_an_order_your', 'Nothing was charged for an order - your cart is still here, so you can try again or pick a different payment method.')}</p>
           <Link to="/checkout" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
         </div>
@@ -70,7 +71,7 @@ export function FashionCheckoutReturnPage() {
       <div role="status" aria-live="polite" className="flex flex-col items-center gap-4 py-10 text-center">
         <Loader2 size={30} className="animate-spin" aria-hidden style={{ color: t.colors.ink }} />
         <h1 className="m-0 text-[clamp(24px,3.4vw,36px)] font-medium leading-[1.15] tracking-tight">
-          {awaitingWallet && !poll.timedOut ? tsNodes('pg.approve_in_wallet', 'Approve the payment in your {{wallet}} app', { wallet: <span className="fx-serif">{ts('pg.easypaisa', 'Easypaisa')}</span> }) : <>{ts('pg.confirming_your', 'Confirming your')} <span className="fx-serif">{ts('pg.word_payment', 'payment')}</span></>}
+          {awaitingWallet && !poll.timedOut ? tsNodes('pg.approve_in_wallet', 'Approve the payment in your {{wallet}} app', { wallet: <span className="fx-serif">{ts('pg.easypaisa', 'Easypaisa')}</span> }) : <AccentText text={ts('h.confirming_your_payment', 'Confirming your *payment*')} size="1em" />}
         </h1>
         <p className="m-0 max-w-[460px] text-base" style={{ color: t.colors.inkMuted }}>
           {poll.timedOut

@@ -42,7 +42,7 @@ function FashionRegisterPageContent() {
   };
 
   return (
-    <AuthShell title={ts('pg.create_your', 'Create your')} accent={ts('pg.word_account', 'account')} subtitle={ts('pg.join_store_to_track_orders_and_check', 'Join {{store}} to track orders and check out faster.', { store: store.name })}
+    <AuthShell title={ts('h.create_your_account', 'Create your *account*')} subtitle={ts('pg.join_store_to_track_orders_and_check', 'Join {{store}} to track orders and check out faster.', { store: store.name })}
       footer={<>{ts('auth.haveAccount', 'Already have an account?')} <Link to={withRedirect('/login', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('auth.signInLink', 'Sign in')}</Link></>}>
       {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
       <form onSubmit={submit} className="flex flex-col gap-4">

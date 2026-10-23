@@ -1,5 +1,6 @@
 import { tt, ts } from '@/utils/tStatic';
 import type { OrderDetail, OrderLineItem, OrderStatus, OrderSummary } from '@/api/services/orders';
+import { activeLocale } from './core/locale';
 
 /** Shared (theme-agnostic) helpers for the buyer "Orders" / "Order" pages. */
 
@@ -119,8 +120,8 @@ export function formatOrderDate(iso: string | null | undefined, withTime = false
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return withTime
-    ? d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-    : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    ? d.toLocaleString(activeLocale(), { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : d.toLocaleDateString(activeLocale(), { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export interface TimelineStep { label: string; date: string; done: boolean }

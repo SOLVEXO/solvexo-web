@@ -15,7 +15,7 @@ function Loyalty() {
   const { data, loading, error, retry } = useLoad(() => loadLoyalty(store.storeId), [store.storeId]);
 
   return (
-    <AccountLayout title={ts('pg.loyalty', 'Loyalty &')} accent={ts('pg.word_rewards', 'rewards')} subtitle={ts('pg.earn_points_on_every_order_at_store_and', 'Earn points on every order at {{store}} and trade them for rewards.', { store: store.name })}>
+    <AccountLayout title={ts('h.loyalty_rewards', 'Loyalty & *rewards*')} subtitle={ts('pg.earn_points_on_every_order_at_store_and', 'Earn points on every order at {{store}} and trade them for rewards.', { store: store.name })}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_rewards', 'Loading rewards')}><SkeletonBlock h={120} rows={2} /></div>
       ) : error ? (

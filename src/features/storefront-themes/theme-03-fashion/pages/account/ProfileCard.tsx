@@ -17,8 +17,8 @@ export function ProfileCard({ profile }: { profile: ProfileData }) {
       <SectionHeading>{ts('account.profile', 'Profile')}</SectionHeading>
       <form onSubmit={e => { e.preventDefault(); void execute({ name: name.trim(), phone: phone.trim(), address: address.trim() }); }} className="grid gap-4 sm:grid-cols-2">
         <Field label={ts('checkout.fullName', 'Full name')}>{p => <TextInput {...p} autoComplete="name" value={name} onChange={e => setName(e.target.value)} />}</Field>
-        <Field label={ts('auth.email', 'Email')}>{p => <TextInput {...p} type="email" value={profile.email ?? ''} readOnly disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />}</Field>
-        <Field label={ts('checkout.phoneNumber', 'Phone number')}>{p => <TextInput {...p} type="tel" autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} />}</Field>
+        <Field label={ts('auth.email', 'Email')}>{p => <TextInput {...p} type="email" dir="ltr" value={profile.email ?? ''} readOnly disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />}</Field>
+        <Field label={ts('checkout.phoneNumber', 'Phone number')}>{p => <TextInput {...p} type="tel" dir="ltr" autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} />}</Field>
         <Field label={ts('auth.address', 'Address')}>{p => <TextInput {...p} autoComplete="street-address" value={address} onChange={e => setAddress(e.target.value)} />}</Field>
         {error && <div className="sm:col-span-2"><Notice tone="error">{error}</Notice></div>}
         <div className="flex items-center gap-3 sm:col-span-2">

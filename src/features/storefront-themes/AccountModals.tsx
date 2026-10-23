@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Button } from '@/components/comman/ui';
 import { apiAddAddress, apiUpdateAddress, type Address, type AddressPayload } from '@/api/services/address';
-import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { localizedCountryOptions } from './core/countryOptions';
 import { EMPTY_ADDRESS_FORM, addressToForm, validateAddressForm } from './accountUi';
 
 const field = 'w-full border border-bone rounded-lg px-3 py-2 text-[13px] text-charcoal outline-none box-border focus:border-brand-orange bg-white';
@@ -60,7 +60,7 @@ export function AddressFormModal({ address, isFirst, onClose, onSaved }: {
         </div>
         <select className={field} aria-label={tr('addresses.country', tr('addresses.country', "Country"))} value={form.country ?? ''} onChange={e => set({ country: e.target.value })}>
           <option value="" disabled>{tr('checkout.selectCountry', "Select country")}</option>
-          {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+          {localizedCountryOptions().map(c => <option key={c.code} value={c.name}>{c.label}</option>)}
         </select>
         {!address?.isDefault && (
           <label className="flex items-center gap-2 text-[12px] text-slate cursor-pointer">

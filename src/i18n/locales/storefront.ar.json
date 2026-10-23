@@ -78,7 +78,8 @@
     "sendResetCode": "إرسال رمز إعادة التعيين",
     "showPassword": "إظهار كلمة المرور",
     "signInBtn": "تسجيل الدخول",
-    "signInLink": "تسجيل الدخول"
+    "signInLink": "تسجيل الدخول",
+    "resendIn": "إعادة إرسال الرمز بعد {{seconds}} ثانية"
   },
   "blog": {
     "err": {
@@ -137,7 +138,16 @@
       "digital": "رقمي",
       "educational": "تعليمي",
       "physical": "مادي"
-    }
+    },
+    "closeFilters": "إغلاق عوامل التصفية",
+    "nextPage": "الصفحة التالية",
+    "noResultsFor": "لا توجد نتائج لـ \"{{term}}\"",
+    "pagination": "ترقيم الصفحات",
+    "prevPage": "الصفحة السابقة",
+    "removeFilter": "إزالة عامل التصفية: {{label}}",
+    "resultTypes": "أنواع نتائج البحث",
+    "sortByAria": "ترتيب حسب",
+    "suggestions": "اقتراحات البحث"
   },
   "cart": {
     "atCheckout": "عند الدفع",
@@ -179,7 +189,8 @@
     "total": "الإجمالي",
     "viewCart": "عرض السلة",
     "yourAccent": "السلة",
-    "yourLead": "هذه"
+    "yourLead": "هذه",
+    "yourCart": "سلتك"
   },
   "category": {
     "notFound": "الفئة غير موجودة",
@@ -374,7 +385,8 @@
     "necessary": "ضرورية",
     "necessaryDesc": " — مطلوبة لعمل المتجر، وهي مفعّلة دائمًا",
     "rejectAll": "رفض الكل",
-    "save": "حفظ التفضيلات"
+    "save": "حفظ التفضيلات",
+    "message": "نستخدم ملفات تعريف الارتباط لتحسين تجربتك ولأغراض التحليلات. اختر الفئات التي تسمح بها."
   },
   "copy.A closer look": "نظرة أقرب",
   "copy.A closer look ": "نظرة أقرب ",
@@ -445,7 +457,9 @@
     "subscribe": "اشتراك",
     "subscribed": "شكرًا — تم اشتراكك.",
     "terms": "شروط الخدمة",
-    "yourEmail": "بريدك الإلكتروني"
+    "yourEmail": "بريدك الإلكتروني",
+    "accountHeading": "الحساب",
+    "shopHeading": "تسوّق"
   },
   "gate": {
     "beRightBack": "سنعود قريبًا",
@@ -467,7 +481,14 @@
     "paymentsNotConfigured": "لم تتم تهيئة المدفوعات بعد.",
     "recipientEmail": "البريد الإلكتروني للمستلم",
     "recipientName": "اسم المستلم",
-    "unavailable": "بطاقات الهدايا غير متاحة"
+    "unavailable": "بطاقات الهدايا غير متاحة",
+    "emailedToYou": "يتم إرسال رمز بطاقة الهدايا إلى بريدك الإلكتروني. تحقق من صندوق الوارد (ومجلد البريد غير الهام) خلال دقائق.",
+    "giftHint": "سنرسل الرمز إلى المستلم بالبريد الإلكتروني ونرسل لك رسالة تأكيد.",
+    "selfHint": "سيتم إرسال الرمز إلى بريدك الإلكتروني.",
+    "sendAsGift": "إرسال كهدية",
+    "sendOn": "تاريخ الإرسال",
+    "sendOnHint": "اختياري. اتركه فارغًا للإرسال مباشرة بعد الدفع.",
+    "willBeEmailed": "سيتم إرسال رمز بطاقة الهدايا إلى {{email}} بتاريخ {{date}}."
   },
   "home": {
     "discover": "اكتشف جديد {{name}}.",
@@ -506,7 +527,8 @@
     "wishlistAria_one": "قائمة الأمنيات، {{count}} عنصر",
     "wishlistAria_two": "قائمة الأمنيات، {{count}} عنصران",
     "wishlistAria_zero": "قائمة الأمنيات، {{count}} عنصر",
-    "wishlistAria_other": "قائمة الأمنيات، {{count}} عنصر"
+    "wishlistAria_other": "قائمة الأمنيات، {{count}} عنصر",
+    "shop": "تسوّق"
   },
   "notFound": {
     "backHome": "العودة إلى الصفحة الرئيسية",
@@ -581,7 +603,9 @@
     "wasPickedUp": "تم استلام طلبك.",
     "willNotify": "سنخبرك عندما يصبح طلبك جاهزًا للاستلام.",
     "downloadFailed": "فشل، أعد المحاولة",
-    "orderNumber": "الطلب رقم {{number}}"
+    "orderNumber": "الطلب رقم {{number}}",
+    "promoSavings": "يشمل توفيرًا ترويجيًا بقيمة {{amount}}",
+    "refundedAmount": "تم استرداد {{amount}}"
   },
   "otp": {
     "didntReceive": "لم تستلمه؟",
@@ -1135,7 +1159,12 @@
     "points_to_reach": "تحتاج إلى {{points}} نقطة إضافية للوصول إلى {{tier}}.",
     "otp_sent_reset": "أرسلنا رمزًا من 6 أرقام إلى {{email}} للتأكد من أنك أنت قبل إعادة تعيين كلمة المرور.",
     "otp_sent_signup": "أرسلنا رمزًا من 6 أرقام إلى {{email}} لإكمال إنشاء حسابك في {{store}}.",
-    "approve_in_wallet": "وافق على الدفع في تطبيق {{wallet}}"
+    "approve_in_wallet": "وافق على الدفع في تطبيق {{wallet}}",
+    "edit_your_review": "تعديل تقييمك",
+    "pending_reviews_hint": "شاركنا رأيك فيما استلمته ليستفيد المتسوقون الآخرون.",
+    "show_fewer": "عرض أقل",
+    "waiting_for_your_review": "بانتظار تقييمك",
+    "write_a_review": "اكتب تقييمًا"
   },
   "product": {
     "addToCart": "أضف إلى السلة",
@@ -1193,7 +1222,8 @@
     "tags": "الوسوم",
     "unavailable": "هذا المنتج غير متاح.",
     "yes": "نعم",
-    "zoomImage": "تكبير الصورة"
+    "zoomImage": "تكبير الصورة",
+    "enlarged": "{{alt}} — مكبّرة"
   },
   "returns": {
     "approved": "تمت الموافقة على الإرجاع",
@@ -1252,7 +1282,9 @@
     "starsAria_two": "{{count}} نجمتان",
     "starsAria_few": "{{count}} نجوم",
     "starsAria_many": "{{count}} نجمة",
-    "starsAria_other": "{{count}} نجمة"
+    "starsAria_other": "{{count}} نجمة",
+    "editYours": "تعديل تقييمك",
+    "write": "اكتب تقييمًا"
   },
   "search": {
     "typeSomething": "اكتب شيئًا للبحث في هذا المتجر."
@@ -1266,7 +1298,9 @@
     "sendMessage": "إرسال الرسالة",
     "sending": "جارٍ الإرسال…",
     "slideshow": "عرض الشرائح",
-    "viewProduct": "عرض المنتج"
+    "viewProduct": "عرض المنتج",
+    "contactError": "تعذّر إرسال رسالتك. يُرجى المحاولة مرة أخرى.",
+    "contactThanks": "شكرًا لك، وصلتنا رسالتك وسنرد عليك قريبًا."
   },
   "wishlist": {
     "addAria": "أضف إلى قائمة الأمنيات",
@@ -1284,5 +1318,48 @@
   "copy": {
     "Get directions": "احصل على الاتجاهات",
     "The edit": "الاختيارات المميّزة"
+  },
+  "h": {
+    "check_your_email": "تحقق من *بريدك* الإلكتروني",
+    "choose_a_new_password": "اختر *كلمة مرور* جديدة",
+    "confirming_your_payment": "جارٍ تأكيد *دفعتك*",
+    "create_your_account": "أنشئ *حسابك*",
+    "details_missing": "*تفاصيل* ناقصة",
+    "frequently_asked_questions": "*الأسئلة* الشائعة",
+    "gift_cards": "*بطاقات* الهدايا",
+    "keep_reading": "تابع *القراءة*",
+    "loyalty_rewards": "الولاء و*المكافآت*",
+    "message_store": "راسل *{{store}}*",
+    "my_account": "*حسابي*",
+    "my_addresses": "*عناويني*",
+    "my_reviews": "*تقييماتي*",
+    "opening_soon": "الافتتاح *قريبًا*",
+    "order_number": "الطلب *#{{number}}*",
+    "password_updated": "تم *تحديث* كلمة المرور",
+    "payment_not_completed": "لم تكتمل *عملية الدفع*",
+    "reset_your_password": "إعادة تعيين *كلمة المرور*",
+    "results_for": "نتائج البحث عن {{query}}",
+    "returns_refunds": "الإرجاع و*الاسترداد*",
+    "secure_checkout": "إتمام شراء *آمن*",
+    "store_credit": "*رصيد* المتجر",
+    "thank_you_order": "شكرًا لك على *طلبك*",
+    "the_stories": "*القصص*",
+    "verify_your_identity": "تحقق من *هويتك*",
+    "welcome_back": "مرحبًا *بعودتك*",
+    "your_cart": "*سلتك*",
+    "your_cart_is_empty": "سلتك *فارغة*",
+    "your_notifications": "*إشعاراتك*",
+    "your_orders": "*طلباتك*",
+    "your_wishlist": "*قائمة أمنياتك*"
+  },
+  "locale": {
+    "country": "البلد/المنطقة",
+    "countryAria": "البلد/المنطقة: {{name}}. تغيير البلد/المنطقة",
+    "currencyAria": "العملة: {{code}}. تغيير العملة",
+    "languageAria": "اللغة: {{name}}. تغيير اللغة",
+    "noMatches": "لا توجد نتائج مطابقة",
+    "searchCountries": "ابحث عن بلد…",
+    "searchCurrencies": "ابحث عن عملة…",
+    "searchLanguages": "ابحث عن لغة…"
   }
 }

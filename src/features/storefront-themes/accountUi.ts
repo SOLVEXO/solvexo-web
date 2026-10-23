@@ -1,6 +1,7 @@
 import type { Address, AddressPayload } from '@/api/services/address';
 import type { MyReviewEntry, ReviewStatus } from '@/api/services/rating';
 import { ts } from '@/utils/tStatic';
+import { activeLocale } from './core/locale';
 
 /** Shared (theme-agnostic) helpers for the buyer "Addresses" and "Reviews" pages. */
 
@@ -56,5 +57,5 @@ export function reviewText(r: MyReviewEntry): string {
 
 export function formatAccountDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(activeLocale(), { year: 'numeric', month: 'short', day: 'numeric' });
 }

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AccentText } from '../../ui/AccentText';
 import { imgProps } from '../imgProps';
 import { ts } from '@/utils/tStatic';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +101,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
             <span className="grid size-16 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><ShoppingBag size={26} style={{ color: t.colors.inkMuted }} /></span>
-            <p className="m-0 text-2xl font-medium tracking-tight">{ts('pg.your_cart_is', 'Your cart is')} <span className="fx-serif" style={{ fontSize: '1.08em' }}>{ts('pg.word_empty', 'empty')}</span></p>
+            <p className="m-0 text-2xl font-medium tracking-tight"><AccentText text={ts('h.your_cart_is_empty', 'Your cart is *empty*')} size="1.08em" /></p>
             <p className="m-0 max-w-[280px] text-sm" style={{ color: t.colors.inkMuted }}>{tr('cart.cartEmpty', 'Your cart is empty')}</p>
             <PillButton variant="outline" onClick={() => { onClose(); navigate('/#shop'); }}>{tr('cart.continueShoppingLower', 'Continue shopping')}</PillButton>
           </div>

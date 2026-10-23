@@ -35,7 +35,7 @@ export function FashionMyReviewsPage() {
   const link = 'cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold underline';
 
   return (
-    <AccountLayout title={ts('pg.word_my', 'My')} accent={ts('pg.word_reviews', 'reviews')} subtitle={ts('pg.what_you_have_said_about_the_products', 'What you have said about the products you bought.')}>
+    <AccountLayout title={ts('h.my_reviews', 'My *reviews*')} subtitle={ts('pg.what_you_have_said_about_the_products', 'What you have said about the products you bought.')}>
       <PendingReviews onReviewed={reload} />
       {loading && !reviews ? <div aria-busy="true"><SkeletonBlock h={130} rows={3} /></div>
         : error && !reviews ? <ErrorState message={error} onRetry={reload} />

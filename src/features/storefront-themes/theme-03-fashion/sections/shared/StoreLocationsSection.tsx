@@ -24,7 +24,7 @@ export function StoreLocationsSection({ section, blocks, colors }: SharedSection
                 {s.mapUrl && (
                   <a href={s.mapUrl} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center gap-2 self-start pt-2 text-sm font-semibold no-underline" style={{ color: colors.ink }}>
                     {copyText(s, 'directionsLabel', 'Get directions')}
-                    <span className="grid size-7 place-items-center rounded-full" style={{ background: colors.selected, color: colors.selectedInk }}><ArrowUpRight size={14} aria-hidden /></span>
+                    <span className="grid size-7 place-items-center rounded-full" style={{ background: colors.selected, color: colors.selectedInk }}><ArrowUpRight size={14} className="fx-flip-rtl" aria-hidden /></span>
                   </a>
                 )}
               </article>

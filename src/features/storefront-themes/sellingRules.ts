@@ -1,4 +1,5 @@
 import { ts } from '@/utils/tStatic';
+import { activeLocale } from './core/locale';
 /** Seller-set order quantity rules (minimum / maximum / multiples of) read off a product; missing = 1 / no cap / 1. */
 export interface QtyRules { min: number; max: number; step: number }
 
@@ -29,5 +30,5 @@ export function qtyRuleHint(r: QtyRules): string | null {
 export function preorderLabel(p: { preorder?: { enabled?: boolean; availableOn?: string | null } | null } | null | undefined): string | null {
   if (!p?.preorder?.enabled) return null;
   const d = p.preorder.availableOn ? new Date(p.preorder.availableOn) : null;
-  return d && !Number.isNaN(d.getTime()) ? ts('product.preorderShips', 'Pre-order — ships from {{date}}', { date: d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) }) : ts('product.preorder', 'Pre-order');
+  return d && !Number.isNaN(d.getTime()) ? ts('product.preorderShips', 'Pre-order — ships from {{date}}', { date: d.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }) : ts('product.preorder', 'Pre-order');
 }

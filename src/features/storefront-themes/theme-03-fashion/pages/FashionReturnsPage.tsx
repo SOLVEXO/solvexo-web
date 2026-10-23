@@ -23,7 +23,7 @@ function Returns() {
   const totalPages = Math.max(1, data?.data.pagination?.totalPages ?? 1);
 
   return (
-    <AccountLayout title={ts('pg.returns', 'Returns &')} accent={ts('pg.word_refunds', 'refunds')} subtitle={ts('pg.request_a_return_on_any_delivered_item', 'Request a return on any delivered item and follow it until your refund or exchange.')}>
+    <AccountLayout title={ts('h.returns_refunds', 'Returns & *refunds*')} subtitle={ts('pg.request_a_return_on_any_delivered_item', 'Request a return on any delivered item and follow it until your refund or exchange.')}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_returns', 'Loading returns')}><SkeletonBlock h={120} rows={2} /></div>
       ) : error ? (

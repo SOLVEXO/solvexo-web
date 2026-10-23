@@ -28,7 +28,7 @@ export function FashionMessagesPage() {
   useStorefrontSeo({ title: ts('account.messages', 'Messages'), noindex: true });
   const signedIn = TokenStorage.isLoggedIn();
   return (
-    <AccountLayout title={ts('gift.message', 'Message')} accent={store.name} subtitle={ts('pg.questions_about_a_product_or_an_order', 'Questions about a product or an order? Chat with us directly.')}>
+    <AccountLayout title={ts('h.message_store', 'Message *{{store}}*', { store: store.name.replace(/\*/g, '') })} subtitle={ts('pg.questions_about_a_product_or_an_order', 'Questions about a product or an order? Chat with us directly.')}>
       {guest ? null : !signedIn ? (
         <EmptyState icon={<MessageCircle size={24} aria-hidden />} title={ts('pg.sign_in_to_chat_with_us', 'Sign in to chat with us')} text={ts('pg.your_conversation_is_saved_to_your_accou', 'Your conversation is saved to your account so you can pick it up on any device.')}
           action={<Link to="/login?redirect=%2Fmessages" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />

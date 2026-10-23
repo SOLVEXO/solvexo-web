@@ -36,7 +36,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
   return (
     <div style={{ border: `1px solid ${t.colors.border}`, borderRadius: 16, overflow: 'hidden' }}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-4 py-4 text-left" style={{ color: t.colors.ink }}>
-        <span className="min-w-0"><span className="block text-sm font-semibold">{ts('orders.orderNumber', 'Order #{{number}}', { number: order.orderNumber })}</span><span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(order.createdAt)}</span></span>
+        <span className="min-w-0"><span className="block text-sm font-semibold">{ts('orders.orderNumber', 'Order #{{number}}', { number: `⁦${order.orderNumber}⁩` })}</span><span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(order.createdAt)}</span></span>
         <span className="flex shrink-0 items-center gap-3">
           <StatusPill tone={TONE[order.orderStatus] ?? 'neutral'}>{statusLabel(order.orderStatus) ?? order.orderStatus}</StatusPill>
           <span className="text-sm font-semibold">{money(order.totalAmount, order.currency)}</span>

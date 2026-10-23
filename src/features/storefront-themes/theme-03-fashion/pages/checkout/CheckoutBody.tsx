@@ -153,7 +153,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
 
   return (
     <Page>
-      <PageTitle accent={ts('checkout.accentWord', 'checkout')} actions={<Link to="/cart" className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('checkout.secure', 'Secure')}</PageTitle>
+      <PageTitle actions={<Link to="/cart" className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('h.secure_checkout', 'Secure *checkout*')}</PageTitle>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
         <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1">
           {checkout && checkout.currency !== displayCurrency && (

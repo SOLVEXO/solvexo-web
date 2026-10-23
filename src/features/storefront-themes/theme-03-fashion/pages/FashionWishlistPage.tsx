@@ -34,7 +34,7 @@ function FashionWishlistPageContent() {
   const subtitle = loading ? ts('pg.loading_your_saved_items', 'Loading your saved items') : ts('wishlist.itemsSaved', '{{count}} items saved', { count });
 
   return (
-    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_wishlist', 'wishlist')} subtitle={signedIn ? subtitle : ts('pg.sign_in_to_see_the_items_you_saved', 'Sign in to see the items you saved.')}
+    <AccountLayout title={ts('h.your_wishlist', 'Your *wishlist*')} subtitle={signedIn ? subtitle : ts('pg.sign_in_to_see_the_items_you_saved', 'Sign in to see the items you saved.')}
       actions={signedIn && count > 0 && !confirmClear ? <PillButton variant="outline" onClick={() => setConfirmClear(true)} style={{ height: 40, padding: '0 20px' }}>{ts('pg.clear_all', 'Clear all')}</PillButton> : undefined}>
       {guest ? null : !signedIn ? (
         <EmptyState icon={<Heart size={24} aria-hidden />} title={ts('pg.sign_in_to_use_your_wishlist', 'Sign in to use your wishlist')} text={ts('pg.save_products_you_love_and_find_them_her', 'Save products you love and find them here on any device.')}

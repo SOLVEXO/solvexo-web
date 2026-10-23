@@ -1,6 +1,7 @@
 import type { BlogPostSummary } from '@/api/services/storeBlog';
 import type { Block } from '@/api/services/storefrontTypes';
 import { ts } from '@/utils/tStatic';
+import { activeLocale } from '../locale';
 
 export const BLOG_PAGE_SIZE = 12;
 
@@ -16,7 +17,7 @@ export function blogIndexPath(blogSlug: string | undefined): string {
 export function formatPostDate(iso: string | null | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function blockText(b: Block): string {

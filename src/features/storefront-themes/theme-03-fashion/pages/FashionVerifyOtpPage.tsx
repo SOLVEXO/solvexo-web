@@ -36,7 +36,7 @@ function FashionVerifyOtpPageContent() {
 
   if (!email) {
     return (
-      <AuthShell title={ts('pg.details', 'Details')} accent={ts('pg.word_missing', 'missing')} subtitle={isForgot ? ts('pg.we_could_not_find_your_verification', 'We could not find your verification details. Please restart the password reset again.') : ts('pg.we_could_not_find_your_verification_2', 'We could not find your verification details. Please register or sign in again.')}>
+      <AuthShell title={ts('h.details_missing', 'Details *missing*')} subtitle={isForgot ? ts('pg.we_could_not_find_your_verification', 'We could not find your verification details. Please restart the password reset again.') : ts('pg.we_could_not_find_your_verification_2', 'We could not find your verification details. Please register or sign in again.')}>
         <PillButton full onClick={() => navigate(isForgot ? '/forgot-password' : '/register')}>{isForgot ? ts('pg.reset_password', 'Reset password') : ts('orders.createAccountBtn', 'Create account')}</PillButton>
       </AuthShell>
     );
@@ -57,7 +57,7 @@ function FashionVerifyOtpPageContent() {
   };
 
   return (
-    <AuthShell title={isForgot ? ts('pg.verify_your', 'Verify your') : ts('pg.check_your', 'Check your')} accent={isForgot ? ts('pg.word_identity', 'identity') : ts('pg.word_email', 'email')}
+    <AuthShell title={isForgot ? ts('h.verify_your_identity', 'Verify your *identity*') : ts('h.check_your_email', 'Check your *email*')}
       subtitle={isForgot
         ? tsNodes('pg.otp_sent_reset', 'We sent a 6-digit code to {{email}} to confirm it is you before resetting your password.', { email: <b style={{ color: t.colors.ink }}>{email}</b> })
         : tsNodes('pg.otp_sent_signup', 'We sent a 6-digit code to {{email}} to finish creating your {{store}} account.', { email: <b style={{ color: t.colors.ink }}>{email}</b> }, { store: store.name })}>

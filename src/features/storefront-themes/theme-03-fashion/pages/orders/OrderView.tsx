@@ -113,7 +113,7 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
             {addr.name || addr.lines.length > 0 ? (
               <address className="text-sm not-italic leading-relaxed">
                 {addr.name && <p className="m-0 font-medium">{addr.name}</p>}
-                {addr.lines.map(l => <p key={l} className="m-0" style={muted}>{l}</p>)}
+                {addr.lines.map(l => <p key={l} className="m-0" style={muted}><bdi>{l}</bdi></p>)}
               </address>
             ) : <p className="m-0 text-sm" style={muted}>{ts('orders.noShippingAddress', 'No shipping address.')}</p>}
           </Card>

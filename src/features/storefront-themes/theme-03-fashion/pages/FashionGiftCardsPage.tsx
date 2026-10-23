@@ -16,7 +16,7 @@ function GiftCards() {
   const settings = res?.data ?? null;
 
   return (
-    <AccountLayout title={ts('pg.gift', 'Gift')} accent={ts('pg.word_cards', 'cards')} subtitle={ts('pg.buy_a_gift_card_for_yourself_or_someone', 'Buy a gift card for yourself or someone else at {{store}}.', { store: store.name })}>
+    <AccountLayout title={ts('h.gift_cards', 'Gift *cards*')} subtitle={ts('pg.buy_a_gift_card_for_yourself_or_someone', 'Buy a gift card for yourself or someone else at {{store}}.', { store: store.name })}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_gift_cards', 'Loading gift cards')}><SkeletonBlock h={140} rows={2} /></div>
       ) : error ? (

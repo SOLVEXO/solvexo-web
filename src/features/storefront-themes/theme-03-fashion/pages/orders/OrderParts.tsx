@@ -21,7 +21,7 @@ export function OrderPill({ badge }: { badge: OrderBadgeInfo }) {
 export function BackLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link to={to} className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium no-underline" style={{ color: t.colors.inkMuted }}>
-      <ArrowLeft size={15} aria-hidden />{children}
+      <ArrowLeft size={15} className="fx-flip-rtl" aria-hidden />{children}
     </Link>
   );
 }

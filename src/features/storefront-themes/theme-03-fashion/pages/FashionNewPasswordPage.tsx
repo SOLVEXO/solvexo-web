@@ -31,7 +31,7 @@ function FashionNewPasswordPageContent() {
 
   if (reset.success) {
     return (
-      <AuthShell title={ts('auth.password', 'Password')} accent={ts('pg.word_updated', 'updated')} subtitle={ts('pg.you_can_now_sign_back_in_to_store_with', 'You can now sign back in to {{store}} with your new password.', { store: store.name })}>
+      <AuthShell title={ts('h.password_updated', 'Password *updated*')} subtitle={ts('pg.you_can_now_sign_back_in_to_store_with', 'You can now sign back in to {{store}} with your new password.', { store: store.name })}>
         <div className="mb-6 grid place-items-center"><span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><CheckCircle2 size={28} style={{ color: t.colors.success }} aria-hidden /></span></div>
         <PillButton full onClick={() => navigate('/login')}>{ts('auth.signInLink', 'Sign in')}</PillButton>
       </AuthShell>
@@ -48,7 +48,7 @@ function FashionNewPasswordPageContent() {
   const error = formError || reset.error;
 
   return (
-    <AuthShell title={ts('pg.choose_a_new', 'Choose a new')} accent={ts('pg.word_password', 'password')} subtitle={ts('pg.almost_done_set_a_new_password_to', 'Almost done. Set a new password to finish resetting your account.')}>
+    <AuthShell title={ts('h.choose_a_new_password', 'Choose a new *password*')} subtitle={ts('pg.almost_done_set_a_new_password_to', 'Almost done. Set a new password to finish resetting your account.')}>
       {error && (
         <div className="mb-5"><Notice tone="error" action={reset.error ? <button type="button" onClick={() => navigate('/verify-otp')} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline">{ts('pg.re_enter_code', 'Re-enter code')}</button> : undefined}>{error}</Notice></div>
       )}

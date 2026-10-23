@@ -41,7 +41,7 @@ function FashionAddressesPageContent() {
   const link = 'cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold underline disabled:opacity-40';
 
   return (
-    <AccountLayout title={ts('pg.word_my', 'My')} accent={ts('pg.word_addresses', 'addresses')} subtitle={ts('pg.where_we_send_your_orders', 'Where we send your orders.')} actions={addresses && addresses.length > 0 ? add : undefined}>
+    <AccountLayout title={ts('h.my_addresses', 'My *addresses*')} subtitle={ts('pg.where_we_send_your_orders', 'Where we send your orders.')} actions={addresses && addresses.length > 0 ? add : undefined}>
       {actionError && <div className="mb-4"><Notice tone="error">{actionError}</Notice></div>}
       {loading && !addresses ? <div aria-busy="true"><SkeletonBlock h={140} rows={2} /></div>
         : error && !addresses ? <ErrorState message={error} onRetry={reload} />
@@ -51,8 +51,8 @@ function FashionAddressesPageContent() {
             {addresses.map(a => (
               <Card key={a._id}>
                 <div className="mb-2 flex flex-wrap items-center gap-2"><p className="m-0 text-base font-semibold">{a.recipientName}</p>{a.isDefault && <StatusPill tone="good">{ts('addresses.default', 'Default')}</StatusPill>}</div>
-                {addressLines(a).map((l, i) => <p key={i} className="m-0 text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>{l}</p>)}
-                {a.phoneNumber && <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{a.phoneNumber}</p>}
+                {addressLines(a).map((l, i) => <p key={i} className="m-0 text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}><bdi>{l}</bdi></p>)}
+                {a.phoneNumber && <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}><bdi>{a.phoneNumber}</bdi></p>}
                 <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
                   <button type="button" onClick={() => setEditing(a)} className={link} style={{ color: t.colors.ink }}>{ts('addresses.edit', 'Edit')}</button>
                   <button type="button" onClick={() => del.open(a)} className={link} style={{ color: t.colors.ink }}>{ts('addresses.delete', 'Delete')}</button>

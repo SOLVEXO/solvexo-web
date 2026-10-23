@@ -36,7 +36,7 @@ function FashionLoginPageContent() {
   };
 
   return (
-    <AuthShell title={ts('pg.welcome', 'Welcome')} accent={ts('pg.word_back', 'back')} subtitle={ts('pg.track_orders_save_your_details_and', 'Track orders, save your details and check out faster.')}
+    <AuthShell title={ts('h.welcome_back', 'Welcome *back*')} subtitle={ts('pg.track_orders_save_your_details_and', 'Track orders, save your details and check out faster.')}
       footer={<>{ts('auth.newHere', 'New here?')} <Link to={withRedirect('/register', redirectTo)} className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('auth.createAnAccount', 'Create an account')}</Link></>}>
       {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate={false}>

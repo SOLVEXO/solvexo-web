@@ -157,3 +157,12 @@ export function apiGetPublicStorePage(storeId: string, slug: string) {
 export function apiListPublicStorePages(storeId: string) {
   return dedupedGet(`pages:${storeId}`, () => client.get<never, ApiResponse<PublicPageSummary[]>>(ENDPOINTS.STORE_PAGES.PUBLIC_LIST(storeId)));
 }
+
+/** False only when the store's (cached) published-page list proves no page uses this slug, so a missing page never costs a 404 request.
+ *  Any doubt (list failed, slug appears in a translated handle) answers true and the caller asks the server. */
+export async function apiPublicPageMayExist(storeId: string, slug: string): Promise<boolean> {
+  try {
+    const list = (await apiListPublicStorePages(storeId)).data ?? [];
+    return list.some(p => p.slug === slug || JSON.stringify(p.translations ?? {}).includes(JSON.stringify(slug)));
+  } catch { return true; }
+}

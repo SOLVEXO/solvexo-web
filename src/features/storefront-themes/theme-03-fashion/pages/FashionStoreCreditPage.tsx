@@ -27,7 +27,7 @@ function StoreCredit() {
   const totalPages = txs ? Math.max(1, Math.ceil(txs.total / (txs.limit || LIMIT))) : 1;
 
   return (
-    <AccountLayout title={ts('pg.store', 'Store')} accent={ts('pg.word_credit', 'credit')} subtitle={ts('pg.credit_from_refunds_and_gifts_at_store', 'Credit from refunds and gifts at {{store}}. It is applied at checkout.', { store: store.name })}>
+    <AccountLayout title={ts('h.store_credit', 'Store *credit*')} subtitle={ts('pg.credit_from_refunds_and_gifts_at_store', 'Credit from refunds and gifts at {{store}}. It is applied at checkout.', { store: store.name })}>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_store_credit', 'Loading store credit')}><SkeletonBlock h={150} /><div className="mt-6"><SkeletonBlock h={64} rows={3} /></div></div>
       ) : error ? (

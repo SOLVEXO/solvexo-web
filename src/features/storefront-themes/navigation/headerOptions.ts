@@ -1,6 +1,7 @@
 ﻿import type { CSSProperties } from 'react';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
 import type { Block } from '@/api/services/storefrontTypes';
+import { ts } from '@/utils/tStatic';
 
 /**
  * The retailer-controlled header settings, with every missing value read as "today's look" — a store saved
@@ -85,7 +86,7 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     showAccount: h.showAccount !== false,
     showWishlist: h.showWishlist !== false,
     showShopMenu: h.showShopMenu !== false,
-    shopLabel: text(h.shopMenuLabel, 'Shop'),
+    shopLabel: text(h.shopMenuLabel, ts('nav.shop', 'Shop')),
     includePagesInNav: h.includePagesInNav !== false,
     showDefaultBlogLink: h.showDefaultBlogLink !== false,
     blogLabel: text(h.blogLinkLabel, defaultBlogLabel),
@@ -184,8 +185,8 @@ export function readFooterOptions(footer: Partial<StorefrontFooter> | null | und
     newsletterHeading: optional(f.newsletterHeading),
     newsletterText: optional(f.newsletterText),
     showDefaultColumns: f.showDefaultColumns !== false,
-    shopColumnHeading: text(f.shopColumnHeading, 'Shop'),
-    accountColumnHeading: text(f.accountColumnHeading, 'Account'),
+    shopColumnHeading: text(f.shopColumnHeading, ts('footer.shopHeading', 'Shop')),
+    accountColumnHeading: text(f.accountColumnHeading, ts('footer.accountHeading', 'Account')),
     blogLabel: text(f.blogLinkLabel, defaultBlogLabel),
     bgColor: hex(f.bgColor),
     textColor: hex(f.textColor),

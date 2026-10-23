@@ -28,7 +28,7 @@ function FashionAccountPageContent() {
 
   return (
     <>
-      <AccountLayout title={ts('pg.word_my', 'My')} accent={ts('pg.word_account', 'account')} subtitle={ts('pg.your_account_at_store', 'Your account at {{store}}.', { store: store.name })}
+      <AccountLayout title={ts('h.my_account', 'My *account*')} subtitle={ts('pg.your_account_at_store', 'Your account at {{store}}.', { store: store.name })}
         actions={<PillButton variant="outline" onClick={() => void logout('/')}><LogOut size={16} aria-hidden /> {ts('account.logout', 'Log out')}</PillButton>}>
         <div className="flex flex-col gap-6">
           {loading && !profile ? <SkeletonBlock h={220} />

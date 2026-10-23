@@ -26,7 +26,7 @@ export function OrderPlacedActions({ orderId, guestEmail }: { orderId: string | 
     <div className="flex flex-col items-center gap-3">
       {guestEmail !== null && (
         <p className="m-0 max-w-[460px] text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>
-          {guestEmail ? <>{tsNodes('checkout.confirmationSentToEmail', 'A confirmation was sent to {{email}}.', { email: <strong style={{ color: t.colors.ink }}>{guestEmail}</strong> })} </> : null}
+          {guestEmail ? <>{tsNodes('checkout.confirmationSentToEmail', 'A confirmation was sent to {{email}}.', { email: <strong style={{ color: t.colors.ink }}><bdi>{guestEmail}</bdi></strong> })} </> : null}
           <Link to="/register" className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('checkout.createAccount', 'Create an account')}</Link> {ts('checkout.createAccountRest', 'with this email to track all your orders.')}
         </p>
       )}

@@ -32,7 +32,7 @@ export function ResendTimer({ email, storeId, isForgot }: { email: string; store
     } finally { setSending(false); }
   };
 
-  if (seconds > 0) return <span className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.resend_in', 'Resend in')} <b style={{ color: t.colors.ink }}>{seconds}s</b></span>;
+  if (seconds > 0) return <span className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('auth.resendIn', 'Resend code in {{seconds}}s', { seconds })}</span>;
   return (
     <span className="flex flex-col items-center gap-1">
       <button type="button" onClick={resend} disabled={sending} className="cursor-pointer border-0 bg-transparent text-sm font-semibold underline disabled:opacity-50" style={{ color: t.colors.ink }}>{sending ? ts('otp.sending', 'Sending...') : ts('otp.resendCode', 'Resend code')}</button>

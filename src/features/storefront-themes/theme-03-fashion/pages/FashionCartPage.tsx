@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { AccentText } from '../ui/AccentText';
 import { imgProps } from '../components/imgProps';
 import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
@@ -41,7 +42,7 @@ export function FashionCartPage() {
     <>
       {before.length > 0 && <FashionSectionRenderer sections={before} />}
       <PageBox>
-        <h1 className="m-0 mb-8 text-[clamp(28px,4vw,48px)] font-medium leading-[1.1] tracking-tight">{tr('cart.yourLead', 'Your')} <span className="fx-serif">{tr('cart.yourAccent', 'cart')}</span></h1>
+        <h1 className="m-0 mb-8 text-[clamp(28px,4vw,48px)] font-medium leading-[1.1] tracking-tight"><AccentText text={tr('h.your_cart', 'Your *cart*')} size="1em" /></h1>
 
         {error && <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-2xl px-5 py-4 text-sm" style={{ background: t.colors.bgAlt }}>{error}<button type="button" onClick={refetch} className="cursor-pointer border-0 bg-transparent underline">{tr('cart.retry', 'Retry')}</button></div>}
 

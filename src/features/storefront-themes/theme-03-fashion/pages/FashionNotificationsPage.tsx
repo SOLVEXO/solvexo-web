@@ -27,7 +27,7 @@ export function FashionNotificationsPage() {
   const tabs: { key: Filter; label: string }[] = [{ key: 'all', label: ts('pg.word_all', 'All') }, { key: 'unread', label: unreadCount > 0 ? ts('pg.unread_count', 'Unread ({{count}})', { count: unreadCount }) : ts('pg.word_unread', 'Unread') }];
 
   return (
-    <AccountLayout title={ts('cart.yourLead', 'Your')} accent={ts('pg.word_notifications', 'notifications')} subtitle={<span aria-live="polite">{!signedIn ? ts('pg.sign_in_to_see_your_updates', 'Sign in to see your updates.') : unreadCount > 0 ? ts('pg.count_unread', '{{count}} unread', { count: unreadCount }) : ts('pg.you_are_all_caught_up', 'You are all caught up.')}</span>}
+    <AccountLayout title={ts('h.your_notifications', 'Your *notifications*')} subtitle={<span aria-live="polite">{!signedIn ? ts('pg.sign_in_to_see_your_updates', 'Sign in to see your updates.') : unreadCount > 0 ? ts('pg.count_unread', '{{count}} unread', { count: unreadCount }) : ts('pg.you_are_all_caught_up', 'You are all caught up.')}</span>}
       actions={signedIn && unreadCount > 0 ? <PillButton variant="outline" onClick={() => void markAllAsRead()} style={{ height: 40, padding: '0 18px' }}><CheckCheck size={16} aria-hidden />{ts('pg.mark_all_as_read', 'Mark all as read')}</PillButton> : undefined}>
       {guest ? null : !signedIn ? (
         <EmptyState icon={<BellOff size={24} aria-hidden />} title={ts('pg.sign_in_to_see_notifications', 'Sign in to see notifications')} text={ts('pg.order_updates_and_replies_from_the_store', 'Order updates and replies from the store show up here.')}

@@ -45,6 +45,7 @@
 @keyframes fx-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .fx-drawer-right { animation: fx-slide-left .3s cubic-bezier(.22,.8,.3,1) both; }
 .fx-drawer-left { animation: fx-slide-right .3s cubic-bezier(.22,.8,.3,1) both; }
+[dir="rtl"] .fx-drawer-left { animation-name: fx-slide-left; }
 .fx-backdrop { animation: fx-fade .25s ease both; }
 .fx-pop { animation: fx-pop .16s ease both; transform-origin: top; }
 .fx-toast { animation: fx-toast-in .28s cubic-bezier(.22,.8,.3,1) both; }
@@ -62,3 +63,22 @@ article[data-fx-hover='shadow']:hover { box-shadow: 0 12px 40px -12px rgba(0,0,0
 article[data-fx-hover='lift']:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -16px rgba(0,0,0,.25); }
 article[data-fx-align='center'] .fx-card-body { text-align: center; }
 article[data-fx-align='center'] .fx-card-body :is(p.flex, ul.flex, div.flex.items-center) { justify-content: center; }
+
+/* RTL: directional arrows/chevrons mirror, and the CTA pill's arrow chip sits at the inline end */
+[dir="rtl"] .fx-flip-rtl { transform: scaleX(-1); }
+[dir="rtl"] .fx-cta { padding: 4px 24px 4px 56px; }
+[dir="rtl"] .fx-cta:hover { padding-left: 24px; padding-right: 56px; }
+[dir="rtl"] .fx-cta .fx-cta-icon { right: auto; left: 4px; transition: left .5s, transform .5s; }
+[dir="rtl"] .fx-cta:hover .fx-cta-icon { right: auto; left: calc(100% - 44px); transform: rotate(-45deg); }
+[dir="rtl"] .fx-cta.fx-cta-sm { padding: 4px 18px 4px 48px; }
+[dir="rtl"] .fx-cta.fx-cta-sm:hover { padding-left: 18px; padding-right: 48px; }
+[dir="rtl"] .fx-cta.fx-cta-sm:hover .fx-cta-icon { right: auto; left: calc(100% - 36px); }
+
+/* Urdu (Nastaliq) and Persian stack tall glyphs: give body text and tight headings more line height */
+:lang(ur) body, :lang(ur) p, :lang(ur) li, :lang(ur) span, :lang(ur) a, :lang(ur) label, :lang(ur) button, :lang(ur) input, :lang(ur) select, :lang(ur) textarea { line-height: 1.9; }
+:lang(ur) h1, :lang(ur) h2, :lang(ur) h3, :lang(ur) h4, :lang(ur) [class*="leading-[1.1]"], :lang(ur) [class*="leading-[1.15]"], :lang(ur) [class*="leading-tight"], :lang(ur) [class*="leading-none"] { line-height: 1.6 !important; }
+:lang(fa) body, :lang(fa) p, :lang(fa) li { line-height: 1.75; }
+:lang(ur) .fx-cta, :lang(ur) .fx-pill { line-height: 1.4; }
+
+/* Seller-written section text: each heading/paragraph picks its own direction so English copy in an RTL page keeps its punctuation */
+.fx-bidi :is(h1, h2, h3, h4, p, li, blockquote, figcaption) { unicode-bidi: plaintext; }

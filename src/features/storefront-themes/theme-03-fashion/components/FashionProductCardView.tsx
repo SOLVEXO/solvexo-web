@@ -95,7 +95,7 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
           ) : (
             <Link to={to} className="fx-pill min-w-0 flex-1 whitespace-nowrap" style={{ ...buttonLook('outline'), height: 42, padding: '0 12px' }}>{soldOut ? ts('sections.viewProduct', 'View product') : ts('pg.choose_options', 'Choose options')}</Link>
           )}
-          {t.cardViewLink && <span className="hidden sm:block"><Link to={to} aria-label={ts('pg.view_name', 'View {{name}}', { name })} className="fx-pill" style={{ ...buttonLook('outline'), width: 42, height: 42, padding: 0 }}><ArrowUpRight size={16} /></Link></span>}
+          {t.cardViewLink && <span className="hidden sm:block"><Link to={to} aria-label={ts('pg.view_name', 'View {{name}}', { name })} className="fx-pill" style={{ ...buttonLook('outline'), width: 42, height: 42, padding: 0 }}><ArrowUpRight size={16} className="fx-flip-rtl" /></Link></span>}
         </div>}
       </div>
     </article>

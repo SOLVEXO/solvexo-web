@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiGetPublicStorePage } from '@/api/services/storePages';
+import { apiGetPublicStorePage, apiPublicPageMayExist } from '@/api/services/storePages';
 import { useLocalize } from '@/hooks/useLocalize';
 import { FashionSectionRenderer } from '../sections';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
@@ -16,7 +16,10 @@ export function FashionCustomPage({ slug }: { slug?: string } = {}) {
   const { store } = useStorefront();
   const localize = useLocalize();
   const { data, loading, error, retry } = useLoad(
-    () => apiGetPublicStorePage(store.storeId, pageSlug).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; }),
+    async () => {
+      if (!(await apiPublicPageMayExist(store.storeId, pageSlug))) return null;
+      return apiGetPublicStorePage(store.storeId, pageSlug).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; });
+    },
     [store.storeId, pageSlug],
   );
   const page = data ? localize.page(data) : null;

@@ -36,7 +36,7 @@ export function TextLink({ to, children, colors }: { to: string; children: React
   return (
     <Link to={to} className="fx-cta fx-cta-sm" style={cta.button}>
       <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
-      <span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={15} /></span>
+      <span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={15} className="fx-flip-rtl" /></span>
     </Link>
   );
 }
@@ -47,7 +47,7 @@ export function LinkButton({ text, link, variant = 'primary', style }: { text?: 
   if (!text || !link) return null;
   const target = resolveLink(link);
   const cta = ctaLook(variant);
-  const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={16} /></span></>;
+  const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={16} className="fx-flip-rtl" /></span></>;
   const base: CSSProperties = { ...cta.button, ...style };
   return target.to
     ? <Link to={target.to} className="fx-cta" style={base}>{inner}</Link>

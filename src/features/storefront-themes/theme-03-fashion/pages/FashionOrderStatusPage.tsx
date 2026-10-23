@@ -21,10 +21,9 @@ export function FashionOrderStatusPage() {
   return (
     <Page>
       <PageTitle
-        accent={order ? `#${order.orderNumber}` : undefined}
         subtitle={order ? ts('pg.placed_on_date', 'Placed on {{date}}', { date: formatOrderDate(order.createdAt, true) }) : undefined}
         actions={order && <div className="flex flex-wrap gap-2"><OrderPill badge={derivePaymentBadge(order)} /><OrderPill badge={deriveFulfillmentBadge(order)} /></div>}
-      >{ts('orders.statusAria', 'Order status')}</PageTitle>
+      >{order ? ts('h.order_number', 'Order *#{{number}}*', { number: String(order.orderNumber).replace(/\*/g, '') }) : ts('orders.statusAria', 'Order status')}</PageTitle>
       {loading ? (
         <div role="status" aria-label={ts('pg.loading_order', 'Loading order')}><SkeletonBlock h={160} rows={3} /></div>
       ) : error ? (

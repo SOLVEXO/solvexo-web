@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Plus } from 'lucide-react';
-import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { localizedCountryOptions } from '../../../core/countryOptions';
 import type { AddressPayload } from '@/api/services/address';
 import { fashionTheme as t } from '../../theme.config';
 import { ErrorState, Field, Notice, PillButton, SelectInput, SkeletonBlock, TextInput } from '../../ui/primitives';
@@ -43,7 +43,7 @@ function AddressForm({ book }: { book: Book }) {
         {p => (
           <SelectInput {...p} autoComplete="country-name" value={form.country ?? ''} onChange={e => set('country', e.target.value)} invalid={!!errors.country}>
             <option value="" disabled>{ts('checkout.selectCountryPrompt', 'Select a country')}</option>
-            {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+            {localizedCountryOptions().map(c => <option key={c.code} value={c.name}>{c.label}</option>)}
           </SelectInput>
         )}
       </Field>
@@ -97,9 +97,9 @@ export function AddressStep({ step, book, pickup }: Props) {
         <div role="radiogroup" aria-label={ts('checkout.savedAddresses', 'Saved addresses')} className="flex flex-col gap-3">
           {book.list.map(a => (
             <RadioRow key={a._id} name="delivery-address" checked={book.selected?._id === a._id} onChange={() => book.select(a._id)} label={`${a.recipientName}, ${a.addressLine1}, ${a.city}`}>
-              <p className="m-0 text-sm font-medium">{a.recipientName} <span style={{ color: t.colors.inkMuted, fontWeight: 400 }}>- {a.phoneNumber}</span></p>
+              <p className="m-0 text-sm font-medium">{a.recipientName} <span style={{ color: t.colors.inkMuted, fontWeight: 400 }}>- <bdi>{a.phoneNumber}</bdi></span></p>
               <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>
-                {a.addressLine1}{a.addressLine2 ? `, ${a.addressLine2}` : ''}, {a.city}, {a.state} {a.zipCode}{a.country ? `, ${a.country}` : ''}
+                <bdi>{a.addressLine1}{a.addressLine2 ? `, ${a.addressLine2}` : ''}, {a.city}, {a.state} {a.zipCode}{a.country ? `, ${a.country}` : ''}</bdi>
               </p>
             </RadioRow>
           ))}

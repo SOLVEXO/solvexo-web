@@ -1,5 +1,6 @@
 ﻿import type { Message, MessageType, SendMessagePayload } from '@/api/services/messaging';
 import { ts } from '@/utils/tStatic';
+import { activeLocale } from '../locale';
 
 /** "just now", "5m ago", "3h ago", "2d ago", then a plain date. */
 export function timeAgo(iso: string, now = Date.now()): string {
@@ -12,11 +13,11 @@ export function timeAgo(iso: string, now = Date.now()): string {
   if (hrs < 24) return ts('pg.counth_ago', '{{count}}h ago', { count: hrs });
   const days = Math.floor(hrs / 24);
   if (days < 7) return ts('pg.countd_ago', '{{count}}d ago', { count: days });
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(activeLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function clockTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(activeLocale(), { hour: 'numeric', minute: '2-digit' });
 }
 
 /** "Today", "Yesterday" or a date, used for the dividers inside a chat thread. */
@@ -26,7 +27,7 @@ export function dayLabel(iso: string, now = new Date()): string {
   const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
   if (diffDays === 0) return ts('pg.word_today', 'Today');
   if (diffDays === 1) return ts('pg.word_yesterday', 'Yesterday');
-  return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(activeLocale(), { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
 export function sameDay(a: string, b: string): boolean {

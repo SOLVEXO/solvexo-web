@@ -145,7 +145,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
               onMouseDown={e => e.preventDefault()} onClick={() => go(fullResults)} onMouseEnter={() => setActive(options.length)}
               className="mt-1 flex cursor-pointer items-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-medium" style={{ background: active === options.length ? t.colors.bgAlt : 'transparent' }}>
               <span className="min-w-0 flex-1 truncate">{ts('pg.search_for_term_view_all_results', 'Search for "{{term}}" — view all results', { term })}</span>
-              <ArrowRight size={16} aria-hidden="true" />
+              <ArrowRight size={16} className="fx-flip-rtl" aria-hidden="true" />
             </li>
           </ul>
         </div>

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { AccentText } from '../ui/AccentText';
 import { ts } from '@/utils/tStatic';
 import { Lock } from 'lucide-react';
 import type { PublicStoreData } from '@/api/services/store';
@@ -33,7 +34,7 @@ export function FashionStorefrontGate({ store, onUnlocked }: { store: PublicStor
         {store.logo ? <img src={store.logo} alt={store.name} className="mx-auto mb-6 max-h-12 max-w-[180px] object-contain" />
           : <p className="m-0 mb-6 text-2xl font-semibold tracking-tight">{store.name}</p>}
         <span className="mx-auto mb-5 grid size-12 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><Lock size={20} /></span>
-        <h1 className="m-0 text-2xl font-semibold tracking-tight">{comingSoon ? <>{ts('pg.opening', 'Opening')} <span className="fx-serif">{ts('pg.word_soon', 'soon')}</span></> : ts('gate.passwordProtected', 'This store is password protected')}</h1>
+        <h1 className="m-0 text-2xl font-semibold tracking-tight">{comingSoon ? <AccentText text={ts('h.opening_soon', 'Opening *soon*')} size="1em" /> : ts('gate.passwordProtected', 'This store is password protected')}</h1>
         <p className="m-0 mt-3 text-[15px] leading-relaxed" style={{ color: t.colors.inkMuted }}>
           {comingSoon ? (store.tagline || ts('pg.we_are_putting_the_finishing_touches_on', 'We are putting the finishing touches on the store. Please check back shortly.')) : ts('pg.enter_the_password_to_visit_the_store', 'Enter the password to visit the store.')}
         </p>

@@ -59,7 +59,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
 
         if (!selectable) {
           return (
-            <div key={key} {...common} className={spacing.className || undefined}>
+            <div key={key} {...common} className={`fx-bidi ${spacing.className}`.trim()}>
               {scoped && <style>{scoped}</style>}
               {render(section, blocks, colors, dynamic, previewContext)}
             </div>
@@ -67,7 +67,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
         }
         const on = selectedSectionId === key;
         return (
-          <div key={key} {...common} data-fx-section-id={key} className={`${on ? 'fx-sel-on' : 'fx-sel'} ${spacing.className}`}
+          <div key={key} {...common} data-fx-section-id={key} className={`fx-bidi ${on ? 'fx-sel-on' : 'fx-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();

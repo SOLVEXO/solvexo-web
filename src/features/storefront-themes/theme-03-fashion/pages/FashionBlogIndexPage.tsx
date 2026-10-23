@@ -31,7 +31,7 @@ export function FashionBlogIndexPage() {
     <>
       {before.length > 0 && <FashionSectionRenderer sections={before} />}
       <Page>
-        <PageTitle accent={feed.title ? undefined : ts('pg.word_stories', 'stories')} subtitle={ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name })}>{feed.title ?? ts('pg.word_the', 'The')}</PageTitle>
+        <PageTitle subtitle={ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name })}>{feed.title ?? ts('h.the_stories', 'The *stories*')}</PageTitle>
 
         {feed.loading ? (
           <div role="status" aria-label={ts('pg.loading_posts', 'Loading posts')} className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">

@@ -3,6 +3,7 @@ import { ts } from '@/utils/tStatic';
 import { AlertCircle, CheckCircle2, Info, Loader2 } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
 import { controlStyle } from './controlStyle';
+import { AccentText } from './AccentText';
 
 /* Small design kit used by every Maison page beyond Home/Product/Cart (auth, account, checkout, orders ...).
    All colors / radii / fonts come from `fashionTheme`, so merchant customization applies everywhere. */
@@ -20,7 +21,7 @@ export function PageTitle({ children, accent, subtitle, actions }: { children: R
     <header className="mb-8 flex flex-wrap items-end justify-between gap-4 md:mb-10">
       <div className="min-w-0">
         <h1 className="m-0 text-[clamp(28px,4vw,46px)] font-medium leading-[1.1] tracking-tight" style={{ fontFamily: t.fonts.display }}>
-          {children}{accent && <> <span className="fx-serif" style={{ fontSize: '1.06em' }}>{accent}</span></>}
+          {typeof children === 'string' ? <AccentText text={children} accent={accent} /> : <>{children}{accent && <> <span className="fx-serif" style={{ fontSize: '1.06em' }}>{accent}</span></>}</>}
         </h1>
         {subtitle && <p className="m-0 mt-3 max-w-[620px] text-base leading-relaxed" style={{ color: t.colors.inkMuted }}>{subtitle}</p>}
       </div>

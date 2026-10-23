@@ -17,6 +17,7 @@ import { FashionButton } from '../components/FashionButton';
 import { FashionProductCard } from '../components/FashionProductCard';
 import { registerFashionSection } from './sectionRegistry';
 import { LinkButton, SectionShell, TextLink } from './SectionShell';
+import { formatPostDate } from '../../core/content/blogUtils';
 
 // ── Library sections shared across themes (one implementation, Maison's tokens) ──────────
 const tokens = (): SharedThemeTokens => ({
@@ -59,7 +60,7 @@ function BlogPostsSection({ section, colors }: { section: Section; colors: Fashi
               <div className="flex w-full items-center justify-center" style={{ aspectRatio: '4 / 3', background: colors.bgAlt, borderRadius: t.imageRadiusPx }}><ImageOff size={22} aria-hidden style={{ color: colors.inkMuted }} /></div>
             )}
             <div className="pt-4">
-              {post.publishedAt && <p className="m-0 mb-1 text-xs" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{new Date(post.publishedAt).toLocaleDateString()}</p>}
+              {post.publishedAt && <p className="m-0 mb-1 text-xs" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{formatPostDate(post.publishedAt)}</p>}
               <p className="m-0 text-lg font-semibold leading-snug" style={{ fontFamily: t.fonts.display }}>{post.title}</p>
               {post.excerpt && <p className="m-0 mt-2 line-clamp-2 text-sm leading-relaxed" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{post.excerpt}</p>}
             </div>

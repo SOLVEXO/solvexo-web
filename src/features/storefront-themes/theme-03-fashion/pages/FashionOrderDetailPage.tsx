@@ -21,8 +21,7 @@ function OrderDetail() {
 
   return (
     <AccountLayout
-      title={ts('checkout.orderLabel', 'Order')}
-      accent={order ? `#${order.orderNumber}` : undefined}
+      title={order ? ts('h.order_number', 'Order *#{{number}}*', { number: String(order.orderNumber).replace(/\*/g, '') }) : ts('checkout.orderLabel', 'Order')}
       subtitle={order ? ts('pg.placed_on_date', 'Placed on {{date}}', { date: formatOrderDate(order.createdAt, true) }) : undefined}
       actions={order && <div className="flex flex-wrap gap-2"><OrderPill badge={derivePaymentBadge(order)} /><OrderPill badge={deriveFulfillmentBadge(order)} /></div>}
     >
