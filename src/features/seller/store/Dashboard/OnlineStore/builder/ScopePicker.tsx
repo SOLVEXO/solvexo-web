@@ -1,4 +1,4 @@
-import { Palette, Home, ShoppingBag, LayoutGrid, FileText, Newspaper, Rss, ShoppingCart, Search, ChevronDown, Check } from 'lucide-react';
+import { Palette, Home, ShoppingBag, LayoutGrid, FileText, Newspaper, Rss, ShoppingCart, Search, ChevronDown, Check, User } from 'lucide-react';
 import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui';
 import type { ThemeTemplateScopeDef, ThemeTemplateScopeGroup } from '@/features/storefront-themes/themeManifest';
 
@@ -28,6 +28,7 @@ const GROUP_ORDER: { key: ThemeTemplateScopeGroup; label: string; Icon: typeof H
   { key: 'articles', label: 'Articles', Icon: Rss },
   { key: 'cart', label: 'Cart', Icon: ShoppingCart },
   { key: 'search', label: 'Search', Icon: Search },
+  { key: 'customer', label: 'Customer pages', Icon: User },
   { key: 'other', label: 'Other pages', Icon: FileText },
 ];
 

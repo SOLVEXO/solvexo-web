@@ -78,6 +78,8 @@ export const SECTION_TYPES = [
   'cart_summary',
   'blog_post_list',
   'article_content',
+  // The fixed form/list of a customer page (login, account, orders, checkout ...); sellers add sections above/below it.
+  'page_content',
   // Carrier for a section the active theme declares in its own manifest (settings.sectionKey picks which).
   'theme_section',
 ] as const;
@@ -125,6 +127,7 @@ export const CORE_SECTION_TYPES: readonly SectionType[] = [
   'cart_summary',
   'blog_post_list',
   'article_content',
+  'page_content',
 ];
 
 export interface Section {

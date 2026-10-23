@@ -529,6 +529,13 @@ export const SECTION_META: SectionMeta[] = [
     defaultBlockSettings: {}, hidden: true, locked: true,
     settingsSchema: [],
   },
+  {
+    type: 'page_content', label: 'Main content', description: 'The form or list this page is built around (sign in, orders, checkout ...). Always present; add sections above or below it.',
+    Icon: FileText, color: '#475569',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
 ];
 
 export const SECTION_META_BY_TYPE: Record<SectionType, SectionMeta> = Object.fromEntries(SECTION_META.map(m => [m.type, m])) as Record<SectionType, SectionMeta>;

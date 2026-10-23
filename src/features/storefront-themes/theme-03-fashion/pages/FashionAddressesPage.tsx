@@ -12,9 +12,14 @@ import { AccountLayout } from '../ui/AccountLayout';
 import { AddressFormDialog } from './account/AddressFormDialog';
 import { ConfirmDialog } from '../ui/Dialog';
 import { useConfirmAction } from '../../core/account/useConfirmAction';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/addresses`: the buyer's saved addresses (add, edit, delete, set default). */
 export function FashionAddressesPage() {
+  return <WithPageSections pageKey="addresses"><FashionAddressesPageContent /></WithPageSections>;
+}
+
+function FashionAddressesPageContent() {
   const guest = useRequireRealAccount();
   useStorefrontSeo({ title: ts('account.addresses', 'Addresses'), noindex: true });
   const { addresses, loading, error, reload } = useMyAddresses();

@@ -7,9 +7,14 @@ import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { fashionTheme as t } from '../theme.config';
 import { PillButton, Field, TextInput, Notice } from '../ui/primitives';
 import { AuthShell } from '../ui/AuthShell';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/forgot-password`. The hook sends the code and moves on to /verify-otp (the backend answers the same for unknown emails). */
 export function FashionForgotPasswordPage() {
+  return <WithPageSections pageKey="forgot-password"><FashionForgotPasswordPageContent /></WithPageSections>;
+}
+
+function FashionForgotPasswordPageContent() {
   useStorefrontSeo({ title: ts('pg.forgot_password', 'Forgot password'), noindex: true });
   const { store } = useStorefront();
   const forgot = useForgotPassword();

@@ -11,6 +11,7 @@ import { deriveFulfillmentBadge, derivePaymentBadge, formatOrderDate } from '../
 import { useLoad } from '../../core/pageHooks';
 import { OrderPill, Pager, RequireAccount } from './orders/OrderParts';
 import { nativeMoney } from '../../core/money/nativeMoney';
+import { WithPageSections } from '../ui/WithPageSections';
 
 const LIMIT = 10;
 
@@ -77,5 +78,9 @@ function OrdersList() {
 
 /** `/orders` - paginated order history with payment + fulfilment pills. */
 export function FashionOrdersPage() {
+  return <WithPageSections pageKey="orders"><FashionOrdersPageContent /></WithPageSections>;
+}
+
+function FashionOrdersPageContent() {
   return <RequireAccount><OrdersList /></RequireAccount>;
 }

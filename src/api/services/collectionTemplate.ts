@@ -83,7 +83,9 @@ export function apiGetCollectionTemplateDraft(storeId: string, resourceType?: Re
 }
 
 export function apiUpdateCollectionTemplateSections(storeId: string, sections: Section[], resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string, baseUpdatedAt?: string) {
-  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.UPDATE_SECTIONS(storeId), resourceType, templateKey, installedThemeId), { sections, ...(baseUpdatedAt ? { baseUpdatedAt } : {}) });
+  // The database drops an empty `settings: {}` (locked core sections such as Main content / Cart items), but the save API requires the key.
+  const complete = sections.map(s => (s.settings ? s : { ...s, settings: {} }));
+  return client.patch<never, ApiResponse<CollectionTemplateData>>(withParams(ENDPOINTS.COLLECTION_TEMPLATE.UPDATE_SECTIONS(storeId), resourceType, templateKey, installedThemeId), { sections: complete, ...(baseUpdatedAt ? { baseUpdatedAt } : {}) });
 }
 
 export function apiPublishCollectionTemplate(storeId: string, resourceType?: ResourceTemplateType, templateKey?: string, installedThemeId?: string) {

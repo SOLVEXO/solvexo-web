@@ -11,6 +11,7 @@ import { loadOrder } from '../../core/orders/orderLoaders';
 import { BackLink, OrderPill, RequireAccount } from './orders/OrderParts';
 import { OrderView } from './orders/OrderView';
 import { BuyAgainBar } from './orders/BuyAgainBar';
+import { WithPageSections } from '../ui/WithPageSections';
 
 function OrderDetail() {
   const { orderId = '' } = useParams<{ orderId: string }>();
@@ -41,5 +42,9 @@ function OrderDetail() {
 
 /** `/orders/:orderId` - status, timeline, tracking, items, totals, address, buy again / return. */
 export function FashionOrderDetailPage() {
+  return <WithPageSections pageKey="order-detail"><FashionOrderDetailPageContent /></WithPageSections>;
+}
+
+function FashionOrderDetailPageContent() {
   return <RequireAccount><OrderDetail /></RequireAccount>;
 }

@@ -58,4 +58,5 @@ registerFashionSection('search_results', (_s, _b, colors) => <Placeholder title=
 registerFashionSection('cart_items', (_s, _b, colors) => <Placeholder title={ts('pg.cart_items', 'Cart items')} note="The shopper's cart lines appear here." colors={colors} />);
 registerFashionSection('cart_summary', (_s, _b, colors) => <Placeholder title={ts('cart.summaryTitle', 'Order summary')} note="Subtotal and the checkout button appear here." colors={colors} />);
 registerFashionSection('blog_post_list', (_s, _b, colors, _d, ctx) => <Placeholder title={ctx?.blogName ?? 'Blog'} note={ctx?.recentPostTitles?.join(' · ') || 'Your latest posts appear here.'} colors={colors} />);
+registerFashionSection('page_content', (_s, _b, colors) => <Placeholder title="Main content" note="This page's form or list appears here. Add sections above or below it." colors={colors} />);
 registerFashionSection('article_content', (_s, _b, colors, _d, ctx) => <Placeholder title={ctx?.articleTitle ?? 'Article'} note={ctx?.articleExcerpt ?? 'The article body appears here.'} colors={colors} />);

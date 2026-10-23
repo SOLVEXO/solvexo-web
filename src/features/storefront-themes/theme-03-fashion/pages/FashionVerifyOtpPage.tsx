@@ -13,9 +13,14 @@ import { AuthShell } from '../ui/AuthShell';
 import { OtpBoxes } from './auth/OtpBoxes';
 import { ResendTimer } from './auth/ResendTimer';
 import { OTP_LENGTH } from '../../core/auth/authLinks';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/verify-otp`: the code step of registration (verifies + signs in) and of password reset (carries the code to /new-password). Needs the email stored in `AuthContext` by the previous step. */
 export function FashionVerifyOtpPage() {
+  return <WithPageSections pageKey="verify-otp"><FashionVerifyOtpPageContent /></WithPageSections>;
+}
+
+function FashionVerifyOtpPageContent() {
   const ctx = AuthContext.get();
   const isForgot = ctx?.flow === 'forgot';
   const email = ctx?.email ?? '';

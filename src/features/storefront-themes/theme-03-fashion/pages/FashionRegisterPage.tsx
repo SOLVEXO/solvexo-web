@@ -14,9 +14,14 @@ import { AuthShell } from '../ui/AuthShell';
 import { PasswordInput } from './auth/PasswordInput';
 import { SocialSignIn } from './auth/SocialSignIn';
 import { withRedirect } from '../../core/auth/authLinks';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/register` (`?redirect=`). Creates an account scoped to THIS store, then continues at /verify-otp. */
 export function FashionRegisterPage() {
+  return <WithPageSections pageKey="register"><FashionRegisterPageContent /></WithPageSections>;
+}
+
+function FashionRegisterPageContent() {
   useStorefrontSeo({ title: ts('orders.createAccountBtn', 'Create account'), noindex: true });
   const { store } = useStorefront();
   const [params] = useSearchParams();

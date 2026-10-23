@@ -12,9 +12,14 @@ import { AuthShell } from '../ui/AuthShell';
 import { PasswordInput } from './auth/PasswordInput';
 import { SocialSignIn } from './auth/SocialSignIn';
 import { withRedirect } from '../../core/auth/authLinks';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/login` (`?redirect=` return path, `?social_code=` / `?social_error=` come back from Google/Facebook). Always a buyer of THIS store. */
 export function FashionLoginPage() {
+  return <WithPageSections pageKey="login"><FashionLoginPageContent /></WithPageSections>;
+}
+
+function FashionLoginPageContent() {
   useStorefrontSeo({ title: ts('auth.signInLink', 'Sign in'), noindex: true });
   const { store } = useStorefront();
   const [params] = useSearchParams();

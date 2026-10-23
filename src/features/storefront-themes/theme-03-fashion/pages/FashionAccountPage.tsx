@@ -4,23 +4,25 @@ import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useRequireRealAccount } from '@/hooks/auth/useRequireRealAccount';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { usePageTemplateSections } from '../../usePageTemplateSections';
-import { FashionSectionRenderer } from '../sections';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { PillButton, ErrorState, SkeletonBlock } from '../ui/primitives';
 import { AccountLayout } from '../ui/AccountLayout';
 import { ProfileCard } from './account/ProfileCard';
 import { PasswordCard } from './account/PasswordCard';
 import { RecentOrders } from './account/RecentOrders';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/account`: profile, password and recent orders. Guest sessions are sent to /login?redirect=/account. */
 export function FashionAccountPage() {
+  return <WithPageSections pageKey="account"><FashionAccountPageContent /></WithPageSections>;
+}
+
+function FashionAccountPageContent() {
   const guest = useRequireRealAccount();
   useStorefrontSeo({ title: ts('pg.my_account', 'My account'), noindex: true });
   const { store } = useStorefront();
   const logout = useLogout();
   const { profile, loading, error, refetch } = useGetProfile();
-  const sections = usePageTemplateSections(store.storeId, 'account');
 
   if (guest) return null;
 
@@ -36,7 +38,6 @@ export function FashionAccountPage() {
           <RecentOrders />
         </div>
       </AccountLayout>
-      {sections.length > 0 && <FashionSectionRenderer sections={sections} />}
     </>
   );
 }

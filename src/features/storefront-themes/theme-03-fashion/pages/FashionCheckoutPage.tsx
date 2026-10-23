@@ -14,9 +14,14 @@ import { parseBuyNow } from '../../core/checkout/checkoutMath';
 import { CheckoutBody } from './checkout/CheckoutBody';
 import { CheckoutSkeleton } from './checkout/CheckoutSkeleton';
 import { OrderPlaced } from './checkout/OrderPlaced';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/checkout` - Maison's own checkout: contact, delivery, payment and a live order summary. */
 export function FashionCheckoutPage() {
+  return <WithPageSections pageKey="checkout"><FashionCheckoutPageContent /></WithPageSections>;
+}
+
+function FashionCheckoutPageContent() {
   const { store } = useStorefront();
   const [params] = useSearchParams();
   const { loggedIn, guest, preparing, denied } = useCheckoutSession();

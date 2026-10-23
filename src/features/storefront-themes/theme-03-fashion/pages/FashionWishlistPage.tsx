@@ -10,9 +10,14 @@ import { fashionTheme as t } from '../theme.config';
 import { AccountLayout } from '../ui/AccountLayout';
 import { EmptyState, PillButton, SkeletonBlock } from '../ui/primitives';
 import { WishlistItemCard } from './community/WishlistItemCard';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/wishlist` - the buyer's saved products for this store (account page, not indexed). */
 export function FashionWishlistPage() {
+  return <WithPageSections pageKey="wishlist"><FashionWishlistPageContent /></WithPageSections>;
+}
+
+function FashionWishlistPageContent() {
   const guest = useRequireRealAccount();
   useStorefrontSeo({ title: ts('nav.wishlist', 'Wishlist'), noindex: true });
   const { wishlistItems, loading, clearWishlist, clearing } = useWishlistContext();

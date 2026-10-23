@@ -10,9 +10,14 @@ import { PillButton, Field, Notice } from '../ui/primitives';
 import { AuthShell } from '../ui/AuthShell';
 import { PasswordInput } from './auth/PasswordInput';
 import { useStoreResetPassword } from '../../core/auth/useStoreResetPassword';
+import { WithPageSections } from '../ui/WithPageSections';
 
 /** `/new-password`: last step of password reset. Needs the code carried in `AuthContext` from /verify-otp, otherwise goes back to /forgot-password. */
 export function FashionNewPasswordPage() {
+  return <WithPageSections pageKey="reset-password"><FashionNewPasswordPageContent /></WithPageSections>;
+}
+
+function FashionNewPasswordPageContent() {
   useStorefrontSeo({ title: ts('pg.reset_password', 'Reset password'), noindex: true });
   const navigate = useNavigate();
   const { store } = useStorefront();
