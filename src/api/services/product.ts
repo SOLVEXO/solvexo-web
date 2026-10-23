@@ -150,6 +150,8 @@ export interface StoreProduct extends ProductSellingOptions {
   storeName:         string | null;
   /** Which of the store's own Product alternate templates this product's detail page renders its surrounding sections through. Defaults to `'default'`. */
   templateKey?:      string;
+  /** Products picked to go with this one — shown by a Related Products section set to "complementary". */
+  complementaryProductIds?: string[];
 }
 
 // ── Request payloads ──────────────────────────────────────────────────────────
@@ -208,6 +210,7 @@ export interface EditPhysicalPayload extends ProductSellingOptions {
   status:            'draft' | 'active' | 'scheduled';
   scheduledAt?:      string | null;
   templateKey?:      string;
+  complementaryProductIds?: string[];
   /** Shipping profile id; null = General profile. */
   shippingProfileId?: string | null;
 }
@@ -227,6 +230,7 @@ export interface EditDigitalPayload {
   compareAtPrice: number | null;
   digital:        DigitalMeta;
   templateKey?:   string;
+  complementaryProductIds?: string[];
 }
 
 // ── Response shapes ───────────────────────────────────────────────────────────

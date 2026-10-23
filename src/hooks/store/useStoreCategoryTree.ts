@@ -6,7 +6,7 @@ import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categ
  *  subcategories (capped at one level deep server-side). Replaces the old
  *  "one fixed main category chosen at onboarding" model. `error` is set when
  *  the load fails so a page can show Retry instead of an empty list. */
-export function useStoreCategoryTree(storeId: string | undefined) {
+export function useStoreCategoryTree(storeId: string | undefined, includeHidden = false) {
   const [tree, setTree] = useState<CategoryNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,11 +15,11 @@ export function useStoreCategoryTree(storeId: string | undefined) {
     if (!storeId) { setTree([]); setLoading(false); return; }
     setLoading(true);
     setError('');
-    apiGetStoreCategoryTree(storeId)
+    apiGetStoreCategoryTree(storeId, includeHidden)
       .then(res => setTree(res.data ?? []))
       .catch(err => { setTree([]); setError(err instanceof Error ? err.message : 'Failed to load categories.'); })
       .finally(() => setLoading(false));
-  }, [storeId]);
+  }, [storeId, includeHidden]);
 
   useEffect(load, [load]);
 

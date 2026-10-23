@@ -84,7 +84,7 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
           )}
           {price && (
             <p className="m-0 flex items-baseline gap-2">
-              <span className="text-base font-semibold md:text-lg" style={{ color: onSale ? t.colors.danger : t.colors.price }}>{price}</span>
+              <span data-color-role="price" className="text-base font-semibold md:text-lg" style={{ color: onSale ? t.colors.danger : t.colors.price }}>{price}</span>
               {onSale && <span className="text-sm line-through" style={{ color: t.colors.inkMuted }}>{comparePrice}</span>}
             </p>
           )}
@@ -108,5 +108,5 @@ function isCssColor(value: string): boolean {
 }
 
 function Chip({ tone, children }: { tone: 'sale' | 'dark'; children: React.ReactNode }) {
-  return <span className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={tone === 'sale' ? { background: t.colors.danger, color: '#fff' } : { background: t.colors.ink, color: t.colors.bg }}>{children}</span>;
+  return <span data-color-role={tone === 'sale' ? 'sale' : undefined} className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={tone === 'sale' ? { background: t.colors.danger, color: '#fff' } : { background: t.colors.ink, color: t.colors.bg }}>{children}</span>;
 }

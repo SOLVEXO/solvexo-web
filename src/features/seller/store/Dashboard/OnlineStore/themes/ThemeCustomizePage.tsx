@@ -1055,7 +1055,7 @@ export function ThemeCustomizePage() {
           <div className={`border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
               <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
-                <ThemeLivePreview sections={homeDraftSections} showChrome draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
+                <ThemeLivePreview sections={homeDraftSections} showChrome colorPick draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
               </div>
             </div>
           </div>

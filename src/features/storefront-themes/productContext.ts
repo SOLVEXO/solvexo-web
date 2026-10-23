@@ -5,6 +5,10 @@ import { createContext, useContext } from 'react';
 export interface ProductPageValue {
   productId: string;
   categoryId: string | null;
+  /** The product's own subcategory, when it has one — "related" prefers it over the wider main category. */
+  subCategoryId?: string | null;
+  /** Products the seller picked to go with this one. */
+  complementaryProductIds?: string[];
 }
 
 export const ProductPageContext = createContext<ProductPageValue | null>(null);

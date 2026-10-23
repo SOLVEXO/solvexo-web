@@ -17,6 +17,8 @@ import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
 import { getThemeManifest, readThemeSetting, themeSettingPatch, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import { BrandKitCard } from './BrandKitCard';
+import { COLOR_KEY_ROLE, COLOR_ROLE_LABEL, ROLE_PRIMARY_KEY, setHoveredColorRole, subscribePickedColorRole } from './colorRoleBridge';
 
 // Fixed platform brand color — same literal `ThemeLibraryPage.tsx`'s Install
 // button, `ThemeCustomizePage.tsx`'s `SaveButton`, and
@@ -389,6 +391,28 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
   const [versions, setVersions] = useState<{ _id: string; publishedAt: string }[]>([]);
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
 
+  // Click a part of the live preview → scroll to and flash the color field that controls it.
+  const [flashKey, setFlashKey] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = subscribePickedColorRole(role => {
+      const key = ROLE_PRIMARY_KEY[role];
+      const el = key ? document.getElementById(`color-field-${key}`) : null;
+      if (!key || !el) {
+        toast.info(role === 'header' || role === 'footer'
+          ? `${COLOR_ROLE_LABEL[role]} colours are in the ${COLOR_ROLE_LABEL[role]} editor (left menu).`
+          : `No separate colour setting for this part in this theme.`);
+        return;
+      }
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      setFlashKey(key);
+      clearTimeout(timer);
+      timer = setTimeout(() => setFlashKey(null), 1800);
+    });
+    return () => { unsubscribe(); clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const editor = useEditorState<ThemeDraft>();
   useThemeEditorUnsavedChanges(editor.dirty);
   useEffect(() => {
@@ -580,6 +604,8 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search theme settings" placeholder="Search settings, e.g. font, button, color" className={`${inp} pl-9`} />
       </div>
 
+      {!query.trim() && <BrandKitCard storeId={storeId} installedThemeId={installedThemeId} current={c} showAccent={manifest.themeSettingsFields.some(f => f.key === 'accentColor')} onApply={set} />}
+
       {!query.trim() && <SettingsTransfer manifest={manifest} current={c} onImport={(patch, count) => { set(patch); flash(true, `Imported ${count} settings. Save or Publish to keep them.`); }} onError={msg => flash(false, msg)} />}
 
       {!query.trim() && <ThemeStyles manifest={manifest} current={c} onApply={(patch, label) => { set(patch); flash(true, label === 'Defaults' ? 'Reset to default settings. Save or Publish to keep it.' : `${label} style applied. Save or Publish to keep it.`); }} />}
@@ -592,7 +618,24 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
           <div key={group} className="flex flex-col gap-4 bg-white border border-bone rounded-2xl p-4">
             <p className="text-[13px] font-bold text-charcoal">{group}</p>
             <div className={GROUP_GRID[Math.min(fields.length, 3)]}>
-              {fields.map(field => <ThemeSettingsField key={field.key} field={field} colors={c} onChange={set} />)}
+              {fields.map(field => {
+                const role = group === 'Colors' ? COLOR_KEY_ROLE[field.key] : undefined;
+                if (!role) return <ThemeSettingsField key={field.key} field={field} colors={c} onChange={set} />;
+                return (
+                  <div
+                    key={field.key}
+                    id={`color-field-${field.key}`}
+                    onMouseEnter={() => setHoveredColorRole(role)}
+                    onMouseLeave={() => setHoveredColorRole(null)}
+                    onFocusCapture={() => setHoveredColorRole(role)}
+                    onBlurCapture={() => setHoveredColorRole(null)}
+                    className="rounded-xl transition-shadow"
+                    style={flashKey === field.key ? { boxShadow: `0 0 0 3px ${ADMIN_ACCENT}`, padding: 6, margin: -6 } : undefined}
+                  >
+                    <ThemeSettingsField field={field} colors={c} onChange={set} />
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

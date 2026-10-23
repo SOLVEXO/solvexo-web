@@ -161,7 +161,9 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
   const body = { fontFamily: k.fontBody, fontSize: '14px', color: k.muted, lineHeight: 1.65, margin: 0 } as const;
   const link = { fontFamily: k.fontBody, fontSize: k.linkSize, color: k.fg } as const;
   const parts = { fontFamily: k.fontBody, color: k.fg, muted: k.muted, fontSize: '14px' };
-  const heading: CSSProperties = opts.headingUppercase ? k.heading : { ...k.heading, textTransform: 'none', letterSpacing: 'normal', fontSize: '14px' };
+  const heading: CSSProperties = opts.headingUppercase
+    ? { ...k.heading, textTransform: 'uppercase', letterSpacing: '.08em', fontSize: '13px' }
+    : { ...k.heading, textTransform: 'none', letterSpacing: 'normal', fontSize: '14px' };
 
   /** Column heading; on phones (when the retailer allows it) it folds the column open/closed. */
   const fold = (id: string, title: ReactNode, children: ReactNode, key?: string) => {

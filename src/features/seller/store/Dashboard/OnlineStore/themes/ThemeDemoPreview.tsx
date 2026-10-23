@@ -2,8 +2,14 @@ import { useParams } from 'react-router-dom';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
 import type { PublicStoreData } from '@/api/services/store';
 import { getThemeDemoPreview, type ThemeDemoPreviewData } from '@/features/storefront-themes/themeDemoPreview';
-import '@/features/storefront-themes/registry';
+import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
+import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+import type { StorefrontColors } from '@/api/services/storeTheme';
 import '@/features/storefront-themes/theme-03-fashion/fashion.css';
+
+function applyDemoColors(themeId: string, colors: Partial<StorefrontColors> | null | undefined) {
+  getThemePreviewComponents(themeId, DEFAULT_THEME_ID).applyMerchantThemeOverrides(colors ?? null);
+}
 
 /** Shared by `ThemeDemoPreview` (full page) and `ThemeThumbnail` (Theme
  *  Library card) below — both need the exact same isolated demo storefront
@@ -55,6 +61,8 @@ export function ThemeDemoPreview() {
     );
   }
 
+  // The full-page demo always shows the theme's OWN design — reset whatever a previous page (e.g. a brand-coloured Library thumbnail) left in the singleton.
+  applyDemoColors(themeId, null);
   const { demoStore, demoSections, SectionRenderer, theme: t, Chrome } = preview;
   const contextValue = buildDemoContextValue(demoStore);
 
@@ -116,12 +124,19 @@ export function ThemeDemoPreview() {
  *  can never go stale as a theme's demo content evolves, and reuses the
  *  exact same registry `ThemeDemoPreview` already reads, so there is
  *  nothing new to keep in sync. */
-export function ThemeThumbnail({ themeId, className }: { themeId: string; className?: string }) {
+export function ThemeThumbnail({ themeId, className, colors }: {
+  themeId: string;
+  className?: string;
+  /** The seller's locked Brand Kit colours — shown on the card so it matches what activating the theme will give them. Omitted = the theme's own colours. */
+  colors?: Partial<StorefrontColors> | null;
+}) {
   const preview = getThemeDemoPreview(themeId);
 
   if (!preview) {
     return <div className={className} style={{ aspectRatio: '4 / 3', background: '#F1EDE5' }} />;
   }
+  // Same pattern the real storefront layout uses: write the theme's own live singleton before rendering with it.
+  applyDemoColors(themeId, colors);
 
   const { demoStore, demoSections, SectionRenderer, theme: t, Chrome } = preview;
   const contextValue = buildDemoContextValue(demoStore);

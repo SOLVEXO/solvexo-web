@@ -6,8 +6,8 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import {
   apiListInstalledThemes, apiInstallTheme, apiActivateTheme, apiUninstallTheme,
-  apiDuplicateTheme, apiRenameTheme, apiCreatePreviewLink, apiRevokePreviewLink,
-  type StoreThemeData,
+  apiDuplicateTheme, apiRenameTheme, apiCreatePreviewLink, apiRevokePreviewLink, apiGetBrandKit,
+  brandKitColors, type StoreThemeData, type BrandKit,
 } from '@/api/services/storeTheme';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/storefront-themes/registry';
@@ -145,6 +145,18 @@ export function ThemeLibraryPage() {
   }, [storeId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // The seller's store-level Brand Kit (if any) — shown as a notice below, since
+  // the gallery thumbnails/previews always render each theme in its OWN colours.
+  const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
+  // Only a LOCKED kit is applied to a theme automatically, so only then do the cards show it.
+  const lockedBrandColors = useMemo(() => (brandKit?.locked ? brandKitColors(brandKit) : null), [brandKit]);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetBrandKit(storeId).then(res => { if (!cancelled) setBrandKit(res.data); }).catch(() => { /* optional notice: stay hidden */ });
+    return () => { cancelled = true; };
+  }, [storeId]);
 
   const installedByDefinitionId = useMemo(
     () => {
@@ -294,6 +306,18 @@ export function ThemeLibraryPage() {
       />
 
       <div className="px-4 lg:px-7 py-5 flex flex-col gap-8">
+        {brandKit && (
+          <div className="flex items-center gap-3 rounded-2xl border border-bone bg-white px-4 py-3">
+            <span className="flex -space-x-1.5 shrink-0">
+              {[brandKit.primaryColor, brandKit.accentColor].map(hex => <span key={hex} className="w-6 h-6 rounded-full border-2 border-white" style={{ background: hex }} />)}
+            </span>
+            <p className="text-[12.5px] text-slate">
+              {brandKit.locked
+                ? <><b className="text-charcoal">Your brand colours stay.</b> They are applied automatically to any theme you install or activate, and the cards below already show them. Full-page previews show each theme's own colours.</>
+                : <><b className="text-charcoal">Brand colours are saved but not locked.</b> A new theme will use its own colours. You can lock them under Customize → Theme Settings → Brand colours.</>}
+            </p>
+          </div>
+        )}
         <section className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <Sparkles size={15} className="text-brand-orange" />
@@ -311,7 +335,7 @@ export function ThemeLibraryPage() {
                      screenshot, so a seller can actually see the design
                      right here instead of reading a text description and
                      guessing. See `ThemeThumbnail`'s own doc comment. */}
-                  <ThemeThumbnail themeId={entry.id} className="w-full" />
+                  <ThemeThumbnail themeId={entry.id} className="w-full" colors={lockedBrandColors} />
                   {isActive && (
                     <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full bg-emerald-600 text-[10.5px] font-bold tracking-wide text-white shadow-md">
                       <span className="w-1.5 h-1.5 rounded-full bg-white" /> ACTIVE

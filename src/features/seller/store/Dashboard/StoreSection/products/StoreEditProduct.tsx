@@ -18,6 +18,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
+import { EntityPickerField } from '@/features/seller/store/Dashboard/OnlineStore/builder/SchemaForm';
 import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
@@ -212,7 +213,9 @@ export default function StoreEditProduct() {
   const [pType,             setPType]             = useState<'physical' | 'digital' | 'educational'>('physical');
   const [variantId,         setVariantId]         = useState<string | null>(null);
   const [templateKey,       setTemplateKey]       = useState('default');
-  const [phys,              setPhys]              = useState<PhysForm>(blankPhys);
+  const [complementaryIds,  setComplementaryIds]  = useState<string[]>([]);
+  const [complementaryReady, setComplementaryReady] = useState(false);
+  const [phys,             setPhys]              = useState<PhysForm>(blankPhys);
   const [dig,               setDig]               = useState<DigForm>(blankDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   // Same reasoning as StoreAddProduct.tsx — the real variant option/value
@@ -236,6 +239,14 @@ export default function StoreEditProduct() {
     setPType(p.productType);
     setVariantId(v._id || null);
     setTemplateKey(p.templateKey ?? 'default');
+    if (p.complementaryProductIds) { setComplementaryIds(p.complementaryProductIds); setComplementaryReady(true); }
+    else {
+      // A list/cache entry from before this field existed doesn't carry it — load the real value
+      // so saving can never wipe the seller's picks. Until then the field is simply not sent.
+      apiGetMyProductById(p._id)
+        .then(res => { setComplementaryIds(res.data.product.complementaryProductIds ?? []); setComplementaryReady(true); })
+        .catch(() => { /* leave it unsent */ });
+    }
     if (p.productType === 'physical') {
       setPhys(physFromEntry(p, v));
       // Real variant list arrives slightly after first paint — see the
@@ -300,6 +311,7 @@ export default function StoreEditProduct() {
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           templateKey,
+          complementaryProductIds: complementaryReady ? complementaryIds : undefined,
           shippingProfileId: phys.shippingProfileId || null,
           ...sellingOptionsPayload(phys.selling),
         });
@@ -382,6 +394,7 @@ export default function StoreEditProduct() {
           price: Number(dig.price),
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
           templateKey,
+          complementaryProductIds: complementaryReady ? complementaryIds : undefined,
           digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
@@ -862,6 +875,16 @@ export default function StoreEditProduct() {
                 </button>
               )}
               <TemplateKeyPicker storeId={storeId} resourceType="product" value={templateKey} onChange={setTemplateKey} label="Product Page Template" />
+            </div>
+          </Card>
+
+          <Card title="Complementary products">
+            <div className="flex flex-col gap-2">
+              <p className="text-[12px] text-slate m-0">Products that go well with this one. They show on this product&apos;s page in a &quot;Product Recommendations&quot; section set to Complementary (e.g. &quot;Complete the look&quot;). Up to 10.</p>
+              {complementaryReady ? (
+                <EntityPickerField mode="products" multiple value={complementaryIds} storeId={storeId} label="Choose products"
+                  onPick={ids => setComplementaryIds(ids.filter(id => id !== productId).slice(0, 10))} />
+              ) : <p className="text-[12px] text-slate m-0">Loading…</p>}
             </div>
           </Card>
 

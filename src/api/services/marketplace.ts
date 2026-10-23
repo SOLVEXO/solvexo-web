@@ -79,6 +79,8 @@ export interface MarketplaceProduct {
   type?:             'physical' | 'digital';
   categoryId:        string;
   subCategoryId?:    string | null;
+  /** Products the seller hand-picked to go with this one (Shopify's "Complementary products"). */
+  complementaryProductIds?: string[];
   educationLevel?:   string | null;
   customLevel?:      string | null;
   normalizedCustomLevel?: string | null;
