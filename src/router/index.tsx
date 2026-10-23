@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 import { basenameFromPathname } from '@/i18n/localeConfig';
+import { countryBasename, countryFromPathname, rememberCountry } from '@/utils/countryPrefix';
 
 // Root wrapper (reference nav + outlet)
 import { RootLayout }   from '@/components/layouts/RootLayout';
@@ -553,7 +554,7 @@ const mainRouter = createBrowserRouter([
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
-]);
+], { basename: countryBasename(window.location.pathname) });
 
 // Decided once at module load — the hostname doesn't change without a full
 // page reload, so this never needs to be reactive. A `*.solvexo.store`
@@ -562,4 +563,7 @@ const mainRouter = createBrowserRouter([
 // (it needs a real DNS-backed lookup), so it's routed into the SAME
 // storefront tree and resolved asynchronously once mounted — see
 // `StorefrontLayout.tsx`.
-export const router = (getStoreSlugFromHost() || isCustomDomainCandidate()) ? storefrontRouter : mainRouter;
+const isStorefront = !!(getStoreSlugFromHost() || isCustomDomainCandidate());
+// Platform site only: remember the country in the URL (the edge middleware keeps sending the visitor there).
+if (!isStorefront) rememberCountry(countryFromPathname(window.location.pathname));
+export const router = isStorefront ? storefrontRouter : mainRouter;

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { countryFromPathname, switchCountryPath } from '@/utils/countryPrefix';
 import { clsx } from 'clsx';
 import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Mail } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
@@ -304,6 +306,22 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
             <SolvexoIcon size={16} />
             <p className="text-[12px] text-[#8b8985]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
           </div>
+          <label className="flex items-center gap-1.5 text-[12px] text-[#8b8985]">
+            <span>Country</span>
+            <select
+              aria-label="Country"
+              value={(countryFromPathname(window.location.pathname) ?? '').toUpperCase()}
+              onChange={e => {
+                if (!e.target.value) return;
+                // Full page load: the router basename is read once at boot.
+                window.location.assign(switchCountryPath(window.location.pathname, window.location.search, window.location.hash, e.target.value));
+              }}
+              className="bg-transparent text-[#c9c7c3] border border-white/15 rounded-md px-2 py-1 text-[12px] max-w-[160px] outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
+            >
+              <option value="" className="text-black">Auto</option>
+              {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code} className="text-black">{c.name}</option>)}
+            </select>
+          </label>
           <MagneticButton>
             <button
               type="button"

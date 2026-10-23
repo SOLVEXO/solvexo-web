@@ -1,4 +1,5 @@
 import client from '../client';
+import { countryFromPathname } from '@/utils/countryPrefix';
 import { ENDPOINTS } from '../endpoints';
 import { setAuthCookie, getAuthCookie, deleteAuthCookie, clearAuthCookie } from '@/utils/authCookie';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
@@ -381,6 +382,9 @@ export interface DetectCountryData {
 }
 export function apiDetectCountry(context?: AuthPageContext, topic?: AuthVisualTopic) {
   const params = new URLSearchParams();
+  // A country in the URL (`/pk/register`) wins over the IP guess.
+  const urlCountry = countryFromPathname(window.location.pathname);
+  if (urlCountry) params.set('country', urlCountry.toUpperCase());
   if (context) params.set('context', context);
   if (topic) params.set('topic', topic);
   const q = params.toString();
