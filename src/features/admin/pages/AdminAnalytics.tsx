@@ -62,7 +62,7 @@ export function AdminAnalytics() {
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
-  const { exportReport, exporting, error: exportError } = useAdminAnalyticsExport();
+  const { exportReport, exporting, exportingFormats, error: exportError } = useAdminAnalyticsExport();
 
   // Re-point the CSV section at whatever's most relevant to the tab the user just opened —
   // but only as a default; `setCsvSection` below still lets them override it explicitly.
@@ -81,6 +81,7 @@ export function AdminAnalytics() {
         filters={filters}
         onChange={setFilters}
         exporting={exporting}
+        exportingFormats={exportingFormats}
         onExportPdf={() => exportReport({ ...params, format: 'pdf' })}
         onExportCsv={() => exportReport({ ...params, format: 'csv', section: csvSection as ExportSection })}
         granularityOptions={GRANULARITY_OPTIONS}

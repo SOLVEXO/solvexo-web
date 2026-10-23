@@ -1,11 +1,12 @@
 import { can } from '@/hooks/auth/useCan';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Plus, Gift, Ban, SlidersHorizontal } from 'lucide-react';
+import { Plus, Gift, Ban, SlidersHorizontal, Mail } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { useToast } from '@/contexts/ToastContext';
 import {
   apiGetGiftCardSettings, apiUpdateGiftCardSettings, apiIssueGiftCard, apiListGiftCards, apiDisableGiftCard,
-  apiAdjustGiftCardBalance,
+  apiAdjustGiftCardBalance, apiResendGiftCardEmail,
   type GiftCardSettings, type GiftCard, type IssueManualGiftCardPayload,
 } from '@/api/services/giftCards';
 import { currencySymbol, fmt2 } from '@/utils/currency';
@@ -198,6 +199,9 @@ function AdjustBalanceModal({
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const toast = useToast();
+  const canEmail = !!giftCard.recipientEmail;
+  const [notify, setNotify] = useState(canEmail);
 
   const handleAdjust = async () => {
     const amt = Number(delta);
@@ -205,7 +209,10 @@ function AdjustBalanceModal({
     setSaving(true);
     setError('');
     try {
-      await apiAdjustGiftCardBalance(storeId, giftCard._id, amt, reason.trim() || undefined);
+      const res = await apiAdjustGiftCardBalance(storeId, giftCard._id, amt, reason.trim() || undefined, canEmail && notify);
+      if (res.emailed === 'sent') toast.success(`Balance updated. ${giftCard.recipientEmail} was emailed.`);
+      else if (res.emailed === 'disabled') toast.info('Balance updated. The email is switched off in Settings → Notifications.');
+      else if (res.emailed === 'failed') toast.error('Balance updated, but the email could not be sent. Use "Resend email" later.');
       onAdjusted();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to adjust balance.');
@@ -237,6 +244,62 @@ function AdjustBalanceModal({
       <Field label="Reason" hint="Optional — shown in the card's activity log.">
         <Input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Correction, goodwill credit" />
       </Field>
+      {canEmail ? (
+        <label className="flex items-start gap-2 text-[12.5px] text-carbon cursor-pointer mt-1">
+          <input type="checkbox" className="mt-0.5" checked={notify} onChange={e => setNotify(e.target.checked)} />
+          <span>Email {giftCard.recipientEmail} the new balance<span className="block text-[11.5px] text-slate">The reason above is included in the email.</span></span>
+        </label>
+      ) : (
+        <p className="text-[11.5px] text-slate mt-1">This card has no recipient email, so nobody can be notified. Tell the customer yourself.</p>
+      )}
+    </Modal>
+  );
+}
+
+// ── Disable confirmation (with the optional "tell the recipient" email) ─────
+function DisableCardModal({
+  storeId, giftCard, onClose, onDisabled,
+}: { storeId: string; giftCard: GiftCard; onClose: () => void; onDisabled: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+  const canEmail = !!giftCard.recipientEmail;
+  const [notify, setNotify] = useState(canEmail);
+
+  const handleDisable = async () => {
+    setSaving(true);
+    try {
+      const res = await apiDisableGiftCard(storeId, giftCard._id, canEmail && notify);
+      if (res.emailed === 'sent') toast.success(`Gift card disabled. ${giftCard.recipientEmail} was emailed.`);
+      else if (res.emailed === 'failed') toast.error('Gift card disabled, but the email could not be sent.');
+      else toast.success('Gift card disabled.');
+      onDisabled();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not disable this gift card.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      title={`Disable ${giftCard.code}?`}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="primary" onClick={handleDisable} loading={saving}>Disable gift card</Button>
+        </>
+      )}
+    >
+      <p className="text-[12.5px] text-slate mb-3">The code stops working at checkout straight away. This cannot be undone from here.</p>
+      {canEmail ? (
+        <label className="flex items-start gap-2 text-[12.5px] text-carbon cursor-pointer">
+          <input type="checkbox" className="mt-0.5" checked={notify} onChange={e => setNotify(e.target.checked)} />
+          <span>Email {giftCard.recipientEmail} that this card was disabled</span>
+        </label>
+      ) : (
+        <p className="text-[11.5px] text-slate">This card has no recipient email, so nobody can be notified.</p>
+      )}
     </Modal>
   );
 }
@@ -255,6 +318,8 @@ export default function StoreGiftCards() {
   const [loading, setLoading] = useState(true);
   const [issueOpen, setIssueOpen] = useState(false);
   const [adjustingCard, setAdjustingCard] = useState<GiftCard | null>(null);
+  const [disablingCard, setDisablingCard] = useState<GiftCard | null>(null);
+  const toast = useToast();
   const canManage = can('giftcards.manage');       // issue + adjust balance
   const canDeactivate = can('giftcards.deactivate'); // disable a card
 
@@ -278,12 +343,17 @@ export default function StoreGiftCards() {
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [storeId, page, status, debouncedCode]);
 
-  const handleDisable = async (gc: GiftCard) => {
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const handleResend = async (gc: GiftCard) => {
+    setResendingId(gc._id);
     try {
-      await apiDisableGiftCard(storeId, gc._id);
-      load();
-    } catch {
-      // The row simply stays unchanged — the seller can retry.
+      const res = await apiResendGiftCardEmail(storeId, gc._id);
+      if (res.success) toast.success(res.message || 'Gift card emailed.');
+      else toast.error(res.message || 'The email could not be sent.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'The email could not be sent.');
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -306,15 +376,25 @@ export default function StoreGiftCards() {
     },
     { key: 'status', header: 'Status', render: gc => <Badge color={statusColor(gc.status)}>{gc.status.charAt(0).toUpperCase() + gc.status.slice(1)}</Badge> },
     { key: 'issuedBy', header: 'Issued', render: gc => (gc.issuedBy === 'purchase' ? 'Purchased' : 'Manual') },
-    { key: 'recipient', header: 'Recipient', render: gc => gc.recipientName || gc.recipientEmail || '—' },
+    {
+      key: 'recipient', header: 'Recipient', render: gc => (
+        <div>
+          <div>{gc.recipientName || gc.recipientEmail || '—'}</div>
+          {gc.deliverAt && !gc.deliveredAt && (
+            <div className="text-[11px] text-amber-700">Scheduled for {new Date(gc.deliverAt).toLocaleDateString()}</div>
+          )}
+        </div>
+      ),
+    },
     { key: 'expiresAt', header: 'Expires', render: gc => (gc.expiresAt ? new Date(gc.expiresAt).toLocaleDateString() : 'Never') },
     {
       key: 'actions', header: '', align: 'right', render: gc => (
         gc.status === 'active' && (canManage || canDeactivate)
           ? (
             <div className="flex items-center gap-1.5 justify-end">
+              {canManage && gc.recipientEmail && <Button variant="outline" size="xs" icon={<Mail size={12} />} loading={resendingId === gc._id} onClick={() => handleResend(gc)}>Resend email</Button>}
               {canManage && <Button variant="outline" size="xs" icon={<SlidersHorizontal size={12} />} onClick={() => setAdjustingCard(gc)}>Adjust</Button>}
-              {canDeactivate && <Button variant="outline" size="xs" icon={<Ban size={12} />} onClick={() => handleDisable(gc)}>Disable</Button>}
+              {canDeactivate && <Button variant="outline" size="xs" icon={<Ban size={12} />} onClick={() => setDisablingCard(gc)}>Disable</Button>}
             </div>
           )
           : null
@@ -379,6 +459,15 @@ export default function StoreGiftCards() {
           giftCard={adjustingCard}
           onClose={() => setAdjustingCard(null)}
           onAdjusted={() => { setAdjustingCard(null); load(); }}
+        />
+      )}
+
+      {disablingCard && (
+        <DisableCardModal
+          storeId={storeId}
+          giftCard={disablingCard}
+          onClose={() => setDisablingCard(null)}
+          onDisabled={() => { setDisablingCard(null); load(); }}
         />
       )}
     </div>

@@ -61,7 +61,7 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_SELLER_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
-  const { exportReport, exporting, error: exportError } = useSellerAnalyticsExport();
+  const { exportReport, exporting, exportingFormats, error: exportError } = useSellerAnalyticsExport();
 
   useEffect(() => { setCsvSection(TAB_TO_CSV_SECTION[activeTab] ?? 'revenue'); }, [activeTab]);
 
@@ -73,6 +73,7 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
         filters={filters}
         onChange={setFilters}
         exporting={exporting}
+        exportingFormats={exportingFormats}
         onExportPdf={() => exportReport({ ...params, format: 'pdf' })}
         onExportCsv={() => exportReport({ ...params, format: 'csv', section: csvSection as SellerExportSection })}
         csvSections={CSV_SECTION_OPTIONS}
@@ -108,7 +109,7 @@ export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewPr
       {isVisited('revenue')   && <div className={paneClassName('revenue')}><SellerRevenueTab params={params} currency={currency} /></div>}
       {isVisited('products')  && <div className={paneClassName('products')}><SellerProductsTab params={params} currency={currency} /></div>}
       {isVisited('customers') && <div className={paneClassName('customers')}><SellerCustomersTab params={params} currency={currency} /></div>}
-      {isVisited('reports')   && <div className={paneClassName('reports')}><SellerReportsTab params={params} storeId={storeId} compare={filters.compareToPreviousPeriod} exporting={exporting} onExportCsv={section => exportReport({ ...params, format: 'csv', section })} /></div>}
+      {isVisited('reports')   && <div className={paneClassName('reports')}><SellerReportsTab params={params} storeId={storeId} compare={filters.compareToPreviousPeriod} exporting={exportingFormats.includes('csv')} onExportCsv={section => exportReport({ ...params, format: 'csv', section })} /></div>}
       {isVisited('traffic')   && <div className={paneClassName('traffic')}><SellerTrafficPaymentsTab params={params} currency={currency} /></div>}
     </div>
   );

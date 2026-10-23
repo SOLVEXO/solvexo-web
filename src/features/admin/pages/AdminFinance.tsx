@@ -36,7 +36,7 @@ export function AdminFinance() {
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('overview');
   const [filters, setFilters] = useState(DEFAULT_ADMIN_FINANCE_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
-  const { exportReport, exporting } = useAdminFinanceExport();
+  const { exportReport, exporting, exportingFormats } = useAdminFinanceExport();
 
   useEffect(() => { setCsvSection(TAB_TO_CSV_SECTION[activeTab] ?? 'transactions'); }, [activeTab]);
 
@@ -53,6 +53,7 @@ export function AdminFinance() {
         filters={filters}
         onChange={setFilters}
         exporting={exporting}
+        exportingFormats={exportingFormats}
         onExportPdf={() => exportReport({ ...params, format: 'pdf' })}
         onExportCsv={() => exportReport({ ...params, format: 'csv', section: csvSection as never })}
         granularityOptions={GRANULARITY_OPTIONS}

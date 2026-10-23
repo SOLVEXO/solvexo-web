@@ -26,6 +26,9 @@ export interface GiftCard {
   recipientName: string | null;
   message: string | null;
   expiresAt: string | null;
+  /** A gift waiting for its send day: set while `deliveredAt` is still empty. */
+  deliverAt?: string | null;
+  deliveredAt?: string | null;
   createdAt: string;
 }
 
@@ -67,14 +70,22 @@ export function apiListGiftCards(storeId: string, query: { page?: number; limit?
 }
 
 /** PATCH /api/gift-cards/:storeId/:giftCardId/disable */
-export function apiDisableGiftCard(storeId: string, giftCardId: string) {
-  return client.patch<never, ApiResponse<GiftCard>>(ENDPOINTS.GIFT_CARDS.DISABLE(storeId, giftCardId), {});
+export function apiDisableGiftCard(storeId: string, giftCardId: string, notify = false) {
+  return client.patch<never, ApiResponse<GiftCard> & { emailed?: GiftCardEmailResult }>(ENDPOINTS.GIFT_CARDS.DISABLE(storeId, giftCardId), { notify });
 }
+
+/** What happened to the optional "tell the recipient" email (null = it was not asked for). */
+export type GiftCardEmailResult = 'sent' | 'failed' | 'disabled' | 'no_recipient' | null;
 
 /** PATCH /api/gift-cards/:storeId/:giftCardId/adjust — real "Edit existing
  *  card value": `delta` can be positive (top-up) or negative (deduction). */
-export function apiAdjustGiftCardBalance(storeId: string, giftCardId: string, delta: number, reason?: string) {
-  return client.patch<never, ApiResponse<GiftCard>>(ENDPOINTS.GIFT_CARDS.ADJUST(storeId, giftCardId), { delta, reason });
+export function apiAdjustGiftCardBalance(storeId: string, giftCardId: string, delta: number, reason?: string, notify = false) {
+  return client.patch<never, ApiResponse<GiftCard> & { emailed?: GiftCardEmailResult }>(ENDPOINTS.GIFT_CARDS.ADJUST(storeId, giftCardId), { delta, reason, notify });
+}
+
+/** POST /api/gift-cards/:storeId/:giftCardId/resend — emails the code again with the current balance. */
+export function apiResendGiftCardEmail(storeId: string, giftCardId: string) {
+  return client.post<never, ApiResponse<null> & { emailed?: string }>(ENDPOINTS.GIFT_CARDS.RESEND(storeId, giftCardId), {});
 }
 
 // ── Buyer-facing ───────────────────────────────────────────────────────────
@@ -93,7 +104,7 @@ export function apiGetGiftCardPublicSettings(storeId: string) {
 /** POST /api/gift-cards/:storeId/purchase-intent */
 export function apiCreateGiftCardPurchaseIntent(
   storeId: string,
-  payload: { amount: number; recipientEmail?: string; recipientName?: string; message?: string },
+  payload: { amount: number; recipientEmail?: string; recipientName?: string; message?: string; sendOn?: string },
 ) {
   return client.post<never, ApiResponse<{ clientSecret: string; paymentIntentId: string; amount: number; currency: string }>>(
     ENDPOINTS.GIFT_CARDS.PURCHASE_INTENT(storeId), payload,

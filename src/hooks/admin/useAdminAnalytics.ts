@@ -136,20 +136,22 @@ export function useAdminAnalyticsPlatformAlerts(params: BaseAnalyticsParams) {
 // ── I. Export ────────────────────────────────────────────────────────────────────
 
 export function useAdminAnalyticsExport() {
-  const [exporting, setExporting] = useState(false);
+  // Which formats are running, so each button shows its own spinner and the other one stays usable.
+  const [exportingFormats, setExportingFormats] = useState<('pdf' | 'csv')[]>([]);
   const [error, setError] = useState('');
 
   const exportReport = useCallback(async (params: ExportParams) => {
-    setExporting(true);
+    const format: 'pdf' | 'csv' = params.format === 'pdf' ? 'pdf' : 'csv';
+    setExportingFormats(prev => (prev.includes(format) ? prev : [...prev, format]));
     setError('');
     try {
       await apiAdminAnalyticsExport(params);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to export report.');
     } finally {
-      setExporting(false);
+      setExportingFormats(prev => prev.filter(f => f !== format));
     }
   }, []);
 
-  return { exportReport, exporting, error };
+  return { exportReport, exporting: exportingFormats.length > 0, exportingFormats, error };
 }

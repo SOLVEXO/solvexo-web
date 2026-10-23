@@ -10,7 +10,10 @@ interface AnalyticsFilterBarProps<T extends BaseAnalyticsUIFilters> {
   onChange: (filters: T) => void;
   onExportPdf: () => void;
   onExportCsv: () => void;
+  /** Any export running (kept for callers that only need a yes/no). */
   exporting?: boolean;
+  /** Which exports are running: each button shows its own spinner and is disabled only while ITS export runs. */
+  exportingFormats?: ('pdf' | 'csv')[];
   /** Extra filter controls rendered in a collapsible "Advanced filters" row (e.g. admin's storeId/sellerId drill-down). Omit entirely to hide the toggle. */
   advanced?: ReactNode;
   /** Optional bucket-size override (admin only — the seller backend has no granularity param). Omit to hide the control entirely. */
@@ -26,7 +29,7 @@ interface AnalyticsFilterBarProps<T extends BaseAnalyticsUIFilters> {
 }
 
 export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
-  filters, onChange, onExportPdf, onExportCsv, exporting, advanced,
+  filters, onChange, onExportPdf, onExportCsv, exportingFormats = [], advanced,
   granularityOptions, granularity, onGranularityChange,
   csvSections, csvSection, onCsvSectionChange, showExport = true,
 }: AnalyticsFilterBarProps<T>) {
@@ -102,11 +105,11 @@ export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
 
         {showExport && (
           <>
-            <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={onExportPdf} loading={exporting} disabled={exporting}>
+            <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={onExportPdf} loading={exportingFormats.includes('pdf')} disabled={exportingFormats.includes('pdf')}>
               Export PDF
             </Button>
             <FilterDropdown options={csvSections} value={csvSection} onChange={onCsvSectionChange} />
-            <Button variant="outline" size="sm" icon={<Download size={13} />} onClick={onExportCsv} loading={exporting} disabled={exporting}>
+            <Button variant="outline" size="sm" icon={<Download size={13} />} onClick={onExportCsv} loading={exportingFormats.includes('csv')} disabled={exportingFormats.includes('csv')}>
               Export CSV
             </Button>
           </>

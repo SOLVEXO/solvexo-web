@@ -10,13 +10,19 @@ import { Card, EmptyState, Field, Notice, PillButton, TextArea, TextInput } from
 import { nativeMoneyShort } from '../../../core/money/nativeMoney';
 import { validateGiftCard, type GiftCardErrors } from '../../../core/money/giftCardForm';
 
+const dayIso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const todayIso = () => dayIso(new Date());
+const yearAheadIso = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return dayIso(d); };
+
 /** Gift card purchase: choose amount + recipient -> card payment -> confirmation. Amounts stay in the store currency
  *  the card is charged in. */
 export function GiftCardPurchase({ settings, storeId, storeName }: { settings: GiftCardPublicSettings; storeId: string; storeName: string }) {
   const [amount, setAmount] = useState<number | null>(null);
+  const [isGift, setIsGift] = useState(false);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
+  const [sendOn, setSendOn] = useState('');
   const [errors, setErrors] = useState<GiftCardErrors>({});
   const [secret, setSecret] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -24,12 +30,14 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
   const [done, setDone] = useState(false);
 
   const start = async () => {
-    const found = validateGiftCard(amount, email);
+    const found = validateGiftCard(amount, email, isGift);
     setErrors(found);
     if (found.amount || found.email || !amount) return;
     setApiError(''); setCreating(true);
     try {
-      const res = await apiCreateGiftCardPurchaseIntent(storeId, { amount, recipientEmail: email.trim(), recipientName: name.trim() || undefined, message: message.trim() || undefined });
+      const res = await apiCreateGiftCardPurchaseIntent(storeId, isGift
+        ? { amount, recipientEmail: email.trim(), recipientName: name.trim() || undefined, message: message.trim() || undefined, sendOn: sendOn || undefined }
+        : { amount });
       setSecret(res.data.clientSecret);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : ts('pg.we_could_not_start_your_purchase', 'We could not start your purchase.'));
@@ -38,14 +46,18 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
 
   if (done) {
     return (
-      <EmptyState icon={<CheckCircle2 size={26} style={{ color: t.colors.success }} />} title={ts('gift.paymentReceived', 'Payment received')} text={ts('pg.the_gift_card_code_is_being_emailed_to', 'The gift card code is being emailed to {{email}}.', { email: email.trim() })}
+      <EmptyState icon={<CheckCircle2 size={26} style={{ color: t.colors.success }} />} title={ts('gift.paymentReceived', 'Payment received')} text={isGift
+          ? (sendOn && sendOn > todayIso()
+            ? ts('gift.willBeEmailed', 'The gift card code will be emailed to {{email}} on {{date}}.', { email: email.trim(), date: sendOn })
+            : ts('pg.the_gift_card_code_is_being_emailed_to', 'The gift card code is being emailed to {{email}}.', { email: email.trim() }))
+          : ts('gift.emailedToYou', 'The gift card code is being emailed to you. Check your inbox (and spam folder) in a few minutes.')}
         action={<Link to="/search" className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.keep_shopping', 'Keep shopping')}</Link>} />
     );
   }
 
   const preview = (
     <Card tone="soft" className="lg:sticky lg:top-24">
-      <div className="flex aspect-[1.6] flex-col justify-between p-5" style={{ background: t.colors.ink, color: t.colors.bg, borderRadius: 18 }}>
+      <div className="flex aspect-[1.6] flex-col justify-between p-5" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: 18 }}>
         <div className="flex items-center justify-between"><span className="text-sm font-semibold">{storeName}</span><Gift size={20} aria-hidden /></div>
         <div>
           <p className="m-0 text-xs" style={{ opacity: 0.7 }}>{ts('checkout.giftCard', 'Gift card')}</p>
@@ -84,15 +96,33 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
               </div>
               {errors.amount && <p role="alert" className="m-0 mt-2 text-[13px]" style={{ color: t.colors.danger }}>{errors.amount}</p>}
             </fieldset>
-            <Field label={ts('gift.recipientEmail', 'Recipient email')} required error={errors.email}>
-              {p => <TextInput {...p} type="email" autoComplete="off" value={email} onChange={e => setEmail(e.target.value)} invalid={!!errors.email} />}
-            </Field>
-            <Field label={ts('checkout.recipientName', 'Recipient name')} hint={ts('pg.optional', 'Optional')}>
-              {p => <TextInput {...p} value={name} onChange={e => setName(e.target.value)} />}
-            </Field>
-            <Field label={ts('gift.message', 'Message')} hint={ts('pg.optional', 'Optional')}>
-              {p => <TextArea {...p} value={message} onChange={e => setMessage(e.target.value)} rows={3} />}
-            </Field>
+            <label className="flex cursor-pointer items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-1" checked={isGift} onChange={e => { setIsGift(e.target.checked); setErrors(er => ({ ...er, email: undefined })); }} />
+              <span>
+                <span className="font-medium">{ts('gift.sendAsGift', 'Send as a gift')}</span>
+                <span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>
+                  {isGift
+                    ? ts('gift.giftHint', 'We email the code to your recipient and send you a confirmation.')
+                    : ts('gift.selfHint', 'The code will be emailed to you.')}
+                </span>
+              </span>
+            </label>
+            {isGift && (
+              <>
+                <Field label={ts('gift.recipientEmail', 'Recipient email')} required error={errors.email}>
+                  {p => <TextInput {...p} type="email" autoComplete="off" value={email} onChange={e => setEmail(e.target.value)} invalid={!!errors.email} />}
+                </Field>
+                <Field label={ts('checkout.recipientName', 'Recipient name')} hint={ts('pg.optional', 'Optional')}>
+                  {p => <TextInput {...p} value={name} onChange={e => setName(e.target.value)} />}
+                </Field>
+                <Field label={ts('gift.message', 'Message')} hint={ts('pg.optional', 'Optional')}>
+                  {p => <TextArea {...p} value={message} onChange={e => setMessage(e.target.value)} rows={3} />}
+                </Field>
+                <Field label={ts('gift.sendOn', 'Send on')} hint={ts('gift.sendOnHint', 'Optional. Leave empty to send it right after payment.')}>
+                  {p => <TextInput {...p} type="date" value={sendOn} min={todayIso()} max={yearAheadIso()} onChange={e => setSendOn(e.target.value)} />}
+                </Field>
+              </>
+            )}
             {apiError && <Notice tone="error">{apiError}</Notice>}
             <div><PillButton type="submit" loading={creating}>{ts('pg.continue_to_payment', 'Continue to payment')}</PillButton></div>
           </form>
