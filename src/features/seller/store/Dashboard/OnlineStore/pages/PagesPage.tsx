@@ -331,7 +331,7 @@ export function PagesPage() {
           — this banner only shows once the page has been published at
           least once. */}
       {pagesEditor.hasUnpublishedChanges && selectedPage?.status === 'published' && (
-        <div className="mx-4 lg:mx-7 mt-4 flex flex-wrap items-center justify-between gap-3 bg-brand-pale-orange border border-[#f5d0bc] rounded-2xl px-4 py-3">
+        <div role="status" className="sticky top-2 z-20 mx-4 lg:mx-7 mt-4 flex flex-wrap items-center justify-between gap-3 bg-brand-pale-orange border border-[#f5d0bc] rounded-2xl px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
           <p className="text-[12.5px] font-semibold text-brand-deep-orange">You have unpublished changes — your live storefront still shows the last published version.</p>
           <div className="flex items-center gap-2 shrink-0">
             <button

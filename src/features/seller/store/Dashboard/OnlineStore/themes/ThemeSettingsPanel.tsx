@@ -543,7 +543,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 flex-wrap justify-between bg-white border border-bone rounded-2xl px-3 py-2.5">
+      <div className="sticky top-[65px] z-10 flex items-center gap-2 flex-wrap justify-between bg-white border border-bone rounded-2xl px-3 py-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
         <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1">Theme Settings</p>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={editor.undo} disabled={!editor.canUndo} title="Undo" className="p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-40 cursor-pointer"><Undo2 size={15} /></button>
