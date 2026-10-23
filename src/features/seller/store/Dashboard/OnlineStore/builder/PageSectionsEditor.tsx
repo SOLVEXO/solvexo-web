@@ -8,6 +8,7 @@ import { findCustomBlockDef } from '@/features/storefront-themes/themeManifest';
 import { SectionFields } from './SectionFields';
 import { BlockFields, type PageOption } from './BlockFields';
 import { SortableList } from './Sortable';
+import { MAX_BLOCKS_PER_SECTION, MAX_SECTIONS_PER_PAGE } from './editorLimits';
 import { AddSectionModal } from './AddSectionModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { buildAppBlockType, findInstalledAppBlock, type AppCatalogEntry } from '@/api/services/apps';
@@ -278,7 +279,10 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
                  only, never add another (app blocks never apply to a
                  locked core section either — none of `APP_BLOCK_CAPABLE_
                  SECTION_TYPES` overlaps with `CORE_SECTION_TYPES`). */}
-              {locked && (meta.addableBlockTypes?.length ?? 0) > 0 && (
+              {section.blocks.length >= MAX_BLOCKS_PER_SECTION && (
+                <p className="text-[11.5px] text-slate px-1">Limit reached: {MAX_BLOCKS_PER_SECTION} blocks</p>
+              )}
+              {section.blocks.length < MAX_BLOCKS_PER_SECTION && locked && (meta.addableBlockTypes?.length ?? 0) > 0 && (
                 <ActionMenu
                   align="left"
                   trigger={<span className="text-[12px] font-semibold text-brand-orange cursor-pointer flex items-center gap-1"><Plus size={13} /> Add block</span>}
@@ -292,7 +296,7 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
                     }))}
                 />
               )}
-              {!locked && (meta.allowedBlockTypes.length === 1 && appBlockOptions.length === 0 ? (
+              {!locked && section.blocks.length < MAX_BLOCKS_PER_SECTION && (meta.allowedBlockTypes.length === 1 && appBlockOptions.length === 0 ? (
                 <button type="button" onClick={() => onChange({ ...section, blocks: [...section.blocks, { type: meta.allowedBlockTypes[0], settings: { ...meta.defaultBlockSettings } }] })}
                   className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left flex items-center gap-1 px-1 hover:underline">
                   <Plus size={13} /> Add {meta.blockLabel.toLowerCase()}
@@ -388,6 +392,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [insertAt, setInsertAt] = useState(sections.length);
+  const sectionsFull = sections.length >= MAX_SECTIONS_PER_PAGE;
 
   return (
     <div className="flex flex-col gap-3">
@@ -422,7 +427,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
             keyFor={(s, i) => s._id ?? `new-${i}`}
             onReorder={onChange}
             isLocked={s => !!SECTION_META_BY_TYPE[s.type]?.locked}
-            renderInsertion={index => index < sections.length ? (
+            renderInsertion={index => index < sections.length && !sectionsFull ? (
               <button
                 type="button"
                 aria-label={`Add section at position ${index + 1}`}
@@ -475,10 +480,12 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
 
           <button
             onClick={() => { setInsertAt(sections.length); setShowAdd(true); }}
-            className="flex items-center justify-center gap-1.5 px-4 py-[10px] text-[13px] font-semibold rounded-[9px] border-2 border-dashed border-bone bg-transparent text-slate hover:border-brand-orange/40 hover:text-brand-orange cursor-pointer transition-colors"
+            disabled={sectionsFull}
+            className="flex items-center justify-center gap-1.5 px-4 py-[10px] text-[13px] font-semibold rounded-[9px] border-2 border-dashed border-bone bg-transparent text-slate hover:border-brand-orange/40 hover:text-brand-orange cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-bone disabled:hover:text-slate"
           >
             <Plus size={14} /> Add Section
           </button>
+          {sectionsFull && <p className="text-[11.5px] text-slate text-center -mt-1">Limit reached: {MAX_SECTIONS_PER_PAGE} sections</p>}
         </>
       )}
 

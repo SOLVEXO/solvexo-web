@@ -6,7 +6,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLocalize } from '@/hooks/useLocalize';
-import { moneyText } from '../../core/money';
+import { displayMoney } from '../../core/money';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { fashionTheme as t } from '../theme.config';
 import { FashionProductCardView } from './FashionProductCardView';
@@ -39,7 +39,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   const compare = product.compareAtPrice;
   const percentOff = price != null && compare != null && compare > price ? Math.round((1 - price / compare) * 100) : 0;
   const soldOut = product.inStock === false;
-  const show = (n: number) => (canConvert(base, currency) ? moneyText(convert(n, base), currency) : '—');
+  const show = (n: number) => displayMoney({ currency, convert, canConvert }, n, base);
   const hasVariant = !!product.variantId;
 
   const add = async (e: MouseEvent) => {

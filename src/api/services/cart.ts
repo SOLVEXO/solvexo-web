@@ -20,6 +20,10 @@ export interface CartItem {
   options?:         { name: string; value: string }[];
   itemTotal?:       number;
   type?:            'physical' | 'digital';
+  /** The product's seller-set order quantity rules (missing = none). */
+  orderMinQuantity?:  number | null;
+  orderMaxQuantity?:  number | null;
+  orderQuantityStep?: number | null;
 }
 
 export interface Cart {

@@ -3,6 +3,7 @@ import { imgProps } from '../components/imgProps';
 import { HERO_SRCSET_WIDTHS } from '@/utils/cloudinaryImage';
 import { ts } from '@/utils/tStatic';
 import { useEffect, useRef, useState } from 'react';
+import { isDocumentRtl, swipeStep, trackOffsetPct } from '../carouselDirection';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import type { Block } from '@/api/services/storefrontTypes';
 import { PreviewBlock } from '../../previewInspector';
@@ -71,6 +72,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const fade = settings.transition === 'fade';
   const cur = n ? i % n : 0;
   const touch = useRef<number | null>(null);
+  const rtl = isDocumentRtl();
 
   useEffect(() => {
     if (!auto) return;
@@ -101,7 +103,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   return (
     <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: `12px ${t.layout.containerPadX} 0` }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onTouchStart={e => { touch.current = e.touches[0].clientX; }}
-      onTouchEnd={e => { if (touch.current != null) { const d = e.changedTouches[0].clientX - touch.current; if (Math.abs(d) > 50) go(d < 0 ? 1 : -1); touch.current = null; } }}>
+      onTouchEnd={e => { if (touch.current != null) { const d = e.changedTouches[0].clientX - touch.current; const s = swipeStep(d, rtl); if (s) go(s); touch.current = null; } }}>
       <style>{`.fx-hero{--h:${hm ?? 'auto'}}@media(min-width:768px){.fx-hero{--h:${hd ?? 'auto'}}}.fx-hero .fx-h{height:var(--h)!important}`}</style>
       <div className="fx-hero mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, borderRadius: t.sectionRadiusPx }}>
         {fade ? (
@@ -113,7 +115,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
             ))}
           </div>
         ) : (
-          <div className="flex" style={{ transform: `translateX(-${cur * 100}%)`, transition: 'transform .7s cubic-bezier(.22,.61,.36,1)' }}>
+          <div className="flex" style={{ transform: `translateX(${trackOffsetPct(cur, rtl)}%)`, transition: 'transform .7s cubic-bezier(.22,.61,.36,1)' }}>
             {slides.map((b, k) => (
               <div key={b._id ?? k} className="w-full shrink-0">
                 {slideBody(b, k)}
@@ -125,8 +127,8 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
 
       {n > 1 && settings.showArrows === true && (
         <>
-          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className="absolute left-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronLeft size={20} /></button>
-          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className="absolute right-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronRight size={20} /></button>
+          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className="absolute start-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronLeft size={20} className="fx-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className="absolute end-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronRight size={20} className="fx-flip-rtl" /></button>
         </>
       )}
 

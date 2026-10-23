@@ -15,7 +15,7 @@ import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useLocalize } from '@/hooks/useLocalize';
 import { renderRichText } from '@/utils/richText';
-import { moneyText } from '../../core/money';
+import { displayMoney } from '../../core/money';
 import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
@@ -31,6 +31,7 @@ import { FashionSectionRenderer } from '../sections';
 import { FashionButton } from '../components/FashionButton';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
+import { breadcrumbJsonLd, pageUrlBuilder, productJsonLd } from '../../core/seo/jsonLd';
 import { fashionTheme as t } from '../theme.config';
 import { FashionNotFoundPage } from './FashionNotFoundPage';
 import { ErrorBlock, PageSkeleton } from './pageParts';
@@ -111,24 +112,21 @@ function ProductPageInner({ slug }: { slug: string }) {
   }, [images]);
 
   useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
-  useJsonLd('product', product && variant ? {
-    '@context': 'https://schema.org', '@type': 'Product', name: product.name,
-    description: product.description?.replace(/\s+/g, ' ').slice(0, 300) || undefined,
-    image: images.slice(0, 6), sku: variant.sku || undefined,
-    brand: detail?.product.vendor ? { '@type': 'Brand', name: detail.product.vendor } : undefined,
-    offers: {
-      '@type': 'Offer', url: window.location.href, price: variant.price, priceCurrency: String(variant.currency ?? store.baseCurrency ?? ''),
-      availability: variantCanBuy(variant, isDigital) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-    },
-    ...(reviews && reviews.stats.totalReviews > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: reviews.stats.averageRating, reviewCount: reviews.stats.totalReviews } } : {}),
-  } : null);
+  const { origin, pathname } = window.location;
+  const pageUrl = `${origin}${pathname}`;
+  useJsonLd('product', product && variant ? productJsonLd({
+    name: product.name, description: product.description, images, sku: variant.sku, vendor: detail?.product.vendor,
+    price: variant.price, currency: String(variant.currency ?? store.baseCurrency ?? ''), inStock: variantCanBuy(variant, isDigital),
+    url: pageUrl, origin, rating: reviews ? { value: reviews.stats.averageRating, count: reviews.stats.totalReviews } : null,
+  }) : null);
+  useJsonLd('breadcrumb', product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
 
   if (loading) return <PageSkeleton />;
   if (error && !detail) return /not found|404/i.test(error) ? <FashionNotFoundPage /> : <ErrorBlock message={tr('product.loadError', "We couldn't load this product.")} onRetry={refetch} />;
   if (!detail || !product || !variant) return <FashionNotFoundPage />;
 
   const base = String(variant.currency ?? store.baseCurrency ?? currency);
-  const show = (n: number) => (canConvert(base, currency) ? moneyText(convert(n, base), currency) : '—');
+  const show = (n: number) => displayMoney({ currency, convert, canConvert }, n, base);
   const state = stockState(variant, isDigital, store.lowStockThreshold);
   const canBuy = variantCanBuy(variant, isDigital);
   const rules = resolveQtyRules(detail.product, Number.isFinite(variantMaxQty(variant, isDigital)) ? variantMaxQty(variant, isDigital) : 999);

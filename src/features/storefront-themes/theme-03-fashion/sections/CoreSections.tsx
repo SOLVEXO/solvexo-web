@@ -18,7 +18,7 @@ function CollectionGrid({ settings: s, colors }: { settings: Record<string, any>
   return (
     <SectionShell colors={colors}>
       <FashionProductBrowser renderCard={(p, currency) => <FashionProductCard product={p} currency={currency} />}
-        collectionId={collectionId} syncUrl={!!scope} defaultSort={s.defaultSort} columns={Number(s.columns) as 2 | 3 | 4 | undefined} showFilters={s.showFilters !== false} />
+        collectionId={collectionId} onProducts={scope?.onProducts} syncUrl={!!scope} defaultSort={s.defaultSort} columns={Number(s.columns) as 2 | 3 | 4 | undefined} showFilters={s.showFilters !== false} />
     </SectionShell>
   );
 }

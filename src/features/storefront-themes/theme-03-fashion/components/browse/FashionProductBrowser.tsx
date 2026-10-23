@@ -29,10 +29,12 @@ interface Props {
   columns?: 2 | 3 | 4;
   showFilters?: boolean;
   emptyText?: string;
+  /** Reports the products currently shown (used for the collection's structured data). */
+  onProducts?: (products: PublicStoreProduct[]) => void;
 }
 
 /** Maison product listing: facet pills with popovers (drawer on phones), sort, active chips, grid, pagination. */
-export function FashionProductBrowser({ renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText }: Props) {
+export function FashionProductBrowser({ renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText, onProducts }: Props) {
   const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
   const { currency, convert } = useCurrencyPreference();
@@ -44,6 +46,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
   const baseCurrency = String(store.baseCurrency ?? currency);
   const symbol = currencySymbol(currency);
   const active = hasActiveFilters(state);
+  useEffect(() => { if (products) onProducts?.(products); }, [products, onProducts]);
 
   useEffect(() => {
     if (!open) return;

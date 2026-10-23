@@ -8,7 +8,9 @@ import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { fashionTheme as t } from '../theme.config';
 import { EmptyState, ErrorState, Page, PageTitle, PillButton, SkeletonBlock } from '../ui/primitives';
 import { BlogPostCard } from './content/BlogPostCard';
-import { topicsOf } from '../../core/content/blogUtils';
+import { blogPostPath, topicsOf } from '../../core/content/blogUtils';
+import { useJsonLd } from '../../core/hooks/useJsonLd';
+import { blogJsonLd, breadcrumbJsonLd, pageUrlBuilder } from '../../core/seo/jsonLd';
 import { useBlogFeed } from '../../core/content/useBlogFeed';
 import { splitAround, useTemplateSections } from '../../core/pageHooks';
 
@@ -21,6 +23,14 @@ export function FashionBlogIndexPage() {
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-index'), 'blog_post_list');
   const title = feed.title ?? ts('blog.journal', 'Journal');
   useStorefrontSeo({ title, description: ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name }) });
+
+  const { origin, pathname } = window.location;
+  const urlFor = pageUrlBuilder(origin, pathname);
+  const description = ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name });
+  useJsonLd('blog', !feed.loading && !feed.error && feed.posts.length ? blogJsonLd({
+    name: title, description, url: `${origin}${pathname}`, origin, posts: feed.posts, postUrl: slug => urlFor(blogPostPath(blogSlug, slug)),
+  }) : null);
+  useJsonLd('breadcrumb', breadcrumbJsonLd([{ name: store.name, url: urlFor('/') }, { name: title, url: `${origin}${pathname}` }]));
 
   const topics = topicsOf(feed.posts);
   const activeTopic = topic && topics.includes(topic) ? topic : null;

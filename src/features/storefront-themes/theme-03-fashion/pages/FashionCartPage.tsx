@@ -6,7 +6,8 @@ import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { moneyText } from '../../core/checkout/checkoutMath';
+import { displayMoney, displayMoneySum } from '../../core/money';
+import { cartLineRules, cartQtyHint, clampQty, stepQty } from '../../sellingRules';
 import { FashionSectionRenderer } from '../sections';
 import { FashionButton } from '../components/FashionButton';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
@@ -31,11 +32,10 @@ export function FashionCartPage() {
   const items = cart?.items ?? [];
   const base = String(store.baseCurrency ?? currency);
   const unit = (i: (typeof items)[number]) => i.unitPrice ?? i.price ?? 0;
-  // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
-  const ratesOk = items.every(i => canConvert(i.currency ?? base, currency));
-  const fmt = (n: number) => (ratesOk ? moneyText(n, currency) : '—');
-  const show = (n: number, from?: string | null) => fmt(convert(n, from ?? base));
-  const subtotal = items.reduce((sum, i) => sum + convert(unit(i) * i.quantity, i.currency ?? base), 0);
+  // No rate for the buyer's currency: amounts stay in the store's own currency (never a wrong symbol).
+  const conv = { currency, convert, canConvert };
+  const show = (n: number, from?: string | null) => displayMoney(conv, n, from ?? base);
+  const subtotalText = displayMoneySum(conv, items.map(i => ({ amount: unit(i) * i.quantity, from: i.currency ?? base })));
   const count = items.reduce((n, i) => n + i.quantity, 0);
 
   return (
@@ -62,6 +62,10 @@ export function FashionCartPage() {
                 const key = `${i.productId}:${i.productVariantId}`;
                 const img = i.image?.[0] ?? i.images?.[0];
                 const busy = adding === i.productVariantId;
+                const rules = cartLineRules(i);
+                const hint = cartQtyHint(i);
+                const prev = stepQty(i.quantity, -1, rules);
+                const next = stepQty(i.quantity, 1, rules);
                 return (
                   <li key={key} className="flex gap-4 p-4 md:gap-6 md:p-5" style={{ border: `1px solid ${t.colors.border}`, borderRadius: 20 }}>
                     <Link to={`/product/${i.productId}`} className="size-24 shrink-0 overflow-hidden md:size-28" style={{ background: t.colors.bgAlt, borderRadius: 14 }}>
@@ -72,15 +76,19 @@ export function FashionCartPage() {
                         <div className="min-w-0">
                           <Link to={`/product/${i.productId}`} className="no-underline" style={{ color: t.colors.ink }}><h2 className="m-0 truncate text-base font-medium">{i.name}</h2></Link>
                           {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
+                          {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
                           {i.quantity > 1 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{show(unit(i), i.currency)} {tr('cart.each', 'each')}</p>}
                         </div>
                         <p className="m-0 shrink-0 text-base font-semibold">{show(unit(i) * i.quantity, i.currency)}</p>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="inline-flex items-center" style={{ border: `1px solid ${t.colors.border}`, borderRadius: 9999 }}>
-                          <button type="button" aria-label={tr('cart.decreaseQty', 'Decrease quantity of {{name}}', { name: i.name })} disabled={busy || i.quantity <= 1} onClick={() => setQty(i.productId, i.productVariantId, i.quantity - 1)} className="grid size-9 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={14} /></button>
-                          <span className="min-w-8 text-center text-sm font-medium" aria-live="polite">{i.quantity}</span>
-                          <button type="button" aria-label={tr('cart.increaseQty', 'Increase quantity of {{name}}', { name: i.name })} disabled={busy} onClick={() => setQty(i.productId, i.productVariantId, i.quantity + 1)} className="grid size-9 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} /></button>
+                          <button type="button" aria-label={tr('cart.decreaseQty', 'Decrease quantity of {{name}}', { name: i.name })} disabled={busy || prev === null} onClick={() => prev !== null && setQty(i.productId, i.productVariantId, prev)} className="grid size-9 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Minus size={14} /></button>
+                          <input type="text" inputMode="numeric" aria-label={tr('cart.quantityOf', 'Quantity of {{name}}', { name: i.name })} key={i.quantity} defaultValue={i.quantity} disabled={busy}
+                            onBlur={e => { const n = parseInt(e.target.value, 10); const q = clampQty(Number.isFinite(n) ? n : i.quantity, rules); if (q !== i.quantity) setQty(i.productId, i.productVariantId, q); else e.target.value = String(i.quantity); }}
+                            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                            className="w-10 border-0 bg-transparent p-0 text-center text-sm font-medium outline-none" />
+                          <button type="button" aria-label={tr('cart.increaseQty', 'Increase quantity of {{name}}', { name: i.name })} disabled={busy || next === null} onClick={() => next !== null && setQty(i.productId, i.productVariantId, next)} className="grid size-9 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} /></button>
                         </div>
                         <button type="button" onClick={() => removeItem(i.productId, i.productVariantId)} disabled={busy} className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent text-sm disabled:opacity-40" style={{ color: t.colors.inkMuted }}><Trash2 size={15} />{tr('cart.remove', 'Remove')}</button>
                       </div>
@@ -93,11 +101,11 @@ export function FashionCartPage() {
             <aside className="p-6 lg:sticky lg:top-24 lg:col-span-4" style={{ background: t.colors.bgAlt, borderRadius: 24 }} aria-label={tr('cart.summaryTitle', 'Order summary')}>
               <h2 className="m-0 mb-5 text-lg font-semibold">{tr('cart.summaryTitle', 'Order summary')}</h2>
               <dl className="m-0 flex flex-col gap-3 text-sm">
-                <div className="flex justify-between"><dt style={{ color: t.colors.inkMuted }}>{tr('cart.subtotalItems', 'Subtotal ({{count}} items)', { count })}</dt><dd className="m-0 font-medium">{fmt(subtotal)}</dd></div>
+                <div className="flex justify-between"><dt style={{ color: t.colors.inkMuted }}>{tr('cart.subtotalItems', 'Subtotal ({{count}} items)', { count })}</dt><dd className="m-0 font-medium">{subtotalText}</dd></div>
                 <div className="flex justify-between"><dt style={{ color: t.colors.inkMuted }}>{tr('cart.shippingTaxes', 'Shipping & taxes')}</dt><dd className="m-0" style={{ color: t.colors.inkMuted }}>{tr('cart.atCheckout', 'At checkout')}</dd></div>
               </dl>
               <div className="my-5 border-0 border-t" style={{ borderColor: t.colors.border, borderTopWidth: 1, borderStyle: 'solid' }} />
-              <div className="mb-6 flex items-baseline justify-between"><span className="text-base font-semibold">{tr('cart.estimatedTotal', 'Estimated total')}</span><span className="text-2xl font-semibold">{fmt(subtotal)}</span></div>
+              <div className="mb-6 flex items-baseline justify-between"><span className="text-base font-semibold">{tr('cart.estimatedTotal', 'Estimated total')}</span><span className="text-2xl font-semibold">{subtotalText}</span></div>
               <FashionButton arrow fullWidth onClick={() => navigate('/checkout')}>{tr('cart.checkout', 'Checkout')}</FashionButton>
               <p className="m-0 mt-4 text-center text-xs" style={{ color: t.colors.inkMuted }}><Link to="/search" style={{ color: 'inherit' }}>{tr('cart.continueShoppingLower', 'Continue shopping')}</Link></p>
             </aside>

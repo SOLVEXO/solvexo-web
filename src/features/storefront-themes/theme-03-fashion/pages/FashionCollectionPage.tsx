@@ -1,4 +1,7 @@
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useJsonLd } from '../../core/hooks/useJsonLd';
+import { breadcrumbJsonLd, collectionJsonLd, pageUrlBuilder, type ListProduct } from '../../core/seo/jsonLd';
 import { ts } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug } from '@/api/services/collections';
@@ -27,13 +30,24 @@ export function FashionCollectionPage() {
   const collection = data ? localize.collection(data) : null;
   useStorefrontSeo({ title: collection?.seo?.metaTitle || collection?.name, description: collection?.seo?.metaDescription || collection?.description, image: collection?.image });
 
+  const [listed, setListed] = useState<{ key: string; items: ListProduct[] }>({ key: '', items: [] });
+  const scope = useMemo(() => ({ collectionId: data?._id, onProducts: (items: ListProduct[]) => setListed({ key: slugOrId, items }) }), [data?._id, slugOrId]);
+  const { origin, pathname } = window.location;
+  const urlFor = pageUrlBuilder(origin, pathname);
+  const pageUrl = `${origin}${pathname}`;
+  useJsonLd('collection', collection ? collectionJsonLd({
+    name: collection.name, description: collection.description, image: collection.image, url: pageUrl, origin, urlFor,
+    products: listed.key === slugOrId ? listed.items : [],
+  }) : null);
+  useJsonLd('breadcrumb', collection ? breadcrumbJsonLd([{ name: store.name, url: urlFor('/') }, { name: collection.name, url: pageUrl }]) : null);
+
   if (loading) return <PageSkeleton />;
   if (error) return <ErrorBlock message={ts('pg.we_couldn_t_load_this_collection', 'We couldn\'t load this collection.')} onRetry={retry} />;
   if (!data || !collection) return <FashionNotFoundPage />;
 
   const hasGrid = sections.some(s => s.type === 'collection_product_grid');
   return (
-    <CollectionScopeContext.Provider value={{ collectionId: data._id }}>
+    <CollectionScopeContext.Provider value={scope}>
       <PageBox padY={false}>
         <header className="relative mt-3 grid overflow-hidden" style={{ borderRadius: 28, background: t.colors.bgAlt, minHeight: collection.image ? 'clamp(220px, 34vh, 340px)' : undefined }}>
           {collection.image && <img src={collection.image} alt="" className="absolute inset-0 size-full object-cover" />}
@@ -47,7 +61,7 @@ export function FashionCollectionPage() {
       {sections.length > 0 && hasGrid ? <FashionSectionRenderer sections={sections} /> : (
         <>
           <PageBox>
-            <FashionProductBrowser renderCard={(p, c) => <FashionProductCard product={p} currency={c} />} collectionId={data._id} syncUrl defaultSort={data.defaultSort as never} />
+            <FashionProductBrowser renderCard={(p, c) => <FashionProductCard product={p} currency={c} />} collectionId={data._id} onProducts={scope.onProducts} syncUrl defaultSort={data.defaultSort as never} />
           </PageBox>
           {sections.length > 0 && <FashionSectionRenderer sections={sections} />}
         </>

@@ -20,11 +20,34 @@ export const clampQty = (q: number, r: QtyRules): number => {
   return Math.min(r.max, Math.max(r.min, snapped));
 };
 
+/** Cart lines have no stock figure, so only the seller's own maximum (and the cart's 999 cap) bounds them. */
+export const CART_LINE_CAP = 999;
+
+/** Rules for a cart line (the cart payload carries the product's three order-quantity fields). */
+export const cartLineRules = (line: RuleSource | null | undefined): QtyRules => resolveQtyRules(line, CART_LINE_CAP);
+
+/** Next legal quantity after pressing + / -; null when already at the end (min for -, max for +). */
+export function stepQty(current: number, dir: 1 | -1, r: QtyRules): number | null {
+  if (dir > 0 ? current >= r.max : current <= r.min) return null;
+  const next = clampQty(current + dir * r.step, r);
+  return next === current ? null : next;
+}
+
 export function qtyRuleHint(r: QtyRules): string | null {
   const parts: string[] = [];
   if (r.min > 1) parts.push(ts('product.minQty', 'Minimum {{count}}', { count: r.min }));
   if (r.step > 1) parts.push(ts('product.stepQty', 'sold in multiples of {{count}}', { count: r.step }));
   return parts.length ? parts.join(', ') : null;
+}
+
+/** Hint for a cart line: min / multiples, plus the seller's maximum when one is set. */
+export function cartQtyHint(line: RuleSource | null | undefined): string | null {
+  const r = cartLineRules(line);
+  const parts: string[] = [];
+  if (r.min > 1) parts.push(ts('cart.minQty', 'Minimum {{count}}', { count: r.min }));
+  if (r.step > 1) parts.push(ts('cart.stepQty', 'Multiples of {{count}}', { count: r.step }));
+  if (line?.orderMaxQuantity) parts.push(ts('cart.maxQty', 'Maximum {{count}}', { count: r.max }));
+  return parts.length ? parts.join(' · ') : null;
 }
 
 export function preorderLabel(p: { preorder?: { enabled?: boolean; availableOn?: string | null } | null } | null | undefined): string | null {

@@ -8,7 +8,8 @@ import { Download, ImageOff, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { currencySymbol, fmt2 } from '@/utils/currency';
+import { displayMoney, displayMoneySum } from '../../../core/money';
+import { cartLineRules, cartQtyHint, stepQty } from '../../../sellingRules';
 import { CartDrawerContext } from '../../../cartDrawerContext';
 import { fashionTheme as t } from '../../theme.config';
 import { useDialogFocus } from '../../../core/hooks/useDialogFocus';
@@ -53,15 +54,17 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
   useDialogFocus(ref, onClose);
   const navigate = useNavigate();
   const { t: tr } = useTranslation('storefront');
-  const { cart, loading, updateQty, removeItem, error } = useCartContext();
+  const { store } = useStorefront();
+  const { cart, loading, setQty, removeItem, error } = useCartContext();
   const { currency: displayCurrency, convert, canConvert } = useCurrencyPreference();
   const [busy, setBusy] = useState<string | null>(null);
   const items = cart?.items ?? [];
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
-  const ratesOk = items.every(i => canConvert(i.currency, displayCurrency));
-  const money = (n: number) => (ratesOk ? `${currencySymbol(displayCurrency)}${fmt2(n)}` : '—');
-  const subtotal = items.reduce((s, i) => s + convert(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency), 0);
+  // No rate for the buyer's currency: amounts stay in the store's own currency (never a wrong symbol).
+  const conv = { currency: displayCurrency, convert, canConvert };
+  const base = String(store.baseCurrency ?? displayCurrency);
+  const lineNative = (i: (typeof items)[number]) => i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity;
+  const subtotalText = displayMoneySum(conv, items.map(i => ({ amount: lineNative(i), from: i.currency ?? base })));
   const run = (key: string, fn: () => Promise<void | boolean>) => { setBusy(key); fn().finally(() => setBusy(null)); };
 
   const stepBtn = 'grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-40';
@@ -110,8 +113,13 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
             <ul className="m-0 flex-1 list-none overflow-y-auto px-6 pb-2">
               {items.map(item => {
                 const key = item.productVariantId;
-                const unit = convert(item.unitPrice ?? item.price ?? 0, item.currency);
-                const line = convert(item.itemTotal ?? (item.unitPrice ?? item.price ?? 0) * item.quantity, item.currency);
+                const from = item.currency ?? base;
+                const unit = displayMoney(conv, item.unitPrice ?? item.price ?? 0, from);
+                const line = displayMoney(conv, lineNative(item), from);
+                const rules = cartLineRules(item);
+                const hint = cartQtyHint(item);
+                const prev = stepQty(item.quantity, -1, rules);
+                const next = stepQty(item.quantity, 1, rules);
                 const working = busy === key;
                 return (
                   <li key={key} className="flex gap-4 py-4 transition-opacity" style={{ opacity: working ? 0.6 : 1, borderTop: `1px solid ${t.colors.border}` }}>
@@ -119,10 +127,11 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex justify-between gap-3">
                         <p className="m-0 text-sm font-medium leading-snug">{item.name}</p>
-                        <p className="m-0 shrink-0 text-sm font-semibold">{money(line)}</p>
+                        <p className="m-0 shrink-0 text-sm font-semibold">{line}</p>
                       </div>
                       {(item.options?.length ?? 0) > 0 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{item.options?.map(o => o.value).join(' / ')}</p>}
-                      {item.quantity > 1 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{money(unit)} {ts('cart.each', 'each')}</p>}
+                      {item.quantity > 1 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{unit} {ts('cart.each', 'each')}</p>}
+                      {hint && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
                       {item.type === 'digital' && (
                         <span className="inline-flex items-center gap-1 self-start rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: t.colors.bgAlt, color: t.colors.inkMuted }}>
                           <Download size={11} /> {tr('cart.digital', 'Digital')}
@@ -130,11 +139,11 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                       )}
                       <div className="mt-auto flex items-center gap-3 pt-1.5">
                         <div className="flex items-center rounded-full" style={{ border: `1px solid ${t.colors.border}` }}>
-                          <button type="button" className={stepBtn} aria-label={tr('cart.decreaseQty', 'Decrease quantity of {{name}}', { name: item.name })} disabled={item.quantity <= 1 || working}
-                            onClick={() => run(key, () => updateQty(item.productId, key, 'decrease'))}><Minus size={13} /></button>
+                          <button type="button" className={stepBtn} aria-label={tr('cart.decreaseQty', 'Decrease quantity of {{name}}', { name: item.name })} disabled={prev === null || working}
+                            onClick={() => prev !== null && run(key, () => setQty(item.productId, key, prev))}><Minus size={13} /></button>
                           <span aria-live="polite" className="w-7 text-center text-sm font-medium">{working ? <Loader2 size={13} className="mx-auto animate-spin" /> : item.quantity}</span>
-                          <button type="button" className={stepBtn} aria-label={tr('cart.increaseQty', 'Increase quantity of {{name}}', { name: item.name })} disabled={working}
-                            onClick={() => run(key, () => updateQty(item.productId, key, 'increase'))}><Plus size={13} /></button>
+                          <button type="button" className={stepBtn} aria-label={tr('cart.increaseQty', 'Increase quantity of {{name}}', { name: item.name })} disabled={next === null || working}
+                            onClick={() => next !== null && run(key, () => setQty(item.productId, key, next))}><Plus size={13} /></button>
                         </div>
                         <button type="button" disabled={working} onClick={() => run(key, () => removeItem(item.productId, key))}
                           className="cursor-pointer border-0 bg-transparent p-0 text-[13px] underline disabled:opacity-40" style={{ color: t.colors.inkMuted }}>
@@ -151,7 +160,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
               <div className="flex flex-col gap-3.5 p-5" style={{ background: t.colors.bgAlt, borderRadius: 24 }}>
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm">{tr('cart.subtotal', 'Subtotal')}</span>
-                  <span className="text-xl font-semibold tracking-tight">{money(subtotal)}</span>
+                  <span className="text-xl font-semibold tracking-tight">{subtotalText}</span>
                 </div>
                 <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{tr('cart.taxesNote', 'Taxes and shipping are calculated at checkout.')}</p>
                 <FashionButton arrow fullWidth onClick={() => { onClose(); navigate('/checkout'); }}>{tr('cart.checkOut', 'Check out')}</FashionButton>

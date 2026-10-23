@@ -132,6 +132,9 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
         options:          variant.options ?? [],
         itemTotal:        unitPrice * gi.quantity,
         type:             gi.type,
+        orderMinQuantity:  cached.product.orderMinQuantity,
+        orderMaxQuantity:  cached.product.orderMaxQuantity,
+        orderQuantityStep: cached.product.orderQuantityStep,
       });
     }
     // A session started while the product lookups above were in flight (guest checkout / login): the real

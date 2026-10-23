@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Info, Percent, Tag, AlertTriangle, Truck, PartyPopper, X, ChevronLeft, ChevronRight, Copy, Check, type LucideIcon } from 'lucide-react';
 import { getDismissedBannerIds, dismissBanner } from '@/utils/dismissedBanners';
+import { isDocumentRtl } from '../carouselDirection';
 import { fashionTheme as t } from '../theme.config';
 
 export type AnnouncementType = 'info' | 'sale' | 'coupon' | 'warning' | 'shipping' | 'holiday';
@@ -47,6 +48,7 @@ const DAY_MS = 86_400_000;
 
 const KEYFRAMES = `
 @keyframes fx-ann-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes fx-ann-marquee-rtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
 @keyframes fx-ann-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fx-ann-slide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .fx-ann-anim { animation: none !important; } }
@@ -157,11 +159,11 @@ export function FashionAnnouncementBar({
       role="region" aria-label={ts('pg.announcement', 'Announcement')}
     >
       <style>{KEYFRAMES}</style>
-      {!marquee && count > 1 && <button type="button" aria-label={ts('pg.previous_announcement', 'Previous announcement')} onClick={() => setIndex(i => (i - 1 + count) % count)} className={step} style={{ color: 'inherit' }}><ChevronLeft size={15} /></button>}
+      {!marquee && count > 1 && <button type="button" aria-label={ts('pg.previous_announcement', 'Previous announcement')} onClick={() => setIndex(i => (i - 1 + count) % count)} className={step} style={{ color: 'inherit' }}><ChevronLeft size={15} className="fx-flip-rtl" /></button>}
       {showIcon && !marquee && <Icon size={15} className="shrink-0" />}
       {marquee ? (
         <div className="min-w-0 flex-1 overflow-hidden" style={typeStyle} aria-live="off">
-          <div className="fx-ann-anim flex w-max" style={{ animation: `fx-ann-marquee ${MARQUEE_SECONDS[marqueeSpeed] * Math.max(1, count / 2)}s linear infinite`, animationPlayState: paused ? 'paused' : 'running' }}>
+          <div className="fx-ann-anim flex w-max" style={{ animation: `${isDocumentRtl() ? 'fx-ann-marquee-rtl' : 'fx-ann-marquee'} ${MARQUEE_SECONDS[marqueeSpeed] * Math.max(1, count / 2)}s linear infinite`, animationPlayState: paused ? 'paused' : 'running' }}>
             {[0, 1].map(copy => (
               <div key={copy} className="flex shrink-0" aria-hidden={copy === 1 || undefined}>
                 {messages.map((m, i) => renderMessage(m, `${copy}-${i}`))}
@@ -178,7 +180,7 @@ export function FashionAnnouncementBar({
           {countdown && <span className="rounded-full px-3 py-0.5 font-bold tabular-nums" style={{ background: 'rgba(255,255,255,0.18)' }} aria-label={ts('pg.ends_in_time', 'Ends in {{time}}', { time: countdown })}>{countdown}</span>}
         </div>
       )}
-      {!marquee && count > 1 && <button type="button" aria-label={ts('pg.next_announcement', 'Next announcement')} onClick={() => setIndex(i => (i + 1) % count)} className={step} style={{ color: 'inherit' }}><ChevronRight size={15} /></button>}
+      {!marquee && count > 1 && <button type="button" aria-label={ts('pg.next_announcement', 'Next announcement')} onClick={() => setIndex(i => (i + 1) % count)} className={step} style={{ color: 'inherit' }}><ChevronRight size={15} className="fx-flip-rtl" /></button>}
       {closable && (
         <button type="button" aria-label={ts('pg.dismiss_announcement', 'Dismiss announcement')} onClick={() => { rememberDismiss(id, dismissFor); setClosedId(id); }} className={step} style={{ color: 'inherit' }}>
           <X size={15} />

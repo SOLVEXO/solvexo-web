@@ -9,9 +9,9 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useLocalize } from '@/hooks/useLocalize';
-import { moneyText } from '../../../core/money';
+import { displayMoney } from '../../../core/money';
 import { useCartDrawer } from '../../../cartDrawerContext';
-import { clampQty, resolveQtyRules } from '../../../sellingRules';
+import { clampQty, qtyRuleHint, resolveQtyRules } from '../../../sellingRules';
 import { optionValueAvailable, stockState, variantCanBuy, variantMaxQty } from '../../../variantAvailability';
 import { fashionTheme as t } from '../../theme.config';
 import { Dialog } from '../../ui/Dialog';
@@ -47,7 +47,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
     body = <div className="flex flex-col gap-4"><Notice tone="error">{ts('product.loadError', 'We couldn\'t load this product.')}</Notice><PillButton variant="outline" onClick={refetch}>{ts('checkout.tryAgain', 'Try again')}</PillButton></div>;
   } else {
     const base = String(variant.currency ?? store.baseCurrency ?? currency);
-    const show = (n: number) => (canConvert(base, currency) ? moneyText(convert(n, base), currency) : '—');
+    const show = (n: number) => displayMoney({ currency, convert, canConvert }, n, base);
     const state = stockState(variant, isDigital, store.lowStockThreshold);
     const canBuy = variantCanBuy(variant, isDigital);
     const max = variantMaxQty(variant, isDigital);
@@ -104,6 +104,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
                 <span className="w-8 text-center text-sm" aria-live="polite">{safeQty}</span>
                 <button type="button" aria-label={ts('product.increaseQty', 'Increase quantity')} disabled={safeQty + rules.step > rules.max} onClick={() => setQty(safeQty + rules.step)} className="grid size-10 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={14} aria-hidden /></button>
               </div>
+              {qtyRuleHint(rules) && <span className="text-xs" style={{ color: t.colors.inkMuted }}>{qtyRuleHint(rules)}</span>}
               <PillButton className="flex-1" loading={busy} disabled={!canBuy} onClick={add}>{canBuy ? ts('pg.add_to_cart', 'Add to cart') : ts('product.soldOut', 'Sold out')}</PillButton>
             </div>
             <Link to={`/product/${handleOf(detail.product)}`} onClick={onClose} className="text-sm underline" style={{ color: t.colors.ink }}>{ts('pg.view_full_details', 'View full details')}</Link>

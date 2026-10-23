@@ -7,6 +7,8 @@ import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { FashionSectionRenderer } from '../sections';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
+import { useJsonLd } from '../../core/hooks/useJsonLd';
+import { articleJsonLd, breadcrumbJsonLd, pageUrlBuilder } from '../../core/seo/jsonLd';
 import { fashionTheme as t } from '../theme.config';
 import { ErrorState, StatusPill } from '../ui/primitives';
 import { FashionNotFoundPage } from './FashionNotFoundPage';
@@ -40,6 +42,17 @@ export function FashionBlogPostPage() {
   const post = data?.post ?? null;
   useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : ts('blog.journal', 'Journal'), description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
 
+  const origin = window.location.origin;
+  const urlFor = pageUrlBuilder(origin, pathname);
+  const url = `${origin}${pathname}`;
+  useJsonLd('article', post ? articleJsonLd({
+    headline: post.title, description: post.seoDescription || post.excerpt, image: post.coverImage, datePublished: post.publishedAt, dateModified: post.updatedAt,
+    author: post.authorName, storeName: store.name, logo: store.logo, url, origin,
+  }) : null);
+  useJsonLd('breadcrumb', post ? breadcrumbJsonLd([
+    { name: store.name, url: urlFor('/') }, { name: ts('blog.journal', 'Journal'), url: urlFor(blogIndexPath(blogSlug)) }, { name: post.title, url },
+  ]) : null);
+
   if (loading) return <PageSkeleton hero />;
   if (error) return <PageBox><ErrorState message={ts('pg.we_couldn_t_load_this_article', 'We couldn\'t load this article.')} onRetry={retry} /></PageBox>;
   if (!data || !post) return <FashionNotFoundPage />;
@@ -48,20 +61,12 @@ export function FashionBlogPostPage() {
   const minutes = readingMinutes(post.content);
   const date = formatPostDate(post.publishedAt);
   const cover = safeUrl(post.coverImage);
-  const url = `${window.location.origin}${pathname}`;
   const more = related.data ? relatedPosts(related.data, post.slug, post.tags ?? [], 3) : [];
-  const jsonLd = JSON.stringify({
-    '@context': 'https://schema.org', '@type': 'BlogPosting', headline: post.title, description: post.seoDescription || post.excerpt || undefined,
-    image: cover ?? undefined, datePublished: post.publishedAt ?? undefined, dateModified: post.updatedAt, mainEntityOfPage: url,
-    author: post.authorName ? { '@type': 'Person', name: post.authorName } : { '@type': 'Organization', name: store.name },
-    publisher: { '@type': 'Organization', name: store.name },
-  }).replace(/</g, '\\u003c');
 
   return (
     <>
       {before.length > 0 && <FashionSectionRenderer sections={before} dynamicSourceValues={dynamic} />}
       <article>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
         <PageBox narrow>
           <Link to={blogIndexPath(blogSlug)} className="mb-8 inline-flex items-center gap-2 text-sm font-medium no-underline" style={{ color: t.colors.inkMuted }}><ArrowLeft size={16} className="fx-flip-rtl" aria-hidden />{ts('pg.all_stories', 'All stories')}</Link>
           {(post.tags?.length ?? 0) > 0 && <div className="mb-4 flex flex-wrap gap-1.5">{post.tags.map(tag => <StatusPill key={tag}>{tag}</StatusPill>)}</div>}

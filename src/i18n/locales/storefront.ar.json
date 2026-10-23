@@ -190,7 +190,11 @@
     "viewCart": "عرض السلة",
     "yourAccent": "السلة",
     "yourLead": "هذه",
-    "yourCart": "سلتك"
+    "yourCart": "سلتك",
+    "maxQty": "الحد الأقصى {{count}}",
+    "minQty": "الحد الأدنى {{count}}",
+    "quantityOf": "كمية {{name}}",
+    "stepQty": "مضاعفات {{count}}"
   },
   "category": {
     "notFound": "الفئة غير موجودة",

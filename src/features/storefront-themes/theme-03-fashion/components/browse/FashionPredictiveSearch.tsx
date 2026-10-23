@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { moneyText } from '../../../core/money';
+import { displayMoney } from '../../../core/money';
 import { apiGetSearchSuggestions, type SearchSuggestions } from '@/api/services/storefrontSearch';
 import { fashionTheme as t } from '../../theme.config';
 
@@ -67,7 +67,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
     data.queries.forEach(x => list.push({ id: `q:${x}`, group: tr('browse.suggestionsGroup', 'Suggestions'), label: x, to: `/search?q=${encodeURIComponent(x)}` }));
     data.products.forEach(p => list.push({
       id: `p:${p.id}`, group: tr('browse.products', 'Products'), label: p.name, image: p.image, to: `/product/${p.slug}`,
-      sub: p.price != null ? (canConvert(baseCurrency, currency) ? moneyText(convert(p.price, baseCurrency), currency) : '—') : undefined,
+      sub: p.price != null ? displayMoney({ currency, convert, canConvert }, p.price, baseCurrency) : undefined,
     }));
     data.collections.forEach(c => list.push({ id: `c:${c.id}`, group: tr('nav.collections', 'Collections'), label: c.name, image: c.image, to: `/collections/${c.slug}` }));
     data.articles.forEach(a => list.push({ id: `a:${a.id}`, group: tr('browse.articles', 'Articles'), label: a.title, image: a.image, to: `/blog/${a.slug}` }));

@@ -124,8 +124,12 @@ function usePrice() {
   const cp = useCurrencyPreferenceOptional();
   const native = store.baseCurrency ?? cp?.currency ?? 'USD';
   const shown = cp?.currency ?? native;
-  const ready = !cp || cp.ratesLoaded || native === shown;
-  return (n?: number | null) => (n == null || !ready ? '—' : `${currencySymbol(shown)}${fmt2(cp ? cp.convert(n, native) : n)}`);
+  // No rate for the buyer's currency: the amount stays in the store's own currency (right symbol, true number).
+  return (n?: number | null) => {
+    if (n == null) return '—';
+    if (!cp || !cp.canConvert(native, shown)) return `${currencySymbol(native)}${fmt2(n)}`;
+    return `${currencySymbol(shown)}${fmt2(cp.convert(n, native))}`;
+  };
 }
 
 export function FeaturedProductSection({ section, colors, theme }: Props) {
