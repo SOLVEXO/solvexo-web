@@ -345,7 +345,9 @@
     "subtotalItems_two": "المجموع الفرعي ({{count}} عنصران)",
     "subtotalItems_few": "المجموع الفرعي ({{count}} عناصر)",
     "subtotalItems_many": "المجموع الفرعي ({{count}} عنصرًا)",
-    "subtotalItems_other": "المجموع الفرعي ({{count}} عنصر)"
+    "subtotalItems_other": "المجموع الفرعي ({{count}} عنصر)",
+    "storeCreditAppliedAmount": "تم تطبيق رصيد المتجر {{amount}}",
+    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}."
   },
   "collection": {
     "notFound": "المجموعة غير موجودة",
@@ -1128,7 +1130,12 @@
     "suggestions_available_two": "{{count}} اقتراحان متاحان",
     "suggestions_available_few": "{{count}} اقتراحات متاحة",
     "suggestions_available_many": "{{count}} اقتراحًا متاحًا",
-    "suggestions_available_other": "{{count}} اقتراح متاح"
+    "suggestions_available_other": "{{count}} اقتراح متاح",
+    "by_author": "بواسطة {{author}}",
+    "points_to_reach": "تحتاج إلى {{points}} نقطة إضافية للوصول إلى {{tier}}.",
+    "otp_sent_reset": "أرسلنا رمزًا من 6 أرقام إلى {{email}} للتأكد من أنك أنت قبل إعادة تعيين كلمة المرور.",
+    "otp_sent_signup": "أرسلنا رمزًا من 6 أرقام إلى {{email}} لإكمال إنشاء حسابك في {{store}}.",
+    "approve_in_wallet": "وافق على الدفع في تطبيق {{wallet}}"
   },
   "product": {
     "addToCart": "أضف إلى السلة",

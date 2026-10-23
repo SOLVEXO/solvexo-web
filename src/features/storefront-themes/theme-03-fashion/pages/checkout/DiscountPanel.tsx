@@ -1,5 +1,5 @@
 ﻿import type { FormEvent } from 'react';
-import { ts } from '@/utils/tStatic';
+import { ts, tsNodes } from '@/utils/tStatic';
 import type { Checkout } from '@/api/services/checkout';
 import { fashionTheme as t } from '../../theme.config';
 import { Field, PillButton, TextInput } from '../../ui/primitives';
@@ -57,7 +57,7 @@ export function DiscountPanel({ checkout, discounts: d, credit, currency, storeC
           <div className="flex items-center justify-between gap-3 text-sm">
             <span>
               {checkout.storeCreditApplied
-                ? <>{ts('checkout.storeCredit', 'Store credit')} <strong>-{moneyText(storeCreditShown, currency)}</strong> {ts('checkout.applied', 'applied')}</>
+                ? tsNodes('checkout.storeCreditAppliedAmount', 'Store credit {{amount}} applied', { amount: <strong>-{moneyText(storeCreditShown, currency)}</strong> })
                 : <>{ts('checkout.storeCreditAvailable', 'Store credit available:')} <strong>{moneyText(credit.balance, credit.balanceCurrency)}</strong></>}
             </span>
             {checkout.storeCreditApplied

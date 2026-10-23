@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { ts } from '@/utils/tStatic';
+import { ts, tsNodes } from '@/utils/tStatic';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Loader2, XCircle } from 'lucide-react';
@@ -70,7 +70,7 @@ export function FashionCheckoutReturnPage() {
       <div role="status" aria-live="polite" className="flex flex-col items-center gap-4 py-10 text-center">
         <Loader2 size={30} className="animate-spin" aria-hidden style={{ color: t.colors.ink }} />
         <h1 className="m-0 text-[clamp(24px,3.4vw,36px)] font-medium leading-[1.15] tracking-tight">
-          {awaitingWallet && !poll.timedOut ? <>{ts('pg.approve_the_payment_in_your', 'Approve the payment in your')} <span className="fx-serif">{ts('pg.easypaisa', 'Easypaisa')}</span> {ts('pg.word_app', 'app')}</> : <>{ts('pg.confirming_your', 'Confirming your')} <span className="fx-serif">{ts('pg.word_payment', 'payment')}</span></>}
+          {awaitingWallet && !poll.timedOut ? tsNodes('pg.approve_in_wallet', 'Approve the payment in your {{wallet}} app', { wallet: <span className="fx-serif">{ts('pg.easypaisa', 'Easypaisa')}</span> }) : <>{ts('pg.confirming_your', 'Confirming your')} <span className="fx-serif">{ts('pg.word_payment', 'payment')}</span></>}
         </h1>
         <p className="m-0 max-w-[460px] text-base" style={{ color: t.colors.inkMuted }}>
           {poll.timedOut

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ts } from '@/utils/tStatic';
+import { ts, tsNodes } from '@/utils/tStatic';
 import { Award, Check, Copy, Gift } from 'lucide-react';
 import { apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
 import { fashionTheme as t } from '../../theme.config';
@@ -42,7 +42,7 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
           </div>
           {balance?.currentTier && <span className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}` }}><Award size={15} aria-hidden />{balance.currentTier}</span>}
         </div>
-        {balance?.nextTier && <p className="m-0 mt-4 text-sm" style={{ color: t.colors.inkMuted }}>{balance.nextTier.pointsNeeded.toLocaleString()} {ts('pg.more_points_to_reach', 'more points to reach')} <strong style={{ color: t.colors.ink }}>{balance.nextTier.name}</strong></p>}
+        {balance?.nextTier && <p className="m-0 mt-4 text-sm" style={{ color: t.colors.inkMuted }}>{tsNodes('pg.points_to_reach', '{{points}} more points to reach {{tier}}', { tier: <strong style={{ color: t.colors.ink }}>{balance.nextTier.name}</strong> }, { points: balance.nextTier.pointsNeeded.toLocaleString() })}</p>}
       </Card>
 
       {error && <Notice tone="error">{error}</Notice>}

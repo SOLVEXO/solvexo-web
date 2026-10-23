@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ts } from '@/utils/tStatic';
+import { ts, tsNodes } from '@/utils/tStatic';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiGetOrderStatusLink } from '@/api/services/orders';
 import { fashionTheme as t } from '../../theme.config';
@@ -26,7 +26,7 @@ export function OrderPlacedActions({ orderId, guestEmail }: { orderId: string | 
     <div className="flex flex-col items-center gap-3">
       {guestEmail !== null && (
         <p className="m-0 max-w-[460px] text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>
-          {guestEmail ? <>{ts('checkout.confirmationSentTo', 'A confirmation was sent to')} <strong style={{ color: t.colors.ink }}>{guestEmail}</strong>. </> : null}
+          {guestEmail ? <>{tsNodes('checkout.confirmationSentToEmail', 'A confirmation was sent to {{email}}.', { email: <strong style={{ color: t.colors.ink }}>{guestEmail}</strong> })} </> : null}
           <Link to="/register" className="font-semibold underline" style={{ color: t.colors.ink }}>{ts('checkout.createAccount', 'Create an account')}</Link> {ts('checkout.createAccountRest', 'with this email to track all your orders.')}
         </p>
       )}

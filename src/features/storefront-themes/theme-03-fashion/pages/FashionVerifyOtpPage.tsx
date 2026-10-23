@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { ts } from '@/utils/tStatic';
+import { ts, tsNodes } from '@/utils/tStatic';
 import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { AuthContext } from '@/api/services/auth';
@@ -58,7 +58,9 @@ function FashionVerifyOtpPageContent() {
 
   return (
     <AuthShell title={isForgot ? ts('pg.verify_your', 'Verify your') : ts('pg.check_your', 'Check your')} accent={isForgot ? ts('pg.word_identity', 'identity') : ts('pg.word_email', 'email')}
-      subtitle={<>{ts('pg.we_sent_a_6_digit_code_to', 'We sent a 6-digit code to')} <b style={{ color: t.colors.ink }}>{email}</b> {isForgot ? ts('pg.to_confirm_it_is_you_before_resetting', 'to confirm it is you before resetting your password.') : ts('pg.to_finish_creating_your_store_account', 'to finish creating your {{store}} account.', { store: store.name })}</>}>
+      subtitle={isForgot
+        ? tsNodes('pg.otp_sent_reset', 'We sent a 6-digit code to {{email}} to confirm it is you before resetting your password.', { email: <b style={{ color: t.colors.ink }}>{email}</b> })
+        : tsNodes('pg.otp_sent_signup', 'We sent a 6-digit code to {{email}} to finish creating your {{store}} account.', { email: <b style={{ color: t.colors.ink }}>{email}</b> }, { store: store.name })}>
       <form onSubmit={e => { e.preventDefault(); void submit(); }} className="flex flex-col gap-5">
         <OtpBoxes values={otp} onChange={change} invalid={!!shownError} />
         <p aria-live="polite" className="m-0 flex min-h-5 items-center justify-center gap-1 text-[13px]" style={{ color: t.colors.success }}>{complete && !shownError && <><Check size={13} aria-hidden /> {ts('pg.code_entered', 'Code entered')}</>}</p>

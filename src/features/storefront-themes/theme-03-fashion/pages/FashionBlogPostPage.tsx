@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { ts } from '@/utils/tStatic';
+import { ts, tsNodes } from '@/utils/tStatic';
 import { ArrowLeft } from 'lucide-react';
 import { apiGetPublicBlogPost, apiListPublicBlogPosts } from '@/api/services/storeBlog';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
@@ -67,7 +67,7 @@ export function FashionBlogPostPage() {
           <h1 className="m-0 text-[clamp(32px,5.2vw,58px)] font-medium leading-[1.06] tracking-tight" style={{ fontFamily: t.fonts.display }}>{post.title}</h1>
           {post.excerpt && <p className="m-0 mt-5 text-lg leading-relaxed" style={{ color: t.colors.inkMuted }}>{post.excerpt}</p>}
           <p className="m-0 mt-5 text-sm" style={{ color: t.colors.inkMuted }}>
-            {post.authorName && <>{ts('pg.word_by', 'By')} <span className="font-semibold" style={{ color: t.colors.ink }}>{post.authorName}</span> · </>}
+            {post.authorName && <>{tsNodes('pg.by_author', 'By {{author}}', { author: <span className="font-semibold" style={{ color: t.colors.ink }}>{post.authorName}</span> })} · </>}
             {date && <><time dateTime={post.publishedAt ?? undefined}>{date}</time> · </>}{ts('pg.minutes_min_read', '{{minutes}} min read', { minutes })}
           </p>
         </PageBox>
