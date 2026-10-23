@@ -5,6 +5,8 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
 import { LANGUAGE_OPTIONS } from '@/utils/languages';
+import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { isStaffSession } from '@/hooks/auth/useCan';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
@@ -141,6 +143,7 @@ export function StoreProfileTab() {
   const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
   const [showDutiesNotice, setShowDutiesNotice] = useState(true);
   const [timezone, setTimezone] = useState('');
+  const [country, setCountry] = useState('');
   const [currencyDisplay, setCurrencyDisplay] = useState<CurrencyDisplay>('symbol');
   const [defaultLanguage, setDefaultLanguage] = useState('en');
   const [saving, setSaving]  = useState(false);
@@ -164,6 +167,7 @@ export function StoreProfileTab() {
     setTaxOverrides(store.taxOverrides ?? []);
     setShowDutiesNotice(store.showDutiesNotice !== false);
     setTimezone(store.timezone ?? '');
+    setCountry(store.country ?? '');
     setCurrencyDisplay(store.currencyDisplay ?? 'symbol');
     setDefaultLanguage(store.defaultLanguage ?? 'en');
   }, [store]);
@@ -173,7 +177,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, currencyDisplay, defaultLanguage, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -191,6 +195,7 @@ export function StoreProfileTab() {
       contactEmail !== (store.contactEmail ?? '') ||
       contactPhone !== (store.contactPhone ?? '') ||
       timezone !== (store.timezone ?? '') ||
+      country !== (store.country ?? '') ||
       currencyDisplay !== (store.currencyDisplay ?? 'symbol') ||
       defaultLanguage !== (store.defaultLanguage ?? 'en') ||
       logo !== (store.logo ?? '') ||
@@ -258,6 +263,14 @@ export function StoreProfileTab() {
               <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+1 555 123 4567" className={inputCls} />
             </Field>
           </div>
+
+          <Field label="Store country">
+            <select value={country} onChange={e => setCountry(e.target.value)} disabled={isStaffSession()} className={inputCls} aria-label="Store country">
+              <option value="">Select your country</option>
+              {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+            </select>
+            <p className="text-[11px] text-slate mt-1">Decides which payment providers you can connect (for example Stripe or local gateways). Disconnect your payment providers in Integrations before changing it. Only the store owner can change it.</p>
+          </Field>
 
           <Field label="Time zone">
             <select value={timezone} onChange={e => setTimezone(e.target.value)} className={inputCls} aria-label="Store time zone">

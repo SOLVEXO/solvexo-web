@@ -86,6 +86,8 @@ export interface UpdateStorePayload {
   storeId:      string;
   /** IANA time zone for reports (Shopify Settings > General). Null = automatic from the store country. */
   timezone?:    string | null;
+  /** Store country (ISO-3166 alpha-2). Owner-only; refused while a payment provider is connected. */
+  country?:     string;
   /** How prices read on the storefront: symbol (Rs 1,200), code (PKR 1,200) or both. */
   currencyDisplay?: CurrencyDisplay;
   /** The language the store's content is written in (no URL prefix); other languages are translations. */
@@ -242,7 +244,8 @@ export interface StoreData {
   /** Server-computed only (determineVerificationLevel) — never trust a
    *  client-side guess of this value. */
   verificationLevel: 'basic' | 'business' | 'enhanced' | null;
-  country:      string;
+  /** Store country (ISO-3166 alpha-2) — null for older stores that never chose one. */
+  country:      string | null;
   businessType: 'individual' | 'company' | 'partnership' | null;
   /** Set by an admin when rejecting a pending lead — see AdminMarketplaceService.rejectLead. */
   rejectionReason: string | null;
