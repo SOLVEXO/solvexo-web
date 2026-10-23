@@ -40,6 +40,9 @@ const PROVIDER_BRAND: Record<PaymentProviderKey, { name: string; color: string; 
   bank_transfer: { name: 'Bank Transfer', color: '#1E7A3C', bg: '#E3F4EA' },
 };
 
+/** Direct wallet merchant accounts — shown under "Advanced" (Safepay/PayFast already offer these wallets). */
+const DIRECT_WALLET_PROVIDERS: string[] = ['jazzcash', 'easypaisa'];
+
 // Safepay gets its own drawn logomark (a shield + checkmark, in Safepay's
 // real brand purple) instead of a plain letter — this is what "generic
 // placeholder" was actually about. The other providers aren't connectable
@@ -1102,10 +1105,28 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
               <p className="text-[13px] font-bold text-carbon mb-1">Payment providers</p>
               <p className="text-[12px] text-slate mb-3">Online payments go straight to your own provider account. Every provider you enable is shown to buyers at checkout.</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {data.payment.filter(i => i.provider !== 'bank_transfer').map(integration => (
+                {data.payment.filter(i => i.provider !== 'bank_transfer' && !DIRECT_WALLET_PROVIDERS.includes(i.provider)).map(integration => (
                   <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
                 ))}
               </div>
+              {/* Like Shopify, one gateway = one option: Safepay and PayFast already offer wallets on their own payment
+                  page. Direct JazzCash / Easypaisa merchant accounts stay available, tucked away. A wallet that is
+                  already connected stays visible (open by default) so nobody loses sight of a live setup. */}
+              {data.payment.some(i => DIRECT_WALLET_PROVIDERS.includes(i.provider)) && (
+                <details className="mt-4 group" open={data.payment.some(i => DIRECT_WALLET_PROVIDERS.includes(i.provider) && i.status !== 'not_connected')}>
+                  <summary className="cursor-pointer text-[12.5px] font-semibold text-graphite select-none">
+                    Advanced: connect JazzCash or Easypaisa directly
+                  </summary>
+                  <p className="text-[12px] text-slate mt-2 mb-3">
+                    Only needed if you have your own JazzCash or Easypaisa merchant account. Buyers can already pay with these wallets through Safepay or PayFast.
+                  </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {data.payment.filter(i => DIRECT_WALLET_PROVIDERS.includes(i.provider)).map(integration => (
+                      <PaymentIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
 
             <div>
