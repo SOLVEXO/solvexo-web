@@ -65,7 +65,7 @@ function DemoCategories({ heading }: { heading: string }) {
 function DemoProducts({ heading }: { heading: string }) {
   return (
     <Shell heading={heading} eyebrow="The edit"
-      action={<span className="fx-cta" style={{ height: 40, padding: '4px 48px 4px 18px', background: t.colors.ink, color: t.colors.bg, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>View all<span className="fx-cta-icon" style={{ width: 32, height: 32, background: t.colors.bg, color: t.colors.ink }}>↗</span></span>}>
+      action={<span className="fx-cta fx-cta-sm" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>View all<span className="fx-cta-icon" style={{ background: t.colors.accentInk, color: t.colors.accent }}>↗</span></span>}>
       <div className="grid grid-cols-2 fx-grid-gap lg:grid-cols-4">
         {PRODUCTS.map((p, i) => (
           <FashionProductCardView key={p.name} to="#" name={p.name} image={p.image} secondImage={t.productImageHover === 'second-image' ? p.second : undefined} tag={p.tag} rating={p.rating}
@@ -94,7 +94,7 @@ export function FashionDemoChrome({ children }: { children: ReactNode }) {
   const icon = 'relative grid size-10 place-items-center rounded-full';
   return (
     <div style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>
-      <div className="px-4 py-2 text-center text-xs font-medium" style={{ background: t.colors.ink, color: t.colors.bg }}>Free shipping on orders over $75</div>
+      <div className="px-4 py-2 text-center text-xs font-medium" style={{ background: t.colors.accent, color: t.colors.accentInk }}>Free shipping on orders over $75</div>
       <header style={{ borderBottom: `1px solid ${t.colors.border}`, background: t.colors.bg }}>
         <div className="mx-auto grid items-center" style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}`, gridTemplateColumns: '1fr auto 1fr', columnGap: 16 }}>
           <span className="text-xl font-semibold tracking-tight md:text-2xl" style={{ fontFamily: t.fonts.display }}>Maison</span>
@@ -107,7 +107,7 @@ export function FashionDemoChrome({ children }: { children: ReactNode }) {
       </header>
       <main>{children}</main>
       <footer style={{ padding: `0 ${t.layout.containerPadX} 24px`, background: t.colors.bg }}>
-        <div className="mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, background: t.colors.ink, color: t.colors.bg, borderRadius: 28 }}>
+        <div className="mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, background: t.colors.accent, color: t.colors.accentInk, borderRadius: 28 }}>
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4" style={{ padding: 'clamp(28px, 4vw, 56px)' }}>
             <div><p className="m-0 mb-3 text-xl font-semibold">Maison</p><p className="m-0 text-sm leading-relaxed opacity-70">Modern pieces, made to last. Free returns within 30 days.</p></div>
             {[['Shop', ['New in', 'Women', 'Men', 'Accessories']], ['Help', ['Shipping', 'Returns', 'Size guide', 'Contact']], ['Company', ['About', 'Journal', 'Stockists', 'Careers']]].map(([h, links]) => (

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { fashionTheme as t } from '../theme.config';
-import { buttonLook } from './buttonLook';
+import { buttonLook, ctaLook } from './buttonLook';
 
 interface Props extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'style'> {
   variant?: 'primary' | 'outline';
@@ -18,12 +18,11 @@ export function FashionButton({ variant = 'primary', children, fullWidth, loadin
   const look = buttonLook(variant);
   const width: CSSProperties = fullWidth || t.buttonWidth === 'full' ? { width: '100%' } : {};
   if (arrow) {
-    const chipBg = variant === 'primary' ? t.colors.bg : t.colors.ink;
-    const chipFg = variant === 'primary' ? t.colors.ink : t.colors.bg;
+    const cta = ctaLook(variant);
     return (
-      <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} className={`fx-cta ${className ?? ''}`} style={{ ...look, ...width, ...style }}>
+      <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} className={`fx-cta ${className ?? ''}`} style={{ ...cta.button, ...width, ...style }}>
         <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
-        <span className="fx-cta-icon" style={{ background: chipBg, color: chipFg }}><ArrowUpRight size={16} /></span>
+        <span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={16} /></span>
       </button>
     );
   }

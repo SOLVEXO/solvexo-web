@@ -27,7 +27,7 @@ export function AccountLayout({ title, accent, subtitle, actions, children }: { 
         <nav aria-label={ts('nav.account', 'Account')} className="fx-hide-scroll -mx-1 flex gap-1 overflow-x-auto px-1 lg:sticky lg:top-24 lg:flex-col lg:overflow-visible">
           {buildLinks().map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className="flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium no-underline transition-colors lg:rounded-xl"
-              style={({ isActive }) => ({ background: isActive ? t.colors.ink : 'transparent', color: isActive ? t.colors.bg : t.colors.ink })}>
+              style={({ isActive }) => ({ background: isActive ? t.colors.selected : 'transparent', color: isActive ? t.colors.selectedInk : t.colors.ink })}>
               <Icon size={16} aria-hidden />{label}
             </NavLink>
           ))}

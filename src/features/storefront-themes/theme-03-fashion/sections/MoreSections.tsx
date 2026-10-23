@@ -86,7 +86,7 @@ function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; b
                 <button type="button" aria-expanded={isOpen} aria-controls={`fx-faq-${id}`} onClick={() => setOpen(isOpen ? null : id)}
                   className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: colors.ink, borderRadius: 20 }}>
                   <span>{b.settings.question}</span>
-                  <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: isOpen ? colors.ink : colors.bgAlt, color: isOpen ? colors.bg : colors.ink, transition: 'transform .25s, background-color .2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}><Plus size={16} /></span>
+                  <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: isOpen ? colors.selected : colors.bgAlt, color: isOpen ? colors.selectedInk : colors.ink, transition: 'transform .25s, background-color .2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}><Plus size={16} /></span>
                 </button>
                 {isOpen && <div id={`fx-faq-${id}`} role="region" className="whitespace-pre-line text-[15px] leading-[1.75]" style={{ padding: '0 22px 20px', color: colors.inkMuted }}>{renderRichText(b.settings.answer)}</div>}
               </div>

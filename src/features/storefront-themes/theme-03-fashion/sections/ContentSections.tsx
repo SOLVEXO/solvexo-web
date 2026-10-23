@@ -172,7 +172,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
             <input id="fx-nl" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(s, 'placeholder', 'Your email')}
               className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm outline-none" style={{ border: `1px solid ${colors.ink}`, color: colors.ink, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }} />
             <button type="submit" disabled={state === 'loading'} className="cursor-pointer px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] disabled:opacity-60"
-              style={{ background: colors.ink, color: colors.bg, border: `1px solid ${colors.ink}`, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>
+              style={{ background: colors.accent, color: colors.accentInk, border: `1px solid ${colors.accent}`, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>
               {state === 'loading' ? ts('pg.word_subscribing', 'Subscribing…') : copyText(s, 'buttonLabel', 'Subscribe')}
             </button>
           </form>

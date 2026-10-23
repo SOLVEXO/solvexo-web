@@ -37,7 +37,7 @@ export function FashionNotificationsPage() {
           <div role="group" aria-label={ts('pg.filter_notifications', 'Filter notifications')} className="mb-5 flex gap-2">
             {tabs.map(tab => (
               <button key={tab.key} type="button" aria-pressed={filter === tab.key} onClick={() => setFilter(tab.key)}
-                className="rounded-full px-4 py-2 text-sm font-medium" style={{ cursor: 'pointer', border: `1px solid ${filter === tab.key ? t.colors.ink : t.colors.border}`, background: filter === tab.key ? t.colors.ink : 'transparent', color: filter === tab.key ? t.colors.bg : t.colors.ink }}>
+                className="rounded-full px-4 py-2 text-sm font-medium" style={{ cursor: 'pointer', border: `1px solid ${filter === tab.key ? t.colors.selected : t.colors.border}`, background: filter === tab.key ? t.colors.selected : 'transparent', color: filter === tab.key ? t.colors.selectedInk : t.colors.ink }}>
                 {tab.label}
               </button>
             ))}

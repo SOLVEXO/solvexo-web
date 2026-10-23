@@ -31,7 +31,7 @@ export function StepCard({ step, title, done, aside, children }: { step: number;
 export function RadioRow({ name, checked, onChange, children, label }: { name: string; checked: boolean; onChange: () => void; children: ReactNode; label?: string }) {
   return (
     <label className="flex cursor-pointer items-start gap-3 p-4 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
-      style={{ border: `1.5px solid ${checked ? t.colors.ink : t.colors.border}`, borderRadius: 16, background: checked ? t.colors.bgAlt : t.colors.bg, outlineColor: t.colors.ink }}>
+      style={{ border: `1.5px solid ${checked ? t.colors.selected : t.colors.border}`, borderRadius: 16, background: checked ? t.colors.bgAlt : t.colors.bg, outlineColor: t.colors.ink }}>
       <input type="radio" name={name} checked={checked} onChange={onChange} aria-label={label} className="mt-1 size-4 shrink-0" style={{ accentColor: t.colors.accent }} />
       <div className="min-w-0 flex-1">{children}</div>
     </label>

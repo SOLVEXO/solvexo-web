@@ -64,6 +64,9 @@ const STATIC_DEFAULTS = {
     border: '#E4E4E7',
     accent: '#09090B',
     accentInk: '#FFFFFF',
+    /** Selected / active states (chosen variant, active tab, filled chips, badges). Follows the accent unless the seller sets one. */
+    selected: '#09090B',
+    selectedInk: '#FFFFFF',
     danger: '#DC2626',
     success: '#16A34A',
     /** Rating stars. */
@@ -130,10 +133,18 @@ export function relativeLuminance(hex: string): number {
 
 export type FashionColors = typeof STATIC_DEFAULTS.colors;
 
-function derive(bg: string, ink: string, accent: string): Pick<FashionColors, 'bg' | 'ink' | 'accent' | 'bgAlt' | 'inkMuted' | 'border' | 'accentInk' | 'price' | 'cardBg'> {
+const HEX6 = /^#[0-9a-f]{6}$/i;
+/** Readable label colour on a solid fill. */
+function inkOn(fill: string): string {
+  return relativeLuminance(fill) < 0.5 ? '#FFFFFF' : '#09090B';
+}
+
+function derive(bg: string, ink: string, accent: string): Pick<FashionColors, 'bg' | 'ink' | 'accent' | 'bgAlt' | 'inkMuted' | 'border' | 'accentInk' | 'selected' | 'selectedInk' | 'price' | 'cardBg'> {
   const dark = relativeLuminance(bg) < 0.5;
   return {
     bg, ink, accent,
+    selected: accent,
+    selectedInk: inkOn(accent),
     bgAlt: mixHex(bg, dark ? 'white' : 'black', 0.05),
     inkMuted: mixHex(ink, dark ? 'black' : 'white', 0.42),
     border: mixHex(bg, dark ? 'white' : 'black', 0.12),
@@ -163,6 +174,8 @@ export interface FashionMerchantColors {
   saleBadge?: Show; quickView?: Show; colorSwatches?: Show; soldOutBadge?: Show; cardStyle?: 'theme' | 'flat' | 'outlined' | 'elevated';
   buttonStyle?: 'solid' | 'outline' | 'soft'; buttonRadius?: Radius; buttonWidth?: 'auto' | 'full';
   sectionSpacing?: 'compact' | 'comfortable' | 'spacious'; containerWidth?: 'narrow' | 'standard' | 'wide';
+  /** Theme-declared `custom.<name>` settings (here: `selectedColor`). */
+  themeSettings?: Record<string, string | number | boolean>;
 }
 
 /** The one place the singleton is written. `null` resets to the theme's own defaults. */
@@ -172,6 +185,14 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   if (c?.mutedColor) fashionTheme.colors.inkMuted = c.mutedColor;
   if (c?.borderColor) fashionTheme.colors.border = c.borderColor;
   if (c?.buttonTextColor) fashionTheme.colors.accentInk = c.buttonTextColor;
+  const picked = c?.themeSettings?.selectedColor;
+  if (typeof picked === 'string' && HEX6.test(picked)) {
+    fashionTheme.colors.selected = picked;
+    fashionTheme.colors.selectedInk = inkOn(picked);
+  } else {
+    fashionTheme.colors.selected = fashionTheme.colors.accent;
+    fashionTheme.colors.selectedInk = fashionTheme.colors.accentInk;
+  }
   if (c?.priceColor) fashionTheme.colors.price = c.priceColor;
   if (c?.cardBgColor) fashionTheme.colors.cardBg = c.cardBgColor;
   fashionTheme.colors.danger = c?.saleColor || d.colors.danger;

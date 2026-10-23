@@ -87,7 +87,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
                     const available = optionValueAvailable(variants, variant, name, v, isDigital);
                     return (
                       <button key={v} type="button" aria-pressed={active} onClick={() => { setPicked(p => ({ ...p, [name]: v })); setQty(1); }}
-                        className="cursor-pointer px-4 py-2 text-sm" style={{ borderRadius: t.buttonRadiusPx, border: `1px solid ${active ? t.colors.ink : t.colors.border}`, background: active ? t.colors.ink : 'transparent', color: active ? t.colors.bg : t.colors.ink, opacity: available ? 1 : 0.45, textDecoration: available ? 'none' : 'line-through' }}>{v}</button>
+                        className="cursor-pointer px-4 py-2 text-sm" style={{ borderRadius: t.buttonRadiusPx, border: `1px solid ${active ? t.colors.selected : t.colors.border}`, background: active ? t.colors.selected : 'transparent', color: active ? t.colors.selectedInk : t.colors.ink, opacity: available ? 1 : 0.45, textDecoration: available ? 'none' : 'line-through' }}>{v}</button>
                     );
                   })}
                 </div>

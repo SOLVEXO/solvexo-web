@@ -56,7 +56,7 @@ export function OrderSummary({ currency, lines, itemCount, storeName, subtotal, 
                 <span className="block size-full overflow-hidden" style={{ background: t.colors.bg, borderRadius: 12, border: `1px solid ${t.colors.border}` }}>
                   {l.image && <img src={l.image} alt="" className="size-full object-cover" />}
                 </span>
-                <span aria-hidden className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full px-1 text-[11px] font-semibold" style={{ background: t.colors.ink, color: t.colors.bg, height: 20 }}>{l.quantity}</span>
+                <span aria-hidden className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full px-1 text-[11px] font-semibold" style={{ background: t.colors.selected, color: t.colors.selectedInk, height: 20 }}>{l.quantity}</span>
               </span>
               <span className="min-w-0 flex-1 text-sm"><span className="line-clamp-2 font-medium">{l.name}</span><span className="sr-only"> {ts('checkout.quantityAria', 'quantity {{count}}', { count: l.quantity })}</span></span>
               <span className="shrink-0 text-sm font-medium">{m(l.amount)}</span>

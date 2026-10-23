@@ -108,5 +108,5 @@ function isCssColor(value: string): boolean {
 }
 
 function Chip({ tone, children }: { tone: 'sale' | 'dark'; children: React.ReactNode }) {
-  return <span data-color-role={tone === 'sale' ? 'sale' : undefined} className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={tone === 'sale' ? { background: t.colors.danger, color: '#fff' } : { background: t.colors.ink, color: t.colors.bg }}>{children}</span>;
+  return <span data-color-role={tone === 'sale' ? 'sale' : undefined} className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={tone === 'sale' ? { background: t.colors.danger, color: '#fff' } : { background: t.colors.selected, color: t.colors.selectedInk }}>{children}</span>;
 }

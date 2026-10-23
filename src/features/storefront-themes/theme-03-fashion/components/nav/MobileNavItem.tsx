@@ -8,7 +8,7 @@ import { fashionTheme as t } from '../../theme.config';
 function Toggle({ expanded, label, controls, onClick }: { expanded: boolean; label: string; controls: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} aria-expanded={expanded} aria-controls={controls} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${label}`}
-      className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 transition-colors" style={{ background: expanded ? t.colors.ink : t.colors.bgAlt, color: expanded ? t.colors.bg : t.colors.ink }}>
+      className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 transition-colors" style={{ background: expanded ? t.colors.selected : t.colors.bgAlt, color: expanded ? t.colors.selectedInk : t.colors.ink }}>
       {expanded ? <Minus size={15} /> : <Plus size={15} />}
     </button>
   );

@@ -114,7 +114,7 @@ export function ReturnProgress({ status, rejectReason }: { status: string | unde
       {[...STEPS, final].map((label, k) => {
         const done = k <= idx;
         return (
-          <li key={label} aria-current={k === idx ? 'step' : undefined} className="px-3 py-1 text-xs" style={{ borderRadius: 999, fontWeight: done ? 600 : 400, background: done ? t.colors.ink : t.colors.bgAlt, color: done ? t.colors.bg : t.colors.inkMuted }}>
+          <li key={label} aria-current={k === idx ? 'step' : undefined} className="px-3 py-1 text-xs" style={{ borderRadius: 999, fontWeight: done ? 600 : 400, background: done ? t.colors.selected : t.colors.bgAlt, color: done ? t.colors.selectedInk : t.colors.inkMuted }}>
             {label}
           </li>
         );

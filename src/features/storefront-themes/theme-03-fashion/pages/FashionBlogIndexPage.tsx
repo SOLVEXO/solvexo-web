@@ -49,7 +49,7 @@ export function FashionBlogIndexPage() {
                   const on = tag === activeTopic;
                   return (
                     <button key={tag ?? 'all'} type="button" aria-pressed={on} onClick={() => setTopic(tag)} className="shrink-0 rounded-full px-4 py-2 text-sm font-medium"
-                      style={{ cursor: 'pointer', border: `1px solid ${on ? t.colors.ink : t.colors.border}`, background: on ? t.colors.ink : 'transparent', color: on ? t.colors.bg : t.colors.ink }}>
+                      style={{ cursor: 'pointer', border: `1px solid ${on ? t.colors.selected : t.colors.border}`, background: on ? t.colors.selected : 'transparent', color: on ? t.colors.selectedInk : t.colors.ink }}>
                       {tag ?? ts('pg.word_all', 'All')}
                     </button>
                   );

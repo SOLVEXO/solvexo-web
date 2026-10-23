@@ -49,7 +49,7 @@ function BlogPostsSection({ section, colors }: { section: Section; colors: Fashi
 
   if (!posts || posts.length === 0) return null;
   return (
-    <SectionShell colors={colors} heading={section.settings.heading} action={<TextLink to="/blog" color={colors.ink}>{copyText(section.settings, 'viewAllLabel', 'View all')}</TextLink>}>
+    <SectionShell colors={colors} heading={section.settings.heading} action={<TextLink to="/blog" colors={colors}>{copyText(section.settings, 'viewAllLabel', 'View all')}</TextLink>}>
       <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map(post => (
           <Link key={post.slug} to={`/blog/${handleOf(post)}`} className="block no-underline" style={{ color: colors.ink }}>

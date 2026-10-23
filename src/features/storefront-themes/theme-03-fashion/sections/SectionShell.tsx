@@ -4,6 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { fashionTheme as t, type FashionColors } from '../theme.config';
 import { EditableText } from '../../inlineEdit';
+import { ctaLook } from '../components/buttonLook';
 
 /** Standard section frame: vertical rhythm from the merchant's spacing setting, centered content box (`mx-auto`
  *  so a section's "full width" option can lift it), optional eyebrow + heading + trailing action. */
@@ -29,11 +30,13 @@ export function SectionShell({ colors, eyebrow, heading, action, align = 'left',
 }
 
 /** "See all" pill with the sliding arrow chip. */
-export function TextLink({ to, children, color }: { to: string; children: ReactNode; color: string }) {
+export function TextLink({ to, children, colors }: { to: string; children: ReactNode; colors?: FashionColors }) {
+  const cta = ctaLook('primary', colors);
+  // size + hover padding live in `.fx-cta-sm` (inline padding would beat the hover rule and park the chip on the text)
   return (
-    <Link to={to} className="fx-cta" style={{ height: 40, padding: '4px 48px 4px 18px', background: color, color: t.colors.bg, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>
+    <Link to={to} className="fx-cta fx-cta-sm" style={cta.button}>
       <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
-      <span className="fx-cta-icon" style={{ width: 32, height: 32, background: t.colors.bg, color }}><ArrowUpRight size={15} /></span>
+      <span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={15} /></span>
     </Link>
   );
 }
@@ -43,12 +46,9 @@ export function LinkButton({ text, link, variant = 'primary', style }: { text?: 
   const { resolveLink } = useStorefront();
   if (!text || !link) return null;
   const target = resolveLink(link);
-  const colors: CSSProperties = variant === 'light' ? { background: '#fff', color: '#09090B' }
-    : variant === 'outline' ? { background: 'transparent', color: t.colors.ink, border: `1px solid ${t.colors.ink}` }
-    : { background: t.colors.accent, color: t.colors.accentInk };
-  const chip: CSSProperties = variant === 'light' ? { background: '#09090B', color: '#fff' } : variant === 'outline' ? { background: t.colors.ink, color: t.colors.bg } : { background: t.colors.bg, color: t.colors.ink };
-  const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="fx-cta-icon" style={chip}><ArrowUpRight size={16} /></span></>;
-  const base: CSSProperties = { fontFamily: t.fonts.body, borderRadius: t.buttonRadiusPx, ...colors, ...style };
+  const cta = ctaLook(variant);
+  const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={16} /></span></>;
+  const base: CSSProperties = { ...cta.button, ...style };
   return target.to
     ? <Link to={target.to} className="fx-cta" style={base}>{inner}</Link>
     : <a href={target.href ?? '#'} className="fx-cta" style={base} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{inner}</a>;

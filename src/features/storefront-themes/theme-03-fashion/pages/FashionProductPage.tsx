@@ -196,7 +196,7 @@ function ProductPageInner({ slug }: { slug: string }) {
                   return (
                     <button key={v} type="button" aria-pressed={on} onClick={() => setPicked(p => ({ ...p, [name]: v }))}
                       className="min-w-12 cursor-pointer px-4 py-2.5 text-sm font-medium transition-colors"
-                      style={{ borderRadius: 9999, border: `1px solid ${on ? t.colors.ink : t.colors.border}`, background: on ? t.colors.ink : 'transparent', color: on ? t.colors.bg : t.colors.ink, opacity: ok ? 1 : 0.45, textDecoration: ok ? undefined : 'line-through' }}>{v}</button>
+                      style={{ borderRadius: 9999, border: `1px solid ${on ? t.colors.selected : t.colors.border}`, background: on ? t.colors.selected : 'transparent', color: on ? t.colors.selectedInk : t.colors.ink, opacity: ok ? 1 : 0.45, textDecoration: ok ? undefined : 'line-through' }}>{v}</button>
                   );
                 })}
               </div>
@@ -260,7 +260,7 @@ function ProductPageInner({ slug }: { slug: string }) {
                     <div className="fx-hide-scroll flex gap-3 overflow-x-auto md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden" style={{ maxHeight: 'min(640px, 70vh)' }}>
                       {images.map((src, i) => (
                         <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={tr('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex}
-                          className="size-20 shrink-0 cursor-pointer overflow-hidden p-0 md:size-[84px]" style={{ borderRadius: 14, background: t.colors.bgAlt, border: `2px solid ${i === imageIndex ? t.colors.ink : 'transparent'}` }}>
+                          className="size-20 shrink-0 cursor-pointer overflow-hidden p-0 md:size-[84px]" style={{ borderRadius: 14, background: t.colors.bgAlt, border: `2px solid ${i === imageIndex ? t.colors.selected : 'transparent'}` }}>
                           <img {...imgProps(src, [160, 240], '84px')} alt="" loading="lazy" className="size-full object-cover" />
                         </button>
                       ))}
@@ -301,7 +301,7 @@ function ProductPageInner({ slug }: { slug: string }) {
                   {(['5', '4', '3', '2', '1'] as const).map(k => {
                     const n = reviews.stats.ratingBreakdown[k] ?? 0;
                     const pct = reviews.stats.totalReviews ? (n / reviews.stats.totalReviews) * 100 : 0;
-                    return <div key={k} className="flex items-center gap-3 text-xs"><span className="w-3">{k}</span><span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: t.colors.border }}><span className="block h-full rounded-full" style={{ width: `${pct}%`, background: t.colors.ink }} /></span><span className="w-6 text-right" style={{ color: t.colors.inkMuted }}>{n}</span></div>;
+                    return <div key={k} className="flex items-center gap-3 text-xs"><span className="w-3">{k}</span><span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: t.colors.border }}><span className="block h-full rounded-full" style={{ width: `${pct}%`, background: t.colors.star }} /></span><span className="w-6 text-right" style={{ color: t.colors.inkMuted }}>{n}</span></div>;
                   })}
                 </div>
               </div>

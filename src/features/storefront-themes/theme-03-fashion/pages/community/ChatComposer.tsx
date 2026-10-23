@@ -59,7 +59,7 @@ export function ChatComposer({ initialText = '', editing, replyTo, sending, uplo
       )}
       {uploading && (
         <div className="mb-2" role="status" aria-label={ts('pg.uploading_file', 'Uploading file')}>
-          <div className="h-1.5 overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}><div style={{ width: `${Math.max(6, uploadProgress)}%`, height: '100%', background: t.colors.ink, transition: 'width .2s' }} /></div>
+          <div className="h-1.5 overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}><div style={{ width: `${Math.max(6, uploadProgress)}%`, height: '100%', background: t.colors.selected, transition: 'width .2s' }} /></div>
           <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{ts('pg.word_uploading', 'Uploading')} {uploadProgress > 0 ? `${uploadProgress}%` : ''}</p>
         </div>
       )}

@@ -34,7 +34,7 @@ function StoreCredit() {
         <ErrorState message={ts('pg.we_could_not_load_your_store_credit', 'We could not load your store credit.')} onRetry={retry} />
       ) : (
         <div className="flex flex-col gap-8">
-          <Card tone="soft" style={{ background: t.colors.ink, color: t.colors.bg }}>
+          <Card tone="soft" style={{ background: t.colors.accent, color: t.colors.accentInk }}>
             <p className="m-0 text-sm" style={{ opacity: 0.7 }}>{ts('credit.available', 'Available balance')}</p>
             <p className="m-0 mt-1 text-[clamp(36px,6vw,56px)] font-medium leading-none tracking-tight" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
             {data?.nextExpiry && <p className="m-0 mt-4 text-sm" style={{ opacity: 0.75 }}>{ts('pg.amount_expires_on_date', '{{amount}} expires on {{date}}', { amount: money(data.nextExpiry.amount, from), date: formatStoreCreditDate(data.nextExpiry.expiresAt) })}</p>}

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { fashionThemeManifest } from './theme.manifest';
 import { applyMerchantThemeOverrides, fashionTheme, fashionTypographyCss, resolveSectionColors } from './theme.config';
+import { ctaLook } from './components/buttonLook';
 
 const fields = fashionThemeManifest.themeSettingsFields;
 const byKey = new Map(fields.map(f => [f.key as string, f]));
@@ -29,13 +30,14 @@ describe('Maison theme styles', () => {
 
   it('defaults cover every editable setting, so "Reset to default" resets everything', () => {
     const defaults = fashionThemeManifest.defaultSettings ?? {};
-    for (const f of fields) expect(f.key in defaults, `default for ${f.key}`).toBe(true);
+    // `custom.*` fields are optional 'Auto' overrides stored in themeSettings, so they have no entry in a style or in the defaults
+    for (const f of fields.filter(x => !String(x.key).startsWith('custom.'))) expect(f.key in defaults, `default for ${f.key}`).toBe(true);
     for (const [key, value] of Object.entries(defaults)) expect(validFor(key, value), `default ${key}`).toBe(true);
   });
 
   it('every style completely defines the look (nothing left over from the previous style)', () => {
     for (const style of fashionThemeManifest.styles ?? []) {
-      for (const f of fields) expect(f.key in style.settings, `${style.id} sets ${f.key}`).toBe(true);
+      for (const f of fields.filter(x => !String(x.key).startsWith('custom.'))) expect(f.key in style.settings, `${style.id} sets ${f.key}`).toBe(true);
     }
   });
 
@@ -86,6 +88,35 @@ describe('Maison theme settings are applied', () => {
     expect([c.bg, c.ink, c.accent, c.inkMuted, c.border, c.danger]).toEqual(['#000000', '#ffffff', '#ff0000', '#999999', '#333333', '#00ff00']);
     const plain = resolveSectionColors('s1', [{ id: 's1', bgColor: '#000000', textColor: '#ffffff', primaryColor: '#ff0000' }]);
     expect(plain.danger).toBe(fashionTheme.colors.danger);
+  });
+
+  it('selected states follow the brand colour unless the seller picks their own', () => {
+    applyMerchantThemeOverrides({ primaryColor: '#6B2F48' });
+    expect(fashionTheme.colors.selected).toBe('#6B2F48');
+    expect(fashionTheme.colors.selectedInk).toBe('#FFFFFF');
+    applyMerchantThemeOverrides({ primaryColor: '#6B2F48', themeSettings: { selectedColor: '#FFD60A' } });
+    expect(fashionTheme.colors.selected).toBe('#FFD60A');
+    expect(fashionTheme.colors.selectedInk).toBe('#09090B');
+    applyMerchantThemeOverrides({ primaryColor: '#6B2F48', themeSettings: { selectedColor: 'red; background:url(x)' } });
+    expect(fashionTheme.colors.selected).toBe('#6B2F48');
+  });
+
+  it('a section colour scheme carries its own selected colour', () => {
+    const c = resolveSectionColors('s1', [{ id: 's1', bgColor: '#ffffff', textColor: '#000000', primaryColor: '#0000ff' }]);
+    expect([c.selected, c.selectedInk]).toEqual(['#0000ff', '#FFFFFF']);
+  });
+
+  it('call-to-action buttons take their colours from the brand, not from the text colour', () => {
+    applyMerchantThemeOverrides({ primaryColor: '#6B2F48', textColor: '#000000' });
+    const primary = ctaLook('primary');
+    expect(primary.button.background).toBe('#6B2F48');
+    expect(primary.chip.color).toBe('#6B2F48');
+    const light = ctaLook('light');
+    expect(light.button.background).toBe('#fff');
+    expect(light.chip.background).toBe('#6B2F48');
+    expect(ctaLook('outline').chip.background).toBe('#6B2F48');
+    applyMerchantThemeOverrides({ primaryColor: '#FAFAFA' });
+    expect(ctaLook('light').chip.background).toBe('#09090B');
   });
 });
 

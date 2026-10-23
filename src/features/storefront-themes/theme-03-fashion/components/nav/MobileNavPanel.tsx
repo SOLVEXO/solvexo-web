@@ -107,7 +107,7 @@ function ShopGroup({ shop, onNavigate }: { shop: ShopGroupData; onNavigate: () =
       <button type="button" onClick={() => setExpanded(e => !e)} aria-expanded={expanded} aria-controls={regionId}
         className="flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-transparent py-4 pl-1 text-left" style={{ color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
         <span>{shop.label}</span>
-        <span className="grid size-10 place-items-center rounded-full" style={{ background: expanded ? t.colors.ink : t.colors.bgAlt, color: expanded ? t.colors.bg : t.colors.ink }}>{expanded ? <Minus size={15} /> : <Plus size={15} />}</span>
+        <span className="grid size-10 place-items-center rounded-full" style={{ background: expanded ? t.colors.selected : t.colors.bgAlt, color: expanded ? t.colors.selectedInk : t.colors.ink }}>{expanded ? <Minus size={15} /> : <Plus size={15} />}</span>
       </button>
       {expanded && (
         <div id={regionId} className="mb-3 overflow-hidden pb-2" style={{ background: t.colors.bgAlt, borderRadius: 20 }}>
