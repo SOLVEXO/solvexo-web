@@ -17,6 +17,13 @@
 .fx-pill:hover:not([disabled]) { opacity: .88; }
 .fx-pill[disabled] { opacity: .5; cursor: not-allowed; }
 
+/* Small screens: a grid/flex child may shrink below its content (thumbnail strips, long words, tables) instead of
+   stretching its column past the screen, which made the whole page wider than the phone and shrank it. `clip` (not
+   `hidden`) keeps sticky headers and the sticky buy bar working. */
+.fx-root { overflow-x: clip; }
+.fx-root .grid > *, .fx-root main > * { min-width: 0; }
+.fx-root h1, .fx-root h2, .fx-root h3, .fx-root p, .fx-root a { overflow-wrap: anywhere; }
+
 .fx-serif { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
 .fx-hide-scroll { scrollbar-width: none; -ms-overflow-style: none; }
 .fx-hide-scroll::-webkit-scrollbar { display: none; }

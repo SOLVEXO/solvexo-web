@@ -18,7 +18,7 @@ export function FashionLayout({ children }: { children: ReactNode }) {
   const announcement = bar?.message ? <FashionAnnouncementBar {...bar} storeId={store.storeId} /> : null;
   return (
     <FashionCartDrawerProvider>
-      <div className="flex min-h-screen flex-col" style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>
+      <div className="fx-root flex min-h-screen flex-col" style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>
         <style>{fashionTypographyCss('main')}</style>
         {above && announcement}
         <FashionNavbar />

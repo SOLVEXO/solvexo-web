@@ -1,4 +1,4 @@
-import { Loader2, RotateCcw, Undo2, Redo2, History, Search } from 'lucide-react';
+import { Loader2, RotateCcw, Undo2, Redo2, History, Search, ChevronDown } from 'lucide-react';
 import { useEffect } from 'react';
 import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';
 import { useToast } from '@/contexts/ToastContext';
@@ -65,6 +65,29 @@ function SaveButton({ onClick, saving, label: text }: { onClick: () => void; sav
   );
 }
 
+/** A card whose body opens and closes (same look as the Brand colours card), so a long settings page stays easy to scan.
+ *  `action` is an optional button shown beside the title (it must not sit inside the toggle button). */
+function Collapsible({ title, hint, open, onToggle, action, children }: {
+  title: string; hint?: string; open: boolean; onToggle: () => void; action?: React.ReactNode; children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white border border-bone rounded-2xl">
+      <div className="flex items-center gap-2 pr-4">
+        <button type="button" onClick={onToggle} aria-expanded={open}
+          className="flex-1 min-w-0 flex items-center justify-between gap-3 p-4 bg-transparent border-none cursor-pointer text-left">
+          <span className="min-w-0">
+            <span className="block text-[13px] font-bold text-charcoal">{title}</span>
+            {hint && <span className="block text-[11.5px] text-slate mt-0.5">{hint}</span>}
+          </span>
+          <ChevronDown size={16} className="shrink-0 text-slate transition-transform" style={{ transform: open ? 'rotate(180deg)' : undefined }} />
+        </button>
+        {action}
+      </div>
+      {open && <div className="flex flex-col gap-4 px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
+
 /** Static Tailwind class strings only — a template literal like
  *  `sm:grid-cols-${n}` would not be picked up by Tailwind's build-time
  *  class scanner (it needs the literal substring present in source), so the
@@ -75,7 +98,6 @@ function SaveButton({ onClick, saving, label: text }: { onClick: () => void; sav
 const GROUP_GRID: Record<number, string> = {
   1: 'flex flex-col gap-3',
   2: 'grid grid-cols-1 sm:grid-cols-2 gap-3',
-  3: 'grid grid-cols-1 sm:grid-cols-3 gap-3',
 };
 
 /** Fixed rendering order for the 4 groups `ThemeSettingsFieldDef['group']`
@@ -141,6 +163,7 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
   const [newName, setNewName] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleSaveCurrent = async () => {
     if (!newName.trim()) return;
@@ -182,12 +205,7 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
   };
 
   return (
-    <div className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
-      <div>
-        <p className="text-[13px] font-bold text-charcoal">Saved Palettes</p>
-        <p className="text-[11.5px] text-slate mt-0.5">Save the colors above under a name, and switch between them any time.</p>
-      </div>
-
+    <Collapsible title="Saved Palettes" hint={schemes.length > 0 ? `${schemes.length} saved` : 'Save the colors above under a name, and switch between them any time.'} open={open} onToggle={() => setOpen(o => !o)}>
       {schemes.length > 0 && (
         <div className="flex flex-col gap-2">
           {schemes.map(s => (
@@ -218,7 +236,7 @@ function SavedPalettes({ storeId, installedThemeId, schemes, current, onSchemesC
         />
         <SaveButton onClick={handleSaveCurrent} saving={saving} label="Save Current" />
       </div>
-    </div>
+    </Collapsible>
   );
 }
 
@@ -262,22 +280,22 @@ function ThemeStyles({ manifest, current, onApply }: {
   current: StorefrontColors;
   onApply: (patch: Partial<StorefrontColors>, label: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
   const styles = manifest.styles ?? [];
   if (styles.length === 0) return null;
   const matches = (settings: Partial<StorefrontColors>) =>
     (Object.keys(settings) as (keyof StorefrontColors)[]).every(k => (current[k] ?? null) === (settings[k] ?? null));
   return (
-    <div className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[13px] font-bold text-charcoal">Theme styles</p>
-          <p className="text-[11.5px] text-slate mt-0.5">Pick a complete look in one click, then fine-tune any setting below. Nothing goes live until you Publish.</p>
-        </div>
-        {manifest.defaultSettings && (
-          <button type="button" onClick={() => onApply(manifest.defaultSettings!, 'Defaults')}
-            className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">Reset to default</button>
-        )}
-      </div>
+    <Collapsible
+      title="Theme styles"
+      hint="Pick a complete look in one click, then fine-tune any setting below. Nothing goes live until you Publish."
+      open={open}
+      onToggle={() => setOpen(o => !o)}
+      action={manifest.defaultSettings ? (
+        <button type="button" onClick={() => onApply(manifest.defaultSettings!, 'Defaults')}
+          className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">Reset to default</button>
+      ) : undefined}
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {styles.map(st => {
           const x = st.settings;
@@ -303,7 +321,7 @@ function ThemeStyles({ manifest, current, onApply }: {
           );
         })}
       </div>
-    </div>
+    </Collapsible>
   );
 }
 
@@ -393,23 +411,33 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
 
   // Click a part of the live preview → scroll to and flash the color field that controls it.
   const [flashKey, setFlashKey] = useState<string | null>(null);
+  // Groups are closed cards (Colors starts open); a search shows every matching group open.
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(['Colors']));
+  const toggleGroup = (group: string) => setOpenGroups(prev => { const next = new Set(prev); if (next.has(group)) next.delete(group); else next.add(group); return next; });
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = subscribePickedColorRole(role => {
       const key = ROLE_PRIMARY_KEY[role];
-      const el = key ? document.getElementById(`color-field-${key}`) : null;
-      if (!key || !el) {
+      if (!key) {
         toast.info(role === 'header' || role === 'footer'
           ? `${COLOR_ROLE_LABEL[role]} colours are in the ${COLOR_ROLE_LABEL[role]} editor (left menu).`
           : `No separate colour setting for this part in this theme.`);
         return;
       }
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      setFlashKey(key);
-      clearTimeout(timer);
-      timer = setTimeout(() => setFlashKey(null), 1800);
+      // The colour fields live in the Colors card: open it first (it may be closed), then scroll once it is on screen.
+      setOpenGroups(prev => (prev.has('Colors') ? prev : new Set(prev).add('Colors')));
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        const el = document.getElementById(`color-field-${key}`);
+        if (!el) { toast.info('No separate colour setting for this part in this theme.'); return; }
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        setFlashKey(key);
+        clearTimeout(timer);
+        timer = setTimeout(() => setFlashKey(null), 1800);
+      }, 80);
     });
-    return () => { unsubscribe(); clearTimeout(timer); };
+    return () => { unsubscribe(); clearTimeout(timer); clearTimeout(scrollTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -615,9 +643,8 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
         const fields = manifest.themeSettingsFields.filter(f => f.group === group && (!q || `${f.label} ${f.helpText ?? ''} ${group}`.toLowerCase().includes(q)));
         if (fields.length === 0) return null;
         return (
-          <div key={group} className="flex flex-col gap-4 bg-white border border-bone rounded-2xl p-4">
-            <p className="text-[13px] font-bold text-charcoal">{group}</p>
-            <div className={GROUP_GRID[Math.min(fields.length, 3)]}>
+          <Collapsible key={group} title={group} hint={`${fields.length} ${fields.length === 1 ? 'setting' : 'settings'}`} open={!!q || openGroups.has(group)} onToggle={() => toggleGroup(group)}>
+            <div className={GROUP_GRID[Math.min(fields.length, 2)]}>
               {fields.map(field => {
                 const role = group === 'Colors' ? COLOR_KEY_ROLE[field.key] : undefined;
                 if (!role) return <ThemeSettingsField key={field.key} field={field} colors={c} onChange={set} />;
@@ -637,7 +664,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
                 );
               })}
             </div>
-          </div>
+          </Collapsible>
         );
       })}
 
