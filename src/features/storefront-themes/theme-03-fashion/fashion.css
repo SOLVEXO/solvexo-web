@@ -79,6 +79,5 @@ article[data-fx-align='center'] .fx-card-body :is(p.flex, ul.flex, div.flex.item
 :lang(ur) h1, :lang(ur) h2, :lang(ur) h3, :lang(ur) h4, :lang(ur) [class*="leading-[1.1]"], :lang(ur) [class*="leading-[1.15]"], :lang(ur) [class*="leading-tight"], :lang(ur) [class*="leading-none"] { line-height: 1.6 !important; }
 :lang(fa) body, :lang(fa) p, :lang(fa) li { line-height: 1.75; }
 :lang(ur) .fx-cta, :lang(ur) .fx-pill { line-height: 1.4; }
-
 /* Seller-written section text: each heading/paragraph picks its own direction so English copy in an RTL page keeps its punctuation */
-.fx-bidi :is(h1, h2, h3, h4, p, li, blockquote, figcaption) { unicode-bidi: plaintext; }
+.fx-bidi :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption, div:not(:has(div, p, section, ul, ol, h1, h2, h3, h4, h5, h6, table, form, img, svg, button, input, select, textarea))) { unicode-bidi: plaintext; }

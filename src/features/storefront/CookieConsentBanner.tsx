@@ -53,7 +53,7 @@ export function CookieConsentBanner({
       style={{ background: p.bg, color: p.text, boxShadow: isCorner ? '0 8px 28px rgba(0,0,0,0.22)' : '0 -4px 16px rgba(0,0,0,0.15)' }}
     >
       <div className={isCorner ? 'p-4 flex flex-col gap-3' : 'px-4 py-3 flex flex-wrap items-center justify-center gap-3'}>
-        <p className={isCorner ? 'text-[12.5px]' : 'text-[12.5px] flex-1 min-w-0 max-w-[640px]'} style={{ color: p.text, opacity: 0.92 }}>
+        <p className={isCorner ? 'text-[12.5px]' : 'text-[12.5px] flex-[1_1_260px] min-w-0 max-w-[640px]'} style={{ color: p.text, opacity: 0.92 }}>
           {message || tr('cookies.message', DEFAULT_MESSAGE)}
         </p>
         <div className={isCorner ? 'flex items-center justify-between gap-3' : 'flex items-center gap-3 shrink-0'}>
