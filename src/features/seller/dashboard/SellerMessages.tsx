@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2, Package } from 'lucide-react';
+import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2, Package, Settings2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { StorePageHeader } from '@/components/layouts/StoreLayout';
+import { StorePageHeader, useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
+import { ChatSettingsModal } from './ChatSettingsModal';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
 import { useConversation } from '@/hooks/messaging/useConversation';
@@ -17,6 +18,7 @@ import {
 import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import type { ActionMenuItem } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
+import { Button } from '@/components/comman/ui/Button';
 
 const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
   voice: 'Voice note', image: 'Photo', video: 'Video', pdf: 'File', document: 'File', product_share: 'Product shared',
@@ -46,6 +48,8 @@ function toEntry(c: Conversation, online: Record<string, boolean>, typingIds: Se
 export function SellerMessages() {
   usePageTitle('Messages');
   const { storeId } = useParams<{ storeId: string }>();
+  const workspace = useStoreWorkspaceOptional();
+  const [chatSettingsOpen, setChatSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const { profile } = useGetProfile();
   const toast = useToast();
@@ -232,11 +236,15 @@ export function SellerMessages() {
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
         actions={
-          <span className="px-3 py-1 bg-[#fdecea] rounded-[6px] text-xs font-semibold text-[#c0392b]">
-            {conversations.reduce((n, c) => n + c.sellerUnread, 0)} Unread
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 bg-[#fdecea] rounded-[6px] text-xs font-semibold text-[#c0392b]">
+              {conversations.reduce((n, c) => n + c.sellerUnread, 0)} Unread
+            </span>
+            {storeId && <Button size="sm" variant="secondary" icon={<Settings2 size={14} />} onClick={() => setChatSettingsOpen(true)}>Chat settings</Button>}
+          </div>
         }
       />
+      {chatSettingsOpen && storeId && <ChatSettingsModal storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onClose={() => setChatSettingsOpen(false)} />}
 
       {/* flex-1 + min-h-0 fills whatever space is actually left under the
           header instead of guessing its pixel height with a calc(100vh - Npx)

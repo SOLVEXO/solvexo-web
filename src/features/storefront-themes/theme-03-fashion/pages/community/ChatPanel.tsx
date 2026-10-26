@@ -2,6 +2,7 @@
 import { ts } from '@/utils/tStatic';
 import { Loader2, MessageCircle, Store as StoreIcon } from 'lucide-react';
 import { apiUploadAttachment, type Conversation, type Message } from '@/api/services/messaging';
+import { apiGetPublicStoreChatSettings, type StoreChatSettings } from '@/api/services/storeChatSettings';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useMessages, type OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { fashionTheme as t } from '../../theme.config';
@@ -24,6 +25,15 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
   const [progress, setProgress] = useState(0);
   const [notice, setNotice] = useState('');
   const [sharing, setSharing] = useState(false);
+  const [look, setLook] = useState<StoreChatSettings | null>(null);
+  useEffect(() => {
+    let live = true;
+    apiGetPublicStoreChatSettings(storeId).then(res => { if (live) setLook(res.data); }).catch(() => {});
+    return () => { live = false; };
+  }, [storeId]);
+  // the seller's own chat photo / name / line / welcome text, falling back to the store's logo, name and the standard line
+  const shownName = look?.name || storeName;
+  const shownLogo = look?.avatarUrl || storeLogo;
   const scroller = useRef<HTMLDivElement>(null);
 
   const isMine = (m: OptimisticMessage) => !!m._tempId || (myId ? m.senderId === myId : m.senderRole === 'user');
@@ -69,17 +79,17 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
     } finally { setUploading(false); }
   };
 
-  const subtitle = chat.otherTyping ? ts('pg.word_typing', 'typing...') : chat.otherOnline ? ts('pg.word_online', 'Online') : ts('pg.we_reply_as_soon_as_we_can', 'We reply as soon as we can');
+  const subtitle = chat.otherTyping ? ts('pg.word_typing', 'typing...') : chat.otherOnline ? ts('pg.word_online', 'Online') : look?.statusLine || ts('pg.we_reply_as_soon_as_we_can', 'We reply as soon as we can');
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: 'min(700px, calc(100dvh - 230px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: 24, background: t.colors.bg }}>
       <header className="flex shrink-0 items-center gap-3 p-4" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
         <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}>
-          {storeLogo ? <img src={storeLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
+          {shownLogo ? <img src={shownLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
           {chat.otherOnline && <span aria-hidden className="absolute bottom-0 right-0 size-3 rounded-full" style={{ background: t.colors.success, border: `2px solid ${t.colors.bg}` }} />}
         </span>
         <div className="min-w-0">
-          <h2 className="m-0 truncate text-base font-semibold">{storeName}</h2>
+          <h2 className="m-0 truncate text-base font-semibold">{shownName}</h2>
           <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }} aria-live="polite">{subtitle}</p>
         </div>
       </header>
@@ -90,7 +100,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
         </div>
       )}
 
-      <div ref={scroller} role="log" aria-live="polite" aria-label={ts('pg.conversation_with_store', 'Conversation with {{store}}', { store: storeName })} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+      <div ref={scroller} role="log" aria-live="polite" aria-label={ts('pg.conversation_with_store', 'Conversation with {{store}}', { store: shownName })} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
         {chat.hasMore && (
           <button type="button" onClick={() => void chat.loadMore()} disabled={chat.loadingMore} className="mx-auto inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-medium" style={{ background: t.colors.bgAlt, border: 'none', color: t.colors.ink, cursor: 'pointer' }}>
             {chat.loadingMore && <Loader2 size={14} className="animate-spin" aria-hidden />}{ts('pg.load_earlier_messages', 'Load earlier messages')}
@@ -103,15 +113,15 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
         ) : chat.messages.length === 0 ? (
           <div className="m-auto grid place-items-center gap-3 text-center">
             <span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><MessageCircle size={24} aria-hidden /></span>
-            <p className="m-0 text-lg font-semibold">{ts('pg.say_hello_to_store', 'Say hello to {{store}}', { store: storeName })}</p>
-            <p className="m-0 max-w-[320px] text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.ask_about_a_product_an_order_or', 'Ask about a product, an order or anything else. You can attach photos and files too.')}</p>
+            <p className="m-0 text-lg font-semibold">{ts('pg.say_hello_to_store', 'Say hello to {{store}}', { store: shownName })}</p>
+            <p className="m-0 max-w-[320px] text-sm" style={{ color: t.colors.inkMuted }}>{look?.greeting || ts('pg.ask_about_a_product_an_order_or', 'Ask about a product, an order or anything else. You can attach photos and files too.')}</p>
           </div>
         ) : chat.messages.map((m, i) => {
           const prev = chat.messages[i - 1];
           return (
             <Fragment key={m._id}>
               {(!prev || !sameDay(prev.createdAt, m.createdAt)) && <p className="m-0 my-1 text-center text-xs font-medium" style={{ color: t.colors.inkMuted }}>{dayLabel(m.createdAt)}</p>}
-              <ChatBubble message={m} mine={isMine(m)} myId={myId} storeName={storeName} onReply={setReplyTo} onEdit={msg => { setEditing(msg); setReplyTo(null); }}
+              <ChatBubble message={m} mine={isMine(m)} myId={myId} storeName={shownName} onReply={setReplyTo} onEdit={msg => { setEditing(msg); setReplyTo(null); }}
                 onDelete={id => { chat.remove(id).catch(() => setNotice(ts('pg.we_could_not_delete_that_message', 'We could not delete that message.'))); }} onRetry={msg => { const payload = retryPayload(msg); if (payload && msg._tempId) void chat.retry(msg._tempId, payload); }}
                 onReact={(id, emoji) => void chat.react(id, emoji, myId ?? null)} />
             </Fragment>

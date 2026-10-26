@@ -39,7 +39,7 @@ export function VoicePlayer({ url, label, color, track }: { url: string; label: 
 
   return (
     <div className="flex w-[230px] max-w-full items-center gap-2.5" role="group" aria-label={label}>
-      <audio ref={audio} src={url} preload="metadata" />
+      <audio ref={audio} src={url} preload="metadata"><track kind="captions" /></audio>
       <button type="button" onClick={toggle} aria-label={playing ? ts('pg.pause', 'Pause') : ts('pg.play', 'Play')} className="grid size-9 shrink-0 place-items-center rounded-full border-0" style={{ background: color, color: track, cursor: 'pointer' }}>
         {playing ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}
       </button>
