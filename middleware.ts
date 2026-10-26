@@ -38,9 +38,9 @@ function countryRedirect(request: Request, hostname: string | undefined, pathnam
   if (!hostname || !PLATFORM_HOSTS.has(hostname) || request.method !== 'GET') return null;
   if (!request.headers.get('accept')?.includes('text/html')) return null;
   if (BOT_UA.test(request.headers.get('user-agent') ?? '')) return null;
-  const base = pathname.length > 1 ? pathname.replace(//+$/, '') : pathname;
+  const base = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
   if (!(COUNTRY_PAGES.has(base) || base.startsWith('/solutions') || base.startsWith('/onboard/'))) return null;
-  const cookie = /(?:^|;s*)sx_country=([a-z]{2})(?:;|$)/.exec(request.headers.get('cookie') ?? '')?.[1];
+  const cookie = /(?:^|;\s*)sx_country=([a-z]{2})(?:;|$)/.exec(request.headers.get('cookie') ?? '')?.[1];
   const ip = request.headers.get('x-vercel-ip-country')?.toLowerCase();
   const code = cookie ?? (ip && /^[a-z]{2}$/.test(ip) ? ip : null);
   if (!code) return null;
