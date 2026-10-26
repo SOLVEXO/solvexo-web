@@ -52,7 +52,7 @@ export interface ThemeSettingsFieldDef {
   /** A shared `StorefrontColors` key, or `custom.<name>` for a setting only THIS theme defines: it is stored in `StorefrontColors.themeSettings` (no backend change needed) and read in the theme with `customThemeSetting`. */
   key: keyof StorefrontColors | `custom.${string}`;
   label: string;
-  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart';
+  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart' | 'Pop-up messages';
   control:
     | { kind: 'color'; /** Optional override: shows an "Auto (theme)" state with a Reset, and saves null when reset. */ optional?: { fallback: string } }
     | { kind: 'select'; options: { value: string; label: string }[] };

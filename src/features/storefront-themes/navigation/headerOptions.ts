@@ -48,15 +48,20 @@ const NAV_FONT_PX = { sm: 13, md: 14, lg: 16 } as const;
 /** Scoped CSS for the retailer's menu typography + hover effect (inline theme styles need !important). */
 export function headerNavCss(scope: string, o: Pick<HeaderOptions, 'navFontSize' | 'navUppercase' | 'navHoverStyle'>): string {
   const rules: string[] = [];
-  if (o.navFontSize !== 'md') rules.push(`[data-sx-header="${scope}"] nav a{font-size:${NAV_FONT_PX[o.navFontSize]}px!important}`);
-  if (o.navUppercase) rules.push(`[data-sx-header="${scope}"] nav a{text-transform:uppercase;letter-spacing:.06em}`);
+  const s = `[data-sx-header="${scope}"]`;
+  // Generic: links only. A theme whose markup differs (e.g. "No link" items as <span>) adds its own rules.
+  const item = `${s} nav a`;
+  const itemHover = `${s} nav a:hover,${s} nav a:focus-visible`;
+  if (o.navFontSize !== 'md') rules.push(`${item}{font-size:${NAV_FONT_PX[o.navFontSize]}px!important}`);
+  // text-transform inherits, so one rule on <nav> covers every label inside it.
+  if (o.navUppercase) rules.push(`${s} nav{text-transform:uppercase;letter-spacing:.06em}`);
   if (o.navHoverStyle === 'underline') {
-    rules.push(`[data-sx-header="${scope}"] nav a{background-image:linear-gradient(currentColor,currentColor);background-size:0 1.5px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .25s ease;padding-bottom:2px}`);
-    rules.push(`[data-sx-header="${scope}"] nav a:hover,[data-sx-header="${scope}"] nav a:focus-visible{background-size:100% 1.5px}`);
+    rules.push(`${item}{background-image:linear-gradient(currentColor,currentColor);background-size:0 1.5px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .25s ease;padding-bottom:2px}`);
+    rules.push(`${itemHover}{background-size:100% 1.5px}`);
   }
   if (o.navHoverStyle === 'pill') {
-    rules.push(`[data-sx-header="${scope}"] nav a{padding:6px 12px;border-radius:999px;transition:background-color .2s ease}`);
-    rules.push(`[data-sx-header="${scope}"] nav a:hover,[data-sx-header="${scope}"] nav a:focus-visible{background-color:color-mix(in srgb,currentColor 10%,transparent)}`);
+    rules.push(`${item}{padding:6px 12px;border-radius:999px;transition:background-color .2s ease}`);
+    rules.push(`${itemHover}{background-color:color-mix(in srgb,currentColor 10%,transparent)}`);
   }
   return rules.join('');
 }

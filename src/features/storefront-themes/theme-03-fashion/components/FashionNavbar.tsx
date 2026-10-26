@@ -23,6 +23,18 @@ import { EditableText } from '../../inlineEdit';
 import { HeaderCta, HeaderTopBar } from './nav/HeaderExtras';
 
 /** Fashion header: centered wordmark between the menu (left) and the icons (right), thin rule, calm hover states. */
+/** Maison renders a "No link" top-level item as a <span>; give it the same size/underline as the <a> items. */
+function maisonNoLinkNavCss(scope: string, o: { navFontSize: 'sm' | 'md' | 'lg'; navHoverStyle: string }): string {
+  const sel = `[data-sx-header="${scope}"] nav [data-nav-group]>span`;
+  const rules: string[] = [];
+  if (o.navFontSize !== 'md') rules.push(`${sel}{font-size:${o.navFontSize === 'sm' ? 13 : 16}px!important}`);
+  if (o.navHoverStyle === 'underline') {
+    rules.push(`${sel}{background-image:linear-gradient(currentColor,currentColor);background-size:0 1.5px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .25s ease;padding-bottom:2px}`);
+    rules.push(`${sel}:hover,${sel}:focus-visible{background-size:100% 1.5px}`);
+  }
+  return rules.join('');
+}
+
 export function FashionNavbar() {
   const { store, theme, resolveLink } = useStorefront();
   const locale = useContentLocale();
@@ -135,7 +147,7 @@ export function FashionNavbar() {
     <>
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <header ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
-        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle })}</style>
+        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o)}</style>
         <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>

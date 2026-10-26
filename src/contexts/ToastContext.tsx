@@ -75,7 +75,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const show = useCallback((variant: ToastVariant, message: string) => {
     const id = nextId.current++;
-    setToasts(prev => [...prev, { id, variant, message, leaving: false, paused: false }].slice(-MAX_VISIBLE));
+    // A double click / double-fired handler must not stack two identical toasts.
+    setToasts(prev => prev.some(t => !t.leaving && t.variant === variant && t.message === message)
+      ? prev
+      : [...prev, { id, variant, message, leaving: false, paused: false }].slice(-MAX_VISIBLE));
     schedule(id, TOAST_DURATION_MS);
   }, [schedule]);
 

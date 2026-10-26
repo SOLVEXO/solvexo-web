@@ -56,6 +56,13 @@ const STATIC_DEFAULTS = {
   colorSwatches: true,
   soldOutBadge: true,
   cardStyle: 'theme' as 'theme' | 'flat' | 'outlined' | 'elevated',
+  /** Pop-up messages ("Added to bag"); seller settings `custom.toast*`. `color` null = the accent. */
+  toast: {
+    style: 'dark' as 'dark' | 'light',
+    color: null as string | null,
+    position: 'bottom-right' as 'bottom-right' | 'bottom-center' | 'top-right' | 'top-center',
+    progress: true,
+  },
   colors: {
     bg: '#FFFFFF',
     bgAlt: '#F4F4F5',
@@ -193,6 +200,12 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
     fashionTheme.colors.selected = fashionTheme.colors.accent;
     fashionTheme.colors.selectedInk = fashionTheme.colors.accentInk;
   }
+  const ts = c?.themeSettings;
+  const toastColor = ts?.toastColor;
+  fashionTheme.toast.style = ts?.toastStyle === 'light' ? 'light' : 'dark';
+  fashionTheme.toast.color = typeof toastColor === 'string' && HEX6.test(toastColor) ? toastColor : null;
+  fashionTheme.toast.position = ts?.toastPosition === 'bottom-center' || ts?.toastPosition === 'top-right' || ts?.toastPosition === 'top-center' ? ts.toastPosition : 'bottom-right';
+  fashionTheme.toast.progress = ts?.toastProgress !== 'hide';
   if (c?.priceColor) fashionTheme.colors.price = c.priceColor;
   if (c?.cardBgColor) fashionTheme.colors.cardBg = c.cardBgColor;
   fashionTheme.colors.danger = c?.saleColor || d.colors.danger;
