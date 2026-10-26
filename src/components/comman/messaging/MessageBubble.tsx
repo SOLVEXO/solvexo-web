@@ -9,6 +9,8 @@ import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { ChatAvatar } from './ChatAvatar';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
+import { useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
+import { formatMoney } from '@/utils/currency';
 
 interface MessageBubbleProps {
   message:          OptimisticMessage;
@@ -363,6 +365,8 @@ export const MessageBubble = memo(function MessageBubble({
   onReact, currentUserId,
 }: MessageBubbleProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // a shared product's price is stored in the store's own currency: show it that way, never with a hard-coded $
+  const storeCurrency = useStoreWorkspaceOptional()?.store?.baseCurrency ?? 'USD';
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const bubbleRadius = own
@@ -512,7 +516,7 @@ export const MessageBubble = memo(function MessageBubble({
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold truncate">{message.productShare?.title ?? `Product #${message.productShare?.productId.slice(-6)}`}</p>
                       {message.productShare?.price != null && (
-                        <p className={clsx('text-[12px]', own ? 'text-white/85' : 'text-slate')}>${message.productShare.price}</p>
+                        <p className={clsx('text-[12px]', own ? 'text-white/85' : 'text-slate')}>{formatMoney(message.productShare.price, storeCurrency)}</p>
                       )}
                     </div>
                   </div>
