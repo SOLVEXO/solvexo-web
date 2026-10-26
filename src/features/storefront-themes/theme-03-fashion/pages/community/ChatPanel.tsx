@@ -75,7 +75,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
     <div className="flex flex-col overflow-hidden" style={{ height: 'min(700px, calc(100dvh - 230px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: 24, background: t.colors.bg }}>
       <header className="flex shrink-0 items-center gap-3 p-4" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
         <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}>
-          {storeLogo ? <img src={storeLogo} alt="" className="size-full object-cover" /> : <StoreIcon size={20} aria-hidden />}
+          {storeLogo ? <img src={storeLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
           {chat.otherOnline && <span aria-hidden className="absolute bottom-0 right-0 size-3 rounded-full" style={{ background: t.colors.success, border: `2px solid ${t.colors.bg}` }} />}
         </span>
         <div className="min-w-0">

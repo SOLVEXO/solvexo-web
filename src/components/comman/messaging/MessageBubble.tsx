@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, memo } from 'react';
+import { useRef, useState, memo } from 'react';
 import { clsx } from 'clsx';
 import {
   Check, CheckCheck, Clock, AlertCircle, FileText, Video as VideoIcon, Play, Pause,
@@ -9,6 +9,7 @@ import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { ChatAvatar } from './ChatAvatar';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
+import { FloatingPanel } from './FloatingPanel';
 import { useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
 import { formatMoney } from '@/utils/currency';
 
@@ -70,7 +71,7 @@ function VoiceNoteBubble({ url, own }: { url: string; own: boolean }) {
   const pct = duration > 0 && Number.isFinite(duration) ? (current / duration) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-[10px] min-w-[180px]">
+    <div className="flex items-center gap-[10px] min-w-[180px] max-w-[260px]">
       <audio
         ref={audioRef}
         src={url}
@@ -141,23 +142,12 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('keydown', onEsc);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
+  const btn = useRef<HTMLButtonElement>(null);
 
   return (
     <div ref={ref} className="relative">
       <button
+        ref={btn}
         onClick={() => setOpen(o => !o)}
         aria-label="Message options"
         aria-haspopup="menu"
@@ -172,10 +162,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
       </button>
 
       {open && (
-        <div role="menu" className={clsx(
-          'absolute top-[22px] z-30 bg-white border border-bone rounded-[10px] py-[5px] min-w-[138px]',
-          own ? 'right-0' : 'left-0',
-        )}>
+        <FloatingPanel anchor={btn} align={own ? 'end' : 'start'} onClose={() => setOpen(false)} className="bg-white border border-bone rounded-[10px] py-[5px] min-w-[138px] shadow-md">
           <button
             role="menuitem"
             onClick={() => { onReply(); setOpen(false); }}
@@ -204,7 +191,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
               </button>
             </>
           )}
-        </div>
+        </FloatingPanel>
       )}
     </div>
   );
@@ -216,21 +203,12 @@ function QuickReactBar({ own, onPick }: { own: boolean; onPick: (emoji: string) 
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('keydown', onEsc);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
+  const btn = useRef<HTMLButtonElement>(null);
 
   return (
     <div ref={ref} className="relative isolate">
       <button
+        ref={btn}
         onClick={() => setOpen(o => !o)}
         aria-label="React"
         aria-haspopup="menu"
@@ -245,13 +223,7 @@ function QuickReactBar({ own, onPick }: { own: boolean; onPick: (emoji: string) 
       </button>
 
       {open && (
-        <div
-          role="menu"
-          className={clsx(
-            'absolute top-[22px] z-30 flex items-center gap-[2px] bg-white border border-bone rounded-full py-[4px] px-[5px] shadow-sm',
-            own ? 'right-0' : 'left-0',
-          )}
-        >
+        <FloatingPanel anchor={btn} align={own ? 'end' : 'start'} onClose={() => setOpen(false)} className="flex items-center gap-[2px] bg-white border border-bone rounded-full py-[4px] px-[5px] shadow-md">
           {QUICK_REACTIONS.map(emoji => (
             <button
               key={emoji}
@@ -262,7 +234,7 @@ function QuickReactBar({ own, onPick }: { own: boolean; onPick: (emoji: string) 
               {emoji}
             </button>
           ))}
-        </div>
+        </FloatingPanel>
       )}
     </div>
   );
@@ -514,7 +486,7 @@ export const MessageBubble = memo(function MessageBubble({
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold truncate">{message.productShare?.title ?? `Product #${message.productShare?.productId.slice(-6)}`}</p>
+                      <p className="text-[13px] font-semibold truncate" title={message.productShare?.title}>{message.productShare?.title ?? `Product #${message.productShare?.productId.slice(-6)}`}</p>
                       {message.productShare?.price != null && (
                         <p className={clsx('text-[12px]', own ? 'text-white/85' : 'text-slate')}>{formatMoney(message.productShare.price, storeCurrency)}</p>
                       )}

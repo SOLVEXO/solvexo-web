@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { AlertCircle, Check, CheckCheck, CornerUpLeft, FileText, ImageOff, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
@@ -6,6 +6,8 @@ import type { Message } from '@/api/services/messaging';
 import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { useMoney } from '../../../core/hooks/useMoney';
 import { fashionTheme as t } from '../../theme.config';
+import { ActionsPopover } from './ActionsPopover';
+import { VoicePlayer } from './VoicePlayer';
 import { REACTION_EMOJIS, clockTime, formatBytes, messagePreview, safeUrl } from '../../../core/community/communityFormat';
 
 interface Props {
@@ -28,11 +30,11 @@ function Attachments({ message, onAccent }: { message: Message; onAccent: boolea
         if (!url) return null;
         if (message.type === 'image') return (
           <a key={i} href={url} target="_blank" rel="noopener noreferrer" aria-label={ts('pg.open_name', 'Open {{name}}', { name: a.fileName || ts('pg.word_photo', 'photo') })}>
-            <img src={safeUrl(a.thumbnailUrl) ?? url} alt={a.fileName || ts('pg.photo_sent_in_chat', 'Photo sent in chat')} loading="lazy" className="block max-h-72 max-w-full object-cover" style={{ borderRadius: 14 }} />
+            <img src={safeUrl(a.thumbnailUrl) ?? url} alt={a.fileName || ts('pg.photo_sent_in_chat', 'Photo sent in chat')} loading="lazy" className="block max-h-72 min-h-[80px] w-auto max-w-full object-contain" style={{ borderRadius: 14, background: t.colors.bgAlt }} />
           </a>
         );
         if (message.type === 'video') return <video key={i} src={url} controls preload="metadata" className="max-h-72 max-w-full" style={{ borderRadius: 14 }} aria-label={a.fileName || ts('pg.word_video', 'Video')}><track kind="captions" /></video>;
-        if (message.type === 'voice') return <audio key={i} src={url} controls preload="metadata" className="max-w-full" aria-label={a.fileName || ts('pg.voice_message', 'Voice message')}><track kind="captions" /></audio>;
+        if (message.type === 'voice') return <VoicePlayer key={i} url={url} label={a.fileName || ts('pg.voice_message', 'Voice message')} color={onAccent ? t.colors.bg : t.colors.ink} track={onAccent ? t.colors.ink : t.colors.bg} />;
         return (
           <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 no-underline" style={{ padding: '8px 12px', borderRadius: 12, background: onAccent ? 'rgba(255,255,255,.14)' : t.colors.bg, color: 'inherit' }}>
             <FileText size={18} aria-hidden />
@@ -59,6 +61,7 @@ function ProductShareCard({ share }: { share: NonNullable<Message['productShare'
 /** A single chat message with reply quote, attachments, reactions, ticks and an actions row. */
 export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit, onDelete, onRetry, onReact }: Props) {
   const [open, setOpen] = useState(false);
+  const menuBtn = useRef<HTMLButtonElement>(null);
   const bg = mine ? t.colors.ink : t.colors.bgAlt;
   const fg = mine ? t.colors.bg : t.colors.ink;
   const seen = mine && m.seenBy?.some(s => s.userId !== myId);
@@ -99,7 +102,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
           </p>
         </div>
         {canAct && (
-          <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={ts('pg.message_actions', 'Message actions')} className="grid size-8 shrink-0 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
+          <button ref={menuBtn} type="button" onClick={() => setOpen(o => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={ts('pg.message_actions', 'Message actions')} className="grid size-8 shrink-0 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
             <MoreHorizontal size={16} aria-hidden />
           </button>
         )}
@@ -119,16 +122,15 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
       )}
 
       {open && canAct && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1 p-1.5" style={{ borderRadius: 9999, background: t.colors.bg, border: `1px solid ${t.colors.border}` }}>
+        <ActionsPopover anchor={menuBtn} align={mine ? 'end' : 'start'} onClose={() => setOpen(false)}>
           {REACTION_EMOJIS.map(e => (
             <button key={e} type="button" onClick={() => { onReact(m._id, e); setOpen(false); }} aria-label={ts('pg.react_emoji', 'React {{emoji}}', { emoji: e })} aria-pressed={mineReaction === e} className="grid size-8 place-items-center rounded-full border-0 text-base" style={{ cursor: 'pointer', background: mineReaction === e ? t.colors.bgAlt : 'transparent' }}>{e}</button>
           ))}
           <button type="button" onClick={() => { onReply(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><CornerUpLeft size={13} aria-hidden />{ts('pg.reply', 'Reply')}</button>
           {mine && m.type === 'text' && <button type="button" onClick={() => { onEdit(m); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.ink, cursor: 'pointer' }}><Pencil size={13} aria-hidden />{ts('addresses.edit', 'Edit')}</button>}
           {mine && <button type="button" onClick={() => { onDelete(m._id); setOpen(false); }} className="inline-flex h-8 items-center gap-1 rounded-full border-0 bg-transparent px-3 text-[13px]" style={{ color: t.colors.danger, cursor: 'pointer' }}><Trash2 size={13} aria-hidden />{ts('addresses.delete', 'Delete')}</button>}
-        </div>
+        </ActionsPopover>
       )}
     </div>
   );
 }
-
