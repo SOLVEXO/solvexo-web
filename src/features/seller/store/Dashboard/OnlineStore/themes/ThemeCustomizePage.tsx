@@ -1048,11 +1048,11 @@ export function ThemeCustomizePage() {
         </div>
       )}
       {scope === 'theme' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5 px-4 lg:px-7 py-5 items-start">
-          <div className={mobilePane === 'preview' ? 'hidden lg:block' : ''}>
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_minmax(0,1fr)] gap-5 px-4 lg:px-7 py-5 items-start">
+          <div className={`min-w-0 ${mobilePane === 'preview' ? 'hidden lg:block' : ''}`}>
           <ThemeSettingsPanel storeId={storeId} installedThemeId={installedThemeId} onDraftChange={setThemeScopePreview} onDirtyChange={setThemeSettingsDirty} />
           </div>
-          <div className={`border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
+          <div className={`min-w-0 border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
               <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                 <ThemeLivePreview sections={homeDraftSections} showChrome colorPick draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
@@ -1098,8 +1098,8 @@ export function ThemeCustomizePage() {
       ) : docMissing ? (
         <div className="p-10 text-center"><p className="text-[14px] text-slate">Couldn't load this template.</p></div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 px-4 lg:px-7 py-5">
-          <div className={`flex flex-col gap-3 ${mobilePane === 'preview' ? 'hidden lg:flex' : ''}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] gap-5 px-4 lg:px-7 py-5">
+          <div className={`min-w-0 flex flex-col gap-3 ${mobilePane === 'preview' ? 'hidden lg:flex' : ''}`}>
             <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1">Header</p>
             {chromeGroup('announcement')}
             {chromeGroup('header')}
@@ -1127,7 +1127,7 @@ export function ThemeCustomizePage() {
             {chromeGroup('footer')}
           </div>
 
-          <div className={`border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
+          <div className={`min-w-0 border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
               <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                 <ThemeLivePreview
