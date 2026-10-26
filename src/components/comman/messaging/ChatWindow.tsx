@@ -21,6 +21,8 @@ interface ChatWindowProps {
   menuItems:       ActionMenuItem[];
   onBack?:         () => void;
   shortcuts?:      ChatHeaderShortcut[];
+  /** Seller's canned replies: typing "/" in the composer suggests them. */
+  quickReplies?:   { title: string; text: string }[];
 
   messages:        OptimisticMessage[];
   msgLoading:      boolean;
@@ -69,7 +71,7 @@ function payloadFromMessage(m: OptimisticMessage): SendMessagePayload | null {
 // Reply/edit/compose state lives here since it's pure UI state that
 // resets per-conversation and doesn't need to leak into the page.
 export function ChatWindow({
-  open, headerName, headerImage, headerVerified, subtitleOverride, menuItems, onBack, shortcuts,
+  open, headerName, headerImage, headerVerified, subtitleOverride, menuItems, onBack, shortcuts, quickReplies,
   messages, msgLoading, currentUserId, otherPartyId, hasMore, loadingMore, onLoadMore,
   sending, uploading, uploadProgress, onSend, onUpload, onFileTooLarge, onEditMessage, onDeleteMessage, onRetry, onReact,
   otherOnline, otherTyping, onTyping, conversationId, storeId, error,
@@ -223,6 +225,21 @@ export function ChatWindow({
         onRetry={handleRetry}
         onReact={onReact}
       />
+
+      {quickReplies && quickReplies.length > 0 && text.startsWith('/') && (() => {
+        const q = text.slice(1).trim().toLowerCase();
+        const found = quickReplies.filter(r => !q || r.title.toLowerCase().includes(q) || r.text.toLowerCase().includes(q)).slice(0, 6);
+        return (
+          <div role="listbox" aria-label="Quick replies" className="mx-3 mb-1 max-h-[220px] overflow-y-auto rounded-xl border border-bone bg-white">
+            {found.length === 0 ? <p className="px-3 py-2 text-[12px] text-slate">No quick reply matches.</p> : found.map(r => (
+              <button key={r.title} type="button" role="option" aria-selected="false" onClick={() => setText(r.text)} className="flex w-full cursor-pointer flex-col items-start gap-0.5 border-0 bg-transparent px-3 py-2 text-left hover:bg-cream">
+                <span className="text-[12.5px] font-semibold text-charcoal">/{r.title}</span>
+                <span className="line-clamp-2 text-[12px] text-slate">{r.text}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       <MessageInput
         value={text}

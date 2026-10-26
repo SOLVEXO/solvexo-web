@@ -470,6 +470,7 @@ export const MessageBubble = memo(function MessageBubble({
                     <p className={clsx('text-[14px] leading-[1.45] whitespace-pre-wrap break-words', own ? 'pl-[18px]' : 'pr-[18px]')}>
                       {message.text}
                       {message.isEdited && <span className={clsx('text-[10px] ml-1', own ? 'text-white/60' : 'text-slate')}>(edited)</span>}
+                      {message.isAutoReply && <span className={clsx('block text-[10px] mt-0.5', own ? 'text-white/60' : 'text-slate')}>Automatic reply</span>}
                     </p>
                     {message.linkPreview && <LinkPreviewCard preview={message.linkPreview} own={own} />}
                   </>

@@ -112,6 +112,8 @@ export interface Message {
   status:          string;
   seenBy:          MessageSeenEntry[];
   isEdited:        boolean;
+  /** Sent by the store's automatic reply. */
+  isAutoReply?:    boolean;
   editedAt:        string | null;
   isDeleted:       boolean;
   deletedAt:       string | null;

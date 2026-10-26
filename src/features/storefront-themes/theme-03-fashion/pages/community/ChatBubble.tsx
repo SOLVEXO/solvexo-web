@@ -96,6 +96,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
             </div>
           )}
           <p className="m-0 mt-1 flex items-center justify-end gap-1 text-[11px] opacity-70">
+            {m.isAutoReply && !m.isDeleted && <span>{ts('pg.automatic_reply', 'Automatic reply')}</span>}
             {m.isEdited && !m.isDeleted && <span>{ts('pg.word_edited', 'edited')}</span>}
             <time dateTime={m.createdAt}>{clockTime(m.createdAt)}</time>
             {mine && !m._pending && !m._failed && (seen ? <CheckCheck size={13} aria-label={ts('pg.seen', 'Seen')} /> : <Check size={13} aria-label={ts('pg.sent', 'Sent')} />)}

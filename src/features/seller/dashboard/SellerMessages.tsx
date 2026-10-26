@@ -4,6 +4,7 @@ import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2,
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
 import { ChatSettingsModal } from './ChatSettingsModal';
+import { apiGetStoreChatSettings, type QuickReply } from '@/api/services/storeChatSettings';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
 import { useConversation } from '@/hooks/messaging/useConversation';
@@ -50,6 +51,13 @@ export function SellerMessages() {
   const { storeId } = useParams<{ storeId: string }>();
   const workspace = useStoreWorkspaceOptional();
   const [chatSettingsOpen, setChatSettingsOpen] = useState(false);
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
+  useEffect(() => {
+    if (!storeId) return;
+    let live = true;
+    apiGetStoreChatSettings(storeId).then(res => { if (live) setQuickReplies(res.data.quickReplies); }).catch(() => {});
+    return () => { live = false; };
+  }, [storeId]);
   const navigate = useNavigate();
   const { profile } = useGetProfile();
   const toast = useToast();
@@ -244,7 +252,7 @@ export function SellerMessages() {
           </div>
         }
       />
-      {chatSettingsOpen && storeId && <ChatSettingsModal storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onClose={() => setChatSettingsOpen(false)} />}
+      {chatSettingsOpen && storeId && <ChatSettingsModal storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onSaved={setQuickReplies} onClose={() => setChatSettingsOpen(false)} />}
 
       {/* flex-1 + min-h-0 fills whatever space is actually left under the
           header instead of guessing its pixel height with a calc(100vh - Npx)
@@ -279,6 +287,7 @@ export function SellerMessages() {
           headerImage={active?.buyer?.profileImage}
           subtitleOverride={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : undefined) : undefined}
           menuItems={menuItems}
+          quickReplies={quickReplies}
           onBack={() => setActiveId(null)}
           shortcuts={storeId ? [{ icon: <Package size={17} />, label: 'View Orders', onClick: () => navigate(`/store/${storeId}/orders`) }] : []}
           messages={messages}
