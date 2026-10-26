@@ -14,6 +14,12 @@ describe('buildPayOptions', () => {
   it('hides the card option when Stripe is not configured', () => {
     expect(buildPayOptions({ allowed: ['stripe'], extras: [], stripeConfigured: false, zeroTotal: false })).toEqual([]);
   });
+  it('does not offer a gateway that cannot charge this checkout currency, but keeps manual methods', () => {
+    const paypalUsd = { provider: 'paypal', displayName: 'PayPal', currency: 'USD', payCurrency: 'USD', available: false } as PublicPaymentMethod;
+    const mollie = { provider: 'mollie', displayName: 'Mollie', currency: 'EUR', payCurrency: 'EUR', available: true } as PublicPaymentMethod;
+    const o = buildPayOptions({ allowed: [], extras: [paypalUsd, mollie, manual], stripeConfigured: false, zeroTotal: false });
+    expect(o.map(x => x.provider ?? x.kind)).toEqual(['mollie', 'manual']);
+  });
   it('drops card and hosted gateways for a zero total but keeps cod and manual', () => {
     const o = buildPayOptions({ allowed: ['stripe', 'cash_on_delivery'], extras: [safepay, manual], stripeConfigured: true, zeroTotal: true });
     expect(o.map(x => x.kind)).toEqual(['cod', 'manual']);

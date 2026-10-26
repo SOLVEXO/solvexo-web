@@ -13,6 +13,7 @@ import {
 } from '@/api/services/integrations';
 import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
 import { ShippingSettingsSection } from './ShippingSettingsSection';
+import { GenericGatewayConnectModal, GenericWebhookPanel, StripeStandardActions } from './GlobalGateways';
 import { CashOnDeliveryCard, ManualPaymentMethodsSection, PkGatewayConnectModal, ModeSwitch, StripePayoutsPanel, WhatsAppNotificationsPanel } from './PaymentExtras';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
 
@@ -38,6 +39,13 @@ const PROVIDER_BRAND: Record<PaymentProviderKey, { name: string; color: string; 
   easypaisa: { name: 'Easypaisa', color: '#0A8043', bg: '#E7F5EE' },
   payfast:   { name: 'PayFast',   color: '#0B5FFF', bg: '#E8F0FF' },
   bank_transfer: { name: 'Bank Transfer', color: '#1E7A3C', bg: '#E3F4EA' },
+  stripe_own:  { name: 'Stripe',      color: '#635BFF', bg: '#EEEDFF' },
+  stripe_standard: { name: 'Stripe',    color: '#635BFF', bg: '#EEEDFF' },
+  paypal:      { name: 'PayPal',      color: '#003087', bg: '#E6EEF9' },
+  razorpay:    { name: 'Razorpay',    color: '#0C2451', bg: '#E8EDF7' },
+  paystack:    { name: 'Paystack',    color: '#0BA4DB', bg: '#E5F6FC' },
+  flutterwave: { name: 'Flutterwave', color: '#F5A623', bg: '#FEF4E0' },
+  mollie:      { name: 'Mollie',      color: '#111111', bg: '#EFEFEF' },
 };
 
 /** Direct wallet merchant accounts — shown under "Advanced" (Safepay/PayFast already offer these wallets). */
@@ -576,7 +584,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
             <p className="text-[14.5px] font-bold text-carbon truncate">{displayName}</p>
             <div className="flex items-center gap-1.5 mt-[3px]">
               <span className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full bg-cream text-slate">
-                {integration.config?.currency ?? 'PKR'}
+                {integration.config?.currency ?? integration.catalog?.chargeCurrency ?? 'PKR'}
               </span>
               {/* Stripe's mode mirrors the platform key — only meaningful once the store's account is connected. */}
               {(!isStripe || integration.status === 'connected') && (
@@ -602,13 +610,25 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
         <StripeConnectSection integration={integration} storeId={storeId} onChanged={onChanged} />
       ) : integration.status === 'not_connected' || integration.status === 'disabled' ? (
         <>
-          <p className="text-[12.5px] text-slate mb-3">Accept real customer payments through {displayName} on your storefront checkout.</p>
-          <Button size="sm" onClick={() => setShowConnect(true)}>Connect</Button>
+          {integration.provider === 'stripe_standard' ? (
+            <StripeStandardActions storeId={storeId} integration={integration} onChanged={onChanged} />
+          ) : (
+            <>
+              <p className="text-[12.5px] text-slate mb-3">Accept real customer payments through {displayName} on your storefront checkout.</p>
+              <Button size="sm" onClick={() => setShowConnect(true)}>Connect</Button>
+            </>
+          )}
         </>
       ) : (
         <div className="flex flex-col gap-3">
           {integration.provider === 'safepay' && !integration.maskedHints?.webhookSecret && (
             <WebhookSetupPanel storeId={storeId} integration={integration} onSaved={onChanged} />
+          )}
+          {integration.provider === 'stripe_standard' && integration.status === 'error' && (
+            <StripeStandardActions storeId={storeId} integration={integration} onChanged={onChanged} />
+          )}
+          {integration.catalog?.generic && (
+            <GenericWebhookPanel storeId={storeId} integration={integration} onSaved={onChanged} />
           )}
           {integration.provider === 'payfast' && integration.webhookToken && (
             <div className="flex flex-col gap-1.5">
@@ -648,6 +668,9 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
 
       {showConnect && (integration.provider === 'jazzcash' || integration.provider === 'payfast' || integration.provider === 'easypaisa') && (
         <PkGatewayConnectModal storeId={storeId} provider={integration.provider} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
+      )}
+      {showConnect && integration.catalog?.generic && (
+        <GenericGatewayConnectModal storeId={storeId} integration={integration} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
       )}
       {showConnect && integration.provider === 'safepay' && (
         <SafepayConnectModal storeId={storeId} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />

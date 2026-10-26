@@ -75,6 +75,14 @@ export function CashOnDeliveryCard() {
 }
 
 // ── Custom manual payment methods (Shopify "Manual payment methods > Custom payment method") ──
+/** One-click starting points: the seller only types their own number / account. */
+const MANUAL_PRESETS: { label: string; name: string; instructions: string }[] = [
+  { label: 'Easypaisa', name: 'Easypaisa transfer', instructions: 'Send the total to Easypaisa 03XX-XXXXXXX (Account title: YOUR NAME), then send the payment screenshot on WhatsApp 03XX-XXXXXXX with your order number.' },
+  { label: 'JazzCash', name: 'JazzCash transfer', instructions: 'Send the total to JazzCash 03XX-XXXXXXX (Account title: YOUR NAME), then send the payment screenshot on WhatsApp 03XX-XXXXXXX with your order number.' },
+  { label: 'Bank transfer', name: 'Bank transfer', instructions: 'Transfer the total to: Bank: YOUR BANK, Account title: YOUR NAME, Account no / IBAN: XXXXXXXX. Write your order number in the transfer note and send the receipt on WhatsApp 03XX-XXXXXXX.' },
+  { label: 'Pay at pickup', name: 'Pay at pickup', instructions: 'Pay in cash or by card when you collect your order from our store.' },
+];
+
 function ManualMethodModal({ storeId, initial, onClose, onSaved }: {
   storeId: string; initial?: ManualPaymentMethodView; onClose: () => void; onSaved: () => void;
 }) {
@@ -100,7 +108,7 @@ function ManualMethodModal({ storeId, initial, onClose, onSaved }: {
 
   return (
     <Modal
-      title={initial ? 'Edit payment method' : 'Add custom payment method'}
+      title={initial ? 'Edit payment method' : 'Accept payment by transfer'}
       width={480}
       onClose={onClose}
       mobileSheet
@@ -109,6 +117,32 @@ function ManualMethodModal({ storeId, initial, onClose, onSaved }: {
         <Button onClick={submit} loading={saving}>Save</Button>
       </>}
     >
+      <div className="rounded-[10px] bg-cream px-3.5 py-3 mb-4">
+        <p className="text-[12px] font-semibold text-carbon mb-1">How this works</p>
+        <ol className="text-[11.5px] leading-[1.6] text-slate list-decimal pl-4">
+          <li>The buyer picks this method at checkout and places the order.</li>
+          <li>They see your instructions below and send you the money (Easypaisa, JazzCash, bank...).</li>
+          <li>The order stays <b>unpaid</b>. When you have received the money, open the order and press <b>Mark as paid</b>.</li>
+        </ol>
+      </div>
+      {!initial && (
+        <div className="mb-4">
+          <p className="text-[12px] font-medium text-charcoal mb-1.5">Start from a template</p>
+          <div className="flex flex-wrap gap-2">
+            {MANUAL_PRESETS.map(p => (
+              <button
+                key={p.label}
+                type="button"
+                className="px-3 py-1.5 rounded-full border border-bone bg-white text-[12px] font-medium text-charcoal hover:border-carbon"
+                onClick={() => { setName(p.name); setInstructions(p.instructions); }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate mt-1.5">Replace the XXXX parts with your own number and name before saving.</p>
+        </div>
+      )}
       <Field label="Name" required hint="Shown to buyers at checkout, e.g. “Easypaisa transfer” or “Pay at pickup”.">
         <Input value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="Easypaisa transfer" />
       </Field>
@@ -150,14 +184,14 @@ export function ManualPaymentMethodsSection({ storeId, methods, onChanged }: {
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-[42px] h-[42px] rounded-[10px] bg-cream flex items-center justify-center shrink-0"><Banknote size={20} className="text-slate" /></div>
           <div className="min-w-0">
-            <p className="text-[14.5px] font-bold text-carbon">Custom payment methods</p>
-            <p className="text-[12px] text-slate">Name your own method — e.g. Easypaisa transfer or pay at pickup — with instructions shown to buyers at checkout.</p>
+            <p className="text-[14.5px] font-bold text-carbon">Payment by transfer (Easypaisa, JazzCash, bank, pay at pickup)</p>
+            <p className="text-[12px] text-slate">No merchant account needed. Buyers send the money to you directly and you mark the order paid. No transaction fee.</p>
           </div>
         </div>
         <Button size="sm" icon={<Plus size={13} />} onClick={() => setEditing('new')}>Add</Button>
       </div>
       {methods.length === 0 ? (
-        <p className="text-[12.5px] text-slate">No custom payment methods yet.</p>
+        <p className="text-[12.5px] text-slate">Nothing added yet. Press <b>Add</b> and pick Easypaisa, JazzCash or Bank transfer to start in one click.</p>
       ) : (
         <ul className="flex flex-col divide-y divide-bone">
           {methods.map(m => (

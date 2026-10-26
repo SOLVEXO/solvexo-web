@@ -717,6 +717,8 @@ export const ENDPOINTS = {
     MANUAL_METHOD:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/manual-methods/${id}`,
     WHATSAPP_NOTIFICATIONS: (storeId: string) => `/api/store/${storeId}/integrations/whatsapp/notifications`,
     WHATSAPP_TEMPLATES: (storeId: string) => `/api/store/${storeId}/integrations/whatsapp/templates`,
+    STRIPE_STANDARD_LINK: (storeId: string) => `/api/store/${storeId}/integrations/stripe_standard/onboarding-link`,
+    STRIPE_STANDARD_SYNC: (storeId: string) => `/api/store/${storeId}/integrations/stripe_standard/sync`,
     WHATSAPP_TEMPLATE: (storeId: string, name: string) => `/api/store/${storeId}/integrations/whatsapp/templates/${encodeURIComponent(name)}`,
   },
 

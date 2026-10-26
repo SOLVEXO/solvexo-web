@@ -640,6 +640,13 @@ export function StoreOrderDetail() {
                     <CreditCard size={13} /> Capture Payment
                   </Button>
                 )}
+                {!detail.isPaid && detail.paymentStatus !== 'authorized' && ['manual', 'manual_bank_transfer', 'cash_on_delivery'].includes(detail.paymentType) && (
+                  <p role="note" className="rounded-[8px] bg-[#FDF3E7] px-3 py-2 text-[11.5px] leading-[1.5]" style={{ color: '#9A6A17' }}>
+                    {detail.paymentType === 'cash_on_delivery'
+                      ? 'Cash on delivery: press Mark as paid once the buyer has paid you on delivery.'
+                      : 'Waiting for the buyer\'s transfer. When the money has reached you, press Mark as paid so this order counts as paid.'}
+                  </p>
+                )}
                 {!detail.isPaid && detail.paymentStatus !== 'authorized' && (
                   <Button size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
                     <CheckCheck size={13} /> Mark as Paid (full amount)

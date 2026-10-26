@@ -5,7 +5,25 @@ import { ENDPOINTS } from '../endpoints';
 // ── Types — mirror solvexo-api's `src/integrations` module exactly ─────────
 
 export type IntegrationType = 'payment' | 'whatsapp' | 'tax' | 'shipping';
-export type PaymentProviderKey = 'safepay' | 'jazzcash' | 'easypaisa' | 'payfast' | 'stripe' | 'bank_transfer';
+export type PaymentProviderKey =
+  | 'safepay' | 'jazzcash' | 'easypaisa' | 'payfast' | 'stripe' | 'bank_transfer'
+  | 'stripe_own' | 'stripe_standard' | 'paypal' | 'razorpay' | 'paystack' | 'flutterwave' | 'mollie';
+
+/** What the backend's payment-provider catalog says about a provider (drives the generic connect form + webhook step). */
+export interface GatewayCatalogView {
+  label: string;
+  /** True = connected through the shared, catalog-driven form (Stripe own keys, PayPal, Razorpay, Paystack, Flutterwave, Mollie). */
+  generic: boolean;
+  fields: { key: string; label: string; secret: boolean; placeholder?: string; help?: string; optional?: boolean }[];
+  webhook: 'none' | 'secret' | 'url';
+  webhookSecretLabel: string | null;
+  webhookHelp: string | null;
+  refunds: 'api' | 'manual';
+  currencies: '*' | string[];
+  /** The currency buyers are charged in through this gateway for THIS store. */
+  chargeCurrency: string;
+  docsUrl: string | null;
+}
 export type IntegrationMode = 'sandbox' | 'live';
 export type IntegrationStatus = 'not_connected' | 'connected' | 'disabled' | 'error' | 'needs_reauth';
 
@@ -27,6 +45,8 @@ export interface StoreIntegrationView {
   /** Stripe only — it has no `StoreIntegration` row of its own; manage it
    *  via the existing Stripe Connect endpoints instead of this module. */
   manageVia?: { statusUrl: string; connectUrl: string };
+  /** Payment providers only: catalog facts (fields to paste, webhook setup, refunds, currencies). */
+  catalog?: GatewayCatalogView | null;
   /** Payment providers only: false when the store's country cannot use this provider (Shopify-style availability). */
   available?: boolean;
   /** Plain-language reason shown to the seller when `available` is false. */
@@ -72,6 +92,19 @@ export interface ConnectSafepayPayload {
   secretKey: string;
   clientId: string;
   mode?: IntegrationMode;
+}
+
+/** Stripe rail with the seller's OWN Stripe account (direct charges): Stripe-hosted onboarding URL / status re-check. */
+export function apiStartStripeStandard(storeId: string, refreshUrl: string, returnUrl: string) {
+  return client.post<never, ApiResponse<{ url: string }>>(ENDPOINTS.STORE_INTEGRATIONS.STRIPE_STANDARD_LINK(storeId), { refreshUrl, returnUrl });
+}
+export function apiSyncStripeStandard(storeId: string) {
+  return client.post<never, ApiResponse<StoreIntegrationView>>(ENDPOINTS.STORE_INTEGRATIONS.STRIPE_STANDARD_SYNC(storeId), {});
+}
+
+/** POST .../payment/<provider>/connect for the catalog-driven global gateways: the body keys are the catalog field keys. */
+export function apiConnectGenericGateway(storeId: string, provider: string, payload: Record<string, string>) {
+  return client.post<never, ApiResponse<StoreIntegrationView>>(ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'payment', provider as never), payload);
 }
 
 /** POST .../payment/jazzcash|payfast/connect — JazzCash: merchantId/password/integritySalt; PayFast: merchantId/securedKey (+ merchantName). */
@@ -217,6 +250,10 @@ export interface PublicPaymentMethod {
    *  real `baseCurrency`, not a fixed literal union. */
   currency: string;
   logo?: string;
+  /** The currency this gateway charges in for this store, and whether it matches the checkout's currency
+   *  (false = the gateway cannot take this checkout, so the storefront does not offer it). */
+  payCurrency?: string;
+  available?: boolean;
 }
 
 /** GET /api/checkout/:checkoutId/payment-methods — always `[]` for a

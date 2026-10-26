@@ -144,6 +144,8 @@ function paymentLine(o: DocumentOrder): string {
   const names: Record<string, string> = {
     cash_on_delivery: 'Cash on delivery', manual_bank_transfer: 'Bank transfer', stripe: 'Card', store_credit: 'Store credit', manual: 'Manual payment',
   };
+    safepay: 'Safepay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', payfast: 'PayFast',
+    stripe_own: 'Stripe', paypal: 'PayPal', razorpay: 'Razorpay', paystack: 'Paystack', flutterwave: 'Flutterwave', mollie: 'Mollie',
   return names[o.paymentType] ?? '';
 }
 

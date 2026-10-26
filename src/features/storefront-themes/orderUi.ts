@@ -108,6 +108,9 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   stripe: tt('order.method.card', "Card"),
   manual_bank_transfer: tt('order.method.bank', "Bank transfer"),
   store_credit: tt('checkout.storeCredit', "Store credit"),
+  // Gateway brand names are never translated.
+  safepay: 'Safepay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', payfast: 'PayFast',
+  stripe_own: 'Stripe', paypal: 'PayPal', razorpay: 'Razorpay', paystack: 'Paystack', flutterwave: 'Flutterwave', mollie: 'Mollie',
 };
 
 export function paymentMethodLabel(paymentType: string | undefined | null): string {

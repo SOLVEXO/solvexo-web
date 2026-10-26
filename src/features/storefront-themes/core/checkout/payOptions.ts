@@ -33,6 +33,8 @@ export function buildPayOptions({ allowed, extras, stripeConfigured, zeroTotal }
     out.push({ key: 'cash_on_delivery', kind: 'cod', label: ts('order.method.cod', 'Cash on delivery'), hint: ts('pg.pay_in_cash_when_your_order_arrives', 'Pay in cash when your order arrives.') });
   }
   for (const m of extras) {
+    // A gateway that cannot charge this checkout's currency is not offered (Shopify hides it the same way).
+    if (m.provider !== 'manual' && m.available === false) continue;
     const manual = m.provider === 'manual' && !!m.methodId;
     if (!manual && zeroTotal) continue;
     out.push({
