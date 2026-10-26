@@ -23,6 +23,7 @@ import {
 import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd } from '@/utils/planPricing';
 
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
+import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
 const INVOICES_PER_PAGE = 10;
@@ -669,6 +670,9 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                       <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
                       <p className="text-[11px] text-slate">
                         {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
+                        {(inv.taxAmountUSD ?? 0) > 0 && (
+                          <span> (${(inv.subtotalUSD ?? inv.amountUSD - (inv.taxAmountUSD ?? 0)).toFixed(2)} + ${(inv.taxAmountUSD ?? 0).toFixed(2)} {inv.taxLabel ?? 'Tax'}{inv.taxRatePercent ? ` ${inv.taxRatePercent}%` : ''})</span>
+                        )}
                         {inv.refundedAmountUSD > 0 && <span className="text-error"> · ${inv.refundedAmountUSD.toFixed(2)} refunded</span>}
                       </p>
                     </div>
@@ -748,6 +752,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               ? `$${buyingAddon.priceUSD.toFixed(2)} will be charged to your card on file now and every month until you cancel.`
               : `$${buyingAddon.priceUSD.toFixed(2)} will be charged to your card on file now. One-time charge — no subscription.`}
           </p>
+          <PlatformTaxNote storeId={storeId} amountUSD={buyingAddon.priceUSD} className="text-[12.5px] text-charcoal mt-1.5" />
           {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
       )}
@@ -770,6 +775,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
           <p className="text-[13px] text-charcoal mb-3">
             Switch to <strong>{confirmingPlan.name}</strong> ({interval})?
           </p>
+          {preview && <PlatformTaxNote storeId={storeId} amountUSD={preview.newAmountUSD} className="text-[12px] text-slate -mt-1.5 mb-3" />}
 
           {previewLoading ? (
             <div className="flex items-center gap-2 text-[12.5px] text-slate py-3">

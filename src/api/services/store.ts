@@ -115,6 +115,10 @@ export interface UpdateStorePayload {
   taxRegions?: TaxRegion[];
   /** Shopify "Charge tax on shipping rates". */
   taxShipping?: boolean;
+  /** The seller's own tax registration number (NTN/STRN, TRN, VAT no...), printed on invoices. */
+  taxId?: string;
+  /** false = not tax-registered: checkout charges no tax (saved rates are kept). */
+  taxRegistered?: boolean;
   /** Shopify "Include tax in all prices": checkout extracts the tax from prices instead of adding it. */
   taxPricesIncludeTax?: boolean;
   /** Shopify "Tax overrides" (per collection / category). */
@@ -159,6 +163,8 @@ export interface StoreData {
   taxRegions: TaxRegion[];
   /** Shipping fee is part of the taxable base. */
   taxShipping?: boolean;
+  taxId?: string;
+  taxRegistered?: boolean;
   taxPricesIncludeTax?: boolean;
   taxOverrides?: TaxOverride[];
   /** Public store data: countries whose buyers see tax-inclusive / tax-exclusive prices regardless of the store default. */

@@ -413,6 +413,8 @@ export interface AdminPlatformRevenueData {
   currency: 'USD';
   range: FinancePeriod;
   planRevenue: { grossUSD: number; refundedUSD: number; netUSD: number; invoiceCount: number };
+  /** Solvexo's own tax collected on plan fees (owed to the tax authority, NOT part of revenue). */
+  planTax?: { collectedUSD: number };
   /** Add-ons (extra AI credits, staff seats...): every successful charge in the range. */
   addons: { grossUSD: number; chargeCount: number };
   transactionFees: {

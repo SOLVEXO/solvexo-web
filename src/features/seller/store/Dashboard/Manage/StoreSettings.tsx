@@ -13,6 +13,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { CustomerAccountsSection } from './CustomerAccountsSection';
 import { DomainsSection } from './DomainsSection';
 import { TaxOverridesEditor } from './TaxOverridesEditor';
+import { StoreTaxIdentity } from './StoreTaxIdentity';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
@@ -139,6 +140,8 @@ export function StoreProfileTab() {
   const [taxRate, setTaxRate] = useState(0);
   const [taxRegions, setTaxRegions] = useState<TaxRegion[]>([]);
   const [taxShipping, setTaxShipping] = useState(false);
+  const [taxId, setTaxId] = useState('');
+  const [taxRegistered, setTaxRegistered] = useState(true);
   const [taxPricesIncludeTax, setTaxPricesIncludeTax] = useState(false);
   const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
   const [showDutiesNotice, setShowDutiesNotice] = useState(true);
@@ -163,6 +166,8 @@ export function StoreProfileTab() {
     setTaxRate(store.taxRate ?? 0);
     setTaxRegions(store.taxRegions ?? []);
     setTaxShipping(!!store.taxShipping);
+    setTaxId(store.taxId ?? '');
+    setTaxRegistered(store.taxRegistered !== false);
     setTaxPricesIncludeTax(!!store.taxPricesIncludeTax);
     setTaxOverrides(store.taxOverrides ?? []);
     setShowDutiesNotice(store.showDutiesNotice !== false);
@@ -177,7 +182,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxId, taxRegistered, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -204,6 +209,8 @@ export function StoreProfileTab() {
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
       taxShipping !== !!store.taxShipping ||
+      taxId !== (store.taxId ?? '') ||
+      taxRegistered !== (store.taxRegistered !== false) ||
       taxPricesIncludeTax !== !!store.taxPricesIncludeTax ||
       JSON.stringify(taxOverrides) !== JSON.stringify(store.taxOverrides ?? []) ||
       showDutiesNotice !== (store.showDutiesNotice !== false) ||
@@ -303,6 +310,16 @@ export function StoreProfileTab() {
             <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
             <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
           </Field>
+
+          <StoreTaxIdentity
+            country={country}
+            taxId={taxId}
+            taxRegistered={taxRegistered}
+            regionCountries={taxRegions.map(r => r.country.trim().toUpperCase())}
+            onTaxId={setTaxId}
+            onTaxRegistered={setTaxRegistered}
+            onAddRegion={(cc, rate) => setTaxRegions(rs => [...rs, { country: cc, state: null, rate }])}
+          />
 
           <Field label="Tax Rate (%)">
             <input type="number" min={0} max={100} step={0.01} value={taxRate} onChange={e => setTaxRate(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} className={inputCls} />

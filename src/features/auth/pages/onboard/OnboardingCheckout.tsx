@@ -11,6 +11,7 @@ import {
 import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
 import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
 import { maxYearlySavingsPercent } from '@/utils/planPricing';
+import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 
 /** Same-day-next-month arithmetic, clamped so Jan 31 + 1 month is Feb 28/29, not Mar 3. */
 function addMonths(d: Date, n: number): Date {
@@ -26,8 +27,10 @@ const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day
 // the store if it doesn't exist yet and buys the plan with billImmediately.
 export function OnboardingCheckoutPage({
   plans, selectedPlanId, billing, paidPlanId, trialDurationDays, hasCardOnFile = false,
-  onSubscribe, onContinue, onStartTrial, onViewPlans, onBack,
+  onSubscribe, onContinue, onStartTrial, onViewPlans, onBack, taxStoreId,
 }: {
+  /** The store being billed: when given, the exact Solvexo tax on today's charge is shown. */
+  taxStoreId?: string;
   plans: PlatformPlan[]; selectedPlanId: string | null; billing: OnboardingBilling;
   paidPlanId: string | null; trialDurationDays: number;
   /** The seller already has a card saved — offer one-click "Subscribe" instead of the card form. */
@@ -259,6 +262,7 @@ export function OnboardingCheckoutPage({
                   By subscribing, you agree to be charged ${yearly ? `${yearlyTotal}/yr` : `${monthly}/mo`} ({plan.name}) + taxes
                   starting on {fmtDate(firstFullCharge)}. Cancel anytime in Settings.
                 </p>
+                {taxStoreId && <PlatformTaxNote storeId={taxStoreId} amountUSD={dueToday} className="text-[12px] text-charcoal text-center mt-1" />}
               </div>
             ) : (
               <div className="flex items-center justify-center py-16">

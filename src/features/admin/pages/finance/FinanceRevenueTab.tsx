@@ -47,8 +47,9 @@ export function FinanceRevenueTab({ params }: { params: AdminFinanceParams }) {
       ) : platform.error ? (
         <AnalyticsErrorState message={platform.error} onRetry={platform.refetch} />
       ) : platform.data ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricCard label="Seller plans (net)" value={formatMoneyCompact(platform.data.planRevenue.netUSD, 'USD')} sub={`${platform.data.planRevenue.invoiceCount} paid invoices`} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <MetricCard label="Seller plans (net)" value={formatMoneyCompact(platform.data.planRevenue.netUSD, 'USD')} sub={`${platform.data.planRevenue.invoiceCount} paid invoices, without tax`} />
+          <MetricCard label="Plan tax collected" value={formatMoneyCompact(platform.data.planTax?.collectedUSD ?? 0, 'USD')} sub="Owed to the tax authority, not revenue" />
           <MetricCard label="Add-ons" value={formatMoneyCompact(platform.data.addons.grossUSD, 'USD')} sub={`${platform.data.addons.chargeCount} charges`} />
           <MetricCard label="Transaction fees collected" value={formatMoneyCompact(platform.data.transactionFees.collectedUSD, 'USD')} sub={`${formatMoneyCompact(platform.data.transactionFees.invoicedUnpaidUSD, 'USD')} invoiced, unpaid`} />
           <MetricCard label="Total platform revenue" value={formatMoneyCompact(platform.data.totalRevenueUSD, 'USD')} sub="Plans + add-ons + collected fees" />

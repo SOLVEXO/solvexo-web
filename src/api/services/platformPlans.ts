@@ -61,7 +61,9 @@ export interface AddonPurchase {
 export interface PlatformPlanInvoice {
   _id: string; storeId: string; sellerId: string; platformPlanId: string;
   invoiceNumber: string; type: 'initial' | 'recurring' | 'proration';
+  /** Total paid, including Solvexo's tax when `taxAmountUSD` > 0. */
   amountUSD: number; status: 'paid' | 'failed' | 'pending' | 'refunded' | 'partially_refunded';
+  subtotalUSD?: number | null; taxAmountUSD?: number; taxRatePercent?: number; taxLabel?: string | null; taxCountry?: string | null;
   paidAt: string | null; refundedAt: string | null; refundedAmountUSD: number;
   hostedInvoiceUrl: string | null; invoicePdfUrl: string | null;
   paymentMethodType: string | null; createdAt: string;

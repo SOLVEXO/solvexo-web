@@ -1,5 +1,6 @@
 import type { SellerOrderDetail } from '@/api/services/product';
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
+import { taxIdLabelForCountry } from '@/utils/taxIdLabel';
 
 /**
  * Print documents for an order: the packing slip (for the packer) and the invoice (for the customer).
@@ -25,7 +26,7 @@ export interface OrderDocumentSettings {
   invoiceTerms: string | null; invoiceFooter: string | null;
 }
 
-export interface OrderDocumentStore { name: string; logo: string | null; contactEmail: string | null; phone: string | null; currency: string | null }
+export interface OrderDocumentStore { name: string; logo: string | null; contactEmail: string | null; phone: string | null; currency: string | null; taxId?: string | null; country?: string | null }
 
 export const DEFAULT_DOCUMENT_SETTINGS: OrderDocumentSettings = {
   companyName: null, addressText: null, phone: null, email: null, taxIdLabel: null, taxIdValue: null,
@@ -186,7 +187,8 @@ function headerHtml(kind: DocKind, o: DocumentOrder, s: OrderDocumentSettings, s
   const name = s.companyName || store.name;
   const email = s.email || store.contactEmail || '';
   const phone = s.phone || store.phone || '';
-  const taxId = kind === 'invoice' && s.invoiceShowTaxId && s.taxIdValue ? `${esc(s.taxIdLabel || 'Tax ID')}: ${esc(s.taxIdValue)}` : '';
+  const taxValue = s.taxIdValue || store.taxId || '';
+  const taxId = kind === 'invoice' && s.invoiceShowTaxId && taxValue ? `${esc(s.taxIdLabel || taxIdLabelForCountry(store.country))}: ${esc(taxValue)}` : '';
   const showLogoImg = s.showLogo && !!logo;
   const brand = `<div class="brand">${showLogoImg ? `<img class="logo" src="${esc(logo)}" alt="" style="max-height:${LOGO_H[s.logoSize]}px">` : ''}
 <div class="co">${showLogoImg && !s.showNameWithLogo ? '' : `<div class="co-name">${esc(name)}</div>`}${s.addressText ? `<div class="co-line">${lines(s.addressText)}</div>` : ''}${phone ? `<div class="co-line">${esc(phone)}</div>` : ''}${email ? `<div class="co-line">${esc(email)}</div>` : ''}${taxId ? `<div class="co-line">${taxId}</div>` : ''}</div></div>`;

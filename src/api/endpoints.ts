@@ -501,6 +501,14 @@ export const ENDPOINTS = {
     TEST: '/api/admin/email-health/test',
   },
 
+  // ── ADMIN: Solvexo's own tax on plan fees ─────────────────────────────────
+  ADMIN_PLATFORM_TAX: {
+    BASE:  '/api/admin/platform-tax',
+    COVERAGE: '/api/admin/platform-tax/coverage',
+    SELLER_QUOTE: '/api/platform-tax/quote',
+    APPLY: '/api/admin/platform-tax/apply-to-subscriptions',
+  },
+
   // ── STORE CUSTOMER NOTIFICATIONS (Settings → Notifications) ───────────────
   STORE_NOTIFICATIONS: {
     SETTINGS: (storeId: string) => `/api/store-notifications/${storeId}`,
@@ -709,6 +717,8 @@ export const ENDPOINTS = {
   STORE_INTEGRATIONS: {
     LIST:    (storeId: string) => `/api/store/${storeId}/integrations`,
     CONNECT: (storeId: string, type: string, provider: string) => `/api/store/${storeId}/integrations/${type}/${provider}/connect`,
+    STRIPE_STANDARD_LINK: (storeId: string) => `/api/store/${storeId}/integrations/stripe_standard/onboarding-link`,
+    STRIPE_STANDARD_SYNC: (storeId: string) => `/api/store/${storeId}/integrations/stripe_standard/sync`,
     TEST:    (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}/test`,
     UPDATE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
     DELETE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
@@ -717,8 +727,6 @@ export const ENDPOINTS = {
     MANUAL_METHOD:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/manual-methods/${id}`,
     WHATSAPP_NOTIFICATIONS: (storeId: string) => `/api/store/${storeId}/integrations/whatsapp/notifications`,
     WHATSAPP_TEMPLATES: (storeId: string) => `/api/store/${storeId}/integrations/whatsapp/templates`,
-    STRIPE_STANDARD_LINK: (storeId: string) => `/api/store/${storeId}/integrations/stripe_standard/onboarding-link`,
-    STRIPE_STANDARD_SYNC: (storeId: string) => `/api/store/${storeId}/integrations/stripe_standard/sync`,
     WHATSAPP_TEMPLATE: (storeId: string, name: string) => `/api/store/${storeId}/integrations/whatsapp/templates/${encodeURIComponent(name)}`,
   },
 

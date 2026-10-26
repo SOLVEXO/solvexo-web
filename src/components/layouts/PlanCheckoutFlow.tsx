@@ -93,6 +93,7 @@ export default function PlanCheckoutFlow({
           paidPlanId={paidPlanId}
           trialDurationDays={trialDays}
           hasCardOnFile={cardOnFile}
+          taxStoreId={storeId}
           onSubscribe={subscribe}
           onContinue={finish}
           onViewPlans={() => setView('plans')}
