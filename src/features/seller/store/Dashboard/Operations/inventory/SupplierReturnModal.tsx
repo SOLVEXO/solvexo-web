@@ -6,7 +6,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { useToast } from '@/contexts/ToastContext';
 import { currencySymbol } from '@/utils/currency';
-import { apiListSuppliers, type Supplier } from '@/api/services/purchaseOrders';
+import { apiListSuppliers, apiCreateSupplier, type Supplier } from '@/api/services/purchaseOrders';
 import { apiGetStockLines, type StockLine } from '@/api/services/product';
 import { apiCreateSupplierReturn, type SupplierReturnReason } from '@/api/services/inventoryOps';
 import { SUPPLIER_RETURN_REASONS } from './supplierReturnReasons';
@@ -37,6 +37,9 @@ export function SupplierReturnModal({ storeId, onClose, onDone, prefill }: {
   // generated once per open: a retry/double click can never remove the stock twice
   const [requestId] = useState(() => `sr-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const fromPo = !!prefill;
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [savingSupplier, setSavingSupplier] = useState(false);
 
   useEffect(() => { apiListSuppliers(storeId).then(res => setSuppliers(res.data.filter(s => s.status === 'active'))).catch(() => setSuppliers([])); }, [storeId]);
   useEffect(() => {
@@ -44,6 +47,22 @@ export function SupplierReturnModal({ storeId, onClose, onDone, prefill }: {
     const t = setTimeout(() => { apiGetStockLines(storeId, 1, 8, search.trim()).then(res => setFound(res.data.lines.filter(l => !l.unlimitedStock))).catch(() => setFound([])); }, 300);
     return () => clearTimeout(t);
   }, [search, storeId, fromPo]);
+
+  const addSupplier = async () => {
+    const name = newName.trim();
+    if (!name) return;
+    setSavingSupplier(true); setError('');
+    try {
+      const res = await apiCreateSupplier(storeId, { name });
+      setSuppliers(prev => [...prev, res.data]);
+      setSupplierId(res.data._id);
+      setNewName(''); setAdding(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not add the supplier.');
+    } finally {
+      setSavingSupplier(false);
+    }
+  };
 
   const found = search.trim().length < 2 ? [] : foundRaw;
   const add = (l: StockLine) => {
@@ -91,7 +110,17 @@ export function SupplierReturnModal({ storeId, onClose, onDone, prefill }: {
             {SUPPLIER_RETURN_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </Select>
         </div>
-        {suppliers.length === 0 && <p className="text-[11.5px] text-slate">Add a supplier first (Purchase Orders tab) so the return can be tracked against them.</p>}
+        {!fromPo && (adding ? (
+          <div className="flex items-end gap-2">
+            <div className="flex-1"><Input label="New supplier name" value={newName} maxLength={120} onChange={e => setNewName(e.target.value)} /></div>
+            <Button onClick={addSupplier} loading={savingSupplier} disabled={!newName.trim()}>Add</Button>
+            <Button variant="secondary" onClick={() => { setAdding(false); setNewName(''); }}>Cancel</Button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setAdding(true)} className="self-start bg-transparent border-0 cursor-pointer p-0 text-[12px] font-semibold text-charcoal underline">
+            + Add supplier{suppliers.length === 0 ? ' (none yet)' : ''}
+          </button>
+        ))}
 
         {!fromPo && (
           <div className="flex flex-col gap-2">

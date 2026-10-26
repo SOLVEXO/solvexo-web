@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
-  Boxes, Truck, AlertTriangle, ClipboardCheck, TrendingUp, CalendarClock, Undo2, ScanLine,
+  Boxes, Truck, AlertTriangle, ClipboardCheck, TrendingUp, CalendarClock, Undo2, ScanLine, Building2,
 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { BarcodeScanModal } from './BarcodeScanModal';
 import ExpiryTab from './tabs/ExpiryTab';
 import SupplierReturnsTab from './tabs/SupplierReturnsTab';
+import SuppliersTab from './tabs/SuppliersTab';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { useRouteTabs } from '@/hooks/useRouteTabs';
 import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
@@ -23,6 +24,7 @@ const TABS: Tab[] = [
   { id: 'purchase-orders', label: 'Purchase Orders',  icon: <Truck size={13} /> },
   { id: 'reorder',         label: 'Reorder',          icon: <AlertTriangle size={13} /> },
   { id: 'counts',          label: 'Stock Counts',     icon: <ClipboardCheck size={13} /> },
+  { id: 'suppliers',       label: 'Suppliers',        icon: <Building2 size={13} /> },
   { id: 'returns',         label: 'Supplier Returns', icon: <Undo2 size={13} /> },
   { id: 'expiry',          label: 'Expiry',           icon: <CalendarClock size={13} /> },
   { id: 'reports',         label: 'Reports',          icon: <TrendingUp size={13} /> },
@@ -51,6 +53,7 @@ const TAB_PERMS: Record<string, string[]> = {
   'purchase-orders': ['purchase_orders.manage'],
   reorder: ['purchase_orders.manage'],
   counts: ['inventory.count', 'inventory.approve'],
+  suppliers: ['purchase_orders.manage'],
   returns: ['purchase_orders.manage'],
   expiry: ['inventory.view'],
   reports: ['inventory.view'],
@@ -84,6 +87,7 @@ export function InventoryHub({ forcedTab }: { forcedTab?: string } = {}) {
       {isVisited('purchase-orders') && <div className={paneClassName('purchase-orders')}><PurchaseOrdersList embedded /></div>}
       {isVisited('reorder')         && <div className={paneClassName('reorder')}><ReorderSuggestions embedded /></div>}
       {isVisited('counts')          && <div className={paneClassName('counts')}><StockCountsTab /></div>}
+      {isVisited('suppliers')       && <div className={paneClassName('suppliers')}><SuppliersTab /></div>}
       {isVisited('returns')         && <div className={paneClassName('returns')}><SupplierReturnsTab /></div>}
       {isVisited('expiry')          && <div className={paneClassName('expiry')}><ExpiryTab /></div>}
       {isVisited('reports')         && <div className={paneClassName('reports')}><InventoryReports embedded /></div>}
