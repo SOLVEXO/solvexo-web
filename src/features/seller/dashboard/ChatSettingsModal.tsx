@@ -11,6 +11,7 @@ const DEFAULT_LINE = 'We reply as soon as we can';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const MAX_QUICK = 20;
+const DEFAULT_AUTO_REPLY = 'Thanks for your message! We will get back to you soon.';
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -131,7 +132,7 @@ export function ChatSettingsModal({ storeId, storeName, storeLogo, onClose, onSa
 
           <Section title="Automatic reply" hint="Sent once to a customer who writes to you, then not again for 12 hours.">
             <label className="flex items-center gap-2 text-[13px] text-charcoal">
-              <input type="checkbox" checked={autoReplyEnabled} onChange={e => setAutoReplyEnabled(e.target.checked)} /> Send an automatic reply
+              <input type="checkbox" checked={autoReplyEnabled} onChange={e => { setAutoReplyEnabled(e.target.checked); if (e.target.checked && !autoReplyText.trim()) setAutoReplyText(DEFAULT_AUTO_REPLY); }} /> Send an automatic reply
             </label>
             {autoReplyEnabled && (
               <>

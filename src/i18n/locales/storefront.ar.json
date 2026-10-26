@@ -1172,7 +1172,11 @@
     "complete_the_look": "أكمل الإطلالة",
     "you_may_also_like": "قد يعجبك أيضًا",
     "recent_searches": "عمليات البحث الأخيرة",
-    "remove_recent_search": "إزالة \"{{term}}\" من عمليات البحث الأخيرة"
+    "remove_recent_search": "إزالة \"{{term}}\" من عمليات البحث الأخيرة",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "seek": "تقديم وتأخير",
+    "automatic_reply": "رد تلقائي"
   },
   "product": {
     "addToCart": "أضف إلى السلة",
