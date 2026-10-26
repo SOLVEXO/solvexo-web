@@ -89,7 +89,7 @@ function LocaleMenu({ icon, code, ariaLabel, options, value, onPick, searchPlace
       {open && createPortal(
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- keyboard handling for the popover lives on its container
         <div ref={panelRef} tabIndex={-1} onKeyDown={onPanelKey} className="fx-pop fixed z-[10001] flex flex-col overflow-hidden outline-none"
-          style={{ ...pos, maxHeight: PANEL_MAX_H, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 48px rgba(0,0,0,.16)' }}>
+          style={{ ...pos, maxHeight: PANEL_MAX_H, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, border: `1px solid ${t.colors.border}`, borderRadius: 20 }}>
           {searchable && (
             <div className="shrink-0 p-2.5" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
               <label className="relative block">

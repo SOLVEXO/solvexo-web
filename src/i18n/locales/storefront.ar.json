@@ -1170,7 +1170,9 @@
     "waiting_for_your_review": "بانتظار تقييمك",
     "write_a_review": "اكتب تقييمًا",
     "complete_the_look": "أكمل الإطلالة",
-    "you_may_also_like": "قد يعجبك أيضًا"
+    "you_may_also_like": "قد يعجبك أيضًا",
+    "recent_searches": "عمليات البحث الأخيرة",
+    "remove_recent_search": "إزالة \"{{term}}\" من عمليات البحث الأخيرة"
   },
   "product": {
     "addToCart": "أضف إلى السلة",

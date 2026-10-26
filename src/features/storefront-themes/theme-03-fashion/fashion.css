@@ -66,6 +66,9 @@ article[data-fx-align='center'] .fx-card-body :is(p.flex, ul.flex, div.flex.item
 
 /* RTL: directional arrows/chevrons mirror, and the CTA pill's arrow chip sits at the inline end */
 [dir="rtl"] .fx-flip-rtl { transform: scaleX(-1); }
+/* The search box has its own clear button; hide the browser's built-in blue one. */
+.fx-search-input::-webkit-search-cancel-button,
+.fx-search-input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 [dir="rtl"] .fx-cta { padding: 4px 24px 4px 56px; }
 [dir="rtl"] .fx-cta:hover { padding-left: 24px; padding-right: 56px; }
 [dir="rtl"] .fx-cta .fx-cta-icon { right: auto; left: 4px; transition: left .5s, transform .5s; }
