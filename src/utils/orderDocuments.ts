@@ -146,8 +146,6 @@ function paymentLine(o: DocumentOrder): string {
     safepay: 'Safepay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', payfast: 'PayFast',
     stripe_own: 'Stripe', paypal: 'PayPal', razorpay: 'Razorpay', paystack: 'Paystack', flutterwave: 'Flutterwave', mollie: 'Mollie',
   };
-    safepay: 'Safepay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', payfast: 'PayFast',
-    stripe_own: 'Stripe', paypal: 'PayPal', razorpay: 'Razorpay', paystack: 'Paystack', flutterwave: 'Flutterwave', mollie: 'Mollie',
   return names[o.paymentType] ?? '';
 }
 
