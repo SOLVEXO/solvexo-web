@@ -6,6 +6,8 @@ import { SkeletonBox } from '@/components/comman/ui';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetStoreCategoryTree } from '@/api/services/categories';
 import { apiListCollections } from '@/api/services/collections';
+import { useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
+import { currencySymbol as symbolFor } from '@/utils/currency';
 
 export type EntityPickerMode = 'products' | 'categories' | 'collections';
 
@@ -39,7 +41,7 @@ const PRODUCTS_FETCH_LIMIT = 200;
  * each root's subcategories), not any fixed/legacy single root.
  */
 export function EntityPickerModal({
-  open, onClose, mode, storeId, multiple, initialSelectedIds, onConfirm, title, currencySymbol = 'Rs',
+  open, onClose, mode, storeId, multiple, initialSelectedIds, onConfirm, title, currencySymbol: symbolProp,
 }: {
   open: boolean;
   onClose: () => void;
@@ -54,6 +56,8 @@ export function EntityPickerModal({
    *  than a hardcoded `$` that was always wrong for a PKR store. */
   currencySymbol?: string;
 }) {
+  // price labels follow the store's own currency unless the caller passes a symbol
+  const currencySymbol = symbolProp ?? symbolFor(useStoreWorkspaceOptional()?.store?.baseCurrency);
   const [rows, setRows] = useState<PickerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

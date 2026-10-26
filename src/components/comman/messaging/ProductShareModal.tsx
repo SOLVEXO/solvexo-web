@@ -3,6 +3,8 @@ import { X, Search, ImageOff, Loader2 } from 'lucide-react';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { EmptyState } from '@/components/comman/ui';
+import { useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
+import { formatMoney } from '@/utils/currency';
 
 interface ProductShareModalProps {
   storeId:  string;
@@ -15,6 +17,8 @@ interface ProductShareModalProps {
 // the conversation's store products to send as a `product_share` message —
 // the message type the backend already fully supports end-to-end.
 export function ProductShareModal({ storeId, onClose, onShare, sharing }: ProductShareModalProps) {
+  // prices come in the store's own currency
+  const currency = useStoreWorkspaceOptional()?.store?.baseCurrency ?? 'USD';
   const [products, setProducts] = useState<PublicStoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -83,7 +87,7 @@ export function ProductShareModal({ storeId, onClose, onShare, sharing }: Produc
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-charcoal truncate">{p.name}</p>
-                    {p.defaultVariantPrice != null && <p className="text-[12px] text-slate">${p.defaultVariantPrice.toLocaleString()}</p>}
+                    {p.defaultVariantPrice != null && <p className="text-[12px] text-slate">{formatMoney(p.defaultVariantPrice, currency)}</p>}
                   </div>
                 </button>
               ))}
