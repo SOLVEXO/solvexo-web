@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2, Package, Settings2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
-import { ChatSettingsModal } from './ChatSettingsModal';
+import { ChatSettingsPanel } from './ChatSettingsPanel';
 import { apiGetStoreChatSettings, type QuickReply } from '@/api/services/storeChatSettings';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
@@ -237,13 +237,14 @@ export function SellerMessages() {
     { label: 'Delete chat', icon: <Trash2 size={14} />, onClick: () => void handleDelete(), danger: true },
   ] : [];
 
+  const settingsShown = chatSettingsOpen && !!storeId;
+
   return (
     <div className="flex flex-col h-full">
       <StorePageHeader
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
       />
-      {chatSettingsOpen && storeId && <ChatSettingsModal storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onSaved={setQuickReplies} onClose={() => setChatSettingsOpen(false)} />}
 
       {/* flex-1 + min-h-0 fills whatever space is actually left under the
           header instead of guessing its pixel height with a calc(100vh - Npx)
@@ -251,13 +252,13 @@ export function SellerMessages() {
           left a blank gap under the whole chat panel, including under the
           composer at the very bottom. */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <div className={activeId ? 'hidden md:flex md:w-auto md:shrink-0' : 'flex w-full md:w-auto md:shrink-0'}>
+        <div className={activeId || settingsShown ? 'hidden md:flex md:w-auto md:shrink-0' : 'flex w-full md:w-auto md:shrink-0'}>
           <ChatList
             title="Chats"
             headerMenuItems={storeId ? [{ label: 'Chat settings', icon: <Settings2 size={14} />, onClick: () => setChatSettingsOpen(true) }] : undefined}
             entries={list.map(c => toEntry(c, online, typingIds, buildRowMenu(c)))}
             activeId={activeId}
-            onSelect={setActiveId}
+            onSelect={id => { setChatSettingsOpen(false); setActiveId(id); }}
             query={query}
             onQueryChange={handleSearch}
             loading={isSearching ? searching : listLoading}
@@ -273,6 +274,9 @@ export function SellerMessages() {
           />
         </div>
 
+        {settingsShown ? (
+          <ChatSettingsPanel storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onSaved={setQuickReplies} onClose={() => setChatSettingsOpen(false)} />
+        ) : (
         <ChatWindow
           open={!!active}
           headerName={active ? (active.buyer?.name ?? `Buyer #${active.buyerId?.slice(-6).toUpperCase() ?? '——'}`) : ''}
@@ -306,6 +310,7 @@ export function SellerMessages() {
           storeId={storeId}
           error={msgError}
         />
+        )}
       </div>
     </div>
   );

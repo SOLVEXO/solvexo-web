@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Plus, Store as StoreIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Plus, Store as StoreIcon, Trash2 } from 'lucide-react';
 import { Input, SkeletonBox } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
-import { Modal } from '@/components/comman/ui/Modal';
 import { useToast } from '@/contexts/ToastContext';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 import { apiGetStoreChatSettings, apiSaveStoreChatSettings, type ChatHoursDay, type QuickReply } from '@/api/services/storeChatSettings';
@@ -25,9 +24,9 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-/** Seller-side "Chat settings": what buyers see in the chat (photo, name, line, welcome), the automatic reply with its
+/** Seller-side "Chat settings" page (opens in the chat pane, WhatsApp style): what buyers see in the chat (photo, name, line, welcome), the automatic reply with its
  *  opening hours, and the seller's own quick replies. An empty text field means the default. */
-export function ChatSettingsModal({ storeId, storeName, storeLogo, onClose, onSaved }: {
+export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSaved }: {
   storeId: string; storeName: string; storeLogo?: string | null; onClose: () => void; onSaved?: (quickReplies: QuickReply[]) => void;
 }) {
   const toast = useToast();
@@ -100,10 +99,13 @@ export function ChatSettingsModal({ storeId, storeName, storeLogo, onClose, onSa
 
   const shownPhoto = avatarUrl || storeLogo || '';
   return (
-    <Modal
-      title="Chat settings" onClose={onClose} width={600} mobileSheet
-      footer={<div className="flex justify-end gap-2"><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={save} loading={saving} disabled={loading || !!loadError || uploading}>Save</Button></div>}
-    >
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-white">
+      <header className="flex shrink-0 items-center gap-3 border-b border-bone px-4 py-3">
+        <button type="button" onClick={onClose} aria-label="Back to chats" className="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-charcoal hover:bg-cream"><ArrowLeft size={20} /></button>
+        <h2 className="m-0 text-[17px] font-semibold text-charcoal">Chat settings</h2>
+      </header>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8">
+        <div className="mx-auto w-full max-w-[640px]">
       {loading ? (
         <div className="flex flex-col gap-3"><SkeletonBox height={64} rounded="10px" /><SkeletonBox height={44} rounded="10px" /><SkeletonBox height={44} rounded="10px" /></div>
       ) : loadError ? (
@@ -188,6 +190,12 @@ export function ChatSettingsModal({ storeId, storeName, storeLogo, onClose, onSa
           {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
         </div>
       )}
-    </Modal>
+        </div>
+      </div>
+      <footer className="flex shrink-0 justify-end gap-2 border-t border-bone px-4 py-3">
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button onClick={save} loading={saving} disabled={loading || !!loadError || uploading}>Save</Button>
+      </footer>
+    </div>
   );
 }
