@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { Search, SquarePen, X, MessagesSquare, Clock } from 'lucide-react';
-import { EmptyState, SkeletonBox, type ActionMenuItem } from '@/components/comman/ui';
+import { ActionMenu, EmptyState, SkeletonBox, type ActionMenuItem } from '@/components/comman/ui';
 import type { MessageType } from '@/api/services/messaging';
 import { ChatListItem } from './ChatListItem';
 
@@ -41,8 +41,10 @@ interface ChatListProps {
   loading:        boolean;
   error?:         string;
   onNew?:         () => void;
+  /** Three-dot menu in the title row (WhatsApp style), e.g. "Chat settings". */
+  headerMenuItems?: ActionMenuItem[];
 
-  filters?:        ChatListFilter[];
+  filters?:       ChatListFilter[];
   activeFilter?:   string;
   onFilterChange?: (id: string) => void;
 
@@ -107,7 +109,7 @@ function useResizableWidth(storageKey: string | undefined, rootRef: React.RefObj
 // searches dropdown when focused+empty, Instagram-style), then the list
 // itself — plus an optional drag handle to resize the pane on desktop.
 export function ChatList({
-  title, entries, activeId, onSelect, query, onQueryChange, loading, error, onNew,
+  title, entries, activeId, onSelect, query, onQueryChange, loading, error, onNew, headerMenuItems,
   filters, activeFilter, onFilterChange,
   recentSearches, onSelectRecentSearch, onClearRecentSearches, onCommitSearch,
   resizeStorageKey,
@@ -125,15 +127,24 @@ export function ChatList({
     >
         <div className="px-4 pt-4 pb-[10px] flex items-center justify-between shrink-0">
           <h2 className="text-[18px] font-bold text-charcoal">{title}</h2>
-          {onNew && (
-            <button
-              onClick={onNew}
-              aria-label="New message"
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-cream cursor-pointer bg-transparent border-none text-charcoal outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
-            >
-              <SquarePen size={19} />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {onNew && (
+              <button
+                onClick={onNew}
+                aria-label="New message"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-cream cursor-pointer bg-transparent border-none text-charcoal outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
+              >
+                <SquarePen size={19} />
+              </button>
+            )}
+            {!!headerMenuItems?.length && (
+              <ActionMenu
+                items={headerMenuItems}
+                ariaLabel="Chat options"
+                triggerClassName="w-8 h-8 flex items-center justify-center rounded-full hover:bg-cream cursor-pointer bg-transparent border-none text-charcoal outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
+              />
+            )}
+          </div>
         </div>
 
         <div className="px-4 pb-[10px] relative shrink-0">

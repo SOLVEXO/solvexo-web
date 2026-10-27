@@ -19,7 +19,6 @@ import {
 import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import type { ActionMenuItem } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
-import { Button } from '@/components/comman/ui/Button';
 
 const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
   voice: 'Voice note', image: 'Photo', video: 'Video', pdf: 'File', document: 'File', product_share: 'Product shared',
@@ -248,7 +247,6 @@ export function SellerMessages() {
             <span className="px-3 py-1 bg-[#fdecea] rounded-[6px] text-xs font-semibold text-[#c0392b]">
               {conversations.reduce((n, c) => n + c.sellerUnread, 0)} Unread
             </span>
-            {storeId && <Button size="sm" variant="secondary" icon={<Settings2 size={14} />} onClick={() => setChatSettingsOpen(true)}>Chat settings</Button>}
           </div>
         }
       />
@@ -263,6 +261,7 @@ export function SellerMessages() {
         <div className={activeId ? 'hidden md:flex md:w-auto md:shrink-0' : 'flex w-full md:w-auto md:shrink-0'}>
           <ChatList
             title="Chats"
+            headerMenuItems={storeId ? [{ label: 'Chat settings', icon: <Settings2 size={14} />, onClick: () => setChatSettingsOpen(true) }] : undefined}
             entries={list.map(c => toEntry(c, online, typingIds, buildRowMenu(c)))}
             activeId={activeId}
             onSelect={setActiveId}
