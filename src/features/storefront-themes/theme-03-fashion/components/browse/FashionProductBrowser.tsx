@@ -128,7 +128,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
   const pill = 'flex h-11 cursor-pointer items-center gap-2 rounded-full bg-transparent px-5 text-sm font-medium transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]';
   const pillStyle = (on: boolean) => ({ border: `1px solid ${on ? t.colors.selected : t.colors.border}`, color: t.colors.ink, fontFamily: t.fonts.body }) as const;
   const popover = 'fx-pop absolute top-[calc(100%+8px)] z-20 max-h-[360px] overflow-y-auto p-1.5';
-  const popoverStyle = { background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20, boxShadow: '0 18px 48px rgba(0,0,0,.14)' } as const;
+  const popoverStyle = { background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20 } as const;
 
   return (
     <div ref={topRef} style={{ scrollMarginTop: 80, fontFamily: t.fonts.body, color: t.colors.ink }}>

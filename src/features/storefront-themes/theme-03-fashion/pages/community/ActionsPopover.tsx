@@ -49,7 +49,7 @@ export function ActionsPopover({ anchor, align, onClose, children }: { anchor: R
     <div
       ref={box} role="menu"
       className="fixed z-[80] flex flex-wrap items-center gap-1 p-1.5"
-      style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden', maxWidth: 'calc(100vw - 16px)', borderRadius: 24, background: t.colors.bg, border: `1px solid ${t.colors.border}`, boxShadow: '0 8px 28px rgba(0,0,0,.14)' }}
+      style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden', maxWidth: 'calc(100vw - 16px)', borderRadius: 24, background: t.colors.bg, border: `1px solid ${t.colors.border}` }}
     >
       {children}
     </div>,
