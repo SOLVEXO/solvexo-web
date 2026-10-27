@@ -107,7 +107,28 @@ export const SECTION_PRESETS: SectionPreset[] = [
       { type: 'multicolumn_column', settings: { heading: 'Real support', body: 'Questions? We reply within a few hours.' } },
     ] }) },
 
+  { id: 'features-4', type: 'feature_list', category: 'trust', name: 'Feature list', description: 'Icon, title and a line of text for each promise', mock: 'columns',
+    build: () => ({ settings: { heading: 'Why shop with us', columns: 4, textAlign: 'left' }, blocks: [
+      { type: 'feature_item', settings: { icon: 'truck', title: 'Fast delivery', description: 'Orders leave our shop within 24 hours.' } },
+      { type: 'feature_item', settings: { icon: 'refresh', title: 'Easy returns', description: 'Changed your mind? Return within 7 days.' } },
+      { type: 'feature_item', settings: { icon: 'shield', title: 'Secure payment', description: 'Pay online safely or on delivery.' } },
+      { type: 'feature_item', settings: { icon: 'headphones', title: 'Real support', description: 'A person answers every message.' } },
+    ] }) },
+
   // ── Brand story ──
+  { id: 'stats-4', type: 'stats_counter', category: 'story', name: 'Numbers that count', description: 'Big numbers that count up on scroll', mock: 'columns',
+    build: () => ({ settings: { heading: 'We in numbers' }, blocks: [
+      { type: 'stat_item', settings: { value: '10k+', label: 'Happy customers' } },
+      { type: 'stat_item', settings: { value: '4.8', label: 'Average rating' } },
+      { type: 'stat_item', settings: { value: '500+', label: 'Products' } },
+      { type: 'stat_item', settings: { value: '5', label: 'Years in business' } },
+    ] }) },
+  { id: 'team-3', type: 'team_grid', category: 'story', name: 'Meet the team', description: 'Photo, name and role for the people behind the brand', mock: 'columns',
+    build: () => ({ settings: { heading: 'Meet the team', columns: 3, textAlign: 'center' }, blocks: [
+      { type: 'team_member', settings: { name: 'Your name', role: 'Founder', bio: 'Tell customers why you started.', imageUrl: '' } },
+      { type: 'team_member', settings: { name: 'Team member', role: 'Designer', bio: 'A line about what they do.', imageUrl: '' } },
+      { type: 'team_member', settings: { name: 'Team member', role: 'Customer care', bio: 'A line about what they do.', imageUrl: '' } },
+    ] }) },
   { id: 'story-statement', type: 'rich_text', category: 'story', name: 'Brand statement', description: 'A centred heading and a few lines about you', mock: 'text',
     build: () => ({ settings: { heading: 'Our story', alignment: 'center' }, blocks: [
       { type: 'paragraph', settings: { text: 'We started with a simple idea: well-made things at fair prices. Every product is chosen with care, and every order is packed by our own team.' } },

@@ -70,7 +70,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   // "show block name" requirement for a freshly-added, not-yet-configured
   // app block.
   const appBlockDef = installedApps ? findInstalledAppBlock(installedApps, block.type)?.block : undefined;
-  const label = block.settings.label || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || (block.type === 'theme_block' ? findCustomBlockDef(block.settings.blockKey)?.label : undefined) || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
+  const label = block.settings.label || (block.type === 'product_text' ? (block.settings.text ? String(block.settings.text).slice(0, 40) : 'Text') : undefined) || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || (block.type === 'theme_block' ? findCustomBlockDef(block.settings.blockKey)?.label : undefined) || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
   const hidden = block.enabled === false;
 
   useEffect(() => {

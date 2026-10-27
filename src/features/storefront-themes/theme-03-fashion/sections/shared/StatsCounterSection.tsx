@@ -51,7 +51,7 @@ export function StatsCounterSection({ section, blocks, colors }: SharedSectionPr
       <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 200px), 1fr))` }}>
         {stats.map((b, i) => (
           <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
-            <div className="flex h-full flex-col items-center gap-2 p-6 text-center" style={{ background: colors.bgAlt, borderRadius: 24 }}>
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center" style={{ background: colors.bgAlt, borderRadius: 24 }}>
               <p className="m-0 text-[clamp(36px,5vw,56px)] font-semibold leading-none tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}><CountUp value={String(b.settings.value)} /></p>
               {b.settings.label && <p className="m-0 text-sm font-medium" style={{ fontFamily: t.fonts.body, color: colors.inkMuted }}>{b.settings.label}</p>}
             </div>
