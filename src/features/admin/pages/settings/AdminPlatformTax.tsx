@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, Landmark, Plus, Trash2, Users } from 'lucide-react';
-import { Button, Card, Input, Select, SkeletonBox } from '@/components/comman/ui';
+import { AlertCircle, CheckCircle2, Landmark, Percent, Plus, Trash2, Users } from 'lucide-react';
+import { Button, Input, Select } from '@/components/comman/ui';
+import { SettingsCard, SettingsSaveBar } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { TAX_SUGGESTIONS } from '@/utils/taxSuggestions';
@@ -118,9 +119,7 @@ export function AdminPlatformTax() {
     } finally { setApplying(null); }
   };
 
-  if (loading && !form) {
-    return <div className="px-4 sm:px-7 py-6 flex flex-col gap-3" aria-busy="true"><SkeletonBox width={260} height={14} /><SkeletonBox width="100%" height={140} /><SkeletonBox width="100%" height={200} /></div>;
-  }
+  if (loading && !form) return null;
   if (loadError || !form) {
     return (
       <div className="px-4 sm:px-7 py-6 flex items-center justify-between gap-4">
@@ -131,15 +130,15 @@ export function AdminPlatformTax() {
   }
 
   return (
-    <div className="px-4 sm:px-7 py-6 flex flex-col gap-6 max-w-[1100px]">
-      <p className="text-[12.5px] text-slate bg-cream rounded-lg px-3 py-2.5 leading-relaxed">
+    <div className="px-4 sm:px-7 py-6 flex flex-col gap-5">
+      <p className="max-w-[80ch] text-[12.5px] text-slate bg-cream rounded-lg px-3 py-2.5 leading-relaxed">
         This is <b>Solvexo&apos;s own tax</b> on the plan fees sellers pay you. It is separate from the sales tax each store charges its own customers.
         Only <b>Confirmed</b> rates are charged, from their start date. A seller&apos;s country with no confirmed rate pays no tax, so add a rate for every country you bill.
         Confirm each rate with your accountant before you switch it on.
       </p>
 
       {gaps.length > 0 && (
-        <div role="alert" className="rounded-lg border border-warning/40 bg-warning-bg px-4 py-3 text-[12.5px] text-charcoal">
+        <div role="alert" className="rounded-xl border border-warning/40 bg-warning-bg px-4 py-3 text-[12.5px] text-charcoal">
           <p className="font-semibold flex items-center gap-1.5"><AlertCircle size={14} /> These paying sellers are not being taxed</p>
           <ul className="mt-1.5 list-disc pl-5">
             {gaps.map(g => (
@@ -149,12 +148,12 @@ export function AdminPlatformTax() {
         </div>
       )}
 
-      <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
-          <h2 className="text-[16px] font-bold text-carbon flex items-center gap-2"><Landmark size={16} /> Tax profile</h2>
-          <p className="text-[12px] text-slate mt-0.5">Your registered business details, shown on plan invoices.</p>
-        </div>
-        <div className="p-5 grid gap-4 sm:grid-cols-2">
+      <SettingsCard
+        title="Tax profile"
+        icon={<Landmark size={14} />}
+        description="Your registered business details, shown on plan invoices."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Registered business name" value={form.legalName} maxLength={120} onChange={e => patch({ legalName: e.target.value })} />
           <Select label="Tax authority" value={form.authority} onChange={e => patch({ authority: e.target.value as PlatformTaxAuthority })}>
             {AUTHORITIES.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
@@ -163,61 +162,61 @@ export function AdminPlatformTax() {
           <Input label="STRN / sales tax registration no." value={form.strn} maxLength={30} onChange={e => patch({ strn: e.target.value })} />
           <div className="sm:col-span-2"><Input label="Registered address" value={form.address} maxLength={300} onChange={e => patch({ address: e.target.value })} /></div>
         </div>
-      </Card>
+      </SettingsCard>
 
-      <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-[16px] font-bold text-carbon">Rates by seller country</h2>
-            <p className="text-[12px] text-slate mt-0.5">The seller&apos;s store country decides the rate. Tax is added on top of the plan price.</p>
+      <SettingsCard
+        title="Rates by seller country"
+        icon={<Percent size={14} />}
+        description="The seller's store country decides the rate. Tax is added on top of the plan price."
+        actions={<Button size="sm" icon={<Plus size={13} />} onClick={() => addRow()}>Add rate</Button>}
+      >
+        {unusedSuggestions.length > 0 && (
+          <div className="mb-4 w-full sm:w-[280px]">
+            <Select aria-label="Add a suggested rate as a draft" value="" onChange={e => { const cc = e.target.value; const s = TAX_SUGGESTIONS[cc]; if (s) addRow(cc, String(s.rate), s.label); }}>
+              <option value="">Add suggested draft…</option>
+              {unusedSuggestions.map(cc => <option key={cc} value={cc}>{countryName(cc)} ({TAX_SUGGESTIONS[cc].rate}%)</option>)}
+            </Select>
           </div>
-          <div className="flex gap-2 flex-wrap items-center">
-            {unusedSuggestions.length > 0 && (
-              <Select aria-label="Add a suggested rate as a draft" value="" onChange={e => { const cc = e.target.value; const s = TAX_SUGGESTIONS[cc]; if (s) addRow(cc, String(s.rate), s.label); }}>
-                <option value="">Add suggested draft…</option>
-                {unusedSuggestions.map(cc => <option key={cc} value={cc}>{countryName(cc)} ({TAX_SUGGESTIONS[cc].rate}%)</option>)}
-              </Select>
-            )}
-            <Button size="sm" icon={<Plus size={13} />} onClick={() => addRow()}>Add rate</Button>
-          </div>
-        </div>
+        )}
 
         {form.rates.length === 0 ? (
-          <p className="p-5 text-[13px] text-slate">No rates yet, so no plan fee is taxed. Add Pakistan to start.</p>
+          <p className="text-[13px] text-slate">No rates yet, so no plan fee is taxed. Add Pakistan to start.</p>
         ) : (
-          <div className="p-5 flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
             <div className="hidden lg:grid grid-cols-[1.5fr_1fr_90px_150px_130px_36px] gap-3 text-[11px] font-semibold uppercase tracking-wide text-slate px-1">
               <span>Country</span><span>Label on invoice</span><span>Rate %</span><span>Starts on</span><span>Status</span><span />
             </div>
-            {form.rates.map((r, i) => (
-              <div key={r.key} className="grid grid-cols-2 lg:grid-cols-[1.5fr_1fr_90px_150px_130px_36px] gap-3 items-end rounded-lg border border-bone p-3 lg:border-0 lg:p-0">
-                <div className="col-span-2 lg:col-span-1">
-                  <Select aria-label={`Rate ${i + 1} country`} value={r.country} onChange={e => patchRow(r.key, { country: e.target.value })}>
-                    <option value="">Choose country</option>
-                    {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+            <div className="lg:divide-y lg:divide-fog lg:border-y lg:border-fog lg:py-2">
+              {form.rates.map((r, i) => (
+                <div key={r.key} className="grid grid-cols-2 lg:grid-cols-[1.5fr_1fr_90px_150px_130px_36px] gap-3 items-end rounded-xl border border-bone p-3 lg:border-0 lg:bg-transparent lg:p-0 lg:py-2.5">
+                  <div className="col-span-2 lg:col-span-1">
+                    <Select aria-label={`Rate ${i + 1} country`} value={r.country} onChange={e => patchRow(r.key, { country: e.target.value })}>
+                      <option value="">Choose country</option>
+                      {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                    </Select>
+                  </div>
+                  <Input aria-label={`Rate ${i + 1} label`} value={r.label} maxLength={40} onChange={e => patchRow(r.key, { label: e.target.value })} />
+                  <Input aria-label={`Rate ${i + 1} percentage`} inputMode="decimal" value={r.ratePercent} placeholder="0" onChange={e => patchRow(r.key, { ratePercent: e.target.value })} />
+                  <Input aria-label={`Rate ${i + 1} start date`} type="date" value={r.effectiveFrom} onChange={e => patchRow(r.key, { effectiveFrom: e.target.value })} />
+                  <Select aria-label={`Rate ${i + 1} status`} value={r.status} onChange={e => patchRow(r.key, { status: e.target.value as RateRow['status'] })}>
+                    <option value="draft">Draft (not charged)</option>
+                    <option value="confirmed">Confirmed</option>
                   </Select>
+                  <button type="button" aria-label={`Remove rate ${i + 1}`} onClick={() => setForm(f => (f ? { ...f, rates: f.rates.filter(x => x.key !== r.key) } : f))}
+                    className="h-9 w-9 inline-flex items-center justify-center rounded-md text-slate hover:text-error hover:bg-fog justify-self-end"><Trash2 size={15} /></button>
                 </div>
-                <Input aria-label={`Rate ${i + 1} label`} value={r.label} maxLength={40} onChange={e => patchRow(r.key, { label: e.target.value })} />
-                <Input aria-label={`Rate ${i + 1} percentage`} inputMode="decimal" value={r.ratePercent} placeholder="0" onChange={e => patchRow(r.key, { ratePercent: e.target.value })} />
-                <Input aria-label={`Rate ${i + 1} start date`} type="date" value={r.effectiveFrom} onChange={e => patchRow(r.key, { effectiveFrom: e.target.value })} />
-                <Select aria-label={`Rate ${i + 1} status`} value={r.status} onChange={e => patchRow(r.key, { status: e.target.value as RateRow['status'] })}>
-                  <option value="draft">Draft (not charged)</option>
-                  <option value="confirmed">Confirmed</option>
-                </Select>
-                <button type="button" aria-label={`Remove rate ${i + 1}`} onClick={() => setForm(f => (f ? { ...f, rates: f.rates.filter(x => x.key !== r.key) } : f))}
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md text-slate hover:text-error hover:bg-cream justify-self-end"><Trash2 size={15} /></button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
-      </Card>
+      </SettingsCard>
 
-      <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
-          <h2 className="text-[16px] font-bold text-carbon flex items-center gap-2"><Users size={16} /> Sellers already paying</h2>
-          <p className="text-[12px] text-slate mt-0.5">New subscriptions get the tax automatically. For sellers who already pay, save your rates first, then apply them here. It takes effect from each seller&apos;s next invoice.</p>
-        </div>
-        <div className="p-5 flex flex-col gap-3">
+      <SettingsCard
+        title="Sellers already paying"
+        icon={<Users size={14} />}
+        description="New subscriptions get the tax automatically. For sellers who already pay, save your rates first, then apply them here. It takes effect from each seller's next invoice."
+      >
+        <div className="flex flex-col gap-3">
           <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={() => runApply(true)} loading={applying === 'check'} disabled={dirty || !!applying}>Check how many change</Button>
             <Button size="sm" onClick={() => runApply(false)} loading={applying === 'apply'} disabled={dirty || !!applying || !applyResult || applyResult.dryRun === false}>Apply to live subscriptions</Button>
@@ -230,18 +229,17 @@ export function AdminPlatformTax() {
             </p>
           )}
         </div>
-      </Card>
+      </SettingsCard>
 
-      <div className="sticky bottom-3 z-10 flex items-center justify-between gap-3 flex-wrap rounded-xl border border-bone bg-white px-4 py-3">
-        <div className="text-[12.5px] min-w-0">
-          {problems.length > 0 ? <p role="alert" className="text-error">{problems[0]}{problems.length > 1 ? ` (+${problems.length - 1} more)` : ''}</p>
-            : dirty ? <p className="text-charcoal">You have unsaved changes.</p> : <p className="text-slate">All changes saved.</p>}
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" disabled={!dirty || saving} onClick={reload}>Discard</Button>
-          <Button size="sm" onClick={save} loading={saving} disabled={!dirty || problems.length > 0}>Save changes</Button>
-        </div>
-      </div>
+      <SettingsSaveBar
+        variant="floating"
+        isDirty={dirty}
+        saving={saving}
+        onSave={save}
+        hint="You have unsaved changes."
+        disabledReason={problems.length > 0 ? `${problems[0]}${problems.length > 1 ? ` (+${problems.length - 1} more)` : ''}` : undefined}
+        actions={<Button size="sm" variant="outline" disabled={!dirty || saving} onClick={reload}>Discard</Button>}
+      />
     </div>
   );
 }

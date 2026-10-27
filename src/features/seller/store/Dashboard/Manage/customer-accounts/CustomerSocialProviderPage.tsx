@@ -4,7 +4,6 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowDown, ArrowLeft, CheckCircle, Copy, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { PageHeader } from '@/components/comman/ui/PageHeader';
-import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { Modal } from '@/components/comman/ui/Modal';
 import { TokenStorage } from '@/api/services/auth';
 import {
@@ -194,13 +193,6 @@ export function CustomerSocialProviderPage() {
         description={`Let customers sign in to your store with their ${label} account. You create the ${label} app yourself, then paste its credentials here.`}
         actions={current ? <StatusBadge state={state} /> : undefined}
       />
-
-      {loading && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]" aria-busy="true" aria-label="Loading">
-          <SkeletonBox height={420} rounded="12px" />
-          <SkeletonBox height={320} rounded="12px" />
-        </div>
-      )}
 
       {!loading && loadError && (
         <div role="alert" className="mt-5 flex items-center gap-3 rounded-xl border border-bone bg-white p-4 text-[13px] text-error">

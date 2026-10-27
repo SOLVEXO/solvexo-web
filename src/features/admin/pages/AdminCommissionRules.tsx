@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Percent, Plus, Trash2, History } from 'lucide-react';
+import { Percent, Plus, Trash2, History, Users } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   useGlobalCommissionDefault, useSetGlobalCommissionDefault, useGlobalCommissionHistory,
@@ -8,7 +8,8 @@ import {
 } from '@/hooks/admin/useCommissionRules';
 import { useAdminSellerBalances } from '@/hooks/admin/useAdminFinance';
 import type { CommissionRateSource, SellerOverrideRow } from '@/api/services/commissionRules';
-import { Button, Modal, Input, Textarea, ActionMenu, SkeletonBox, SearchInput, Table, type TableColumn } from '@/components/comman/ui';
+import { Button, Modal, Input, Textarea, ActionMenu, SearchInput, Table, type TableColumn } from '@/components/comman/ui';
+import { SettingsCard } from '@/components/comman/settings';
 
 const SOURCE_LABEL: Record<CommissionRateSource, string> = {
   seller_override: 'Seller override',
@@ -55,25 +56,16 @@ function GlobalDefaultCard() {
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
-      <div className="flex items-center justify-between gap-3 mb-1">
-        <div>
-          <p className="text-[14px] font-bold text-charcoal flex items-center gap-[6px]">
-            <Percent size={15} className="text-brand-orange" /> Global Default Commission
-          </p>
-          <p className="text-[11px] text-slate mt-[2px]">
-            Applied to stores with no active platform plan and no seller-specific override.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={openEdit}>Edit</Button>
-      </div>
-
-      {loading ? (
-        <SkeletonBox height={32} width={100} rounded="6px" className="mt-3" />
-      ) : error ? (
-        <p className="text-[12px] text-error mt-3">{error}</p>
+    <SettingsCard
+      title="Global Default Commission"
+      icon={<Percent size={14} />}
+      description="Applied to stores with no active platform plan and no seller-specific override."
+      actions={<Button variant="outline" size="sm" onClick={openEdit}>Edit</Button>}
+    >
+      {loading ? null : error ? (
+        <p className="text-[12px] text-error">{error}</p>
       ) : (
-        <p className="text-[28px] font-bold text-carbon mt-3">{rule ? pct(rule.rate) : '8.00%'}</p>
+        <p className="text-[28px] font-bold text-carbon leading-tight">{rule ? pct(rule.rate) : '8.00%'}</p>
       )}
       {rule?.notes && <p className="text-[12px] text-slate mt-1">{rule.notes}</p>}
 
@@ -84,10 +76,8 @@ function GlobalDefaultCard() {
         <History size={12} /> {showHistory ? 'Hide history' : 'View history'}
       </button>
       {showHistory && (
-        <div className="mt-2 border-t border-bone pt-2 flex flex-col gap-1.5">
-          {historyLoading ? (
-            <SkeletonBox height={40} rounded="6px" />
-          ) : history.length === 0 ? (
+        <div className="mt-2 border-t border-fog pt-2 flex flex-col gap-1.5">
+          {historyLoading ? null : history.length === 0 ? (
             <p className="text-[11px] text-slate">No changes recorded yet.</p>
           ) : history.map(h => (
             <div key={h._id} className="flex justify-between text-[11.5px]">
@@ -116,7 +106,7 @@ function GlobalDefaultCard() {
           </div>
         </Modal>
       )}
-    </div>
+    </SettingsCard>
   );
 }
 
@@ -161,9 +151,7 @@ function SellerOverrideModal({ onClose, onSaved }: { onClose: () => void; onSave
           <>
             <SearchInput value={search} onChange={setSearch} placeholder="Search seller name, email, or store…" />
             <div className="max-h-[220px] overflow-y-auto border border-bone rounded-[8px] divide-y divide-bone">
-              {balances.loading ? (
-                <div className="p-3"><SkeletonBox height={40} rounded="6px" /></div>
-              ) : (balances.data?.sellers ?? []).length === 0 ? (
+              {balances.loading ? null : (balances.data?.sellers ?? []).length === 0 ? (
                 <p className="text-[12px] text-slate p-3">{search ? 'No matching stores.' : 'Start typing to search stores.'}</p>
               ) : (balances.data?.sellers ?? []).map(s => (
                 <button
@@ -242,15 +230,13 @@ export function AdminCommissionRules({ embedded = false }: { embedded?: boolean 
 
       <GlobalDefaultCard />
 
-      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-        <div className="px-5 py-[14px] border-b border-bone flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <p className="text-[14px] font-bold text-charcoal">Seller Overrides</p>
-            <p className="text-[11px] text-slate">Always wins over plan-tier and global rates.</p>
-          </div>
-          <Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(true)} className="shrink-0">Add Override</Button>
-        </div>
-
+      <SettingsCard
+        title="Seller Overrides"
+        icon={<Users size={14} />}
+        description="Always wins over plan-tier and global rates."
+        bodyClassName="px-0 pb-0"
+        actions={<Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(true)} className="shrink-0">Add Override</Button>}
+      >
         {error ? (
           <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
         ) : (
@@ -263,7 +249,7 @@ export function AdminCommissionRules({ embedded = false }: { embedded?: boolean 
             pagination={data ? { page, total: data.total, perPage: data.limit, onChange: setPage, label: 'overrides' } : undefined}
           />
         )}
-      </div>
+      </SettingsCard>
 
       {adding && (
         <SellerOverrideModal

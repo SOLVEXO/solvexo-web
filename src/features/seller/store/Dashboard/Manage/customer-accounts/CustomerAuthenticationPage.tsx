@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, CheckCircle, ChevronRight, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { PageHeader } from '@/components/comman/ui/PageHeader';
-import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { apiGetCustomerSocialSetup, SOCIAL_PROVIDER_LABEL, type CustomerSocialSetup } from '@/api/services/customerSocialLogin';
 import { PreviewButton, ProviderLogo, StatusBadge } from './socialProviderUi';
 import { formatWhen, providerState } from './socialProviderUtils';
@@ -49,16 +48,6 @@ export function CustomerAuthenticationPage() {
           </span>
         ) : undefined}
       />
-
-      {loading && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]" aria-busy="true" aria-label="Loading sign-in methods">
-          <div className="flex flex-col gap-3">
-            <SkeletonBox height={96} rounded="12px" />
-            <SkeletonBox height={96} rounded="12px" />
-          </div>
-          <SkeletonBox height={220} rounded="12px" />
-        </div>
-      )}
 
       {!loading && error && (
         <div role="alert" className="mt-5 flex items-center gap-3 rounded-xl border border-bone bg-white p-4 text-[13px] text-error">

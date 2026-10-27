@@ -307,7 +307,7 @@ export default function FilesLibrary() {
             {items.map(item => (
               <div key={item._id} className="relative">
               <input type="checkbox" checked={picked.has(item._id)} onChange={() => togglePick(item._id)} aria-label={`Select ${item.filename || 'file'}`}
-                className="absolute top-2 left-2 z-10 w-4 h-4 cursor-pointer accent-[#D97757]" />
+                className="absolute top-2 left-2 z-10 w-4 h-4 cursor-pointer" />
               <button type="button" onClick={() => setSelected(item)}
                 className={`group relative w-full aspect-square rounded-lg overflow-hidden border ${picked.has(item._id) ? 'border-brand-orange ring-2 ring-brand-orange/30' : 'border-bone'} hover:border-brand-orange transition-colors bg-cream text-left`}>
                 {item.resourceType === 'video' ? (

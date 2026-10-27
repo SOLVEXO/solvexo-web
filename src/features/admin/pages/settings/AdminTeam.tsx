@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Link2, RefreshCw, ShieldCheck, Trash2, LogOut } from 'lucide-react';
+import { Plus, Link2, RefreshCw, ShieldCheck, Trash2, LogOut, Users, History, ClipboardCheck } from 'lucide-react';
 import { Button, Modal, Toggle } from '@/components/comman/ui';
+import { SettingsCard, SettingsRow, SettingsChoice } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import {
   ADMIN_PERMISSION_AREAS, ADMIN_PERMISSION_LABELS, type AdminPermission, type AdminMember, type AdminRole, type AdminApproval,
@@ -12,11 +13,11 @@ import type { AdminActivityLogEntry } from '@/api/services/activityLog';
 import { can } from '@/hooks/auth/useCan';
 import { TokenStorage } from '@/api/services/auth';
 
-const INPUT = 'w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40';
+const INPUT = 'w-full border border-bone rounded-[10px] bg-white px-3 py-2 text-[13px] outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15';
 const errMsg = (e: unknown, fb = 'Something went wrong.') => (e instanceof Error ? e.message : fb);
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString() : '—');
 const STATE_STYLE: Record<string, string> = {
-  active: 'bg-green-50 text-green-700', invited: 'bg-amber-50 text-amber-700', inactive: 'bg-bone text-slate', access_expired: 'bg-red-50 text-red-700',
+  active: 'bg-success-bg text-success', invited: 'bg-warning-bg text-warning', inactive: 'bg-bone text-slate', access_expired: 'bg-error-bg text-error',
 };
 const STATE_LABEL: Record<string, string> = { active: 'Active', invited: 'Invite pending', inactive: 'Inactive', access_expired: 'Access ended' };
 
@@ -58,9 +59,9 @@ function useLoad<T>(fn: () => Promise<{ data: T }>, key = '') {
 }
 
 function LoadState({ loading, error, onRetry }: { loading: boolean; error: string; onRetry: () => void }) {
-  if (loading) return <p className="text-[13px] text-slate py-6">Loading…</p>;
+  if (loading) return null;
   if (error) return (
-    <div role="alert" className="border border-red-200 bg-red-50 rounded-xl p-4 flex items-center justify-between gap-3">
+    <div role="alert" className="border border-error-border bg-error-bg rounded-xl p-4 flex items-center justify-between gap-3">
       <p className="text-[13px] text-error">{error}</p><Button size="sm" variant="outline" onClick={onRetry}>Retry</Button>
     </div>
   );
@@ -93,27 +94,29 @@ function AdminsPane() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12.5px] text-slate">People who can sign in to this admin panel. Each one only sees what their role allows.</p>
-        <Button size="sm" onClick={() => setInvite(true)} disabled={!roles.data?.length}><Plus size={14} /> Invite admin</Button>
-      </div>
-      <LoadState loading={admins.loading} error={admins.error} onRetry={admins.reload} />
-      {admins.data && (
-        <div className="bg-white border border-bone rounded-2xl overflow-x-auto">
-          <table className="w-full text-[12.5px]">
-            <thead><tr className="text-left text-slate border-b border-bone">
-              {['Name', 'Role', 'Status', 'Last sign-in', 'Sessions', ''].map(h => <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>)}
-            </tr></thead>
+      <SettingsCard
+        title="Admins"
+        icon={<Users size={14} />}
+        description="People who can sign in to this admin panel. Each one only sees what their role allows."
+        actions={<Button size="sm" onClick={() => setInvite(true)} disabled={!roles.data?.length}><Plus size={14} /> Invite admin</Button>}
+      >
+        <LoadState loading={admins.loading} error={admins.error} onRetry={admins.reload} />
+        {admins.data && (
+          <div className="-mx-5 -mb-5 overflow-x-auto border-t border-fog">
+            <table className="w-full text-[12.5px]">
+              <thead><tr className="bg-cream text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-slate border-b border-bone">
+                {['Name', 'Role', 'Status', 'Last sign-in', 'Sessions', ''].map(h => <th key={h} className="px-5 py-2.5 font-semibold whitespace-nowrap">{h}</th>)}
+              </tr></thead>
             <tbody>
               {admins.data.map(a => (
-                <tr key={a._id} className="border-b border-bone last:border-0">
-                  <td className="px-4 py-3"><p className="font-semibold text-charcoal">{a.name}</p><p className="text-[11.5px] text-slate">{a.email}</p></td>
-                  <td className="px-4 py-3">{a.isSuperAdmin ? <span className="inline-flex items-center gap-1 font-semibold text-brand-orange"><ShieldCheck size={13} /> Super Admin</span> : (a.roleName ?? '—')}</td>
-                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${STATE_STYLE[a.state]}`}>{STATE_LABEL[a.state]}</span>
+                <tr key={a._id} className="border-b border-fog last:border-0">
+                  <td className="px-5 py-3"><p className="font-semibold text-charcoal">{a.name}</p><p className="text-[11.5px] text-slate">{a.email}</p></td>
+                  <td className="px-5 py-3">{a.isSuperAdmin ? <span className="inline-flex items-center gap-1 font-semibold text-brand-orange"><ShieldCheck size={13} /> Super Admin</span> : (a.roleName ?? '—')}</td>
+                  <td className="px-5 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${STATE_STYLE[a.state]}`}>{STATE_LABEL[a.state]}</span>
                     {a.accessExpiresAt && <p className="text-[11px] text-slate mt-0.5">Until {fmt(a.accessExpiresAt)}</p>}</td>
-                  <td className="px-4 py-3 text-slate">{fmt(a.lastLoginAt)}</td>
-                  <td className="px-4 py-3 text-slate">{a.sessionCount}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3 text-slate">{fmt(a.lastLoginAt)}</td>
+                  <td className="px-5 py-3 text-slate">{a.sessionCount}</td>
+                  <td className="px-5 py-3">
                     <div className="flex gap-1.5 justify-end flex-wrap">
                       {a.state === 'invited' && <Button size="xs" variant="outline" onClick={() => resend(a)}><RefreshCw size={12} /> Resend</Button>}
                       {!a.isSuperAdmin && <Button size="xs" variant="outline" onClick={() => setEdit(a)}>Edit</Button>}
@@ -128,11 +131,12 @@ function AdminsPane() {
                   </td>
                 </tr>
               ))}
-              {admins.data.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate">No admins yet.</td></tr>}
+              {admins.data.length === 0 && <tr><td colSpan={6} className="px-5 py-8 text-center text-slate">No admins yet.</td></tr>}
             </tbody>
           </table>
         </div>
       )}
+      </SettingsCard>
 
       {invite && roles.data && (
         <AdminFormModal roles={roles.data} onClose={() => setInvite(false)}
@@ -188,19 +192,22 @@ function AdminFormModal({ roles, admin, onClose, onSave }: { roles: AdminRole[];
     <Modal title={admin ? 'Edit admin' : 'Invite admin'} onClose={onClose} width={460}
       footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={submit} disabled={busy}>{busy ? 'Saving…' : admin ? 'Save' : 'Send invite'}</Button></>}>
       <div className="flex flex-col gap-3">
-        <div><label htmlFor="at-name" className="text-[12px] font-medium text-graphite mb-1 block">Name</label>
+        <div><label htmlFor="at-name" className="text-[13px] font-medium text-charcoal mb-1 block">Name</label>
           <input id="at-name" className={INPUT} value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></div>
-        <div><label htmlFor="at-email" className="text-[12px] font-medium text-graphite mb-1 block">Email</label>
+        <div><label htmlFor="at-email" className="text-[13px] font-medium text-charcoal mb-1 block">Email</label>
           <input id="at-email" type="email" className={INPUT} value={f.email} disabled={!!admin} onChange={e => setF({ ...f, email: e.target.value })} /></div>
-        <div><label htmlFor="at-role" className="text-[12px] font-medium text-graphite mb-1 block">Role</label>
+        <div><label htmlFor="at-role" className="text-[13px] font-medium text-charcoal mb-1 block">Role</label>
           <select id="at-role" className={INPUT} value={f.roleId} onChange={e => setF({ ...f, roleId: e.target.value })}>
             {roles.map(r => <option key={r._id} value={r._id}>{r.name}{r.readOnly ? ' (read-only)' : ''}</option>)}
           </select></div>
-        <div><label htmlFor="at-exp" className="text-[12px] font-medium text-graphite mb-1 block">Access ends on (optional — temporary access)</label>
+        <div><label htmlFor="at-exp" className="text-[13px] font-medium text-charcoal mb-1 block">Access ends on (optional — temporary access)</label>
           <input id="at-exp" type="date" className={INPUT} value={f.accessExpiresAt ?? ''} onChange={e => setF({ ...f, accessExpiresAt: e.target.value || null })} /></div>
         {admin && (
-          <div className="flex items-center justify-between"><span className="text-[13px] text-charcoal">Account active</span>
-            <Toggle checked={f.status === 'active'} onChange={v => setF({ ...f, status: v ? 'active' : 'inactive' })} ariaLabel="Account active" /></div>
+          <div className="border border-bone rounded-xl px-4">
+            <SettingsRow label="Account active" description="An inactive admin cannot sign in until this is switched back on.">
+              <Toggle checked={f.status === 'active'} onChange={v => setF({ ...f, status: v ? 'active' : 'inactive' })} ariaLabel="Account active" />
+            </SettingsRow>
+          </div>
         )}
         {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
       </div>
@@ -217,27 +224,30 @@ function RolesPane() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12.5px] text-slate">A role is a set of pages an admin can open. A read-only role can look but never change anything.</p>
-        <Button size="sm" onClick={() => setEditing('new')}><Plus size={14} /> New role</Button>
-      </div>
-      <LoadState loading={roles.loading} error={roles.error} onRetry={roles.reload} />
-      <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))]">
-        {roles.data?.map(r => (
-          <div key={r._id} className="bg-white border border-bone rounded-2xl p-4 flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <div><p className="text-[13.5px] font-bold text-charcoal">{r.name}</p>
-                <p className="text-[11.5px] text-slate">{r.adminCount ?? 0} admin{(r.adminCount ?? 0) === 1 ? '' : 's'}{r.readOnly ? ' · read-only' : ''}{r.isPreset ? ' · starter' : ''}</p></div>
+      <SettingsCard
+        title="Roles"
+        icon={<ShieldCheck size={14} />}
+        description="A role is a set of pages an admin can open. A read-only role can look but never change anything."
+        actions={<Button size="sm" onClick={() => setEditing('new')}><Plus size={14} /> New role</Button>}
+      >
+        <LoadState loading={roles.loading} error={roles.error} onRetry={roles.reload} />
+        <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))]">
+          {roles.data?.map(r => (
+            <div key={r._id} className="rounded-xl border border-bone bg-cream/50 p-4 flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div><p className="text-[13px] font-semibold text-charcoal">{r.name}</p>
+                  <p className="text-[11.5px] text-slate">{r.adminCount ?? 0} admin{(r.adminCount ?? 0) === 1 ? '' : 's'}{r.readOnly ? ' · read-only' : ''}{r.isPreset ? ' · starter' : ''}</p></div>
+              </div>
+              {r.description && <p className="text-[12px] text-slate">{r.description}</p>}
+              <p className="text-[11.5px] text-graphite">{r.permissions.map(p => ADMIN_PERMISSION_LABELS[p as AdminPermission]?.label ?? p).join(' · ') || 'No permissions'}</p>
+              <div className="flex gap-1.5 mt-auto pt-1">
+                <Button size="xs" variant="outline" onClick={() => setEditing(r)}>Edit</Button>
+                {!r.isPreset && <Button size="xs" variant="danger" onClick={() => setDel(r)}><Trash2 size={12} /></Button>}
+              </div>
             </div>
-            {r.description && <p className="text-[12px] text-slate">{r.description}</p>}
-            <p className="text-[11.5px] text-graphite">{r.permissions.map(p => ADMIN_PERMISSION_LABELS[p as AdminPermission]?.label ?? p).join(' · ') || 'No permissions'}</p>
-            <div className="flex gap-1.5 mt-auto pt-1">
-              <Button size="xs" variant="outline" onClick={() => setEditing(r)}>Edit</Button>
-              {!r.isPreset && <Button size="xs" variant="danger" onClick={() => setDel(r)}><Trash2 size={12} /></Button>}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </SettingsCard>
       {editing && (
         <RoleModal role={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)}
           onSave={async b => {
@@ -277,14 +287,15 @@ function RoleModal({ role, onClose, onSave }: { role?: AdminRole; onClose: () =>
       footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={submit} disabled={busy}>{busy ? 'Saving…' : 'Save role'}</Button></>}>
       <div className="flex flex-col gap-4">
         <div className="grid sm:grid-cols-2 gap-3">
-          <div><label htmlFor="ar-name" className="text-[12px] font-medium text-graphite mb-1 block">Role name</label>
+          <div><label htmlFor="ar-name" className="text-[13px] font-medium text-charcoal mb-1 block">Role name</label>
             <input id="ar-name" className={INPUT} value={name} onChange={e => setName(e.target.value)} /></div>
-          <div><label htmlFor="ar-desc" className="text-[12px] font-medium text-graphite mb-1 block">Description</label>
+          <div><label htmlFor="ar-desc" className="text-[13px] font-medium text-charcoal mb-1 block">Description</label>
             <input id="ar-desc" className={INPUT} value={description} onChange={e => setDescription(e.target.value)} /></div>
         </div>
-        <div className="flex items-center justify-between border border-bone rounded-xl px-4 py-3">
-          <div><p className="text-[13px] font-semibold text-charcoal">Read-only role</p><p className="text-[11.5px] text-slate">Can open the allowed pages but cannot change anything.</p></div>
-          <Toggle checked={readOnly} onChange={setReadOnly} ariaLabel="Read-only role" />
+        <div className="border border-bone rounded-xl px-4">
+          <SettingsRow label="Read-only role" description="Can open the allowed pages but cannot change anything.">
+            <Toggle checked={readOnly} onChange={setReadOnly} ariaLabel="Read-only role" />
+          </SettingsRow>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-[12.5px] font-semibold text-charcoal">Permissions · {perms.size} of {total} selected</p>
@@ -295,16 +306,17 @@ function RoleModal({ role, onClose, onSave }: { role?: AdminRole; onClose: () =>
         </div>
         {ADMIN_PERMISSION_AREAS.map(a => (
           <fieldset key={a.area} className="border border-bone rounded-xl p-3">
-            <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.06em] text-slate">{a.area}</legend>
-            <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2">
+            <legend className="px-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate">{a.area}</legend>
+            <div className="grid sm:grid-cols-2 gap-2">
               {a.keys.map(k => (
-                <div key={k} className="flex items-start gap-2">
-                  <input id={'perm-' + k} type="checkbox" className="mt-1" checked={perms.has(k)} onChange={() => toggle(k)} />
-                  <label htmlFor={'perm-' + k} className="cursor-pointer">
-                    <span className="text-[12.5px] font-medium text-charcoal block">{ADMIN_PERMISSION_LABELS[k].label}</span>
-                    <span className="text-[11.5px] text-slate">{ADMIN_PERMISSION_LABELS[k].hint}</span>
-                  </label>
-                </div>
+                <SettingsChoice
+                  key={k}
+                  type="checkbox"
+                  checked={perms.has(k)}
+                  onChange={() => toggle(k)}
+                  label={ADMIN_PERMISSION_LABELS[k].label}
+                  description={ADMIN_PERMISSION_LABELS[k].hint}
+                />
               ))}
             </div>
           </fieldset>
@@ -326,28 +338,35 @@ function ApprovalsPane() {
   };
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12.5px] text-slate">Big actions (payouts, commission, plans) by team admins wait here for a Super Admin.</p>
-        <select aria-label="Filter approvals" className="border border-bone rounded-[8px] px-2 py-1.5 text-[12.5px]" value={status} onChange={e => setStatus(e.target.value as 'pending' | 'all')}>
-          <option value="pending">Pending</option><option value="all">All</option>
-        </select>
-      </div>
-      <LoadState loading={list.loading} error={list.error} onRetry={list.reload} />
-      {list.data && list.data.length === 0 && <p className="text-[13px] text-slate py-6 text-center">Nothing waiting for approval.</p>}
-      <div className="flex flex-col gap-2">
-        {list.data?.map(a => (
-          <div key={a._id} className="bg-white border border-bone rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <p className="text-[13px] font-semibold text-charcoal">{a.actionLabel}</p>
-              <p className="text-[11.5px] text-slate">{a.requestedByName ?? 'An admin'} · {fmt(a.createdAt)} · {a.summary}</p>
-              <p className="text-[11.5px] text-graphite capitalize">{a.stale ? 'expired' : a.status}{a.decidedByName ? ` by ${a.decidedByName}` : ''}</p>
-            </div>
-            {a.status === 'pending' && !a.stale && can('team.manage') && (
-              <div className="flex gap-1.5"><Button size="sm" onClick={() => decide(a, true)}>Approve</Button><Button size="sm" variant="outline" onClick={() => decide(a, false)}>Reject</Button></div>
-            )}
+      <SettingsCard
+        title="Approvals"
+        icon={<ClipboardCheck size={14} />}
+        description="Big actions (payouts, commission, plans) by team admins wait here for a Super Admin."
+        actions={(
+          <select aria-label="Filter approvals" className="border border-bone rounded-[10px] bg-white px-3 py-1.5 text-[13px] outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15" value={status} onChange={e => setStatus(e.target.value as 'pending' | 'all')}>
+            <option value="pending">Pending</option><option value="all">All</option>
+          </select>
+        )}
+      >
+        <LoadState loading={list.loading} error={list.error} onRetry={list.reload} />
+        {list.data && list.data.length === 0 && <p className="text-[13px] text-slate py-4 text-center">Nothing waiting for approval.</p>}
+        {(list.data?.length ?? 0) > 0 && (
+          <div className="-mx-5 -mb-5 mt-1 border-t border-fog divide-y divide-fog px-5">
+            {list.data?.map(a => (
+              <div key={a._id} className="py-3.5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-charcoal">{a.actionLabel}</p>
+                  <p className="text-[11.5px] text-slate">{a.requestedByName ?? 'An admin'} · {fmt(a.createdAt)} · {a.summary}</p>
+                  <p className="text-[11.5px] text-graphite capitalize">{a.stale ? 'expired' : a.status}{a.decidedByName ? ` by ${a.decidedByName}` : ''}</p>
+                </div>
+                {a.status === 'pending' && !a.stale && can('team.manage') && (
+                  <div className="flex gap-1.5 shrink-0"><Button size="sm" onClick={() => decide(a, true)}>Approve</Button><Button size="sm" variant="outline" onClick={() => decide(a, false)}>Reject</Button></div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+      </SettingsCard>
     </div>
   );
 }
@@ -362,21 +381,29 @@ function AuditPane() {
   const pg = audit.data?.pagination;
   return (
     <div className="flex flex-col gap-3">
-      <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setPage(1); setQ(search.trim()); }}>
-        <input aria-label="Search audit trail" className={INPUT} placeholder="Search by admin email or action…" value={search} onChange={e => setSearch(e.target.value)} />
-        <Button type="submit" variant="outline">Search</Button>
-      </form>
-      <LoadState loading={audit.loading} error={audit.error} onRetry={audit.reload} />
-      {!audit.loading && !audit.error && logs.length === 0 && <p className="text-[13px] text-slate py-6 text-center">No admin changes recorded yet.</p>}
-      <div className="bg-white border border-bone rounded-2xl divide-y divide-bone">
-        {logs.map(l => (
-          <div key={l._id} className="px-4 py-2.5 flex items-start justify-between gap-3 flex-wrap">
-            <div><p className="text-[12.5px] text-charcoal">{l.description ?? l.action}</p>
-              <p className="text-[11.5px] text-slate">{l.actorName ?? 'Admin'}{l.ip ? ` · ${l.ip}` : ''}</p></div>
-            <p className="text-[11.5px] text-slate whitespace-nowrap">{fmt(l.createdAt)}</p>
+      <SettingsCard
+        title="Audit trail"
+        icon={<History size={14} />}
+        description="Every change made from this admin panel, newest first."
+      >
+        <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setPage(1); setQ(search.trim()); }}>
+          <input aria-label="Search audit trail" className={INPUT} placeholder="Search by admin email or action…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Button type="submit" variant="outline">Search</Button>
+        </form>
+        <LoadState loading={audit.loading} error={audit.error} onRetry={audit.reload} />
+        {!audit.loading && !audit.error && logs.length === 0 && <p className="text-[13px] text-slate py-4 text-center">No admin changes recorded yet.</p>}
+        {logs.length > 0 && (
+          <div className="-mx-5 -mb-5 mt-1 border-t border-fog divide-y divide-fog px-5">
+            {logs.map(l => (
+              <div key={l._id} className="py-3 flex items-start justify-between gap-3 flex-wrap">
+                <div className="min-w-0"><p className="text-[12.5px] text-charcoal">{l.description ?? l.action}</p>
+                  <p className="text-[11.5px] text-slate">{l.actorName ?? 'Admin'}{l.ip ? ` · ${l.ip}` : ''}</p></div>
+                <p className="text-[11.5px] text-slate whitespace-nowrap">{fmt(l.createdAt)}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+      </SettingsCard>
       {pg && pg.totalPages > 1 && (
         <div className="flex items-center justify-between text-[12.5px] text-slate">
           <span>Page {pg.page} of {pg.totalPages}</span>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ExternalLink, FileText, Loader2 } from 'lucide-react';
-import { Badge, Button, Card, SkeletonBox } from '@/components/comman/ui';
+import { Badge, Button } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
@@ -49,33 +49,26 @@ export function PoliciesSettings({ canManage }: { canManage: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="m-0 text-[16px] font-bold text-charcoal">Policies</h2>
-        <p className="mt-1 mb-0 text-[12.5px] text-slate">
-          Customers see these in your footer and at checkout. The templates are a starting point: read them and adjust them to your business and your local law.
-        </p>
-      </div>
+      <p className="m-0 text-[12.5px] text-slate leading-relaxed">
+        Customers see these in your footer and at checkout. The templates are a starting point: read them and adjust them to your business and your local law.
+      </p>
 
       {error ? (
-        <div role="alert" className="flex items-center gap-3 rounded-xl border border-bone bg-white p-4 text-[13px] text-charcoal">
+        <div role="alert" className="flex items-center gap-3 rounded-2xl border border-bone bg-white p-4 text-[13px] text-charcoal">
           <AlertCircle size={16} className="shrink-0 text-error" />
           <span className="flex-1">{error}</span>
           <Button variant="secondary" size="sm" onClick={load}>Retry</Button>
         </div>
-      ) : pages === null ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-3">
-          {POLICIES.map(p => <SkeletonBox key={p.type} className="h-[132px] w-full rounded-xl" />)}
-        </div>
-      ) : (
+      ) : pages === null ? null : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-3">
           {POLICIES.map(policy => {
             const page = pages.find(pg => pg.policyType === policy.type);
             const live = page?.status === 'published';
             const url = page && live && store?.slug ? getStorefrontUrl(store.slug, `/${page.slug}`) : null;
             return (
-              <Card key={policy.type}>
+              <section key={policy.type} className="bg-white border border-bone rounded-2xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-pale-orange text-brand-orange"><FileText size={16} /></div>
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-brand-pale-orange text-brand-orange"><FileText size={14} /></div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="m-0 text-[14px] font-semibold text-charcoal">{policy.title}</h3>
@@ -100,7 +93,7 @@ export function PoliciesSettings({ canManage }: { canManage: boolean }) {
                     </div>
                   </div>
                 </div>
-              </Card>
+              </section>
             );
           })}
         </div>

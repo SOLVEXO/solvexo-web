@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, History, AlertTriangle, Globe2, Plus } from 'lucide-react';
+import { RefreshCw, History, AlertTriangle, Globe2, Plus, Coins, TrendingUp, Zap } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
+import { Button, Input, Toggle, StatusBadge, EmptyState, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
+import { SettingsCard, SettingsRow } from '@/components/comman/settings';
 import {
   apiGetPlatformConfig, apiUpdateFxConfig, apiGetAdminCurrencies, apiAddCurrency, apiEnableAllCurrencies,
   apiRetryStripeCardPaymentSupport,
@@ -14,6 +15,10 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** Bare select styled to the settings input convention (the shared `Select`
+ *  wraps a label we don't want inside an inline control row). */
+const FIELD_CLS = 'w-full px-3 py-2 rounded-[10px] border border-bone bg-white text-[13px] outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 disabled:opacity-50 disabled:cursor-not-allowed';
+
 // ── Current rate cards ────────────────────────────────────────────────────────
 function RateCard({ currency, rate, staleness }: {
   currency: string;
@@ -21,19 +26,19 @@ function RateCard({ currency, rate, staleness }: {
   staleness?: { hoursOld: number; isStale: boolean } | null;
 }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex-1 min-w-[220px]">
+    <div className="rounded-xl border border-bone bg-cream/50 px-4 py-3.5 flex-1 min-w-[220px]">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[13px] font-bold text-carbon">{currency}</p>
+        <p className="text-[13px] font-semibold text-charcoal">{currency}</p>
         {staleness?.isStale && <StatusBadge status="Stale" />}
         {rate?.source === 'admin' && !staleness?.isStale && <StatusBadge status="Admin Override" />}
       </div>
       {rate ? (
         <>
-          <p className="text-[22px] font-bold text-charcoal leading-tight">
+          <p className="text-[22px] font-bold text-carbon leading-tight">
             {currency === 'USD' ? '1.00' : rate.ratePerUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             <span className="text-[12px] font-medium text-slate ml-1">per USD</span>
           </p>
-          <p className="text-[11px] text-slate mt-1">
+          <p className="text-[11.5px] text-slate mt-1">
             Updated {formatDate(rate.effectiveFrom)} · {rate.source === 'admin' ? 'manual override' : 'auto-refreshed'}
           </p>
         </>
@@ -95,14 +100,16 @@ function OverrideForm({ currencies, onDone }: { currencies: string[]; onDone: ()
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-      <p className="text-[13px] font-bold text-carbon mb-1">Set Manual Rate</p>
-      <p className="text-[11px] text-slate mb-3">Overrides the auto-refreshed rate immediately. Only applies to checkouts created after this change.</p>
+    <SettingsCard
+      title="Set manual rate"
+      icon={<TrendingUp size={14} />}
+      description="Overrides the auto-refreshed rate immediately. Only applies to checkouts created after this change."
+    >
       <div className="flex items-end gap-3 flex-wrap">
         <div className="w-[110px]">
-          <label className="block text-[11px] font-medium text-charcoal mb-1">Currency</label>
+          <label className="block text-[12px] font-medium text-charcoal mb-1">Currency</label>
           <select value={currency} onChange={e => setCurrency(e.target.value)} disabled={selectable.length === 0}
-            className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 disabled:opacity-50 disabled:cursor-not-allowed">
+            aria-label="Currency to override" className={FIELD_CLS}>
             {selectable.length === 0
               ? <option value="PKR">PKR</option>
               : selectable.map(code => <option key={code} value={code}>{code}</option>)}
@@ -114,7 +121,7 @@ function OverrideForm({ currencies, onDone }: { currencies: string[]; onDone: ()
         <Button variant="primary" loading={submitting} onClick={submit}>Apply</Button>
       </div>
       {error && <p className="text-[12px] text-error mt-2 flex items-center gap-1"><AlertTriangle size={13} />{error}</p>}
-    </div>
+    </SettingsCard>
   );
 }
 
@@ -159,7 +166,7 @@ function AddCurrencyForm({ existing, onDone }: { existing: string[]; onDone: () 
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-bone">
+    <div className="mt-3 pt-3 border-t border-fog">
       <div className="flex items-end gap-3 flex-wrap">
         <div className="w-[100px]">
           <Input label="Code" value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="SEK" maxLength={3} />
@@ -292,36 +299,33 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
       )}
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
-        {embedded && (
-          <div className="flex justify-end">
-            <Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>
+        <SettingsCard
+          title="Current rates"
+          icon={<Coins size={14} />}
+          description="The authoritative rate per currency against USD, used by checkout, settlement and refunds."
+          actions={embedded ? <Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button> : undefined}
+        >
+          <div className="flex gap-3 flex-wrap">
+            {loading ? null : (
+              Object.keys(rates).length === 0 ? (
+                <EmptyState icon={<AlertTriangle size={28} className="text-slate" />} title="No rates configured" description="Set a manual rate below to get started." />
+              ) : (
+                Object.entries(rates).map(([currency, rate]) => (
+                  <RateCard key={currency} currency={currency} rate={rate} staleness={staleness[currency]} />
+                ))
+              )
+            )}
           </div>
-        )}
-        <div className="flex gap-4 flex-wrap">
-          {loading ? (
-            <SkeletonBox className="h-24 w-full" />
-          ) : (
-            Object.keys(rates).length === 0 ? (
-              <EmptyState icon={<AlertTriangle size={28} className="text-slate" />} title="No rates configured" description="Set a manual rate below to get started." />
-            ) : (
-              Object.entries(rates).map(([currency, rate]) => (
-                <RateCard key={currency} currency={currency} rate={rate} staleness={staleness[currency]} />
-              ))
-            )
-          )}
-        </div>
+        </SettingsCard>
 
         <OverrideForm currencies={currencies.map(c => c.code)} onDone={load} />
 
-        <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-[13px] font-bold text-carbon flex items-center gap-2"><Globe2 size={15} className="text-slate" /> Enabled Currencies</p>
-              <p className="text-[11px] text-slate mt-[2px]">
-                {loading ? 'Loading…' : `${currencies.length} of 152 real ISO-4217 currencies enabled for checkout/settlement.`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
+        <SettingsCard
+          title="Enabled currencies"
+          icon={<Globe2 size={14} />}
+          description={loading ? 'Loading…' : `${currencies.length} of 152 real ISO-4217 currencies enabled for checkout/settlement.`}
+          actions={(
+            <>
               <BulkImportButton
                 entityLabel="currencies"
                 basePath="/api/admin/platform-config/currencies"
@@ -332,11 +336,12 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
                 ]}
               />
               <Button variant="primary" size="sm" loading={enablingAll} onClick={enableAllCurrencies}>Enable All Currencies</Button>
-            </div>
-          </div>
-          {enableAllMessage && <p className="text-[12px] text-slate mt-2">{enableAllMessage}</p>}
+            </>
+          )}
+        >
+          {enableAllMessage && <p className="text-[12px] text-slate mb-3">{enableAllMessage}</p>}
           {currencies.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
+            <div className="flex flex-wrap gap-1.5">
               {currencies.map(c => (
                 c.stripeCardPaymentSupported === false ? (
                   <span
@@ -356,29 +361,36 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
                     </button>
                   </span>
                 ) : (
-                  <span key={c.code} className="px-2 py-[3px] rounded-md bg-bone/60 text-[11px] font-medium text-charcoal border border-bone">{c.code}</span>
+                  <span key={c.code} className="px-2 py-[3px] rounded-md bg-mist text-[11px] font-medium text-charcoal border border-bone">{c.code}</span>
                 )
               ))}
             </div>
           )}
           <AddCurrencyForm existing={currencies.map(c => c.code)} onDone={load} />
-        </div>
+        </SettingsCard>
 
         {fxConfig && (
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center justify-between">
-            <div>
-              <p className="text-[13px] font-bold text-carbon">Auto-refresh from provider</p>
-              <p className="text-[11px] text-slate mt-[2px]">Daily automatic rate refresh (sanity-band + abnormal-jump checked before ever becoming current).</p>
+          <SettingsCard
+            title="Rate refresh"
+            icon={<Zap size={14} />}
+            description="How the platform keeps these rates current between manual overrides."
+          >
+            <div className="-mx-5 border-y border-fog px-5">
+              <SettingsRow
+                label="Auto-refresh from provider"
+                description="Daily automatic rate refresh (sanity-band + abnormal-jump checked before ever becoming current)."
+              >
+                <Toggle checked={fxConfig.autoRefreshEnabled} onChange={toggleAutoRefresh} disabled={savingConfig} ariaLabel="Auto-refresh from provider" />
+              </SettingsRow>
             </div>
-            <Toggle checked={fxConfig.autoRefreshEnabled} onChange={toggleAutoRefresh} disabled={savingConfig} />
-          </div>
+          </SettingsCard>
         )}
 
-        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <div className="px-5 py-[14px] border-b border-bone flex items-center gap-2">
-            <History size={14} className="text-slate" />
-            <p className="text-[13px] font-bold text-carbon">Rate History</p>
-          </div>
+        <SettingsCard
+          title="Rate History"
+          icon={<History size={14} />}
+          bodyClassName="px-0 pb-0"
+        >
           <Table
             columns={historyColumns}
             data={history}
@@ -386,7 +398,7 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
             loading={loading}
             emptyState={{ icon: <History size={28} className="text-slate" />, title: 'No history yet', description: 'Rate changes will appear here.' }}
           />
-        </div>
+        </SettingsCard>
       </div>
     </div>
   );

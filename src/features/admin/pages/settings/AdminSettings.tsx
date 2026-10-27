@@ -1,50 +1,36 @@
 import { useEffect, useState } from 'react';
 import {
-  User, KeyRound, Bell,
+  User, KeyRound,
   Camera, Check, Loader2, Eye, EyeOff,
 } from 'lucide-react';
+import { clsx } from 'clsx';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { useChangePassword } from '@/hooks/auth/useChangePassword';
 import { useUpload } from '@/hooks/upload/useUpload';
-import { NotificationsPanel, PasteImageUrl } from '@/components/comman/ui';
+import { PasteImageUrl, Button } from '@/components/comman/ui';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
-import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
-import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
+import { SettingsCard, SettingsRow, SettingsSaveBar } from '@/components/comman/settings';
 
-type Section = 'profile' | 'security' | 'notifications';
+const inputCls = "w-full px-3 py-[9px] rounded-[10px] text-[13px] border border-bone bg-white text-charcoal outline-none box-border transition-colors placeholder:text-slate/70 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15";
 
-const TABS: Tab[] = [
-  { id: 'profile',       label: 'Profile',          icon: <User size={13} /> },
-  { id: 'security',      label: 'Email & Password',  icon: <KeyRound size={13} /> },
-  { id: 'notifications', label: 'Notifications',     icon: <Bell size={13} /> },
-];
+const readonlyValueCls = 'text-[12.5px] font-semibold text-charcoal';
 
-// ── Profile Skeleton ──────────────────────────────────────────────────────────
-function ProfileSkeleton() {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <>
-      <div className="flex items-center gap-4 mb-[22px]">
-        <div className="animate-pulse w-[76px] h-[76px] rounded-full bg-bone flex-shrink-0" />
-        <div>
-          <div className="animate-pulse w-[110px] h-[13px] rounded bg-bone mb-2" />
-          <div className="animate-pulse w-20 h-[11px] rounded bg-bone" />
-        </div>
-      </div>
-      <div className="h-px bg-[#f0eee6] mb-5" />
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="mb-4">
-          <div className="animate-pulse w-20 h-[11px] rounded bg-bone mb-[6px]" />
-          <div className="animate-pulse w-full h-[38px] rounded-lg bg-bone" />
-        </div>
-      ))}
-    </>
+    <div className="mb-4 last:mb-0">
+      <label className="text-[12px] font-semibold text-charcoal block mb-1.5">{label}</label>
+      {children}
+    </div>
   );
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
+/** The hub's "My Account" tab: who you are, then the password that signs you in.
+ *  It used to carry its own Profile / Email & Password / Notifications strip on
+ *  top of the hub rail — three more tabs inside a tab, and its Notifications was
+ *  the very panel the rail already links to. One page, two cards, no sub-nav. */
 export function AdminSettings({ embedded = false }: { embedded?: boolean } = {}) {
-  const { activeTab: active, setActiveTab: setActive, isVisited, paneClassName } = useKeepAliveTabs<Section>('profile');
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
@@ -87,42 +73,56 @@ export function AdminSettings({ embedded = false }: { embedded?: boolean } = {})
     if (ok) { setCurrentPassword(''); setNewPassword(''); }
   };
 
+  // Nothing pending until a field actually differs from the loaded profile —
+  // the same dirty rule the store-settings tabs use, so the shared save bar can
+  // hide itself when there is nothing to save.
+  const isDirty =
+    !!profile &&
+    (firstName !== (profile.name.split(' ')[0] ?? '') ||
+      lastName !== profile.name.split(' ').slice(1).join(' ') ||
+      phone !== (profile.phone ?? '') ||
+      address !== (profile.address ?? '') ||
+      profileImage !== (profile.profileImage ?? ''));
+
+  const saveMsg = saved
+    ? { ok: true, text: 'Profile updated' }
+    : saveError
+      ? { ok: false, text: saveError }
+      : null;
+
   return (
     <div>
-      {!embedded && <AdminPageHeader title="My Account" subtitle="Manage your admin profile, password, and notification preferences." />}
+      {!embedded && <AdminPageHeader title="My Account" subtitle="Manage your admin profile and password." />}
 
       <div className={embedded ? 'px-4 lg:px-7 py-6' : 'px-4 sm:px-7 pt-5 pb-8'}>
-        <div className="mb-4">
-          <TabBar tabs={TABS} active={active} onChange={id => setActive(id as Section)} />
-        </div>
-
-        {/* Profile */}
-        {isVisited('profile') && (
-          <div className={`${paneClassName('profile')} bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6`}>
-            <p className="text-[16px] font-bold text-charcoal mb-[22px]">Profile</p>
-
-            {profileLoading ? <ProfileSkeleton /> : (
+        <div className="flex flex-col gap-5">
+          <SettingsCard
+            title="Profile"
+            icon={<User size={14} />}
+            description="Your own details as the panel shows them — avatar, name and contact."
+          >
+            {profileLoading ? null : (
               <>
                 {/* Avatar */}
-                <div className="flex items-center gap-4 mb-[22px]">
+                <div className="mb-5 flex items-center gap-4">
                   <label className={`relative flex-shrink-0 ${photoUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
-                    <div className="w-[76px] h-[76px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[26px] font-bold flex items-center justify-center overflow-hidden">
+                    <div className="size-[76px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[26px] font-bold flex items-center justify-center overflow-hidden">
                       {photoUploading
                         ? <Loader2 size={24} className="animate-spin" />
                         : profileImage
                           ? <img loading="lazy" decoding="async" src={profileImage} alt={profile?.name} className="w-full h-full object-cover" />
                           : (profile?.name?.slice(0, 2).toUpperCase() ?? 'AD')}
                     </div>
-                    <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange flex items-center justify-center">
+                    <span className="absolute bottom-0 right-0 size-6 rounded-full bg-brand-orange flex items-center justify-center">
                       <Camera size={12} className="text-white" />
                     </span>
                     <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
                   </label>
                   <div>
-                    <p className="text-[13px] font-semibold text-charcoal mb-[3px]">Profile Photo</p>
-                    <p className="text-[12px] text-slate mb-2">JPG, PNG — max 2 MB</p>
+                    <p className="mb-[3px] text-[13px] font-medium text-charcoal">Profile Photo</p>
+                    <p className="mb-2 text-[11.5px] text-slate">JPG, PNG — max 2 MB</p>
                     <div className="flex items-center gap-3">
-                      <label className={`inline-block px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-[12px] text-graphite ${photoUploading ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}>
+                      <label className={`inline-block px-[14px] py-[5px] bg-white border border-bone rounded-md text-[12px] text-graphite ${photoUploading ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}>
                         {photoUploading ? 'Uploading…' : 'Upload Photo'}
                         <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
                       </label>
@@ -131,143 +131,114 @@ export function AdminSettings({ embedded = false }: { embedded?: boolean } = {})
                   </div>
                 </div>
 
-                <div className="h-px bg-[#f0eee6] mb-5" />
-
-                {/* Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-4">
-                  <div>
-                    <label className="text-[12px] font-medium text-graphite mb-[5px] block">First Name</label>
-                    <input value={firstName} onChange={e => setFirstName(e.target.value)}
-                      className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-medium text-graphite mb-[5px] block">Last Name</label>
-                    <input value={lastName} onChange={e => setLastName(e.target.value)}
-                      className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
-                  </div>
+                {/* Editable details */}
+                <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
+                  <Field label="First Name">
+                    <input value={firstName} onChange={e => setFirstName(e.target.value)} className={inputCls} />
+                  </Field>
+                  <Field label="Last Name">
+                    <input value={lastName} onChange={e => setLastName(e.target.value)} className={inputCls} />
+                  </Field>
                 </div>
 
-                {/* Email */}
-                <div className="mb-4">
-                  <label className="text-[12px] font-medium text-graphite mb-[5px] block">Email</label>
-                  <div className="flex items-center gap-[10px]">
-                    <input readOnly value={profile?.email ?? ''}
-                      className="flex-1 min-w-0 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
-                    {profile?.isVerified && (
-                      <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-[#e3f4ea] text-[#1e7a3c] flex items-center gap-1 flex-shrink-0">
-                        <Check size={10} /> Verified
-                      </span>
-                    )}
-                  </div>
+                <Field label="Phone Number">
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" className={inputCls} />
+                </Field>
+
+                <Field label="Address">
+                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" className={inputCls} />
+                </Field>
+
+                {/* Read-only identity (was a pile of disabled inputs) */}
+                <div className="-mx-5 mt-5 divide-y divide-fog border-y border-fog px-5">
+                  <SettingsRow label="Email" description="The address you sign in with — it can't be changed here.">
+                    <span className="flex items-center gap-2">
+                      <span className={readonlyValueCls}>{profile?.email ?? '—'}</span>
+                      {profile?.isVerified && (
+                        <span className="flex items-center gap-1 rounded-md bg-success-bg px-2.5 py-1 text-[11px] font-semibold text-success">
+                          <Check size={10} /> Verified
+                        </span>
+                      )}
+                    </span>
+                  </SettingsRow>
+
+                  <SettingsRow label="Role" description="Granted by your admin permissions.">
+                    <span className={clsx(readonlyValueCls, 'capitalize')}>{profile?.role ?? '—'}</span>
+                  </SettingsRow>
+
+                  <SettingsRow label="Account status">
+                    <span className={clsx('text-[12.5px] font-semibold capitalize', profile?.status === 'active' ? 'text-success' : 'text-slate')}>
+                      {profile?.status ?? '—'}
+                    </span>
+                  </SettingsRow>
                 </div>
 
-                {/* Phone */}
-                <div className="mb-4">
-                  <label className="text-[12px] font-medium text-graphite mb-[5px] block">Phone Number</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000"
-                    className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
-                </div>
-
-                {/* Address */}
-                <div className="mb-4">
-                  <label className="text-[12px] font-medium text-graphite mb-[5px] block">Address</label>
-                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address"
-                    className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
-                </div>
-
-                {/* Role + Status */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-[22px]">
-                  <div>
-                    <label className="text-[12px] font-medium text-graphite mb-[5px] block">Role</label>
-                    <input readOnly value={profile?.role ?? ''}
-                      className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border capitalize" />
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-medium text-graphite mb-[5px] block">Account Status</label>
-                    <input readOnly value={profile?.status ?? ''}
-                      className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-cream box-border capitalize"
-                      style={{ color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82' }} />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className={`px-6 py-[10px] bg-brand-orange hover:bg-brand-deep-orange border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 transition-colors duration-150 ${saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-                  >
-                    {saving && <Loader2 size={13} className="animate-spin" />}
-                    {saving ? 'Saving…' : 'Save Changes'}
-                  </button>
-                  {saved && <span className="text-[11px] text-success font-medium">Profile updated</span>}
-                  {saveError && <span className="text-[11px] text-error font-medium">{saveError}</span>}
-                </div>
+                <SettingsSaveBar
+                  isDirty={isDirty}
+                  saving={saving}
+                  onSave={handleSave}
+                  saveMsg={saveMsg}
+                />
               </>
             )}
-          </div>
-        )}
+          </SettingsCard>
 
-        {/* Email & Password section */}
-        {isVisited('security') && (
-          <div className={`${paneClassName('security')} bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6`}>
-            <p className="text-[16px] font-bold text-charcoal mb-[22px]">Email &amp; Password</p>
-
-            <div className="mb-5">
-              <label className="text-[12px] font-medium text-graphite mb-[5px] block">Email</label>
-              <input readOnly value={profile?.email ?? ''}
-                className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
-            </div>
-
-            <div className="h-px bg-[#f0eee6] mb-5" />
-
-            <p className="text-[13px] font-semibold text-charcoal mb-4">Change Password</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-4">
-              <div>
-                <label className="text-[12px] font-medium text-graphite mb-[5px] block">Current Password</label>
+          <SettingsCard
+            title="Password"
+            icon={<KeyRound size={14} />}
+            description="Change the password you sign in with."
+          >
+            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
+              <Field label="Current Password">
                 <div className="relative">
                   <input type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
-                    className="w-full px-3 pr-[42px] py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    className={`${inputCls} pr-[42px]`} />
                   <button type="button" onClick={() => setShowCurrentPassword(s => !s)}
                     aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
                     {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-              </div>
-              <div>
-                <label className="text-[12px] font-medium text-graphite mb-[5px] block">New Password</label>
+              </Field>
+              <Field label="New Password">
                 <div className="relative">
-                  <input type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                    className="w-full px-3 pr-[42px] py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    aria-describedby="admin-new-password-rule"
+                    className={`${inputCls} pr-[42px]`}
+                  />
                   <button type="button" onClick={() => setShowNewPassword(s => !s)}
                     aria-label={showNewPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
                     {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-              </div>
+                <p id="admin-new-password-rule" className="mt-1 text-[11.5px] text-slate">
+                  At least 8 characters — mix letters, numbers and a symbol.
+                </p>
+              </Field>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
+            {/* A one-off action, not a form save — it keeps its own disabled
+                rule (both fields filled) and clears the fields on success, so
+                it stays a plain button instead of the shared save bar. */}
+            <div className="mt-4 flex items-center gap-3">
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleChangePassword}
-                disabled={pwSaving || !currentPassword || !newPassword}
-                className={`px-6 py-[10px] bg-brand-orange hover:bg-brand-deep-orange border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 transition-colors duration-150 ${pwSaving || !currentPassword || !newPassword ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                disabled={!currentPassword || !newPassword}
+                loading={pwSaving}
               >
-                {pwSaving && <Loader2 size={13} className="animate-spin" />}
                 {pwSaving ? 'Updating…' : 'Update Password'}
-              </button>
-              {pwSuccess && <span className="text-[11px] text-success font-medium">Password changed successfully</span>}
-              {pwError && <span className="text-[11px] text-error font-medium">{pwError}</span>}
+              </Button>
+              {pwSuccess && <span className="text-[12px] font-medium text-success">Password changed successfully</span>}
+              {pwError && <span className="text-[12px] font-medium text-error">{pwError}</span>}
             </div>
-          </div>
-        )}
-
-        {/* Notifications section */}
-        {isVisited('notifications') && (
-          <div className={paneClassName('notifications')}><NotificationsPanel /></div>
-        )}
+          </SettingsCard>
+        </div>
       </div>
     </div>
   );

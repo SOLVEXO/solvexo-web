@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, Percent, Truck, Landmark } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
+import { Button, Modal, Toggle, Field, Input } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE_URL } from '@/api/client';
@@ -1113,11 +1113,7 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
       )}
 
       <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-6">
-        {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {Array.from({ length: 2 }).map((_, i) => <SkeletonBox key={i} height={160} rounded="10px" />)}
-          </div>
-        ) : error ? (
+        {loading ? null : error ? (
           <div className="flex items-center gap-3">
             <p className="text-[13px] text-error">{error}</p>
             <Button size="sm" variant="outline" icon={<RefreshCw size={12} />} onClick={load}>Retry</Button>

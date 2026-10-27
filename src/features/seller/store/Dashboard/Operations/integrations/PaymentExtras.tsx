@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ComponentProps } from 'react';
 import { PasswordToggleButton } from '@/components/comman/ui/PasswordField';
 import { Banknote, Pencil, Plus, Trash2, RefreshCw, FlaskConical, HandCoins } from 'lucide-react';
-import { Button, Modal, Toggle, SkeletonBox, Field, Input, Textarea, Select } from '@/components/comman/ui';
+import { Button, Modal, Toggle, Field, Input, Textarea, Select } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
 import {
@@ -345,7 +345,7 @@ export function StripePayoutsPanel({ storeId }: { storeId: string }) {
   }, [storeId]);
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <SkeletonBox height={120} rounded="10px" />;
+  if (loading) return null;
   if (error) {
     return (
       <div className="flex items-center gap-3">
@@ -498,7 +498,7 @@ export function WhatsAppNotificationsPanel({ storeId }: { storeId: string }) {
   }
 
   if (error) return <p className="text-[12px] text-error">{error}</p>;
-  if (!settings) return <SkeletonBox height={140} rounded="10px" />;
+  if (!settings) return null;
 
   const approved = (templates ?? []).filter(t => t.status === 'APPROVED');
   return (
@@ -548,7 +548,7 @@ export function WhatsAppNotificationsPanel({ storeId }: { storeId: string }) {
           </div>
         </div>
         {templatesError && <p className="text-[12px] text-error mb-2">{templatesError}</p>}
-        {templates === null ? <SkeletonBox height={60} rounded="10px" /> : templates.length === 0 ? (
+        {templates === null ? null : templates.length === 0 ? (
           <p className="text-[12px] text-slate">No templates yet.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-bone">

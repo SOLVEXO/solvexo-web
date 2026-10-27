@@ -288,6 +288,26 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  /* Native checkbox/radio fill — the browser default is its own system blue,
+     which reads as off-brand anywhere it appears (settings toggles, filter
+     lists, consent rows...). `accent-color` repaints only the filled state,
+     so the control stays native: real label click targets, keyboard and
+     screen-reader behaviour untouched, no custom markup to keep in sync.
+     Token-based, so a page-scoped theme (`.theme-education`) recolors these
+     too, and any call site can still win with an `accent-*` utility. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--color-brand-orange);
+  }
+
+  /* Same for a bare slider — without this the thumb/progress is system blue
+     (opacity, overlay and intensity sliders in settings). `.range-thumb`
+     opts out on its own by switching to `appearance: none` and painting its
+     own brand-coloured handle. */
+  input[type='range'] {
+    accent-color: var(--color-brand-orange);
+  }
 }
 
 /* ── Reduced motion — one centralized rule instead of hunting down every

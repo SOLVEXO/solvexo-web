@@ -1,112 +1,62 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore } from '@/api/services/store';
+import { Users } from 'lucide-react';
+import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
+import { SettingsCard, SettingsChoice, SettingsRow } from '@/components/comman/settings';
 
 type Mode = 'optional' | 'required';
 
-const OPTIONS: { value: Mode; title: string; hint: string }[] = [
-  { value: 'optional', title: 'Accounts are optional', hint: 'Customers can check out as guests or create an account.' },
-  { value: 'required', title: 'Accounts are required', hint: 'Customers must sign in to check out.' },
+const OPTIONS: { value: Mode; label: string; description: string }[] = [
+  { value: 'optional', label: 'Accounts are optional', description: 'Customers can check out as guests or create an account.' },
+  { value: 'required', label: 'Accounts are required', description: 'Customers must sign in to check out.' },
 ];
 
-/** Shopify Settings -> Customer accounts (Optional / Required). Saves through
- *  the same update-store call as the other settings; staff need
- *  `settings.general.manage` to change it. */
-export function CustomerAccountsSection() {
-  const { store, storeId, refetch } = useStoreWorkspace();
+/** Shopify Settings → Customer accounts (Optional / Required).
+ *  Presentational only: the owning tab holds `customerAccounts` in the same
+ *  form state and save call as the rest of the tab, so one Save button covers
+ *  the whole page instead of one per card. */
+export function CustomerAccountsSection({ storeId, mode, onMode }: {
+  storeId: string;
+  mode: Mode;
+  onMode: (mode: Mode) => void;
+}) {
   const canEdit = hasNavPermission(TokenStorage.getUser(), 'settings.general.manage');
-  const saved: Mode = store?.customerAccounts === 'required' ? 'required' : 'optional';
-  const [mode, setMode] = useState<Mode>(saved);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  useEffect(() => { setMode(saved); }, [saved]);
-
-  const save = async () => {
-    if (!storeId || saving || !canEdit) return;
-    setSaving(true);
-    setMsg(null);
-    try {
-      await apiUpdateStore({ storeId, customerAccounts: mode });
-      refetch();
-      setMsg({ ok: true, text: 'Customer accounts setting saved.' });
-    } catch (err) {
-      setMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to save customer accounts setting.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const dirty = mode !== saved;
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
-      <p className="text-[14px] font-semibold text-charcoal mb-1">Customer accounts</p>
-      <p className="text-[11px] text-slate mb-4">Choose whether customers need an account to check out.</p>
-
-      <div role="radiogroup" aria-label="Customer accounts" className="flex flex-col gap-2">
-        {OPTIONS.map(o => {
-          const active = mode === o.value;
-          return (
-            <label
-              key={o.value}
-              className={`flex items-start gap-3 px-[14px] py-3 rounded-[9px] border ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'} ${active ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-cream'}`}
-            >
-              <input
-                type="radio"
-                name="customer-accounts"
-                value={o.value}
-                checked={active}
-                disabled={!canEdit || saving}
-                onChange={() => { setMode(o.value); setMsg(null); }}
-                className="mt-[3px]"
-              />
-              <span>
-                <span className="block text-[13px] font-medium text-charcoal">{o.title}</span>
-                <span className="block text-[11px] text-slate">{o.hint}</span>
-              </span>
-            </label>
-          );
-        })}
+    <SettingsCard
+      title="Customer accounts"
+      icon={<Users size={14} />}
+      description="Choose whether customers need an account to check out."
+    >
+      <div role="radiogroup" aria-label="Customer accounts" className="grid gap-2.5 sm:grid-cols-2">
+        {OPTIONS.map(o => (
+          <SettingsChoice
+            key={o.value}
+            name="customer-accounts"
+            checked={mode === o.value}
+            label={o.label}
+            description={o.description}
+            disabled={!canEdit}
+            onChange={() => onMode(o.value)}
+          />
+        ))}
       </div>
 
-      <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-bone">
-        <div>
-          <p className="text-[13px] font-medium text-charcoal">Authentication</p>
-          <p className="text-[11px] text-slate">Let customers sign in with Google or Facebook.</p>
-        </div>
-        <Link to={`/store/${storeId}/settings/customer-accounts/authentication`} className="px-3.5 py-1.5 rounded-lg border border-bone bg-white text-[12.5px] font-semibold text-charcoal no-underline hover:bg-cream">
-          Manage
-        </Link>
-      </div>
-
-      {!canEdit && <p className="text-[11px] text-slate mt-3">You need the "Manage general settings" permission to change this.</p>}
-
-      <div className="flex items-center gap-3 mt-4">
-        <button
-          type="button"
-          onClick={save}
-          disabled={!dirty || saving || !canEdit}
-          className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold"
-          style={{
-            background: dirty && !saving && canEdit ? '#D97757' : '#E8E6DC',
-            color: dirty && !saving && canEdit ? '#fff' : '#8C8A82',
-            cursor: dirty && !saving && canEdit ? 'pointer' : 'not-allowed',
-          }}
+      <div className="mt-1 border-t border-fog">
+        <SettingsRow
+          label="Authentication"
+          description="Let customers sign in with Google or Facebook."
         >
-          {saving && <Loader2 size={14} className="animate-spin" />}
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-        {msg && (
-          <span role="status" className="flex items-center gap-1.5 text-[12px]" style={{ color: msg.ok ? '#166534' : '#991B1B' }}>
-            {msg.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-            {msg.text}
-          </span>
-        )}
+          <Link
+            to={`/store/${storeId}/settings/customer-accounts/authentication`}
+            className="inline-flex items-center px-3.5 py-1.5 rounded-lg border border-bone bg-white text-[12.5px] font-semibold text-charcoal no-underline hover:bg-cream"
+          >
+            Manage
+          </Link>
+        </SettingsRow>
       </div>
-    </div>
+
+      {!canEdit && <p className="mt-1 text-[11px] text-slate">You need the "Manage general settings" permission to change this.</p>}
+    </SettingsCard>
   );
 }

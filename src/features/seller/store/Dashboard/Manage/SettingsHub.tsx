@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
-  Package, Wallet, Globe, ShieldCheck, ChevronLeft, ChevronRight, Bell, Languages, FileText, Scale,
+  Package, Wallet, Globe, ShieldCheck, Bell, Languages, FileText, Scale,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
+import { SettingsShell, type SettingsNavGroup } from '@/components/comman/settings';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiSellerAnalyticsOverview } from '@/api/services/analytics/analytics';
@@ -27,22 +27,55 @@ import { MarketsSettings } from '../Operations/MarketsSettings';
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
 const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
 
-const ALL_TABS: Tab[] = [
-  { id: 'profile', label: 'Store Profile',    icon: <Store size={13} /> },
-  { id: 'product-types', label: 'Product Types',    icon: <Package size={13} /> },
-  { id: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={13} /> },
-  { id: 'domains',       label: 'Domains',           icon: <Globe size={13} /> },
-  { id: 'privacy',       label: 'Privacy',           icon: <ShieldCheck size={13} /> },
-  { id: 'markets',       label: 'Markets',           icon: <Languages size={13} /> },
-  { id: 'notifications', label: 'Notifications',     icon: <Bell size={13} /> },
-  { id: 'policies',      label: 'Policies',          icon: <Scale size={13} /> },
-  { id: 'order-documents', label: 'Order documents',  icon: <FileText size={13} /> },
-  { id: 'billing',      label: 'Billing',      icon: <CreditCard size={13} /> },
-  { id: 'integrations', label: 'Integrations', icon: <Plug size={13} /> },
-  { id: 'staff',        label: 'Staff',        icon: <Users size={13} /> },
-  { id: 'custom-fields', label: 'Custom Fields', icon: <SlidersHorizontal size={13} /> },
-  { id: 'content-types', label: 'Content Types', icon: <Boxes size={13} /> },
-  { id: 'activity-log', label: 'Activity Log', icon: <History size={13} /> },
+// The hub's own navigation, grouped for the desktop rail (each group gets an
+// eyebrow, each row a one-line hint). Mobile flattens this back into the single
+// "Settings" list it always showed, in the same order.
+const NAV_GROUPS: SettingsNavGroup[] = [
+  {
+    label: 'Store',
+    items: [
+      { id: 'profile',       label: 'Store Profile',  icon: <Store size={13} />,       hint: 'Name, logo, currency, tax' },
+      { id: 'product-types', label: 'Product Types',  icon: <Package size={13} />,     hint: 'What this store can sell' },
+      { id: 'privacy',       label: 'Privacy',        icon: <ShieldCheck size={13} />, hint: 'Visibility, consent, data requests' },
+    ],
+  },
+  {
+    label: 'Payments & billing',
+    items: [
+      { id: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={13} />,     hint: 'Gateways, cash on delivery, payouts' },
+      { id: 'billing',         label: 'Billing',         icon: <CreditCard size={13} />, hint: 'Plan, invoices, usage' },
+    ],
+  },
+  {
+    label: 'Markets & domains',
+    items: [
+      { id: 'domains', label: 'Domains', icon: <Globe size={13} />,     hint: 'Custom domain, white label' },
+      { id: 'markets', label: 'Markets', icon: <Languages size={13} />, hint: 'Languages, regions, currencies' },
+    ],
+  },
+  {
+    label: 'Customer communications',
+    items: [
+      { id: 'notifications',   label: 'Notifications',   icon: <Bell size={13} />,     hint: 'Email and in-app alerts' },
+      { id: 'policies',        label: 'Policies',        icon: <Scale size={13} />,    hint: 'Refund, shipping, terms' },
+      { id: 'order-documents', label: 'Order documents', icon: <FileText size={13} />, hint: 'Invoices, receipts, packing slips' },
+    ],
+  },
+  {
+    label: 'Team & content',
+    items: [
+      { id: 'staff',         label: 'Staff',         icon: <Users size={13} />,             hint: 'Members, roles, invitations' },
+      { id: 'custom-fields', label: 'Custom Fields', icon: <SlidersHorizontal size={13} />, hint: 'Metafield definitions' },
+      { id: 'content-types', label: 'Content Types', icon: <Boxes size={13} />,             hint: 'Metaobject types' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { id: 'integrations', label: 'Integrations', icon: <Plug size={13} />,    hint: 'Shipping, payments, apps' },
+      { id: 'activity-log', label: 'Activity Log', icon: <History size={13} />, hint: 'Who changed what, and when' },
+    ],
+  },
 ];
 
 // ── Mobile-only store hero — same gradient hero + stats-strip pattern as
@@ -177,7 +210,11 @@ const TAB_PERMS: Record<string, string[]> = {
 export default function SettingsHub() {
   const { store, storeId } = useStoreWorkspace();
   const user = TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>();
-  const TABS = ALL_TABS.filter(t => !TAB_PERMS[t.id] || hasNavPermission(user, TAB_PERMS[t.id]));
+  const GROUPS = NAV_GROUPS
+    .map(g => ({ ...g, items: g.items.filter(t => !TAB_PERMS[t.id] || hasNavPermission(user, TAB_PERMS[t.id])) }))
+    .filter(g => g.items.length > 0);
+  const TAB_IDS = GROUPS.flatMap(g => g.items.map(t => t.id));
+  const FIRST_TAB = TAB_IDS[0] ?? 'notifications';
   // Every tab has its own URL: /store/:storeId/settings/:tab. No tab = the
   // mobile menu screen (desktop redirects to /profile). Old `?tab=` links
   // (dashboard, notification bell, bookmarks) are redirected to the path form.
@@ -186,93 +223,56 @@ export default function SettingsHub() {
   const [searchParams] = useSearchParams();
   const legacyTab = searchParams.get('tab');
   const legacyId = legacyTab ? (LEGACY_TAB_IDS[legacyTab] ?? legacyTab) : null;
-  const validTab = tabParam && TABS.some(t => t.id === tabParam) ? tabParam : null;
-  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs(validTab ?? TABS[0]?.id ?? 'notifications');
+  const validTab = tabParam && TAB_IDS.includes(tabParam) ? tabParam : null;
+  const { activeTab, setActiveTab, isVisited, paneClassName, warmOtherTabs } = useKeepAliveTabs(validTab ?? FIRST_TAB);
   useEffect(() => { if (validTab) setActiveTab(validTab); }, [validTab, setActiveTab]);
+  // A tab renders nothing until its own data lands, so a first visit normally
+  // costs mount + fetch after the click. Warm the remaining panes in the
+  // background (mounted, hidden, one every few hundred ms) so switching to any
+  // of them shows real content at once. Keyed on the id list, not the array,
+  // because `TAB_IDS` is rebuilt every render.
+  const tabIdsKey = TAB_IDS.join(',');
+  useEffect(() => { warmOtherTabs(tabIdsKey.split(',')); }, [tabIdsKey, warmOtherTabs]);
   useEffect(() => {
     if (!tabParam && !legacyId && window.matchMedia('(min-width: 1024px)').matches) {
-      navigate(`/store/${storeId}/settings/${TABS[0]?.id ?? 'notifications'}`, { replace: true });
+      navigate(`/store/${storeId}/settings/${FIRST_TAB}`, { replace: true });
     }
   }, [tabParam, legacyId, storeId, navigate]);
   // Mobile drill-in = a tab is in the URL (back arrow returns to /settings).
   const mobileDrilledIn = !!validTab;
-  const activeTabLabel = TABS.find(t => t.id === activeTab)?.label ?? 'Settings';
 
   const openTab = (id: string) => navigate(`/store/${storeId}/settings/${id}`);
 
-  if (legacyId && !tabParam && TABS.some(t => t.id === legacyId)) {
+  if (legacyId && !tabParam && TAB_IDS.includes(legacyId)) {
     return <Navigate to={`/store/${storeId}/settings/${legacyId}`} replace />;
   }
-  if (tabParam && !validTab) return <Navigate to={`/store/${storeId}/settings/${TABS[0]?.id ?? 'notifications'}`} replace />;
+  if (tabParam && !validTab) return <Navigate to={`/store/${storeId}/settings/${FIRST_TAB}`} replace />;
 
   return (
     <>
       <StorePageHeader title="Settings" subtitle="Your store's configuration, billing, integrations, and team access — all in one place." />
 
-      {/* Mobile-only menu — this hub's own 11 tabs, styled the same
-         icon-badge/chevron rows as StoreNavMenu below, plus every OTHER
-         store section right underneath (Orders/Catalog/Online Store/etc.) —
-         together the one real "jump to anything" home for a narrow
-         viewport, since the sidebar isn't shown below `lg:`. Hidden once a
-         section is opened (mobileDrilledIn) and always hidden on desktop. */}
-      {!mobileDrilledIn && (
-        <div className="lg:hidden px-4 pt-3 pb-6 flex flex-col gap-4">
-          <MobileStoreHero storeId={storeId} name={store?.name} logo={store?.logo} status={store?.status} plan={store?.plan} />
-          <div className="bg-white border border-bone rounded-2xl overflow-hidden">
-            <div className="px-5 pt-4 pb-2">
-              <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.06em]">Settings</p>
-            </div>
-            <div className="divide-y divide-[#f3f2ec]">
-              {TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => openTab(tab.id)}
-                  className="w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0 text-brand-orange">
-                    {tab.icon}
-                  </div>
-                  <span className="flex-1 text-[13px] font-medium text-charcoal">{tab.label}</span>
-                  <ChevronRight size={15} className="text-slate shrink-0" />
-                </button>
-              ))}
-            </div>
-          </div>
-          <StoreNavMenu storeId={storeId} excludeItemIds={['settings']} />
-        </div>
-      )}
-
-      {/* Mobile-only back bar — shown only once a section is open, replacing
-         the horizontal TabBar (which stays desktop-only below) so a mobile
-         visitor is always looking at one focused screen at a time. */}
-      {mobileDrilledIn && (
-        <div className="lg:hidden flex items-center gap-2 px-4 pt-3 pb-1">
-          <button
-            onClick={() => navigate(`/store/${storeId}/settings`)}
-            aria-label="Back to settings menu"
-            className="size-8 -ml-1 flex items-center justify-center rounded-full bg-transparent border-none cursor-pointer text-charcoal hover:bg-cream transition-colors"
-          >
-            <ChevronLeft size={19} />
-          </button>
-          <p className="text-[15px] font-bold text-carbon">{activeTabLabel}</p>
-        </div>
-      )}
-
-      <div className="hidden lg:block px-4 md:px-7 pt-3">
-        <TabBar tabs={TABS} active={activeTab} onChange={openTab} />
-      </div>
-
-      {/* Store Profile/Product Types/Payment Methods/Domains/Privacy/Billing/
-         Integrations/Staff already bring their own `px-4 lg:px-7 py-...`
-         padding internally (unchanged from their standalone-page layout) —
-         Custom Fields/Content Types/Activity Log never had any of their own
-         (their standalone routes relied on the page-level wrapper for it),
-         so those three get it added here instead, matching each component's
-         own pre-existing behavior. Hidden on mobile until a section is
-         opened (mobileDrilledIn) — always shown on desktop. */}
-      {/* Each tab stays mounted (hidden via CSS) once visited, instead of
-         unmounting on switch — a repeat visit is instant, no refetch/skeleton. */}
-      <div className={mobileDrilledIn ? '' : 'hidden lg:block'}>
+      {/* `SettingsShell` owns both navigation surfaces from these groups: the
+         mobile menu screen (hero + flat rows list + the rest of the dashboard
+         nav, since the sidebar isn't shown below `lg:`) and, on desktop, the
+         sticky tab rail to the right of the content. Panes mount once, inside
+         the shell — the mobile/desktop split is a display toggle, not a
+         second render. */}
+      <SettingsShell
+        groups={GROUPS}
+        activeId={activeTab}
+        onOpen={openTab}
+        drilledIn={mobileDrilledIn}
+        onBack={() => navigate(`/store/${storeId}/settings`)}
+        mobileHero={<MobileStoreHero storeId={storeId} name={store?.name} logo={store?.logo} status={store?.status} plan={store?.plan} />}
+        mobileFooter={<StoreNavMenu storeId={storeId} excludeItemIds={['settings']} />}
+      >
+        {/* Each tab stays mounted (hidden via CSS) once visited, instead of
+            unmounting on switch — a repeat visit is instant, no refetch/skeleton.
+            Store Profile/Product Types/Payment Methods/Domains/Privacy/Billing/
+            Integrations/Staff bring their own `px-4 lg:px-7 py-...` padding
+            (unchanged from their standalone-page layout); the rest never had any
+            of their own, so the hub adds it here. */}
         {isVisited('profile')    && <div className={paneClassName('profile')}><StoreProfileTab /></div>}
         {isVisited('product-types')    && <div className={paneClassName('product-types')}><ProductTypesTab /></div>}
         {isVisited('payment-methods')  && <div className={paneClassName('payment-methods')}><PaymentMethodsTab /></div>}
@@ -300,7 +300,7 @@ export default function SettingsHub() {
         {isVisited('custom-fields') && <div className={paneClassName('custom-fields') + ' px-4 lg:px-7 py-6'}><MetafieldDefinitionsPage embedded /></div>}
         {isVisited('content-types') && <div className={paneClassName('content-types') + ' px-4 lg:px-7 py-6'}><MetaobjectTypesPage embedded /></div>}
         {isVisited('activity-log')      && <div className={paneClassName('activity-log') + ' px-4 lg:px-7 py-6'}><ActivityLogTab /></div>}
-      </div>
+      </SettingsShell>
     </>
   );
 }

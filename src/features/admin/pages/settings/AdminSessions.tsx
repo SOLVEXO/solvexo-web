@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, MonitorSmartphone } from 'lucide-react';
 import { Button } from '@/components/comman/ui';
+import { SettingsCard } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import { apiMyAdminSessions, apiRevokeMyAdminSession, apiRevokeAllMyAdminSessions, type AdminSession } from '@/api/services/adminTeam';
 
@@ -34,28 +35,35 @@ export function AdminSessions() {
 
   return (
     <div className="px-4 sm:px-7 py-6 flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-[12.5px] text-slate">Devices where your admin account is signed in. Sign out any you don't recognise.</p>
-        {sessions && sessions.length > 1 && <Button size="sm" variant="outline" onClick={revokeAll}><LogOut size={13} /> Sign out all</Button>}
-      </div>
       {error && (
-        <div role="alert" className="border border-red-200 bg-red-50 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div role="alert" className="border border-error-border bg-error-bg rounded-xl p-4 flex items-center justify-between gap-3">
           <p className="text-[13px] text-error">{error}</p><Button size="sm" variant="outline" onClick={load}>Retry</Button>
         </div>
       )}
-      {!sessions && !error && <p className="text-[13px] text-slate py-6">Loading…</p>}
-      {sessions && sessions.length === 0 && <p className="text-[13px] text-slate py-6 text-center">No active sessions.</p>}
-      <div className="bg-white border border-bone rounded-2xl divide-y divide-bone">
-        {sessions?.map(s => (
-          <div key={s.sid} className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <p className="text-[13px] font-semibold text-charcoal">{device(s.userAgent)}{s.current && <span className="ml-2 text-[11px] text-success font-semibold">This device</span>}</p>
-              <p className="text-[11.5px] text-slate">{s.ip ?? 'Unknown IP'} · signed in {fmt(s.createdAt)} · last active {fmt(s.lastSeenAt)}</p>
-            </div>
-            {!s.current && <Button size="xs" variant="outline" onClick={() => revoke(s.sid)}>Sign out</Button>}
+      <SettingsCard
+        title="Sessions"
+        icon={<MonitorSmartphone size={14} />}
+        description="Devices where your admin account is signed in. Sign out any you don't recognise."
+        actions={sessions && sessions.length > 1
+          ? <Button size="sm" variant="outline" onClick={revokeAll}><LogOut size={13} /> Sign out all</Button>
+          : undefined}
+      >
+        {!sessions && !error && <p className="text-[13px] text-slate py-4">Loading…</p>}
+        {sessions && sessions.length === 0 && <p className="text-[13px] text-slate py-4 text-center">No active sessions.</p>}
+        {(sessions?.length ?? 0) > 0 && (
+          <div className="-mx-5 -mb-5 border-t border-fog divide-y divide-fog px-5">
+            {sessions?.map(s => (
+              <div key={s.sid} className="py-3.5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-charcoal">{device(s.userAgent)}{s.current && <span className="ml-2 text-[11px] text-success font-semibold">This device</span>}</p>
+                  <p className="text-[11.5px] text-slate">{s.ip ?? 'Unknown IP'} · signed in {fmt(s.createdAt)} · last active {fmt(s.lastSeenAt)}</p>
+                </div>
+                {!s.current && <Button size="xs" variant="outline" onClick={() => revoke(s.sid)}>Sign out</Button>}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+      </SettingsCard>
     </div>
   );
 }

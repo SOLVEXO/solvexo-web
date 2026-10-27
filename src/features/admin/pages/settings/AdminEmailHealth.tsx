@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Mail, Send } from 'lucide-react';
-import { Button, Card, SkeletonBox } from '@/components/comman/ui';
+import { Button } from '@/components/comman/ui';
+import { SettingsCard, SettingsRow, SettingsGroupLabel } from '@/components/comman/settings';
 import { apiGetEmailHealth, apiSendTestEmail, type EmailHealth } from '@/api/services/adminEmailHealth';
 
 function errMsg(err: unknown, fallback: string): string {
@@ -39,27 +40,20 @@ export function AdminEmailHealth() {
   const maxDay = Math.max(1, ...(data?.days ?? []).map(d => d.sent + d.failed));
 
   return (
-    <div className="px-4 sm:px-7 py-6 flex flex-col gap-6 max-w-[900px]">
-      <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-[16px] font-bold text-carbon flex items-center gap-2"><Mail size={16} /> Platform email</h2>
-            <p className="text-[12px] text-slate mt-0.5">Sign-up codes, order emails, invoices and alerts all go through this SMTP account.</p>
-          </div>
-          <Button size="sm" icon={<Send size={13} />} onClick={sendTest} loading={testing} disabled={loading || !!error || !data?.configured}>Send test email</Button>
-        </div>
-
-        {loading && !data ? (
-          <div className="p-5 flex flex-col gap-3" aria-busy="true">
-            <SkeletonBox width={260} height={12} /><SkeletonBox width={200} height={12} /><SkeletonBox width="100%" height={80} />
-          </div>
-        ) : error || !data ? (
-          <div className="p-5 flex items-center justify-between gap-4">
+    <div className="px-4 sm:px-7 py-6 flex flex-col gap-5">
+      <SettingsCard
+        title="Platform email"
+        icon={<Mail size={14} />}
+        description="Sign-up codes, order emails, invoices and alerts all go through this SMTP account."
+        actions={<Button size="sm" icon={<Send size={13} />} onClick={sendTest} loading={testing} disabled={loading || !!error || !data?.configured}>Send test email</Button>}
+      >
+        {loading && !data ? null : error || !data ? (
+          <div className="flex items-center justify-between gap-4">
             <p role="alert" className="flex items-center gap-1.5 text-[12.5px] text-error"><AlertCircle size={14} /> {error || 'Could not load.'}</p>
             <Button size="sm" variant="outline" onClick={reload}>Retry</Button>
           </div>
         ) : (
-          <div className="p-5 flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
             {testResult && (
               <p role={testResult.ok ? 'status' : 'alert'} className={testResult.ok ? 'flex items-center gap-1.5 text-[12.5px] text-success' : 'flex items-start gap-1.5 text-[12.5px] text-error'}>
                 {testResult.ok ? <CheckCircle2 size={14} /> : <AlertCircle size={14} className="mt-0.5 shrink-0" />} {testResult.text}
@@ -67,27 +61,39 @@ export function AdminEmailHealth() {
             )}
 
             {!data.configured && (
-              <p role="alert" className="flex items-start gap-1.5 text-[12.5px] text-error bg-error-bg rounded-lg px-3 py-2">
+              <p role="alert" className="flex items-start gap-1.5 text-[12.5px] text-error bg-error-bg border border-error-border rounded-xl px-3 py-2.5">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" /> SMTP is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD and SMTP_FROM on the server — no email can be sent until then.
               </p>
             )}
             {data.configured && data.consecutiveFailures >= 3 && (
-              <p role="alert" className="flex items-start gap-1.5 text-[12.5px] text-error bg-error-bg rounded-lg px-3 py-2">
+              <p role="alert" className="flex items-start gap-1.5 text-[12.5px] text-error bg-error-bg border border-error-border rounded-xl px-3 py-2.5">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" /> The last {data.consecutiveFailures} emails failed to send{data.lastError ? `: ${data.lastError}` : '.'}
               </p>
             )}
 
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-[12.5px]">
-              <div className="flex justify-between gap-3"><dt className="text-slate">Status</dt><dd className="font-medium text-charcoal">{data.configured ? 'Configured' : 'Not configured'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-slate">Server</dt><dd className="font-medium text-charcoal">{data.host}:{data.port}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-slate">Sent from</dt><dd className="font-medium text-charcoal">{data.from ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-slate">Sender name</dt><dd className="font-medium text-charcoal">{data.appName ?? '— (set APP_NAME)'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-slate">Last 14 days</dt><dd className="font-medium text-charcoal">{data.totals.sent} sent · {data.totals.failed} failed</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-slate">Last error</dt><dd className="font-medium text-charcoal text-right break-words max-w-[60%]">{data.lastError ?? 'None'}</dd></div>
-            </dl>
+            <div className="-mx-5 border-y border-fog px-5 divide-y divide-fog">
+              <SettingsRow label="Status">
+                <span className="text-[12.5px] font-semibold text-charcoal">{data.configured ? 'Configured' : 'Not configured'}</span>
+              </SettingsRow>
+              <SettingsRow label="Server">
+                <span className="text-[12.5px] font-semibold text-charcoal">{data.host}:{data.port}</span>
+              </SettingsRow>
+              <SettingsRow label="Sent from">
+                <span className="text-[12.5px] font-semibold text-charcoal">{data.from ?? '—'}</span>
+              </SettingsRow>
+              <SettingsRow label="Sender name" description="Shown as the from name on every email.">
+                <span className="text-[12.5px] font-semibold text-charcoal">{data.appName ?? '— (set APP_NAME)'}</span>
+              </SettingsRow>
+              <SettingsRow label="Last 14 days">
+                <span className="text-[12.5px] font-semibold text-charcoal">{data.totals.sent} sent · {data.totals.failed} failed</span>
+              </SettingsRow>
+              <SettingsRow label="Last error" stacked>
+                <span className="block text-[12.5px] font-medium text-charcoal break-words">{data.lastError ?? 'None'}</span>
+              </SettingsRow>
+            </div>
 
             <div>
-              <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-2">Emails per day</p>
+              <SettingsGroupLabel className="mb-2">Emails per day</SettingsGroupLabel>
               <div className="flex items-end gap-1.5 h-[90px]" role="img" aria-label="Emails sent and failed per day, last 14 days">
                 {data.days.map(d => (
                   <div key={d.date} className="flex-1 flex flex-col justify-end h-full" title={`${d.date}: ${d.sent} sent, ${d.failed} failed`}>
@@ -100,7 +106,7 @@ export function AdminEmailHealth() {
             </div>
           </div>
         )}
-      </Card>
+      </SettingsCard>
     </div>
   );
 }

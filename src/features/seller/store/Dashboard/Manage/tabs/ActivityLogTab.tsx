@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { clsx } from 'clsx';
 import { useActivityLogLive } from '@/hooks/useActivityLogLive';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
@@ -8,7 +9,7 @@ import {
 } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
 import { ChevronLeft, ChevronRight, Activity as ActivityIcon, Download, X } from 'lucide-react';
-import { EmptyState, SkeletonBox, ActivityLogDetailModal } from '@/components/comman/ui';
+import { EmptyState, ActivityLogDetailModal } from '@/components/comman/ui';
 
 // The only `targetType`s a seller actually has a real page for — everything
 // else stays plain text in the detail modal rather than a broken/fake link.
@@ -130,7 +131,7 @@ export function ActivityLogTab() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map(m => (
-          <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
+          <div key={m.label} className="bg-white border border-bone rounded-2xl px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
             {m.sub && <p className="text-xs text-slate mt-1">{m.sub}</p>}
@@ -141,7 +142,7 @@ export function ActivityLogTab() {
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
 
         {/* LEFT: Filters */}
-        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+        <div className="bg-white border border-bone rounded-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-bone">
             <p className="text-[13px] font-semibold text-carbon">Filter by Type</p>
           </div>
@@ -151,10 +152,13 @@ export function ActivityLogTab() {
               <button
                 key={cat.id}
                 onClick={() => { setCategory(cat.id); setPage(1); }}
-                className="w-full flex items-center px-4 py-[10px] border-b border-[#f0eee6] cursor-pointer border-none text-left transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-orange/50"
-                style={{ background: isActive ? '#FBECE4' : 'transparent', borderLeft: isActive ? '3px solid #D97757' : '3px solid transparent' }}
+                className={clsx(
+                  'w-full flex items-center border-b border-l-[3px] border-b-fog px-4 py-[10px] text-left cursor-pointer',
+                  'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-orange/50',
+                  isActive ? 'bg-brand-pale-orange border-l-brand-orange' : 'bg-transparent border-l-transparent hover:bg-cream',
+                )}
               >
-                <span className="text-[13px]" style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}>
+                <span className={clsx('text-[13px]', isActive ? 'font-semibold text-brand-deep-orange' : 'font-normal text-charcoal')}>
                   {cat.label}
                 </span>
               </button>
@@ -177,10 +181,10 @@ export function ActivityLogTab() {
         </div>
 
         {/* RIGHT: Feed */}
-        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+        <div className="bg-white border border-bone rounded-2xl overflow-hidden">
           <div className="flex items-center gap-[10px] px-4 py-3 border-b border-bone">
             <div className="flex-1 flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-colors duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               <input
                 placeholder="Search activity..."
                 value={search}
@@ -189,8 +193,8 @@ export function ActivityLogTab() {
               />
             </div>
             <div className="flex items-center gap-[5px] shrink-0">
-              <span className="w-2 h-2 rounded-full" style={{ background: live ? '#2D8A4E' : '#C0BDB5' }} />
-              <span className="text-[11px] font-medium" style={{ color: live ? '#2D8A4E' : '#8C8A82' }}>{live ? 'Live' : 'Connecting…'}</span>
+              <span className={clsx('w-2 h-2 rounded-full', live ? 'bg-success' : 'bg-bone')} />
+              <span className={clsx('text-[11px] font-medium', live ? 'text-success' : 'text-slate')}>{live ? 'Live' : 'Connecting…'}</span>
             </div>
           </div>
 
@@ -204,19 +208,7 @@ export function ActivityLogTab() {
             </div>
           )}
 
-          {loading ? (
-            <div className="p-4 flex flex-col gap-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <SkeletonBox width={30} height={30} rounded="999px" />
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <SkeletonBox width="30%" height={12} />
-                    <SkeletonBox width="55%" height={11} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
+          {loading ? null : error ? (
             <div className="p-4 text-xs text-error">{error}</div>
           ) : logs.length === 0 ? (
             <EmptyState
@@ -225,7 +217,7 @@ export function ActivityLogTab() {
               description="Actions taken by you and your team will show up here."
             />
           ) : (
-            logs.map((item, i) => {
+            logs.map(item => {
               const isMe = !!me && item.actorId === me.id;
               const actorName = isMe ? me!.name : (item.actorName ?? 'Team member');
               const actorRole = (isMe ? me!.role : item.actorRole ?? '') ;
@@ -237,11 +229,10 @@ export function ActivityLogTab() {
                 <div
                   key={item._id}
                   onClick={() => setViewing(item)}
-                  className="px-4 py-[14px] transition-colors duration-150 hover:bg-cream cursor-pointer"
-                  style={{ borderBottom: i < logs.length - 1 ? '1px solid #F0EEE6' : 'none' }}
+                  className="border-b border-b-fog px-4 py-[14px] transition-colors duration-150 last:border-b-0 hover:bg-cream cursor-pointer"
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">
+                    <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 bg-brand-pale-orange text-brand-deep-orange">
                       {initialsOf(actorName)}
                     </div>
                     {item.actorId ? (
@@ -254,7 +245,7 @@ export function ActivityLogTab() {
                     ) : (
                       <span className="text-[13px] font-semibold text-carbon">{actorName}</span>
                     )}
-                    {roleLabel && <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold bg-[#eaf0fb] text-[#2156a8]">{roleLabel}</span>}
+                    {roleLabel && <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold bg-fog text-graphite">{roleLabel}</span>}
                     <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: cs.bg, color: cs.color }}>{catLabel}</span>
                     <span className="ml-auto text-[11px] text-slate shrink-0">{timeAgo(item.createdAt)}</span>
                   </div>

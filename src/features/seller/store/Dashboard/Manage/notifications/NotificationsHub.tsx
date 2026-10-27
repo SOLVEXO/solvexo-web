@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Bell, Mail, Palette } from 'lucide-react';
-import { Button, Card, NotificationsPanel, SkeletonBox } from '@/components/comman/ui';
+import { Button, NotificationsPanel } from '@/components/comman/ui';
+import { SettingsCard } from '@/components/comman/settings';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import type { CustomerEmailSetting } from '@/api/services/storeNotifications';
@@ -11,7 +12,10 @@ import { LookAndSender } from './LookAndSender';
 import { useCustomerEmailSettings } from './useCustomerEmailSettings';
 
 /** This section is flat — no card/button glow or drop shadows anywhere (focus rings are untouched). */
-const NO_SHADOWS = '[&_.surface-panel]:!shadow-none [&_.surface-panel:hover]:!shadow-none [&_button]:!shadow-none [&_button:hover]:!shadow-none';
+/** Settings is a flat, hairline-bordered surface: the shared `Card`'s
+ *  signature glow is switched off here (and only here) so this tab matches the
+ *  other settings tabs. */
+const NO_SHADOWS = '[&_.surface-panel]:!shadow-none [&_.surface-panel:hover]:!shadow-none';
 
 const VIEWS: Tab[] = [
   { id: 'emails', label: 'Customer emails', icon: <Mail size={13} /> },
@@ -80,19 +84,16 @@ export function NotificationsHub({ storeId, canManage }: Props) {
 
       {isVisited('look') && (
         <div className={paneClassName('look')}>
-          {data.loading && !data.settings ? (
-            <Card padding="none">
-              <div className="p-5 flex flex-col gap-3" aria-busy="true" aria-label="Loading">
-                <SkeletonBox width={220} height={12} /><SkeletonBox width="100%" height={36} rounded="8px" /><SkeletonBox width="100%" height={36} rounded="8px" />
-              </div>
-            </Card>
-          ) : data.loadError || !data.settings ? (
-            <Card padding="none">
-              <div className="p-5 flex items-center justify-between gap-4">
-                <p role="alert" className="flex items-center gap-1.5 text-[12.5px] text-error"><AlertCircle size={14} /> {data.loadError || 'Could not load.'}</p>
-                <Button size="sm" variant="outline" onClick={data.reload}>Retry</Button>
-              </div>
-            </Card>
+          {data.loading && !data.settings ? null : data.loadError || !data.settings ? (
+            <div role="alert">
+              <SettingsCard
+                tone="danger"
+                icon={<AlertCircle size={14} />}
+                title="Couldn't load notification settings"
+                description={data.loadError || 'Could not load.'}
+                actions={<Button size="sm" variant="outline" onClick={data.reload}>Retry</Button>}
+              />
+            </div>
           ) : (
             <LookAndSender settings={data.settings} onSave={data.saveLook} />
           )}

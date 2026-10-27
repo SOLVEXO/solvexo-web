@@ -7,23 +7,15 @@ import {
   useUpdateMaintenanceMode,
 } from '@/hooks/admin/useAdminConfig';
 import type { PlatformConfig, AiConfig, EmailConfig } from '@/api/services/config/adminConfig';
-import { Toggle, Input, Select, Button, Modal, SkeletonBox, AdminPageHeader } from '@/components/comman/ui';
+import { Toggle, Input, Select, Button, Modal, AdminPageHeader } from '@/components/comman/ui';
+import { SettingsCard, SettingsRow, SettingsGroupLabel, SettingsSaveBar } from '@/components/comman/settings';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Bot, Mail } from 'lucide-react';
 
 const AI_MODELS = ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-4-8'];
 const EMAIL_PROVIDERS = ['SendGrid', 'Mailgun', 'AWS SES', 'Postmark'];
 
-// ── Saved indicator — transient success feedback (no toast system in this app) ─
-function SavedHint({ show }: { show: boolean }) {
-  if (!show) return null;
-  return (
-    <span className="inline-flex items-center gap-1 text-[12px] font-medium text-success">
-      <CheckCircle2 size={13} /> Saved
-    </span>
-  );
-}
-
+// ── Saved flash — transient success feedback (no toast system in this app) ────
 function useSavedFlash() {
   const [saved, setSaved] = useState(false);
   const flash = () => {
@@ -46,30 +38,32 @@ function MaintenanceCard({ config, onSaved }: { config: PlatformConfig; onSaved:
 
   return (
     <>
-      <div
-        className="bg-white rounded-[10px] px-[22px] py-5 transition-[border-color] duration-200"
-        style={{ border: config.maintenanceMode ? '2px solid #C13030' : '1px solid #E8E6DC' }}
+      <SettingsCard
+        title="Maintenance Mode"
+        icon={<AlertCircle size={14} />}
+        tone={config.maintenanceMode ? 'danger' : 'default'}
+        className={config.maintenanceMode ? 'border-error' : undefined}
+        description="When enabled, the platform shows a maintenance page to all users."
       >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[14px] font-bold text-charcoal flex items-center gap-[6px] mb-[3px]">
-              <AlertCircle size={15} className="text-error" /> Maintenance Mode
-            </p>
-            <p className="text-[12px] text-slate">When enabled, the platform shows a maintenance page to all users.</p>
-          </div>
-          <Toggle
-            checked={config.maintenanceMode}
-            disabled={submitting}
-            onChange={(next) => (next ? setConfirming(true) : apply(false))}
-          />
+        {/* Switches the moment it is flipped (behind a confirm dialog), so this
+            card has no save bar of its own. */}
+        <div className="-mx-5 border-y border-fog px-5">
+          <SettingsRow label="Maintenance mode" description="Sellers and buyers see the maintenance page instead of the app.">
+            <Toggle
+              checked={config.maintenanceMode}
+              disabled={submitting}
+              onChange={(next) => (next ? setConfirming(true) : apply(false))}
+              ariaLabel="Maintenance mode"
+            />
+          </SettingsRow>
         </div>
         {config.maintenanceMode && (
-          <p className="mt-3 text-[11px] font-semibold text-error flex items-center gap-1">
+          <p className="mt-3 text-[11.5px] font-semibold text-error flex items-center gap-1">
             <AlertTriangle size={11} /> Maintenance mode is ON — users cannot access the platform.
           </p>
         )}
         {error && <p className="mt-2 text-[12px] text-error">{error}</p>}
-      </div>
+      </SettingsCard>
 
       {confirming && (
         <Modal mobileSheet
@@ -121,10 +115,18 @@ function AiConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved: (c
     if (ok) { onSaved({ ...config, aiConfig: { ...config.aiConfig, ...payload } }); flash(); }
   }
 
+  const isDirty =
+    creditLimit !== String(config.aiConfig.monthlyCreditLimit) ||
+    aiModel !== config.aiConfig.aiModel;
+
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
-      <p className="text-[14px] font-bold text-charcoal mb-4">AI Configuration</p>
+    <SettingsCard
+      title="AI Configuration"
+      icon={<Bot size={14} />}
+      description="What each seller may spend on AI each month, and the model behind it."
+    >
       <div className="flex flex-col gap-[14px]">
+        <SettingsGroupLabel>Usage &amp; model</SettingsGroupLabel>
         <Input
           label="Monthly Credit Limit (per seller)"
           type="number"
@@ -132,23 +134,25 @@ function AiConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved: (c
           value={creditLimit}
           onChange={(e) => setCreditLimit(e.target.value)}
           error={validationError || undefined}
+          className="max-w-[220px]"
         />
         <Select label="AI Model" value={aiModel} onChange={(e) => setAiModel(e.target.value)}>
           {AI_MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
         </Select>
-        <div className="bg-brand-pale-orange rounded-lg px-3 py-[10px] text-[12px] text-brand-deep-orange">
-          <p className="font-semibold mb-[3px]">Cost estimate</p>
-          <p className="text-[#8c6050]">
-            At {creditLimit || 0} credits/seller × active sellers, actual usage tracks against each seller's AI wallet.
-          </p>
+        <div className="rounded-[10px] bg-mist px-3.5 py-[10px] text-[11.5px] leading-relaxed text-graphite">
+          <span className="font-semibold text-brand-deep-orange">{creditLimit || 0} credits/seller</span>
+          {' '}× active sellers. Actual usage tracks against each seller's own AI wallet, so this is a ceiling, not a bill.
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
-        <div className="flex items-center gap-3">
-          <Button onClick={save} loading={submitting} size="sm" className="self-start">Save AI Config</Button>
-          <SavedHint show={saved} />
-        </div>
       </div>
-    </div>
+
+      <SettingsSaveBar
+        isDirty={isDirty}
+        saving={submitting}
+        onSave={save}
+        saveMsg={saved ? { ok: true, text: 'Saved' } : null}
+      />
+    </SettingsCard>
   );
 }
 
@@ -183,40 +187,38 @@ function EmailConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved:
     if (ok) { onSaved({ ...config, emailConfig: { ...config.emailConfig, ...payload } }); flash(); }
   }
 
+  const isDirty =
+    fromName !== config.emailConfig.fromName ||
+    fromEmail !== (config.emailConfig.fromEmail ?? '') ||
+    replyToEmail !== (config.emailConfig.replyToEmail ?? '') ||
+    provider !== config.emailConfig.provider;
+
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
-      <p className="text-[14px] font-bold text-charcoal mb-4">Email Configuration</p>
+    <SettingsCard
+      title="Email Configuration"
+      icon={<Mail size={14} />}
+      description="The sender identity on platform email and the provider that delivers it."
+    >
       <div className="flex flex-col gap-[14px]">
+        <SettingsGroupLabel>Sender identity</SettingsGroupLabel>
         <Input label="From Name" value={fromName} onChange={(e) => setFromName(e.target.value)} />
         <Input label="From Email" type="email" value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} error={validationError.includes('From Email') ? validationError : undefined} />
         <Input label="Reply-To Email" type="email" value={replyToEmail} onChange={(e) => setReplyToEmail(e.target.value)} error={validationError.includes('Reply-To') ? validationError : undefined} />
+
+        <SettingsGroupLabel className="mt-1">Delivery provider</SettingsGroupLabel>
         <Select label="Email Provider" value={provider} onChange={(e) => setProvider(e.target.value)}>
           {EMAIL_PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
         </Select>
         {error && <p className="text-[12px] text-error">{error}</p>}
-        <div className="flex items-center gap-3">
-          <Button onClick={save} loading={submitting} size="sm" className="self-start">Save Email Config</Button>
-          <SavedHint show={saved} />
-        </div>
       </div>
-    </div>
-  );
-}
 
-
-// ── Skeleton ───────────────────────────────────────────────────────────────────
-function ConfigSkeleton() {
-  return (
-    <div className="flex flex-col gap-4">
-      <SkeletonBox height={84} rounded="10px" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SkeletonBox height={280} rounded="10px" />
-        <div className="flex flex-col gap-4">
-          <SkeletonBox height={200} rounded="10px" />
-          <SkeletonBox height={260} rounded="10px" />
-        </div>
-      </div>
-    </div>
+      <SettingsSaveBar
+        isDirty={isDirty}
+        saving={submitting}
+        onSave={save}
+        saveMsg={saved ? { ok: true, text: 'Saved' } : null}
+      />
+    </SettingsCard>
   );
 }
 
@@ -240,17 +242,13 @@ export function AdminConfig({ embedded = false }: { embedded?: boolean } = {}) {
         <AdminPageHeader title="Platform Config" subtitle="AI settings, email config and system controls." />
       )}
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      {loading && !config ? (
-        <ConfigSkeleton />
-      ) : error && !config ? (
+      {loading && !config ? null : error && !config ? (
         <AnalyticsErrorState message={error} onRetry={refetch} />
       ) : config ? (
         <>
           <MaintenanceCard config={config} onSaved={setConfig} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <AiConfigCard config={config} onSaved={setConfig} />
-            <EmailConfigCard config={config} onSaved={setConfig} />
-          </div>
+          <AiConfigCard config={config} onSaved={setConfig} />
+          <EmailConfigCard config={config} onSaved={setConfig} />
         </>
       ) : null}
       </div>

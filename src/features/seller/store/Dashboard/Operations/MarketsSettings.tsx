@@ -3,7 +3,7 @@ import { AlertCircle, Globe, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-reac
 import { Button } from '@/components/comman/ui';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
 import { Modal } from '@/components/comman/ui/Modal';
-import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { SettingsCard } from '@/components/comman/settings';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { useToast } from '@/contexts/ToastContext';
 import { apiGetEnabledCurrencies } from '@/api/services/store';
@@ -81,36 +81,35 @@ export function MarketsSettings({ embedded = false }: { embedded?: boolean }) {
 
   const addButton = <Button size="sm" icon={<Plus size={13} />} onClick={() => setEditing('new')}>Add market</Button>;
 
+  // No skeleton — a settings tab switch must show content immediately, so
+  // nothing renders until the list lands and then it appears in one go.
+  if (loading) return null;
+
   return (
-    <div className={embedded ? 'w-full' : 'w-full px-4 lg:px-7 pt-5 pb-10'}>
+    <div className={embedded ? 'flex w-full flex-col gap-5' : 'flex w-full flex-col gap-5 px-4 lg:px-7 pt-5 pb-10'}>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
-          <h2 className="text-[19px] font-bold text-charcoal leading-tight">Markets</h2>
-          <p className="text-[12.5px] text-slate mt-1 max-w-[620px] leading-relaxed">
+          <h2 className="text-[18px] font-bold text-carbon leading-tight">Markets</h2>
+          <p className="text-[12.5px] text-slate mt-0.5 leading-relaxed">
             Sell to different countries with a local currency, languages and pricing rules. A buyer is matched to the first active market that lists their country, otherwise to your primary market.
           </p>
         </div>
-        {!loading && !error && markets.length > 0 && addButton}
+        {!error && markets.length > 0 && addButton}
       </div>
 
-      {loading && (
-        <div className="mt-5 grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))]" aria-busy="true" aria-label="Loading markets">
-          <SkeletonBox height={150} rounded="12px" />
-          <SkeletonBox height={150} rounded="12px" />
+      {error && (
+        <div role="alert">
+          <SettingsCard
+            tone="danger"
+            icon={<AlertCircle size={14} />}
+            title="Couldn't load markets"
+            description={error}
+            actions={<Button size="sm" variant="outline" icon={<RefreshCw size={12} />} onClick={load}>Retry</Button>}
+          />
         </div>
       )}
 
-      {!loading && error && (
-        <div role="alert" className="mt-5 flex items-center gap-3 rounded-xl border border-bone bg-white p-4 text-[13px] text-error">
-          <AlertCircle size={15} className="shrink-0" />
-          <span className="flex-1">{error}</span>
-          <button type="button" onClick={load} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-bone bg-white text-[12px] font-semibold text-charcoal cursor-pointer">
-            <RefreshCw size={12} /> Retry
-          </button>
-        </div>
-      )}
-
-      {!loading && !error && markets.length === 0 && (
+      {!error && markets.length === 0 && (
         <EmptyState
           icon={<Globe size={28} className="text-brand-orange" />}
           title="No markets yet"
@@ -119,8 +118,8 @@ export function MarketsSettings({ embedded = false }: { embedded?: boolean }) {
         />
       )}
 
-      {!loading && !error && markets.length > 0 && (
-        <ul className="mt-5 m-0 p-0 list-none grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))]">
+      {!error && markets.length > 0 && (
+        <ul className="m-0 p-0 list-none grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))]">
           {markets.map(m => (
             <li key={m._id} className="rounded-xl border border-bone bg-white p-4 flex flex-col gap-3 min-w-0">
               <div className="flex items-start justify-between gap-2">

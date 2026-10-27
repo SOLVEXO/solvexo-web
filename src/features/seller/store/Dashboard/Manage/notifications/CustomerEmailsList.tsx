@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AlertCircle, ChevronRight, Mail } from 'lucide-react';
-import { Button, Card, SkeletonBox, Toggle } from '@/components/comman/ui';
+import { Button, Card, Toggle } from '@/components/comman/ui';
 import type { CustomerEmailGroup, CustomerEmailSetting, StoreNotificationSettings } from '@/api/services/storeNotifications';
 
 const GROUPS: { id: CustomerEmailGroup; title: string }[] = [
@@ -22,20 +22,7 @@ interface Props {
 
 /** Customer emails, grouped. Each row is one click target (opens the editor); the switch is its own control. */
 export function CustomerEmailsList({ storeId, settings, loading, loadError, rowError, onRetry, onToggle, onOpen }: Props) {
-  if (loading && !settings) {
-    return (
-      <Card padding="none">
-        <div className="divide-y divide-bone" aria-busy="true" aria-label="Loading customer emails">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="px-4 py-3 flex items-center justify-between">
-              <div><SkeletonBox width={170} height={12} className="mb-2" /><SkeletonBox width={300} height={9} /></div>
-              <SkeletonBox width={36} height={20} rounded="99px" />
-            </div>
-          ))}
-        </div>
-      </Card>
-    );
-  }
+  if (loading && !settings) return null;
 
   if (loadError || !settings) {
     return (

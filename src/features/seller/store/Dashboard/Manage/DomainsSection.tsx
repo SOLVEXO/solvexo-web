@@ -13,6 +13,7 @@ import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/service
 import { useToast } from '@/contexts/ToastContext';
 import { Modal } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
+import { SettingsCard, SettingsRow } from '@/components/comman/settings';
 
 const POLL_MS = 15_000;
 
@@ -97,7 +98,7 @@ function Step({ state, title, children, last }: { state: StepState; title: strin
         {!last && <span className="flex-1 w-px bg-bone mt-1" aria-hidden="true" />}
       </div>
       <div className={`min-w-0 flex-1 ${last ? '' : 'pb-4'}`}>
-        <p className={`text-[14px] m-0 ${state === 'pending' ? 'text-slate' : 'text-charcoal font-semibold'}`}>
+        <p className={`text-[13px] m-0 ${state === 'pending' ? 'text-slate' : 'text-charcoal font-semibold'}`}>
           {title}
           <span className="sr-only"> — {state === 'done' ? 'completed' : state === 'current' ? 'in progress' : state === 'error' ? 'needs attention' : 'not started'}</span>
         </p>
@@ -121,7 +122,6 @@ function DnsPanel({ storeId, entry, checking, note, onCheck }: {
   const [guide, setGuide] = useState<DomainGuide | null>(null);
   const [guideError, setGuideError] = useState('');
   const [retryTick, setRetryTick] = useState(0);
-  const guideLoading = !guide && !guideError;
 
   // Re-read the domain's DNS on mount and whenever a check has just run (the server stamps lastCheckedAt).
   useEffect(() => {
@@ -139,8 +139,8 @@ function DnsPanel({ storeId, entry, checking, note, onCheck }: {
   const txt = entry.txt;
 
   return (
-    <div className="mt-4 rounded-lg border border-bone bg-cream/60 p-3 sm:p-4">
-      <p className="text-[14px] font-semibold text-charcoal m-0">Finish connecting {entry.domain}</p>
+    <div className="mt-4 rounded-xl border border-bone bg-cream/50 p-3 sm:p-4">
+      <p className="text-[13px] font-semibold text-charcoal m-0">Finish connecting {entry.domain}</p>
       <ol className="list-none p-0 mt-3 mb-0">
         <Step state="current" title="Configure DNS records">
           <div className="mt-2 text-[13px] text-slate">
@@ -157,7 +157,6 @@ function DnsPanel({ storeId, entry, checking, note, onCheck }: {
               )}
             </p>
 
-            {guideLoading && !guide && <div className="animate-pulse rounded-lg bg-bone h-[88px] mt-3" aria-busy="true" />}
             {guideError && (
               <div className="mt-3 flex items-center justify-between gap-3 flex-wrap text-error" role="alert">
                 <span>{guideError}</span>
@@ -291,7 +290,7 @@ function RowMenu({ domain, canPrimary, onPrimary, onRemove, disabled }: {
         <MoreHorizontal size={16} />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 top-full mt-1 z-20 min-w-[170px] rounded-lg border border-bone bg-white shadow-lg py-1">
+        <div role="menu" className="absolute right-0 top-full mt-1 z-20 min-w-[170px] rounded-lg border border-bone bg-white py-1">
           {canPrimary && (
             <button type="button" role="menuitem" className={`${item} text-charcoal`} onClick={() => { setOpen(false); onPrimary(); }}>
               Make primary
@@ -458,50 +457,34 @@ export function DomainsSection({ storeId }: { storeId: string }) {
     return null;
   }
 
-  const cardCls = 'bg-white rounded-[10px] border border-bone p-4 sm:p-5';
   const addDisabled = planBlocked || (!!data && data.maxDomains > 0 && data.domains.length >= data.maxDomains);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <h2 className="text-[18px] font-semibold text-charcoal m-0">Domains</h2>
-          <p className="text-[13px] text-slate mt-1 mb-0">
-            Connect your own domain so customers find your store under your brand name.
-          </p>
-        </div>
-        {canManage && (
+    <div className="flex flex-col gap-5">
+      {/* Tab intro — the rail already names the tab, so this is a card like the rest */}
+      <SettingsCard
+        title="Domains"
+        icon={<Globe size={14} />}
+        description="Connect your own domain so customers find your store under your brand name."
+        actions={canManage ? (
           <Button size="md" icon={<Plus size={14} />} onClick={openAdd} disabled={addDisabled || !data} className="min-h-[40px]">
             Connect existing domain
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Plan gate */}
       {planBlocked && (
-        <div className={`${cardCls} flex items-center justify-between gap-3 flex-wrap bg-cream`}>
-          <div className="flex items-start gap-3 min-w-0">
-            <span className="w-9 h-9 rounded-lg bg-bone flex items-center justify-center shrink-0"><Lock size={16} className="text-slate" /></span>
-            <div className="min-w-0">
-              <p className="text-[14px] font-semibold text-charcoal m-0">
-                Custom domains are available from the {domainFeature?.requiredPlan ?? 'Basic'} plan
-              </p>
-              <p className="text-[13px] text-slate mt-0.5 mb-0">Upgrade to serve your store from your own domain. Your free address keeps working.</p>
-            </div>
-          </div>
-          <Button size="md" onClick={goBilling} className="min-h-[40px]">Upgrade plan</Button>
-        </div>
-      )}
-
-      {loading && (
-        <div className="flex flex-col gap-3" aria-busy="true">
-          {[1, 2].map(i => <div key={i} className="animate-pulse rounded-[10px] bg-bone h-[84px] w-full" />)}
-        </div>
+        <SettingsCard
+          title={`Custom domains are available from the ${domainFeature?.requiredPlan ?? 'Basic'} plan`}
+          icon={<Lock size={14} />}
+          description="Upgrade to serve your store from your own domain. Your free address keeps working."
+          actions={<Button size="md" onClick={goBilling} className="min-h-[40px]">Upgrade plan</Button>}
+        />
       )}
 
       {!loading && loadError && (
-        <div className="flex items-center justify-between gap-3 flex-wrap text-[13px] text-error bg-error-bg rounded-[10px] px-4 py-3" role="alert">
+        <div className="flex items-center justify-between gap-3 flex-wrap text-[13px] text-error bg-error-bg rounded-xl px-4 py-3" role="alert">
           <span>{loadError}</span>
           <Button size="sm" variant="outline" onClick={() => load(false)} className="min-h-[36px]">Retry</Button>
         </div>
@@ -510,33 +493,32 @@ export function DomainsSection({ storeId }: { storeId: string }) {
       {!loading && !loadError && data && (
         <>
           {/* Free address */}
-          <div className={cardCls}>
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0"><Link2 size={16} className="text-brand-orange" /></span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-[14px] font-semibold text-charcoal m-0 break-all">{data.defaultDomain}</p>
-                    <a
-                      href={`https://${data.defaultDomain}`}
-                      target="_blank" rel="noopener noreferrer"
-                      aria-label={`Open ${data.defaultDomain} in a new tab`}
-                      className="text-slate hover:text-charcoal inline-flex"
-                    ><ExternalLink size={14} /></a>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[12px] text-slate">Free address</span>
-                    {data.primaryDomain === null && <Pill>Primary</Pill>}
-                  </div>
+          <SettingsCard
+            title="Free address"
+            icon={<Link2 size={14} />}
+            description="Your store's built-in domain — it keeps working whichever domain is primary."
+          >
+            <div className="-mx-5 border-y border-fog px-5">
+              <SettingsRow
+                label={<span className="break-all">{data.defaultDomain}</span>}
+                description={data.primaryDomain === null ? <Pill>Primary</Pill> : undefined}
+              >
+                <div className="flex items-center justify-end gap-2">
+                  <a
+                    href={`https://${data.defaultDomain}`}
+                    target="_blank" rel="noopener noreferrer"
+                    aria-label={`Open ${data.defaultDomain} in a new tab`}
+                    className="text-slate hover:text-charcoal inline-flex"
+                  ><ExternalLink size={14} /></a>
+                  {canManage && data.primaryDomain !== null && (
+                    <Button size="sm" variant="outline" loading={busy['__default'] === 'primary'} onClick={() => makePrimary(null)} className="min-h-[36px]">
+                      Make primary
+                    </Button>
+                  )}
                 </div>
-              </div>
-              {canManage && data.primaryDomain !== null && (
-                <Button size="sm" variant="outline" loading={busy['__default'] === 'primary'} onClick={() => makePrimary(null)} className="min-h-[36px]">
-                  Make primary
-                </Button>
-              )}
+              </SettingsRow>
             </div>
-          </div>
+          </SettingsCard>
 
           {/* Connected domains */}
           {data.domains.map(d => {
@@ -545,56 +527,52 @@ export function DomainsSection({ storeId }: { storeId: string }) {
             const checking = b === 'verify';
             const allSet = !unverified && d.sslStatus === 'active';
             return (
-              <div key={d.domain} className={cardCls}>
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <span className="w-9 h-9 rounded-lg bg-bone flex items-center justify-center shrink-0"><Globe size={16} className="text-charcoal" /></span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[14px] font-semibold text-charcoal m-0 break-all">{d.domain}</p>
-                        {!unverified && (
-                          <a
-                            href={`https://${d.domain}`}
-                            target="_blank" rel="noopener noreferrer"
-                            aria-label={`Open ${d.domain} in a new tab`}
-                            className="text-slate hover:text-charcoal inline-flex"
-                          ><ExternalLink size={14} /></a>
-                        )}
-                        {d.isPrimary && <Pill>Primary</Pill>}
-                      </div>
-                      <div className="flex items-center gap-x-3 gap-y-1.5 mt-2 flex-wrap" aria-live="polite">
-                        {checking
-                          ? <StatusBadge tone="warn"><Loader2 size={12} className="animate-spin" /> Checking…</StatusBadge>
-                          : unverified
-                            ? <StatusBadge tone="warn">Needs setup</StatusBadge>
-                            : <StatusBadge tone="ok">Connected</StatusBadge>}
-                        {!checking && sslLine(d)}
-                      </div>
-                    </div>
+              <SettingsCard
+                key={d.domain}
+                title={d.domain}
+                icon={<Globe size={14} />}
+                description={(
+                  <span className="flex items-center gap-x-3 gap-y-1.5 flex-wrap" aria-live="polite">
+                    {!unverified && (
+                      <a
+                        href={`https://${d.domain}`}
+                        target="_blank" rel="noopener noreferrer"
+                        aria-label={`Open ${d.domain} in a new tab`}
+                        className="text-slate hover:text-charcoal inline-flex"
+                      ><ExternalLink size={14} /></a>
+                    )}
+                    {d.isPrimary && <Pill>Primary</Pill>}
+                    {checking
+                      ? <StatusBadge tone="warn"><Loader2 size={12} className="animate-spin" /> Checking…</StatusBadge>
+                      : unverified
+                        ? <StatusBadge tone="warn">Needs setup</StatusBadge>
+                        : <StatusBadge tone="ok">Connected</StatusBadge>}
+                    {!checking && sslLine(d)}
+                  </span>
+                )}
+                actions={canManage ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm" variant="outline" icon={<RefreshCw size={13} className={checking ? 'animate-spin' : ''} />}
+                      disabled={!!b} onClick={() => verify(d.domain)} className="min-h-[36px]"
+                    >
+                      Refresh
+                    </Button>
+                    <RowMenu
+                      domain={d.domain}
+                      canPrimary={!unverified && !d.isPrimary}
+                      disabled={!!b && !checking}
+                      onPrimary={() => setConfirm({ kind: 'primary', domain: d.domain })}
+                      onRemove={() => setConfirm({ kind: 'remove', domain: d.domain, wasPrimary: d.isPrimary })}
+                    />
                   </div>
-                  {canManage && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        size="sm" variant="outline" icon={<RefreshCw size={13} className={checking ? 'animate-spin' : ''} />}
-                        disabled={!!b} onClick={() => verify(d.domain)} className="min-h-[36px]"
-                      >
-                        Refresh
-                      </Button>
-                      <RowMenu
-                        domain={d.domain}
-                        canPrimary={!unverified && !d.isPrimary}
-                        disabled={!!b && !checking}
-                        onPrimary={() => setConfirm({ kind: 'primary', domain: d.domain })}
-                        onRemove={() => setConfirm({ kind: 'remove', domain: d.domain, wasPrimary: d.isPrimary })}
-                      />
-                    </div>
-                  )}
-                </div>
+                ) : undefined}
+              >
                 {(b === 'primary' || b === 'remove') && (
-                  <p className="text-[12.5px] text-slate mt-2" role="status">{b === 'primary' ? 'Updating primary domain…' : 'Removing…'}</p>
+                  <p className="text-[12.5px] text-slate mt-1" role="status">{b === 'primary' ? 'Updating primary domain…' : 'Removing…'}</p>
                 )}
                 {!unverified && (
-                  <p className="text-[12px] text-slate mt-3 mb-0">Last checked {timeAgo(d.lastCheckedAt)}</p>
+                  <p className="text-[12px] text-slate mt-1 mb-0">Last checked {timeAgo(d.lastCheckedAt)}</p>
                 )}
 
                 {unverified && (
@@ -611,7 +589,7 @@ export function DomainsSection({ storeId }: { storeId: string }) {
                     Redirects to <strong>{data.canonicalHost}</strong>. Make this domain primary to serve your store here.
                   </p>
                 )}
-              </div>
+              </SettingsCard>
             );
           })}
 
@@ -641,7 +619,7 @@ export function DomainsSection({ storeId }: { storeId: string }) {
           )}
         >
           <form onSubmit={e => { e.preventDefault(); void addDomain(); }}>
-            <label htmlFor="domains-add-input" className="text-[13px] font-semibold text-charcoal block mb-1.5">Domain</label>
+            <label htmlFor="domains-add-input" className="text-[13px] font-medium text-charcoal block mb-1.5">Domain</label>
             <input
               id="domains-add-input"
               value={newDomain}
@@ -653,7 +631,7 @@ export function DomainsSection({ storeId }: { storeId: string }) {
               spellCheck={false}
               aria-invalid={!!addError}
               aria-describedby="domains-add-help"
-              className={`w-full px-3 py-[10px] min-h-[40px] rounded-lg text-[14px] border bg-white text-charcoal outline-none box-border focus:border-brand-orange ${addError ? 'border-error' : 'border-bone'}`}
+              className={`w-full px-3 py-[9px] min-h-[40px] rounded-[10px] text-[13px] border bg-white text-charcoal outline-none box-border transition-colors placeholder:text-slate/70 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 ${addError ? 'border-error' : 'border-bone'}`}
             />
             <p id="domains-add-help" className="text-[12.5px] text-slate mt-1.5 mb-0">
               Enter the domain you own, without https://. You'll add one DNS record at your domain provider in the next step.

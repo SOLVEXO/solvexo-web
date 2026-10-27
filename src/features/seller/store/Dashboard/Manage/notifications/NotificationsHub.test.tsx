@@ -55,9 +55,10 @@ beforeEach(() => {
 });
 
 describe('NotificationsHub — Customer emails list', () => {
-  it('shows a loading state, then the emails grouped under Orders / Returns / Invoices with a summary', async () => {
+  it('renders nothing while loading, then the emails grouped under Orders / Returns / Invoices with a summary', async () => {
     renderHub();
-    expect(screen.getByLabelText('Loading customer emails')).toBeInTheDocument();
+    // Settings tabs render nothing while loading — no skeleton flash.
+    expect(screen.queryByRole('heading', { name: 'Orders' })).toBeNull();
     expect(await screen.findByRole('heading', { name: 'Orders' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Returns & exchanges' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Invoices & gift cards' })).toBeInTheDocument();
@@ -246,14 +247,14 @@ describe('NotificationsHub — Look & sender', () => {
     await openLook();
     fireEvent.change(screen.getByLabelText('Reply-to email'), { target: { value: 'not-an-email' } });
     expect(await screen.findByText('You have unsaved changes')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('Enter a valid email address.')).toBeInTheDocument();
     expect(api.apiUpdateStoreNotificationSettings).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Reply-to email'), { target: { value: 'Help@First.store' } });
     fireEvent.change(screen.getByLabelText('Sender name'), { target: { value: ' First Store Team ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use colour #2563eb' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(api.apiUpdateStoreNotificationSettings).toHaveBeenCalledWith('store-1', {
       senderName: 'First Store Team', replyToEmail: 'Help@First.store', showLogo: true, accentColor: '#2563eb', footerText: null, staffOrderEmails: [],
     }));
@@ -262,13 +263,13 @@ describe('NotificationsHub — Look & sender', () => {
   it('rejects a bad colour and a bad extra recipient without calling the server', async () => {
     await openLook();
     fireEvent.change(screen.getByLabelText('Email colour'), { target: { value: 'red' } });
-    fireEvent.click(await screen.findByRole('button', { name: 'Save' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('Use a colour like #d97757.')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Email colour'), { target: { value: '' } });
     const staff = screen.getByPlaceholderText('Type an email, press Enter');
     fireEvent.change(staff, { target: { value: 'broken' } });
     fireEvent.keyDown(staff, { key: 'Enter' });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText(/"broken" is not a valid email address/)).toBeInTheDocument();
     expect(api.apiUpdateStoreNotificationSettings).not.toHaveBeenCalled();
   });
@@ -285,7 +286,7 @@ describe('NotificationsHub — Look & sender', () => {
     api.apiUpdateStoreNotificationSettings.mockRejectedValueOnce(new Error('accentColor must look like #d97757'));
     await openLook();
     fireEvent.change(screen.getByLabelText('Sender name'), { target: { value: 'Keep me' } });
-    fireEvent.click(await screen.findByRole('button', { name: 'Save' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('accentColor must look like #d97757')).toBeInTheDocument();
     expect(screen.getByLabelText('Sender name')).toHaveValue('Keep me');
   });

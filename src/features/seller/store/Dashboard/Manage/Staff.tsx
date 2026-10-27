@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Check, X, ShieldCheck, KeyRound, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
+import { EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import {
   apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff, apiReactivateStaff, apiDeleteStaff, apiResendStaffInvite,
@@ -250,9 +250,7 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
       )}
       {actionError && <div role="alert" className="bg-error-bg border border-error/30 rounded-lg px-3.5 py-2.5 text-[12px] text-error">{actionError}</div>}
 
-      {loading ? (
-        <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={56} rounded="10px" />)}</div>
-      ) : staff.length === 0 ? (
+      {loading ? null : staff.length === 0 ? (
         <EmptyState icon={<Users size={28} className="text-brand-orange opacity-55" />} title="No staff accounts yet" description="Invite one to give a warehouse worker or manager their own scoped login." action={roles.length > 0 ? { label: 'Invite Staff', onClick: openNew, icon: <Plus size={14} /> } : undefined} />
       ) : (
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
@@ -403,9 +401,7 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
         <Button size="sm" icon={<Plus size={13} />} onClick={openNew}>New Role</Button>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={56} rounded="10px" />)}</div>
-      ) : (
+      {loading ? null : (
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
           {roles.map(role => (
             <div key={role._id} className="flex items-center justify-between gap-3 px-4 py-3">

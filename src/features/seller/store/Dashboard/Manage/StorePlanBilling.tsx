@@ -1,16 +1,16 @@
 import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   Check, Zap, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
-  XCircle, RotateCcw, Loader2, type LucideIcon,
+  XCircle, RotateCcw, Loader2, LayoutGrid, Percent, ReceiptText, CircleDollarSign, type LucideIcon,
 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
+import { SettingsCard } from '@/components/comman/settings';
 import { Modal } from '@/components/comman/ui/Modal';
 import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
 import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
 import { Textarea } from '@/components/comman/ui/Input';
-import { SkeletonBox } from '@/components/comman/ui';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan,
   apiPreviewPlatformPlanChange, apiCancelScheduledPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
@@ -29,9 +29,9 @@ const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlo
 const INVOICES_PER_PAGE = 10;
 
 const INVOICE_STATUS_STYLE: Record<string, string> = {
-  paid: 'bg-[#e3f4ea] text-[#1e7a3c]',
-  pending: 'bg-[#fdf2da] text-[#946200]',
-  failed: 'bg-[#fdecea] text-[#c0392b]',
+  paid: 'bg-success-bg text-success',
+  pending: 'bg-warning-bg text-warning',
+  failed: 'bg-error-bg text-error',
   refunded: 'bg-bone text-slate',
   partially_refunded: 'bg-bone text-slate',
 };
@@ -53,11 +53,11 @@ function newAddonIdempotencyKey(storeId: string, addonType: string): string {
 }
 
 const FEE_BILL_STATUS_STYLE: Record<string, string> = {
-  paid: 'bg-[#e3f4ea] text-[#1e7a3c]',
-  invoiced: 'bg-[#fdf2da] text-[#946200]',
-  creating: 'bg-[#fdf2da] text-[#946200]',
-  payment_failed: 'bg-[#fdecea] text-[#c0392b]',
-  failed: 'bg-[#fdecea] text-[#c0392b]',
+  paid: 'bg-success-bg text-success',
+  invoiced: 'bg-warning-bg text-warning',
+  creating: 'bg-warning-bg text-warning',
+  payment_failed: 'bg-error-bg text-error',
+  failed: 'bg-error-bg text-error',
 };
 
 /**
@@ -83,18 +83,18 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
 
   const accrued = data?.accrued;
   return (
-    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-      <div className="px-5 py-[14px] border-b border-bone">
-        <p className="text-[13px] font-bold text-carbon">Transaction fees</p>
-        <p className="text-[11px] text-slate mt-0.5">Charged on sales paid through a third-party gateway. Billed once a month with your plan — never deducted from your sales.</p>
-      </div>
-      {loading ? (
-        <div className="px-5 py-5"><SkeletonBox height={40} /></div>
-      ) : error ? (
+    <SettingsCard
+      title="Transaction fees"
+      icon={<Percent size={14} />}
+      divided
+      description="Charged on sales paid through a third-party gateway. Billed once a month with your plan — never deducted from your sales."
+      bodyClassName="px-0 pb-0"
+    >
+      {loading ? null : error ? (
         <p role="alert" className="px-5 py-5 text-[13px] text-error">{error}</p>
       ) : (
         <>
-          <div className="px-5 py-4 border-b border-bone flex flex-wrap items-center justify-between gap-3">
+          <div className="px-5 py-4 border-b border-fog flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[11px] text-slate uppercase tracking-wide">Accrued this period</p>
               <p className="text-[20px] font-bold text-carbon">
@@ -115,9 +115,9 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
           ) : (
             <div className="flex flex-col">
               {data!.bills.map(b => (
-                <div key={b._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                <div key={b._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-carbon">{b.periodKey}</p>
+                    <p className="text-[13px] font-medium text-charcoal">{b.periodKey}</p>
                     <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)} · {b.saleCount} sale(s)</p>
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
@@ -134,7 +134,7 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
           )}
         </>
       )}
-    </div>
+    </SettingsCard>
   );
 }
 
@@ -153,8 +153,8 @@ function UsageBar({ label, used, max, Icon }: { label: string; used: number; max
         <span className="text-[12px] font-semibold text-carbon">{used}{unlimited ? '' : ` / ${max}`}</span>
       </div>
       {!unlimited && (
-        <div className="h-[6px] bg-cream rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: near ? '#C0392B' : '#D97757' }} />
+        <div className="h-[6px] bg-mist rounded-full overflow-hidden">
+          <div className={`h-full rounded-full transition-all ${near ? 'bg-error' : 'bg-brand-orange'}`} style={{ width: `${pct}%` }} />
         </div>
       )}
     </div>
@@ -445,28 +445,11 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
 
   const BANNER_STYLE = {
     error:   { bg: 'bg-error-bg', border: 'border-error-border', text: 'text-error', icon: 'text-error' },
-    warning: { bg: 'bg-[#fdf2da]', border: 'border-[#f5dfa6]', text: 'text-[#946200]', icon: 'text-[#946200]' },
-    info:    { bg: 'bg-info-bg', border: 'border-[#bfdcf3]', text: 'text-[#1a5a8a]', icon: 'text-[#1a5a8a]' },
+    warning: { bg: 'bg-warning-bg', border: 'border-warning/30', text: 'text-warning', icon: 'text-warning' },
+    info:    { bg: 'bg-info-bg', border: 'border-info/25', text: 'text-info', icon: 'text-info' },
   };
 
-  if (loading && !current) {
-    return (
-      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
-        <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-4">
-          <SkeletonBox width={180} height={16} rounded="4px" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SkeletonBox height={34} rounded="6px" />
-            <SkeletonBox height={34} rounded="6px" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <SkeletonBox key={i} height={220} rounded="10px" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (loading && !current) return null;
 
   return (
     <>
@@ -474,7 +457,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         <StorePageHeader title="Billing Center" subtitle="Your store's Solvexo subscription, usage limits, payment method, and billing history." />
       )}
 
-      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
         {actionError && (
           <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
@@ -505,21 +488,23 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         })()}
 
         {entitlements && current && (
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div>
-                <p className="text-[13px] font-bold text-carbon">Current Plan — {entitlements.currentPlanName}</p>
-                <p className="text-[11.5px] text-slate mt-[3px]">
-                  {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
-                  {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
-                </p>
-              </div>
+          <SettingsCard
+            title={`Current Plan — ${entitlements.currentPlanName}`}
+            icon={<CircleDollarSign size={14} />}
+            description={(
+              <>
+                {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
+                {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
+              </>
+            )}
+          >
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+              <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
+                isPastDue || isTrialEnded ? 'bg-error-bg text-error' : isCancelPending ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success'
+              }`}>
+                {isCancelPending ? 'Canceling' : isTrialEnded ? 'Trial ended' : current.status === 'trialing' ? 'Trial' : current.status}
+              </span>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
-                  isPastDue || isTrialEnded ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#fdf2da] text-[#946200]' : 'bg-[#e3f4ea] text-[#1e7a3c]'
-                }`}>
-                  {isCancelPending ? 'Canceling' : isTrialEnded ? 'Trial ended' : current.status === 'trialing' ? 'Trial' : current.status}
-                </span>
                 {canManage && current.stripeCustomerId && (
                   <Button size="sm" variant="outline" icon={<CreditCard size={13} />} loading={portalBusy} onClick={openBillingPortal}>
                     Payment method
@@ -549,88 +534,94 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               />
               <UsageBar label="POS Locations" used={entitlements.maxPosLocations.used} max={entitlements.maxPosLocations.limit} Icon={MonitorSmartphone} />
             </div>
-          </div>
+          </SettingsCard>
         )}
 
-        <div className="flex items-center justify-between">
-          <p className="text-[15px] font-bold text-carbon">Available Plans</p>
-          <div className="inline-flex bg-white rounded-full p-1 border border-bone">
-            {(['monthly', 'yearly'] as const).map(iv => (
-              <button key={iv} onClick={() => setInterval_(iv)}
-                className="px-3.5 py-[6px] rounded-full text-[11.5px] font-semibold cursor-pointer border-none capitalize"
-                style={{ background: interval === iv ? '#141413' : 'transparent', color: interval === iv ? '#fff' : '#8C8A82' }}>
-                {iv}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div id="platform-plans-list" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {plans.map(plan => {
-            const isCurrent = current?.platformPlanId === plan._id;
-            // Mirrors the backend's own computeProration: a yearly interval
-            // with no explicit yearlyPriceUSD is charged monthly x 12, never
-            // the bare monthly figure — this card must show that same number
-            // or it understates what "Switch to this plan" will actually bill.
-            const price = interval === 'yearly' ? yearlyTotal(plan) : plan.monthlyPriceUSD;
-            const isScheduled = scheduledChange?.planId === plan._id;
-            const savings = yearlySavingsPercent(plan);
-            return (
-              <div key={plan._id} className="bg-white border rounded-[10px] px-5 py-4 flex flex-col" style={{ borderColor: isCurrent ? '#D97757' : '#E8E6DC', borderWidth: isCurrent ? 2 : 1 }}>
-                <div className="flex items-start justify-between mb-1">
-                  <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
-                  {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
+        <SettingsCard
+          title="Available Plans"
+          icon={<LayoutGrid size={14} />}
+          description="What each plan costs at the billing interval you pick, and what it includes."
+          actions={(
+            <div className="inline-flex bg-white rounded-full p-1 border border-bone">
+              {(['monthly', 'yearly'] as const).map(iv => (
+                <button key={iv} onClick={() => setInterval_(iv)}
+                  className={`px-3.5 py-[6px] rounded-full text-[11.5px] font-semibold cursor-pointer border-none capitalize ${interval === iv ? 'bg-carbon text-white' : 'bg-transparent text-slate'}`}>
+                  {iv}
+                </button>
+              ))}
+            </div>
+          )}
+        >
+          <div id="platform-plans-list" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {plans.map(plan => {
+              const isCurrent = current?.platformPlanId === plan._id;
+              // Mirrors the backend's own computeProration: a yearly interval
+              // with no explicit yearlyPriceUSD is charged monthly x 12, never
+              // the bare monthly figure — this card must show that same number
+              // or it understates what "Switch to this plan" will actually bill.
+              const price = interval === 'yearly' ? yearlyTotal(plan) : plan.monthlyPriceUSD;
+              const isScheduled = scheduledChange?.planId === plan._id;
+              const savings = yearlySavingsPercent(plan);
+              return (
+                <div key={plan._id} className={`bg-white rounded-xl px-4 py-4 flex flex-col border transition-colors ${isCurrent ? 'border-2 border-brand-orange' : 'border-bone hover:border-border-hover'}`}>
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-[14px] font-semibold text-charcoal">{plan.name}</p>
+                    {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
+                  </div>
+                  <p className="text-[20px] font-bold text-brand-orange">
+                    {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : interval === 'yearly' ? `${formatUsd(yearlyMonthlyEquivalent(plan))}/mo` : `${price}/mo`}
+                  </p>
+                  {interval === 'yearly' && !plan.isFree && !plan.isCustomPricing && (
+                    <p className="text-[11.5px] text-slate -mt-0.5">Billed {formatUsd(yearlyTotal(plan))} yearly{savings > 0 ? ` · save ${savings}%` : ''}</p>
+                  )}
+                  {/* Intro offer (monthly only — same rule the backend applies when it creates the subscription). */}
+                  <p className="text-[11.5px] font-medium text-success mb-2 min-h-[16px]">
+                    {interval === 'monthly' && !isCurrent && !plan.isFree && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null
+                      ? `Start at $${plan.introPriceUSD}/mo for ${plan.introDurationCycles} month${plan.introDurationCycles === 1 ? '' : 's'}, then $${plan.monthlyPriceUSD}/mo`
+                      : ' '}
+                  </p>
+                  <ul className="flex flex-col gap-1.5 mb-4 p-0 list-none flex-1">
+                    {plan.featureBullets.map(f => (
+                      <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite"><Check size={12} className="text-brand-orange mt-[2px] shrink-0" />{f}</li>
+                    ))}
+                  </ul>
+                  <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={!canManage || isCurrent || isScheduled} loading={changingId === plan._id} onClick={() => {
+                    setActionError('');
+                    // Enterprise has no self-serve checkout — it's agreed with sales and assigned by an admin.
+                    if (plan.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`; return; }
+                    // First paid purchase (no Stripe customer yet, still on trial/locked, or coming
+                    // from the free plan) needs a card → full checkout. An already-paying store
+                    // keeps the proration confirm modal.
+                    // A store that is "active" but has no card saved (e.g. assigned its plan by an admin)
+                    // also needs the checkout — the proration modal can only charge a card already on file.
+                    const needsCheckout = !plan.isFree && !plan.isCustomPricing
+                      && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree || cardOnFile === false);
+                    if (needsCheckout) setCheckoutPlanId(plan._id); else setConfirmingPlan(plan);
+                  }}>
+                    {isCurrent ? 'Current Plan' : isScheduled ? 'Starts next cycle' : plan.isCustomPricing ? 'Contact sales' : 'Switch to this plan'}
+                  </Button>
                 </div>
-                <p className="text-[20px] font-bold text-brand-orange">
-                  {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : interval === 'yearly' ? `${formatUsd(yearlyMonthlyEquivalent(plan))}/mo` : `${price}/mo`}
-                </p>
-                {interval === 'yearly' && !plan.isFree && !plan.isCustomPricing && (
-                  <p className="text-[11.5px] text-slate -mt-0.5">Billed {formatUsd(yearlyTotal(plan))} yearly{savings > 0 ? ` · save ${savings}%` : ''}</p>
-                )}
-                {/* Intro offer (monthly only — same rule the backend applies when it creates the subscription). */}
-                <p className="text-[11.5px] font-medium text-success mb-2 min-h-[16px]">
-                  {interval === 'monthly' && !isCurrent && !plan.isFree && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null
-                    ? `Start at $${plan.introPriceUSD}/mo for ${plan.introDurationCycles} month${plan.introDurationCycles === 1 ? '' : 's'}, then $${plan.monthlyPriceUSD}/mo`
-                    : ' '}
-                </p>
-                <ul className="flex flex-col gap-1.5 mb-4 p-0 list-none flex-1">
-                  {plan.featureBullets.map(f => (
-                    <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite"><Check size={12} className="text-brand-orange mt-[2px] shrink-0" />{f}</li>
-                  ))}
-                </ul>
-                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={!canManage || isCurrent || isScheduled} loading={changingId === plan._id} onClick={() => {
-                  setActionError('');
-                  // Enterprise has no self-serve checkout — it's agreed with sales and assigned by an admin.
-                  if (plan.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`; return; }
-                  // First paid purchase (no Stripe customer yet, still on trial/locked, or coming
-                  // from the free plan) needs a card → full checkout. An already-paying store
-                  // keeps the proration confirm modal.
-                  // A store that is "active" but has no card saved (e.g. assigned its plan by an admin)
-                  // also needs the checkout — the proration modal can only charge a card already on file.
-                  const needsCheckout = !plan.isFree && !plan.isCustomPricing
-                    && (!current?.stripeCustomerId || current.status !== 'active' || !!current.plan?.isFree || cardOnFile === false);
-                  if (needsCheckout) setCheckoutPlanId(plan._id); else setConfirmingPlan(plan);
-                }}>
-                  {isCurrent ? 'Current Plan' : isScheduled ? 'Starts next cycle' : plan.isCustomPricing ? 'Contact sales' : 'Switch to this plan'}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone">
-            <p className="text-[13px] font-bold text-carbon">Add-ons</p>
-            {canManage && <Button size="sm" icon={<Zap size={13} />} onClick={openAddonPicker}>Buy add-on</Button>}
+              );
+            })}
           </div>
+        </SettingsCard>
+
+        <SettingsCard
+          title="Add-ons"
+          icon={<Zap size={14} />}
+          divided
+          description="Extra capacity or features bought on top of your plan — charged to your card on file."
+          actions={canManage ? <Button size="sm" icon={<Zap size={13} />} onClick={openAddonPicker}>Buy add-on</Button> : undefined}
+          bodyClassName="px-0 pb-0"
+        >
           {addons.length === 0 ? (
             <p className="px-5 py-6 text-center text-[13px] text-slate">No add-on purchases yet.</p>
           ) : (
             <div className="flex flex-col">
               {addons.map(a => (
-                <div key={a._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                <div key={a._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-carbon">{ADDON_LABELS[a.addonType] ?? a.addonType}</p>
+                    <p className="text-[13px] font-medium text-charcoal">{ADDON_LABELS[a.addonType] ?? a.addonType}</p>
                     <p className="text-[11px] text-slate">
                       Qty {a.quantity} · ${(a.priceUSD ?? 0).toFixed(2)}{a.recurring ? '/mo' : ' one-time'} · {new Date(a.createdAt).toLocaleDateString()}
                       {a.status === 'canceled' && <span> · Canceled</span>}
@@ -644,17 +635,15 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               ))}
             </div>
           )}
-        </div>
+        </SettingsCard>
 
-        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <div className="px-5 py-[14px] border-b border-bone">
-            <p className="text-[13px] font-bold text-carbon">Billing History</p>
-          </div>
-          {invoicesLoading ? (
-            <div className="px-5 py-4 flex flex-col gap-3" aria-busy="true">
-              {Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={36} rounded="6px" />)}
-            </div>
-          ) : invoicesError ? (
+        <SettingsCard
+          title="Billing History"
+          icon={<ReceiptText size={14} />}
+          divided
+          bodyClassName="px-0 pb-0"
+        >
+          {invoicesLoading ? null : invoicesError ? (
             <div role="alert" className="px-5 py-5 flex flex-wrap items-center justify-between gap-3">
               <p className="text-[13px] text-error">{invoicesError}</p>
               <Button size="sm" variant="outline" onClick={() => setInvoiceNonce(n => n + 1)}>Retry</Button>
@@ -665,9 +654,9 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             <>
               <div className="flex flex-col">
                 {invoices.map(inv => (
-                  <div key={inv._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                  <div key={inv._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
+                      <p className="text-[13px] font-medium text-charcoal">{inv.invoiceNumber}</p>
                       <p className="text-[11px] text-slate">
                         {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
                         {(inv.taxAmountUSD ?? 0) > 0 && (
@@ -690,8 +679,8 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                   </div>
                 ))}
               </div>
-                {invoicePages > 1 && (
-                <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-bone">
+              {invoicePages > 1 && (
+                <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-fog">
                   <span className="text-[11.5px] text-slate" aria-live="polite">Page {invoicePage} of {invoicePages} · {invoiceTotal} invoices</span>
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" disabled={invoicePage <= 1} onClick={() => setInvoicePage(p => Math.max(1, p - 1))}>Previous</Button>
@@ -701,7 +690,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               )}
             </>
           )}
-        </div>
+        </SettingsCard>
 
         <TransactionFeesCard storeId={storeId} />
       </div>
@@ -720,7 +709,6 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
       {addonModal && !buyingAddon && (
         <Modal title="Buy an add-on" width={420} onClose={closeAddonFlow}>
           <div className="flex flex-col gap-2">
-            {catalog === null && !catalogError && <SkeletonBox height={64} rounded="8px" />}
             {catalogError && <p className="text-[12px] text-error">{catalogError}</p>}
             {catalog?.length === 0 && <p className="text-[13px] text-slate">No add-ons are available right now.</p>}
             {catalog?.map(item => (

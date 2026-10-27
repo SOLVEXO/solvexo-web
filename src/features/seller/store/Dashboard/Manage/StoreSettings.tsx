@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, Clock, EyeOff, ShieldCheck } from 'lucide-react';
+import { Store, Loader2, CreditCard, Globe, Lock, Clock, EyeOff, ShieldCheck, MapPin, Languages, Landmark, Boxes, Info } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
@@ -15,6 +15,7 @@ import { DomainsSection } from './DomainsSection';
 import { TaxOverridesEditor } from './TaxOverridesEditor';
 import { StoreTaxIdentity } from './StoreTaxIdentity';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
+import { SettingsCard, SettingsRow, SettingsSaveBar, SettingsChoice, SettingsGroupLabel } from '@/components/comman/settings';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products:    'Physical Products',
@@ -23,34 +24,22 @@ const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   services_bookings:    'Services / Bookings',
   in_person_pos:        'In-Person / POS',
 };
+const PRODUCT_TYPE_HINTS: Record<ProductType, string> = {
+  physical_products:    'Stocked items shipped to the buyer — variants, weight, shipping rates.',
+  digital_downloads:    'Files delivered automatically after payment, no shipping step.',
+  educational_resources:'Courses and lessons with per-enrolment access.',
+  services_bookings:    'Time-slotted appointments the buyer reserves at checkout.',
+  in_person_pos:        'Sold face to face — inventory counts down without an online cart.',
+};
 const ALL_PRODUCT_TYPES: ProductType[] = [
   'physical_products', 'digital_downloads', 'educational_resources',
   'services_bookings', 'in_person_pos',
 ];
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-function SettingsSkeleton() {
-  const box = (w: string, h: number) => (
-    <div className="animate-pulse rounded-[6px] bg-bone" style={{ width: w, height: h }} />
-  );
-  return (
-    <div className="px-4 lg:px-7 py-6">
-      <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone max-w-[600px]">
-        {[1,2,3,4].map(i => (
-          <div key={i} className="mb-5">
-            {box('100px', 12)}<div className="mt-2">{box('100%', 38)}</div>
-          </div>
-        ))}
-        {box('120px', 36)}
-      </div>
-    </div>
-  );
-}
-
 // ── Field ─────────────────────────────────────────────────────────────────────
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mb-5">
+    <div className="mb-4">
       <label className="text-[12px] font-semibold text-charcoal block mb-1.5">
         {label}
       </label>
@@ -69,47 +58,17 @@ function moneyPreview(mode: CurrencyDisplay, currency?: string | null): string {
   return mode === 'code' ? code + ' ' + body : mode === 'symbol_code' ? symText + ' ' + code : symText;
 }
 
-const inputCls = "w-full px-3 py-[9px] rounded-lg text-[13px] border border-bone bg-bone text-charcoal outline-none box-border";
+const inputCls = "w-full px-3 py-[9px] rounded-[10px] text-[13px] border border-bone bg-white text-charcoal outline-none box-border transition-colors placeholder:text-slate/70 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15";
 
-// Shared save-bar — every settings tab below uses the same "Save Changes"
-// button + inline status-message pattern, so this is one implementation
-// instead of 4 hand-rolled copies.
+// Shared save bar — every settings tab below uses the same dirty/saving/
+// result pattern, so this is one implementation instead of 4 hand-rolled
+// copies. It sticks to the bottom of the viewport (the tabs' forms run long —
+// a button at the top is off-screen by the time the form is filled in).
 function SaveBar({ isDirty, saving, onSave, saveMsg }: {
   isDirty: boolean; saving: boolean; onSave: () => void;
   saveMsg: { ok: boolean; text: string } | null;
 }) {
-  return (
-    <>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={onSave}
-          disabled={!isDirty || saving}
-          className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold transition-all duration-150"
-          style={{
-            background: isDirty && !saving ? '#D97757' : '#E8E6DC',
-            color: isDirty && !saving ? '#fff' : '#8C8A82',
-            cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          Save Changes
-        </button>
-      </div>
-      {saveMsg && (
-        <div
-          className="flex items-center gap-2 px-[14px] py-[10px] rounded-lg mb-[18px] text-[13px] border"
-          style={{
-            background: saveMsg.ok ? '#F0FDF4' : '#FFF1F2',
-            borderColor: saveMsg.ok ? '#BBF7D0' : '#FECDD3',
-            color: saveMsg.ok ? '#166534' : '#991B1B',
-          }}
-        >
-          {saveMsg.ok ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
-          {saveMsg.text}
-        </div>
-      )}
-    </>
-  );
+  return <SettingsSaveBar variant="floating" isDirty={isDirty} saving={saving} onSave={onSave} saveMsg={saveMsg} />;
 }
 
 // ── Store Profile — Basic Information + general store-identity behavior ────
@@ -216,24 +175,20 @@ export function StoreProfileTab() {
       showDutiesNotice !== (store.showDutiesNotice !== false) ||
       JSON.stringify(taxRegions) !== JSON.stringify(store.taxRegions ?? []));
 
-  if (loading) return <SettingsSkeleton />;
+  if (loading) return null;
 
   return (
     <div className="px-4 lg:px-7 py-6">
-      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
+      {/* Full-width column of focused cards — the page already gets its
+          readability limit from the tab panel beside it. */}
+      <div className="flex flex-col gap-5">
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
-
-        {/* Left column — identity */}
-        <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
-              <Store size={15} className="text-brand-orange" />
-            </div>
-            <p className="text-[14px] font-semibold text-charcoal">Basic Information</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        <SettingsCard
+          title="Store identity"
+          icon={<Store size={14} />}
+          description="What customers see first — your mark, your name, and the line beside it."
+        >
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
               <p className="text-[13px] font-semibold text-charcoal">Store logo</p>
               <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Header, emails &amp; invoices</p>
@@ -261,8 +216,14 @@ export function StoreProfileTab() {
             <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="e.g. Handmade with love since 2020" maxLength={100} className={inputCls} />
             <p className="text-[11px] text-slate mt-1">A short line shown next to your store name on your storefront.</p>
           </Field>
+        </SettingsCard>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <SettingsCard
+          title="Contact &amp; location"
+          icon={<MapPin size={14} />}
+          description="Where buyers reach you, and the country that decides which payment providers you can connect."
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Contact Email">
               <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="support@yourstore.com" className={inputCls} />
             </Field>
@@ -286,7 +247,13 @@ export function StoreProfileTab() {
             </select>
             <p className="text-[11px] text-slate mt-1">Analytics days, "Today" and report dates use this time zone.</p>
           </Field>
+        </SettingsCard>
 
+        <SettingsCard
+          title="Language &amp; prices"
+          icon={<Languages size={14} />}
+          description="The language you write your catalog in, and how a price reads for your customers."
+        >
           <Field label="Store language">
             <select value={defaultLanguage} onChange={e => setDefaultLanguage(e.target.value)} className={inputCls} aria-label="Store language">
               {LANGUAGE_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
@@ -302,15 +269,14 @@ export function StoreProfileTab() {
             </select>
             <p className="text-[11px] text-slate mt-1">How prices read for your customers, in every currency they shop in.</p>
           </Field>
-        </div>
+        </SettingsCard>
 
-        {/* Right column — behavior + read-only identity */}
-        <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-          <Field label="Low Stock Threshold">
-            <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
-            <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
-          </Field>
-
+        {/* ── Tax ── */}
+        <SettingsCard
+          title="Tax &amp; duties"
+          icon={<Landmark size={14} />}
+          description="What you add on top of a price, and where. Skip it all if you are not registered."
+        >
           <StoreTaxIdentity
             country={country}
             taxId={taxId}
@@ -326,37 +292,36 @@ export function StoreProfileTab() {
             <p className="text-[11px] text-slate mt-1">The default rate, used only when no tax region below matches the buyer's address (and no TaxJar connection is active — see Integrations).</p>
           </Field>
 
-          <Field label="Prices include tax">
-            <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
-              <input type="checkbox" checked={taxPricesIncludeTax} onChange={e => setTaxPricesIncludeTax(e.target.checked)} />
-              All prices and shipping rates already include tax
-            </label>
-            <p className="text-[11px] text-slate mt-1">Checkout then shows "Including $X in taxes" and extracts the tax from the price instead of adding it. You can change this per country in Tax Regions below. TaxJar quotes are always added on top.</p>
-          </Field>
+          <div className="mt-1 divide-y divide-fog border-t border-fog">
+            <SettingsRow
+              label="Prices include tax"
+              description='Checkout then shows "Including $X in taxes" and extracts the tax from the price instead of adding it. You can change this per country in Tax Regions below. TaxJar quotes are always added on top.'
+            >
+              <Toggle checked={taxPricesIncludeTax} onChange={setTaxPricesIncludeTax} ariaLabel="Prices include tax" />
+            </SettingsRow>
 
-          <Field label="Charge tax on shipping rates">
-            <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
-              <input type="checkbox" checked={taxShipping} onChange={e => setTaxShipping(e.target.checked)} />
-              Include the shipping fee in the taxable amount
-            </label>
-            <p className="text-[11px] text-slate mt-1">The same rate that applies to the items is charged on shipping. Off = shipping is never taxed.</p>
-          </Field>
+            <SettingsRow
+              label="Charge tax on shipping rates"
+              description="The same rate that applies to the items is charged on shipping. Off = shipping is never taxed."
+            >
+              <Toggle checked={taxShipping} onChange={setTaxShipping} ariaLabel="Charge tax on shipping rates" />
+            </SettingsRow>
 
-          <Field label="International duties notice">
-            <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
-              <input type="checkbox" checked={showDutiesNotice} onChange={e => setShowDutiesNotice(e.target.checked)} />
-              Tell buyers that duties and import taxes may be charged on delivery
-            </label>
-            <p className="text-[11px] text-slate mt-1">Shown at checkout under the shipping method when the buyer's country differs from your store country. Solvexo does not calculate duties — the carrier collects them on delivery.</p>
-          </Field>
+            <SettingsRow
+              label="International duties notice"
+              description="Shown at checkout under the shipping method when the buyer's country differs from your store country. Solvexo does not calculate duties — the carrier collects them on delivery."
+            >
+              <Toggle checked={showDutiesNotice} onChange={setShowDutiesNotice} ariaLabel="International duties notice" />
+            </SettingsRow>
+          </div>
 
           {/* Tax Regions — Shopify-"Tax regions"-style manual per-destination
              rates, checked before the flat Tax Rate above at checkout. */}
-          <div className="border-t border-bone pt-[18px] mb-[18px]">
-            <p className="text-[12px] font-semibold text-charcoal mb-1">Tax Regions</p>
-            <p className="text-[11px] text-slate mb-3">Charge a different rate for specific countries or states, instead of one flat rate for every buyer. Leave State blank to cover the whole country.</p>
+          <div className="mb-4 mt-4 border-t border-fog pt-4">
+            <p className="text-[13px] font-semibold text-charcoal mb-1">Tax regions</p>
+            <p className="text-[11.5px] text-slate mb-3">Charge a different rate for specific countries or states, instead of one flat rate for every buyer. Leave State blank to cover the whole country.</p>
             {taxRegions.map((r, i) => (
-              <div key={i} className="flex items-center gap-2 mb-2">
+              <div key={i} className="mb-2 flex flex-wrap items-center gap-2">
                 <input
                   value={r.country}
                   onChange={e => setTaxRegions(rs => rs.map((x, j) => j === i ? { ...x, country: e.target.value.toUpperCase() } : x))}
@@ -390,7 +355,7 @@ export function StoreProfileTab() {
                 <button
                   type="button"
                   onClick={() => setTaxRegions(rs => rs.filter((_, j) => j !== i))}
-                  className="text-slate hover:text-red-500 text-[16px] px-1 shrink-0"
+                  className="size-7 shrink-0 rounded-lg border-0 bg-transparent text-[16px] leading-none text-slate cursor-pointer hover:bg-error-bg hover:text-error"
                   aria-label="Remove tax region"
                 >
                   ×
@@ -415,43 +380,52 @@ export function StoreProfileTab() {
           </div>
 
           <TaxOverridesEditor storeId={storeId} value={taxOverrides} onChange={setTaxOverrides} />
+        </SettingsCard>
 
-          {/* Review moderation */}
-          <div className="border-t border-bone pt-[18px]">
-            <p className="text-[12px] font-semibold text-charcoal mb-3">Reviews</p>
-            <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-              <div>
-                <p className="text-[13px] font-medium text-charcoal">Require review approval</p>
-                <p className="text-[11px] text-slate">New reviews stay hidden until you approve them. Off by default — reviews publish instantly.</p>
-              </div>
-              <Toggle checked={reviewModerationEnabled} onChange={setReviewModerationEnabled} ariaLabel="Require review approval" />
-            </div>
-          </div>
+        {/* ── Inventory & reviews ── */}
+        <SettingsCard
+          title="Inventory &amp; reviews"
+          icon={<Boxes size={14} />}
+          description="When a product counts as running low, and whether a review publishes on its own."
+        >
+          <Field label="Low stock threshold">
+            <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={`${inputCls} max-w-[140px]`} />
+            <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
+          </Field>
 
-          <div className="mt-6 border-t border-bone pt-[18px]">
-            <Field label="Store URL">
-              <input value={store?.slug ?? ''} readOnly className={`${inputCls} text-slate cursor-default bg-[#f3f2ec]`} />
-              <p className="text-[10px] text-slate mt-1">URL slug cannot be changed.</p>
-            </Field>
+          <SettingsRow
+            label="Require review approval"
+            description="New reviews stay hidden until you approve them. Off by default — reviews publish instantly."
+            className="border-t border-fog"
+          >
+            <Toggle checked={reviewModerationEnabled} onChange={setReviewModerationEnabled} ariaLabel="Require review approval" />
+          </SettingsRow>
+        </SettingsCard>
 
-            <Field label="Plan">
-              <input value={store?.plan ?? ''} readOnly className={`${inputCls} text-slate cursor-default bg-[#f3f2ec]`} />
-            </Field>
-
-            <p className="text-[12px] font-semibold text-charcoal mb-3">Store Info</p>
-            {[
-              { label: 'Status',   value: store?.status   ?? '—' },
-              { label: 'Seller',   value: store?.sellerType ?? '—' },
-              { label: 'AI Credits', value: String(store?.aiCredits ?? 0) },
-            ].map(r => (
-              <div key={r.label} className="flex justify-between text-[12px] py-1.5 border-b border-[#f3f2ec]">
-                <span className="text-slate">{r.label}</span>
-                <span className="font-semibold text-charcoal">{r.value}</span>
-              </div>
+        {/* ── Read-only identity (was a pile of disabled inputs) ── */}
+        <SettingsCard
+          title="Plan &amp; status"
+          icon={<Info size={14} />}
+          divided
+          description="Set by your subscription and store review — change them from Billing."
+        >
+          <div className="-my-1 divide-y divide-fog">
+            {([
+              { label: 'Store URL',   value: store?.slug ? `/${store.slug}` : '—', hint: 'The URL slug cannot be changed.' },
+              { label: 'Plan',        value: store?.plan ?? '—',                   hint: 'Upgrade or switch it under Billing.' },
+              { label: 'Status',      value: store?.status ?? '—' },
+              { label: 'Seller type', value: store?.sellerType ?? '—' },
+              { label: 'AI credits',  value: String(store?.aiCredits ?? 0) },
+            ] as { label: string; value: string; hint?: string }[]).map(r => (
+              <SettingsRow key={r.label} label={r.label} description={r.hint}>
+                <span className="text-[12.5px] font-semibold text-charcoal">{r.value}</span>
+              </SettingsRow>
             ))}
           </div>
-        </div>
+        </SettingsCard>
       </div>
+
+      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
     </div>
   );
 }
@@ -485,39 +459,37 @@ export function ProductTypesTab() {
 
   const isDirty = !!store && JSON.stringify(productTypes.slice().sort()) !== JSON.stringify((store.productTypes ?? []).slice().sort());
 
-  if (loading) return <SettingsSkeleton />;
+  if (loading) return null;
 
   return (
     <div className="px-4 lg:px-7 py-6">
-      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
+      <div className="flex flex-col gap-5">
+        <SettingsCard
+          title="Product types"
+          icon={<Boxes size={14} />}
+          description="Which kinds of listings this store can sell. Each type brings its own checkout, fulfilment and inventory fields."
+        >
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {ALL_PRODUCT_TYPES.map(t => {
+              const active = productTypes.includes(t);
+              return (
+                <SettingsChoice
+                  key={t}
+                  type="checkbox"
+                  checked={active}
+                  label={PRODUCT_TYPE_LABELS[t]}
+                  description={PRODUCT_TYPE_HINTS[t]}
+                  onChange={() => toggleType(t)}
+                />
+              );
+            })}
+          </div>
+          {productTypes.length === 0 && (
+            <p role="alert" className="mt-3 text-[11.5px] text-error">Select at least one type — sellers cannot publish listings until you do.</p>
+          )}
+        </SettingsCard>
 
-      <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-        <p className="text-[14px] font-semibold text-charcoal mb-2">Product Types</p>
-        <p className="text-[11px] text-slate mb-4">What kind of products will you sell?</p>
-
-        <div className="flex flex-col gap-2.5">
-          {ALL_PRODUCT_TYPES.map(t => {
-            const active = productTypes.includes(t);
-            return (
-              <div
-                key={t}
-                onClick={() => toggleType(t)}
-                className="flex items-center gap-3 px-[14px] py-3 rounded-[9px] cursor-pointer transition-all duration-150 border"
-                style={{ borderColor: active ? '#D97757' : '#E8E6DC', background: active ? '#FBECE4' : '#FAF9F5' }}
-              >
-                <div
-                  className="w-[18px] h-[18px] rounded-[5px] shrink-0 flex items-center justify-center"
-                  style={{ border: `2px solid ${active ? '#D97757' : '#CBCABA'}`, background: active ? '#D97757' : 'transparent' }}
-                >
-                  {active && <CheckCircle size={11} className="text-white" />}
-                </div>
-                <span className="text-[13px]" style={{ fontWeight: active ? 600 : 400, color: active ? '#D97757' : '#141413' }}>
-                  {PRODUCT_TYPE_LABELS[t]}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
       </div>
     </div>
   );
@@ -535,6 +507,7 @@ export function PaymentMethodsTab() {
   // currency is accepted" (the schema default) — never collapsed into an
   // array like `[baseCurrency]` just because nothing is set yet.
   const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[] | null>(null);
+  const [customerAccounts, setCustomerAccounts] = useState<'optional' | 'required'>('optional');
   const [platformCurrencies, setPlatformCurrencies] = useState<string[]>([]);
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -547,6 +520,7 @@ export function PaymentMethodsTab() {
     if (!store) return;
     setPaymentCaptureMethod(store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic');
     setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : null);
+    setCustomerAccounts(store.customerAccounts === 'required' ? 'required' : 'optional');
   }, [store]);
 
   const handleSave = async () => {
@@ -554,7 +528,7 @@ export function PaymentMethodsTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, paymentCaptureMethod, enabledCurrencies });
+      await apiUpdateStore({ storeId, paymentCaptureMethod, enabledCurrencies, customerAccounts });
       refetch();
       setSaveMsg({ ok: true, text: 'Payment methods updated successfully.' });
     } catch (err) {
@@ -567,114 +541,120 @@ export function PaymentMethodsTab() {
   const isDirty =
     !!store &&
     (paymentCaptureMethod !== (store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic') ||
+      customerAccounts !== (store.customerAccounts === 'required' ? 'required' : 'optional') ||
       JSON.stringify(enabledCurrencies ? enabledCurrencies.slice().sort() : null) !==
         JSON.stringify(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies.slice().sort() : null));
 
-  if (loading) return <SettingsSkeleton />;
+  if (loading) return null;
 
   return (
     <div className="px-4 lg:px-7 py-6">
-      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
-
-      <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-        <p className="text-[14px] font-semibold text-charcoal mb-4">Payment Methods</p>
-
-        {/* Cash on Delivery now lives with the other manual payment methods on the Integrations tab (Shopify layout). */}
-        <p className="text-[11.5px] text-slate">Payment providers, Cash on Delivery, bank transfer and custom payment methods are managed on the Integrations tab.</p>
-
-        {/* Payment capture method — Shopify's real "Automatically at checkout"
-           vs "Manually" setting. Only affects online Stripe checkouts on a
-           single-store cart — see PaymentService.initiatePayment. */}
-        <div className="mt-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-          <p className="text-[13px] font-medium text-charcoal mb-1">When to capture payment</p>
-          <p className="text-[11px] text-slate mb-3">Controls when an online card payment is actually charged.</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPaymentCaptureMethod('automatic')}
-              className={`flex-1 text-left px-3 py-2.5 rounded-lg border text-[12px] cursor-pointer ${paymentCaptureMethod === 'automatic' ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white'}`}
-            >
-              <span className="block font-semibold text-charcoal">Automatically at checkout</span>
-              <span className="block text-slate mt-0.5">Charge the buyer the instant checkout succeeds.</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentCaptureMethod('manual')}
-              className={`flex-1 text-left px-3 py-2.5 rounded-lg border text-[12px] cursor-pointer ${paymentCaptureMethod === 'manual' ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white'}`}
-            >
-              <span className="block font-semibold text-charcoal">Manually</span>
-              <span className="block text-slate mt-0.5">Authorize the card, review the order, then capture it yourself before it ships.</span>
-            </button>
+      <div className="flex flex-col gap-5">
+        {/* Cash on Delivery, bank transfer and custom providers live with the
+           other manual payment methods on the Integrations tab (Shopify layout). */}
+        <SettingsCard
+          title="Payment capture"
+          icon={<CreditCard size={14} />}
+          description="Providers, Cash on Delivery, bank transfer and custom methods are managed on the Integrations tab."
+        >
+          <SettingsGroupLabel className="mb-2.5">When an online card payment is charged</SettingsGroupLabel>
+          <div role="radiogroup" aria-label="When to capture payment" className="grid gap-2.5 sm:grid-cols-2">
+            <SettingsChoice
+              name="payment-capture-method"
+              checked={paymentCaptureMethod === 'automatic'}
+              label="Automatically at checkout"
+              description="Charge the buyer the instant checkout succeeds."
+              onChange={() => setPaymentCaptureMethod('automatic')}
+            />
+            <SettingsChoice
+              name="payment-capture-method"
+              checked={paymentCaptureMethod === 'manual'}
+              label="Manually"
+              description="Authorize the card, review the order, then capture it yourself before it ships."
+              onChange={() => setPaymentCaptureMethod('manual')}
+            />
           </div>
-        </div>
+        </SettingsCard>
 
         {/* Markets — which currencies buyers may check out in on this store */}
-        <div className="mt-6 border-t border-bone pt-[18px]">
-          <p className="text-[12px] font-semibold text-charcoal mb-1">Markets</p>
-          <p className="text-[11px] text-slate mb-3">Which currencies can buyers pay in at checkout on your store?</p>
+        <SettingsCard
+          title="Markets"
+          icon={<Globe size={14} />}
+          description="Which currencies buyers can pay in at checkout on your store."
+        >
           {maxMarkets !== -1 && (
-            <p className="text-[11px] text-slate mb-3">
+            <p className="mb-3 text-[11.5px] text-slate">
               Your plan allows up to <span className="font-semibold text-charcoal">{maxMarkets}</span> {maxMarkets === 1 ? 'currency' : 'currencies'}, your store currency included. Upgrade your plan for more.
             </p>
           )}
 
-          <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream mb-2">
-            <div>
-              <p className="text-[13px] font-medium text-charcoal">Restrict to specific currencies</p>
-              <p className="text-[11px] text-slate">
-                {enabledCurrencies !== null
-                  ? 'On — buyers can only pay in the currencies checked below.'
-                  : maxMarkets === -1
-                    ? 'Off — buyers can pay in any currency this platform supports.'
-                    : `Off — buyers can pay in your store currency plus the first ${Math.max(0, maxMarkets - 1)} other supported ${maxMarkets - 1 === 1 ? 'currency' : 'currencies'}.`}
-              </p>
-            </div>
-            <Toggle
-              checked={enabledCurrencies !== null}
-              ariaLabel="Restrict which currencies buyers can pay in"
-              onChange={v => {
-                if (!v) { setEnabledCurrencies(null); return; }
-                // With a plan limit, seed only what fits — store currency first.
-                const base = store?.baseCurrency;
-                const ordered = base && platformCurrencies.includes(base)
-                  ? [base, ...platformCurrencies.filter(c => c !== base)]
-                  : [...platformCurrencies];
-                setEnabledCurrencies(maxMarkets === -1 ? ordered : ordered.slice(0, Math.max(1, maxMarkets)));
-              }}
-            />
+          <div className="border-y border-fog -mx-5 px-5">
+            <SettingsRow
+              label="Restrict to specific currencies"
+              description={enabledCurrencies !== null
+                ? 'On — buyers can only pay in the currencies switched on below.'
+                : maxMarkets === -1
+                  ? 'Off — buyers can pay in any currency this platform supports.'
+                  : `Off — buyers can pay in your store currency plus the first ${Math.max(0, maxMarkets - 1)} other supported ${maxMarkets - 1 === 1 ? 'currency' : 'currencies'}.`}
+            >
+              <Toggle
+                checked={enabledCurrencies !== null}
+                ariaLabel="Restrict which currencies buyers can pay in"
+                onChange={v => {
+                  if (!v) { setEnabledCurrencies(null); return; }
+                  // With a plan limit, seed only what fits — store currency first.
+                  const base = store?.baseCurrency;
+                  const ordered = base && platformCurrencies.includes(base)
+                    ? [base, ...platformCurrencies.filter(c => c !== base)]
+                    : [...platformCurrencies];
+                  setEnabledCurrencies(maxMarkets === -1 ? ordered : ordered.slice(0, Math.max(1, maxMarkets)));
+                }}
+              />
+            </SettingsRow>
           </div>
 
-          {enabledCurrencies !== null && (
-            <div className="flex flex-col gap-2">
-              {platformCurrencies.map(c => {
-                const isBase = c === store?.baseCurrency;
-                const checked = enabledCurrencies.includes(c);
-                const atLimit = maxMarkets !== -1 && enabledCurrencies.length >= maxMarkets;
-                return (
-                  <div key={c} className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-                    <p className="text-[13px] font-medium text-charcoal">{c}{isBase ? ' (your store currency)' : ''}</p>
-                    <Toggle
-                      checked={checked}
-                      disabled={isBase || (!checked && atLimit)}
-                      ariaLabel={`Accept ${c} at checkout`}
-                      onChange={v => {
-                        if (isBase && !v) return; // can never disable your own store currency
-                        setEnabledCurrencies(prev => (v ? [...(prev ?? []), c] : (prev ?? []).filter(x => x !== c)));
-                      }}
-                    />
-                  </div>
-                );
-              })}
+          {enabledCurrencies !== null && platformCurrencies.length > 0 && (
+            <div className="mt-1">
+              <SettingsGroupLabel className="mb-1">Accepted currencies · {enabledCurrencies.length}{maxMarkets !== -1 ? ` of ${maxMarkets}` : ''}</SettingsGroupLabel>
+              <div className="divide-y divide-fog">
+                {platformCurrencies.map(c => {
+                  const isBase = c === store?.baseCurrency;
+                  const checked = enabledCurrencies.includes(c);
+                  const atLimit = maxMarkets !== -1 && enabledCurrencies.length >= maxMarkets;
+                  return (
+                    <SettingsRow
+                      key={c}
+                      label={c}
+                      description={isBase ? 'Your store currency — always accepted.' : undefined}
+                      className="py-2.5"
+                    >
+                      <Toggle
+                        checked={checked}
+                        disabled={isBase || (!checked && atLimit)}
+                        ariaLabel={`Accept ${c} at checkout`}
+                        onChange={v => {
+                          if (isBase && !v) return; // can never disable your own store currency
+                          setEnabledCurrencies(prev => (v ? [...(prev ?? []), c] : (prev ?? []).filter(x => x !== c)));
+                        }}
+                      />
+                    </SettingsRow>
+                  );
+                })}
+              </div>
             </div>
           )}
-        </div>
+        </SettingsCard>
+
+        {storeId && (
+          <CustomerAccountsSection storeId={storeId} mode={customerAccounts} onMode={setCustomerAccounts} />
+        )}
+
+        {storeId && (
+          <RemoveBrandingCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
+        )}
+
+        <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
       </div>
-
-      <CustomerAccountsSection />
-
-      {storeId && (
-        <RemoveBrandingCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
-      )}
     </div>
   );
 }
@@ -717,37 +697,31 @@ function RemoveBrandingCard({ storeId, store, refetch }: {
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone mt-5">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
-          {locked ? <Lock size={15} className="text-brand-orange" /> : <EyeOff size={15} className="text-brand-orange" />}
-        </div>
-        <p className="text-[14px] font-semibold text-charcoal">Remove Solvexo branding</p>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 flex-wrap px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-        <div className="min-w-0 flex-1">
-          <p id="remove-branding-label" className="text-[13px] font-medium text-charcoal m-0">Hide the 'Powered by Solvexo' badge on your storefront.</p>
-          {locked && (
-            <p className="text-[12px] text-slate mt-1 mb-0 flex items-center gap-1.5">
-              <Lock size={12} /> Available on the {whiteLabelFeature?.requiredPlan ?? 'Advanced'} plan
-            </p>
-          )}
-        </div>
-        {locked ? (
-          <Button size="sm" onClick={() => navigate(`/store/${storeId}/settings?tab=billing`)} className="min-h-[36px]">Upgrade plan</Button>
-        ) : (
+    <SettingsCard
+      title="Remove Solvexo branding"
+      icon={locked ? <Lock size={14} /> : <EyeOff size={14} />}
+      description="Applies to the public storefront straight away — no Save needed."
+    >
+      <div className="-mx-5 border-y border-fog px-5">
+        <SettingsRow
+          label="Hide the 'Powered by Solvexo' badge"
+          description={locked ? `Available on the ${whiteLabelFeature?.requiredPlan ?? 'Advanced'} plan.` : undefined}
+        >
           <div className="flex items-center gap-2">
             {savingWhiteLabel && <Loader2 size={14} className="animate-spin text-slate" />}
-            <Toggle checked={enabled} onChange={() => { void toggleWhiteLabel(); }} disabled={savingWhiteLabel || !store} ariaLabel="Remove Solvexo branding" />
+            {locked ? (
+              <Button size="sm" onClick={() => navigate(`/store/${storeId}/settings?tab=billing`)} className="min-h-[36px]">Upgrade plan</Button>
+            ) : (
+              <Toggle checked={enabled} onChange={() => { void toggleWhiteLabel(); }} disabled={savingWhiteLabel || !store} ariaLabel="Remove Solvexo branding" />
+            )}
           </div>
-        )}
+        </SettingsRow>
       </div>
 
       {msg && (
-        <p role={msg.ok ? 'status' : 'alert'} className={`text-[12px] mt-3 mb-0 ${msg.ok ? 'text-success' : 'text-error'}`}>{msg.text}</p>
+        <p role={msg.ok ? 'status' : 'alert'} className={`mt-3 text-[12px] ${msg.ok ? 'text-success' : 'text-error'}`}>{msg.text}</p>
       )}
-    </div>
+    </SettingsCard>
   );
 }
 
@@ -756,7 +730,7 @@ function RemoveBrandingCard({ storeId, store, refetch }: {
  *  in principle be reused elsewhere). */
 export function DomainSettingsTab() {
   const { storeId, loading } = useStoreWorkspace();
-  if (loading) return <SettingsSkeleton />;
+  if (loading) return null;
   return (
     <div className="px-4 lg:px-7 py-6">
       {storeId && (
@@ -807,37 +781,27 @@ function StoreVisibilityCard({ storeId, store, refetch }: {
   ];
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-      <div className="flex items-center gap-2 mb-5">
-        <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
-          <EyeOff size={15} className="text-brand-orange" />
-        </div>
-        <p className="text-[14px] font-semibold text-charcoal">Store Visibility</p>
-      </div>
-
-      {msg && (
-        <p className={`text-[12px] mb-3 ${msg.ok ? 'text-success' : 'text-error'}`}>{msg.text}</p>
-      )}
-
-      <div className="flex flex-col gap-2">
+    <SettingsCard
+      title="Storefront visibility"
+      icon={<EyeOff size={14} />}
+      description="Who can reach your store while you build it."
+    >
+      <div role="radiogroup" aria-label="Store visibility" className="flex flex-col gap-2.5">
         {OPTIONS.map(opt => (
-          <label
+          <SettingsChoice
             key={opt.value}
-            className="flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer"
-            style={{ borderColor: mode === opt.value ? '#D97757' : '#EFEDE6', background: mode === opt.value ? '#FDF6F1' : 'transparent' }}
-          >
-            <input type="radio" name="store-privacy-mode" className="mt-1" checked={mode === opt.value} onChange={() => setMode(opt.value)} />
-            <opt.icon size={15} className="mt-0.5 text-slate shrink-0" />
-            <div>
-              <p className="text-[12.5px] font-semibold text-charcoal">{opt.label}</p>
-              <p className="text-[11.5px] text-slate">{opt.description}</p>
-            </div>
-          </label>
+            name="store-privacy-mode"
+            checked={mode === opt.value}
+            label={opt.label}
+            description={opt.description}
+            icon={<opt.icon size={14} />}
+            onChange={() => setMode(opt.value)}
+          />
         ))}
       </div>
 
       {mode === 'password' && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Field label="Password">
             <input
               type="text"
@@ -850,10 +814,8 @@ function StoreVisibilityCard({ storeId, store, refetch }: {
         </div>
       )}
 
-      <div className="mt-4">
-        <Button size="sm" loading={saving} disabled={!isDirty} onClick={save}>Save</Button>
-      </div>
-    </div>
+      <SettingsSaveBar isDirty={isDirty} saving={saving} onSave={save} saveMsg={msg} />
+    </SettingsCard>
   );
 }
 
@@ -935,29 +897,23 @@ function CustomerPrivacyCard({ storeId, store, refetch }: {
   const pendingCount = requests.filter(r => r.status === 'pending').length;
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
-      <div className="flex items-center gap-2 mb-5">
-        <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
-          <ShieldCheck size={15} className="text-brand-orange" />
-        </div>
-        <p className="text-[14px] font-semibold text-charcoal">Customer Privacy</p>
-      </div>
-
-      {saveMsg && (
-        <p className={`text-[12px] mb-3 ${saveMsg.ok ? 'text-success' : 'text-error'}`}>{saveMsg.text}</p>
-      )}
-
-      <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-        <div>
-          <p className="text-[13px] font-medium text-charcoal">Show a cookie consent banner</p>
-          <p className="text-[11px] text-slate">Visitors see a real banner with "Accept All" and "Manage Preferences" (Analytics/Marketing, like Shopify's own) — your tracking pixels only load for the categories they actually approve: Google Analytics under Analytics, Facebook/Google Ads/TikTok under Marketing.</p>
-        </div>
-        <Toggle checked={cookieBannerEnabled} onChange={setCookieBannerEnabled} ariaLabel="Show a cookie consent banner" />
+    <SettingsCard
+      title="Customer privacy"
+      icon={<ShieldCheck size={14} />}
+      description="Cookie consent and buyer data requests on your storefront."
+    >
+      <div className="-mx-5 border-y border-fog px-5">
+        <SettingsRow
+          label="Show a cookie consent banner"
+          description='Visitors get a real banner with "Accept All" and "Manage Preferences" (Analytics/Marketing) — your tracking pixels only load for the categories they actually approve: Google Analytics under Analytics, Facebook/Google Ads/TikTok under Marketing.'
+        >
+          <Toggle checked={cookieBannerEnabled} onChange={setCookieBannerEnabled} ariaLabel="Show a cookie consent banner" />
+        </SettingsRow>
       </div>
 
       {cookieBannerEnabled && (
         <>
-          <div className="mt-3">
+          <div className="mt-4">
             <Field label="Banner message">
               <textarea
                 value={cookieBannerMessage}
@@ -971,63 +927,61 @@ function CustomerPrivacyCard({ storeId, store, refetch }: {
             </Field>
           </div>
 
-          <div className="mb-1">
-            <p className="text-[12px] font-semibold text-charcoal mb-1.5">Who sees the banner</p>
-            <div className="flex flex-col gap-2">
-              <label className="flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer"
-                style={{ borderColor: cookieBannerRegionMode === 'all' ? '#D97757' : '#EFEDE6', background: cookieBannerRegionMode === 'all' ? '#FDF6F1' : 'transparent' }}>
-                <input type="radio" name="cookie-region-mode" className="mt-1" checked={cookieBannerRegionMode === 'all'} onChange={() => setCookieBannerRegionMode('all')} />
-                <div>
-                  <p className="text-[12.5px] font-semibold text-charcoal">All visitors</p>
-                  <p className="text-[11.5px] text-slate">Every visitor sees the banner, regardless of where they're browsing from.</p>
-                </div>
-              </label>
-              <label className="flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer"
-                style={{ borderColor: cookieBannerRegionMode === 'eu_uk_only' ? '#D97757' : '#EFEDE6', background: cookieBannerRegionMode === 'eu_uk_only' ? '#FDF6F1' : 'transparent' }}>
-                <input type="radio" name="cookie-region-mode" className="mt-1" checked={cookieBannerRegionMode === 'eu_uk_only'} onChange={() => setCookieBannerRegionMode('eu_uk_only')} />
-                <div>
-                  <p className="text-[12.5px] font-semibold text-charcoal">Only regions with consent laws (EU/UK)</p>
-                  <p className="text-[11.5px] text-slate">Only shown to visitors whose location resolves to an EU country or the UK — everyone else browses with no banner.</p>
-                </div>
-              </label>
+          <div className="mt-4">
+            <SettingsGroupLabel className="mb-2">Who sees the banner</SettingsGroupLabel>
+            <div role="radiogroup" aria-label="Who sees the banner" className="flex flex-col gap-2.5">
+              <SettingsChoice
+                name="cookie-region-mode"
+                checked={cookieBannerRegionMode === 'all'}
+                label="All visitors"
+                description="Every visitor sees the banner, regardless of where they're browsing from."
+                onChange={() => setCookieBannerRegionMode('all')}
+              />
+              <SettingsChoice
+                name="cookie-region-mode"
+                checked={cookieBannerRegionMode === 'eu_uk_only'}
+                label="Only regions with consent laws (EU/UK)"
+                description="Only shown to visitors whose location resolves to an EU country or the UK — everyone else browses with no banner."
+                onChange={() => setCookieBannerRegionMode('eu_uk_only')}
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-1">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-[12px] font-semibold text-charcoal mb-1.5">Position</p>
-              <div className="flex flex-col gap-1.5">
+              <SettingsGroupLabel className="mb-2">Position</SettingsGroupLabel>
+              <div role="radiogroup" aria-label="Banner position" className="flex flex-col gap-2">
                 {([
                   { value: 'bottom_bar' as const, label: 'Bottom bar', desc: 'Full-width bar across the bottom.' },
                   { value: 'bottom_corner' as const, label: 'Bottom corner', desc: 'Compact floating card, bottom-right.' },
                 ]).map(opt => (
-                  <label key={opt.value} className="flex items-start gap-2.5 rounded-lg border px-3 py-2 cursor-pointer"
-                    style={{ borderColor: cookieBannerPosition === opt.value ? '#D97757' : '#EFEDE6', background: cookieBannerPosition === opt.value ? '#FDF6F1' : 'transparent' }}>
-                    <input type="radio" name="cookie-position" className="mt-1" checked={cookieBannerPosition === opt.value} onChange={() => setCookieBannerPosition(opt.value)} />
-                    <div>
-                      <p className="text-[12px] font-semibold text-charcoal">{opt.label}</p>
-                      <p className="text-[11px] text-slate">{opt.desc}</p>
-                    </div>
-                  </label>
+                  <SettingsChoice
+                    key={opt.value}
+                    name="cookie-position"
+                    checked={cookieBannerPosition === opt.value}
+                    label={opt.label}
+                    description={opt.desc}
+                    onChange={() => setCookieBannerPosition(opt.value)}
+                  />
                 ))}
               </div>
             </div>
             <div>
-              <p className="text-[12px] font-semibold text-charcoal mb-1.5">Color</p>
-              <div className="flex flex-col gap-1.5">
+              <SettingsGroupLabel className="mb-2">Color</SettingsGroupLabel>
+              <div role="radiogroup" aria-label="Banner color" className="flex flex-col gap-2">
                 {([
                   { value: 'dark' as const, label: 'Dark', desc: 'Black background, white text.' },
                   { value: 'light' as const, label: 'Light', desc: 'White background, dark text.' },
                   { value: 'brand' as const, label: 'Match my theme', desc: "Uses your storefront's brand color." },
                 ]).map(opt => (
-                  <label key={opt.value} className="flex items-start gap-2.5 rounded-lg border px-3 py-2 cursor-pointer"
-                    style={{ borderColor: cookieBannerColorMode === opt.value ? '#D97757' : '#EFEDE6', background: cookieBannerColorMode === opt.value ? '#FDF6F1' : 'transparent' }}>
-                    <input type="radio" name="cookie-color" className="mt-1" checked={cookieBannerColorMode === opt.value} onChange={() => setCookieBannerColorMode(opt.value)} />
-                    <div>
-                      <p className="text-[12px] font-semibold text-charcoal">{opt.label}</p>
-                      <p className="text-[11px] text-slate">{opt.desc}</p>
-                    </div>
-                  </label>
+                  <SettingsChoice
+                    key={opt.value}
+                    name="cookie-color"
+                    checked={cookieBannerColorMode === opt.value}
+                    label={opt.label}
+                    description={opt.desc}
+                    onChange={() => setCookieBannerColorMode(opt.value)}
+                  />
                 ))}
               </div>
             </div>
@@ -1035,51 +989,49 @@ function CustomerPrivacyCard({ storeId, store, refetch }: {
         </>
       )}
 
-      <div className="mt-4 flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-        <div>
-          <p className="text-[13px] font-medium text-charcoal">"Do Not Sell My Personal Information" link</p>
-          <p className="text-[11px] text-slate">Adds a real footer link (required in some regions, e.g. California/CCPA) — a visitor can submit a request, which shows up below for you to resolve.</p>
-        </div>
-        <Toggle checked={showDoNotSellLink} onChange={setShowDoNotSellLink} ariaLabel='Show a "Do Not Sell My Personal Information" footer link' />
-      </div>
-
-      <div className="mt-4">
-        <Button size="sm" loading={saving} disabled={!isDirty} onClick={handleSave}>Save</Button>
+      <div className="mt-4 -mx-5 border-y border-fog px-5">
+        <SettingsRow
+          label='"Do Not Sell My Personal Information" link'
+          description='Adds a real footer link (required in some regions, e.g. California/CCPA) — a visitor can submit a request, which shows up below for you to resolve.'
+        >
+          <Toggle checked={showDoNotSellLink} onChange={setShowDoNotSellLink} ariaLabel='Show a "Do Not Sell My Personal Information" footer link' />
+        </SettingsRow>
       </div>
 
       {showDoNotSellLink && (
-        <div className="mt-5 border-t border-bone pt-4">
-          <p className="text-[12px] font-semibold text-charcoal mb-1">
+        <div className="mt-4">
+          <SettingsGroupLabel className="mb-2">
             Data requests {pendingCount > 0 && <span className="text-brand-orange">({pendingCount} pending)</span>}
-          </p>
+          </SettingsGroupLabel>
           {requests.length === 0 ? (
             <p className="text-[11.5px] text-slate">No requests submitted yet.</p>
           ) : (
-            <div className="flex flex-col gap-1.5">
+            <div className="divide-y divide-fog">
               {requests.slice().reverse().map(r => (
-                <div key={r._id} className="flex items-center justify-between gap-3 px-[12px] py-2 rounded-[8px] border border-bone bg-cream">
-                  <div className="min-w-0">
-                    <p className="text-[12.5px] font-medium text-charcoal truncate">{r.email}</p>
-                    <p className="text-[10.5px] text-slate">{formatRequestDate(r.createdAt)}</p>
-                  </div>
+                <SettingsRow
+                  key={r._id}
+                  label={r.email}
+                  description={formatRequestDate(r.createdAt)}
+                  className="py-2.5"
+                >
                   {r.status === 'completed' ? (
-                    <span className="text-[11px] font-semibold text-success shrink-0">Resolved</span>
+                    <span className="text-[11px] font-semibold text-success">Resolved</span>
                   ) : (
                     <Button size="sm" variant="outline" loading={completingId === r._id} onClick={() => markComplete(r._id)}>Mark Complete</Button>
                   )}
-                </div>
+                </SettingsRow>
               ))}
             </div>
           )}
         </div>
       )}
 
-      <div className="mt-5 border-t border-bone pt-4">
-        <p className="text-[11.5px] text-slate">
-          Your Privacy Policy page's own content is written in <span className="font-semibold text-charcoal">Settings → Policies</span> (create it from a template, then edit it) — the footer link above points to it automatically once it is published.
-        </p>
-      </div>
-    </div>
+      <p className="mt-4 text-[11.5px] text-slate leading-relaxed">
+        Your Privacy Policy page's own content is written in <span className="font-semibold text-charcoal">Settings → Policies</span> (create it from a template, then edit it) — the footer link above points to it automatically once it is published.
+      </p>
+
+      <SettingsSaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
+    </SettingsCard>
   );
 }
 
@@ -1091,32 +1043,26 @@ function CustomerPrivacyCard({ storeId, store, refetch }: {
  *  features under the hood. */
 export function PrivacyTab() {
   const { store, storeId, loading, refetch } = useStoreWorkspace();
-  if (loading) return <SettingsSkeleton />;
+  if (loading) return null;
   return (
     <div className="px-4 lg:px-7 py-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate mb-2">Storefront Visibility</p>
-          {storeId && <StoreVisibilityCard storeId={storeId} store={store ? { privacyMode: store.privacyMode } : null} refetch={refetch} />}
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate mb-2">Customer Privacy</p>
-          {storeId && (
-            <CustomerPrivacyCard
-              storeId={storeId}
-              store={store ? {
-                cookieBannerEnabled: store.cookieBannerEnabled,
-                cookieBannerMessage: store.cookieBannerMessage,
-                cookieBannerRegionMode: store.cookieBannerRegionMode,
-                cookieBannerPosition: store.cookieBannerPosition,
-                cookieBannerColorMode: store.cookieBannerColorMode,
-                showDoNotSellLink: store.showDoNotSellLink,
-                privacyRequests: store.privacyRequests,
-              } : null}
-              refetch={refetch}
-            />
-          )}
-        </div>
+      <div className="flex flex-col gap-5">
+        {storeId && <StoreVisibilityCard storeId={storeId} store={store ? { privacyMode: store.privacyMode } : null} refetch={refetch} />}
+        {storeId && (
+          <CustomerPrivacyCard
+            storeId={storeId}
+            store={store ? {
+              cookieBannerEnabled: store.cookieBannerEnabled,
+              cookieBannerMessage: store.cookieBannerMessage,
+              cookieBannerRegionMode: store.cookieBannerRegionMode,
+              cookieBannerPosition: store.cookieBannerPosition,
+              cookieBannerColorMode: store.cookieBannerColorMode,
+              showDoNotSellLink: store.showDoNotSellLink,
+              privacyRequests: store.privacyRequests,
+            } : null}
+            refetch={refetch}
+          />
+        )}
       </div>
     </div>
   );
