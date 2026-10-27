@@ -124,7 +124,8 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, initial, onCl
                   <input type="checkbox" checked={onlyOutside} onChange={e => setOnlyOutside(e.target.checked)} /> Only when we are closed (use the hours below)
                 </label>
               </>
-                </Section>
+            )}
+          </Section>
 
           {autoReplyEnabled && onlyOutside && (
             <Section title="Opening hours" hint="In your store time zone. A day that is switched off counts as closed all day.">
