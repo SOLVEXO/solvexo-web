@@ -16,9 +16,9 @@ export const PRODUCT_OPTIONAL_BLOCKS = ['product_rating', 'product_sku', 'produc
 
 /** Blocks a seller ADDS to the main product (Shopify Dawn): "Buy it now" once,
  *  collapsible tabs and size charts as many times as needed. They carry settings. */
-export const PRODUCT_EXTRA_BLOCKS = ['product_buy_now', 'product_collapsible_tab', 'product_size_chart'] as const;
+export const PRODUCT_EXTRA_BLOCKS = ['product_buy_now', 'product_collapsible_tab', 'product_size_chart', 'product_text', 'product_pickup'] as const;
 export type ProductExtraBlock = (typeof PRODUCT_EXTRA_BLOCKS)[number];
-const REPEATABLE = new Set<string>(['product_collapsible_tab', 'product_size_chart']);
+const REPEATABLE = new Set<string>(['product_collapsible_tab', 'product_size_chart', 'product_text']);
 
 export type ProductMainBlock = (typeof PRODUCT_MAIN_BLOCKS)[number] | (typeof PRODUCT_OPTIONAL_BLOCKS)[number];
 /** Everything except the gallery, which always owns the left column. */

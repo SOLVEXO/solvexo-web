@@ -11,6 +11,7 @@ export function isLiquidStorefrontRoute(pathname: string): boolean {
   return !nativeRoutes.has(pathname)
     && !pathname.startsWith('/orders/')
     && !pathname.startsWith('/order-status/')
+    && !pathname.startsWith('/gift-cards/view/')
     && !pathname.startsWith('/checkout/');
 }
 

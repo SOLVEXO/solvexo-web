@@ -1,5 +1,6 @@
 import { lazy, type ComponentType, type ReactNode } from 'react';
 import type { PublicStoreData } from '@/api/services/store';
+import type { CookieBannerProps } from '@/features/storefront/CookieConsentBanner';
 
 // Maison (theme-03-fashion) is the single base theme. A theme is: a manifest, a layout, one page per StorefrontRouteKey, a gate page and the three preview registrations below.
 import { FashionLayout } from './theme-03-fashion/layout/FashionLayout';
@@ -12,6 +13,7 @@ import { FashionCategoryPage } from './theme-03-fashion/pages/FashionCategoryPag
 import { FashionSearchPage } from './theme-03-fashion/pages/FashionSearchPage';
 import { FashionNotFoundPage } from './theme-03-fashion/pages/FashionNotFoundPage';
 import { FashionStorefrontGate } from './theme-03-fashion/pages/FashionStorefrontGate';
+import { FashionCookieBanner } from './theme-03-fashion/components/FashionCookieBanner';
 // Pages a visitor rarely opens first (checkout, account, orders, blog, auth...) load on demand so the storefront opens faster.
 const FashionCheckoutPage = lazy(() => import('./theme-03-fashion/pages/FashionCheckoutPage').then(m => ({ default: m.FashionCheckoutPage })));
 const FashionCheckoutReturnPage = lazy(() => import('./theme-03-fashion/pages/FashionCheckoutReturnPage').then(m => ({ default: m.FashionCheckoutReturnPage })));
@@ -29,6 +31,7 @@ const FashionOrderStatusPage = lazy(() => import('./theme-03-fashion/pages/Fashi
 const FashionReturnsPage = lazy(() => import('./theme-03-fashion/pages/FashionReturnsPage').then(m => ({ default: m.FashionReturnsPage })));
 const FashionStoreCreditPage = lazy(() => import('./theme-03-fashion/pages/FashionStoreCreditPage').then(m => ({ default: m.FashionStoreCreditPage })));
 const FashionGiftCardsPage = lazy(() => import('./theme-03-fashion/pages/FashionGiftCardsPage').then(m => ({ default: m.FashionGiftCardsPage })));
+const FashionGiftCardViewPage = lazy(() => import('./theme-03-fashion/pages/FashionGiftCardViewPage').then(m => ({ default: m.FashionGiftCardViewPage })));
 const FashionLoyaltyPage = lazy(() => import('./theme-03-fashion/pages/FashionLoyaltyPage').then(m => ({ default: m.FashionLoyaltyPage })));
 const FashionWishlistPage = lazy(() => import('./theme-03-fashion/pages/FashionWishlistPage').then(m => ({ default: m.FashionWishlistPage })));
 const FashionNotificationsPage = lazy(() => import('./theme-03-fashion/pages/FashionNotificationsPage').then(m => ({ default: m.FashionNotificationsPage })));
@@ -45,7 +48,7 @@ import './theme-03-fashion/theme.demoPreview';
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
-  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'storeCredit' | 'orders' | 'orderDetail' | 'orderStatus' | 'addresses' | 'myReviews'
+  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'orderStatus' | 'addresses' | 'myReviews'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 
@@ -64,6 +67,8 @@ interface NewThemeImpl {
   pages: Partial<Record<StorefrontRouteKey, ComponentType>>;
   /** Rendered instead of `Layout`/`pages` while the store is password/coming-soon gated and this tab has not unlocked it. */
   GatePage: ComponentType<{ store: PublicStoreData; onUnlocked: () => void }>;
+  /** The visitor's cookie-consent banner in this theme's own look. A theme without one gets the platform banner. */
+  CookieBanner?: ComponentType<CookieBannerProps>;
   /** Theme Library card metadata; `builtRouteCount` is the honest build progress shown on the card. */
   display: { name: string; description: string; builtRouteCount: number; totalRouteCount: number };
   /** Sent as `theme` in `apiInstallTheme(...)` so a fresh install starts with this theme's own look, not the backend schema defaults. */
@@ -77,6 +82,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   'theme-03-fashion': {
     Layout: FashionLayout,
     GatePage: FashionStorefrontGate,
+    CookieBanner: FashionCookieBanner,
     pages: {
       home: FashionHomePage,
       product: FashionProductPage,
@@ -101,6 +107,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       returns: FashionReturnsPage,
       storeCredit: FashionStoreCreditPage,
       giftCards: FashionGiftCardsPage,
+      giftCardView: FashionGiftCardViewPage,
       loyalty: FashionLoyaltyPage,
       wishlist: FashionWishlistPage,
       notifications: FashionNotificationsPage,
@@ -114,8 +121,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     display: {
       name: 'Maison',
       description: 'Fashion and apparel - modern, image-led and rounded, with a big headline, pill buttons, clean product cards and a polished buy box.',
-      builtRouteCount: 32,
-      totalRouteCount: 32,
+      builtRouteCount: 33,
+      totalRouteCount: 33,
     },
     installDefaults: {
       primaryColor: '#09090B',

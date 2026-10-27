@@ -7,6 +7,15 @@ const DEFAULT_MESSAGE = 'We use cookies to improve your experience and for analy
 export type CookieBannerPosition = 'bottom_bar' | 'bottom_corner';
 export type CookieBannerColorMode = 'dark' | 'light' | 'brand';
 
+/** What every cookie banner gets (this shared one, or a theme's own `CookieBanner` from the registry). */
+export interface CookieBannerProps {
+  message: string | null;
+  position?: CookieBannerPosition;
+  colorMode?: CookieBannerColorMode;
+  brandColor?: string;
+  onDecide: (consent: CookieConsentCategories) => void;
+}
+
 interface Palette { bg: string; text: string; textMuted: string; buttonBg: string; buttonText: string; border: string }
 
 function resolvePalette(colorMode: CookieBannerColorMode, brandColor: string): Palette {

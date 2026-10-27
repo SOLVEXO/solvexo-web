@@ -115,3 +115,16 @@ describe('splitProductTemplateSections', () => {
     expect(after.map(s => s._id)).toEqual(['a']);
   });
 });
+
+describe('product_text block', () => {
+  it('can be added several times and keeps its settings and order', () => {
+    const r = resolveProductMainLayout({ blocks: [
+      { type: 'product_title' }, { type: 'product_text', settings: { text: 'Free returns' } },
+      { type: 'product_buy_buttons' }, { type: 'product_text', settings: { text: 'Ships in 2 days' } },
+    ] });
+    const texts = r.infoItems.filter(i => i.type === 'product_text');
+    expect(texts.map(t => t.settings.text)).toEqual(['Free returns', 'Ships in 2 days']);
+    expect(new Set(texts.map(t => t.key)).size).toBe(2);
+    expect(r.infoOrder).not.toContain('product_text');
+  });
+});

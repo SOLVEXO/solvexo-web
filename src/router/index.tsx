@@ -235,6 +235,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'notifications', element: <ThemedRoute routeKey="notifications" /> },
           { path: 'returns', element: <ThemedRoute routeKey="returns" /> },
           { path: 'gift-cards', element: <ThemedRoute routeKey="giftCards" /> },
+          { path: 'gift-cards/view/:token', element: <ThemedRoute routeKey="giftCardView" /> },
           { path: 'store-credit', element: <ThemedRoute routeKey="storeCredit" /> },
           { path: 'orders/:orderId', element: <ThemedRoute routeKey="orderDetail" /> },
           { path: 'orders', element: <ThemedRoute routeKey="orders" /> },

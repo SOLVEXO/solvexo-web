@@ -101,6 +101,25 @@ export function apiGetGiftCardPublicSettings(storeId: string) {
   return client.get<never, ApiResponse<GiftCardPublicSettings>>(ENDPOINTS.GIFT_CARDS.PUBLIC_SETTINGS(storeId));
 }
 
+/** What the gift card page (opened from the link in the gift card email) shows. */
+export interface GiftCardView {
+  storeId: string;
+  storeName: string;
+  code: string;
+  currency: string;
+  initialValue: number;
+  balance: number;
+  status: 'active' | 'disabled' | 'expired';
+  expiresAt: string | null;
+  message: string | null;
+  recipientName: string | null;
+}
+
+/** GET /api/gift-cards/view/:token (public; the signed token from the email is the key) */
+export function apiGetGiftCardView(token: string) {
+  return client.get<never, ApiResponse<GiftCardView>>(ENDPOINTS.GIFT_CARDS.VIEW(token));
+}
+
 /** POST /api/gift-cards/:storeId/purchase-intent */
 export function apiCreateGiftCardPurchaseIntent(
   storeId: string,

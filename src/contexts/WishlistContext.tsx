@@ -57,6 +57,9 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
 
   // Maps "productId::variantId" → wishlistId (needed for removal)
   const idMap = useRef(new Map<string, string>());
+  // Keys with an add/remove request in flight. A second tap or a click that reaches the heart AND its parent card would
+  // otherwise run the call twice (two requests, two toasts).
+  const inFlight = useRef(new Set<string>());
 
   // Initial fetch — silently skip if not authenticated, or if this provider
   // isn't scoped to a store (the app-wide instance in `main.tsx`).
@@ -93,6 +96,8 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
     requireAuth(async () => {
       if (!storeId) return;
       const k = wKey(productId, variantId);
+      if (inFlight.current.has(k)) return;
+      inFlight.current.add(k);
       setWishlisting(variantId);
       // Optimistic
       setWishlistedKeys(prev => new Set(prev).add(k));
@@ -116,6 +121,7 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
         setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
         toast.error(err instanceof Error ? err.message : ts('pg.failed_to_add_to_wishlist', 'Failed to add to wishlist.'));
       } finally {
+        inFlight.current.delete(k);
         setWishlisting(null);
       }
     }, ts('pg.sign_in_to_save_items_to_your_wishlist', 'Sign in to save items to your wishlist.'));
@@ -124,6 +130,8 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
   const removeFromWishlist = useCallback(async (productId: string, variantId: string) => {
     if (!storeId) return;
     const k = wKey(productId, variantId);
+    if (inFlight.current.has(k)) return;
+    inFlight.current.add(k);
     setWishlisting(variantId);
 
     // Snapshot the removed item (and its position) from inside the updater
@@ -172,6 +180,7 @@ export function WishlistProvider({ storeId, children }: { storeId?: string; chil
       }
       toast.error(err instanceof Error ? err.message : ts('pg.failed_to_remove_from_wishlist', 'Failed to remove from wishlist.'));
     } finally {
+      inFlight.current.delete(k);
       setWishlisting(null);
     }
   }, [toast, storeId]);

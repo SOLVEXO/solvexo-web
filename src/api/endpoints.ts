@@ -492,6 +492,7 @@ export const ENDPOINTS = {
     ADJUST:          (storeId: string, giftCardId: string) => `/api/gift-cards/${storeId}/${giftCardId}/adjust`,
     RESEND:          (storeId: string, giftCardId: string) => `/api/gift-cards/${storeId}/${giftCardId}/resend`,
     PUBLIC_SETTINGS: (storeId: string) => `/api/gift-cards/${storeId}/public-settings`,
+    VIEW:            (token: string) => `/api/gift-cards/view/${encodeURIComponent(token)}`,
     PURCHASE_INTENT: (storeId: string) => `/api/gift-cards/${storeId}/purchase-intent`,
   },
 

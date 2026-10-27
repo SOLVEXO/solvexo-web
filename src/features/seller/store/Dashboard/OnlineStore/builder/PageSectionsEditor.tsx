@@ -26,11 +26,15 @@ const ADDABLE_BLOCK_LABELS: Record<string, string> = {
   product_buy_now: 'Buy it now button',
   product_collapsible_tab: 'Collapsible tab',
   product_size_chart: 'Size chart',
+  product_text: 'Text',
+  product_pickup: 'Pickup availability',
 };
 const ADDABLE_BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
   product_buy_now: { label: 'Buy it now' },
   product_collapsible_tab: { title: 'Materials & care', content: '' },
   product_size_chart: { label: 'Size chart' },
+  product_text: { text: '', size: 'medium' },
+  product_pickup: { heading: '' },
 };
 
 function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {

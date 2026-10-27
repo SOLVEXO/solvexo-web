@@ -18,6 +18,9 @@ import { GalleryGridSection } from './shared/GalleryGridSection';
 import { StoreLocationsSection } from './shared/StoreLocationsSection';
 import { ContactFormSection } from './shared/ContactFormSection';
 import { RelatedProductsSection } from './shared/RelatedProductsSection';
+import { FeatureListSection } from './shared/FeatureListSection';
+import { TeamGridSection } from './shared/TeamGridSection';
+import { StatsCounterSection } from './shared/StatsCounterSection';
 import { ts } from '@/utils/tStatic';
 
 registerFashionSection('multicolumn', (section, blocks, colors) => <MulticolumnSection section={section} blocks={blocks} colors={colors} />);
@@ -30,6 +33,9 @@ registerFashionSection('gallery_grid', (section, blocks, colors) => <GalleryGrid
 registerFashionSection('store_locations', (section, blocks, colors) => <StoreLocationsSection section={section} blocks={blocks} colors={colors} />);
 registerFashionSection('contact_form', (section, blocks, colors) => <ContactFormSection section={section} blocks={blocks} colors={colors} />);
 registerFashionSection('related_products', (section, blocks, colors) => <RelatedProductsSection section={section} blocks={blocks} colors={colors} />);
+registerFashionSection('feature_list', (section, blocks, colors) => <FeatureListSection section={section} blocks={blocks} colors={colors} />);
+registerFashionSection('team_grid', (section, blocks, colors) => <TeamGridSection section={section} blocks={blocks} colors={colors} />);
+registerFashionSection('stats_counter', (section, blocks, colors) => <StatsCounterSection section={section} blocks={blocks} colors={colors} />);
 // ── Divider ───────────────────────────────────────────────────────────────────
 registerFashionSection('divider', (section, _b, colors) => {
   const h = Math.min(160, Math.max(0, Number(section.settings.height) || 32));

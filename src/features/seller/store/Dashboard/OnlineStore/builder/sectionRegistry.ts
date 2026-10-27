@@ -1,6 +1,7 @@
-﻿import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
+﻿import { ListChecks, Users, Hash, Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
+import { FEATURE_ICON_OPTIONS } from '@/features/storefront-themes/featureIcons';
 
 export interface SectionMeta {
   type:               SectionType;
@@ -450,6 +451,36 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
+    type: 'feature_list', label: 'Feature List', description: 'An icon, a short title and a line of text for each reason to shop with you — delivery, returns, quality.',
+    Icon: ListChecks, color: '#0891B2',
+    defaultSettings: { heading: '', columns: 3, textAlign: 'left' },
+    allowedBlockTypes: ['feature_item'], blockLabel: 'Feature',
+    defaultBlockSettings: { icon: 'check', title: '', description: '' },
+    settingsSchema: withHeading([
+      { key: 'columns', kind: 'select', label: 'Features per row', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'textAlign', kind: 'select', label: 'Text alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
+    ]),
+  },
+  {
+    type: 'team_grid', label: 'Team', description: 'Photo, name, role and a short bio for each person behind the brand.',
+    Icon: Users, color: '#DB2777',
+    defaultSettings: { heading: 'Meet the team', columns: 3, textAlign: 'center' },
+    allowedBlockTypes: ['team_member'], blockLabel: 'Person',
+    defaultBlockSettings: { name: '', role: '', bio: '', imageUrl: '' },
+    settingsSchema: withHeading([
+      { key: 'columns', kind: 'select', label: 'People per row', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'textAlign', kind: 'select', label: 'Text alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
+    ]),
+  },
+  {
+    type: 'stats_counter', label: 'Stats Counter', description: 'Big numbers that count up on scroll — customers, orders, years in business.',
+    Icon: Hash, color: '#CA8A04',
+    defaultSettings: { heading: '' },
+    allowedBlockTypes: ['stat_item'], blockLabel: 'Number',
+    defaultBlockSettings: { value: '', label: '' },
+    settingsSchema: withHeading([]),
+  },
+  {
     type: 'store_locations', label: 'Store Locations', description: 'Your shops or pickup points: address, phone, opening hours and a "Get directions" link.',
     Icon: MapPin, color: '#16A34A',
     defaultSettings: { heading: 'Visit us' },
@@ -491,7 +522,7 @@ export const SECTION_META: SectionMeta[] = [
     Icon: ShoppingBag, color: '#D97757',
     defaultSettings: {}, allowedBlockTypes: ['product_media', 'product_title', 'product_price', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description'], blockLabel: 'Item',
     defaultBlockSettings: {}, hidden: true, locked: true,
-    addableBlockTypes: ['product_buy_now', 'product_collapsible_tab', 'product_size_chart'],
+    addableBlockTypes: ['product_buy_now', 'product_collapsible_tab', 'product_size_chart', 'product_text', 'product_pickup'],
     settingsSchema: [],
   },
   {
@@ -594,6 +625,15 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'title', kind: 'text', label: 'Heading', required: true, maxLength: 80, placeholder: 'Materials & care' },
     { key: 'content', kind: 'textarea', label: 'Content', rows: 5, maxLength: 5000 },
     { key: 'openByDefault', kind: 'checkbox', label: 'Open by default', defaultOff: true },
+  ],
+  product_pickup: [
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Pickup', hint: 'Shown when you have an active Local pickup option in Shipping and the item is in stock. The place, address and instructions come from that pickup option.' },
+  ],
+  product_text: [
+    { key: 'text', kind: 'textarea', label: 'Text', rows: 3, maxLength: 1000, hint: 'A short note under the buy box, e.g. "Free returns within 14 days". Add the block again for more lines.' },
+    { key: 'size', kind: 'select', label: 'Text size', options: [
+      { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+    ] },
   ],
   product_size_chart: [
     { key: 'label', kind: 'text', label: 'Link text', maxLength: 40, placeholder: 'Size chart' },
@@ -701,6 +741,21 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'body', kind: 'textarea', label: 'Text', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+  ],
+  feature_item: [
+    { key: 'icon', kind: 'select', label: 'Icon', options: FEATURE_ICON_OPTIONS },
+    { key: 'title', kind: 'text', label: 'Title', required: true, maxLength: 80, placeholder: 'Free delivery' },
+    { key: 'description', kind: 'textarea', label: 'Text', required: true, maxLength: 300, rows: 3, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+  ],
+  team_member: [
+    { key: 'imageUrl', kind: 'image', label: 'Photo (optional)', hint: 'Without a photo the person\'s initials are shown.' },
+    { key: 'name', kind: 'text', label: 'Name', required: true, maxLength: 80 },
+    { key: 'role', kind: 'text', label: 'Role', required: true, maxLength: 80, placeholder: 'Founder' },
+    { key: 'bio', kind: 'textarea', label: 'Short bio', maxLength: 300, rows: 3 },
+  ],
+  stat_item: [
+    { key: 'value', kind: 'text', label: 'Number', required: true, maxLength: 20, placeholder: '10k+', hint: 'Digits count up when shown, e.g. 10k+, 4.8, 1,200.' },
+    { key: 'label', kind: 'text', label: 'Label', required: true, maxLength: 60, placeholder: 'Happy customers' },
   ],
   gallery_image: [
     { key: 'imageUrl', kind: 'image', label: 'Photo', required: true },

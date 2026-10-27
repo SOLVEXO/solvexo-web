@@ -312,6 +312,7 @@ export function StorefrontLayout() {
   const themeId = theme?.themeDefinitionId;
   const impl = (themeId && NEW_THEME_REGISTRY[themeId]) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID];
   const Layout = impl.Layout;
+  const CookieBanner = impl.CookieBanner ?? CookieConsentBanner;
   const liquidRoute = isLiquidStorefrontRoute(location.pathname);
 
   // The gate replaces the ENTIRE tree (no navbar/cart/footer/Outlet) — every
@@ -342,7 +343,7 @@ export function StorefrontLayout() {
             ? <PublishedLiquidStorefront key={`${store.storeId}:${theme.sourcePackageVersion}`} storeId={store.storeId} />
             : <Layout><Outlet /></Layout>}
           {store.cookieBannerEnabled && !cookieConsent && (
-            <CookieConsentBanner
+            <CookieBanner
               message={store.cookieBannerMessage}
               position={store.cookieBannerPosition}
               colorMode={store.cookieBannerColorMode}

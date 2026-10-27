@@ -22,7 +22,7 @@ import { resolveProductMainLayout, splitProductTemplateSections } from '../../pr
 import { clampQty, preorderLabel, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../components/product/ProductParts';
-import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart } from '../components/product/ProductExtraBlocks';
+import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../components/product/ProductExtraBlocks';
 import { FashionImageLightbox } from '../components/product/FashionImageLightbox';
 import { StickyBuyBar } from '../components/product/StickyBuyBar';
 import { ProductDelivery } from '../components/product/ProductDelivery';
@@ -236,6 +236,9 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_specs: () => <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
     product_collapsible_tab: s => <ProductCollapsibleTab settings={s} />,
     product_size_chart: s => <ProductSizeChart settings={s} />,
+    product_pickup: s => <ProductPickup storeId={store.storeId} storeName={store.name} settings={s} available={canBuy && !isDigital} />,
+    // An empty note renders nothing at all (a blank wrapper would still add a gap in the buy box).
+    product_text: s => typeof s.text === 'string' && s.text.trim() ? <ProductTextBlock settings={s} /> : null,
   };
 
   return (
