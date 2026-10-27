@@ -86,6 +86,8 @@ export function StorefrontLayout() {
   setCurrencyDisplay(store?.currencyDisplay);
   const [loading, setLoading] = useState(() => boot.current === null);
   const [error, setError] = useState('');
+  // The server could not be reached (network error / 5xx): a different message from a store that really does not exist.
+  const [unavailable, setUnavailable] = useState(false);
   // Real Shopify-style storefront gate (`Store.privacyMode`) — a per-tab
   // unlock, checked the instant the store loads so a password-protected
   // store never flashes its real content first. See `FashionStorefrontGate`/
@@ -119,6 +121,7 @@ export function StorefrontLayout() {
     let cancelled = false;
     if (!boot.current) setLoading(true);
     setError('');
+    setUnavailable(false);
     // One request for store + theme + home page; an older API without it falls back to the separate calls.
     const load = apiGetStorefrontBootstrap(slug ? { slug } : { host: window.location.hostname })
       .then(b => {
@@ -157,10 +160,13 @@ export function StorefrontLayout() {
         if (cancelled) return;
         // A cached storefront stays on screen through a network blip; a real 404 clears it.
         if (boot.current && err?.status !== 404) return;
-        clearBootSnapshot();
+        const serverProblem = !!err?.isNetworkError || (typeof err?.status === 'number' && err.status >= 500);
+        // Only a real 404 means the store is gone; a server problem keeps the cached copy for the next try.
+        if (!serverProblem) clearBootSnapshot();
         setStore(null);
         setTheme(null);
-        setError('Store not found');
+        setUnavailable(serverProblem);
+        setError(serverProblem ? 'Store unavailable' : 'Store not found');
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -294,7 +300,14 @@ export function StorefrontLayout() {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center gap-4">
         <Store size={48} className="text-bone" />
-        <p className="text-[15px] text-slate">{slug ? 'Store not found' : "This domain isn't connected to a store yet"}</p>
+        {unavailable ? (
+          <>
+            <p className="text-[15px] text-slate text-center px-6">We can't load this store right now. Please try again in a moment.</p>
+            <button type="button" onClick={() => window.location.reload()} className="h-9 px-4 rounded-lg border border-bone bg-white text-[13px] font-semibold text-carbon cursor-pointer hover:bg-fog">Try again</button>
+          </>
+        ) : (
+          <p className="text-[15px] text-slate">{slug ? 'Store not found' : "This domain isn't connected to a store yet"}</p>
+        )}
       </div>
     );
   }
