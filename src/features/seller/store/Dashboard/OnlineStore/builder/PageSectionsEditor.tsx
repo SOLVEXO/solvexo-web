@@ -29,6 +29,7 @@ const ADDABLE_BLOCK_LABELS: Record<string, string> = {
   product_text: 'Text',
   product_pickup: 'Pickup availability',
 };
+const ADD_ONCE_BLOCKS = new Set(['product_buy_now', 'product_pickup']);
 const ADDABLE_BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
   product_buy_now: { label: 'Buy it now' },
   product_collapsible_tab: { title: 'Materials & care', content: '' },
@@ -292,8 +293,8 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
                   trigger={<span className="text-[12px] font-semibold text-brand-orange cursor-pointer flex items-center gap-1"><Plus size={13} /> Add block</span>}
                   triggerClassName="self-start px-1 py-0.5 bg-transparent border-none cursor-pointer"
                   items={(meta.addableBlockTypes ?? [])
-                    // "Buy it now" once; tabs and size charts as often as needed.
-                    .filter(bt => bt !== 'product_buy_now' || !section.blocks.some(b => b.type === bt))
+                    // "Buy it now" and "Pickup availability" once; tabs, size charts and text notes as often as needed.
+                    .filter(bt => !ADD_ONCE_BLOCKS.has(bt) || !section.blocks.some(b => b.type === bt))
                     .map(bt => ({
                       label: ADDABLE_BLOCK_LABELS[bt] ?? bt.replace(/_/g, ' '),
                       onClick: () => onChange({ ...section, blocks: [...section.blocks, { type: bt, settings: { ...(ADDABLE_BLOCK_DEFAULTS[bt] ?? {}) } }] }),
