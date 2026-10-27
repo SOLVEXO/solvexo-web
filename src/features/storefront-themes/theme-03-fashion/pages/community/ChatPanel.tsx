@@ -84,9 +84,11 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: 'min(700px, calc(100dvh - 230px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: 24, background: t.colors.bg }}>
       <header className="flex shrink-0 items-center gap-3 p-4" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
-        <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}>
-          {shownLogo ? <img src={shownLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
-          {chat.otherOnline && <span aria-hidden className="absolute bottom-0 right-0 size-3 rounded-full" style={{ background: t.colors.success, border: `2px solid ${t.colors.bg}` }} />}
+        <span className="relative size-11 shrink-0">
+          <span className="grid size-full place-items-center overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}>
+            {shownLogo ? <img src={shownLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
+          </span>
+          {chat.otherOnline && <span aria-hidden className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full" style={{ background: '#22C55E', border: `2.5px solid ${t.colors.bg}` }} />}
         </span>
         <div className="min-w-0">
           <h2 className="m-0 truncate text-base font-semibold">{shownName}</h2>

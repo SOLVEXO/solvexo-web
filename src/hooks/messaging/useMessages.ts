@@ -19,7 +19,8 @@ export function useMessages(conversationId: string | null) {
   const [sending,    setSending]    = useState(false);
   const [error,      setError]      = useState('');
   const [otherUserId,  setOtherUserId]  = useState<string | null>(null);
-  const [otherOnline,  setOtherOnline]  = useState(false);
+  // undefined = not known yet (header shows nothing instead of a false "Offline")
+  const [otherOnline,  setOtherOnline]  = useState<boolean | undefined>(undefined);
   const [otherTyping,  setOtherTyping]  = useState(false);
   const requestId = useRef(0);
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,7 +46,7 @@ export function useMessages(conversationId: string | null) {
   useEffect(() => {
     if (!conversationId) return;
     const socket = acquireMessagingSocket();
-    setOtherOnline(false);
+    setOtherOnline(undefined);
     setOtherTyping(false);
 
     function handleJoined(info: { conversationId: string; otherUserId: string; otherOnline: boolean }) {
@@ -96,7 +97,11 @@ export function useMessages(conversationId: string | null) {
       }));
     }
 
+    // After a network blip the server forgets our room + presence: join again.
+    function rejoin() { socket.emit('join-conversation', conversationId); }
+
     socket.emit('join-conversation', conversationId);
+    socket.on('connect', rejoin);
     socket.on('messaging:joined', handleJoined);
     socket.on('messaging:error', handleMessagingError);
     socket.on('message:new', handleNew);
@@ -108,6 +113,7 @@ export function useMessages(conversationId: string | null) {
 
     return () => {
       socket.emit('leave-conversation', conversationId);
+      socket.off('connect', rejoin);
       socket.off('messaging:joined', handleJoined);
       socket.off('messaging:error', handleMessagingError);
       socket.off('message:new', handleNew);
