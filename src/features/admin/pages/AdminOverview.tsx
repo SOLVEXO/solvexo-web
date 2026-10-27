@@ -1,190 +1,69 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { LayoutGrid } from 'lucide-react';
 import {
-  AlertCircle, Users, UserCheck, DollarSign, UserPlus,
-  Shield, Store, Bell, Tag, ArrowRight, LayoutGrid, TrendingUp,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  apiAdminAnalyticsOverview, apiAdminAnalyticsTopCategories,
-  type AdminOverviewData, type TopCategoryRow,
+  apiAdminAnalyticsOverview, apiAdminAnalyticsPlatformAlerts, apiAdminAnalyticsPlatformHealth,
 } from '@/api/services/analytics/adminAnalytics';
-import { useAdminAnalyticsGrowthForecast } from '@/hooks/admin/useAdminAnalytics';
-import { formatCurrency, formatNumber, formatPercent } from '@/components/comman/analytics/format';
-import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
-import { MetricCard } from '@/components/comman/ui/MetricCard';
-import { EmptyState } from '@/components/comman/ui/EmptyState';
-import { Badge } from '@/components/comman/ui/Badge';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { DashboardCanvas } from '@/components/comman/dashboard/DashboardCanvas';
+import { CustomizeButton, CustomizeToolbar } from '@/components/comman/dashboard/CustomizeToolbar';
+import { useDashboardLayout } from '@/components/comman/dashboard/useDashboardLayout';
+import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
+import type { DashboardScope } from '@/api/services/dashboardLayout';
+import type { DashboardWidgetDef } from '@/components/comman/dashboard/dashboardTypes';
+import { can } from '@/hooks/auth/useCan';
+import { ADMIN_DEFAULT_WIDGETS, ADMIN_PRESETS, ADMIN_WIDGET_DEFS, type AdminWidgetDef } from './adminDashboardWidgets';
+import { AdminWidget, type AdminDashboardData } from './AdminDashboardCards';
 
-// Pure navigation shortcuts to the real queue/alert/moderation pages — no new
-// data fetched here, just quicker access to where that data already lives.
-interface QuickLink { Icon: LucideIcon; label: string; desc: string; path: string; gradient: string; iconColor: string }
-const QUICK_LINKS: QuickLink[] = [
-  { Icon: Shield,  label: 'Moderation Queue', desc: 'Review flagged listings & reports', path: '/admin/moderation',   gradient: 'from-[#fbe9e7] to-[#fbdfdc]', iconColor: '#B3261E' },
-  { Icon: Users,   label: 'Users & Sellers',  desc: 'Accounts, suspensions, roles',      path: '/admin/users',        gradient: 'from-[#eaf0fb] to-[#dcebfa]', iconColor: '#2156A8' },
-  { Icon: Bell,    label: 'Site Content',     desc: 'Announcements, FAQs & testimonials', path: '/admin/content',      gradient: 'from-[#f3e8ff] to-[#ede0fe]', iconColor: '#A855F7' },
-];
+const SCOPE: DashboardScope = { kind: 'admin' };
 
-// A fixed-range glance dashboard — a few key numbers, no filter/export chrome.
-// The full filterable/exportable, tab-by-tab report lives at `/admin/analytics`
-// (`AdminAnalytics.tsx`) — deliberately a separate page, not this one.
+// The widget library and layout only decide what is arranged on screen. A team admin without the matching permission
+// never sees (or is offered) the widget, and every data endpoint checks the permission again on the server.
+const canSeeWidget = (d: DashboardWidgetDef) => {
+  const perm = (d as AdminWidgetDef).perm;
+  return perm === null ? true : can(perm as Parameters<typeof can>[0]);
+};
+const PATH_PERMISSION: Record<string, string> = { '/admin/clients': 'clients.view', '/admin/finance': 'finance.view', '/admin/content': 'content.manage' };
+const canOpen = (path: string) => { const p = PATH_PERMISSION[path]; return !p || can(p as Parameters<typeof can>[0]); };
+
+// Super Admin Home: a customizable platform overview. The filterable, exportable reports stay in /admin/analytics.
 export function AdminOverview() {
-  const navigate = useNavigate();
-  const [overview, setOverview]   = useState<AdminOverviewData | null>(null);
-  const [categories, setCategories] = useState<TopCategoryRow[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const forecast = useAdminAnalyticsGrowthForecast();
-
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError('');
-    Promise.all([
-      apiAdminAnalyticsOverview({ range: '30d' }),
-      apiAdminAnalyticsTopCategories({ range: '30d', limit: 5 }),
-    ])
-      .then(([overviewRes, categoriesRes]) => {
-        if (cancelled) return;
-        setOverview(overviewRes.data);
-        setCategories(categoriesRes.data ?? []);
-      })
-      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load platform overview.'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [reloadKey]);
-
-  const metrics = overview ? [
-    { label: 'Seller Accounts',        value: formatNumber(overview.totalSellers),             trend: undefined, trendUp: true, sub: undefined, icon: <Users size={16} />, color: '#8B5CF6' },
-    { label: 'Sellers Active (30 days)', value: formatNumber(overview.sellersActiveThisMonth), trend: overview.sellersActiveThisMonthChange ? `${overview.sellersActiveThisMonthChange > 0 ? '+' : ''}${formatNumber(overview.sellersActiveThisMonthChange)}` : undefined, trendUp: (overview.sellersActiveThisMonthChange ?? 0) >= 0, sub: undefined, icon: <UserCheck size={16} />, color: '#22C55E' },
-    { label: 'Total Stores',           value: formatNumber(overview.totalStores),              trend: undefined, trendUp: true, sub: undefined, icon: <Store size={16} />, color: '#0D9488' },
-    { label: 'Active Stores',          value: formatNumber(overview.activeStores),             trend: undefined, trendUp: true, sub: undefined, icon: <Store size={16} />, color: '#0EA5E9' },
-    { label: 'GMV (30 days)',          value: formatCurrency(overview.totalGMV),                trend: overview.totalGMVChangePercent != null ? formatPercent(overview.totalGMVChangePercent, { signed: true }) : undefined, trendUp: (overview.totalGMVChangePercent ?? 0) >= 0, sub: undefined, icon: <DollarSign size={16} />, color: '#D97757' },
-    { label: 'New Users',              value: formatNumber(overview.newUsers),                  trend: undefined, trendUp: true, sub: `${formatNumber(overview.totalCustomers)} total customers`, icon: <UserPlus size={16} />, color: '#0EA5E9' },
-  ] : [];
-
-  const maxCategoryRevenue = Math.max(1, ...categories.map(c => c.revenue));
+  const layout = useDashboardLayout({ scope: SCOPE, defs: ADMIN_WIDGET_DEFS, defaultWidgets: ADMIN_DEFAULT_WIDGETS, canSee: canSeeWidget });
+  const canAnalytics = can('analytics.view');
+  const overview = useKeyedLoad(() => apiAdminAnalyticsOverview({ range: '30d' }).then(r => r.data), 'overview', canAnalytics);
+  const alerts = useKeyedLoad(() => apiAdminAnalyticsPlatformAlerts({}).then(r => r.data), 'alerts', canAnalytics);
+  const health = useKeyedLoad(() => apiAdminAnalyticsPlatformHealth({}).then(r => r.data), 'health', canAnalytics);
+  const data: AdminDashboardData = useMemo(() => ({ overview, alerts, health }), [overview, alerts, health]);
 
   return (
     <>
-      <AdminPageHeader title="Platform Overview" subtitle="Last 30 days across the Solvexo platform." icon={<LayoutGrid size={17} />} />
+      <AdminPageHeader
+        title="Platform Overview"
+        subtitle="Monitor your platform: merchants, subscription revenue and system health."
+        icon={<LayoutGrid size={17} />}
+        actions={layout.editing ? undefined : <CustomizeButton layout={layout} />}
+      />
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      {error && (
-        <div className="dash-section-enter flex items-center gap-3 px-4 py-3 rounded-xl bg-error-bg border border-error/10 text-[12.5px]">
-          <span className="flex size-8 items-center justify-center rounded-full bg-error/10 text-error shrink-0">
-            <AlertCircle size={15} />
-          </span>
-          <div>
-            <p className="font-semibold text-error">Couldn't load the platform overview</p>
-            <p className="text-error/80">{error}</p>
+        {layout.editing && <CustomizeToolbar layout={layout} defs={ADMIN_WIDGET_DEFS} presets={ADMIN_PRESETS} />}
+
+        {layout.loadError && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-error-bg border border-error/10 text-[12.5px] text-error" role="alert">
+            <span>Your saved layout could not be loaded, so the default layout is shown. {layout.loadError}</span>
+            <button type="button" onClick={layout.reload} className="ml-auto font-semibold underline bg-transparent border-none cursor-pointer text-error">Try again</button>
           </div>
-          <button type="button" onClick={() => setReloadKey(k => k + 1)} className="ml-auto px-3 py-1.5 rounded-lg border border-error/20 bg-white text-error text-[12px] font-semibold cursor-pointer">Retry</button>
-        </div>
-      )}
+        )}
 
-      {/* ── Metrics Row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {loading ? (
-          Array.from({ length: 6 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
-        ) : metrics.map((m) => (
-          <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend} trendUp={m.trendUp} sub={m.sub} icon={m.icon} color={m.color} />
-        ))}
-      </div>
-
-      {forecast.data && (
-        <div className="bg-white border border-bone rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="size-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center">
-              <TrendingUp size={16} className="text-brand-orange" />
-            </div>
-            <div>
-              <p className="text-[13px] font-bold text-charcoal">Platform Growth Forecast</p>
-              <p className="text-[10.5px] text-slate">
-                {forecast.data.method === 'trend_seasonal' ? 'Trend-based (across all stores)' : 'Simple average — building up platform history'}
-              </p>
-            </div>
+        {layout.loading ? (
+          <div className="grid grid-cols-12 gap-4">{Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="col-span-12 sm:col-span-6 lg:col-span-3 h-[110px]" />)}</div>
+        ) : layout.widgets.length === 0 && !layout.editing ? (
+          <div className="bg-white border border-bone rounded-2xl px-6 py-12 text-center">
+            <p className="text-[14px] font-semibold text-charcoal">Your dashboard is empty</p>
+            <p className="text-[12.5px] text-slate mt-1 mb-4">Add widgets to build the overview you want.</p>
+            <CustomizeButton layout={layout} />
           </div>
-          <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
-            <div>
-              <p className="text-[11px] text-slate">Next 7 days (net order revenue)</p>
-              <p className="text-[15px] font-bold text-charcoal">{formatCurrency(forecast.data.projectedNext7Days)}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-slate">Next 30 days (net order revenue)</p>
-              <p className="text-[15px] font-bold text-charcoal">{formatCurrency(forecast.data.projectedNext30Days)}</p>
-            </div>
-          </div>
-          {forecast.data.method === 'simple_average' && <Badge color="orange" size="sm">Building up history</Badge>}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
-
-        {/* ── Top Categories ── */}
-        <div className="bg-white border border-bone rounded-2xl transition-colors duration-200 hover:border-brand-orange/25 px-5 py-4">
-          <p className="text-[14px] font-bold text-charcoal mb-4">
-            Top Categories by Revenue (30 days)
-          </p>
-          {loading ? (
-            <div className="flex flex-col gap-3">
-              {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="h-6 w-full" />)}
-            </div>
-          ) : categories.length === 0 ? (
-            <EmptyState
-              icon={<Tag size={24} className="text-slate/50" />}
-              title="No category revenue yet"
-              description="Once orders start coming in across the marketplace, the top-earning categories will show up here."
-              className="py-10"
-            />
-          ) : (
-            <div className="flex flex-col gap-[14px]">
-              {categories.map((cat) => (
-                <div key={cat.categoryId}>
-                  <div className="flex justify-between items-center mb-[5px]">
-                    <span className="text-[12px] text-graphite">{cat.name}</span>
-                    <span className="text-[12px] font-semibold text-charcoal">{formatCurrency(cat.revenue)}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-cream overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-orange to-brand-deep-orange transition-[width] duration-500 ease-out"
-                      style={{ width: `${Math.round((cat.revenue / maxCategoryRevenue) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Quick access — shortcuts to moderation/marketplace/users/announcements ── */}
-        <div className="bg-white border border-bone rounded-2xl transition-colors duration-200 hover:border-brand-orange/25 px-5 py-4">
-          <p className="text-[14px] font-bold text-charcoal mb-4">Quick Access</p>
-          <div className="flex flex-col gap-2">
-            {QUICK_LINKS.map(({ Icon, label, desc, path, gradient, iconColor }) => (
-              <button
-                key={label}
-                onClick={() => navigate(path)}
-                className={`group flex items-center gap-3 px-3 py-[10px] rounded-xl border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-px hover:border-brand-orange/30 text-left w-full`}
-              >
-                <div
-                  className="size-9 rounded-[10px] bg-white/70 border border-white/60 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
-                  style={{ color: iconColor }}
-                >
-                  <Icon size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12.5px] font-semibold text-charcoal">{label}</p>
-                  <p className="text-[11px] text-slate truncate">{desc}</p>
-                </div>
-                <ArrowRight size={14} className="text-slate/50 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+        ) : (
+          <DashboardCanvas defs={ADMIN_WIDGET_DEFS} layout={layout} renderWidget={(def, w) => <AdminWidget def={def} w={w} data={data} canOpen={canOpen} />} />
+        )}
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
@@ -7,26 +7,31 @@ import {
   Megaphone, ClipboardList, Plus, History, Wallet, Flame,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { ChevronUp, ChevronDown as ChevronDownIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, TrialBillingPill } from '@/components/layouts/StoreLayout';
 import { AreaChart } from '@/components/comman/charts';
-import { MetricCard, SkeletonBox, Button, FilterDropdown, CopyIconButton, StatusBadge } from '@/components/comman/ui';
+import { MetricCard, SkeletonBox, Button, CopyIconButton, StatusBadge } from '@/components/comman/ui';
 import {
-  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday, apiSellerAnalyticsSalesForecast,
-  type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData, type SellerSalesForecastData,
+  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday, apiSellerAnalyticsSalesForecast, apiSellerAnalyticsSessions,
+  type SellerSessionsData, type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData, type SellerSalesForecastData,
 } from '@/api/services/analytics/analytics';
 import type { AnalyticsRangePreset } from '@/components/comman/analytics/analyticsFilters';
 import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders, apiGetTrendingProducts, type SellerOrder } from '@/api/services/product';
 import { apiGetSellerReturns } from '@/api/services/orders';
 import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
-import { apiUpdateStore, type PublicStoreProduct } from '@/api/services/store';
+import { type PublicStoreProduct } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetFinanceDashboard, type FinanceWallet } from '@/api/services/finance';
 import { apiGetActivityLog, type ActivityLogEntry, type ActivityCategory } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { DASHBOARD_METRIC_CATALOG, DEFAULT_DASHBOARD_METRICS } from './dashboardMetrics.const';
+import { DashboardCanvas } from '@/components/comman/dashboard/DashboardCanvas';
+import { CustomizeButton, CustomizeToolbar } from '@/components/comman/dashboard/CustomizeToolbar';
+import { useDashboardLayout } from '@/components/comman/dashboard/useDashboardLayout';
+import type { DashboardWidgetDef, LayoutWidget } from '@/components/comman/dashboard/dashboardTypes';
+import { STORE_WIDGET_DEFS, STORE_PRESETS, buildDefaultWidgets, type StoreWidgetDef } from './storeDashboardWidgets';
+import { TrafficSourcesCard } from './TrafficSourcesCard';
 import { can, isStaffSession } from '@/hooks/auth/useCan';
-import { Sliders, Check as CheckIcon, ChevronUp, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
@@ -48,6 +53,7 @@ interface StoreMetrics {
   entitlements: EntitlementsSummary | null;
   salesForecast: SellerSalesForecastData | null;
   primaryWallet: FinanceWallet | null;
+  sessions: SellerSessionsData | null;
 }
 
 // A staff member without the 'analytics.view' permission gets 403 on the analytics endpoints — the dashboard must
@@ -95,8 +101,10 @@ function useStoreDashboardMetrics(storeId: string) {
       // the dashboard from loading over these two.
       can('analytics.view') ? apiSellerAnalyticsSalesForecast({ storeId }).catch(() => null) : Promise.resolve(null),
       can('finance.payouts.view') ? apiGetFinanceDashboard(storeId).catch(() => null) : Promise.resolve(null),
+      // Conversion needs the first-party session data; a store with no tracked sessions yet just shows "no data".
+      can('analytics.view') ? apiSellerAnalyticsSessions({ storeId, range: '30d' }).catch(() => null) : Promise.resolve(null),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes, forecastRes, financeRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes, disputesRes, riskRes, captureRes, entitlementsRes, forecastRes, financeRes, sessionsRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes?.data ?? EMPTY_OVERVIEW,
@@ -112,6 +120,7 @@ function useStoreDashboardMetrics(storeId: string) {
           entitlements: (entitlementsRes as any)?.data ?? null,
           salesForecast: (forecastRes as any)?.data ?? null,
           primaryWallet: (financeRes as any)?.wallets?.[0] ?? null,
+          sessions: (sessionsRes as any)?.data ?? null,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -326,7 +335,7 @@ const ACTIVITY_ICON: Record<ActivityCategory, LucideIcon> = {
   customers: Users, settings: Settings, security: AlertTriangle,
 };
 
-function RecentActivityCard({ storeId }: { storeId: string }) {
+function RecentActivityCard({ storeId, limit = 5 }: { storeId: string; limit?: number }) {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<ActivityLogEntry[] | null>(null);
   // Collapsible, same show/hide pattern as SetupGuideCard's own header
@@ -336,11 +345,11 @@ function RecentActivityCard({ storeId }: { storeId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    apiGetActivityLog(storeId, { limit: 5 })
+    apiGetActivityLog(storeId, { limit })
       .then(res => { if (!cancelled) setEntries(res.data.logs); })
       .catch(() => { if (!cancelled) setEntries([]); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, limit]);
 
   if (!entries || entries.length === 0) return null;
 
@@ -409,17 +418,17 @@ function RecentActivityCard({ storeId }: { storeId: string }) {
 // plain counts — this is the only place on the page showing actual order
 // rows. Self-hiding for a brand-new store with zero orders yet, same
 // convention as RecentActivityCard/AvailableBalanceBanner below. ───────────
-function RecentOrdersCard({ storeId, currency }: { storeId: string; currency?: string | null }) {
+function RecentOrdersCard({ storeId, currency, limit = 5 }: { storeId: string; currency?: string | null; limit?: number }) {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<SellerOrder[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    apiGetSellerOrders(storeId, 1, 5)
+    apiGetSellerOrders(storeId, 1, limit)
       .then(res => { if (!cancelled) setOrders(res.data.orders); })
       .catch(() => { if (!cancelled) setOrders([]); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, limit]);
 
   if (!orders || orders.length === 0) return null;
 
@@ -470,17 +479,17 @@ function RecentOrdersCard({ storeId, currency }: { storeId: string; currency?: s
 // last 7 days yet. No fabricated "units sold" figure — the shared
 // PublicStoreProduct shape this endpoint returns doesn't carry that number
 // back to the client, so only real fields (name/image/price) are shown. ───
-function TopProductsCard({ storeId, currency }: { storeId: string; currency?: string | null }) {
+function TopProductsCard({ storeId, currency, limit = 5 }: { storeId: string; currency?: string | null; limit?: number }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    apiGetTrendingProducts(storeId, 5)
+    apiGetTrendingProducts(storeId, limit)
       .then(res => { if (!cancelled) setProducts(res.data.products); })
       .catch(() => { if (!cancelled) setProducts([]); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, limit]);
 
   if (!products || products.length === 0) return null;
 
@@ -646,6 +655,19 @@ function renderMetricCard(
           sub="Per order" icon={<TrendingUp size={16} />} color="#F59E0B"
         />
       );
+    case 'conversion_rate': {
+      const s = metrics?.sessions;
+      const tracked = !!s && s.trackingSince !== null && s.sessions > 0;
+      const change = tracked ? s!.conversionRateChange : null;
+      return (
+        <MetricCard key={id}
+          label="Conversion rate (30 days)" value={tracked ? `${s!.conversionRate.toFixed(1)}%` : '—'}
+          trend={change !== null && change !== 0 ? `${Math.abs(change).toFixed(1)} pts vs prev.` : undefined}
+          trendUp={change !== null ? change >= 0 : undefined}
+          sub={tracked ? `${formatNumber(s!.sessions)} sessions` : 'No tracked sessions yet'} icon={<TrendingUp size={16} />} color="#0EA5E9"
+        />
+      );
+    }
     case 'refund_rate_30d':
       return (
         <MetricCard key={id}
@@ -684,91 +706,6 @@ function renderMetricCard(
     default:
       return null; // an id the current build no longer recognizes — never crash the dashboard over it
   }
-}
-
-function MetricsCustomizeModal({ storeId, current, onClose, onSaved }: {
-  storeId: string; current: string[]; onClose: () => void; onSaved: () => void;
-}) {
-  const [selected, setSelected] = useState<string[]>(current);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const toggle = (id: string) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-  const move = (id: string, dir: -1 | 1) => {
-    setSelected(prev => {
-      const i = prev.indexOf(id);
-      const j = i + dir;
-      if (j < 0 || j >= prev.length) return prev;
-      const next = prev.slice();
-      [next[i], next[j]] = [next[j], next[i]];
-      return next;
-    });
-  };
-
-  const handleSave = async () => {
-    if (selected.length === 0) { setError('Choose at least one metric.'); return; }
-    setSaving(true); setError('');
-    try {
-      await apiUpdateStore({ storeId, dashboardMetrics: selected });
-      onSaved();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl w-full max-w-[440px] max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b border-bone flex items-center justify-between">
-          <p className="text-sm font-bold text-charcoal">Customize Metrics</p>
-          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-slate hover:text-charcoal">
-            <XIcon size={16} />
-          </button>
-        </div>
-        <p className="px-5 pt-3 text-[11.5px] text-slate">Choose which cards show on your dashboard, and drag their order with the arrows.</p>
-        <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-1.5">
-          {/* Selected, in order, first — so the reorder arrows have obvious meaning */}
-          {selected.filter(id => DASHBOARD_METRIC_CATALOG.some(m => m.id === id)).map((id, i, arr) => {
-            const def = DASHBOARD_METRIC_CATALOG.find(m => m.id === id)!;
-            return (
-              <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-brand-orange/30 bg-brand-pale-orange">
-                <button onClick={() => toggle(id)} className="w-6 h-6 rounded-md bg-brand-orange text-white flex items-center justify-center shrink-0 border-none cursor-pointer">
-                  <CheckIcon size={13} />
-                </button>
-                <span className="flex-1 text-[12.5px] font-medium text-charcoal">{def.label}</span>
-                <button onClick={() => move(id, -1)} disabled={i === 0} className="text-slate hover:text-charcoal disabled:opacity-30 bg-transparent border-none cursor-pointer p-0.5">
-                  <ChevronUp size={14} />
-                </button>
-                <button onClick={() => move(id, 1)} disabled={i === arr.length - 1} className="text-slate hover:text-charcoal disabled:opacity-30 bg-transparent border-none cursor-pointer p-0.5">
-                  <ChevronDownIcon size={14} />
-                </button>
-              </div>
-            );
-          })}
-          {/* Not-yet-selected options */}
-          {DASHBOARD_METRIC_CATALOG.filter(m => !selected.includes(m.id)).map(def => (
-            <button
-              key={def.id}
-              onClick={() => toggle(def.id)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-bone bg-white cursor-pointer text-left"
-            >
-              <span className="w-6 h-6 rounded-md border border-bone flex items-center justify-center shrink-0" />
-              <span className="flex-1 text-[12.5px] text-charcoal">{def.label}</span>
-            </button>
-          ))}
-        </div>
-        {error && <p className="px-5 text-[11.5px] text-error">{error}</p>}
-        <div className="px-5 py-4 border-t border-bone flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} loading={saving}>Save</Button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -991,55 +928,109 @@ function DashboardHeroSkeleton() {
   );
 }
 
+// Stable references: the layout hook memoises on these.
+const canSeeWidget = (d: DashboardWidgetDef) => {
+  if (d.id === 'setup_guide') return !isStaffSession();
+  const perm = (d as StoreWidgetDef).perm;
+  return Array.isArray(perm) && perm.length === 0 ? true : can(perm);
+};
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreDashboard() {
   const navigate = useNavigate();
-  const { store, storeId, loading, refetch: refetchStore } = useStoreWorkspace();
+  const { store, storeId, loading } = useStoreWorkspace();
   const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
   const testimonialPrompt = useTestimonialPrompt();
-  const [showCustomize, setShowCustomize] = useState(false);
-  const [revenueRange, setRevenueRange] = useState<AnalyticsRangePreset>('30d');
   const { seriesByRange, loading: revenueOverviewLoading, error: revenueOverviewError, refetch: refetchRevenueOverview } = useRevenueOverviewAll(storeId);
-  const revenueOverviewSeries = seriesByRange[revenueRange] ?? [];
-  // Which metric cards this session may see (a staff role without the permission gets no card, not an error).
-  const metricPermission = (id: string) => (id === 'active_products' ? 'inventory.view' : 'analytics.view');
-  const activeMetricIds = ((store?.dashboardMetrics && store.dashboardMetrics.length > 0)
-    ? store.dashboardMetrics
-    : DEFAULT_DASHBOARD_METRICS).filter(id => can(metricPermission(id)));
-  const showAnalytics = can('analytics.view');
-  const showNeedsAttention = can(['orders.capture_payment', 'orders.view', 'orders.disputes_manage', 'inventory.view', 'orders.return']);
   const staff = isStaffSession();
 
-  const revenueGranularity = REVENUE_RANGE_GRANULARITY[revenueRange];
-  const chartData = revenueOverviewSeries.map(p => ({
-    label: formatBucketLabel(p.date, revenueGranularity),
-    revenue: p.grossRevenue,
-  }));
-  const revenueSparkline = (metrics?.revenueSeries ?? []).map(p => p.grossRevenue);
+  const scope = useMemo(() => ({ kind: 'store' as const, storeId }), [storeId]);
+  const defaultWidgets = useMemo(() => buildDefaultWidgets(store?.dashboardMetrics), [store?.dashboardMetrics]);
+  const layout = useDashboardLayout({ scope, defs: STORE_WIDGET_DEFS, defaultWidgets, canSee: canSeeWidget });
+
   const totalCustomers = metrics ? metrics.overview.newCustomersCount + metrics.overview.returningCustomersCount : 0;
   const usageWarning = getUsageWarning(metrics?.entitlements ?? null);
   const wallet = metrics?.primaryWallet;
   const showBalanceBanner = !!wallet && (wallet.availableBalance > 0 || wallet.pendingBalance > 0);
+  const revenueSparkline = (metrics?.revenueSeries ?? []).map(p => p.grossRevenue);
+  const currency = store?.baseCurrency;
+
+  const renderWidget = (def: DashboardWidgetDef, w: LayoutWidget): ReactNode => {
+    const limit = typeof w.settings.limit === 'number' ? w.settings.limit : 5;
+    const range = (typeof w.settings.range === 'string' ? w.settings.range : '30d') as AnalyticsRangePreset;
+    if (def.id.startsWith('metric.')) return renderMetricCard(def.id.slice('metric.'.length), metrics, currency, totalCustomers, revenueSparkline);
+    switch (def.id) {
+      case 'sales_chart': {
+        const granularity = REVENUE_RANGE_GRANULARITY[range];
+        const data = (seriesByRange[range] ?? []).map(p => ({ label: formatBucketLabel(p.date, granularity), revenue: p.grossRevenue }));
+        if (revenueOverviewError) {
+          return (
+            <div className="surface-panel rounded-2xl px-5 py-5 flex items-center justify-center min-h-[300px] h-full">
+              <AnalyticsErrorState message={revenueOverviewError} onRetry={refetchRevenueOverview} />
+            </div>
+          );
+        }
+        return (
+          <AreaChart
+            data={data} dataKey="revenue" xKey="label" title="Sales over time"
+            subtitle={revenueOverviewLoading ? 'Loading…' : REVENUE_RANGE_OPTIONS.find(o => o.value === range)?.label}
+            height={300} loading={revenueOverviewLoading}
+            valuePrefix={currencySymbol(currency)}
+            yTickFormatter={v => v >= 1000 ? `${currencySymbol(currency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(currency)}${v}`}
+          />
+        );
+      }
+      case 'needs_attention':
+        return metrics ? (
+          <NeedsAttentionCard
+            storeId={storeId} lowStockCount={metrics.lowStockCount} pendingOrdersCount={metrics.pendingOrdersCount}
+            openReturnsCount={metrics.openReturnsCount} openDisputeCount={metrics.openDisputeCount}
+            highRiskOrderCount={metrics.highRiskOrderCount} awaitingCaptureCount={metrics.awaitingCaptureCount}
+          />
+        ) : null;
+      case 'balance':
+        return showBalanceBanner && wallet ? <AvailableBalanceBanner wallet={wallet} storeId={storeId} /> : null;
+      case 'insights':
+        return metrics?.overview ? <InsightsStrip overview={metrics.overview} forecast={metrics.salesForecast} currency={currency} /> : null;
+      case 'setup_guide':
+        return metrics ? <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} /> : null;
+      case 'recent_activity': return <RecentActivityCard storeId={storeId} limit={limit} />;
+      case 'recent_orders':   return <RecentOrdersCard storeId={storeId} currency={currency} limit={limit} />;
+      case 'top_products':    return <TopProductsCard storeId={storeId} currency={currency} limit={limit} />;
+      case 'traffic_sources': return <TrafficSourcesCard storeId={storeId} range={range} />;
+      default: return null; // a widget id this build no longer knows: never crash the dashboard over it
+    }
+  };
 
   return (
     <div>
-      <StorePageHeader title="Dashboard" subtitle="" />
+      <StorePageHeader
+        title="Dashboard"
+        subtitle="Monitor and manage your store."
+        actions={layout.editing ? undefined : <CustomizeButton layout={layout} />}
+      />
 
-      {/* One-time nudge on first dashboard landing — see useTestimonialPrompt's
-         own doc comment for exactly when this can and can't show. Always also
-         reachable from Settings' "Share Your Story" tab regardless. */}
+      {/* One-time nudge on first dashboard landing — see useTestimonialPrompt's own doc comment. */}
       {testimonialPrompt.show && !staff && (
         <TestimonialPromptCard onClose={testimonialPrompt.dismiss} onSubmitted={testimonialPrompt.dismiss} />
       )}
 
-      {loading || metricsLoading ? <DashSkeleton /> : (
+      {loading || metricsLoading || layout.loading ? <DashSkeleton /> : (
         <div className="px-4 lg:px-7 py-6 flex flex-col gap-6 max-w-[1440px] mx-auto">
 
-          {/* Shopify-style trial pill — Dashboard-only (not shown on any
-             other page's header). */}
+          {layout.editing && <CustomizeToolbar layout={layout} defs={STORE_WIDGET_DEFS} presets={STORE_PRESETS} />}
+
+          {/* Shopify-style trial pill — Dashboard-only. */}
           {!staff && <TrialBillingPill />}
 
           <DashboardHero store={store} storeId={storeId} />
+
+          {layout.loadError && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10" role="alert">
+              <span>Your saved layout could not be loaded, so the default layout is shown. {layout.loadError}</span>
+              <button onClick={layout.reload} className="font-semibold underline bg-transparent border-none cursor-pointer text-error shrink-0">Try again</button>
+            </div>
+          )}
 
           {metricsError && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">
@@ -1050,8 +1041,7 @@ export default function StoreDashboard() {
             </div>
           )}
 
-          {/* Contextual plan-usage warning — only ever appears when a real
-             limit is genuinely close; otherwise this row doesn't exist. */}
+          {/* Contextual plan-usage warning — only ever appears when a real limit is genuinely close. */}
           {usageWarning && !staff && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-brand-pale-orange text-brand-deep-orange text-[12.5px] border border-brand-orange/20">
               <span className="flex items-center gap-2">
@@ -1067,112 +1057,16 @@ export default function StoreDashboard() {
             </div>
           )}
 
-          {/* Metric Cards — customizable, see MetricsCustomizeModal above. */}
-          {activeMetricIds.length > 0 && (
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em]">Metrics</p>
-            {can('settings.general.manage') && (
-            <button
-              onClick={() => setShowCustomize(true)}
-              className="flex items-center gap-1.5 text-[11.5px] font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer"
-            >
-              <Sliders size={12} /> Customize
-            </button>
-            )}
-          </div>
+          {layout.widgets.length === 0 && !layout.editing ? (
+            <div className="surface-panel rounded-2xl px-6 py-12 text-center">
+              <p className="text-[14px] font-semibold text-charcoal">Your dashboard is empty</p>
+              <p className="text-[12.5px] text-slate mt-1 mb-4">Add widgets to build the dashboard you want.</p>
+              <CustomizeButton layout={layout} />
+            </div>
+          ) : (
+            <DashboardCanvas defs={STORE_WIDGET_DEFS} layout={layout} renderWidget={renderWidget} />
           )}
-          {/* auto-fit, not a fixed 4-column grid — the card count here is
-             seller-customizable (see MetricsCustomizeModal), and a fixed
-             column count leaves a leftover row's 1-2 cards small and
-             left-aligned, looking abandoned. auto-fit instead stretches
-             whatever's left in the last row to fill it. */}
-          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
-            {activeMetricIds.map(id => renderMetricCard(id, metrics, store?.baseCurrency, totalCustomers, revenueSparkline))}
-          </div>
-
-          {/* Revenue Chart + Needs Attention — the core of the page: trend
-             on the left, urgent tasks on the right, sharing one row.
-             items-stretch — Needs Attention matches the chart's height (it
-             opts out via self-start while collapsed, so a collapsed card
-             never gets force-stretched into empty white space). */}
-          {(showAnalytics || showNeedsAttention) && (
-          <div className={`grid grid-cols-1 ${showAnalytics && showNeedsAttention ? 'lg:grid-cols-[2fr_1fr]' : ''} gap-4 items-stretch`}>
-            {!showAnalytics ? null : revenueOverviewError ? (
-              <div className="surface-panel rounded-2xl px-5 py-5 flex items-center justify-center min-h-[300px]">
-                <AnalyticsErrorState message={revenueOverviewError} onRetry={refetchRevenueOverview} />
-              </div>
-            ) : (
-              <AreaChart
-                data={chartData}
-                dataKey="revenue"
-                xKey="label"
-                title="Revenue Overview"
-                subtitle={revenueOverviewLoading ? 'Loading…' : REVENUE_RANGE_OPTIONS.find(o => o.value === revenueRange)?.label}
-                action={
-                  <FilterDropdown
-                    options={REVENUE_RANGE_OPTIONS}
-                    value={revenueRange}
-                    onChange={v => setRevenueRange(v as AnalyticsRangePreset)}
-                  />
-                }
-                height={300}
-                loading={revenueOverviewLoading}
-                valuePrefix={currencySymbol(store?.baseCurrency)}
-                yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
-              />
-            )}
-            {metrics && showNeedsAttention && (
-              <NeedsAttentionCard
-                storeId={storeId}
-                lowStockCount={metrics.lowStockCount}
-                pendingOrdersCount={metrics.pendingOrdersCount}
-                openReturnsCount={metrics.openReturnsCount}
-                openDisputeCount={metrics.openDisputeCount}
-                highRiskOrderCount={metrics.highRiskOrderCount}
-                awaitingCaptureCount={metrics.awaitingCaptureCount}
-              />
-            )}
-          </div>
-          )}
-
-          {/* Payout — a slim, contextual strip, only when there's a real
-             balance to mention. */}
-          {can('finance.payouts.view') && showBalanceBanner && wallet && <AvailableBalanceBanner wallet={wallet} storeId={storeId} />}
-
-          {showAnalytics && metrics?.overview && <InsightsStrip overview={metrics.overview} forecast={metrics.salesForecast} currency={store?.baseCurrency} />}
-
-          {/* Setup Guide + Recent Activity, side by side. Both are
-             self-hiding (Setup Guide once every task is done; Activity once
-             there's nothing to show), so a mature, active store naturally
-             loses this row entirely over time. items-stretch — both cards
-             match the taller one's height (each card opts out via
-             self-start while collapsed, so a collapsed card never gets
-             force-stretched into empty white space). */}
-          {!staff && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-            {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} store={store} />}
-            <RecentActivityCard storeId={storeId} />
-          </div>
-          )}
-
-          {/* Recent Orders + Top Products, side by side — both self-hiding,
-             so a brand-new store with no sales yet loses this row entirely
-             rather than showing two empty cards. */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-            {can('orders.view') && <RecentOrdersCard storeId={storeId} currency={store?.baseCurrency} />}
-            {can('inventory.view') && <TopProductsCard storeId={storeId} currency={store?.baseCurrency} />}
-          </div>
-
         </div>
-      )}
-
-      {showCustomize && (
-        <MetricsCustomizeModal
-          storeId={storeId}
-          current={activeMetricIds}
-          onClose={() => setShowCustomize(false)}
-          onSaved={() => { setShowCustomize(false); refetchStore(); }}
-        />
       )}
     </div>
   );
