@@ -34,7 +34,7 @@ function Attachments({ message, onAccent }: { message: Message; onAccent: boolea
           </a>
         );
         if (message.type === 'video') return <video key={i} src={url} controls preload="metadata" className="max-h-72 max-w-full" style={{ borderRadius: 14 }} aria-label={a.fileName || ts('pg.word_video', 'Video')}><track kind="captions" /></video>;
-        if (message.type === 'voice') return <VoicePlayer key={i} url={url} label={a.fileName || ts('pg.voice_message', 'Voice message')} color={onAccent ? t.colors.bg : t.colors.ink} track={onAccent ? t.colors.ink : t.colors.bg} />;
+        if (message.type === 'voice') return <VoicePlayer key={i} url={url} label={a.fileName || ts('pg.voice_message', 'Voice message')} color={t.colors.accent} track="rgba(11,20,26,.15)" />;
         return (
           <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 no-underline" style={{ padding: '8px 12px', borderRadius: 12, background: onAccent ? 'rgba(255,255,255,.14)' : t.colors.bg, color: 'inherit' }}>
             <FileText size={18} aria-hidden />
@@ -62,8 +62,8 @@ function ProductShareCard({ share }: { share: NonNullable<Message['productShare'
 export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit, onDelete, onRetry, onReact }: Props) {
   const [open, setOpen] = useState(false);
   const menuBtn = useRef<HTMLButtonElement>(null);
-  const bg = mine ? t.colors.ink : t.colors.bgAlt;
-  const fg = mine ? t.colors.bg : t.colors.ink;
+  const bg = mine ? `color-mix(in srgb, ${t.colors.accent} 16%, ${t.colors.bg})` : t.colors.bg;
+  const fg = t.colors.ink;
   const seen = mine && m.seenBy?.some(s => s.userId !== myId);
   const link = safeUrl(m.linkPreview?.url);
   const canAct = !m.isDeleted && !m._pending && !m._failed;
@@ -72,11 +72,11 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
 
   return (
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
-      <div className={`flex max-w-[88%] items-end gap-1.5 sm:max-w-[72%] ${mine ? 'flex-row-reverse' : ''}`}>
-        <div className="min-w-0" style={{ background: bg, color: fg, padding: '10px 14px', borderRadius: 20, borderBottomRightRadius: mine ? 6 : 20, borderBottomLeftRadius: mine ? 20 : 6, opacity: m._pending ? 0.6 : 1 }}>
-          {!mine && <p className="m-0 mb-0.5 text-xs font-semibold opacity-70">{storeName}</p>}
+      <div className={`group flex max-w-[85%] items-start gap-1 sm:max-w-[65%] ${mine ? 'flex-row-reverse' : ''}`}>
+        <div className="min-w-0" style={{ background: bg, color: fg, padding: '6px 9px 5px', borderRadius: 10, borderTopRightRadius: mine ? 0 : 10, borderTopLeftRadius: mine ? 10 : 0, boxShadow: '0 1px 0.5px rgba(11,20,26,.13)', opacity: m._pending ? 0.6 : 1 }}>
+          {!mine && <p className="m-0 mb-0.5 text-[12.5px] font-semibold" style={{ color: t.colors.accent }}>{storeName}</p>}
           {m.replyTo && (
-            <div className="mb-2 text-[13px]" style={{ padding: '6px 10px', borderRadius: 10, borderLeft: `3px solid ${mine ? t.colors.bg : t.colors.ink}`, background: mine ? 'rgba(255,255,255,.14)' : t.colors.bg }}>
+            <div className="mb-2 text-[13px]" style={{ padding: '6px 10px', borderRadius: 10, borderLeft: `4px solid ${t.colors.accent}`, background: 'rgba(11,20,26,.06)' }}>
               <span className="block truncate opacity-80">{m.replyTo.text || messagePreview({ type: m.replyTo.type ?? 'text', text: m.replyTo.text ?? null, isDeleted: false })}</span>
             </div>
           )}
@@ -85,25 +85,25 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
           ) : (
             <div className="flex flex-col gap-2">
               {m.type === 'product_share' && m.productShare && <ProductShareCard share={m.productShare} />}
-              {m.attachments?.length > 0 && m.type !== 'text' && <Attachments message={m} onAccent={mine} />}
-              {m.text && <p className="m-0 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.text}</p>}
+              {m.attachments?.length > 0 && m.type !== 'text' && <Attachments message={m} onAccent={false} />}
+              {m.text && <p className="m-0 whitespace-pre-wrap break-words text-[14.5px] leading-[1.4]">{m.text}</p>}
               {link && m.linkPreview && (
-                <a href={link} target="_blank" rel="noopener noreferrer" className="block no-underline" style={{ padding: '8px 12px', borderRadius: 12, background: mine ? 'rgba(255,255,255,.14)' : t.colors.bg, color: 'inherit' }}>
+                <a href={link} target="_blank" rel="noopener noreferrer" className="block no-underline" style={{ padding: '8px 12px', borderRadius: 12, background: 'rgba(11,20,26,.06)', color: 'inherit' }}>
                   {m.linkPreview.title && <span className="block truncate text-[13px] font-medium">{m.linkPreview.title}</span>}
                   <span className="block truncate text-xs opacity-70">{m.linkPreview.siteName || link}</span>
                 </a>
               )}
             </div>
           )}
-          <p className="m-0 mt-1 flex items-center justify-end gap-1 text-[11px] opacity-70">
+          <p className="m-0 mt-0.5 flex items-center justify-end gap-1 text-[11px]" style={{ color: t.colors.inkMuted }}>
             {m.isAutoReply && !m.isDeleted && <span>{ts('pg.automatic_reply', 'Automatic reply')}</span>}
             {m.isEdited && !m.isDeleted && <span>{ts('pg.word_edited', 'edited')}</span>}
             <time dateTime={m.createdAt}>{clockTime(m.createdAt)}</time>
-            {mine && !m._pending && !m._failed && (seen ? <CheckCheck size={13} aria-label={ts('pg.seen', 'Seen')} /> : <Check size={13} aria-label={ts('pg.sent', 'Sent')} />)}
+            {mine && !m._pending && !m._failed && (seen ? <CheckCheck size={15} style={{ color: t.colors.accent }} aria-label={ts('pg.seen', 'Seen')} /> : <Check size={15} aria-label={ts('pg.sent', 'Sent')} />)}
           </p>
         </div>
         {canAct && (
-          <button ref={menuBtn} type="button" onClick={() => setOpen(o => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={ts('pg.message_actions', 'Message actions')} className="grid size-8 shrink-0 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
+          <button ref={menuBtn} type="button" onClick={() => setOpen(o => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={ts('pg.message_actions', 'Message actions')} className="grid size-7 shrink-0 place-items-center rounded-full border-0 bg-transparent opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100" style={{ color: t.colors.inkMuted, cursor: 'pointer' }}>
             <MoreHorizontal size={16} aria-hidden />
           </button>
         )}

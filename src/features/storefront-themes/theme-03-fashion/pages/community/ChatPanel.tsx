@@ -82,8 +82,8 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
   const subtitle = chat.otherTyping ? ts('pg.word_typing', 'typing...') : chat.otherOnline ? ts('pg.word_online', 'Online') : look?.statusLine || ts('pg.we_reply_as_soon_as_we_can', 'We reply as soon as we can');
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'min(700px, calc(100dvh - 230px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: 24, background: t.colors.bg }}>
-      <header className="flex shrink-0 items-center gap-3 p-4" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: 'min(720px, calc(100dvh - 200px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: 16, background: t.colors.bgAlt }}>
+      <header className="flex shrink-0 items-center gap-3 px-4 py-2.5" style={{ background: t.colors.bg, borderBottom: `1px solid ${t.colors.border}` }}>
         <span className="relative size-11 shrink-0">
           <span className="grid size-full place-items-center overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}>
             {shownLogo ? <img src={shownLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
@@ -91,7 +91,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
           {chat.otherOnline && <span aria-hidden className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full" style={{ background: '#22C55E', border: `2.5px solid ${t.colors.bg}` }} />}
         </span>
         <div className="min-w-0">
-          <h2 className="m-0 truncate text-base font-semibold">{shownName}</h2>
+          <h2 className="m-0 truncate text-base font-semibold" style={{ color: t.colors.ink }}>{shownName}</h2>
           <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }} aria-live="polite">{subtitle}</p>
         </div>
       </header>
@@ -102,7 +102,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
         </div>
       )}
 
-      <div ref={scroller} role="log" aria-live="polite" aria-label={ts('pg.conversation_with_store', 'Conversation with {{store}}', { store: shownName })} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+      <div ref={scroller} role="log" aria-live="polite" aria-label={ts('pg.conversation_with_store', 'Conversation with {{store}}', { store: shownName })} className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4 sm:px-6">
         {chat.hasMore && (
           <button type="button" onClick={() => void chat.loadMore()} disabled={chat.loadingMore} className="mx-auto inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-medium" style={{ background: t.colors.bgAlt, border: 'none', color: t.colors.ink, cursor: 'pointer' }}>
             {chat.loadingMore && <Loader2 size={14} className="animate-spin" aria-hidden />}{ts('pg.load_earlier_messages', 'Load earlier messages')}
@@ -122,7 +122,7 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
           const prev = chat.messages[i - 1];
           return (
             <Fragment key={m._id}>
-              {(!prev || !sameDay(prev.createdAt, m.createdAt)) && <p className="m-0 my-1 text-center text-xs font-medium" style={{ color: t.colors.inkMuted }}>{dayLabel(m.createdAt)}</p>}
+              {(!prev || !sameDay(prev.createdAt, m.createdAt)) && <p className="m-0 my-2 self-center rounded-lg px-3 py-1 text-xs font-medium" style={{ background: t.colors.bg, color: t.colors.inkMuted, boxShadow: '0 1px 0.5px rgba(11,20,26,.13)' }}>{dayLabel(m.createdAt)}</p>}
               <ChatBubble message={m} mine={isMine(m)} myId={myId} storeName={shownName} onReply={setReplyTo} onEdit={msg => { setEditing(msg); setReplyTo(null); }}
                 onDelete={id => { chat.remove(id).catch(() => setNotice(ts('pg.we_could_not_delete_that_message', 'We could not delete that message.'))); }} onRetry={msg => { const payload = retryPayload(msg); if (payload && msg._tempId) void chat.retry(msg._tempId, payload); }}
                 onReact={(id, emoji) => void chat.react(id, emoji, myId ?? null)} />
