@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ImagePlus, Plus, Store as StoreIcon, Trash2 } from 'lucide-react';
-import { Input, SkeletonBox } from '@/components/comman/ui';
+import { Input } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
-import { apiGetStoreChatSettings, apiSaveStoreChatSettings, type ChatHoursDay, type QuickReply } from '@/api/services/storeChatSettings';
+import { apiSaveStoreChatSettings, type ChatHoursDay, type QuickReply, type StoreChatSettingsFull } from '@/api/services/storeChatSettings';
 
 const DEFAULT_LINE = 'We reply as soon as we can';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -26,14 +26,11 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 /** Seller-side "Chat settings" page (opens in the chat pane, WhatsApp style): what buyers see in the chat (photo, name, line, welcome), the automatic reply with its
  *  opening hours, and the seller's own quick replies. An empty text field means the default. */
-export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSaved }: {
-  storeId: string; storeName: string; storeLogo?: string | null; onClose: () => void; onSaved?: (quickReplies: QuickReply[]) => void;
+export function ChatSettingsPanel({ storeId, storeName, storeLogo, initial, onClose, onSaved }: {
+  storeId: string; storeName: string; storeLogo?: string | null; initial: StoreChatSettingsFull | null; onClose: () => void; onSaved?: (settings: StoreChatSettingsFull) => void;
 }) {
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [attempt, setAttempt] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [name, setName] = useState('');
   const [statusLine, setStatusLine] = useState('');
@@ -47,21 +44,13 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSa
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Settings come from the page (already loaded), so the form opens instantly with no spinner.
   useEffect(() => {
-    let live = true;
-    apiGetStoreChatSettings(storeId)
-      .then(res => {
-        if (!live) return;
-        const d = res.data;
-        setAvatarUrl(d.avatarUrl ?? ''); setName(d.name ?? ''); setStatusLine(d.statusLine ?? ''); setGreeting(d.greeting ?? '');
-        setAutoReplyEnabled(d.autoReplyEnabled); setAutoReplyText(d.autoReplyText ?? ''); setOnlyOutside(d.autoReplyOnlyOutsideHours);
-        setHours(d.hours); setQuick(d.quickReplies);
-      })
-      .catch((err: unknown) => { if (live) setLoadError(err instanceof Error ? err.message : 'Could not load the chat settings.'); })
-      .finally(() => { if (live) setLoading(false); });
-    return () => { live = false; };
-  }, [storeId, attempt]);
-  const retry = () => { setLoading(true); setLoadError(''); setAttempt(a => a + 1); };
+    if (!initial) return;
+    setAvatarUrl(initial.avatarUrl ?? ''); setName(initial.name ?? ''); setStatusLine(initial.statusLine ?? ''); setGreeting(initial.greeting ?? '');
+    setAutoReplyEnabled(initial.autoReplyEnabled); setAutoReplyText(initial.autoReplyText ?? ''); setOnlyOutside(initial.autoReplyOnlyOutsideHours);
+    setHours(initial.hours); setQuick(initial.quickReplies);
+  }, [initial]);
 
   const pick = async (file: File | undefined) => {
     if (!file) return;
@@ -89,7 +78,7 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSa
         autoReplyEnabled, autoReplyText, autoReplyOnlyOutsideHours: onlyOutside, hours, quickReplies: cleanQuick,
       });
       toast.success('Chat settings saved');
-      onSaved?.(res.data.quickReplies);
+      onSaved?.(res.data);
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not save the chat settings.');
@@ -106,14 +95,6 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSa
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8">
         <div className="mx-auto w-full max-w-[640px]">
-      {loading ? (
-        <div className="flex flex-col gap-3"><SkeletonBox height={64} rounded="10px" /><SkeletonBox height={44} rounded="10px" /><SkeletonBox height={44} rounded="10px" /></div>
-      ) : loadError ? (
-        <div role="alert" className="flex items-center justify-between gap-3">
-          <p className="text-[12.5px] text-error">{loadError}</p>
-          <Button size="sm" variant="secondary" onClick={retry}>Retry</Button>
-        </div>
-      ) : (
         <div className="flex flex-col gap-4">
           <p className="text-[12px] text-slate">This is what customers see at the top of their chat with you. Leave a field empty to use the default.</p>
 
@@ -143,8 +124,7 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSa
                   <input type="checkbox" checked={onlyOutside} onChange={e => setOnlyOutside(e.target.checked)} /> Only when we are closed (use the hours below)
                 </label>
               </>
-            )}
-          </Section>
+                </Section>
 
           {autoReplyEnabled && onlyOutside && (
             <Section title="Opening hours" hint="In your store time zone. A day that is switched off counts as closed all day.">
@@ -189,12 +169,11 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, onClose, onSa
 
           {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
         </div>
-      )}
         </div>
       </div>
       <footer className="flex shrink-0 justify-end gap-2 border-t border-bone px-4 py-3">
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button onClick={save} loading={saving} disabled={loading || !!loadError || uploading}>Save</Button>
+        <Button onClick={save} loading={saving} disabled={!initial || uploading}>Save</Button>
       </footer>
     </div>
   );

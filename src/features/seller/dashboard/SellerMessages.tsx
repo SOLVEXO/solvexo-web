@@ -4,7 +4,7 @@ import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2,
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
 import { ChatSettingsPanel } from './ChatSettingsPanel';
-import { apiGetStoreChatSettings, type QuickReply } from '@/api/services/storeChatSettings';
+import { apiGetStoreChatSettings, type StoreChatSettingsFull } from '@/api/services/storeChatSettings';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
 import { useConversation } from '@/hooks/messaging/useConversation';
@@ -50,11 +50,12 @@ export function SellerMessages() {
   const { storeId } = useParams<{ storeId: string }>();
   const workspace = useStoreWorkspaceOptional();
   const [chatSettingsOpen, setChatSettingsOpen] = useState(false);
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
+  const [chatSettings, setChatSettings] = useState<StoreChatSettingsFull | null>(null);
+  const quickReplies = chatSettings?.quickReplies ?? [];
   useEffect(() => {
     if (!storeId) return;
     let live = true;
-    apiGetStoreChatSettings(storeId).then(res => { if (live) setQuickReplies(res.data.quickReplies); }).catch(() => {});
+    apiGetStoreChatSettings(storeId).then(res => { if (live) setChatSettings(res.data); }).catch(() => {});
     return () => { live = false; };
   }, [storeId]);
   const navigate = useNavigate();
@@ -275,7 +276,7 @@ export function SellerMessages() {
         </div>
 
         {settingsShown ? (
-          <ChatSettingsPanel storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onSaved={setQuickReplies} onClose={() => setChatSettingsOpen(false)} />
+          <ChatSettingsPanel storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} initial={chatSettings} onSaved={setChatSettings} onClose={() => setChatSettingsOpen(false)} />
         ) : (
         <ChatWindow
           open={!!active}
