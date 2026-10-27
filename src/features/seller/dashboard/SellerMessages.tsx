@@ -242,13 +242,6 @@ export function SellerMessages() {
       <StorePageHeader
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
-        actions={
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-[#fdecea] rounded-[6px] text-xs font-semibold text-[#c0392b]">
-              {conversations.reduce((n, c) => n + c.sellerUnread, 0)} Unread
-            </span>
-          </div>
-        }
       />
       {chatSettingsOpen && storeId && <ChatSettingsModal storeId={storeId} storeName={workspace?.store?.name ?? ''} storeLogo={workspace?.store?.logo} onSaved={setQuickReplies} onClose={() => setChatSettingsOpen(false)} />}
 
