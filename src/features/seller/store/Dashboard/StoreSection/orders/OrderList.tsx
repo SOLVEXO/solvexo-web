@@ -28,7 +28,7 @@ import {
   type SellerOrder,
   type SellerOrderStats,
 } from '@/api/services/product';
-import { currencySymbol, fmt2 } from '@/utils/currency';
+import { formatAmount } from '@/utils/currency';
 import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetSellerOrderDetail } from '@/api/services/product';
@@ -338,9 +338,17 @@ export function StoreOrderList() {
     {
       key: 'amount', header: 'Amount', align: 'right',
       render: o => (
-        <span className="text-[13px] font-bold text-charcoal whitespace-nowrap">
-          {currencySymbol(store?.baseCurrency)}{fmt2(o.amount)}
-        </span>
+        <div className="flex flex-col items-end leading-tight">
+          <span className="text-[13px] font-bold text-charcoal whitespace-nowrap">
+            {formatAmount(o.amount, o.currency ?? store?.baseCurrency)}
+          </span>
+          {/* Shopify parity: the customer's own currency under the store-currency total when the order was placed in another one. */}
+          {o.orderCurrency && o.orderAmount != null && o.orderCurrency !== (o.currency ?? store?.baseCurrency) && (
+            <span className="text-[11px] text-slate whitespace-nowrap" title={`Customer paid in ${o.orderCurrency}`}>
+              {formatAmount(o.orderAmount, o.orderCurrency)} {o.orderCurrency}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -456,7 +464,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Revenue"
-            value={stats ? `${currencySymbol(store?.baseCurrency)}${stats.revenue.toLocaleString()}` : 0}
+            value={stats ? formatAmount(stats.revenue, store?.baseCurrency) : 0}
             icon={<DollarSign size={16} />}
             loading={loading && !stats}
           />
@@ -468,7 +476,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Avg. Order"
-            value={stats ? `${currencySymbol(store?.baseCurrency)}${stats.avgOrder.toLocaleString()}` : 0}
+            value={stats ? formatAmount(stats.avgOrder, store?.baseCurrency) : 0}
             icon={<TrendingUp size={16} />}
             loading={loading && !stats}
           />

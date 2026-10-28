@@ -17,7 +17,7 @@ import { apiCaptureOrderPayment } from '@/api/services/payment';
 import {
   SkeletonBox, StatusBadge, Button, Modal, Field, Input, Select,
 } from '@/components/comman/ui';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, formatAmount, getCurrencyDecimals } from '@/utils/currency';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
@@ -71,9 +71,16 @@ export function StoreOrderDetail() {
   const navigate = useNavigate();
   const { orderId = '' } = useParams<{ orderId: string }>();
   const { storeId, store } = useStoreWorkspace();
-  const symbol = currencySymbol(store?.baseCurrency);
-
   const [detail,  setDetail]  = useState<SellerOrderDetail | null>(null);
+  // The order's own currency (what the buyer paid in), not the store's base currency.
+  const orderCurrency = detail?.currency ?? store?.baseCurrency;
+  const symbol = currencySymbol(orderCurrency);
+  // Same precision and symbol spacing everywhere ("$52.50", "AED 36.00", "Rs 8,900").
+  const money = (n: number) => {
+    const d = getCurrencyDecimals(orderCurrency);
+    return `${symbol}${/^[A-Za-z]/.test(symbol) ? ' ' : ''}${n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+  };
+
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
   const [busyAction, setBusyAction] = useState<OrderAction>(null);
@@ -161,7 +168,7 @@ export function StoreOrderDetail() {
   const [captureError, setCaptureError] = useState('');
 
   const openCaptureModal = () => {
-    setCaptureAmount(detail ? String(detail.sellerOrder.subtotal) : '');
+    setCaptureAmount(detail ? String(detail.totals?.total ?? detail.sellerOrder.subtotal) : '');
     setCaptureError('');
     setShowCaptureModal(true);
   };
@@ -279,6 +286,13 @@ export function StoreOrderDetail() {
 
   if (!detail) return null;
   const so = detail.sellerOrder;
+  // Customer-currency vs store-currency: the order keeps both (Shopify parity), so say plainly how they relate.
+  const storeCurrency = detail.storeCurrency ?? store?.baseCurrency ?? null;
+  const foreignOrder  = !!storeCurrency && !!detail.currency && storeCurrency !== detail.currency;
+  const fxBase = (so.subtotal ?? 0) + (so.taxAmount ?? 0);
+  const fxRateText = foreignOrder && so.settlementAmount != null && fxBase > 0
+    ? `1 ${detail.currency} ≈ ${(so.settlementAmount / fxBase).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${so.settlementCurrency ?? storeCurrency}`
+    : '';
   const isPickup    = detail.fulfillmentMethod === 'pickup';
   const shipments   = so.shipments ?? [];
   const canProcess  = so.status === 'pending';
@@ -376,7 +390,7 @@ export function StoreOrderDetail() {
                       {item.returnStatus !== 'none' && <p className="text-[11px] text-warning mt-0.5">Return: {item.returnStatus.replace(/_/g, ' ')}</p>}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[13px] font-bold text-charcoal">{symbol}{item.totalPrice.toLocaleString()}</p>
+                      <p className="text-[13px] font-bold text-charcoal">{money(item.totalPrice)}</p>
                       <div className="mt-1"><StatusBadge status={item.status} size="sm" /></div>
                     </div>
                   </div>
@@ -384,8 +398,50 @@ export function StoreOrderDetail() {
               </div>
               <div className="flex items-center justify-between pt-3 mt-1 border-t border-bone">
                 <span className="text-[12.5px] font-semibold text-charcoal">Subtotal (this store)</span>
-                <span className="text-[14px] font-bold text-charcoal">{symbol}{so.subtotal.toLocaleString()}</span>
+                <span className="text-[14px] font-bold text-charcoal">{money(so.subtotal)}</span>
               </div>
+              {detail.totals && (
+                <div className="flex flex-col gap-1 pt-2" data-testid="order-money-summary">
+                  {detail.totals.discount > 0 && (
+                    <div className="flex items-center justify-between text-[12px] text-slate">
+                      <span>Discount{detail.totals.couponCode ? ` (${detail.totals.couponCode})` : ''}</span>
+                      <span>−{money(detail.totals.discount)}</span>
+                    </div>
+                  )}
+                  {detail.totals.shipping != null && (
+                    <div className="flex items-center justify-between text-[12px] text-slate">
+                      <span>Shipping</span><span>{money(detail.totals.shipping)}</span>
+                    </div>
+                  )}
+                  {detail.totals.tax > 0 && (
+                    <div className="flex items-center justify-between text-[12px] text-slate">
+                      <span>Tax</span><span>{money(detail.totals.tax)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-1.5 mt-0.5 border-t border-bone">
+                    <span className="text-[12.5px] font-semibold text-charcoal">Total</span>
+                    <span className="text-[14px] font-bold text-charcoal">{money(detail.totals.total)} <span className="text-[11px] font-medium text-slate">{orderCurrency}</span></span>
+                  </div>
+                  {(detail.totals.giftCard > 0 || detail.totals.storeCredit > 0) && (
+                    <div className="flex items-center justify-between text-[12px] text-slate">
+                      <span>Paid with gift card / store credit</span>
+                      <span>−{money(detail.totals.giftCard + detail.totals.storeCredit)}</span>
+                    </div>
+                  )}
+                  {(so.refundedTotal ?? 0) > 0 && (
+                    <div className="flex items-center justify-between text-[12px] text-error">
+                      <span>Refunded</span><span>−{money(so.refundedTotal ?? 0)}</span>
+                    </div>
+                  )}
+                  {foreignOrder && so.settlementAmount != null && (
+                    <div className="mt-2 rounded-lg bg-cream border border-bone px-3 py-2 text-[11.5px] text-slate leading-[1.5]" data-testid="order-fx-note">
+                      Customer paid in <strong className="text-charcoal">{orderCurrency}</strong>. Your store receives{' '}
+                      <strong className="text-charcoal">{formatAmount(so.settlementAmount, so.settlementCurrency ?? storeCurrency)}</strong> (items + tax)
+                      {fxRateText ? <> at {fxRateText} (rate saved when the order was placed)</> : null}.
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
 
             {!isPickup && shipments.length > 0 && (
@@ -598,7 +654,8 @@ export function StoreOrderDetail() {
             <Card title="Payment" icon={CreditCard}>
               <InfoRow label="Method" value={<span className="capitalize">{detail.paymentType.replace(/_/g, ' ')}</span>} />
               <InfoRow label="Status" value={<StatusBadge status={detail.paymentStatus} size="sm" />} />
-              <InfoRow label="Currency" value={detail.currency} />
+              <InfoRow label="Customer currency" value={detail.currency} />
+              {foreignOrder && <InfoRow label="Store currency" value={storeCurrency} />}
               {detail.paidAt && <InfoRow label="Paid At" value={formatDate(detail.paidAt)} />}
               {detail.paymentStatus === 'authorized' && (
                 <p className="text-[11px] text-slate mt-2 leading-[1.4]">
@@ -618,7 +675,7 @@ export function StoreOrderDetail() {
                           </p>
                           {p.note && <p className="text-[11px] text-slate mt-0.5">{p.note}</p>}
                         </div>
-                        <p className="text-[12.5px] font-bold text-charcoal shrink-0">{symbol}{p.amount.toLocaleString()}</p>
+                        <p className="text-[12.5px] font-bold text-charcoal shrink-0">{money(p.amount)}</p>
                       </div>
                     ))}
                   </div>
@@ -771,7 +828,7 @@ export function StoreOrderDetail() {
             <>
               <Button variant="outline" size="sm" onClick={() => setShowCaptureModal(false)} disabled={busy}>Cancel</Button>
               <Button size="sm" onClick={() => handleCapturePayment(false)} loading={busyAction === 'capture'} disabled={busy}>
-                Capture {currencySymbol(detail.currency)}{captureAmount || '0'}
+                Capture {currencySymbol(detail.currency)}{captureAmount || '0'} {detail.currency}
               </Button>
             </>
           }
@@ -780,7 +837,7 @@ export function StoreOrderDetail() {
           <p className="text-[12.5px] text-slate mb-4">
             The card is authorized but hasn't been charged yet. Capture the full amount, or a lesser amount if part of the order can't be fulfilled — the rest is released back to the buyer automatically.
           </p>
-          <Field label="Amount to capture" hint={`Authorized amount: ${currencySymbol(detail.currency)}${detail.sellerOrder.subtotal.toFixed(2)}`}>
+          <Field label="Amount to capture" hint={`Authorized amount (incl. shipping and tax): ${money(detail.totals?.total ?? detail.sellerOrder.subtotal)} ${detail.currency}`}>
             <Input type="number" value={captureAmount} onChange={e => setCaptureAmount(e.target.value)} disabled={busy} />
           </Field>
           <button
@@ -832,9 +889,9 @@ export function StoreOrderDetail() {
         >
           {paymentError && <p className="text-[12px] text-error mb-3">{paymentError}</p>}
           <p className="text-[12.5px] text-slate mb-4">
-            Records a manually-collected payment (cash, bank transfer, etc.) against this order. Partial amounts are supported — the order is automatically marked fully paid once the total recorded reaches {symbol}{detail.sellerOrder.subtotal.toFixed(2)}.
+            Records a manually-collected payment (cash, bank transfer, etc.) against this order. Partial amounts are supported — the order is automatically marked fully paid once the total recorded reaches {money(detail.totals?.total ?? detail.sellerOrder.subtotal)} ({detail.currency}).
           </p>
-          <Field label="Amount" required>
+          <Field label={`Amount (${detail.currency})`} required>
             <Input type="number" placeholder="0.00" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} disabled={busy} />
           </Field>
           <Field label="Payment method" required>
@@ -914,7 +971,11 @@ export function StoreOrderDetail() {
               <option value="store_credit">Store credit</option>
             </Select>
           </Field>
-          <Field label="Refund amount" required>
+          <Field
+            label={`Refund amount (${detail.currency})`}
+            required
+            hint={`Up to ${money(Math.max(0, Math.round(((so.subtotal ?? 0) + (so.taxAmount ?? 0) - (so.refundedTotal ?? 0)) * 100) / 100))} can still be refunded on this order (items + tax, in ${detail.currency}, the currency the customer paid in).`}
+          >
             <Input type="number" placeholder="0.00" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} disabled={busy} />
           </Field>
           <Field label="Reason" hint="Optional — shown in your activity log.">

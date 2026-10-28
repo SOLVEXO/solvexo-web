@@ -721,6 +721,9 @@ export interface SellerOrder {
   amount:      number;
   /** Currency `amount` is denominated in (the order's own currency, fixed per store). */
   currency:    string | null;
+  /** What the customer was charged for this store's part (items + tax) and in which currency; absent on old API builds. */
+  orderAmount?:   number;
+  orderCurrency?: string;
   status:      string;
   isPaid:      boolean;
   paymentType: string;
@@ -850,6 +853,12 @@ export interface SellerOrderDetailSellerOrder {
   cancelledAt:     string | null;
   cancelReason:    string | null;
   returnStatus:    string;
+  /** This store's part converted into the store currency at the order's frozen rate (items + tax). */
+  settlementAmount?:   number | null;
+  settlementCurrency?: string | null;
+  /** Running total already refunded on this sub-order, in the ORDER's currency. */
+  refundedTotal?:      number;
+  taxAmount?:          number;
 }
 
 export interface SellerOrderDetailShippingAddress {
@@ -873,6 +882,9 @@ export interface SellerOrderDetail {
   orderNumber:     string;
   createdAt:       string;
   currency:        string;
+  /** The store's own currency and the rate frozen on this order (units of order currency per 1 USD). */
+  storeCurrency?:  string | null;
+  ratePerUSD?:     number | null;
   paymentType:     string;
   paymentStatus:   string;
   isPaid:          boolean;

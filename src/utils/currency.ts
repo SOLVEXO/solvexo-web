@@ -67,6 +67,15 @@ export function fmt2(amount: number): string {
   return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** Symbol + amount at the currency's own precision ("$52.50", "AED 36.00", "Rs 8,900", "€16.99"):
+ *  letter-only symbols get a space, zero-decimal currencies (PKR) never show ".00". */
+export function formatAmount(amount: number, code?: string | null): string {
+  const symbol = currencySymbol(code);
+  const d = getCurrencyDecimals(code);
+  const n = amount.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+  return `${symbol}${/^[A-Za-z]/.test(symbol) ? ' ' : ''}${n}`;
+}
+
 /** Formats an amount with the correct symbol for a given currency code. */
 export function formatMoney(amount: number, code?: string | null): string {
   return `${currencySymbol(code)} ${amount.toLocaleString()}`;

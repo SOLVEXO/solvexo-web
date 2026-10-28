@@ -7,6 +7,8 @@ import {
 } from '@/api/services/orders';
 import type { ProductVariant, SellerOrderDetailItem } from '@/api/services/product';
 import { AddProductSearch } from './EditOrderModal';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { formatAmount } from '@/utils/currency';
 
 interface Replacement { variantId: string; label: string; price: number; quantity: number }
 
@@ -28,6 +30,7 @@ const money = (symbol: string, n: number) => `${symbol}${n.toLocaleString(undefi
 /** Shopify "Create exchange": pick the returned lines, pick replacement variants, review the price difference, confirm. */
 export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, isPaid, onClose, onDone }: Props) {
   const toast = useToast();
+  const { store } = useStoreWorkspace();
   const [picked, setPicked] = useState<string[]>(() => (lines.length === 1 ? [lines[0]._id] : []));
   const [repl, setRepl] = useState<Replacement[]>([]);
   const [refundTo, setRefundTo] = useState<'original' | 'store_credit'>('original');
@@ -138,7 +141,7 @@ export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, is
             <div key={r.variantId} className="flex items-center gap-3 border border-bone rounded-lg px-3 py-2">
               <div className="flex-1 min-w-0">
                 <p className="text-[12.5px] font-semibold text-charcoal truncate">{r.label}</p>
-                <p className="text-[11px] text-slate">{fmt(r.price)} each (current price)</p>
+                <p className="text-[11px] text-slate">{formatAmount(r.price, store?.baseCurrency)} each (store price; converted to the order's currency in the summary)</p>
               </div>
               <input
                 aria-label={`Quantity of ${r.label}`} inputMode="numeric" value={r.quantity} disabled={saving}
@@ -148,7 +151,7 @@ export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, is
               <button type="button" aria-label={`Remove ${r.label}`} onClick={() => setQty(r.variantId, 0)} className="text-slate hover:text-error cursor-pointer"><X size={14} /></button>
             </div>
           ))}
-          <AddProductSearch storeId={storeId} symbol={symbol} onAdd={addVariant} />
+          <AddProductSearch storeId={storeId} onAdd={addVariant} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

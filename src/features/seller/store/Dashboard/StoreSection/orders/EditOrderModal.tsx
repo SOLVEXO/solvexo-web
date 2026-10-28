@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, Minus, Package, Plus, Search, X } from 'lucide-react';
 import { Button, Field, Input, Modal, Select } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { formatAmount } from '@/utils/currency';
 import { apiEditOrder, type EditOrderPayload, type EditOrderResult } from '@/api/services/orders';
 import {
   apiGetStoreInventory, apiListVariants,
@@ -45,9 +47,12 @@ function QtyStepper({ value, onChange, disabled }: { value: number; onChange: (n
   );
 }
 
-export function AddProductSearch({ storeId, symbol, onAdd }: {
-  storeId: string; symbol: string; onAdd: (v: ProductVariant, productName: string) => void;
+export function AddProductSearch({ storeId, onAdd }: {
+  storeId: string; symbol?: string; onAdd: (v: ProductVariant, productName: string) => void;
 }) {
+  // Catalog prices are in the STORE's currency, never the order's.
+  const { store } = useStoreWorkspace();
+  const storeCurrency = store?.baseCurrency;
   const [q, setQ] = useState('');
   const [products, setProducts] = useState<InventoryProduct[]>([]);
   const [searching, setSearching] = useState(false);
@@ -106,7 +111,7 @@ export function AddProductSearch({ storeId, symbol, onAdd }: {
                   {p.image ? <img src={p.image} alt="" className="w-full h-full object-cover" /> : <Package size={14} className="text-slate" />}
                 </span>
                 <span className="text-[12.5px] text-charcoal truncate flex-1">{p.name}</span>
-                <span className="text-[11px] text-slate shrink-0">{money(symbol, p.price)}</span>
+                <span className="text-[11px] text-slate shrink-0">{formatAmount(p.price, storeCurrency)}</span>
               </button>
             </li>
           ))}
@@ -132,7 +137,7 @@ export function AddProductSearch({ storeId, symbol, onAdd }: {
                 <div className="flex-1 min-w-0">
                   <p className="text-[12.5px] text-charcoal truncate">{opts}</p>
                   <p className="text-[11px] text-slate">
-                    {money(symbol, v.price)} · {v.unlimitedStock ? 'Unlimited stock' : `${v.stock} in stock`}
+                    {formatAmount(v.price, storeCurrency)} · {v.unlimitedStock ? 'Unlimited stock' : `${v.stock} in stock`}
                   </p>
                 </div>
                 <Button size="xs" variant="outline" disabled={!v.unlimitedStock && v.stock <= 0} onClick={() => onAdd(v, openProduct.name)}>
@@ -149,6 +154,7 @@ export function AddProductSearch({ storeId, symbol, onAdd }: {
 
 export function EditOrderModal({ storeId, orderId, orderNumber, items, symbol, isPaid, onClose, onSaved }: Props) {
   const toast = useToast();
+  const storeCurrency = useStoreWorkspace().store?.baseCurrency;
   const [qtys, setQtys] = useState<Record<string, number>>(() =>
     Object.fromEntries(items.filter(isEditable).map(i => [i._id, i.quantity])));
   const [additions, setAdditions] = useState<Addition[]>([]);
@@ -272,16 +278,16 @@ export function EditOrderModal({ storeId, orderId, orderNumber, items, symbol, i
             <div key={a.variantId} className="flex items-center gap-3 py-2.5 border-t border-bone">
               <div className="flex-1 min-w-0">
                 <p className="text-[12.5px] font-semibold text-charcoal truncate">{a.label}</p>
-                <p className="text-[11px] text-success">New item · {fmt(a.price)} each</p>
+                <p className="text-[11px] text-success">New item · store price {formatAmount(a.price, storeCurrency)} each · converted to the order's currency in the summary</p>
               </div>
               <QtyStepper value={a.quantity} onChange={n => setAddQty(a.variantId, n)} disabled={saving} />
-              <p className="w-20 text-right text-[12.5px] font-bold text-charcoal">{fmt(a.price * a.quantity)}</p>
+              <p className="w-20 text-right text-[12.5px] font-bold text-charcoal" aria-hidden="true">—</p>
               <button type="button" aria-label={`Remove ${a.label}`} onClick={() => setAddQty(a.variantId, 0)} className="text-slate hover:text-error cursor-pointer"><X size={14} /></button>
             </div>
           ))}
         </div>
 
-        <AddProductSearch storeId={storeId} symbol={symbol} onAdd={addVariant} />
+        <AddProductSearch storeId={storeId} onAdd={addVariant} />
 
         <div className="border border-bone rounded-lg px-4 py-3 flex flex-col gap-1.5" aria-live="polite">
           <p className="text-[11px] font-bold text-charcoal uppercase tracking-[0.05em]">Summary</p>
