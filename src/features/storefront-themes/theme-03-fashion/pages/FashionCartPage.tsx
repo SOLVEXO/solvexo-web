@@ -6,7 +6,7 @@ import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { displayMoney, displayMoneySum } from '../../core/money';
+import { displayMoney, displayMoneyLine, displayMoneySum, type MoneyLine } from '../../core/money';
 import { cartLineRules, cartQtyHint, clampQty, stepQty } from '../../sellingRules';
 import { FashionSectionRenderer } from '../sections';
 import { FashionButton } from '../components/FashionButton';
@@ -34,8 +34,9 @@ export function FashionCartPage() {
   const unit = (i: (typeof items)[number]) => i.unitPrice ?? i.price ?? 0;
   // No rate for the buyer's currency: amounts stay in the store's own currency (never a wrong symbol).
   const conv = { currency, convert, canConvert };
-  const show = (n: number, from?: string | null) => displayMoney(conv, n, from ?? base);
-  const subtotalText = displayMoneySum(conv, items.map(i => ({ amount: unit(i) * i.quantity, from: i.currency ?? base })));
+  // The market's fixed price (if the seller set one) is per unit: convert the unit price, then multiply by the quantity (like checkout).
+  const lineOf = (i: (typeof items)[number]): MoneyLine => ({ amount: unit(i) * i.quantity, from: i.currency ?? base, unit: unit(i), qty: i.quantity, ref: { productId: i.productId, variantId: i.productVariantId } });
+  const subtotalText = displayMoneySum(conv, items.map(lineOf));
   const count = items.reduce((n, i) => n + i.quantity, 0);
 
   return (
@@ -77,9 +78,9 @@ export function FashionCartPage() {
                           <Link to={`/product/${i.productId}`} className="no-underline" style={{ color: t.colors.ink }}><h2 className="m-0 truncate text-base font-medium">{i.name}</h2></Link>
                           {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
                           {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
-                          {i.quantity > 1 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{show(unit(i), i.currency)} {tr('cart.each', 'each')}</p>}
+                          {i.quantity > 1 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{displayMoney(conv, unit(i), i.currency ?? base, lineOf(i).ref)} {tr('cart.each', 'each')}</p>}
                         </div>
-                        <p className="m-0 shrink-0 text-base font-semibold">{show(unit(i) * i.quantity, i.currency)}</p>
+                        <p className="m-0 shrink-0 text-base font-semibold">{displayMoneyLine(conv, lineOf(i))}</p>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="inline-flex items-center" style={{ border: `1px solid ${t.colors.border}`, borderRadius: 9999 }}>

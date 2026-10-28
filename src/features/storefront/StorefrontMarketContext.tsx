@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { apiSuggestLocationForStore } from '@/api/services/store';
-import { apiGetPublicStoreMarkets, resolveMarket, type PublicStoreMarkets } from '@/api/services/markets';
+import { apiGetPublicMarketPrices, apiGetPublicStoreMarkets, resolveMarket, type PublicStoreMarkets } from '@/api/services/markets';
+import { fixedPriceKey, type FixedPriceMap } from '@/utils/marketPriceMath';
 import { TokenStorage } from '@/api/services/auth';
 import { useCurrencyPreference, CURRENCY_STORAGE_KEY } from '@/contexts/CurrencyPreferenceContext';
 import { setStorefrontLocaleInfo } from '@/utils/currentStorefront';
@@ -25,7 +26,7 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
   sourceLanguage?: string | null;
   children: ReactNode;
 }) {
-  const { setCurrency, setCurrencyAuto, setMarketPricing, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
+  const { setCurrency, setCurrencyAuto, setMarketPricing, setFixedPrices, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
   const [data, setData] = useState<PublicStoreMarkets | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const loaded = loadedFor === storeId;
@@ -70,6 +71,22 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
     setMarketPricing(market ? { currency: market.currency, pricingRule: market.pricingRule } : null);
     return () => setMarketPricing(null);
   }, [market, setMarketPricing]);
+
+  // Shopify catalog fixed prices of the resolved market (checkout charges them, so the storefront must show them too).
+  const marketId = market?.id ?? null;
+  useEffect(() => {
+    if (!marketId) { setFixedPrices(null); return; }
+    let cancelled = false;
+    apiGetPublicMarketPrices(storeId, marketId)
+      .then(res => {
+        if (cancelled) return;
+        const map: FixedPriceMap = new Map();
+        for (const r of res.data ?? []) map.set(fixedPriceKey(r.productId, r.variantId), { price: r.fixedPrice, compareAt: r.compareAtPrice ?? null });
+        setFixedPrices(map.size ? map : null);
+      })
+      .catch(() => { if (!cancelled) setFixedPrices(null); }); // fail open: converted prices
+    return () => { cancelled = true; setFixedPrices(null); };
+  }, [storeId, marketId, setFixedPrices]);
 
   // Currency default: an explicit choice (or a logged-in account preference) always wins; otherwise the
   // market's currency (when the store/platform enable it), else the old IP suggestion for a first visit.

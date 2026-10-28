@@ -8,7 +8,7 @@ import { Download, ImageOff, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { displayMoney, displayMoneySum } from '../../../core/money';
+import { displayMoney, displayMoneyLine, displayMoneySum, type MoneyLine } from '../../../core/money';
 import { cartLineRules, cartQtyHint, stepQty } from '../../../sellingRules';
 import { CartDrawerContext } from '../../../cartDrawerContext';
 import { fashionTheme as t } from '../../theme.config';
@@ -64,7 +64,13 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
   const conv = { currency: displayCurrency, convert, canConvert };
   const base = String(store.baseCurrency ?? displayCurrency);
   const lineNative = (i: (typeof items)[number]) => i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity;
-  const subtotalText = displayMoneySum(conv, items.map(i => ({ amount: lineNative(i), from: i.currency ?? base })));
+  // Fixed market prices are per unit: convert the unit price, then multiply (only when the line total is plain unit x quantity).
+  const lineOf = (i: (typeof items)[number]): MoneyLine => {
+    const u = i.unitPrice ?? i.price ?? 0;
+    const plain = i.itemTotal == null || Math.abs(i.itemTotal - u * i.quantity) < 0.005;
+    return { amount: lineNative(i), from: i.currency ?? base, ...(plain ? { unit: u, qty: i.quantity, ref: { productId: i.productId, variantId: i.productVariantId } } : {}) };
+  };
+  const subtotalText = displayMoneySum(conv, items.map(lineOf));
   const run = (key: string, fn: () => Promise<void | boolean>) => { setBusy(key); fn().finally(() => setBusy(null)); };
 
   const stepBtn = 'grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-40';
@@ -114,8 +120,8 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
               {items.map(item => {
                 const key = item.productVariantId;
                 const from = item.currency ?? base;
-                const unit = displayMoney(conv, item.unitPrice ?? item.price ?? 0, from);
-                const line = displayMoney(conv, lineNative(item), from);
+                const unit = displayMoney(conv, item.unitPrice ?? item.price ?? 0, from, { productId: item.productId, variantId: item.productVariantId });
+                const line = displayMoneyLine(conv, lineOf(item));
                 const rules = cartLineRules(item);
                 const hint = cartQtyHint(item);
                 const prev = stepQty(item.quantity, -1, rules);

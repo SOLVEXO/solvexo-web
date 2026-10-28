@@ -6,7 +6,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLocalize } from '@/hooks/useLocalize';
-import { displayMoney } from '../../core/money';
+import { displayMoney, saleInfo } from '../../core/money';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { fashionTheme as t } from '../theme.config';
 import { FashionProductCardView } from './FashionProductCardView';
@@ -15,7 +15,7 @@ import { FashionQuickView } from './product/FashionQuickView';
 /** Card for every real product grid (collection, search, featured): wires cart, wishlist and currency into the view. */
 export function FashionProductCard({ product, currency }: { product: PublicStoreProduct; currency: string }) {
   const { store } = useStorefront();
-  const { convert, canConvert } = useCurrencyPreference();
+  const { convert, canConvert, fixedPriceFor } = useCurrencyPreference();
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
@@ -37,9 +37,11 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   const base = String(store.baseCurrency ?? currency);
   const price = product.defaultVariantPrice;
   const compare = product.compareAtPrice;
-  const percentOff = price != null && compare != null && compare > price ? Math.round((1 - price / compare) * 100) : 0;
   const soldOut = product.inStock === false;
-  const show = (n: number) => displayMoney({ currency, convert, canConvert }, n, base);
+  const priceRef = { productId: product._id, variantId: product.variantId };
+  const show = (n: number, compare = false) => displayMoney({ currency, convert, canConvert }, n, base, { ...priceRef, compare });
+  const sale = saleInfo({ currency, convert, canConvert, fixedPriceFor }, price, compare, base, priceRef);
+  const percentOff = sale.percentOff;
   const hasVariant = !!product.variantId;
 
   const add = async (e: MouseEvent) => {
@@ -66,7 +68,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
       tag={product.tags?.[0]}
       rating={product.averageRating ?? 0}
       price={price != null ? show(price) : undefined}
-      comparePrice={compare != null ? show(compare) : undefined}
+      comparePrice={sale.onSale ? show(sale.compareAmount, true) : undefined}
       percentOff={percentOff}
       soldOut={soldOut}
       wished={hasVariant ? isWishlisted(product._id, product.variantId as string) : null}

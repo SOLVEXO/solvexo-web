@@ -9,7 +9,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useLocalize } from '@/hooks/useLocalize';
-import { displayMoney } from '../../../core/money';
+import { displayMoney, saleInfo } from '../../../core/money';
 import { useCartDrawer } from '../../../cartDrawerContext';
 import { clampQty, qtyRuleHint, resolveQtyRules } from '../../../sellingRules';
 import { optionValueAvailable, stockState, variantCanBuy, variantMaxQty } from '../../../variantAvailability';
@@ -22,7 +22,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
   const { store } = useStorefront();
   const { addToCart, adding } = useCartContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
-  const { currency, convert, canConvert } = useCurrencyPreference();
+  const { currency, convert, canConvert, fixedPriceFor } = useCurrencyPreference();
   const localize = useLocalize();
   const { detail, loading, error, refetch } = useProductById(slug);
   const [picked, setPicked] = useState<Record<string, string>>({});
@@ -47,13 +47,14 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
     body = <div className="flex flex-col gap-4"><Notice tone="error">{ts('product.loadError', 'We couldn\'t load this product.')}</Notice><PillButton variant="outline" onClick={refetch}>{ts('checkout.tryAgain', 'Try again')}</PillButton></div>;
   } else {
     const base = String(variant.currency ?? store.baseCurrency ?? currency);
-    const show = (n: number) => displayMoney({ currency, convert, canConvert }, n, base);
+    const show = (n: number, compare = false) => displayMoney({ currency, convert, canConvert }, n, base, { productId: detail.product._id, variantId: variant._id, compare });
     const state = stockState(variant, isDigital, store.lowStockThreshold);
     const canBuy = variantCanBuy(variant, isDigital);
     const max = variantMaxQty(variant, isDigital);
     const rules = resolveQtyRules(detail.product, Number.isFinite(max) ? max : 999);
     const safeQty = clampQty(qty, rules);
-    const onSale = variant.compareAtPrice != null && variant.compareAtPrice > variant.price;
+    const sale = saleInfo({ currency, convert, canConvert, fixedPriceFor }, variant.price, variant.compareAtPrice, base, { productId: detail.product._id, variantId: variant._id });
+    const onSale = sale.onSale;
     const busy = adding === variant._id;
     const add = async () => {
       const ok = await addToCart(detail.product._id, variant._id, isDigital ? 'digital' : 'physical', safeQty);
@@ -73,7 +74,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
           </div>
           <p className="m-0 flex flex-wrap items-baseline gap-3">
             <span className="text-2xl font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.ink }}>{show(variant.price)}</span>
-            {onSale && <span className="text-lg line-through opacity-50">{show(variant.compareAtPrice as number)}</span>}
+            {onSale && <span className="text-lg line-through opacity-50">{show(sale.compareAmount, true)}</span>}
           </p>
           {optionNames.map(name => {
             const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));

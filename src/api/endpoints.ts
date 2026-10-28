@@ -197,6 +197,7 @@ export const ENDPOINTS = {
     SUGGEST_LOCATION: '/api/store/suggest-location',
     SUGGEST_LOCATION_FOR_STORE: (storeId: string) => `/api/store/public/${storeId}/suggest-location`,
     PUBLIC_MARKETS: (storeId: string) => `/api/public/store-markets/${storeId}`,
+    PUBLIC_MARKET_PRICES: (storeId: string, marketId: string) => `/api/public/store-markets/${storeId}/${marketId}/prices`,
     DOMAINS:         (storeId: string) => `/api/store/${storeId}/domains`,
     DOMAIN_PRIMARY:  (storeId: string) => `/api/store/${storeId}/domains/primary`,
     DOMAIN_ITEM:     (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}`,

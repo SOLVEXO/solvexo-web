@@ -15,7 +15,7 @@ import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useLocalize } from '@/hooks/useLocalize';
 import { renderRichText } from '@/utils/richText';
-import { displayMoney } from '../../core/money';
+import { displayMoney, saleInfo } from '../../core/money';
 import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
@@ -54,7 +54,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   const { t: tr } = useTranslation('storefront');
   const { addToCart, adding } = useCartContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
-  const { currency, convert, canConvert } = useCurrencyPreference();
+  const { currency, convert, canConvert, fixedPriceFor } = useCurrencyPreference();
   const localize = useLocalize();
   const { detail, loading, error, refetch } = useProductById(slug);
   const product = detail ? localize.product(detail.product) : null;
@@ -126,13 +126,14 @@ function ProductPageInner({ slug }: { slug: string }) {
   if (!detail || !product || !variant) return <FashionNotFoundPage />;
 
   const base = String(variant.currency ?? store.baseCurrency ?? currency);
-  const show = (n: number) => displayMoney({ currency, convert, canConvert }, n, base);
+  const show = (n: number, compare = false) => displayMoney({ currency, convert, canConvert }, n, base, { productId: detail.product._id, variantId: variant._id, compare });
   const state = stockState(variant, isDigital, store.lowStockThreshold);
   const canBuy = variantCanBuy(variant, isDigital);
   const rules = resolveQtyRules(detail.product, Number.isFinite(variantMaxQty(variant, isDigital)) ? variantMaxQty(variant, isDigital) : 999);
   const safeQty = clampQty(qty, rules);
-  const onSale = variant.compareAtPrice != null && variant.compareAtPrice > variant.price;
-  const percentOff = onSale ? Math.round((1 - variant.price / (variant.compareAtPrice as number)) * 100) : 0;
+  const sale = saleInfo({ currency, convert, canConvert, fixedPriceFor }, variant.price, variant.compareAtPrice, base, { productId: detail.product._id, variantId: variant._id });
+  const onSale = sale.onSale;
+  const percentOff = sale.percentOff;
   const pre = preorderLabel(detail.product);
   const busy = adding === variant._id;
   const rating = reviews?.stats.averageRating ?? detail.product.averageRating ?? 0;
@@ -159,7 +160,7 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_price: () => (
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[28px] font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>
-        {onSale && <><span className="text-xl line-through opacity-50">{show(variant.compareAtPrice as number)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>{tr('product.savePercent', 'Save {{percent}}%', { percent: percentOff })}</span></>}
+        {onSale && <><span className="text-xl line-through opacity-50">{show(sale.compareAmount, true)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>{tr('product.savePercent', 'Save {{percent}}%', { percent: percentOff })}</span></>}
       </div>
     ),
     product_description: s => product.description ? (

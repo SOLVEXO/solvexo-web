@@ -27,6 +27,18 @@ export function apiGetPublicStoreMarkets(storeId: string) {
   return dedupedGet(`markets:${storeId}`, () => client.get<never, { success: boolean; data: PublicStoreMarkets }>(ENDPOINTS.STORE.PUBLIC_MARKETS(storeId)));
 }
 
+export interface PublicMarketFixedPrice {
+  productId: string;
+  variantId: string | null;
+  fixedPrice: number;
+  compareAtPrice?: number | null;
+}
+
+/** GET /api/public/store-markets/:storeId/:marketId/prices (no auth): the market's fixed catalog prices. */
+export function apiGetPublicMarketPrices(storeId: string, marketId: string) {
+  return dedupedGet(`market-prices:${marketId}`, () => client.get<never, { success: boolean; data: PublicMarketFixedPrice[] }>(ENDPOINTS.STORE.PUBLIC_MARKET_PRICES(storeId, marketId)));
+}
+
 /** Market resolution shared with the server: first market listing the country,
  *  else the primary market, else null. */
 export function resolveMarket(markets: PublicStoreMarket[], country: string | null | undefined): PublicStoreMarket | null {

@@ -68,7 +68,7 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
     data.queries.forEach(x => list.push({ id: `q:${x}`, group: tr('browse.suggestionsGroup', 'Suggestions'), label: x, to: `/search?q=${encodeURIComponent(x)}` }));
     data.products.forEach(p => list.push({
       id: `p:${p.id}`, group: tr('browse.products', 'Products'), label: p.name, image: p.image, to: `/product/${p.slug}`,
-      sub: p.price != null ? displayMoney({ currency, convert, canConvert }, p.price, baseCurrency) : undefined,
+      sub: p.price != null ? displayMoney({ currency, convert, canConvert }, p.price, baseCurrency, { productId: p.id }) : undefined,
     }));
     data.collections.forEach(c => list.push({ id: `c:${c.id}`, group: tr('nav.collections', 'Collections'), label: c.name, image: c.image, to: `/collections/${c.slug}` }));
     data.articles.forEach(a => list.push({ id: `a:${a.id}`, group: tr('browse.articles', 'Articles'), label: a.title, image: a.image, to: `/blog/${a.slug}` }));

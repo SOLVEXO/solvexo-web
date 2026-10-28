@@ -3,7 +3,10 @@ import { TokenStorage } from '@/api/services/auth';
 import { apiEditProfile } from '@/api/services/auth';
 import { apiGetCurrentRates, type CurrentRatesMap } from '@/api/services/exchangeRate';
 import { apiGetEnabledCurrencies, type SupportedCurrency } from '@/api/services/store';
-import { computeMarketPrice, type MarketPricingTarget } from '@/utils/marketPriceMath';
+import { computeMarketPrice, fixedPriceKey, type FixedPriceMap, type MarketPricingTarget } from '@/utils/marketPriceMath';
+
+/** Which catalog item a price belongs to, so the market's fixed price (if any) can replace the converted one. */
+export interface PriceRef { productId?: string | null; variantId?: string | null; /** The "compare at" (was) price of that item. */ compare?: boolean }
 
 // Re-exported so existing importers of this file's own `SupportedCurrency`
 // don't need updating — the real type now lives in api/services/store.ts
@@ -36,11 +39,13 @@ function convertAmount(
   toCurrency: string,
   rates: CurrentRatesMap,
   market?: MarketPricingTarget | null,
+  fixedPrice?: number | null,
 ): number {
   if (!fromCurrency) return amount;
-  // Same currency and no rounding rule to apply => untouched.
-  if (fromCurrency === toCurrency && !(market && market.currency === toCurrency && market.pricingRule.useRounding)) return amount;
-  return computeMarketPrice(amount, fromCurrency, toCurrency, rates, market);
+  // Same currency and no market rule that moves the price (a percentage adjustment or a fixed price) => untouched.
+  const ruleApplies = !!market && market.currency === toCurrency;
+  if (fromCurrency === toCurrency && !(ruleApplies && (Number(market!.pricingRule.percentageAdjustment) || fixedPrice != null))) return amount;
+  return computeMarketPrice(amount, fromCurrency, toCurrency, rates, market, fixedPrice);
 }
 
 // Location detection only ever sets the INITIAL default for a guest with no
@@ -63,13 +68,17 @@ interface CurrencyPreferenceContextValue {
    *  currency using the live current rate. This is what actually makes the
    *  navbar toggle change visible prices — every price display must call
    *  this instead of showing a product/cart item's raw stored amount. */
-  convert: (amount: number, fromCurrency?: string | null) => number;
+  convert: (amount: number, fromCurrency?: string | null, ref?: PriceRef | null) => number;
+  /** Storefront sets the active market's fixed catalog prices; null = none. */
+  setFixedPrices: (prices: FixedPriceMap | null) => void;
   /** Same conversion, but to an EXPLICIT target currency rather than the
    *  buyer's display preference — for a page that must match a specific
    *  already-resolved currency (e.g. a live Checkout's `checkout.currency`,
    *  which can differ from the raw preference when a store restricts its
    *  enabled Markets — see CheckoutService.resolveStoreCurrency). */
   convertTo: (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => number;
+  /** The active market's fixed catalog price (and compare-at) of an item, in the market currency; null when there is none. */
+  fixedPriceFor: (productId?: string | null, variantId?: string | null) => { price: number; compareAt: number | null } | null;
   ratesLoaded: boolean;
   /** False when `from` can't be turned into the display currency (rates not loaded, or no rate for one of the two currencies): show a dash, never the native number under another symbol. */
   canConvert: (fromCurrency?: string | null, toCurrency?: string) => boolean;
@@ -119,6 +128,8 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   // actually has one set yet; otherwise the guest/local value carries over.
   useEffect(() => {
     if (!TokenStorage.isLoggedIn()) return;
+    // A choice made in this browser (a currency pick or a country pick) is newer than the login-time cookie.
+    try { if (localStorage.getItem(CURRENCY_EXPLICIT_KEY) === '1') return; } catch { /* per-viewer convenience */ }
     const user = TokenStorage.getUser<{ currencyPreference?: string | null }>();
     if (user?.currencyPreference) {
       setCurrencyState(user.currencyPreference);
@@ -149,14 +160,36 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
     }
   }, []);
 
+  const [fixedPrices, setFixedPricesState] = useState<FixedPriceMap | null>(null);
+  const setFixedPrices = useCallback((m: FixedPriceMap | null) => setFixedPricesState(m), []);
+
   const convert = useCallback(
-    (amount: number, fromCurrency?: string | null) => convertAmount(amount, fromCurrency ?? currency, currency, rates, marketPricing),
-    [currency, rates, marketPricing],
+    (amount: number, fromCurrency?: string | null, ref?: PriceRef | null) => {
+      let fixed: number | null = null;
+      if (ref?.productId && fixedPrices && marketPricing?.currency === currency) {
+        const hit = fixedPrices.get(fixedPriceKey(ref.productId, ref.variantId)) ?? fixedPrices.get(fixedPriceKey(ref.productId));
+        // A fixed "compare at" price replaces the converted one only when the seller set it.
+        fixed = hit ? (ref.compare ? hit.compareAt : hit.price) : null;
+      }
+      return convertAmount(amount, fromCurrency ?? currency, currency, rates, marketPricing, fixed);
+    },
+    [currency, rates, marketPricing, fixedPrices],
+  );
+
+  const fixedPriceFor = useCallback(
+    (productId?: string | null, variantId?: string | null) => {
+      if (!productId || !fixedPrices || marketPricing?.currency !== currency) return null;
+      return fixedPrices.get(fixedPriceKey(productId, variantId)) ?? fixedPrices.get(fixedPriceKey(productId)) ?? null;
+    },
+    [currency, fixedPrices, marketPricing],
   );
 
   const convertTo = useCallback(
-    (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => convertAmount(amount, fromCurrency ?? toCurrency, toCurrency, rates, marketPricing),
-    [rates, marketPricing],
+    // Plain FX, NOT the market rule: the amounts converted here (checkout item totals, shipping rates) were already
+    // market-adjusted on the server (the checkout stores the native amount that converts to the market price), so
+    // applying the manual rate / fee / rounding again would charge the rule twice.
+    (amount: number, fromCurrency: string | null | undefined, toCurrency: string) => convertAmount(amount, fromCurrency ?? toCurrency, toCurrency, rates, null),
+    [rates],
   );
 
   const canConvert = useCallback((fromCurrency?: string | null, toCurrency?: string) => {
@@ -169,8 +202,8 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   }, [currency, rates, ratesLoaded]);
 
   const value = useMemo<CurrencyPreferenceContextValue>(
-    () => ({ currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, canConvert, enabledCurrencies }),
-    [currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, convert, convertTo, ratesLoaded, canConvert, enabledCurrencies],
+    () => ({ currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, setFixedPrices, convert, convertTo, fixedPriceFor, ratesLoaded, canConvert, enabledCurrencies }),
+    [currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, setFixedPrices, convert, convertTo, fixedPriceFor, ratesLoaded, canConvert, enabledCurrencies],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
