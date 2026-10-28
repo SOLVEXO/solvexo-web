@@ -26,7 +26,7 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
   sourceLanguage?: string | null;
   children: ReactNode;
 }) {
-  const { setCurrency, setCurrencyAuto, setMarketPricing, setFixedPrices, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
+  const { currency, setCurrency, setCurrencyAuto, setMarketPricing, setFixedPrices, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
   const [data, setData] = useState<PublicStoreMarkets | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const loaded = loadedFor === storeId;
@@ -87,6 +87,17 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
       .catch(() => { if (!cancelled) setFixedPrices(null); }); // fail open: converted prices
     return () => { cancelled = true; setFixedPrices(null); };
   }, [storeId, marketId, setFixedPrices]);
+
+  // A saved currency the store's markets no longer sell in (an old choice, or a store without the local-currency rail,
+  // where every market sells in the store currency) is dropped for the resolved market's currency.
+  useEffect(() => {
+    if (!loaded || markets.length === 0) return;
+    const valid = new Set<string>(markets.map(m => m.currency));
+    if (baseCurrency) valid.add(baseCurrency);
+    if (valid.has(currency)) return;
+    const target = market?.currency ?? baseCurrency;
+    if (target) setCurrencyAuto(target);
+  }, [loaded, markets, market, baseCurrency, currency, setCurrencyAuto]);
 
   // Currency default: an explicit choice (or a logged-in account preference) always wins; otherwise the
   // market's currency (when the store/platform enable it), else the old IP suggestion for a first visit.

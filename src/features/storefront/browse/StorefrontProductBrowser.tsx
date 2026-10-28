@@ -2,7 +2,6 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
-import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol, formatMoney } from '@/utils/currency';
 import type { PublicStoreFacets, PublicStoreProduct } from '@/api/services/store';
@@ -45,13 +44,11 @@ type Panel = string | null;
 
 export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText }: Props) {
   const { t: tr } = useTranslation('storefront');
-  const { store } = useStorefront();
-  const { currency, convert } = useCurrencyPreference();
-  const { state, update, products, total, totalPages, facets, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort });
+  const { currency } = useCurrencyPreference();
+  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort });
   const [open, setOpen] = useState<Panel>(null);
   const [drawer, setDrawer] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
-  const baseCurrency = String(store.baseCurrency ?? currency);
   const symbol = currencySymbol(currency);
   const active = hasActiveFilters(state);
 
@@ -77,9 +74,8 @@ export function StorefrontProductBrowser({ tokens: t, renderCard, heading, categ
   } as const;
   const muted = { fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted } as const;
 
-  const fromBase = (n: number | null | undefined) => (n == null ? null : convert(n, baseCurrency));
-  const priceMin = fromBase(facets?.price.min);
-  const priceMax = fromBase(facets?.price.max);
+  const priceMin = priceRange.min;
+  const priceMax = priceRange.max;
 
   // ── Facet group model (shared by the desktop dropdowns and the mobile drawer) ──
   type Group = { id: string; label: string; body: (compact: boolean) => ReactNode; count: number };

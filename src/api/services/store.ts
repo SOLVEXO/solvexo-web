@@ -593,6 +593,9 @@ export interface PublicStoreProductsParams {
   availability?: 'in_stock' | 'out_of_stock';
   minPrice?:     number;
   maxPrice?:     number;
+  /** Buyer currency + market: min/maxPrice are in this currency and the server filters/sorts by the price the buyer sees. */
+  currency?:     string;
+  marketId?:     string;
   type?:         'all' | 'physical' | 'digital';
   categoryId?:   string;
   collectionId?: string;
@@ -612,7 +615,7 @@ export interface PublicStoreProductsParams {
 
 export interface PublicStoreFacets {
   availability: { in_stock: number; out_of_stock: number };
-  /** Cheapest-variant price range of the currently matching products, in the STORE currency. */
+  /** Cheapest-variant price range of the currently matching products, in `currency` (the buyer's currency when the request sent one, else the STORE currency). */
   price: { min: number | null; max: number | null; currency: string | null };
   productTypes: { value: string; count: number }[];
   tags: { value: string; count: number }[];
@@ -669,6 +672,8 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
   if (params?.availability) query.set('availability', params.availability);
   if (params?.minPrice != null) query.set('minPrice', String(params.minPrice));
   if (params?.maxPrice != null) query.set('maxPrice', String(params.maxPrice));
+  if (params?.currency)         query.set('currency',     params.currency);
+  if (params?.marketId)         query.set('marketId',     params.marketId);
   if (params?.tags?.length)         query.set('tags',        params.tags.join(','));
   if (params?.productTypes?.length) query.set('productType', params.productTypes.join(','));
   for (const [name, values] of Object.entries(params?.options ?? {})) {

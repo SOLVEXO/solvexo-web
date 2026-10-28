@@ -111,6 +111,10 @@ function MethodPanel({ p, pay, currency, total, checkoutId }: { p: PayOption; pa
             ? ts('checkout.easypaisaNotice', 'You will get a payment request in your Easypaisa app. Approve it there to place your order.')
             : ts('checkout.redirectNotice', 'You will be taken to {{name}} to complete your payment securely, then brought back here.', { name: p.label })}
       </p>
+      {manual && total > 0 && (
+        // The seller's text may name another currency ("pay in PKR"): always show what this order totals in the checkout currency.
+        <p className="m-0 text-sm font-medium">{ts('checkout.total', 'Total')}: <bdi>{moneyText(total, currency)}</bdi></p>
+      )}
       {easypaisa && (
         <Field label={ts('checkout.easypaisaAria', 'Easypaisa account number')} hint={ts('checkout.easypaisaFieldHint', 'Leave empty to use your delivery phone number.')}>
           {f => <TextInput {...f} type="tel" inputMode="tel" autoComplete="tel" placeholder={ts('checkout.walletPlaceholder', '03XXXXXXXXX')} value={pay.walletAccount} onChange={e => pay.setWalletAccount(e.target.value)} />}

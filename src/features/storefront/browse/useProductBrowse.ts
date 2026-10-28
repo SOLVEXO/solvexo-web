@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { useStorefrontMarketOptional } from '@/features/storefront/storefrontMarket';
 import { apiGetPublicStoreProducts, type PublicStoreFacets, type PublicStoreProduct } from '@/api/services/store';
 import { DEFAULT_SORT, parseBrowseState, writeBrowseState, type BrowseSort, type BrowseState } from './browseState';
 
@@ -16,7 +17,12 @@ interface Scope { categoryId?: string; collectionId?: string; search?: string }
  *  by listings embedded in the home page where the URL must stay untouched). */
 export function useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort = DEFAULT_SORT }: Scope & { syncUrl: boolean; defaultSort?: BrowseSort }) {
   const { store } = useStorefront();
-  const { currency, convert, ratesLoaded } = useCurrencyPreference();
+  const { currency, convert } = useCurrencyPreference();
+  // The buyer's market: the server prices, filters and sorts by the price this buyer SEES (market rule, fixed prices),
+  // so the request carries the currency + market instead of converting the typed price back to the store currency.
+  const marketCtx = useStorefrontMarketOptional();
+  const marketId = marketCtx?.market?.id;
+  const marketsReady = marketCtx ? marketCtx.loaded : true;
   const [urlParams, setUrlParams] = useSearchParams();
   const [localParams, setLocalParams] = useState(() => new URLSearchParams());
   const params = syncUrl ? urlParams : localParams;
@@ -50,26 +56,24 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl, de
   useEffect(() => { setFacets(null); setProducts(null); }, [categoryId, collectionId, search]);
 
   const baseCurrency = String(store.baseCurrency ?? currency);
-  // buyer-currency amount -> store (catalogue) currency. null = rates not ready yet.
-  const toBase = useCallback((amount: number | undefined): number | undefined | null => {
-    if (amount == null) return undefined;
-    if (currency === baseCurrency) return amount;
-    if (!ratesLoaded) return null;
-    const perBase = convert(1000, baseCurrency) / 1000;
-    return perBase > 0 ? Math.round((amount / perBase) * 100) / 100 : amount;
-  }, [currency, baseCurrency, ratesLoaded, convert]);
+  // The facet price range in the buyer's currency. The server prices it for this buyer (currency + market sent below);
+  // a store-currency range (rates missing server-side) is converted here as before.
+  const facetPrice = facets?.price;
+  const priceRange = useMemo(() => {
+    if (!facetPrice) return { min: null as number | null, max: null as number | null };
+    if (facetPrice.currency === currency) return { min: facetPrice.min, max: facetPrice.max };
+    const conv = (n: number | null) => (n == null ? null : convert(n, facetPrice.currency ?? baseCurrency));
+    return { min: conv(facetPrice.min), max: conv(facetPrice.max) };
+  }, [facetPrice, currency, baseCurrency, convert]);
 
-  const wantsPrice = state.minPrice != null || state.maxPrice != null;
   useEffect(() => {
-    const min = toBase(state.minPrice);
-    const max = toBase(state.maxPrice);
-    if (min === null || max === null) return; // wait for exchange rates
+    if (!marketsReady) return; // the market decides the prices: wait for it
     const ctrl = new AbortController();
     setLoading(true);
     setError('');
     apiGetPublicStoreProducts(store.storeId, {
       page: state.page, limit: BROWSE_PAGE_SIZE, sort: state.sort, categoryId, collectionId, search,
-      availability: state.availability, minPrice: min, maxPrice: max,
+      availability: state.availability, minPrice: state.minPrice, maxPrice: state.maxPrice, currency, marketId,
       productTypes: state.productTypes, tags: state.tags, options: state.options, facets: true,
     }, ctrl.signal)
       .then(res => {
@@ -86,7 +90,7 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl, de
       });
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.storeId, paramsKey, categoryId, collectionId, search, nonce, wantsPrice ? ratesLoaded : 0, currency]);
+  }, [store.storeId, paramsKey, categoryId, collectionId, search, nonce, currency, marketId, marketsReady]);
 
   // A shared link may point past the last page once filters narrow the list.
   useEffect(() => {
@@ -94,7 +98,7 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl, de
   }, [loading, products, state.page, totalPages, update]);
 
   return {
-    state, update, products, total, totalPages, facets, loading, error,
+    state, update, products, total, totalPages, facets, priceRange, loading, error,
     retry: () => setNonce(n => n + 1),
     currency,
   };

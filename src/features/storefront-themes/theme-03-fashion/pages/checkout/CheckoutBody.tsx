@@ -44,7 +44,7 @@ const lineImage = (i: CartItem) => i.image?.[0] ?? i.images?.[0] ?? null;
 
 /** The interactive checkout: contact -> address -> delivery -> payment on the left, live summary on the right. */
 export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, guest, loggedIn, onPlaced }: Props) {
-  const { convertTo, currency: displayCurrency } = useCurrencyPreference();
+  const { convert, convertTo, currency: displayCurrency } = useCurrencyPreference();
   const isDigital = items.length > 0 && items.every(i => i.type === 'digital');
 
   const guestContact = useGuestContact(guest);
@@ -117,8 +117,16 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
   const terms = policies.data?.find(p => p.policyType === 'terms_of_service');
 
   // --- figures: every amount below is expressed in `currency` (never a native amount with the wrong symbol) ---
-  const currency = checkout?.currency ?? baseCurrency;
-  const estimateOf = (i: CartItem) => convertTo(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency, currency);
+  // Before the checkout exists (address not saved yet) the estimate is in the shopper's own currency with the market's
+  // prices, exactly like the cart; once the server creates the checkout, its currency and amounts take over.
+  const currency = checkout?.currency ?? displayCurrency ?? baseCurrency;
+  const estimateOf = (i: CartItem) => {
+    const unit = i.unitPrice ?? i.price ?? 0;
+    const plain = i.itemTotal == null || Math.abs(i.itemTotal - unit * i.quantity) < 0.005;
+    return plain
+      ? convert(unit, i.currency, { productId: i.productId, variantId: i.productVariantId }) * i.quantity
+      : convertTo(i.itemTotal as number, i.currency, currency);
+  };
   const lines: SummaryLine[] = checkout
     ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency), image: i.image }))
     : items.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: estimateOf(i), image: lineImage(i) }));
