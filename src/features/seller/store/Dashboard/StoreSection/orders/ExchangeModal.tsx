@@ -19,6 +19,7 @@ interface Props {
   /** Physical lines with an open return (requested / approved / received) and no exchange yet. */
   lines: SellerOrderDetailItem[];
   symbol: string;
+  currency?: string;
   isPaid: boolean;
   onClose: () => void;
   /** Called after the exchange was created; the parent refetches. */
@@ -28,7 +29,7 @@ interface Props {
 const money = (symbol: string, n: number) => `${symbol}${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 /** Shopify "Create exchange": pick the returned lines, pick replacement variants, review the price difference, confirm. */
-export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, isPaid, onClose, onDone }: Props) {
+export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, currency, isPaid, onClose, onDone }: Props) {
   const toast = useToast();
   const { store } = useStoreWorkspace();
   const [picked, setPicked] = useState<string[]>(() => (lines.length === 1 ? [lines[0]._id] : []));
@@ -96,7 +97,7 @@ export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, is
       .finally(() => setSaving(false));
   };
 
-  const fmt = (n: number) => money(symbol, n);
+  const fmt = (n: number) => (currency ? formatAmount(n, currency) : money(symbol, n));
 
   return (
     <Modal

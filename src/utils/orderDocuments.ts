@@ -1,5 +1,5 @@
 import type { SellerOrderDetail } from '@/api/services/product';
-import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
+import { formatAmount } from '@/utils/currency';
 import { taxIdLabelForCountry } from '@/utils/taxIdLabel';
 
 /**
@@ -116,9 +116,9 @@ function fmtDate(iso: string): string {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// Same symbol/spacing/precision as the seller screens ("$36.22", "AED 36.00", "Rs 7,980").
 function money(amount: number, code: string): string {
-  const dec = getCurrencyDecimals(code);
-  return `${currencySymbol(code)} ${amount.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
+  return formatAmount(amount, code);
 }
 
 // `margin` is the printed page margin. It lives INSIDE the document (the @page margin is 0) so the browser has no room

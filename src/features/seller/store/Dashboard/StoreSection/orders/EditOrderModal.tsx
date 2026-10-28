@@ -20,6 +20,8 @@ interface Props {
   orderNumber: string;
   items: SellerOrderDetailItem[];
   symbol: string;
+  /** The order's own currency code: amounts are shown at its precision ("AED 43.67", "$36.22"). */
+  currency?: string;
   isPaid: boolean;
   onClose: () => void;
   /** Called after a successful (non-dry-run) save; the parent refetches. */
@@ -152,7 +154,7 @@ export function AddProductSearch({ storeId, onAdd }: {
   );
 }
 
-export function EditOrderModal({ storeId, orderId, orderNumber, items, symbol, isPaid, onClose, onSaved }: Props) {
+export function EditOrderModal({ storeId, orderId, orderNumber, items, symbol, currency, isPaid, onClose, onSaved }: Props) {
   const toast = useToast();
   const storeCurrency = useStoreWorkspace().store?.baseCurrency;
   const [qtys, setQtys] = useState<Record<string, number>>(() =>
@@ -226,7 +228,7 @@ export function EditOrderModal({ storeId, orderId, orderNumber, items, symbol, i
   };
 
   const sym = preview?.currency ? preview.currency : '';
-  const fmt = (n: number) => money(symbol, n);
+  const fmt = (n: number) => (currency ? formatAmount(n, currency) : money(symbol, n));
 
   return (
     <Modal

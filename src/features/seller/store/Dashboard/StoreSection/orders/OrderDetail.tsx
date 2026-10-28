@@ -917,6 +917,7 @@ export function StoreOrderDetail() {
           orderNumber={detail.orderNumber}
           items={so.items}
           symbol={symbol}
+          currency={detail.currency}
           isPaid={detail.isPaid}
           onClose={() => setShowEditOrder(false)}
           onSaved={() => { setShowEditOrder(false); load(); }}
@@ -930,6 +931,7 @@ export function StoreOrderDetail() {
           orderNumber={detail.orderNumber}
           lines={exchangeCandidates.filter(i => exchangeIds.length === 0 || exchangeIds.includes(i._id))}
           symbol={symbol}
+          currency={detail.currency}
           isPaid={detail.isPaid}
           onClose={() => { setShowExchange(false); setExchangeIds([]); }}
           onDone={() => { setShowExchange(false); setExchangeIds([]); load(); }}
