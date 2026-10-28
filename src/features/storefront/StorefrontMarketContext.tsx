@@ -25,7 +25,7 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
   sourceLanguage?: string | null;
   children: ReactNode;
 }) {
-  const { setCurrencyAuto, setMarketPricing, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
+  const { setCurrency, setCurrencyAuto, setMarketPricing, hasExplicitCurrency, enabledCurrencies } = useCurrencyPreference();
   const [data, setData] = useState<PublicStoreMarkets | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const loaded = loadedFor === storeId;
@@ -64,12 +64,6 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
     markets.forEach(m => m.countries.forEach(c => set.add(c.toUpperCase())));
     return Array.from(set).sort();
   }, [markets]);
-
-  const setCountry = useCallback((code: string) => {
-    const c = code.toUpperCase();
-    try { localStorage.setItem(COUNTRY_STORAGE_KEY, c); } catch { /* per-viewer convenience */ }
-    setSavedCountry(c);
-  }, []);
 
   // Pricing rule of the resolved market -> currency conversion (only bites when the buyer currency == market currency).
   useEffect(() => {
@@ -119,6 +113,20 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
     const { pathname, search, hash } = window.location;
     window.location.assign(switchLocalePath(pathname, search, hash, code, defaultLanguage));
   }, [defaultLanguage]);
+
+  // Shopify: the country the buyer picks decides the currency (the market's), and a language the new
+  // market does not offer falls back to that market's default language.
+  const setCountry = useCallback((code: string) => {
+    const c = code.toUpperCase();
+    try { localStorage.setItem(COUNTRY_STORAGE_KEY, c); } catch { /* per-viewer convenience */ }
+    setSavedCountry(c);
+    const picked = resolveMarket(markets, c);
+    if (picked && enabledCurrencies.includes(picked.currency) && (!allowedCurrencies?.length || allowedCurrencies.includes(picked.currency))) {
+      setCurrency(picked.currency);
+    }
+    const offered = picked?.languages?.length ? picked.languages.filter(l => languages.includes(l)) : [];
+    if (offered.length && !offered.includes(language)) setLanguage(offered.includes(defaultLanguage) ? defaultLanguage : offered[0]);
+  }, [markets, enabledCurrencies, allowedCurrencies, setCurrency, languages, language, defaultLanguage, setLanguage]);
 
   useEffect(() => {
     setStorefrontLocaleInfo({ country, locale: language });

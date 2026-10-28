@@ -71,8 +71,8 @@ export function BlogBlockEditor({ content, onChange, onRequestRemove, storeId }:
     <div className="flex flex-col gap-3">
       {content.length === 0 && (
         <div className="border border-dashed border-bone rounded-xl bg-white py-8 px-4 text-center">
-          <p className="text-[13px] font-semibold text-charcoal">Is post mein abhi koi content nahi hai</p>
-          <p className="text-[12px] text-slate mt-1">Neeche se pehla block add karein.</p>
+          <p className="text-[13px] font-semibold text-charcoal">This post has no content yet</p>
+          <p className="text-[12px] text-slate mt-1">Add your first block below.</p>
         </div>
       )}
 

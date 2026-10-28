@@ -1,8 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Check, ChevronDown, Globe, Languages, MapPin, Search } from 'lucide-react';
-import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { Check, ChevronDown, Languages, MapPin, Search } from 'lucide-react';
+import { resolveMarket } from '@/api/services/markets';
 import { useStorefrontMarketOptional } from '@/features/storefront/storefrontMarket';
 import { localizedCountryOptions } from '../../core/countryOptions';
 import { activeLocale } from '../../core/locale';
@@ -84,7 +84,7 @@ function LocaleMenu({ icon, code, ariaLabel, options, value, onPick, searchPlace
         onKeyDown={e => { if (!open && e.key === 'ArrowDown') { e.preventDefault(); show(); } }}
         className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-transparent px-3 text-[13px] font-medium transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]"
         style={{ color: 'inherit', fontFamily: t.fonts.body }}>
-        {icon}<span>{code}</span><ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .2s' }} />
+        {icon}<span className="max-w-[200px] truncate">{code}</span><ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .2s' }} />
       </button>
       {open && createPortal(
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- keyboard handling for the popover lives on its container
@@ -123,17 +123,31 @@ function LocaleMenu({ icon, code, ariaLabel, options, value, onPick, searchPlace
   );
 }
 
+/** "PKR Rs" / "USD $" — currency code beside its symbol, like Shopify's "United States (USD $)". */
+function currencyLabel(code: string): string {
+  try {
+    const sym = new Intl.NumberFormat(activeLocale(), { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find(p => p.type === 'currency')?.value;
+    return sym && sym !== code ? `${code} ${sym}` : code;
+  } catch { return code; }
+}
+
 /** Country/region selector. Hidden unless the store has markets with named countries. */
 export function FashionCountrySelector() {
   const { t: tr } = useTranslation('storefront');
   const market = useStorefrontMarketOptional();
   const options = useMemo<Option[]>(() => (market?.countries ?? [])
-    .map(code => { const name = localizedCountryOptions().find(c => c.code === code)?.label ?? code; return { value: code, label: name, hint: code, search: `${code} ${name}` }; })
-    .sort((a, b) => a.label.localeCompare(b.label, activeLocale())), [market?.countries]);
+    .map(code => {
+      const name = localizedCountryOptions().find(c => c.code === code)?.label ?? code;
+      const currency = resolveMarket(market?.markets ?? [], code)?.currency;
+      return { value: code, label: currency ? `${name} (${currencyLabel(currency)})` : name, search: `${code} ${name} ${currency ?? ''}` };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, activeLocale())), [market?.countries, market?.markets]);
   if (!market || options.length === 0) return null;
-  const active = options.find(o => o.value === market.country);
+  // No saved or detected country yet: show the resolved (primary) market's country, like Shopify, not a bare placeholder.
+  const active = options.find(o => o.value === market.country)
+    ?? options.find(o => o.value === market.market?.countries?.[0]?.toUpperCase());
   return (
-    <LocaleMenu icon={<MapPin size={15} />} code={active?.value ?? tr('locale.country', 'Country/region')} value={market.country} options={options} onPick={market.setCountry}
+    <LocaleMenu icon={<MapPin size={15} />} code={active?.label ?? tr('locale.country', 'Country/region')} value={active?.value ?? market.country} options={options} onPick={market.setCountry}
       ariaLabel={tr('locale.countryAria', 'Country/region: {{name}}. Change country/region', { name: active?.label ?? tr('locale.country', 'Country/region') })}
       searchPlaceholder={tr('locale.searchCountries', 'Search countries…')} />
   );
@@ -154,33 +168,12 @@ export function FashionLanguageSwitcher() {
   );
 }
 
-function currencyName(code: string): string {
-  try { return new Intl.DisplayNames(undefined, { type: 'currency' }).of(code) ?? code; } catch { return code; }
-}
-
-/** Display-currency selector, limited to the store's enabled currencies. Hidden with a single currency. */
-export function FashionCurrencySelector({ allowed }: { allowed?: string[] | null }) {
-  const { t: tr } = useTranslation('storefront');
-  const { currency, setCurrency, enabledCurrencies } = useCurrencyPreference();
-  const codes = allowed ? enabledCurrencies.filter(c => allowed.includes(c)) : enabledCurrencies;
-  const options = useMemo<Option[]>(() => codes.map(code => { const name = currencyName(code); return { value: code, label: `${code} — ${name}`, search: `${code} ${name}` }; }), [codes]);
-  if (options.length <= 1) return null;
-  const active = options.find(o => o.value === currency) ?? options[0];
-  return (
-    <LocaleMenu icon={<Globe size={15} />} code={active.value} value={active.value} options={options}
-      onPick={code => { const next = codes.find(c => c === code); if (next) setCurrency(next); }}
-      ariaLabel={tr('locale.currencyAria', 'Currency: {{code}}. Change currency', { code: active.value })}
-      searchPlaceholder={tr('locale.searchCurrencies', 'Search currencies…')} />
-  );
-}
-
-/** Country + language + currency, side by side. */
-export function FashionLocaleControls({ allowedCurrencies }: { allowedCurrencies?: string[] | null }) {
+/** Country + language side by side. Currency has no selector of its own (Shopify): it follows the country's market. */
+export function FashionLocaleControls() {
   return (
     <>
       <FashionCountrySelector />
       <FashionLanguageSwitcher />
-      <FashionCurrencySelector allowed={allowedCurrencies} />
     </>
   );
 }
