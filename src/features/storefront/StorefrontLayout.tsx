@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -107,12 +107,14 @@ export function StorefrontLayout() {
   // Affiliate referral links land here with ?ref=CODE — remembered for
   // checkout attribution (see utils/affiliateAttribution.ts).
   useEffect(() => { if (FEATURES.affiliates) captureAffiliateRef(); }, []);
-  // Publish the active store for code outside this context (AuthGateModal / social login).
-  useEffect(() => {
+  // Publish the active store for code outside this context (AuthGateModal / social login). Layout effects: they must run
+  // BEFORE any page's passive effects (e.g. the checkout starting its guest session), or a hard load of /checkout is
+  // sent to /login because the store id / guest flag are not published yet.
+  useLayoutEffect(() => {
     setCurrentStorefrontStoreId(store?.storeId ?? null);
     return () => setCurrentStorefrontStoreId(null);
   }, [store?.storeId]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     setStorefrontGuestCheckout(store?.guestCheckoutEnabled === true);
     return () => setStorefrontGuestCheckout(false);
   }, [store?.guestCheckoutEnabled]);
