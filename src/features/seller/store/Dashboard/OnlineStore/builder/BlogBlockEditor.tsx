@@ -109,7 +109,7 @@ export function BlogBlockEditor({ content, onChange, onRequestRemove, storeId }:
                   <AutoGrowTextarea
                     value={s.text ?? ''}
                     maxLength={PARAGRAPH_MAX}
-                    placeholder="Yahan apna paragraph likhein…"
+                    placeholder="Write your paragraph here…"
                     onChange={text => update(i, { settings: { ...s, text } })}
                   />
                 </Field>
