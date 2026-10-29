@@ -847,6 +847,7 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
       : store?.status === 'suspended'
         ? 'Store is suspended'
         : 'Store is not live yet';
+  const storefrontUrl = store?.slug ? getStorefrontUrl(store.slug) : '';
 
   return (
     <div className="dash-section-enter surface-panel rounded-2xl relative overflow-hidden">
@@ -876,11 +877,11 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
                 <span className={`size-[6px] rounded-full ${isLive ? 'bg-success pos-live-pulse' : 'bg-slate'}`} />
                 <span className={`text-[12.5px] font-medium ${isLive ? 'text-success' : 'text-slate'}`}>{statusLabel}</span>
               </span>
-              {store?.slug && (
+              {storefrontUrl && (
                 <span className="flex items-center gap-1 text-[12px] text-slate">
                   <span className="text-slate/60">·</span>
-                  /{store.slug}
-                  <CopyIconButton value={`/${store.slug}`} title="Copy store URL" size={11} />
+                  {storefrontUrl.replace(/^https?:\/\//, '')}
+                  <CopyIconButton value={storefrontUrl} title="Copy store URL" size={11} />
                 </span>
               )}
             </div>
@@ -890,9 +891,9 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
         <div className="h-px w-full bg-bone lg:hidden" />
 
         <div className="flex items-center gap-2 shrink-0">
-          {store?.slug && (
+          {storefrontUrl && (
             <a
-              href={getStorefrontUrl(store.slug)}
+              href={storefrontUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-[12px] font-medium py-[7px] px-[14px] rounded-md bg-white text-carbon border border-bone hover:bg-cream hover:border-slate/40 transition-colors duration-150 no-underline"
