@@ -409,9 +409,9 @@ export default function StoreEditProduct() {
 
   if (fetching) {
     return (
-      <div className="bg-cream min-h-screen">
+      <div className="bg-cream min-h-dvh">
         {/* ── Header skeleton ── */}
-        <div className="px-7 py-5 bg-white border-b border-bone flex items-center justify-between">
+        <div className="px-7 max-sm:px-4 py-5 bg-white border-b border-bone flex items-center justify-between">
           <div className="flex flex-col gap-2">
             <SkeletonBox width={160} height={18} rounded="6px" />
             <SkeletonBox width={120} height={12} rounded="4px" />
@@ -423,7 +423,7 @@ export default function StoreEditProduct() {
         </div>
 
         {/* ── 2-column body skeleton ── */}
-        <div className="px-4 sm:px-7 py-6 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_296px] gap-5 items-start">
+        <div className="px-4 sm:px-7 py-6 max-sm:pb-[calc(96px+env(safe-area-inset-bottom))] grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_296px] gap-5 items-start">
           {/* Left column */}
           <div className="flex flex-col gap-5">
             <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">
@@ -458,10 +458,10 @@ export default function StoreEditProduct() {
   }
 
   return (
-    <div className="bg-cream min-h-screen">
+    <div className="bg-cream min-h-dvh">
 
       {/* ── Header ── */}
-      <div className="px-7 py-5 bg-white border-b border-bone flex items-center justify-between">
+      <div className="px-7 max-sm:px-4 py-5 bg-white border-b border-bone flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal leading-tight">Edit Product</h1>
           <div className="flex items-center gap-1.5 mt-0.5">
@@ -472,7 +472,7 @@ export default function StoreEditProduct() {
               : <><Package  size={11} className="text-slate" /><span className="text-[12px] text-slate">Physical Product</span></>}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 max-sm:hidden">
           {error && <p className="text-[12px] text-red-500 font-medium">{error}</p>}
           <button onClick={() => navigate(-1)}
             className="px-4 py-[9px] rounded-[9px] text-[13px] font-semibold text-slate bg-white border border-bone cursor-pointer hover:bg-cream transition-colors">
@@ -487,7 +487,7 @@ export default function StoreEditProduct() {
       </div>
 
       {/* ── 2-column body ── */}
-      <div className="px-4 sm:px-7 py-6 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_296px] gap-5 items-start">
+      <div className="px-4 sm:px-7 py-6 max-sm:pb-[calc(96px+env(safe-area-inset-bottom))] grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_296px] gap-5 items-start">
 
         {/* Left column */}
         <div className="flex flex-col gap-5">
@@ -891,14 +891,14 @@ export default function StoreEditProduct() {
           <MetafieldsEditor storeId={storeId} ownerResource="product" ownerId={productId} />
 
           {/* Action buttons */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-sm:fixed max-sm:left-0 max-sm:right-0 max-sm:bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] max-sm:z-[999] max-sm:flex-row max-sm:items-center max-sm:bg-white max-sm:border-t max-sm:border-bone max-sm:px-4 max-sm:py-3 max-sm:shadow-[0_-6px_18px_rgba(20,15,10,0.10)]">
             <button onClick={() => handleSubmit()} disabled={saving}
-              className="w-full py-[11px] rounded-[10px] text-[13px] font-bold border-none transition-all duration-150"
+              className="w-full max-sm:flex-[1.7] max-sm:min-h-11 py-[11px] rounded-[10px] text-[13px] font-bold border-none transition-all duration-150"
               style={{ background: saving ? '#E8E6DC' : '#D97757', color: saving ? '#8C8A82' : '#fff', cursor: saving ? 'not-allowed' : 'pointer' }}>
               {saving ? 'Saving…' : 'Save Changes'}
             </button>
             <button onClick={() => navigate(-1)} disabled={saving}
-              className="w-full py-[9px] rounded-[10px] text-[13px] font-semibold text-slate border-none bg-transparent cursor-pointer hover:text-charcoal transition-colors">
+              className="w-full max-sm:flex-1 max-sm:min-h-11 py-[9px] rounded-[10px] text-[13px] font-semibold text-slate border-none bg-transparent cursor-pointer hover:text-charcoal transition-colors">
               Cancel
             </button>
           </div>

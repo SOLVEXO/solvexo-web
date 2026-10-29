@@ -35,7 +35,7 @@ export function RoleSegmentedControl({
   return (
     <div className={className}>
       {label && (
-        <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
+        <label className="block text-[12px] pointer-coarse:text-[14px] font-medium text-charcoal mb-[6px]">{label}</label>
       )}
       <div
         role="radiogroup"

@@ -33,7 +33,7 @@ export function TrafficSourcesCard({ storeId, range }: { storeId: string; range:
       <div className="px-4 py-3 border-b border-[#f3f2ec] flex items-center gap-2.5 shrink-0">
         <div className="w-7 h-7 rounded-lg bg-[#eef2ff] text-[#4F46E5] flex items-center justify-center shrink-0"><Megaphone size={13} /></div>
         <p className="flex-1 text-[13px] font-bold text-charcoal">Traffic sources</p>
-        <button type="button" onClick={() => navigate(`/store/${storeId}/analytics`)} className="text-[11.5px] font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer">Analytics →</button>
+        <button type="button" onClick={() => navigate(`/store/${storeId}/analytics`)} className="text-[13px] sm:text-[11.5px] pointer-coarse:py-1 font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer">Analytics →</button>
       </div>
       <div className="px-4 py-3 flex-1">
         {error ? <AnalyticsErrorState message={error} onRetry={() => setReloadKey(k => k + 1)} />
@@ -43,7 +43,7 @@ export function TrafficSourcesCard({ storeId, range }: { storeId: string; range:
             <ul className="flex flex-col gap-3 list-none p-0 m-0">
               {data.breakdown.slice(0, 6).map(row => (
                 <li key={row.source}>
-                  <div className="flex justify-between text-[12px] mb-1"><span className="text-graphite">{LABEL[row.source] ?? row.source}</span><span className="font-semibold text-charcoal">{formatNumber(row.count)} · {row.percent.toFixed(0)}%</span></div>
+                  <div className="flex justify-between text-[12.5px] sm:text-[12px] mb-1"><span className="text-graphite">{LABEL[row.source] ?? row.source}</span><span className="font-semibold text-charcoal">{formatNumber(row.count)} · {row.percent.toFixed(0)}%</span></div>
                   <div className="h-1.5 rounded-full bg-cream overflow-hidden"><div className="h-full rounded-full bg-brand-orange" style={{ width: `${Math.min(100, row.percent)}%` }} /></div>
                 </li>
               ))}

@@ -219,7 +219,7 @@ export function NotificationsPanel() {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0 pr-12">
+                <div className="flex-1 min-w-0 pr-12 pointer-coarse:pr-[86px]">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className={clsx('text-[13px] text-carbon', !notif.isRead ? 'font-bold' : 'font-semibold')}>
                       {notif.title}
@@ -240,12 +240,12 @@ export function NotificationsPanel() {
                 </div>
 
                 {/* Operations */}
-                <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 top-1/2 -translate-y-1/2">
+                <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 transition-opacity absolute right-4 top-1/2 -translate-y-1/2">
                   {!notif.isRead && (
                     <button
                       title="Mark as read"
                       onClick={() => markAsRead(notif._id)}
-                      className="size-7 rounded-lg bg-white border border-bone flex items-center justify-center cursor-pointer text-success hover:bg-success-bg transition-colors"
+                      className="size-7 pointer-coarse:size-11 rounded-lg bg-white border border-bone flex items-center justify-center cursor-pointer text-success hover:bg-success-bg transition-colors"
                     >
                       <Check size={13} />
                     </button>
@@ -253,7 +253,7 @@ export function NotificationsPanel() {
                   <button
                     title="Delete notification"
                     onClick={() => deleteNotification(notif._id)}
-                    className="size-7 rounded-lg bg-white border border-bone flex items-center justify-center cursor-pointer text-error hover:bg-error-bg transition-colors"
+                    className="size-7 pointer-coarse:size-11 rounded-lg bg-white border border-bone flex items-center justify-center cursor-pointer text-error hover:bg-error-bg transition-colors"
                   >
                     <Trash2 size={13} />
                   </button>

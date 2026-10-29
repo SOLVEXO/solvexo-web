@@ -26,16 +26,16 @@ export function Field({ label, required, hint, error, className, children }: Fie
 
   return (
     <div className={clsx('mb-[14px]', className)}>
-      <label htmlFor={finalId} className="block text-[12px] font-medium text-charcoal mb-[5px]">
+      <label htmlFor={finalId} className="block text-[12px] pointer-coarse:text-[14px] font-medium text-charcoal mb-[5px]">
         {label}
         {required && <span className="text-brand-orange ml-[2px]"> *</span>}
       </label>
       {control}
       {hint && !error && (
-        <p id={descId} className="mt-1 text-[11px] text-slate">{hint}</p>
+        <p id={descId} className="mt-1 text-[11px] pointer-coarse:text-[12.5px] text-slate">{hint}</p>
       )}
       {error && (
-        <p id={descId} className="mt-1 text-[11px] text-error">{error}</p>
+        <p id={descId} className="mt-1 text-[11px] pointer-coarse:text-[12.5px] text-error">{error}</p>
       )}
     </div>
   );

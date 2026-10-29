@@ -44,6 +44,17 @@ const SIZES: Record<ButtonSize, string> = {
   lg: 'text-[15px] py-[13px] px-6        rounded-lg',
 };
 
+// 44px is the hit-target minimum every native platform documents, and the
+// sizes above sit well under it. Raised only for coarse pointers so the dense
+// desktop tables keep their compact rows. `link` opts out at the call site —
+// an inline text link growing to 44px would push its own line apart.
+const TAP_TARGET: Record<ButtonSize, string> = {
+  xs: 'pointer-coarse:min-h-9',
+  sm: 'pointer-coarse:min-h-10',
+  md: 'pointer-coarse:min-h-11',
+  lg: 'pointer-coarse:min-h-12',
+};
+
 const VARIANTS: Record<ButtonVariant, string> = {
   // Orange filled — primary CTA. The signature --shadow-glow bloom on hover
   // is what separates this from a flat color-swap button — it's the one
@@ -101,6 +112,7 @@ export function Button({
       className={clsx(
         BASE,
         SIZES[size],
+        variant !== 'link' && TAP_TARGET[size],
         VARIANTS[variant],
         fullWidth  && 'w-full',
         pill       && 'rounded-full!',

@@ -43,7 +43,9 @@ export const SIZE_LABEL: Record<WidgetSize, string> = {
 
 // Full class names (not built from the size) so Tailwind keeps them.
 export const SIZE_CLASS: Record<WidgetSize, string> = {
-  small: 'col-span-12 sm:col-span-6 lg:col-span-3',
+  // `small` is only ever a KPI metric, so two-up on a phone is Shopify's own
+  // layout; every other widget defaults to third/medium/large/full.
+  small: 'col-span-6 sm:col-span-6 lg:col-span-3',
   third: 'col-span-12 lg:col-span-4',
   medium: 'col-span-12 lg:col-span-6',
   large: 'col-span-12 lg:col-span-8',

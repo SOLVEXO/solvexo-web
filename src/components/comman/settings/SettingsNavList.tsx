@@ -119,7 +119,7 @@ export function SettingsNavPanel({
     // here could never resolve (the wrapper's own height is auto), so the panel
     // grew past the viewport and `overflow-hidden` cut the last rows off — the
     // inner scroll never engaged. A viewport calc needs no definite parent.
-    <div className={clsx('flex flex-col min-h-0 max-h-[calc(100vh-116px)] bg-white border border-bone rounded-2xl overflow-hidden', className)}>
+    <div className={clsx('flex flex-col min-h-0 max-h-[calc(100dvh-116px)] bg-white border border-bone rounded-2xl overflow-hidden', className)}>
       {searchable && (
         <div className="shrink-0 p-3 border-b border-fog">
           <div className="relative">

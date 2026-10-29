@@ -58,9 +58,9 @@ export default function SupplierReturnsTab() {
 
   return (
     <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] text-slate max-w-[520px]">Send stock back to a supplier. Units leave your inventory immediately and the supplier’s credit is tracked here.</p>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <p className="text-[12px] pointer-coarse:text-[13px] text-slate max-w-[520px]">Send stock back to a supplier. Units leave your inventory immediately and the supplier’s credit is tracked here.</p>
+        <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="secondary" loading={exporting} onClick={exportCsv}>Export CSV</Button>
         {canReturn
           ? <Button size="sm" icon={<Plus size={13} />} onClick={() => setCreating(true)}>New return</Button>
@@ -80,16 +80,18 @@ export default function SupplierReturnsTab() {
       ) : (
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
           {rows.map(r => (
-            <div key={r._id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div key={r._id} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 sm:py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-charcoal truncate">{r.returnNumber} · {r.supplierName}</p>
-                <p className="text-[11px] text-slate truncate">
+                <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{r.returnNumber} · {r.supplierName}</p>
+                <p className="text-[11px] pointer-coarse:text-[13px] text-slate sm:truncate">
                   {new Date(r.createdAt).toLocaleDateString()} · {REASONS.find(x => x.value === r.reason)?.label} · {r.items.map(i => `${i.quantity}× ${i.name}`).join(', ')}
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
-                <span className="text-[13px] font-bold text-charcoal">{symbol}{r.totalCredit.toLocaleString()}</span>
-                <Badge color={r.creditStatus === 'received' ? 'green' : 'orange'} size="sm">{r.creditStatus === 'received' ? 'Credit received' : 'Credit pending'}</Badge>
+                <span className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <span className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal shrink-0">{symbol}{r.totalCredit.toLocaleString()}</span>
+                  <Badge color={r.creditStatus === 'received' ? 'green' : 'orange'} size="sm">{r.creditStatus === 'received' ? 'Credit received' : 'Credit pending'}</Badge>
+                </span>
                 {r.creditStatus === 'pending' && canManage && <Button size="sm" variant="secondary" loading={busyId === r._id} onClick={() => void markCredit(r._id)}>Mark received</Button>}
               </div>
             </div>

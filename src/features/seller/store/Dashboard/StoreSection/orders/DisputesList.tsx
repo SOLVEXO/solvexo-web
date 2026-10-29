@@ -131,7 +131,7 @@ export default function DisputesList() {
         {!loading && !error && visible.length > 0 && (
           <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
             {visible.map(d => (
-              <div key={d.disputeId} className="flex items-center gap-4 px-5 py-4 border-b border-bone last:border-b-0">
+              <div key={d.disputeId} className="flex flex-col gap-3 px-4 py-4 md:px-5 border-b border-bone last:border-b-0 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[12.5px] font-bold ${statusColor(d.status)}`}>{STATUS_LABELS[d.status] ?? d.status}</span>
@@ -144,12 +144,12 @@ export default function DisputesList() {
                     )}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
+                <div className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
                   <p className="text-[14px] font-bold text-charcoal">{symbol}{d.amount.toLocaleString()}</p>
+                  {(d.status === 'needs_response' || d.status === 'warning_needs_response') && (
+                    <Button size="sm" onClick={() => openEvidenceModal(d)}>Submit Evidence</Button>
+                  )}
                 </div>
-                {(d.status === 'needs_response' || d.status === 'warning_needs_response') && (
-                  <Button size="sm" onClick={() => openEvidenceModal(d)}>Submit Evidence</Button>
-                )}
               </div>
             ))}
           </div>

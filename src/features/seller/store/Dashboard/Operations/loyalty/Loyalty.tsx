@@ -473,12 +473,12 @@ function VouchersTab({ storeId }: { storeId: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
         {VOUCHER_FILTERS.map(f => (
           <button
             key={f.id}
             onClick={() => { setFilter(f.id); setPage(1); }}
-            className="px-3 py-[6px] rounded-full text-xs font-medium cursor-pointer border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            className="shrink-0 whitespace-nowrap px-3 py-[6px] rounded-full text-xs font-medium cursor-pointer border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
             style={{
               background: filter === f.id ? '#141413' : '#fff',
               color: filter === f.id ? '#fff' : '#4A4945',

@@ -149,9 +149,9 @@ export function TextTranslationsPanel({ storeId, locale, onDirtyChange, scope }:
 
   return (
     <div className="mt-4 flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-bone bg-white p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-bone bg-white p-4 sm:p-3">
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-[13px] font-semibold text-charcoal">{languageName(locale)}: {doneCount} of {allItems.length} translated</p>
+          <p className="m-0 text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal">{languageName(locale)}: {doneCount} of {allItems.length} translated</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-bone overflow-hidden" aria-hidden><div className="h-full bg-brand-orange" style={{ width: `${Math.round((doneCount / allItems.length) * 100)}%` }} /></div>
         </div>
         <Button size="sm" variant="outline" icon={<Sparkles size={13} />} disabled={missing === 0 || !!autoBusy} loading={autoBusy === 'all'} onClick={() => void autoTranslate('all', allItems)}>
@@ -173,7 +173,7 @@ export function TextTranslationsPanel({ storeId, locale, onDirtyChange, scope }:
         <div className="flex gap-1.5" role="group" aria-label="Show">
           {([['missing', `Needs translation (${missing})`], ['all', `All (${allItems.length})`]] as [Filter, string][]).map(([id, label]) => (
             <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}
-              className={`px-3 py-1.5 rounded-lg border text-[12px] font-semibold cursor-pointer ${filter === id ? 'border-brand-orange text-brand-orange bg-brand-pale-orange/40' : 'border-bone text-charcoal bg-white hover:bg-cream'}`}>{label}</button>
+              className={`px-3 py-1.5 rounded-lg border text-[12px] font-semibold cursor-pointer pointer-coarse:min-h-11 ${filter === id ? 'border-brand-orange text-brand-orange bg-brand-pale-orange/40' : 'border-bone text-charcoal bg-white hover:bg-cream'}`}>{label}</button>
           ))}
         </div>
       </div>
@@ -185,15 +185,15 @@ export function TextTranslationsPanel({ storeId, locale, onDirtyChange, scope }:
         const groupMissing = g.items.filter(i => !valueOf(i.key).trim()).length;
         return (
           <section key={g.id} className="rounded-xl border border-bone bg-white">
-            <div className="flex items-center gap-2 px-3 py-2.5">
+            <div className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:gap-2 sm:px-3 sm:py-2.5">
               <button type="button" aria-expanded={isOpen} onClick={() => setOpen(o => ({ ...o, [g.id]: !isOpen }))}
-                className="flex flex-1 items-center gap-2 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
+                className="flex items-center gap-2 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0 sm:flex-1">
                 {isOpen ? <ChevronDown size={15} aria-hidden /> : <ChevronRight size={15} aria-hidden />}
-                <span className="text-[13.5px] font-semibold text-charcoal truncate">{g.title}</span>
-                <span className="text-[11.5px] text-slate shrink-0">{g.items.length - groupMissing} of {g.items.length}</span>
+                <span className="text-[13.5px] font-semibold text-charcoal sm:truncate">{g.title}</span>
+                <span className="text-[11.5px] pointer-coarse:text-[13px] text-slate shrink-0">{g.items.length - groupMissing} of {g.items.length}</span>
               </button>
               {groupMissing > 0 && (
-                <Button size="xs" variant="outline" icon={<Sparkles size={11} />} disabled={!!autoBusy} loading={autoBusy === g.id} onClick={() => void autoTranslate(g.id, g.items)}>Auto-translate</Button>
+                <Button size="xs" className="self-start sm:self-auto" variant="outline" icon={<Sparkles size={11} />} disabled={!!autoBusy} loading={autoBusy === g.id} onClick={() => void autoTranslate(g.id, g.items)}>Auto-translate</Button>
               )}
             </div>
             {isOpen && (
@@ -202,10 +202,10 @@ export function TextTranslationsPanel({ storeId, locale, onDirtyChange, scope }:
                   const value = valueOf(item.key);
                   const id = `tt-${item.key}`;
                   return (
-                    <li key={item.key} className="grid gap-2 p-3 lg:grid-cols-2">
+                    <li key={item.key} className="grid gap-2 p-4 sm:p-3 lg:grid-cols-2">
                       <div className="min-w-0">
                         <p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-slate">{item.label}</p>
-                        <p className="m-0 mt-1 text-[13px] text-charcoal whitespace-pre-line break-words">{item.source}</p>
+                        <p className="m-0 mt-1 text-[13px] pointer-coarse:text-[15px] text-charcoal whitespace-pre-line break-words">{item.source}</p>
                       </div>
                       <div className="min-w-0">
                         <label htmlFor={id} className="text-[11px] font-semibold uppercase tracking-wide text-slate">
@@ -214,7 +214,7 @@ export function TextTranslationsPanel({ storeId, locale, onDirtyChange, scope }:
                         <textarea id={id} value={value} rows={item.multiline ? 4 : 2} maxLength={5000} dir="auto"
                           onChange={e => setValue(item.key, e.target.value)}
                           placeholder="Not translated: visitors see the original"
-                          className="mt-1 w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none focus:border-brand-orange resize-y" />
+                          className="mt-1 w-full px-3 py-2 text-[13px] pointer-coarse:text-[15px] border border-bone rounded-lg text-charcoal bg-white outline-none focus:border-brand-orange resize-y" />
                       </div>
                     </li>
                   );

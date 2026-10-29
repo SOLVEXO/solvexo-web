@@ -38,35 +38,41 @@ function ReviewModal({ storeId, proof, onClose, onDone }: { storeId: string; pro
       width={560}
       onClose={onClose}
       footer={
+        // On a phone the sheet is full-width, so the two actions stack (primary
+        // on top via col-reverse) instead of crushing each other side by side.
         proof.status === 'pending' ? (
-          rejecting_ ? (
-            <>
-              <Button variant="ghost" onClick={() => setRejecting(false)}>Back</Button>
-              <Button variant="danger" loading={rejecting} disabled={!reason.trim()} onClick={handleReject}>Confirm Reject</Button>
-            </>
-          ) : confirmingApprove ? (
-            <>
-              <Button variant="ghost" onClick={() => setConfirmingApprove(false)}>Back</Button>
-              <Button variant="primary" icon={<CheckCircle2 size={14} />} loading={approving} onClick={handleApprove}>Confirm Approve</Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" icon={<XCircle size={14} />} onClick={() => setRejecting(true)}>Reject</Button>
-              <Button variant="primary" icon={<CheckCircle2 size={14} />} onClick={() => setConfirmingApprove(true)}>Approve</Button>
-            </>
-          )
+          <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:justify-end">
+            {rejecting_ ? (
+              <>
+                <Button variant="ghost" onClick={() => setRejecting(false)}>Back</Button>
+                <Button variant="danger" loading={rejecting} disabled={!reason.trim()} onClick={handleReject}>Confirm Reject</Button>
+              </>
+            ) : confirmingApprove ? (
+              <>
+                <Button variant="ghost" onClick={() => setConfirmingApprove(false)}>Back</Button>
+                <Button variant="primary" icon={<CheckCircle2 size={14} />} loading={approving} onClick={handleApprove}>Confirm Approve</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" icon={<XCircle size={14} />} onClick={() => setRejecting(true)}>Reject</Button>
+                <Button variant="primary" icon={<CheckCircle2 size={14} />} onClick={() => setConfirmingApprove(true)}>Approve</Button>
+              </>
+            )}
+          </div>
         ) : (
           <Button variant="outline" onClick={onClose}>Close</Button>
         )
       }
     >
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[13px] font-semibold text-charcoal">{proof.buyerName}</p>
-            <p className="text-[12px] text-slate">{proof.buyerEmail}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-charcoal truncate">{proof.buyerName}</p>
+            <p className="text-[12px] text-slate break-all">{proof.buyerEmail}</p>
           </div>
-          <StatusBadge status={STATUS_LABEL[proof.status]} />
+          <span className="shrink-0">
+            <StatusBadge status={STATUS_LABEL[proof.status]} />
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream border border-bone rounded-[8px] px-3 py-3 text-[12.5px]">
@@ -137,7 +143,10 @@ export function StorePaymentProofs() {
     {
       key: 'amount', header: 'Amount',
       render: p => (
-        <span className="whitespace-nowrap">
+        // One line in the desktop table; allowed to wrap inside the mobile
+        // label/value card, where a nowrap "PKR 1,234,567 · $1,234.56" row
+        // can't shrink past its label.
+        <span className="sm:whitespace-nowrap">
           PKR {p.amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           <span className="text-slate"> · ${p.amountUSD.toFixed(2)}</span>
         </span>
@@ -149,7 +158,7 @@ export function StorePaymentProofs() {
     },
     {
       key: 'createdAt', header: 'Submitted',
-      render: p => <span className="whitespace-nowrap">{formatDate(p.createdAt)}</span>,
+      render: p => <span className="sm:whitespace-nowrap">{formatDate(p.createdAt)}</span>,
     },
     {
       key: 'status', header: 'Status',
@@ -157,8 +166,11 @@ export function StorePaymentProofs() {
     },
     {
       key: 'actions', header: '', align: 'right',
+      // Below `sm` the kit's Table swaps the cells for a stacked card whose
+      // unlabeled actions strip is all that is left of this row — a full-width
+      // button there is a real tap target instead of a 70px sliver.
       render: p => (
-        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewing(p); }}>Review</Button>
+        <Button variant="ghost" size="sm" className="max-sm:w-full" onClick={(e) => { e.stopPropagation(); setViewing(p); }}>Review</Button>
       ),
     },
   ];
@@ -170,14 +182,16 @@ export function StorePaymentProofs() {
         subtitle="Bank-transfer payments into your own account — review the buyer's proof before an order counts as paid."
       />
 
-      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-4">
+      <div className="px-4 md:px-7 pb-8 pt-5 flex flex-col gap-4">
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ManualPaymentProofStatus | '')}
-              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-              <option value="">All Statuses</option>
-              {(['pending', 'approved', 'rejected'] as const).map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-            </select>
+          <div className="px-4 sm:px-5 py-[12px] sm:py-[14px] border-b border-bone overflow-x-auto scrollbar-hide overscroll-x-contain">
+            <div className="flex items-center gap-2.5 min-w-max">
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ManualPaymentProofStatus | '')}
+                className="shrink-0 px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+                <option value="">All Statuses</option>
+                {(['pending', 'approved', 'rejected'] as const).map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              </select>
+            </div>
           </div>
 
           {error ? (

@@ -113,12 +113,12 @@ export default function StaffPage({ embedded = false }: { embedded?: boolean } =
             </div>
             <div className="divide-y divide-bone">
               {approvals.map(a => (
-                <div key={a._id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div key={a._id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3">
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold text-charcoal truncate">{a.summary}</p>
-                    <p className="text-[11px] text-slate">Requested by {a.requestedByName ?? 'a staff member'} · {new Date(a.createdAt).toLocaleString()}</p>
+                    <p className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{a.summary}</p>
+                    <p className="text-[11px] pointer-coarse:text-[13px] text-slate">Requested by {a.requestedByName ?? 'a staff member'} · {new Date(a.createdAt).toLocaleString()}</p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center justify-between gap-2 shrink-0 sm:justify-end">
                     <Button size="xs" variant="outline" icon={<X size={12} />} onClick={() => handleReject(a._id)} loading={approvalBusy === a._id}>Reject</Button>
                     <Button size="xs" variant="primary" icon={<Check size={12} />} onClick={() => handleApprove(a._id)} loading={approvalBusy === a._id}>Approve</Button>
                   </div>
@@ -132,7 +132,7 @@ export default function StaffPage({ embedded = false }: { embedded?: boolean } =
         <div className="flex gap-1">
           {(['staff', 'roles'] as const).map(t => (
             <button key={t} type="button" onClick={() => setSubTab(t)}
-              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-semibold border cursor-pointer ${subTab === t ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
+              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-semibold border cursor-pointer pointer-coarse:min-h-11 ${subTab === t ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
               {t === 'staff' ? 'Staff Members' : 'Roles'}
             </button>
           ))}
@@ -229,11 +229,11 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] text-slate max-w-[520px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <p className="text-[12px] pointer-coarse:text-[13px] text-slate max-w-[520px]">
           Invite staff to their own store-scoped login (at <code className="text-[11px]">/staff-login/{storeId}</code>) with only the Role's permissions — they set their own password from the invite email. You always have full access regardless of what's set here.
         </p>
-        <Button size="sm" icon={<Plus size={13} />} onClick={openNew} disabled={roles.length === 0}>Invite Staff</Button>
+        <Button size="sm" className="self-start sm:self-auto" icon={<Plus size={13} />} onClick={openNew} disabled={roles.length === 0}>Invite Staff</Button>
       </div>
       {roles.length === 0 && !loading && (
         <p className="text-[12px] text-slate bg-cream rounded-lg px-3 py-2">Create a Role first (see the Roles tab above) before inviting staff.</p>
@@ -261,25 +261,29 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
               ? `Joined ${timeAgo(member.inviteAcceptedAt)}`
               : expired ? 'Invite link expired — resend it' : member.inviteSentAt ? `Invite sent ${timeAgo(member.inviteSentAt)} · waiting for them to accept` : 'Waiting for them to accept';
             return (
-              <div key={member._id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <button type="button" onClick={() => openEdit(member)} className="min-w-0 text-left bg-transparent border-none cursor-pointer flex-1">
-                  <p className="text-[13px] font-semibold text-charcoal truncate">{member.name} <span className="text-slate font-normal">· {member.email}</span></p>
-                  <p className="text-[11px] text-slate">{roleName(member.roleId)} · {invitedLine}</p>
+              <div key={member._id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3">
+                <button type="button" onClick={() => openEdit(member)} className="min-w-0 flex-1 text-left bg-transparent border-none cursor-pointer">
+                  <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{member.name} <span className="text-slate font-normal">· {member.email}</span></p>
+                  <p className="text-[11px] pointer-coarse:text-[13px] text-slate">{roleName(member.roleId)} · {invitedLine}</p>
                 </button>
-                <div className="flex items-center gap-2 shrink-0">
-                  {pending
-                    ? <Badge color={expired ? 'gray' : 'orange'} size="sm">{expired ? 'Invite expired' : 'Invite pending'}</Badge>
-                    : <Badge color={member.status === 'active' ? 'green' : 'gray'} size="sm">{member.status === 'active' ? 'Active' : 'Inactive'}</Badge>}
-                  {pending && member.status === 'active' && (
-                    <Button size="xs" variant="ghost" loading={resendingId === member._id} onClick={() => handleResendInvite(member)}>Resend Invite</Button>
-                  )}
-                  {!pending && member.status === 'active' && (
-                    <Button size="xs" variant="ghost" loading={busyId === member._id} onClick={() => handleDeactivate(member)}>Deactivate</Button>
-                  )}
-                  {member.status !== 'active' && (
-                    <Button size="xs" variant="outline" loading={busyId === member._id} onClick={() => handleReactivate(member)}>Reactivate</Button>
-                  )}
-                  <Button size="xs" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(member)}>Delete</Button>
+                <div className="flex items-center justify-between gap-2 shrink-0 sm:justify-end">
+                  <div className="shrink-0">
+                    {pending
+                      ? <Badge color={expired ? 'gray' : 'orange'} size="sm">{expired ? 'Invite expired' : 'Invite pending'}</Badge>
+                      : <Badge color={member.status === 'active' ? 'green' : 'gray'} size="sm">{member.status === 'active' ? 'Active' : 'Inactive'}</Badge>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {pending && member.status === 'active' && (
+                      <Button size="xs" variant="ghost" loading={resendingId === member._id} onClick={() => handleResendInvite(member)}>Resend Invite</Button>
+                    )}
+                    {!pending && member.status === 'active' && (
+                      <Button size="xs" variant="ghost" loading={busyId === member._id} onClick={() => handleDeactivate(member)}>Deactivate</Button>
+                    )}
+                    {member.status !== 'active' && (
+                      <Button size="xs" variant="outline" loading={busyId === member._id} onClick={() => handleReactivate(member)}>Reactivate</Button>
+                    )}
+                    <Button size="xs" variant="ghost" icon={<Trash2 size={12} className="pointer-coarse:size-4" />} onClick={() => setConfirmDelete(member)}>Delete</Button>
+                  </div>
                 </div>
               </div>
             );
@@ -394,27 +398,27 @@ function RolesList({ storeId, roles, loading, onChanged }: { storeId: string; ro
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] text-slate max-w-[520px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <p className="text-[12px] pointer-coarse:text-[13px] text-slate max-w-[520px]">
           A Role is a named, reusable bundle of permissions — assign it to multiple staff instead of picking permissions one-by-one (matches Shopify's own Role model).
         </p>
-        <Button size="sm" icon={<Plus size={13} />} onClick={openNew}>New Role</Button>
+        <Button size="sm" className="self-start sm:self-auto" icon={<Plus size={13} />} onClick={openNew}>New Role</Button>
       </div>
 
       {loading ? null : (
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
           {roles.map(role => (
-            <div key={role._id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <button type="button" onClick={() => openEdit(role)} className="min-w-0 text-left bg-transparent border-none cursor-pointer flex-1">
-                <p className="text-[13px] font-semibold text-charcoal truncate flex items-center gap-1.5">
+            <div key={role._id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3">
+              <button type="button" onClick={() => openEdit(role)} className="min-w-0 flex-1 text-left bg-transparent border-none cursor-pointer">
+                <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal flex flex-wrap items-center gap-1.5 sm:flex-nowrap sm:truncate">
                   <KeyRound size={12} className="text-slate shrink-0" />
                   {role.name}
                   {role.isPreset && <Badge color="blue" size="sm">Preset</Badge>}
                 </p>
-                <p className="text-[11px] text-slate">{role.permissions.length} permission{role.permissions.length !== 1 ? 's' : ''}{role.description ? ` · ${role.description}` : ''}</p>
+                <p className="text-[11px] pointer-coarse:text-[13px] text-slate">{role.permissions.length} permission{role.permissions.length !== 1 ? 's' : ''}{role.description ? ` · ${role.description}` : ''}</p>
               </button>
               {!role.isPreset && (
-                <Button size="xs" variant="ghost" icon={<Trash2 size={12} />} onClick={() => handleDelete(role)}>Delete</Button>
+                <Button size="xs" className="self-start sm:self-auto" variant="ghost" icon={<Trash2 size={12} className="pointer-coarse:size-4" />} onClick={() => handleDelete(role)}>Delete</Button>
               )}
             </div>
           ))}

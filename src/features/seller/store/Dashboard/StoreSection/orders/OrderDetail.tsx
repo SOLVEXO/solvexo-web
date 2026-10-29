@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { clsx } from 'clsx';
 import {
   ArrowLeft, Package, MapPin, User, CreditCard, Truck, AlertCircle,
   CheckCheck, RefreshCw, XCircle, Undo2, Store as StoreIcon, Printer, Pencil, RotateCcw, StickyNote,
@@ -45,15 +46,15 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function Card({ title, icon: Icon, action, children }: { title: string; icon?: React.ElementType; action?: ReactNode; children: ReactNode }) {
+function Card({ title, icon: Icon, action, flatOnPhone, children }: { title: string; icon?: React.ElementType; action?: ReactNode; flatOnPhone?: boolean; children: ReactNode }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-bone flex items-center gap-2">
+    <div className={clsx('bg-white border border-bone rounded-[10px] overflow-hidden', flatOnPhone && 'max-sm:bg-transparent max-sm:border-0')}>
+      <div className={clsx('px-5 py-3.5 border-b border-bone flex items-center gap-2', flatOnPhone && 'max-sm:hidden')}>
         {Icon && <Icon size={14} className="text-brand-orange shrink-0" />}
         <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em] flex-1">{title}</p>
         {action}
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className={clsx('px-5 py-4', flatOnPhone && 'max-sm:p-0')}>{children}</div>
     </div>
   );
 }
@@ -323,6 +324,109 @@ export function StoreOrderDetail() {
   const canRefund   = detail.isPaid;
   const isEditWindow = (so.status === 'pending' || so.status === 'processing') && shipments.length === 0;
 
+  // Same nodes the Actions card has always held — the phone gets them in a bar
+  // pinned above the store tab bar (`--store-tabbar-h` is only set while that nav
+  // is mounted, so it falls back to 0 anywhere else), `sm` and up get the plain
+  // vertical stack back.
+  const primaryActions = [
+    <Button key="print-slip" size="sm" variant="outline" onClick={() => void handlePrint('slip')} disabled={busy}>
+      <Printer size={13} /> Print packing slip
+    </Button>,
+    <Button key="print-invoice" size="sm" variant="outline" onClick={() => void handlePrint('invoice')} disabled={busy}>
+      <Printer size={13} /> Print invoice
+    </Button>,
+    detail.paymentStatus === 'authorized' && (
+      <Button key="capture" size="sm" onClick={openCaptureModal} disabled={busy}>
+        <CreditCard size={13} /> Capture Payment
+      </Button>
+    ),
+    !detail.isPaid && detail.paymentStatus !== 'authorized' && (
+      <Button key="mark-paid" size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
+        <CheckCheck size={13} /> Mark as Paid (full amount)
+      </Button>
+    ),
+    !detail.isPaid && detail.paymentStatus !== 'authorized' && (
+      <Button
+        key="record-payment"
+        size="sm" variant="outline"
+        onClick={() => { setPaymentAmount(''); setPaymentMethod('cash'); setPaymentReference(''); setPaymentNote(''); setPaymentError(''); setShowRecordPaymentModal(true); }}
+        disabled={busy}
+      >
+        <CreditCard size={13} /> Record a Payment
+      </Button>
+    ),
+    canProcess && (
+      <Button key="processing" size="sm" variant="outline" onClick={() => changeStatus('processing', 'processing')} loading={busyAction === 'processing'} disabled={busy && busyAction !== 'processing'}>
+        <RefreshCw size={13} /> Mark Processing
+      </Button>
+    ),
+    canShip && (
+      <Button key="fulfil" size="sm" variant="outline" disabled={busy} onClick={() => setShowFulfil(true)}>
+        <Truck size={13} /> Fulfil items
+      </Button>
+    ),
+    canBuyLabel && (
+      <Button key="buy-label" size="sm" variant="outline" disabled={busy} onClick={() => setShowLabelModal(true)}>
+        <Package size={13} /> Buy shipping label
+      </Button>
+    ),
+    canReadyForPickup && (
+      <Button key="ready-pickup" size="sm" variant="outline" onClick={() => changeStatus('shipped', 'ready')} loading={busyAction === 'ready'} disabled={busy && busyAction !== 'ready'}>
+        <StoreIcon size={13} /> Mark ready for pickup
+      </Button>
+    ),
+    (canMarkPickedUp || canMarkDelivered) && (
+      <Button key="delivered" size="sm" variant="outline" onClick={() => changeStatus('delivered', 'delivered')} loading={busyAction === 'delivered'} disabled={busy && busyAction !== 'delivered'}>
+        <CheckCheck size={13} /> {isPickup ? 'Mark as picked up' : 'Mark delivered'}
+      </Button>
+    ),
+    canComplete && (
+      <Button key="completed" size="sm" onClick={handleMarkCompleted} loading={busyAction === 'completed'} disabled={busy && busyAction !== 'completed'}>
+        <CheckCheck size={13} /> Mark Completed
+      </Button>
+    ),
+    canRefund && (
+      <Button
+        key="refund"
+        size="sm" variant="outline"
+        onClick={() => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setRefundTo('original'); setShowRefundModal(true); }}
+        disabled={busy}
+      >
+        <Undo2 size={13} /> Issue Refund
+      </Button>
+    ),
+    canCancel && (
+      <Button
+        key="cancel"
+        size="sm" variant="outline"
+        onClick={() => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }}
+        disabled={busy}
+        className="!text-error !border-error/30 hover:!bg-error-bg"
+      >
+        <XCircle size={13} /> Cancel Order
+      </Button>
+    ),
+  ].filter(Boolean);
+
+  const primaryActionsBarClass =
+    'fixed left-0 right-0 bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[999] bg-white border-t border-bone px-4 py-3 flex items-center gap-2 scrollbar-hide '
+    + (primaryActions.length <= 2 ? 'max-sm:[&>*]:flex-1' : 'max-sm:overflow-x-auto max-sm:gap-[9px]')
+    + ' sm:static sm:z-auto sm:flex-col sm:items-stretch sm:bg-transparent sm:border-0 sm:px-0 sm:py-0';
+
+  const paymentHint = !detail.isPaid && detail.paymentStatus !== 'authorized' && ['manual', 'manual_bank_transfer', 'cash_on_delivery'].includes(detail.paymentType)
+    ? (
+      <p role="note" className="rounded-[8px] bg-[#FDF3E7] px-3 py-2 text-[11.5px] leading-[1.5]" style={{ color: '#9A6A17' }}>
+        {detail.paymentType === 'cash_on_delivery'
+          ? 'Cash on delivery: press Mark as paid once the buyer has paid you on delivery.'
+          : 'Waiting for the buyer\'s transfer. When the money has reached you, press Mark as paid so this order counts as paid.'}
+      </p>
+    )
+    : null;
+
+  const noFurtherActions = !canProcess && !canShip && !canReadyForPickup && !canMarkPickedUp && !canMarkDelivered && !canComplete && !canCancel && !canRefund && detail.isPaid
+    ? <p className="text-[12px] text-slate">No further actions available for this order.</p>
+    : null;
+
   return (
     <>
       <StorePageHeader
@@ -345,7 +449,9 @@ export function StoreOrderDetail() {
         }
       />
 
-      <div className="px-4 lg:px-7 py-5 flex flex-col gap-4">
+      {/* max-sm extra bottom room: the pinned action bar sits on top of the tab
+          bar, and the layout's own pb-[100px] only clears the tab bar. */}
+      <div className="px-4 lg:px-7 py-5 max-sm:pb-[calc(60px+env(safe-area-inset-bottom))] flex flex-col gap-4">
         {error && (
           <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-2">
             <AlertCircle size={15} className="text-error shrink-0" />
@@ -683,93 +789,17 @@ export function StoreOrderDetail() {
               )}
             </Card>
 
-            <Card title="Actions">
+            {/* On a phone the bar takes the buttons off the page, so a card that
+                would be left holding nothing goes flat instead of ending the
+                scroll with an empty box. */}
+            <Card title="Actions" flatOnPhone={!slipError && !paymentHint && !noFurtherActions}>
               <div className="flex flex-col gap-2">
-                <Button size="sm" variant="outline" onClick={() => void handlePrint('slip')} disabled={busy}>
-                  <Printer size={13} /> Print packing slip
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => void handlePrint('invoice')} disabled={busy}>
-                  <Printer size={13} /> Print invoice
-                </Button>
                 {slipError && <p role="alert" className="text-[11.5px] text-error">{slipError}</p>}
-                {detail.paymentStatus === 'authorized' && (
-                  <Button size="sm" onClick={openCaptureModal} disabled={busy}>
-                    <CreditCard size={13} /> Capture Payment
-                  </Button>
+                {paymentHint}
+                {primaryActions.length > 0 && (
+                  <div className={primaryActionsBarClass}>{primaryActions}</div>
                 )}
-                {!detail.isPaid && detail.paymentStatus !== 'authorized' && ['manual', 'manual_bank_transfer', 'cash_on_delivery'].includes(detail.paymentType) && (
-                  <p role="note" className="rounded-[8px] bg-[#FDF3E7] px-3 py-2 text-[11.5px] leading-[1.5]" style={{ color: '#9A6A17' }}>
-                    {detail.paymentType === 'cash_on_delivery'
-                      ? 'Cash on delivery: press Mark as paid once the buyer has paid you on delivery.'
-                      : 'Waiting for the buyer\'s transfer. When the money has reached you, press Mark as paid so this order counts as paid.'}
-                  </p>
-                )}
-                {!detail.isPaid && detail.paymentStatus !== 'authorized' && (
-                  <Button size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
-                    <CheckCheck size={13} /> Mark as Paid (full amount)
-                  </Button>
-                )}
-                {!detail.isPaid && detail.paymentStatus !== 'authorized' && (
-                  <Button
-                    size="sm" variant="outline"
-                    onClick={() => { setPaymentAmount(''); setPaymentMethod('cash'); setPaymentReference(''); setPaymentNote(''); setPaymentError(''); setShowRecordPaymentModal(true); }}
-                    disabled={busy}
-                  >
-                    <CreditCard size={13} /> Record a Payment
-                  </Button>
-                )}
-                {canProcess && (
-                  <Button size="sm" variant="outline" onClick={() => changeStatus('processing', 'processing')} loading={busyAction === 'processing'} disabled={busy && busyAction !== 'processing'}>
-                    <RefreshCw size={13} /> Mark Processing
-                  </Button>
-                )}
-                {canShip && (
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => setShowFulfil(true)}>
-                    <Truck size={13} /> Fulfil items
-                  </Button>
-                )}
-                {canBuyLabel && (
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => setShowLabelModal(true)}>
-                    <Package size={13} /> Buy shipping label
-                  </Button>
-                )}
-                {canReadyForPickup && (
-                  <Button size="sm" variant="outline" onClick={() => changeStatus('shipped', 'ready')} loading={busyAction === 'ready'} disabled={busy && busyAction !== 'ready'}>
-                    <StoreIcon size={13} /> Mark ready for pickup
-                  </Button>
-                )}
-                {(canMarkPickedUp || canMarkDelivered) && (
-                  <Button size="sm" variant="outline" onClick={() => changeStatus('delivered', 'delivered')} loading={busyAction === 'delivered'} disabled={busy && busyAction !== 'delivered'}>
-                    <CheckCheck size={13} /> {isPickup ? 'Mark as picked up' : 'Mark delivered'}
-                  </Button>
-                )}
-                {canComplete && (
-                  <Button size="sm" onClick={handleMarkCompleted} loading={busyAction === 'completed'} disabled={busy && busyAction !== 'completed'}>
-                    <CheckCheck size={13} /> Mark Completed
-                  </Button>
-                )}
-                {canRefund && (
-                  <Button
-                    size="sm" variant="outline"
-                    onClick={() => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setRefundTo('original'); setShowRefundModal(true); }}
-                    disabled={busy}
-                  >
-                    <Undo2 size={13} /> Issue Refund
-                  </Button>
-                )}
-                {canCancel && (
-                  <Button
-                    size="sm" variant="outline"
-                    onClick={() => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }}
-                    disabled={busy}
-                    className="!text-error !border-error/30 hover:!bg-error-bg"
-                  >
-                    <XCircle size={13} /> Cancel Order
-                  </Button>
-                )}
-                {!canProcess && !canShip && !canReadyForPickup && !canMarkPickedUp && !canMarkDelivered && !canComplete && !canCancel && !canRefund && detail.isPaid && (
-                  <p className="text-[12px] text-slate">No further actions available for this order.</p>
-                )}
+                {noFurtherActions}
               </div>
             </Card>
           </div>

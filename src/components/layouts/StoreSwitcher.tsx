@@ -52,6 +52,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
   const navigate = useNavigate();
   const listId = useId();
   const [open, setOpen] = useState(false);
+  const [sheet, setSheet] = useState(false);
   const [query, setQuery] = useState('');
   const [recentIds, setRecentIds] = useState<string[]>(readRecentIds);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +60,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const pos = useDropdownPosition(triggerRef, open, variant === 'dark' ? 'left' : 'right', 6, PANEL_WIDTH);
+  const pos = useDropdownPosition(triggerRef, open && !sheet, variant === 'dark' ? 'left' : 'right', 6, PANEL_WIDTH);
 
   useEffect(() => {
     if (!open) return;
@@ -147,12 +148,18 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
     <div ref={containerRef} className="relative">
       <button
         ref={triggerRef}
-        onClick={() => (open ? close() : setOpen(true))}
+        onClick={() => {
+          if (open) { close(); return; }
+          // A centred floating panel on a phone reads as desktop chrome; the
+          // app-native shape here is a sheet rising off the bottom edge.
+          setSheet(window.matchMedia('(max-width: 639px)').matches);
+          setOpen(true);
+        }}
         aria-expanded={open}
         className={clsx(
           'flex items-center gap-2 cursor-pointer transition-colors duration-150',
           isLight
-            ? clsx('rounded-lg border py-[6px] px-[10px] bg-white', open ? 'border-brand-orange/40 bg-cream' : 'border-bone hover:bg-cream')
+            ? clsx('rounded-lg border py-[6px] px-[10px] pointer-coarse:min-h-11 bg-white', open ? 'border-brand-orange/40 bg-cream' : 'border-bone hover:bg-cream')
             : clsx('w-full rounded-md py-2 px-[10px] border-0', open ? 'bg-charcoal' : 'bg-dark-active hover:bg-charcoal'),
         )}
       >
@@ -195,13 +202,18 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
           ref={panelRef}
           role="group"
           aria-label="Switch store"
-          style={{ top: pos.top, left: pos.left }}
+          style={sheet ? { top: 'auto', left: 0, right: 0, bottom: 0 } : { top: pos.top, left: pos.left }}
           className={clsx(
-            'dropdown-enter fixed z-[9999] flex flex-col overflow-hidden rounded-[16px] border',
-            'w-[340px] max-w-[calc(100vw-24px)]',
+            'dropdown-enter fixed z-[9999] flex flex-col overflow-hidden',
+            sheet
+              ? 'w-full max-h-[76dvh] rounded-t-[18px] border-x border-t pb-[env(safe-area-inset-bottom)]'
+              : 'w-[340px] max-w-[calc(100vw-24px)] rounded-[16px] border',
             isLight ? 'bg-white border-bone' : 'bg-[#1a1917] border-charcoal',
           )}
         >
+          {sheet && (
+            <span aria-hidden className="mx-auto mt-2 mb-1 block h-[4px] w-9 rounded-full bg-bone" />
+          )}
           <div className={clsx('flex items-center gap-2 px-3 py-[10px] border-b', isLight ? 'bg-cream/40 border-bone' : 'bg-charcoal/40 border-charcoal')}>
             <Search size={14} className={clsx('shrink-0', isLight ? 'text-slate' : 'text-dark-label')} aria-hidden="true" />
             <input
@@ -214,7 +226,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
               aria-controls={listId}
               autoComplete="off"
               className={clsx(
-                'flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px]',
+                'flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] pointer-coarse:text-[16px]',
                 isLight ? 'text-carbon placeholder:text-slate' : 'text-white placeholder:text-dark-label',
               )}
             />
@@ -222,7 +234,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
               onClick={close}
               aria-label="Close"
               className={clsx(
-                'shrink-0 size-6 rounded-md border-0 flex items-center justify-center cursor-pointer transition-colors duration-150',
+                'shrink-0 size-6 pointer-coarse:size-11 rounded-md border-0 flex items-center justify-center cursor-pointer transition-colors duration-150',
                 isLight ? 'text-slate hover:bg-bone' : 'text-dark-label hover:bg-charcoal',
               )}
             >
@@ -230,7 +242,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
             </button>
           </div>
 
-          <div ref={listRef} id={listId} className="max-h-[292px] overflow-y-auto py-1">
+          <div ref={listRef} id={listId} className={clsx('overflow-y-auto overscroll-contain py-1', sheet ? 'flex-1 min-h-0' : 'max-h-[292px]')}>
             {loading && [0, 1, 2].map(i => (
               <div key={i} className="flex items-center gap-[10px] px-[13px] py-[9px]">
                 <div className={clsx('size-[30px] rounded-[9px] shrink-0 animate-pulse', isLight ? 'bg-bone' : 'bg-charcoal')} />
@@ -254,7 +266,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
                 <div key={row.store._id}>
                   {showGroup && (
                     <p className={clsx(
-                      'px-[14px] pt-2 pb-1 text-[9px] font-semibold uppercase tracking-[0.08em]',
+                      'px-[14px] pt-2 pb-1 text-[9px] pointer-coarse:text-[11px] font-semibold uppercase tracking-[0.08em]',
                       isLight ? 'text-slate' : 'text-dark-label',
                     )}>
                       {row.group}
@@ -267,7 +279,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
                     onClick={() => select(row.store)}
                     onKeyDown={e => onRowKeyDown(e, i)}
                     className={clsx(
-                      'relative flex items-center gap-[10px] w-full px-[13px] py-[9px] text-left cursor-pointer transition-colors duration-[120ms]',
+                      'relative flex items-center gap-[10px] w-full px-[13px] py-[9px] pointer-coarse:py-3 text-left cursor-pointer transition-colors duration-[120ms]',
                       isCurrent
                         ? isLight ? 'bg-cream' : 'bg-dark-hover'
                         : isLight ? 'hover:bg-brand-pale-orange/60' : 'hover:bg-dark-hover',
@@ -283,7 +295,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
                         : row.store.name.slice(0, 2).toUpperCase()}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className={clsx('block text-[12px] font-semibold truncate leading-[1.35]', isLight ? 'text-carbon' : 'text-dark-text')}>
+                      <span className={clsx('block text-[12px] pointer-coarse:text-[15px] font-semibold truncate leading-[1.35]', isLight ? 'text-carbon' : 'text-dark-text')}>
                         {row.store.name}
                       </span>
                       <span className="flex items-center gap-[5px] min-w-0">
@@ -291,7 +303,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
                           className={clsx('size-[5px] rounded-full shrink-0', row.store.status === 'active' ? 'bg-[#3FA36B]' : 'bg-[#D9A441]')}
                           aria-hidden="true"
                         />
-                        <span className={clsx('block text-[10px] truncate leading-[1.35]', isLight ? 'text-slate' : 'text-dark-label')}>
+                        <span className={clsx('block text-[10px] pointer-coarse:text-[12.5px] truncate leading-[1.35]', isLight ? 'text-slate' : 'text-dark-label')}>
                           /{row.store.slug}
                         </span>
                         {row.store.plan && (

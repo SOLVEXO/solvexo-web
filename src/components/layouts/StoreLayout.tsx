@@ -439,6 +439,14 @@ function StoreBottomNav() {
 
   const goToTab = (path: string) => navigate(`/store/${storeId}/${path}`);
 
+  // The toast stack lives in RootLayout, so it can't see this bar — a custom
+  // property on :root is the only channel between two unrelated subtrees.
+  // Unset everywhere else, so storefront toasts keep their old bottom-6.
+  useEffect(() => {
+    document.documentElement.style.setProperty('--store-tabbar-h', '62px');
+    return () => { document.documentElement.style.removeProperty('--store-tabbar-h'); };
+  }, []);
+
   // Fluid curved cutout: the bubble sits ON TOP of the bar and the bar's edge
   // sweeps up into it through two inverted-radius shoulders, so the curve reads
   // as coming from BELOW the icon, never arcing over it. border-radius/clip-path
@@ -1196,8 +1204,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
-      <div className="flex items-center gap-3 min-w-0">
+    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sticky top-0 z-10 shrink-0">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
            hamburger that used to open a copy of the desktop sidebar. */}
@@ -1213,7 +1221,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
               else navigate(dashboardPath);
             }}
             aria-label="Go back"
-            className="lg:hidden size-8 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
+            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
           >
             <ChevronLeft size={19} />
           </button>
@@ -1223,8 +1231,18 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate">{subtitle}</p>}
         </div>
       </div>
+      {/* Page actions get their own scrollable row below `sm`: three or four
+          labelled buttons in a nowrap row used to crush the title to nothing
+          on a phone. `sm:contents` dissolves the wrapper at `sm` and up, so the
+          buttons sit back in the header row exactly as before — no duplicated
+          markup, and every one of the ~40 pages that pass `actions` is fixed at
+          once. */}
+      {actions && (
+        <div className="order-last w-full min-w-0 sm:order-none sm:contents flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0">
+          {actions}
+        </div>
+      )}
       <div className="flex flex-nowrap items-center gap-[10px] shrink-0">
-        {actions}
         {/* Shopify-style store switcher — jump to another of this seller's
            stores right from the navbar, on every store page. */}
         {!isStaffSession() && <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />}
@@ -1248,7 +1266,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           onClick={() => navigate(`/store/${storeId}/account`)}
           title="Account settings"
           aria-label="Account settings"
-          className="size-8 rounded-full shrink-0 overflow-hidden border-2 border-bone bg-brand-pale-orange flex items-center justify-center cursor-pointer hover:border-brand-orange/60 transition-colors"
+          className="size-8 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full shrink-0 overflow-hidden border-2 border-bone bg-brand-pale-orange flex items-center justify-center cursor-pointer hover:border-brand-orange/60 transition-colors"
         >
           {profileLoading ? (
             <div className="w-full h-full bg-bone animate-pulse" />
@@ -1699,7 +1717,7 @@ export function StoreLayout() {
 
   return (
     <StoreWorkspaceProvider>
-      <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
+      <div className={clsx('flex bg-cream overflow-hidden', 'h-dvh')}>
         <StoreSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Platform announcements now arrive as real per-store Notifications
@@ -1709,8 +1727,14 @@ export function StoreLayout() {
           <PlatformBillingBanner />
           {/* pb clears the whole tab bar: 62px flush bar + the ~31px the active
               bubble protrudes above it. */}
-          <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[100px] lg:pb-0">
-            <GatedOutlet />
+          <div data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain pb-[100px] lg:pb-0">
+            {/* Keyed by path so the subtree actually remounts and the entrance
+                animation re-fires on every navigation. Only the page content is
+                inside this key — the sidebar and tab bar above/below it keep
+                their state, so the chrome stays put while the screen turns. */}
+            <div key={currentPath} className="page-route-enter">
+              <GatedOutlet />
+            </div>
           </div>
         </div>
       </div>

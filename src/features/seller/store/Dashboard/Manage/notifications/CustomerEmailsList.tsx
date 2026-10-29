@@ -78,11 +78,11 @@ export function CustomerEmailsList({ storeId, settings, loading, loadError, rowE
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[13px] font-semibold text-charcoal">{ev.label}</span>
-                          {ev.customized && <span className="text-[10.5px] font-medium text-brand-deep-orange bg-brand-pale-orange px-1.5 py-0.5 rounded">Customized</span>}
-                          {!ev.enabled && <span className="text-[10.5px] font-medium text-slate bg-bone px-1.5 py-0.5 rounded">Off</span>}
+                          <span className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal">{ev.label}</span>
+                          {ev.customized && <span className="text-[10.5px] pointer-coarse:text-[12px] font-medium text-brand-deep-orange bg-brand-pale-orange px-1.5 py-0.5 rounded">Customized</span>}
+                          {!ev.enabled && <span className="text-[10.5px] pointer-coarse:text-[12px] font-medium text-slate bg-bone px-1.5 py-0.5 rounded">Off</span>}
                         </span>
-                        <span className="block text-[12px] text-slate mt-0.5 line-clamp-2 sm:line-clamp-1">{ev.description}</span>
+                        <span className="block text-[12px] pointer-coarse:text-[13px] text-slate mt-0.5 line-clamp-2 sm:line-clamp-1">{ev.description}</span>
                       </span>
                       <ChevronRight size={15} className="text-slate shrink-0" aria-hidden />
                     </button>

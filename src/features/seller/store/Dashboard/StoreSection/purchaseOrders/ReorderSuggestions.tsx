@@ -51,22 +51,22 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
         ) : (
           groups.map(group => (
             <div key={group.supplierId ?? 'unassigned'} className="bg-white rounded-xl border border-bone overflow-hidden">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-bone bg-cream">
-                <p className="text-[13px] font-bold text-charcoal">{group.supplierName}</p>
-                <Button size="xs" variant="primary" onClick={() => createPoForGroup(group)}>Create Purchase Order</Button>
+              <div className="px-4 py-4 flex flex-col gap-3 border-b border-bone bg-cream sm:flex-row sm:items-center sm:justify-between sm:py-3">
+                <p className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal min-w-0">{group.supplierName}</p>
+                <Button size="xs" className="self-start sm:self-auto" variant="primary" onClick={() => createPoForGroup(group)}>Create Purchase Order</Button>
               </div>
               <div className="divide-y divide-bone">
                 {group.items.map(item => (
-                  <div key={item.variantId} className="flex items-center gap-3 px-4 py-2.5">
+                  <div key={item.variantId} className="flex items-center gap-3 px-4 py-3.5 sm:py-2.5">
                     <div className="w-9 h-9 rounded-lg bg-cream border border-bone shrink-0 overflow-hidden flex items-center justify-center">
                       {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : null}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.productName}</p>
-                      <p className="text-[11px] text-slate">SKU: {item.sku}</p>
+                      <p className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{item.productName}</p>
+                      <p className="text-[11px] pointer-coarse:text-[13px] text-slate">SKU: {item.sku}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[12px] font-semibold text-charcoal">{item.available} left</p>
+                      <p className="text-[12px] pointer-coarse:text-[15px] font-semibold text-charcoal">{item.available} left</p>
                       {item.daysOfStockLeft != null && (
                         <>
                           <Badge color={item.daysOfStockLeft <= 7 ? 'red' : 'orange'} size="sm">
@@ -74,7 +74,7 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
                             ~{item.daysOfStockLeft}d left
                           </Badge>
                           <p
-                            className="text-[9px] text-slate mt-0.5"
+                            className="text-[9px] pointer-coarse:text-[11px] text-slate mt-0.5"
                             title={
                               item.forecastMethod === 'trend_seasonal'
                                 ? 'Based on this SKU\'s sales trend and weekly pattern'

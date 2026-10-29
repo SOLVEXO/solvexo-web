@@ -10,13 +10,15 @@ export interface ModalProps {
   footer?:  ReactNode;
   width?:   number;
   /** Renders as a native-app bottom sheet below `sm` (full-width, rounded top
-   *  only, slides up) instead of the default centered dialog — stays a
-   *  normal centered modal at `sm` and up either way. Off by default so
-   *  every existing Modal caller keeps its current look unchanged. */
+   *  only, slides up) instead of a centered dialog — stays a normal centered
+   *  modal at `sm` and up either way. On by default because a box floating in
+   *  the middle of a phone screen is the clearest giveaway of a website; pass
+   *  `mobileSheet={false}` for the rare overlay that genuinely wants to stay
+   *  centered (a confirm prompt, a picker anchored to its trigger). */
   mobileSheet?: boolean;
 }
 
-export function Modal({ title, onClose, children, footer, width = 440, mobileSheet = false }: ModalProps) {
+export function Modal({ title, onClose, children, footer, width = 440, mobileSheet = true }: ModalProps) {
   const titleId = useId();
 
   const style: CSSProperties = mobileSheet
@@ -28,7 +30,9 @@ export function Modal({ title, onClose, children, footer, width = 440, mobileShe
       onClose={onClose}
       align={mobileSheet ? 'bottom-mobile' : 'center'}
       ariaLabelledBy={titleId}
-      className={clsx('max-h-[90vh]', mobileSheet && 'max-w-full sm:max-w-[var(--modal-w)]')}
+      // `dvh` on mobile: a sheet sized against the *large* viewport gets its
+      // footer pushed under the browser's own bar once the URL bar collapses.
+      className={clsx('max-h-[86dvh] sm:max-h-[90vh]', mobileSheet && 'max-w-full sm:max-w-[var(--modal-w)]')}
       style={style}
     >
       <div className="flex items-center justify-between px-5 py-4 border-b border-bone shrink-0">
@@ -36,13 +40,13 @@ export function Modal({ title, onClose, children, footer, width = 440, mobileShe
         <button
           onClick={onClose}
           aria-label="Close dialog"
-          className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-fog transition-[background-color,color,transform] duration-fast ease-spring hover:rotate-90 hover:text-carbon"
+          className="w-7 h-7 pointer-coarse:size-11 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-fog transition-[background-color,color,transform] duration-fast ease-spring hover:rotate-90 hover:text-carbon"
         >
           <X size={16} />
         </button>
       </div>
 
-      <div className="px-5 py-4 overflow-y-auto">{children}</div>
+      <div className="px-5 py-4 overflow-y-auto overscroll-contain">{children}</div>
 
       {footer && (
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-bone shrink-0">

@@ -190,9 +190,12 @@ export function StoreReturnList() {
         {!error && (
           <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
 
-            {/* Filters */}
-            <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
-              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-colors duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
+            {/* Filters — one sideways-scrolling row on a phone so search + status
+                never stack into a block that pushes the list below the fold;
+                wrapping returns from `sm`. Card-contained, so the scroll track is
+                the card's own edge (no page-bleed negative margin). */}
+            <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone overflow-x-auto scrollbar-hide sm:flex-wrap sm:overflow-visible">
+              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white shrink-0 transition-colors duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
@@ -209,7 +212,7 @@ export function StoreReturnList() {
                 aria-label="Filter by return status"
                 value={status}
                 onChange={e => { setStatus(e.target.value); setPage(1); }}
-                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
+                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0 whitespace-nowrap transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
               >
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>

@@ -34,7 +34,7 @@ export function Badge({ children, color = 'gray', size = 'md', dot, className }:
     <span
       className={clsx(
         'inline-flex items-center gap-[5px] rounded-full whitespace-nowrap font-semibold',
-        size === 'md' ? 'text-[11px] py-[3px] px-[9px]' : 'text-[10px] py-[2px] px-[7px]',
+        size === 'md' ? 'text-[11px] pointer-coarse:text-[12.5px] py-[3px] px-[9px]' : 'text-[10px] py-[2px] px-[7px]',
         colorClasses[color],
         className,
       )}
