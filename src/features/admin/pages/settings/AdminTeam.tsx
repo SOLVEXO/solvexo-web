@@ -5,7 +5,7 @@ import { SettingsCard, SettingsRow, SettingsChoice } from '@/components/comman/s
 import { useToast } from '@/contexts/ToastContext';
 import {
   ADMIN_PERMISSION_AREAS, ADMIN_PERMISSION_LABELS, type AdminPermission, type AdminMember, type AdminRole, type AdminApproval,
-  apiListAdmins, apiInviteAdmin, apiUpdateAdmin, apiResendAdminInvite, apiRevokeAdminSessions, apiSetAdminSuper, apiDeleteAdmin,
+  apiListAdmins, apiInviteAdmin, apiUpdateAdmin, apiResendAdminInvite, apiRevokeAdminSessions, apiResetAdminTwoFactor, apiSetAdminSuper, apiDeleteAdmin,
   apiListAdminRoles, apiCreateAdminRole, apiUpdateAdminRole, apiDeleteAdminRole,
   apiListAdminApprovals, apiDecideAdminApproval, apiGetAdminAudit,
 } from '@/api/services/adminTeam';
@@ -105,7 +105,7 @@ function AdminsPane() {
           <div className="-mx-5 -mb-5 overflow-x-auto border-t border-fog">
             <table className="w-full text-[12.5px]">
               <thead><tr className="bg-cream text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-slate border-b border-bone">
-                {['Name', 'Role', 'Status', 'Last sign-in', 'Sessions', ''].map(h => <th key={h} className="px-5 py-2.5 font-semibold whitespace-nowrap">{h}</th>)}
+                {['Name', 'Role', 'Status', 'Two-factor', 'Last sign-in', 'Sessions', ''].map(h => <th key={h} className="px-5 py-2.5 font-semibold whitespace-nowrap">{h}</th>)}
               </tr></thead>
             <tbody>
               {admins.data.map(a => (
@@ -114,6 +114,9 @@ function AdminsPane() {
                   <td className="px-5 py-3">{a.isSuperAdmin ? <span className="inline-flex items-center gap-1 font-semibold text-brand-orange"><ShieldCheck size={13} /> Super Admin</span> : (a.roleName ?? '—')}</td>
                   <td className="px-5 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${STATE_STYLE[a.state]}`}>{STATE_LABEL[a.state]}</span>
                     {a.accessExpiresAt && <p className="text-[11px] text-slate mt-0.5">Until {fmt(a.accessExpiresAt)}</p>}</td>
+                  <td className="px-5 py-3">{a.twoFactorEnabled
+                    ? <span className="text-[11.5px] font-semibold text-success">On</span>
+                    : <span className="text-[11.5px] font-semibold text-warning">Off</span>}</td>
                   <td className="px-5 py-3 text-slate">{fmt(a.lastLoginAt)}</td>
                   <td className="px-5 py-3 text-slate">{a.sessionCount}</td>
                   <td className="px-5 py-3">
@@ -121,6 +124,12 @@ function AdminsPane() {
                       {a.state === 'invited' && <Button size="xs" variant="outline" onClick={() => resend(a)}><RefreshCw size={12} /> Resend</Button>}
                       {!a.isSuperAdmin && <Button size="xs" variant="outline" onClick={() => setEdit(a)}>Edit</Button>}
                       {a.sessionCount > 0 && a._id !== (me?._id ?? me?.id) && <Button size="xs" variant="outline" onClick={() => run(() => apiRevokeAdminSessions(a._id), 'Signed out everywhere.')}><LogOut size={12} /> Sign out</Button>}
+                      {a.twoFactorEnabled && a._id !== (me?._id ?? me?.id) && (
+                        <Button size="xs" variant="outline" title="For a lost phone: turns two-factor off and signs them out, so they can set it up again"
+                          onClick={() => window.confirm(`Reset two-factor sign-in for ${a.name}? Use this only if they lost their phone and recovery codes.`) && run(() => apiResetAdminTwoFactor(a._id), 'Two-factor reset.')}>
+                          Reset 2FA
+                        </Button>
+                      )}
                       {isOwner && a._id !== (me?._id ?? me?.id) && (
                         <Button size="xs" variant="outline" onClick={() => run(() => apiSetAdminSuper(a._id, !a.isSuperAdmin), a.isSuperAdmin ? 'Now a team admin.' : 'Now a Super Admin.')}>
                           {a.isSuperAdmin ? 'Make team admin' : 'Make Super Admin'}

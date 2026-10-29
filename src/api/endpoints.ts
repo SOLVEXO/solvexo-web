@@ -777,6 +777,15 @@ export const ENDPOINTS = {
     DELETE_BIN: (storeId: string, binId: string) => `/api/inventory/${storeId}/bins/${binId}`,
   },
 
+  ADMIN_TWO_FACTOR: {
+    VERIFY_LOGIN: '/api/auth/admin/2fa/verify',
+    STATUS: '/api/admin/2fa',
+    SETUP: '/api/admin/2fa/setup',
+    ENABLE: '/api/admin/2fa/enable',
+    DISABLE: '/api/admin/2fa/disable',
+    RECOVERY_CODES: '/api/admin/2fa/recovery-codes',
+  },
+
   ADMIN_TEAM: {
     INVITE: (token: string) => `/api/admin/team/invite/${token}`,
     ACCEPT: (token: string) => `/api/admin/team/invite/${token}/accept`,
@@ -786,6 +795,7 @@ export const ENDPOINTS = {
     ADMIN: (id: string) => `/api/admin/team/admins/${id}`,
     RESEND: (id: string) => `/api/admin/team/admins/${id}/resend-invite`,
     REVOKE_SESSIONS: (id: string) => `/api/admin/team/admins/${id}/revoke-sessions`,
+    RESET_2FA: (id: string) => `/api/admin/team/admins/${id}/reset-2fa`,
     SUPER: (id: string) => `/api/admin/team/admins/${id}/super`,
     ROLES: '/api/admin/team/roles',
     ROLE: (id: string) => `/api/admin/team/roles/${id}`,

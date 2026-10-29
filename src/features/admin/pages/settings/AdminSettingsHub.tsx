@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { User, Settings as SettingsIcon, Percent, Coins, Activity, Bell, Mail, Users, MonitorSmartphone, Landmark } from 'lucide-react';
+import { User, Settings as SettingsIcon, Percent, Coins, Activity, Bell, Mail, Users, MonitorSmartphone, Landmark, ShieldCheck } from 'lucide-react';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { AdminNavMenu } from '@/components/layouts/AdminLayout';
 import { SettingsShell, type SettingsNavGroup } from '@/components/comman/settings';
@@ -14,6 +14,7 @@ import { NotificationsPanel } from '@/components/comman/ui';
 import { AdminEmailHealth } from './AdminEmailHealth';
 import { AdminTeam } from './AdminTeam';
 import { AdminSessions } from './AdminSessions';
+import { AdminTwoFactor } from './AdminTwoFactor';
 import { AdminPlatformTax } from './AdminPlatformTax';
 import { can } from '@/hooks/auth/useCan';
 
@@ -24,6 +25,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     label: 'Account',
     items: [
       { id: 'account',        label: 'My Account', icon: <User size={13} />,             hint: 'Your profile and password' },
+      { id: 'two-factor',     label: 'Two-factor sign-in', icon: <ShieldCheck size={13} />, hint: 'Authenticator app codes' },
       { id: 'sessions',       label: 'Sessions',   icon: <MonitorSmartphone size={13} />, hint: 'Devices signed in' },
     ],
   },
@@ -56,7 +58,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     ],
   },
 ];
-// A team admin only gets the tabs their role allows (the owner / Super Admin gets all). Account, Notifications and Sessions are always open.
+// A team admin only gets the tabs their role allows (the owner / Super Admin gets all). Account, Two-factor, Notifications and Sessions are always open.
 const TAB_PERMISSION: Record<string, string> = {
   'platform-config': 'config.manage', email: 'config.manage', 'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', tax: 'billing.manage',
   'activity-log': 'activity.view', team: 'team.manage',
@@ -115,6 +117,7 @@ export default function AdminSettingsHub() {
         {isVisited('activity-log')     && <div className={paneClassName('activity-log')}><AdminActivityLog embedded /></div>}
         {isVisited('team')             && <div className={paneClassName('team')}><AdminTeam /></div>}
         {isVisited('sessions')         && <div className={paneClassName('sessions')}><AdminSessions /></div>}
+        {isVisited('two-factor')       && <div className={paneClassName('two-factor')}><AdminTwoFactor /></div>}
       </SettingsShell>
     </>
   );
