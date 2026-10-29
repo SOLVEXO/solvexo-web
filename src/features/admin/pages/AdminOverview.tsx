@@ -41,9 +41,14 @@ export function AdminOverview() {
         title="Platform Overview"
         subtitle="Monitor your platform: merchants, subscription revenue and system health."
         icon={<LayoutGrid size={17} />}
-        actions={layout.editing ? undefined : <CustomizeButton layout={layout} />}
       />
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
+        {!layout.editing && (
+          <div className="flex justify-end -mb-2">
+            <CustomizeButton layout={layout} />
+          </div>
+        )}
+
         {layout.editing && <CustomizeToolbar layout={layout} defs={ADMIN_WIDGET_DEFS} presets={ADMIN_PRESETS} />}
 
         {layout.loadError && (

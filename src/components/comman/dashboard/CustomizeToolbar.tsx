@@ -8,11 +8,16 @@ import { WidgetLibraryDrawer } from './WidgetLibraryDrawer';
 
 const btn = 'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-bone bg-white text-[12.5px] font-semibold text-carbon hover:bg-fog cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange';
 
-/** The "Customize dashboard" button (normal mode). */
+/** Quiet text-link affordance for entering customize mode. */
 export function CustomizeButton({ layout }: { layout: DashboardLayoutApi }) {
   return (
-    <button type="button" onClick={layout.startEdit} disabled={layout.loading} aria-label="Customize dashboard" className={btn}>
-      <SlidersHorizontal size={14} /> Customize<span className="hidden md:inline"> dashboard</span>
+    <button
+      type="button"
+      onClick={layout.startEdit}
+      disabled={layout.loading}
+      className="inline-flex items-center gap-1.5 h-8 px-1 rounded-md text-[12.5px] font-semibold text-slate hover:text-brand-deep-orange cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange"
+    >
+      <SlidersHorizontal size={14} /> Customize dashboard
     </button>
   );
 }

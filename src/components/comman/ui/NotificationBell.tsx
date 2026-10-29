@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import { TokenStorage } from '@/api/services/auth';
 import {
-  Bell, Check, Trash2, Clock, X
+  Bell, Check, X
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
@@ -143,14 +143,14 @@ export function NotificationBell() {
         <div
           ref={panelRef}
           style={pos}
-          className="dropdown-enter fixed z-[9999] bg-white border border-bone rounded-[16px] w-[320px] md:w-[350px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
+          className="dropdown-enter fixed z-[9999] bg-white border border-bone rounded-[14px] w-[330px] md:w-[356px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-bone flex items-center justify-between bg-cream/30">
-            <div className="flex items-center gap-1.5">
+          <div className="px-4 py-3 border-b border-bone flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <span className="text-[13px] font-bold text-carbon">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-[2px] rounded-full text-[9px] font-bold bg-brand-pale-orange text-brand-orange">
+                <span className="px-1.5 py-[2px] rounded-full text-[9.5px] font-bold bg-brand-pale-orange text-brand-deep-orange leading-none">
                   {unreadCount} new
                 </span>
               )}
@@ -166,73 +166,60 @@ export function NotificationBell() {
           </div>
 
           {/* List content */}
-          <div className="max-h-[300px] overflow-y-auto divide-y divide-[#f5f4ef]">
+          <div className="max-h-[340px] overflow-y-auto divide-y divide-fog">
             {recentNotifications.length > 0 ? (
               recentNotifications.map((notif) => (
                 <div
                   key={notif._id}
                   onClick={() => openNotification(notif)}
-                  className={clsx(
-                    'p-3 flex gap-3 text-left transition-colors duration-150 relative group cursor-pointer hover:bg-cream/40',
-                    !notif.isRead && 'bg-brand-pale-orange/20'
-                  )}
+                  className="group relative flex gap-3 px-3.5 py-3 cursor-pointer transition-colors duration-150 hover:bg-cream/50"
                 >
-                  {/* Category icon */}
-                  <div className="size-8 rounded-lg bg-bone flex items-center justify-center shrink-0">
-                    {getNotificationIcon(notif.type)}
-                  </div>
+                  {/* Unread reads as an edge bar on the row, not a loose dot
+                      floating in the corner of the card. */}
+                  {!notif.isRead && (
+                    <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-brand-orange" />
+                  )}
+
+                  {/* The icon already carries its own type colour, so the
+                      tinted chip behind it was only adding a second shape. */}
+                  <span aria-hidden className="shrink-0 mt-[2px]">{getNotificationIcon(notif.type, 15)}</span>
 
                   {/* Body text */}
                   <div className="flex-1 min-w-0 pr-6">
-                    <p className={clsx('text-[12px] text-charcoal leading-tight', !notif.isRead ? 'font-bold' : 'font-medium')}>
+                    <p className={clsx(
+                      'text-[12.5px] leading-snug',
+                      notif.isRead ? 'font-semibold text-charcoal' : 'font-bold text-carbon',
+                    )}>
                       {notif.title}
                     </p>
-                    <p className="text-[11px] text-slate mt-1 leading-normal break-words">
+                    <p className="text-[11.5px] text-slate mt-1 leading-normal break-words line-clamp-2">
                       {notif.body}
                     </p>
-                    <div className="flex items-center gap-1 text-[10px] text-slate mt-1.5">
-                      <Clock size={9} />
-                      <span>{formatRelativeTime(notif.createdAt)}</span>
-                    </div>
+                    <p className="text-[10.5px] text-slate/80 mt-1.5">{formatRelativeTime(notif.createdAt)}</p>
                   </div>
 
-                  {/* Actions on hover */}
-                  <div className="absolute right-2 top-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!notif.isRead && (
-                      <button
-                        title="Mark as read"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsRead(notif._id);
-                        }}
-                        className="size-5 rounded bg-white border border-bone flex items-center justify-center cursor-pointer text-success hover:bg-success-bg transition-colors"
-                      >
-                        <Check size={11} />
-                      </button>
-                    )}
-                    <button
-                      title="Delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNotification(notif._id);
-                      }}
-                      className="size-5 rounded bg-white border border-bone flex items-center justify-center cursor-pointer text-error hover:bg-error-bg transition-colors"
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  </div>
-
-                  {/* Unread blue dot indicator */}
-                  {!notif.isRead && (
-                    <span className="absolute right-3 bottom-3 w-[6px] h-[6px] rounded-full bg-brand-orange shrink-0" />
-                  )}
+                  {/* One action instead of two — opening the row already marks
+                      it read, so a separate "mark read" button was redundant,
+                      and a bare trash glyph read as a bigger threat than
+                      removing one line from a list. */}
+                  <button
+                    title="Dismiss"
+                    aria-label="Dismiss notification"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNotification(notif._id);
+                    }}
+                    className="absolute right-2 top-2 size-6 rounded-md flex items-center justify-center cursor-pointer border-0 bg-transparent text-slate opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-cream hover:text-carbon outline-none transition-[opacity,background-color,color] duration-150"
+                  >
+                    <X size={13} />
+                  </button>
                 </div>
               ))
             ) : (
-              <div className="py-8 px-4 text-center">
-                <Bell size={24} className="text-slate/40 mx-auto mb-2" />
-                <p className="text-[12px] font-medium text-slate">All caught up!</p>
-                <p className="text-[10px] text-slate/75 mt-0.5">No new notifications.</p>
+              <div className="py-9 px-4 text-center">
+                <Bell size={22} className="text-slate/35 mx-auto mb-2" />
+                <p className="text-[12.5px] font-semibold text-charcoal">All caught up</p>
+                <p className="text-[11px] text-slate mt-0.5">No new notifications.</p>
               </div>
             )}
           </div>
@@ -240,7 +227,7 @@ export function NotificationBell() {
           {/* Footer */}
           <button
             onClick={handleViewAll}
-            className="w-full py-2.5 border-t border-bone bg-cream/10 text-center text-[12px] font-semibold text-brand-orange hover:text-brand-deep-orange hover:bg-cream/30 cursor-pointer border-none"
+            className="w-full py-2.5 border-t border-bone bg-cream/40 text-center text-[12px] font-semibold text-brand-orange hover:text-brand-deep-orange hover:bg-cream cursor-pointer"
           >
             View all notification settings
           </button>

@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Languages,
-  ClipboardList, Megaphone, Star, Search, Wallet, Inbox, SlidersHorizontal,
+  ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
@@ -171,12 +171,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // { id: 'online-store-apps',      Icon: Blocks,     label: 'Apps',      path: 'online-store/apps',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
       { id: 'online-store-translations', Icon: Languages, label: 'Translate & adapt', path: 'online-store/translations', requiredPermission: 'onlinestore.content.manage' },
-      // Moved out of Marketing.tsx — these three are store-content/design
-      // features (no promotion/targeting/scheduling logic tying them to
-      // Marketing), matching where Shopify itself puts banners/announcement
-      // content: under the storefront's own customization area, not
-      // Marketing. Same APIs/data as before, just relocated.
-      { id: 'online-store-preferences', Icon: SlidersHorizontal, label: 'Preferences', path: 'online-store/preferences', requiredPermission: 'seo.manage' },
     ],
   },
   {
@@ -401,7 +395,8 @@ export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeI
 }
 
 // ── Mobile bottom tab bar — real navigation for the most frequent
-// destinations, same icon-only pattern as SellerBottomNav. The last tab
+// destinations: a detached pill of labelled tabs, where the active one lifts
+// out of the bar into a floating bubble. The last tab
 // ("More") is where every OTHER section lives (Online Store — Themes/Pages/
 // Menus/Blog/Files — plus Sales/Catalog/Customers/Growth/Finance/Settings)
 // via StoreSettings' own mobile menu (`MobileStoreMenu` + `StoreNavMenu`) —
@@ -444,29 +439,67 @@ function StoreBottomNav() {
 
   const goToTab = (path: string) => navigate(`/store/${storeId}/${path}`);
 
+  // Fluid curved cutout: the bubble sits ON TOP of the bar and the bar's edge
+  // sweeps up into it through two inverted-radius shoulders, so the curve reads
+  // as coming from BELOW the icon, never arcing over it. border-radius/clip-path
+  // can't do this (the seam where bump meets flat bar always shows), so it's one
+  // small SVG: feet land ON the bar's top edge, fill dips 2px below it to hide
+  // the bar's outline, and the stroked arc continues that outline so bar + notch
+  // read as one shape. Apex stays shallow — it hides behind the bubble.
+  const activeIndex = tabs.findIndex(tab => isActive(tab.path));
+  const activeTab = activeIndex >= 0 ? tabs[activeIndex] : null;
+  const activeCount = activeTab ? badges[activeTab.id] ?? 0 : 0;
+
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
-      <div className="flex items-stretch">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] pb-[env(safe-area-inset-bottom)]">
+      <div className="relative h-[62px] flex items-stretch px-5 bg-white shadow-[0_-1px_0_var(--color-bone),0_-8px_20px_rgba(20,15,10,0.07)]">
         {tabs.map(tab => {
           const active = isActive(tab.path);
+          const count = badges[tab.id] ?? 0;
           return (
             <button
               key={tab.id}
               onClick={() => goToTab(tab.path)}
               aria-current={active ? 'page' : undefined}
               aria-label={tab.label}
-              className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
+              className={clsx(
+                'relative flex-1 flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-transparent border-none rounded-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange',
+                active && 'peer/tab',
+              )}
             >
-              <tab.Icon
-                size={21}
-                strokeWidth={active ? 2.2 : 1.8}
-                className={clsx('transition-colors duration-150', active ? 'text-brand-orange' : 'text-slate')}
-              />
-              {(badges[tab.id] ?? 0) > 0 && <span className="absolute ml-4 -mt-3 min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center">{badges[tab.id] > 99 ? '99+' : badges[tab.id]}</span>}
-              <span className={clsx('w-[16px] h-[3px] rounded-full transition-colors duration-150', active ? 'bg-brand-orange' : 'bg-transparent')} />
+              {/* the active tab's icon floats up into the cutout, so this only
+                  holds the slot open to keep every label on one baseline */}
+              {active
+                ? <span aria-hidden="true" className="size-[21px]" />
+                : <tab.Icon size={21} strokeWidth={1.8} className="text-slate transition-colors duration-150" />}
+              {!active && count > 0 && <span className="absolute ml-4 -mt-3 min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center">{count > 99 ? '99+' : count}</span>}
+              <span className={clsx('text-[10px] leading-none transition-colors duration-150', active ? 'font-semibold text-charcoal' : 'font-medium text-slate')}>
+                {tab.label}
+              </span>
             </button>
           );
         })}
+
+        {activeTab && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-[44px] left-0 h-[46px] w-[72px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring peer-hover/tab:[&>span]:translate-y-0"
+            style={{ left: `calc(20px + ${(activeIndex + 0.5) / tabs.length} * (100% - 40px))` }}
+          >
+            <svg viewBox="0 0 72 46" className="absolute inset-0 size-full overflow-visible">
+              <path d="M6 43C19 43 19 30 36 30C53 30 53 43 66 43L66 45L6 45Z" fill="#fff" />
+              <path d="M6 43C19 43 19 30 36 30C53 30 53 43 66 43" fill="none" stroke="var(--color-bone)" strokeWidth="1" />
+            </svg>
+            {/* perched on the bump: its centre clears the bar's top edge, so the
+                only visible curve is the pair of shoulders underneath it */}
+            <span className="absolute left-1/2 top-[10px] size-[46px] -translate-x-1/2 translate-y-[3px] rounded-full bg-white shadow-[0_3px_12px_rgba(20,15,10,0.13)] flex items-center justify-center transition-transform duration-200 ease-spring">
+              <span className="size-[30px] rounded-[11px] bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center">
+                <activeTab.Icon size={16} strokeWidth={2.1} className="text-white" />
+              </span>
+              {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center border border-white">{activeCount > 99 ? '99+' : activeCount}</span>}
+            </span>
+          </span>
+        )}
       </div>
     </nav>
   );
@@ -1674,7 +1707,9 @@ export function StoreLayout() {
              in the bell above, not a separate dismissable banner here. */}
           <ViewAsBanner />
           <PlatformBillingBanner />
-          <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+          {/* pb clears the whole tab bar: 62px flush bar + the ~31px the active
+              bubble protrudes above it. */}
+          <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[100px] lg:pb-0">
             <GatedOutlet />
           </div>
         </div>

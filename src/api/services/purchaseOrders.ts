@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { downloadBlob } from '@/utils/downloadBlob';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -71,6 +72,10 @@ export interface PurchaseOrder {
   taxCost: number;
   total: number;
   poNumber: string;
+  /** Only the single-PO fetch returns this (read off the supplier record; a PO
+   *  itself stores just `supplierName`), so the list view must not assume it.
+   *  It is what tells the UI whether emailing this supplier is possible. */
+  supplierEmail?: string | null;
   expectedAt: string | null;
   orderedAt: string | null;
   receivedAt: string | null;
@@ -126,8 +131,33 @@ export function apiUpdatePurchaseOrder(storeId: string, id: string, payload: Par
   return client.patch<never, ApiResponse<PurchaseOrder>>(ENDPOINTS.PURCHASE_ORDERS.UPDATE(storeId, id), payload);
 }
 
-export function apiMarkPurchaseOrderOrdered(storeId: string, id: string) {
-  return client.post<never, ApiResponse<PurchaseOrder>>(ENDPOINTS.PURCHASE_ORDERS.MARK_ORDERED(storeId, id), {});
+export function apiMarkPurchaseOrderOrdered(storeId: string, id: string, emailSupplier = false) {
+  return client.post<never, ApiResponse<MarkOrderedResult>>(ENDPOINTS.PURCHASE_ORDERS.MARK_ORDERED(storeId, id), { emailSupplier });
+}
+
+/** The saved PO plus what happened to the optional "email the supplier too"
+ *  request — the status change is never undone by a failed send, so the UI
+ *  has to be able to report both outcomes separately. */
+export interface MarkOrderedResult extends PurchaseOrder {
+  emailSent: boolean | null;
+  emailError: string | null;
+}
+
+export interface SendToSupplierResult {
+  sent: boolean;
+  supplierEmail: string;
+  poNumber: string;
+}
+
+export function apiSendPurchaseOrderToSupplier(storeId: string, id: string) {
+  return client.post<never, ApiResponse<SendToSupplierResult>>(ENDPOINTS.PURCHASE_ORDERS.SEND_TO_SUPPLIER(storeId, id), {});
+}
+
+/** The PO as a PDF carrying the store's own branding, streamed and saved —
+ *  same on-demand blob download the finance tax-report PDF uses. */
+export async function apiDownloadPurchaseOrderPdf(storeId: string, id: string, poNumber: string) {
+  const blob = await client.get<never, Blob>(ENDPOINTS.PURCHASE_ORDERS.PURCHASE_ORDER_PDF(storeId, id), { responseType: 'blob' } as never);
+  downloadBlob(blob, `${poNumber.replace(/[^A-Za-z0-9._-]/g, '-')}.pdf`);
 }
 
 export function apiCancelPurchaseOrder(storeId: string, id: string) {

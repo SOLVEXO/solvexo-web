@@ -149,7 +149,6 @@ const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/O
 const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
 const ContactMessages = lazy(() => import('@/features/seller/store/Dashboard/Manage/ContactMessages'));
-const OnlineStorePreferences = lazy(() => import('@/features/seller/store/Dashboard/Manage/OnlineStorePreferences'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
 const MetaobjectTypesPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/Metaobjects/MetaobjectTypesPage').then(m => ({ default: m.MetaobjectTypesPage })));
@@ -428,7 +427,11 @@ const mainRouter = createBrowserRouter([
           // Edited in Themes → Customize now (Header group / Featured products section).
           { path: 'online-store/announcement-bar',     element: <Navigate to="../online-store/themes" replace /> },
           { path: 'online-store/contact-messages',     element: <ContactMessages /> },
-          { path: 'online-store/preferences',           element: <OnlineStorePreferences /> },
+          // Home-page title/description/social image now lives in one place
+          // only: SEO → Store SEO (`SeoMetaForm` over the same
+          // `apiGetStoreSeo`/`apiUpdateStoreSeo`). The duplicate
+          // Online-Store→Preferences screen and its sidebar row are gone.
+          { path: 'online-store/preferences',           element: <Navigate to="../seo/store" replace /> },
           { path: 'online-store/featured',             element: <Navigate to="../online-store/themes" replace /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'disputes',                         element: <DisputesList /> },

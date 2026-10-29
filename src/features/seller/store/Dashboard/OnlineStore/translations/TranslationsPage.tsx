@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, Languages, RefreshCw } from 'lucide-react';
+import { AlertCircle, Languages, Plus, RefreshCw } from 'lucide-react';
 import { Button, Pagination, SearchInput, Select, TabBar, type Tab } from '@/components/comman/ui';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -115,6 +115,16 @@ export function TranslationsPage() {
       <PageHeader
         title="Translate & adapt"
         description="Translate your products, collections, pages, menus, blog posts and store text (headings, buttons, announcement, header, footer, categories, FAQs) into the languages of your markets. Buyers see the translation when they pick that language; otherwise they see your English text."
+        // The languages listed below come from Markets — without this link a
+        // seller who wants one more language has to leave and go find it.
+        actions={
+          <Link
+            to={`/store/${storeId}/settings/markets`}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium py-[7px] px-[14px] rounded-md bg-white text-carbon border border-bone hover:bg-cream hover:border-slate/40 transition-colors duration-150 no-underline"
+          >
+            <Plus size={13} /> Add a language
+          </Link>
+        }
       />
 
       {langLoading && (
@@ -140,11 +150,6 @@ export function TranslationsPage() {
           title="No languages to translate into yet"
           description="Add a language to one of your markets first. Your store's own language is the original text and is never translated."
         />
-      )}
-      {!langLoading && !langRes.error && languages.length === 0 && (
-        <div className="flex justify-center -mt-4">
-          <Link to={`/store/${storeId}/settings/markets`} className="text-[13px] font-semibold text-brand-orange no-underline hover:underline">Go to Markets</Link>
-        </div>
       )}
 
       {!langLoading && !langRes.error && languages.length > 0 && (

@@ -1008,7 +1008,6 @@ export default function StoreDashboard() {
       <StorePageHeader
         title="Dashboard"
         subtitle="Monitor and manage your store."
-        actions={layout.editing ? undefined : <CustomizeButton layout={layout} />}
       />
 
       {/* One-time nudge on first dashboard landing — see useTestimonialPrompt's own doc comment. */}
@@ -1023,6 +1022,12 @@ export default function StoreDashboard() {
 
           {/* Shopify-style trial pill — Dashboard-only. */}
           {!staff && <TrialBillingPill />}
+
+          {!layout.editing && (
+            <div className="flex justify-end -mb-4">
+              <CustomizeButton layout={layout} />
+            </div>
+          )}
 
           <DashboardHero store={store} storeId={storeId} />
 

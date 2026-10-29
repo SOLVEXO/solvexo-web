@@ -155,10 +155,16 @@ export function StoreReturnList() {
 
         {/* ── How returns work ── */}
         <div className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px]">
-          <p className="text-[14px] font-semibold text-carbon mb-1.5">How returns work</p>
-          <p className="text-[13px] text-slate leading-[1.6]">
-            1. Approve the request (no money moves). 2. When the items arrive, mark them as received and choose whether to restock. 3. Refund them to the original payment method or store credit, or exchange them for other items.
-          </p>
+          <p className="text-[14px] font-semibold text-carbon mb-2.5">How returns work</p>
+          <ul className="m-0 pl-[18px] list-disc flex flex-col gap-1.5 marker:text-slate/70">
+            {[
+              'Approve the request (no money moves).',
+              'When the items arrive, mark them as received and choose whether to restock.',
+              'Refund them to the original payment method or store credit, or exchange them for other items.',
+            ].map(step => (
+              <li key={step} className="text-[13px] text-slate leading-[1.6] pl-1">{step}</li>
+            ))}
+          </ul>
         </div>
 
         {exchangeError && (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Plus, Trash2, Search, CheckCircle2, PackageCheck, XCircle, Undo2 } from 'lucide-react';
+import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
+import { Plus, Trash2, Search, CheckCircle2, PackageCheck, XCircle, Undo2, FileDown, Mail } from 'lucide-react';
 import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { SupplierReturnModal, type ReturnLine } from '@/features/seller/store/Dashboard/Operations/inventory/SupplierReturnModal';
@@ -16,6 +16,7 @@ import {
   apiCreatePurchaseOrder, apiGetPurchaseOrder, apiUpdatePurchaseOrder,
   apiMarkPurchaseOrderOrdered, apiCancelPurchaseOrder, apiCloseShortPurchaseOrder, apiReceivePurchaseOrder,
   apiListSuppliers, apiCreateSupplier,
+  apiDownloadPurchaseOrderPdf, apiSendPurchaseOrderToSupplier,
   type PurchaseOrder, type PurchaseOrderItem, type Supplier,
 } from '@/api/services/purchaseOrders';
 
@@ -128,6 +129,9 @@ export default function PurchaseOrderForm() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [marking, setMarking] = useState(false);
+  const [emailOnOrder, setEmailOnOrder] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [emailing, setEmailing] = useState(false);
   const [closingShort, setClosingShort] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
@@ -220,13 +224,45 @@ export default function PurchaseOrderForm() {
     if (!poId) return;
     setMarking(true);
     try {
-      await apiMarkPurchaseOrderOrdered(storeId, poId);
-      toast.success('Marked as ordered.');
+      const res = await apiMarkPurchaseOrderOrdered(storeId, poId, emailOnOrder);
+      if (res.data.emailSent === false) {
+        // The PO is genuinely ordered — only the optional email failed, so
+        // say exactly that rather than making "Mark as ordered" look broken.
+        toast.error(`Marked as ordered, but the supplier email failed: ${res.data.emailError ?? 'unknown error'}`);
+      } else {
+        toast.success(res.data.emailSent === true ? 'Marked as ordered and emailed to the supplier.' : 'Marked as ordered.');
+      }
+      setEmailOnOrder(false);
       loadPo();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update purchase order.');
     } finally {
       setMarking(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!poId || !po) return;
+    setDownloading(true);
+    try {
+      await apiDownloadPurchaseOrderPdf(storeId, poId, po.poNumber);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to build the PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleEmailSupplier = async () => {
+    if (!poId) return;
+    setEmailing(true);
+    try {
+      const res = await apiSendPurchaseOrderToSupplier(storeId, poId);
+      toast.success(`Purchase order sent to ${res.data.supplierEmail}.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to email the supplier.');
+    } finally {
+      setEmailing(false);
     }
   };
 
@@ -271,6 +307,16 @@ export default function PurchaseOrderForm() {
         subtitle={!isNew && po ? `Status: ${po.status.replace('_', ' ')}` : 'Order stock from a supplier and receive it once it arrives.'}
         actions={
           <div className="flex gap-2">
+            {!isNew && po && (
+              <Button variant="outline" size="sm" icon={<FileDown size={13} />} loading={downloading} onClick={handleDownloadPdf}>
+                Download PDF
+              </Button>
+            )}
+            {!isNew && po && (
+              <Button variant="outline" size="sm" icon={<Mail size={13} />} loading={emailing} disabled={!po.supplierEmail} onClick={handleEmailSupplier}>
+                Email supplier
+              </Button>
+            )}
             {!isNew && po?.status === 'draft' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingCancel(true)}>Cancel</Button>
             )}
@@ -303,6 +349,24 @@ export default function PurchaseOrderForm() {
                 onChange={v => { setSupplierId(v.supplierId); setSupplierName(v.supplierName); }} />
             ) : (
               <p className="text-[13px] text-charcoal">{supplierName}</p>
+            )}
+
+            {!isNew && (po?.supplierEmail ? (
+              <p className="text-[11.5px] text-slate mt-2">Purchase orders go to {po.supplierEmail}</p>
+            ) : (
+              <p className="text-[11.5px] text-warning mt-2">
+                No email saved for this supplier, so it cannot be emailed a purchase order.{' '}
+                <Link to={`/store/${storeId}/inventory/suppliers`} className="font-semibold underline">Add one</Link>
+              </p>
+            ))}
+
+            {/* Sending is part of placing the order, so the choice lives beside the
+                supplier — not as a second button the seller has to notice. */}
+            {!isNew && po?.status === 'draft' && po.supplierEmail && (
+              <label htmlFor="po-email-on-order" className="flex items-start gap-2 text-[12.5px] text-charcoal cursor-pointer mt-3">
+                <input id="po-email-on-order" type="checkbox" checked={emailOnOrder} onChange={e => setEmailOnOrder(e.target.checked)} disabled={marking} className="mt-[2px] accent-brand-orange cursor-pointer" />
+                <span>Email this to <b>{po.supplierName}</b> when I mark the order as placed, with the PDF attached.</span>
+              </label>
             )}
 
             {locations.length >= 2 && (
