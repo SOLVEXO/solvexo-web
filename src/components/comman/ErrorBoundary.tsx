@@ -11,6 +11,9 @@ interface ErrorBoundaryProps {
    *  persistent inside it, e.g. a dashboard's sidebar layout) on every
    *  single navigation, error or not. No effect while there's no error. */
   resetKey?: unknown;
+  /** Set for a boundary around ONE section of a page (e.g. a settings tab): the fallback is a compact card naming that
+   *  section and its error, so the rest of the page keeps working instead of the whole screen going blank. */
+  section?: string;
 }
 
 interface ErrorBoundaryState {
@@ -27,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[ErrorBoundary] Uncaught error:', error, info.componentStack);
+    console.error(`[ErrorBoundary]${this.props.section ? ` ${this.props.section}:` : ''} Uncaught error:`, error, info.componentStack);
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {
@@ -40,6 +43,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render() {
     if (!this.state.error) return this.props.children;
+
+    if (this.props.section) {
+      return (
+        <div role="alert" className="m-4 sm:m-7 border border-error-border bg-error-bg rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-error shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold text-error">{this.props.section} couldn't be shown</p>
+            <p className="text-[12px] text-slate mt-0.5 break-words">{this.state.error.message || 'Unexpected error.'}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={this.handleReset}>Try again</Button>
+        </div>
+      );
+    }
 
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
