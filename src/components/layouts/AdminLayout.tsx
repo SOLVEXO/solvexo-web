@@ -3,7 +3,7 @@ import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import {
-  LayoutDashboard, Users, Shield, DollarSign, Settings, UserCog,
+  LayoutDashboard, Gauge, Users, Shield, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
@@ -28,6 +28,7 @@ interface AdminNavItem {
 export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'overview',      Icon: LayoutDashboard, label: 'Overview',        path: '/admin'               },
   { id: 'analytics',     Icon: BarChart3,       label: 'Analytics',       path: '/admin/analytics'     },
+  { id: 'saas-metrics',  Icon: Gauge,           label: 'SaaS Metrics',    path: '/admin/saas-metrics'  },
   // Moderation is a tab inside this page now (AdminClients.tsx), not its
   // own nav destination — see that file's own comment.
   { id: 'clients',       Icon: Users,           label: 'Clients Manage',  path: '/admin/clients'       },
@@ -135,6 +136,7 @@ interface AdminModule {
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
+  { id: 'saas-metrics', label: 'SaaS Metrics',       Icon: Gauge,           ids: ['saas-metrics'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance'] },
   { id: 'billing',   label: 'Billing',               Icon: RefreshCw,      ids: ['billing'] },
   // Just one destination now (Moderation moved inside it as a tab — see
@@ -187,7 +189,7 @@ const VISIBLE_ADMIN_NAV = ADMIN_NAV.filter(item => VISIBLE_NAV_IDS.has(item.id))
 // Platform-team admins only see the pages their role allows (the owner / Super Admin sees all). The backend
 // enforces the same permissions; this only hides what would answer 403. 'settings' (own account) is always open.
 const NAV_PERMISSION: Record<string, string> = {
-  overview: 'analytics.view', analytics: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
+  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
   'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',
   content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage',

@@ -1237,6 +1237,8 @@ export const ENDPOINTS = {
       PLATFORM_HEALTH:             '/api/admin/analytics/platform/health',
       PLATFORM_ALERTS:             '/api/admin/analytics/platform/alerts',
       EXPORT:                      '/api/admin/analytics/export',
+      SAAS_METRICS:                '/api/admin/analytics/saas-metrics',
+      SAAS_METRICS_EXPORT:         '/api/admin/analytics/saas-metrics/export',
     },
   },
 

@@ -157,6 +157,7 @@ const MetaobjectEntriesPage = lazy(() => import('@/features/seller/store/Dashboa
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
 const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminSaasMetrics = lazy(() => import('@/features/admin/pages/AdminSaasMetrics').then(m => ({ default: m.AdminSaasMetrics })));
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
@@ -513,6 +514,7 @@ const mainRouter = createBrowserRouter([
         children: [
           { index: true,          element: <AdminOverview /> },
           { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
+          { path: 'saas-metrics', element: <RequireRole role="admin"><AdminSaasMetrics /></RequireRole> },
           // "Users & Sellers" is now the "Clients" workspace — same seller
           // data, opening into a full per-client workspace instead of a
           // modal. Old URL redirected (bookmarks/deep-links still land
