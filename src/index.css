@@ -256,6 +256,22 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    /* Native apps never zoom on a double-tap and never flash a grey box under
+       a finger — both are browser defaults, so both die here rather than at
+       hundreds of call sites. `manipulation` keeps panning and pinch-zoom (so
+       accessibility is untouched) and removes only double-tap-zoom plus the
+       300ms tap delay. Anything that genuinely needs its own gesture handling
+       (carousels, drag surfaces) sets `touch-action` on a class, which wins
+       over this zero-specificity rule. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Reaching the end of a list should stop, not rubber-band the whole page
+     into the browser's own overscroll UI. Nested scrollers opt in separately
+     with `overscroll-contain`, since chaining happens per-container. */
+  html, body {
+    overscroll-behavior-y: none;
   }
 
   html {
@@ -273,7 +289,9 @@
   }
 
   #root {
-    min-height: 100vh;
+    /* `dvh`, not `vh`: `vh` is the *large* viewport, so with a mobile URL bar
+       the bottom of the app was always sitting under the browser chrome. */
+    min-height: 100dvh;
   }
 
   /* Safety-net keyboard focus ring for anything that doesn't define its own
@@ -561,6 +579,17 @@
 }
 .dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }
 
+/* ── Route change ── A phone never hard-cuts between screens, it cross-fades
+   them in with a slight rise. Deliberately shorter and shallower than
+   `dash-section-enter` (which the individual cards already stagger): this one
+   covers the whole page container, so the two read as one motion rather than
+   the page sliding twice. ── */
+@keyframes page-route-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-route-enter { animation: page-route-enter 220ms var(--ease-out) both; }
+
 /* ── Solvexo signature surface — replaces "white rounded rectangle + shadow."
    Resting state is a warm --color-paper tone with a 1px hairline and a
    faint inset top highlight (simulated directional light). On hover/focus
@@ -577,16 +606,33 @@
               box-shadow        var(--duration-normal) var(--ease-out),
               transform          var(--duration-normal) var(--ease-spring);
 }
-.surface-panel-interactive:hover,
+/* Touch devices have no hover-out, so an ungated :hover lift sticks after the
+   first tap and the card sits permanently raised — the single most obvious
+   "this is a website" tell. Gating it to real pointers (matching what
+   Tailwind's own `hover:` variant compiles to in v4) lets touch get a press
+   instead, which is what a native card actually does. */
+@media (hover: hover) {
+  .surface-panel-interactive:hover {
+    background-color: var(--color-paper-raised);
+    border-color: rgba(217,119,87,0.22);
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.8), var(--shadow-glow);
+    transform: translateY(-3px);
+  }
+}
 .surface-panel-interactive:focus-visible {
   background-color: var(--color-paper-raised);
   border-color: rgba(217,119,87,0.22);
   box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.8), var(--shadow-glow);
   transform: translateY(-3px);
 }
+.surface-panel-interactive:active {
+  transform: scale(0.99);
+  transition-duration: var(--duration-micro);
+}
 @media (prefers-reduced-motion: reduce) {
   .surface-panel-interactive:hover,
-  .surface-panel-interactive:focus-visible { transform: none; }
+  .surface-panel-interactive:focus-visible,
+  .surface-panel-interactive:active { transform: none; }
 }
 
 /* ── Masked title reveal — the page-header text itself clips up from a hard

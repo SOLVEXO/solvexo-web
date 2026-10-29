@@ -12,6 +12,13 @@ import { SkeletonBox } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// A phone puts the page's primary action in a bar pinned above the store tab
+// bar (`--store-tabbar-h` is only set while that nav is mounted, so it falls
+// back to 0 anywhere else). `sm:contents` dissolves the wrapper from `sm` up,
+// leaving the button a direct child of the header row — its position today.
+const actionBarClass =
+  'fixed left-0 right-0 bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[999] bg-white border-t border-bone px-4 py-3 flex items-center gap-2 max-sm:[&>*]:flex-1 sm:contents';
+
 function formatDate(iso: string) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -90,7 +97,7 @@ export default function StoreProductDetail() {
 
   if (fetching) {
     return (
-      <div className="bg-cream min-h-screen">
+      <div className="bg-cream min-h-dvh">
 
         {/* ── Header skeleton ── */}
         <div className="sticky top-0 z-10 bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between">
@@ -98,10 +105,12 @@ export default function StoreProductDetail() {
             <SkeletonBox width={220} height={17} rounded="6px" />
             <SkeletonBox width={90} height={18} rounded="5px" />
           </div>
-          <SkeletonBox width={150} height={38} rounded="9px" />
+          <div className={actionBarClass}>
+            <SkeletonBox width={150} height={38} rounded="9px" />
+          </div>
         </div>
 
-        <div className="px-7 py-5 flex flex-col gap-4">
+        <div className="px-7 py-5 max-sm:pb-[calc(60px+env(safe-area-inset-bottom))] flex flex-col gap-4">
 
           {/* ── Hero skeleton ── */}
           <div className="bg-white border border-bone rounded-[10px] overflow-hidden flex">
@@ -160,7 +169,7 @@ export default function StoreProductDetail() {
     : null;
 
   return (
-    <div className="bg-cream min-h-screen">
+    <div className="bg-cream min-h-dvh">
 
       {/* ── Header ── */}
       <div className="sticky top-0 z-10 bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between">
@@ -173,15 +182,19 @@ export default function StoreProductDetail() {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => navigate(`/store/${storeId}/products/edit/${p._id}`, { state: { entry } })}
-          className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-5 py-[10px] text-[13px] font-semibold cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          <Edit2 size={14} /> Edit Product
-        </button>
+        <div className={actionBarClass}>
+          <button
+            onClick={() => navigate(`/store/${storeId}/products/edit/${p._id}`, { state: { entry } })}
+            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-5 py-[10px] text-[13px] font-semibold cursor-pointer hover:opacity-90 transition-opacity max-sm:pointer-coarse:min-h-11"
+          >
+            <Edit2 size={14} /> Edit Product
+          </button>
+        </div>
       </div>
 
-      <div className="px-7 py-5 flex flex-col gap-4">
+      {/* max-sm extra bottom room: the pinned action bar sits on top of the tab
+          bar, and the layout's own pb-[100px] only clears the tab bar. */}
+      <div className="px-7 py-5 max-sm:pb-[calc(60px+env(safe-area-inset-bottom))] flex flex-col gap-4">
 
         {/* ── Hero ── */}
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden flex">

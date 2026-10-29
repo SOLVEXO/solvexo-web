@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, ShoppingBag, DollarSign, Package, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert, MailCheck, MailX, Trash2 } from 'lucide-react';
+import { Users, ShoppingBag, DollarSign, Package, ChevronLeft, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert, MailCheck, MailX, Trash2 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
@@ -32,6 +32,14 @@ function initialsOf(name: string) {
 
 function fmtDate(d: string | null) {
   return d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+}
+
+/** Dialog actions as a native phone sheet lays them out: stacked full-width,
+ *  primary (DOM-last) on top, Cancel below it — and the usual compact
+ *  right-aligned row from `sm` up. Put it in a Modal's `footer`; the stretch
+ *  cross-axis is what makes each button full-width, so no per-button widths. */
+function SheetActions({ children }: { children: ReactNode }) {
+  return <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:justify-end">{children}</div>;
 }
 
 const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green' | 'blue' | 'orange' | 'red' | 'gray' }> = {
@@ -197,7 +205,8 @@ export default function StoreCustomerList() {
       .finally(() => setOrdersLoading(false));
   }, [sel, storeId]);
 
-  // On a phone the detail panel is stacked BELOW the whole list, so a tap on a row would show nothing: bring it into view.
+  // The panel scrolls itself into view on a phone (it is now the whole screen
+  // there, not a rail below the list) so a tap on a row always lands on it.
   const selId = sel?._id;
   useEffect(() => {
     if (!selId || window.matchMedia('(min-width: 1024px)').matches) return;
@@ -466,7 +475,11 @@ export default function StoreCustomerList() {
         title="Customers"
         subtitle="Everyone who bought from, signed up to, or was added to this store — and whether they agreed to marketing emails."
         actions={
-          <div className="flex flex-wrap gap-2">
+          // The sticky header's right cluster (these + store switcher, bell,
+          // avatar) is shrink-0, so a wrapping/labelled pair here pushes the
+          // whole page wider than a phone. Same convention as BulkImportButton:
+          // icon-only under `sm`, labelled from `sm` up.
+          <div className="flex items-center gap-2">
             {hasNavPermission(TokenStorage.getUser(), 'customers.edit') && (
               <BulkImportButton
                 entityLabel="customers"
@@ -476,8 +489,8 @@ export default function StoreCustomerList() {
                 notes={['Email is the unique key — customers that already exist in this store are skipped.', 'No password or email is sent; customers can sign in later by resetting their password.', 'People who unsubscribed earlier are never re-subscribed by an import.']}
               />
             )}
-            <Button size="sm" icon={<Plus size={14} />} onClick={() => { setCreateForm({ name: '', email: '', phone: '', marketingConsent: false }); setCreateError(''); setCreateNotice(''); setCreateOpen(true); }}>
-              Create Customer
+            <Button size="sm" icon={<Plus size={14} />} aria-label="Create Customer" onClick={() => { setCreateForm({ name: '', email: '', phone: '', marketingConsent: false }); setCreateError(''); setCreateNotice(''); setCreateOpen(true); }}>
+              <span className="hidden sm:inline">Create Customer</span>
             </Button>
           </div>
         }
@@ -485,7 +498,11 @@ export default function StoreCustomerList() {
 
       <div className="px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5">
 
-        <div className="flex flex-wrap gap-3">
+        {/* Cards are `flex-1 min-w-[140px]`, so this already lands 2-up on a
+            phone and 4-up from `md` — a hard `grid-cols-2` would fight their
+            own min-width at ~320px and push the page wider. Hidden while a
+            customer is open on a phone, so that screen reads as its own page. */}
+        <div className={`${sel ? 'hidden lg:flex' : 'flex'} flex-wrap gap-3`}>
           <MetricCard label="Total Customers" value={total.toLocaleString()} icon={<Users size={16} />} loading={loading && page === 1 && customers.length === 0} />
           <MetricCard label="Subscribed to email" value={summary.subscribed.toLocaleString()} icon={<MailCheck size={16} />} loading={loading && page === 1 && customers.length === 0} />
           <MetricCard label="Total Orders"    value={summary.totalOrders.toLocaleString()} icon={<ShoppingBag size={16} />} loading={loading && page === 1 && customers.length === 0} />
@@ -500,28 +517,50 @@ export default function StoreCustomerList() {
         )}
 
         <div className={`grid grid-cols-1 gap-4 items-start ${sel ? 'lg:grid-cols-[1fr_300px]' : ''}`}>
-          <div className="bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden">
+          {/* Mobile is a drill-in: a selected customer replaces the list (the
+             `lg:` rail can't be reached on a phone), with a back bar on top —
+             the same shape SettingsShell uses for the Settings hub. */}
+          {sel && (
+            <div className="lg:hidden -mb-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSel(null)}
+                aria-label="Back to customer list"
+                className="size-9 -ml-2 flex items-center justify-center rounded-full bg-transparent border-none cursor-pointer text-charcoal active:bg-cream hover:bg-cream transition-colors shrink-0"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <p className="text-[15px] font-bold text-carbon truncate">{sel.name || sel.email}</p>
+            </div>
+          )}
+
+          <div className={`bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden ${sel ? 'hidden lg:block' : ''}`}>
             <TabBar
               tabs={[{ id: 'active', label: 'Active' }, { id: 'archived', label: 'Archived' }]}
               active={view}
               onChange={id => setView(id as StoreCustomerView)}
             />
 
-            <div className="px-5 py-3.5 border-b border-bone flex flex-wrap items-center gap-2.5">
-              <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" className="max-w-[220px]" />
-              <FilterDropdown placeholder="All Segments" options={SEGMENT_OPTIONS} value={segment} onChange={setSegment} />
-              <FilterDropdown placeholder="Email marketing" options={MARKETING_OPTIONS} value={marketing} onChange={setMarketing} />
-              <div className="flex items-center gap-1.5 text-[12px] text-slate">
-                <span>Last order</span>
-                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                  className="px-2 py-[6px] text-[12px] border border-bone rounded-lg outline-none text-charcoal bg-white" />
-                <span>–</span>
-                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                  className="px-2 py-[6px] text-[12px] border border-bone rounded-lg outline-none text-charcoal bg-white" />
+            {/* One horizontally scrolling control strip (Shopify-mobile style) —
+                flex-wrap here stacked search + 2 dropdowns + a date range into a
+                block that ate half the screen. */}
+            <div className="border-b border-bone overflow-x-auto scrollbar-hide overscroll-x-contain">
+              <div className="flex items-center gap-2.5 min-w-max px-4 md:px-5 py-3">
+                <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" className="w-[190px] sm:w-[220px] shrink-0" />
+                <FilterDropdown placeholder="All Segments" options={SEGMENT_OPTIONS} value={segment} onChange={setSegment} className="shrink-0" />
+                <FilterDropdown placeholder="Email marketing" options={MARKETING_OPTIONS} value={marketing} onChange={setMarketing} className="shrink-0" />
+                <div className="flex items-center gap-1.5 text-[12px] text-slate shrink-0">
+                  <span className="shrink-0">Last order</span>
+                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                    className="px-2 py-[6px] text-[12px] border border-bone rounded-lg outline-none text-charcoal bg-white shrink-0" />
+                  <span>–</span>
+                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                    className="px-2 py-[6px] text-[12px] border border-bone rounded-lg outline-none text-charcoal bg-white shrink-0" />
+                </div>
+                <Button size="xs" variant="outline" icon={<Download size={12} />} loading={exporting} onClick={() => handleExport()} className="ml-auto">
+                  Export
+                </Button>
               </div>
-              <Button size="xs" variant="outline" icon={<Download size={12} />} loading={exporting} onClick={() => handleExport()} className="ml-auto">
-                Export
-              </Button>
             </div>
 
             {error ? (
@@ -539,7 +578,9 @@ export default function StoreCustomerList() {
                 selectedKeys={selectedKeys}
                 onSelectionChange={setSelectedKeys}
                 bulkActions={keys => (
-                  <>
+                  // Up to 5 buttons in the selection bar — `min-w-0` + its own
+                  // scroller keeps them reachable without widening the card.
+                  <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto scrollbar-hide overscroll-x-contain">
                     <Button size="xs" variant="outline" icon={<TagIcon size={12} />} disabled={bulkSaving} onClick={() => setBulkTagOpen(true)}>
                       Add Tag
                     </Button>
@@ -565,7 +606,7 @@ export default function StoreCustomerList() {
                     <Button size="xs" variant="outline" icon={<Download size={12} />} loading={exporting} onClick={() => handleExport(Array.from(keys) as string[])}>
                       Export
                     </Button>
-                  </>
+                  </div>
                 )}
                 pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'customers' }}
                 emptyState={{
@@ -583,7 +624,7 @@ export default function StoreCustomerList() {
 
           {/* Signed up for marketing email but has no account/orders: only consent can be managed. */}
           {sel && sel.isSubscriberOnly && (
-            <div data-customer-panel className="w-full lg:w-[300px] shrink-0">
+            <div data-customer-panel className="w-full shrink-0 scroll-mt-[124px] lg:w-[300px] lg:scroll-mt-0">
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 lg:sticky lg:top-[70px]">
                 <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
                   <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
@@ -628,7 +669,7 @@ export default function StoreCustomerList() {
 
           {/* Edit panel */}
           {sel && !sel.isSubscriberOnly && (
-            <div data-customer-panel className="w-full lg:w-[300px] shrink-0">
+            <div data-customer-panel className="w-full shrink-0 scroll-mt-[124px] lg:w-[300px] lg:scroll-mt-0">
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 lg:sticky lg:top-[70px]">
                 <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
                   <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
@@ -804,10 +845,10 @@ export default function StoreCustomerList() {
         <Modal
           title="Create Customer"
           onClose={() => { if (!creating) setCreateOpen(false); }}
-          footer={<>
+          footer={<SheetActions>
             <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>Cancel</Button>
             <Button variant="primary" onClick={handleCreateCustomer} loading={creating}>Create</Button>
-          </>}
+          </SheetActions>}
         >
           {createError && <p className="text-[12px] text-error mb-3">{createError}</p>}
           <p className="text-[12px] text-slate mb-3">
@@ -841,10 +882,10 @@ export default function StoreCustomerList() {
         <Modal
           title="Remove from list?"
           onClose={() => { if (!subBusy) setSubRemoveOpen(false); }}
-          footer={<>
+          footer={<SheetActions>
             <Button variant="ghost" onClick={() => setSubRemoveOpen(false)} disabled={subBusy}>Cancel</Button>
             <Button variant="danger" onClick={handleSubscriberRemove} loading={subBusy}>Remove</Button>
-          </>}
+          </SheetActions>}
         >
           {subError && <p className="text-[12px] text-error mb-3">{subError}</p>}
           <p className="text-[13px] text-charcoal">
@@ -857,10 +898,10 @@ export default function StoreCustomerList() {
         <Modal
           title={`Add tag to ${selectedKeys.size} customer${selectedKeys.size === 1 ? '' : 's'}`}
           onClose={() => setBulkTagOpen(false)}
-          footer={<>
+          footer={<SheetActions>
             <Button variant="ghost" onClick={() => setBulkTagOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={handleBulkTag} loading={bulkSaving}>Add Tag(s)</Button>
-          </>}
+          </SheetActions>}
         >
           <input
             autoFocus
@@ -877,10 +918,10 @@ export default function StoreCustomerList() {
         <Modal
           title="Erase this customer's data?"
           onClose={() => { if (!erasing) setEraseConfirmOpen(false); }}
-          footer={<>
+          footer={<SheetActions>
             <Button variant="ghost" onClick={() => setEraseConfirmOpen(false)} disabled={erasing}>Cancel</Button>
             <Button variant="danger" onClick={handleEraseCustomerData} loading={erasing}>Erase Data</Button>
-          </>}
+          </SheetActions>}
         >
           {eraseError && <p className="text-[12px] text-error mb-3">{eraseError}</p>}
           <p className="text-[13px] text-charcoal mb-2.5">

@@ -50,11 +50,11 @@ export default function StockCountsTab() {
 
   return (
     <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] text-slate max-w-[520px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <p className="text-[12px] pointer-coarse:text-[13px] text-slate max-w-[520px]">
           A real physical count — snapshot today's book quantities, count each SKU one at a time, then review and apply only what's actually different.
         </p>
-        <Button size="sm" icon={<ClipboardCheck size={13} />} onClick={handleStart} loading={starting} disabled={hasOpen}>
+        <Button size="sm" className="self-start sm:self-auto" icon={<ClipboardCheck size={13} />} onClick={handleStart} loading={starting} disabled={hasOpen}>
           {hasOpen ? 'A count is already open' : 'Start New Count'}
         </Button>
       </div>
@@ -74,17 +74,17 @@ export default function StockCountsTab() {
             <button
               key={c._id} type="button"
               onClick={() => navigate(`/store/${storeId}/inventory/count/${c._id}`)}
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors"
+              className="w-full flex flex-col gap-2 px-4 py-4 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3"
             >
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-charcoal truncate">
+                <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">
                   Count started {new Date(c.startedAt).toLocaleDateString()} · {c.items.length} SKU{c.items.length !== 1 ? 's' : ''}
                 </p>
-                <p className="text-[11px] text-slate">
+                <p className="text-[11px] pointer-coarse:text-[13px] text-slate">
                   {c.items.filter(i => i.countedQty != null).length} of {c.items.length} counted
                 </p>
               </div>
-              <Badge color={STATUS_META[c.status].color} size="sm">{STATUS_META[c.status].label}</Badge>
+              <Badge className="self-start sm:self-auto" color={STATUS_META[c.status].color} size="sm">{STATUS_META[c.status].label}</Badge>
             </button>
           ))}
         </div>

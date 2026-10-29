@@ -66,7 +66,7 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, c
             </div>
           )}
         </div>
-        <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">
+        <p className="text-[11px] pointer-coarse:text-[12.5px] font-medium text-slate uppercase tracking-[0.06em] mb-1">
           {label}
         </p>
         <p ref={valueRef} className="text-[28px] font-bold text-carbon leading-[1.15] tabular-nums tracking-tight">
@@ -81,7 +81,7 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, c
           </span>
         )}
         {sub && (
-          <p className="text-[11px] text-slate mt-[7px]">{sub}</p>
+          <p className="text-[11px] pointer-coarse:text-[12.5px] text-slate mt-[7px]">{sub}</p>
         )}
       </div>
     </Card>

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent as ReactTouchEvent } from 'react';
 import { clsx } from 'clsx';
 import { ChevronUp, ChevronDown, ArrowUpDown, Inbox } from 'lucide-react';
 import { Pagination } from './Pagination';
@@ -62,11 +62,172 @@ const TH =
   'text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] ' +
   'px-5 py-[12px] whitespace-nowrap';
 
+// ── Mobile row ────────────────────────────────────────────────────────────────
+// On desktop these same columns get their own `<td>` and are always visible.
+// On mobile there is no room for an actions column, so a row with icon-only
+// columns (a kebab menu, Fulfil/Refund buttons) hides them off-canvas to the
+// right and reveals them on a horizontal swipe — the native list-item gesture.
+// `touch-action: pan-y` is what makes this safe: the browser keeps vertical
+// scrolling (and fires `touchcancel`, which we treat as an abort), and only
+// hands us the gesture once horizontal movement clearly wins.
+const SWIPE_AXIS_THRESHOLD = 10;
+
+interface MobileRowProps<T> {
+  row:            T;
+  index:          number;
+  rowKey:         string | number;
+  labeledColumns: TableColumn<T>[];
+  actionColumns:  TableColumn<T>[];
+  onRowClick?:    (row: T) => void;
+  selectable?:    boolean;
+  selected?:      boolean;
+  onToggleSelect?: (key: string | number) => void;
+  open:           boolean;
+  anyOpen:        boolean;
+  onOpenChange:   (key: string | number | null) => void;
+}
+
+function MobileRow<T>({
+  row, index, rowKey, labeledColumns, actionColumns, onRowClick,
+  selectable, selected, onToggleSelect, open, anyOpen, onOpenChange,
+}: MobileRowProps<T>) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [revealWidth, setRevealWidth] = useState(0);
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+
+  const dragRef = useRef(0);
+  const gesture = useRef({ x: 0, y: 0, axis: 'none' as 'none' | 'h' | 'v', aborted: true });
+  // Set when a real swipe happened, so the synthetic click that follows
+  // `touchend` doesn't also open the row.
+  const consumedClick = useRef(false);
+
+  useLayoutEffect(() => {
+    const el = stripRef.current;
+    if (el) setRevealWidth(el.offsetWidth);
+  }, [actionColumns, index]);
+
+  const canSwipe = actionColumns.length > 0 && revealWidth > 0;
+  const base = open ? -revealWidth : 0;
+  const offset = dragging ? drag : base;
+
+  const onTouchStart = (e: ReactTouchEvent<HTMLDivElement>) => {
+    if (!canSwipe) return;
+    const t = e.touches[0];
+    gesture.current = { x: t.clientX, y: t.clientY, axis: 'none', aborted: false };
+  };
+
+  const onTouchMove = (e: ReactTouchEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    if (g.aborted) return;
+    const t = e.touches[0];
+    const dx = t.clientX - g.x;
+    const dy = t.clientY - g.y;
+
+    if (g.axis === 'none') {
+      if (Math.abs(dx) > SWIPE_AXIS_THRESHOLD && Math.abs(dx) > Math.abs(dy)) g.axis = 'h';
+      else if (Math.abs(dy) > SWIPE_AXIS_THRESHOLD) { g.aborted = true; return; }
+      else return;
+      setDragging(true);
+    }
+    if (g.axis === 'h') {
+      const next = Math.max(-revealWidth, Math.min(0, dx + base));
+      dragRef.current = next;
+      setDrag(next);
+    }
+  };
+
+  const onTouchEnd = () => {
+    const wasSwipe = !gesture.current.aborted && gesture.current.axis === 'h';
+    gesture.current = { x: 0, y: 0, axis: 'none', aborted: true };
+    if (!wasSwipe) return;
+    const nextOpen = dragRef.current < -revealWidth / 2;
+    consumedClick.current = true;
+    setDragging(false);
+    setDrag(nextOpen ? -revealWidth : 0);
+    onOpenChange(nextOpen ? rowKey : null);
+  };
+
+  const onTouchCancel = () => {
+    if (!gesture.current.aborted) {
+      setDragging(false);
+      setDrag(base);
+    }
+    gesture.current = { x: 0, y: 0, axis: 'none', aborted: true };
+  };
+
+  const onClick = () => {
+    if (consumedClick.current) { consumedClick.current = false; return; }
+    if (anyOpen) { onOpenChange(null); return; }
+    onRowClick?.(row);
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {actionColumns.length > 0 && (
+        <div
+          ref={stripRef}
+          className="absolute top-0 right-0 bottom-0 flex items-center gap-2 px-4 pointer-events-none [&>*]:pointer-events-auto"
+        >
+          {actionColumns.map(col => (
+            <span key={col.key}>{col.render ? col.render(row, index) : null}</span>
+          ))}
+        </div>
+      )}
+      <div
+        className={clsx(
+          'relative bg-white px-4 py-3 flex items-start gap-3',
+          canSwipe && 'touch-pan-y',
+          onRowClick && 'cursor-pointer active:bg-cream',
+          !dragging && 'transition-transform duration-[220ms] ease-out',
+          open && 'shadow-[inset_2px_0_0_0_var(--color-brand-orange)]',
+        )}
+        style={{ transform: `translateX(${offset}px)` }}
+        onClick={onClick}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
+      >
+        {selectable && (
+          <input
+            type="checkbox"
+            aria-label="Select row"
+            checked={selected}
+            onClick={e => e.stopPropagation()}
+            onChange={() => onToggleSelect?.(rowKey)}
+            className="accent-brand-orange shrink-0 cursor-pointer size-5 pointer-coarse:size-6 mt-[3px]"
+          />
+        )}
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          {labeledColumns.map(col => (
+            <div key={col.key} className="flex items-start justify-between gap-3">
+              <span className="text-[11.5px] font-semibold text-slate uppercase tracking-[0.04em] shrink-0 pt-[3px]">{col.header}</span>
+              {/* Callers write these cells for a fixed-width desktop column, so
+                  many of them carry `max-w-[180px] truncate`. Inside a stacked
+                  phone card there is no column to fit, and clipped names read as
+                  broken — the descendant overrides below neutralise that truncation
+                  for small screens only (this branch is `sm:hidden`). */}
+              <span className="text-[15px] text-carbon text-right min-w-0 leading-[1.35] [&_span]:max-w-none [&_span]:overflow-visible [&_span]:whitespace-normal [&_span]:break-words">
+                {col.render ? col.render(row, index) : String((row as Record<string, unknown>)[col.key] ?? '')}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Table<T = Record<string, unknown>>({
   columns, data, keyExtractor, onRowClick, pagination, className,
   sort, onSortChange, selectable, selectedKeys, onSelectionChange, bulkActions,
   loading = false, loadingRows = 5, emptyState,
 }: TableProps<T>) {
+  // Only one mobile row is left swiped-open at a time, the way a native list
+  // behaves — otherwise two rows could both hold their actions out.
+  const [swipedKey, setSwipedKey] = useState<string | number | null>(null);
+
   const perPage    = pagination?.perPage ?? 10;
   const start      = pagination ? (pagination.page - 1) * perPage + 1 : 1;
   const end        = pagination ? Math.min(pagination.page * perPage, pagination.total) : data.length;
@@ -106,8 +267,12 @@ export function Table<T = Record<string, unknown>>({
   return (
     <div className={className}>
       {selectable && keys.size > 0 && bulkActions && (
-        <div className="px-5 py-2.5 border-b border-bone bg-brand-pale-orange/40 flex items-center gap-3">
-          <span className="text-[12px] font-medium text-charcoal">{keys.size} selected</span>
+        // On a phone a selection bar belongs at the bottom, over the content —
+        // pinned just above the store tab bar (`--store-tabbar-h` is only set
+        // while that nav is mounted, so elsewhere it falls back to 0). From
+        // `sm` up it stays an inline strip at the top of the card.
+        <div className="fixed bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] left-0 right-0 z-[9998] flex items-center gap-3 px-4 py-3 bg-white border-t border-bone shadow-[0_-6px_18px_rgba(20,15,10,0.10)] sm:static sm:z-auto sm:bg-brand-pale-orange/40 sm:border-t-0 sm:border-b sm:px-5 sm:py-2.5 sm:shadow-none">
+          <span className="text-[13px] font-medium text-charcoal">{keys.size} selected</span>
           <div className="flex items-center gap-2 ml-auto">
             {bulkActions(keys)}
           </div>
@@ -254,27 +419,21 @@ export function Table<T = Record<string, unknown>>({
               data.map((row, i) => {
                 const rowKey = keyExtractor(row, i);
                 return (
-                  <div
+                  <MobileRow
                     key={rowKey}
-                    className={clsx('px-4 py-3 flex flex-col gap-1.5', onRowClick && 'cursor-pointer active:bg-cream')}
-                    onClick={() => onRowClick?.(row)}
-                  >
-                    {labeledColumns.map(col => (
-                      <div key={col.key} className="flex items-start justify-between gap-3">
-                        <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em] shrink-0 pt-[1px]">{col.header}</span>
-                        <span className="text-[13px] text-carbon text-right min-w-0">
-                          {col.render ? col.render(row, i) : String((row as Record<string, unknown>)[col.key] ?? '')}
-                        </span>
-                      </div>
-                    ))}
-                    {unlabeledColumns.length > 0 && (
-                      <div className="flex items-center justify-end gap-2 pt-1" onClick={e => e.stopPropagation()}>
-                        {unlabeledColumns.map(col => (
-                          <span key={col.key}>{col.render ? col.render(row, i) : null}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    row={row}
+                    index={i}
+                    rowKey={rowKey}
+                    labeledColumns={labeledColumns}
+                    actionColumns={unlabeledColumns}
+                    onRowClick={onRowClick}
+                    selectable={selectable}
+                    selected={keys.has(rowKey)}
+                    onToggleSelect={toggleRow}
+                    open={swipedKey === rowKey}
+                    anyOpen={swipedKey !== null}
+                    onOpenChange={setSwipedKey}
+                  />
                 );
               })
             )}

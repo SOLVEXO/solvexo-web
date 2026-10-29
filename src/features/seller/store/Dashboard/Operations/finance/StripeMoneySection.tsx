@@ -182,10 +182,10 @@ export function StripeMoneySection({ storeId }: { storeId: string }) {
                     <button
                       type="button"
                       onClick={() => setSelectedPayout(p.id)}
-                      className="w-full py-2.5 flex items-center justify-between gap-3 text-[12.5px] text-left bg-transparent border-none cursor-pointer hover:bg-ivory px-1 rounded"
+                      className="w-full py-3.5 sm:py-2.5 flex items-center justify-between gap-3 text-[12.5px] pointer-coarse:text-[15px] text-left bg-transparent border-none cursor-pointer hover:bg-ivory px-1 rounded"
                     >
-                      <span className="text-charcoal w-24">{day(p.arrivalDate ?? p.created)}</span>
-                      <span className="flex-1"><Badge color={st.color}>{st.label}</Badge>{p.failureMessage && <span className="text-error text-[11px] ml-2">{p.failureMessage}</span>}</span>
+                      <span className="text-charcoal w-24 shrink-0">{day(p.arrivalDate ?? p.created)}</span>
+                      <span className="flex-1"><Badge color={st.color}>{st.label}</Badge>{p.failureMessage && <span className="text-error text-[11px] pointer-coarse:text-[13px] ml-2">{p.failureMessage}</span>}</span>
                       <span className="font-semibold text-carbon">{money(p.amount, p.currency)}</span>
                     </button>
                   </li>

@@ -66,6 +66,33 @@ const EMPTY_OVERVIEW: SellerOverviewData = {
 };
 const EMPTY_TODAY: SellerTodaySummaryData = { revenue: 0, revenueChangePercent: 0, ordersCount: 0, avgOrderValue: 0 };
 
+// Below `sm` each dashboard widget takes the full page width, so even these short lists become one long column. The
+// widget's own `limit` setting caps what is fetched; this caps what a phone has to scroll before the next card.
+const PHONE_LIST_CAP = 5;
+// Needs Attention's quiet "all clear" rows only — the actionable rows above them are never capped, and the header
+// pill already carries the aggregate ("All clear" / the live count) for anything trimmed here.
+const PHONE_CLEAR_CAP = 3;
+
+// `sm:` is where the dashboard grid starts giving a widget more than one phone-width column; below it the page is a
+// single stack. A widget that doesn't survive that stack renders nothing at all instead of a narrower version of
+// itself, so its DashboardCanvas cell (`empty:hidden`) collapses rather than leaving a blank band on the page.
+// Optional call because jsdom has no matchMedia.
+const COMPACT_VIEWPORT_QUERY = '(max-width: 639.98px)';
+
+function useIsCompactViewport() {
+  const [compact, setCompact] = useState(() => !!window.matchMedia?.(COMPACT_VIEWPORT_QUERY).matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.(COMPACT_VIEWPORT_QUERY);
+    if (!mq) return;
+    const onChange = (event: MediaQueryListEvent) => setCompact(event.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  return compact;
+}
+
 function useStoreDashboardMetrics(storeId: string) {
   const [metrics, setMetrics] = useState<StoreMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,7 +165,9 @@ function useStoreDashboardMetrics(storeId: string) {
 // needs action, or as a quiet green "all fine" row when it doesn't. This
 // gives a genuine full status picture (not just problems) and fills the
 // card naturally, instead of either one lonely row floating in a mostly
-// empty box, or a single vague "all caught up" placeholder.
+// empty box, or a single vague "all caught up" placeholder. On a phone the
+// green rows are the only ones trimmed past the cap — a signal you can act
+// on is never hidden.
 interface AttentionItem { label: string; okLabel: string; count: number; path: string; Icon: LucideIcon; color: string; perm: string }
 
 function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount, awaitingCaptureCount }: {
@@ -147,6 +176,7 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
   const navigate = useNavigate();
   // Collapsible, same header pattern as SetupGuideCard/RecentActivityCard.
   const [collapsed, setCollapsed] = useState(false);
+  const compact = useIsCompactViewport();
   // Seller-friendly phrasing — "N need X", not "Order(s) with an open Y" —
   // same real signals, easier to scan at a glance.
   const allItems: AttentionItem[] = [
@@ -160,6 +190,7 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
   if (allItems.length === 0) return null; // nothing here this staff role may act on
   const flagged = allItems.filter(i => i.count > 0);
   const clear = allItems.filter(i => i.count === 0);
+  const visibleClear = compact ? clear.slice(0, PHONE_CLEAR_CAP) : clear;
   const totalCount = flagged.reduce((s, i) => s + i.count, 0);
   const allClear = flagged.length === 0;
 
@@ -180,7 +211,7 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
           {allClear ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
         </div>
         <p className="text-sm font-bold text-charcoal">Needs Attention</p>
-        <span className={`ml-auto text-[11px] font-semibold px-2 py-[2px] rounded-full ${allClear ? 'text-success bg-success-bg' : 'text-slate bg-cream'}`}>
+        <span className={`ml-auto text-[11px] pointer-coarse:text-[12px] font-semibold px-2 py-[2px] rounded-full ${allClear ? 'text-success bg-success-bg' : 'text-slate bg-cream'}`}>
           {allClear ? 'All clear' : totalCount}
         </span>
         {collapsed ? <ChevronDownIcon size={15} className="text-slate shrink-0" /> : <ChevronUp size={15} className="text-slate shrink-0" />}
@@ -200,7 +231,7 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
               <ArrowRight size={14} className="text-slate shrink-0" />
             </button>
           ))}
-          {clear.map(item => (
+          {visibleClear.map(item => (
             <div key={item.label} className="flex items-center gap-3 px-5 py-3">
               <div className="w-8 h-8 rounded-lg bg-success-bg text-success flex items-center justify-center shrink-0">
                 <CheckCircle size={14} />
@@ -303,7 +334,7 @@ function InsightsStrip({ overview, forecast, currency }: { overview: SellerOverv
         </div>
         <div>
           <p className="text-sm font-bold text-charcoal">Things worth knowing</p>
-          <p className="text-[11px] text-slate mt-[1px]">A few observations from the last 30 days</p>
+          <p className="text-[12px] sm:text-[11px] text-slate mt-[1px]">A few observations from the last 30 days</p>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4">
@@ -314,7 +345,7 @@ function InsightsStrip({ overview, forecast, currency }: { overview: SellerOverv
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg, color }}>
                 <Icon size={15} />
               </div>
-              <p className="text-[12.5px] text-charcoal leading-[1.45]">{insight.text}</p>
+              <p className="text-[13.5px] sm:text-[12.5px] text-charcoal leading-[1.45]">{insight.text}</p>
             </div>
           );
         })}
@@ -342,6 +373,7 @@ function RecentActivityCard({ storeId, limit = 5 }: { storeId: string; limit?: n
   // toggle — a seller who doesn't care about the feed can tuck it away
   // without losing the row entirely.
   const [collapsed, setCollapsed] = useState(false);
+  const compact = useIsCompactViewport();
 
   useEffect(() => {
     let cancelled = false;
@@ -352,6 +384,7 @@ function RecentActivityCard({ storeId, limit = 5 }: { storeId: string; limit?: n
   }, [storeId, limit]);
 
   if (!entries || entries.length === 0) return null;
+  const visible = compact ? entries.slice(0, PHONE_LIST_CAP) : entries;
 
   return (
     // self-start while collapsed — opts this card OUT of the grid's
@@ -376,7 +409,7 @@ function RecentActivityCard({ storeId, limit = 5 }: { storeId: string; limit?: n
         </div>
         <div className="flex-1 min-w-0 flex items-baseline gap-2">
           <p className="text-[13px] font-bold text-charcoal shrink-0">Recent Activity</p>
-          <span className="text-[11px] text-slate truncate">Last {entries.length} event{entries.length === 1 ? '' : 's'}</span>
+          <span className="text-[12px] sm:text-[11px] text-slate truncate">Last {visible.length} event{visible.length === 1 ? '' : 's'}</span>
         </div>
         {collapsed ? <ChevronDownIcon size={15} className="text-slate shrink-0" /> : <ChevronUp size={15} className="text-slate shrink-0" />}
       </button>
@@ -384,24 +417,24 @@ function RecentActivityCard({ storeId, limit = 5 }: { storeId: string; limit?: n
       {!collapsed && (
         <div className="flex-1 flex flex-col">
           <div className="flex flex-col divide-y divide-[#f3f2ec]">
-            {entries.map(entry => {
+            {visible.map(entry => {
               const Icon = ACTIVITY_ICON[entry.category] ?? History;
               return (
                 <div key={entry._id} className="flex items-center gap-2.5 px-4 py-2.5">
                   <div className="w-6 h-6 rounded-md bg-cream text-slate flex items-center justify-center shrink-0">
                     <Icon size={11.5} />
                   </div>
-                  <span className="flex-1 text-[12px] text-charcoal leading-[1.4] overflow-hidden text-ellipsis whitespace-nowrap">
+                  <span className="flex-1 text-[13px] sm:text-[12px] text-charcoal leading-[1.4] overflow-hidden text-ellipsis whitespace-nowrap">
                     {entry.description ?? entry.action}
                   </span>
-                  <span className="text-[10.5px] text-slate shrink-0">{timeAgo(entry.createdAt)}</span>
+                  <span className="text-[12px] sm:text-[10.5px] text-slate shrink-0">{timeAgo(entry.createdAt)}</span>
                 </div>
               );
             })}
           </div>
           <button
             onClick={() => navigate(`/store/${storeId}/settings?tab=activity`)}
-            className="mt-auto w-full px-4 py-2.5 border-t border-[#f3f2ec] text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left"
+            className="mt-auto w-full px-4 py-2.5 pointer-coarse:py-3 border-t border-[#f3f2ec] text-[13px] sm:text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left"
           >
             View activity →
           </button>
@@ -421,6 +454,7 @@ function RecentActivityCard({ storeId, limit = 5 }: { storeId: string; limit?: n
 function RecentOrdersCard({ storeId, currency, limit = 5 }: { storeId: string; currency?: string | null; limit?: number }) {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<SellerOrder[] | null>(null);
+  const compact = useIsCompactViewport();
 
   useEffect(() => {
     let cancelled = false;
@@ -431,6 +465,7 @@ function RecentOrdersCard({ storeId, currency, limit = 5 }: { storeId: string; c
   }, [storeId, limit]);
 
   if (!orders || orders.length === 0) return null;
+  const visible = compact ? orders.slice(0, PHONE_LIST_CAP) : orders;
 
   return (
     <div className="dash-section-enter surface-panel rounded-2xl overflow-hidden flex flex-col h-full">
@@ -441,20 +476,20 @@ function RecentOrdersCard({ storeId, currency, limit = 5 }: { storeId: string; c
         <p className="flex-1 text-[13px] font-bold text-charcoal">Recent Orders</p>
       </div>
       <div className="flex-1 flex flex-col divide-y divide-[#f3f2ec]">
-        {orders.map(o => (
+        {visible.map(o => (
           <button
             key={o.orderId}
             onClick={() => navigate(`/store/${storeId}/orders/detail/${o.orderId}`)}
             className="flex items-center gap-3 px-4 py-2.5 bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors w-full"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-[12.5px] font-semibold text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
+              <p className="text-[13px] sm:text-[12.5px] font-semibold text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
                 #{o.orderNumber} · {o.customer.name}
               </p>
-              <p className="text-[11px] text-slate mt-[1px] overflow-hidden text-ellipsis whitespace-nowrap">{o.product}</p>
+              <p className="text-[12px] sm:text-[11px] text-slate mt-[1px] overflow-hidden text-ellipsis whitespace-nowrap">{o.product}</p>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
-              <span className="text-[12px] font-bold text-carbon tabular-nums">{formatMoneyCompact(o.amount, o.currency ?? currency)}</span>
+              <span className="text-[13px] sm:text-[12px] font-bold text-carbon tabular-nums">{formatMoneyCompact(o.amount, o.currency ?? currency)}</span>
               <StatusBadge status={o.status} size="sm" />
             </div>
           </button>
@@ -462,7 +497,7 @@ function RecentOrdersCard({ storeId, currency, limit = 5 }: { storeId: string; c
       </div>
       <button
         onClick={() => navigate(`/store/${storeId}/orders`)}
-        className="mt-auto w-full px-4 py-2.5 border-t border-[#f3f2ec] text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left shrink-0"
+        className="mt-auto w-full px-4 py-2.5 pointer-coarse:py-3 border-t border-[#f3f2ec] text-[13px] sm:text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left shrink-0"
       >
         View all orders →
       </button>
@@ -482,6 +517,7 @@ function RecentOrdersCard({ storeId, currency, limit = 5 }: { storeId: string; c
 function TopProductsCard({ storeId, currency, limit = 5 }: { storeId: string; currency?: string | null; limit?: number }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
+  const compact = useIsCompactViewport();
 
   useEffect(() => {
     let cancelled = false;
@@ -492,6 +528,7 @@ function TopProductsCard({ storeId, currency, limit = 5 }: { storeId: string; cu
   }, [storeId, limit]);
 
   if (!products || products.length === 0) return null;
+  const visible = compact ? products.slice(0, PHONE_LIST_CAP) : products;
 
   return (
     <div className="dash-section-enter surface-panel rounded-2xl overflow-hidden flex flex-col h-full">
@@ -501,26 +538,26 @@ function TopProductsCard({ storeId, currency, limit = 5 }: { storeId: string; cu
         </div>
         <div className="flex-1 flex items-baseline gap-2 min-w-0">
           <p className="text-[13px] font-bold text-charcoal shrink-0">Top Products</p>
-          <span className="text-[11px] text-slate truncate">Last 7 days</span>
+          <span className="text-[12px] sm:text-[11px] text-slate truncate">Last 7 days</span>
         </div>
       </div>
       <div className="flex-1 flex flex-col divide-y divide-[#f3f2ec]">
-        {products.map((p, i) => (
+        {visible.map((p, i) => (
           <button
             key={p._id}
             onClick={() => navigate(`/store/${storeId}/products/detail/${p._id}`)}
             className="flex items-center gap-3 px-4 py-2.5 bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors w-full"
           >
-            <span className="text-[11px] font-bold text-slate w-4 shrink-0 tabular-nums">{i + 1}</span>
+            <span className="text-[12px] sm:text-[11px] font-bold text-slate w-4 shrink-0 tabular-nums">{i + 1}</span>
             <div className="w-8 h-8 rounded-lg bg-cream border border-bone overflow-hidden shrink-0 flex items-center justify-center">
               {p.images?.[0]
                 ? <img loading="lazy" decoding="async" src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
                 : <ShoppingBag size={13} className="text-slate" />}
             </div>
-            <span className="flex-1 min-w-0 text-[12.5px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="flex-1 min-w-0 text-[13px] sm:text-[12.5px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
               {p.name}
             </span>
-            <span className="text-[12px] font-bold text-carbon tabular-nums shrink-0">
+            <span className="text-[13px] sm:text-[12px] font-bold text-carbon tabular-nums shrink-0">
               {formatMoneyCompact(p.defaultVariantPrice, currency)}
             </span>
           </button>
@@ -528,7 +565,7 @@ function TopProductsCard({ storeId, currency, limit = 5 }: { storeId: string; cu
       </div>
       <button
         onClick={() => navigate(`/store/${storeId}/products`)}
-        className="mt-auto w-full px-4 py-2.5 border-t border-[#f3f2ec] text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left shrink-0"
+        className="mt-auto w-full px-4 py-2.5 pointer-coarse:py-3 border-t border-[#f3f2ec] text-[13px] sm:text-[11.5px] font-semibold text-brand-orange hover:underline bg-transparent border-0 cursor-pointer text-left shrink-0"
       >
         View all products →
       </button>
@@ -553,17 +590,17 @@ function AvailableBalanceBanner({ wallet, storeId }: { wallet: FinanceWallet; st
       </div>
       <div className="flex-1 min-w-0 flex items-center gap-6 flex-wrap">
         <div>
-          <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em]">Available</p>
+          <p className="text-[11px] sm:text-[10px] font-semibold text-slate uppercase tracking-[0.06em]">Available</p>
           <p className="text-[17px] font-bold text-carbon tabular-nums leading-tight">{formatMoneyCompact(wallet.availableBalance, wallet.currency)}</p>
         </div>
-        <div className="flex items-center gap-1.5 text-[12px] text-slate">
+        <div className="flex items-center gap-1.5 text-[12.5px] sm:text-[12px] text-slate">
           <Clock size={12} />
           Pending: <span className="font-semibold text-graphite">{formatMoneyCompact(wallet.pendingBalance, wallet.currency)}</span>
         </div>
       </div>
       <button
         onClick={() => navigate(`/store/${storeId}/finance`)}
-        className="text-[12px] font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer shrink-0"
+        className="text-[13px] sm:text-[12px] pointer-coarse:py-1.5 font-semibold text-brand-orange hover:underline bg-transparent border-none cursor-pointer shrink-0"
       >
         View Finance →
       </button>
@@ -710,6 +747,7 @@ function renderMetricCard(
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DashSkeleton() {
+  const compact = useIsCompactViewport();
   return (
     <div className="px-4 lg:px-7 py-6 flex flex-col gap-5 max-w-[1440px] mx-auto">
       <DashboardHeroSkeleton />
@@ -724,11 +762,13 @@ function DashSkeleton() {
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-        <div className="bg-white rounded-2xl border border-bone p-5 h-[320px]">
-          <SkeletonBox width={144} height={14} rounded="4px" className="mb-2" />
-          <SkeletonBox width={96} height={10} rounded="4px" className="mb-5" />
-          <SkeletonBox width="100%" height={200} rounded="8px" />
-        </div>
+        {!compact && (
+          <div className="bg-white rounded-2xl border border-bone p-5 h-[320px]">
+            <SkeletonBox width={144} height={14} rounded="4px" className="mb-2" />
+            <SkeletonBox width={96} height={10} rounded="4px" className="mb-5" />
+            <SkeletonBox width="100%" height={200} rounded="8px" />
+          </div>
+        )}
         <div className="bg-white rounded-2xl border border-bone h-[320px]">
           <div className="px-5 pt-5 pb-4 border-b border-[#f3f2ec] flex items-center gap-3">
             <SkeletonBox width={40} height={40} rounded="10px" className="shrink-0" />
@@ -941,6 +981,7 @@ export default function StoreDashboard() {
   const navigate = useNavigate();
   const { store, storeId, loading } = useStoreWorkspace();
   const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
+  const compact = useIsCompactViewport();
   const testimonialPrompt = useTestimonialPrompt();
   const { seriesByRange, loading: revenueOverviewLoading, error: revenueOverviewError, refetch: refetchRevenueOverview } = useRevenueOverviewAll(storeId);
   const staff = isStaffSession();
@@ -962,6 +1003,10 @@ export default function StoreDashboard() {
     if (def.id.startsWith('metric.')) return renderMetricCard(def.id.slice('metric.'.length), metrics, currency, totalCustomers, revenueSparkline);
     switch (def.id) {
       case 'sales_chart': {
+        // Daily x-axis ticks and a hover-only tooltip don't survive a phone column, and the same period is already on
+        // the page as the Revenue metric card and the Insights trend. Customize mode keeps it, so the widget stays
+        // configurable from anywhere.
+        if (compact && !layout.editing) return null;
         const granularity = REVENUE_RANGE_GRANULARITY[range];
         const data = (seriesByRange[range] ?? []).map(p => ({ label: formatBucketLabel(p.date, granularity), revenue: p.grossRevenue }));
         if (revenueOverviewError) {

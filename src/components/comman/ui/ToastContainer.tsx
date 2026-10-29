@@ -70,7 +70,11 @@ export function ToastContainer() {
   if (toasts.length === 0 || customHosts > 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 items-end pointer-events-none">
+    // On the seller dashboard the tab bar owns the bottom 62px (+ safe area) and
+    // both layers are z-[9999], so the stack has to clear it or the toast lands
+    // behind it. `--store-tabbar-h` is only set while that bar is mounted, so
+    // everywhere else this resolves to the original bottom-6 (24px).
+    <div className="fixed bottom-[calc(12px+var(--store-tabbar-h,12px)+env(safe-area-inset-bottom))] right-6 z-[9999] flex flex-col gap-3 items-end pointer-events-none lg:bottom-6">
       {toasts.map(t => {
         const style = resolveStyle(t.variant, t.message);
         const Icon = style.icon;

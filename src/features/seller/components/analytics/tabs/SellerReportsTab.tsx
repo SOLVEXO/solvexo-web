@@ -255,12 +255,12 @@ export function SellerReportsTab({ params, storeId, compare, onExportCsv, export
   const current = REPORTS.find(r => r.id === active)!;
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Reports">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="-mx-1 flex min-w-0 gap-1.5 overflow-x-auto scrollbar-hide px-1 pb-1" role="tablist" aria-label="Reports">
           {REPORTS.map(r => (
             <button
               key={r.id} type="button" role="tab" aria-selected={active === r.id} onClick={() => setActive(r.id)}
-              className={`px-3 py-1.5 rounded-lg border text-[12px] font-medium cursor-pointer ${active === r.id ? 'border-brand-orange bg-brand-pale-orange text-charcoal' : 'border-bone bg-white text-slate hover:text-charcoal'}`}
+              className={`shrink-0 px-3 py-1.5 rounded-lg border text-[12px] font-medium cursor-pointer whitespace-nowrap ${active === r.id ? 'border-brand-orange bg-brand-pale-orange text-charcoal' : 'border-bone bg-white text-slate hover:text-charcoal'}`}
             >
               {r.label}
             </button>

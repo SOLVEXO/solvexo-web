@@ -133,14 +133,14 @@ export default function StockCountSession() {
             return (
               <div
                 key={item._id}
-                className={`flex items-center gap-3 px-4 py-2.5 ${isMatch ? 'bg-brand-pale-orange' : ''}`}
+                className={`flex flex-wrap sm:flex-nowrap items-center gap-3 px-4 py-3.5 sm:py-2.5 ${isMatch ? 'bg-brand-pale-orange' : ''}`}
               >
                 <div className="w-9 h-9 rounded-lg bg-cream border border-bone shrink-0 overflow-hidden flex items-center justify-center">
                   {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : null}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.productName}</p>
-                  <p className="text-[11px] text-slate">SKU: {item.sku ?? '—'} · System: {item.systemQty}</p>
+                  <p className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{item.productName}</p>
+                  <p className="text-[11px] pointer-coarse:text-[13px] text-slate">SKU: {item.sku ?? '—'} · System: {item.systemQty}</p>
                 </div>
                 {item.countedQty != null && (
                   hasDiscrepancy
@@ -156,7 +156,7 @@ export default function StockCountSession() {
                   disabled={count.status !== 'open' || savingId === item._id}
                   onBlur={e => handleCount(item, e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                  className="w-20 px-2 py-1.5 text-[13px] border border-bone rounded-md text-center shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+                  className="w-full sm:w-20 px-2 py-2.5 sm:py-1.5 text-[15px] sm:text-[13px] border border-bone rounded-md text-center shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
                 />
               </div>
             );

@@ -25,7 +25,7 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag, press Enter',
   return (
     <div className={clsx(
       'flex flex-wrap gap-[5px] items-center px-[10px] py-[6px]',
-      'border border-bone rounded-lg bg-white min-h-[40px]',
+      'border border-bone rounded-lg bg-white min-h-[40px] pointer-coarse:min-h-[48px]',
       className,
     )}>
       {tags.map((t, i) => (
@@ -54,7 +54,7 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag, press Enter',
         // right after typing a tag never silently drops it.
         onBlur={add}
         placeholder={tags.length === 0 ? placeholder : ''}
-        className="flex-1 min-w-[80px] border-0 outline-none text-[12px] text-carbon placeholder:text-slate bg-transparent"
+        className="flex-1 min-w-[80px] border-0 outline-none text-[12px] pointer-coarse:text-[16px] text-carbon placeholder:text-slate bg-transparent"
       />
     </div>
   );

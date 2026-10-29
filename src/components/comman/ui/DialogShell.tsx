@@ -40,7 +40,11 @@ export function DialogShell({ onClose, children, align = 'center', className, st
         :                             'items-center p-4',
       )}
     >
-      <div className="dialog-overlay-enter absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      {/* `touch-none` is the scroll freeze: a drag that starts on the backdrop
+          is swallowed instead of scrolling the page behind the dialog, which
+          is what makes a sheet feel modal. Cheaper and side-effect-free than
+          patching `overflow:hidden` onto every scroll ancestor. */}
+      <div className="dialog-overlay-enter absolute inset-0 touch-none bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
       <div
         ref={dialogRef}
@@ -55,7 +59,7 @@ export function DialogShell({ onClose, children, align = 'center', className, st
           // Modals/sheets sit at the top of the elevation stack, so they get
           // the brightest surface + the strongest shadow token rather than
           // reusing the resting-card treatment at a bigger size.
-          'relative flex flex-col w-full bg-paper-raised border-bone shadow-raised overflow-hidden outline-none',
+          'relative flex flex-col w-full overscroll-contain bg-paper-raised border-bone shadow-raised overflow-hidden outline-none',
           align === 'bottom'
             ? 'sheet-panel-enter rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)]'
             : align === 'bottom-mobile'

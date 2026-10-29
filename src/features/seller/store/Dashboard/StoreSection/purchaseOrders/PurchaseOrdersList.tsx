@@ -79,7 +79,7 @@ export default function PurchaseOrdersList({ embedded = false }: { embedded?: bo
           <div className="flex gap-1 flex-wrap">
             {STATUS_TABS.map(s => (
               <button key={s} type="button" onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer ${statusFilter === s ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer pointer-coarse:min-h-11 ${statusFilter === s ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
                 {s === '' ? 'All' : STATUS_META[s].label}
               </button>
             ))}
@@ -108,16 +108,16 @@ export default function PurchaseOrdersList({ embedded = false }: { embedded?: bo
           <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
             {items.map(po => (
               <button key={po._id} type="button" onClick={() => navigate(`/store/${storeId}/purchase-orders/${po._id}`)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors">
+                className="w-full flex flex-col gap-2.5 px-4 py-4 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3">
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-charcoal truncate">{po.poNumber} · {po.supplierName}</p>
-                  <p className="text-[11px] text-slate">
+                  <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{po.poNumber} · {po.supplierName}</p>
+                  <p className="text-[11px] pointer-coarse:text-[13px] text-slate">
                     {po.items.length} item{po.items.length !== 1 ? 's' : ''} · {new Date(po.createdAt).toLocaleDateString()}
                     {po.expectedAt ? ` · expected ${new Date(po.expectedAt).toLocaleDateString()}` : ''}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[13px] font-bold text-charcoal">{currencySymbol(po.currency ?? store?.baseCurrency ?? 'USD')}{po.total.toFixed(2)}</span>
+                <div className="flex items-center justify-between gap-3 sm:justify-end shrink-0">
+                  <span className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal">{currencySymbol(po.currency ?? store?.baseCurrency ?? 'USD')}{po.total.toFixed(2)}</span>
                   <Badge color={STATUS_META[po.status].color} size="sm">{STATUS_META[po.status].label}</Badge>
                 </div>
               </button>

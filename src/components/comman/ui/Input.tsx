@@ -14,14 +14,17 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
 }
 
+// 16px below `sm` on purpose: iOS Safari auto-zooms the whole page whenever a
+// focused input renders under 16px, which is the loudest "this is a website"
+// moment left in the dashboard. Desktop keeps the tighter 13px scale.
 const BASE =
-  'w-full py-[9px] px-3 rounded-md border border-bone bg-white text-[13px] text-charcoal ' +
-  'outline-none transition-[border-color,box-shadow] duration-150 ' +
+  'w-full py-[9px] px-3 rounded-md border border-bone bg-white text-[16px] sm:text-[13px] text-charcoal ' +
+  'pointer-coarse:min-h-11 outline-none transition-[border-color,box-shadow] duration-150 ' +
   'placeholder:text-slate focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 ' +
   'disabled:opacity-50 disabled:bg-cream';
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, leftAddon, rightIcon, className, id, ...props }, ref) => {
+  ({ label, error, leftAddon, rightIcon, className, id, type, inputMode, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
     return (
@@ -33,13 +36,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftAddon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 select-none text-[13px] text-slate pointer-events-none">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 select-none text-[16px] sm:text-[13px] text-slate pointer-events-none">
               {leftAddon}
             </span>
           )}
           <input
             ref={ref}
             id={inputId}
+            type={type}
+            // `type="number"` alone still raises the full QWERTY keyboard on a
+            // phone; inputMode is what actually picks the keypad. Defaulted
+            // here so every price/stock/rate field gets it without ~30 call
+            // sites having to remember.
+            inputMode={inputMode ?? (type === 'number' ? 'decimal' : undefined)}
             aria-invalid={!!error}
             className={clsx(
               BASE,

@@ -42,10 +42,10 @@ export default function DraftOrdersList() {
       />
 
       <div className="px-4 lg:px-7 pt-5 pb-8">
-        <div className="flex gap-1 mb-4">
+        <div className="-mx-1 mb-4 flex gap-1 overflow-x-auto scrollbar-hide px-1 pb-1">
           {(['', 'open', 'completed', 'cancelled'] as const).map(s => (
             <button key={s} type="button" onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer ${statusFilter === s ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer ${statusFilter === s ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
               {s === '' ? 'All' : s[0].toUpperCase() + s.slice(1)}
             </button>
           ))}
@@ -64,12 +64,12 @@ export default function DraftOrdersList() {
           <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
             {items.map(d => (
               <button key={d._id} type="button" onClick={() => navigate(`/store/${storeId}/draft-orders/${d._id}`)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors">
+                className="w-full flex items-center justify-between gap-2 sm:gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors">
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-charcoal truncate">{d.customerName}</p>
                   <p className="text-[11px] text-slate">{d.items.length} item{d.items.length !== 1 ? 's' : ''} · {new Date(d.createdAt).toLocaleDateString()}{d.orderNumber ? ` · ${d.orderNumber}` : ''}</p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3 shrink-0">
                   <span className="text-[13px] font-bold text-charcoal">{currencySymbol(d.currency ?? store?.baseCurrency ?? 'USD')}{d.total.toFixed(2)}</span>
                   <Badge color={STATUS_COLOR[d.status]} size="sm">{d.status}</Badge>
                 </div>

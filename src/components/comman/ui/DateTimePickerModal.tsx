@@ -110,7 +110,7 @@ export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedul
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="w-7 h-7 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors shrink-0"
+            className="w-7 h-7 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors shrink-0"
           >
             <X size={13} />
           </button>
@@ -126,7 +126,7 @@ export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedul
                 type="button"
                 onClick={prevMonth}
                 aria-label="Previous month"
-                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
+                className="w-7 h-7 pointer-coarse:w-11 pointer-coarse:h-11 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -135,7 +135,7 @@ export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedul
                 type="button"
                 onClick={nextMonth}
                 aria-label="Next month"
-                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
+                className="w-7 h-7 pointer-coarse:w-11 pointer-coarse:h-11 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
               >
                 <ChevronRight size={14} />
               </button>
@@ -161,7 +161,7 @@ export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedul
                       type="button"
                       disabled={past}
                       onClick={() => !past && setSel({ y: viewY, m: viewM, d: day })}
-                      className="w-8 h-8 rounded-full border-none flex items-center justify-center text-[12px] transition-all duration-100"
+                      className="w-8 h-8 pointer-coarse:min-h-11 rounded-full border-none flex items-center justify-center text-[12px] pointer-coarse:text-[14px] transition-all duration-100"
                       style={{
                         background: s ? '#D97757' : 'transparent',
                         color:      s ? '#fff' : past ? '#C5C3BB' : '#141413',
@@ -209,7 +209,7 @@ export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedul
                     key={p}
                     type="button"
                     onClick={() => setAmpm(p)}
-                    className="w-[40px] h-[22px] rounded-[6px] text-[11px] font-bold border-none cursor-pointer transition-all duration-150 flex items-center justify-center"
+                    className="w-[40px] h-[22px] pointer-coarse:min-h-11 rounded-[6px] text-[11px] pointer-coarse:text-[13px] font-bold border-none cursor-pointer transition-all duration-150 flex items-center justify-center"
                     style={{ background: ampm === p ? '#D97757' : '#E8E6DC', color: ampm === p ? '#fff' : '#8C8A82' }}
                   >
                     {p}

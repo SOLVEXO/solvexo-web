@@ -144,7 +144,13 @@ export function isPickupOrder(order: { fulfillmentMethod?: 'ship' | 'pickup' }):
   return order.fulfillmentMethod === 'pickup';
 }
 
-/** Ordered -> Paid -> Shipped -> Delivered (pickup: Ready for pickup -> Picked up); Cancelled replaces the tail when cancelled. */
+/** Ordered -> Processing -> Shipped -> Delivered (pickup: Ready for pickup -> Picked up); Cancelled replaces the tail when cancelled.
+ *
+ *  Payment is deliberately NOT a stage here — it is its own badge above the bar.
+ *  "Paid" used to be step two, which read wrong for cash on delivery: `paidAt`
+ *  stays empty until the buyer actually hands over the cash, and the seller's
+ *  "Mark as paid" then wrote paid + shipped + delivered in one go, so the bar
+ *  jumped from one step to full in a single frame. */
 export function buildOrderTimeline(order: OrderDetail): TimelineStep[] {
   const subs = order.sellerOrders ?? [];
   const shippedAt = earliest(subs.map(s => s.shippedAt));
@@ -156,11 +162,13 @@ export function buildOrderTimeline(order: OrderDetail): TimelineStep[] {
     steps.push({ label: tt('order.cancelled', "Cancelled"), date: '', done: true });
     return steps;
   }
-  const payLabel = derivePaymentBadge(order).label;
-  const paid = !!order.paidAt || payLabel === tt('order.paid', "Paid") || payLabel === tt('order.refunded', "Refunded") || payLabel === tt('order.partiallyRefunded', "Partially refunded");
   const shipped = !!shippedAt || ['shipped', 'delivered', 'completed'].includes(order.orderStatus);
   const delivered = !!deliveredAt || ['delivered', 'completed'].includes(order.orderStatus);
-  steps.push({ label: tt('order.paid', "Paid"), date: formatOrderDate(order.paidAt), done: paid });
+  const processing = shipped || delivered
+    || ['processing', 'shipped', 'delivered', 'completed'].includes(order.orderStatus)
+    || subs.some(s => ['processing', 'shipped', 'delivered', 'completed'].includes(String(s.status)));
+  // No `processingAt` timestamp exists on an order, so this step carries no date.
+  steps.push({ label: tt('order.processing', "Processing"), date: '', done: processing });
   steps.push({ label: pickup ? tt('order.readyForPickup', "Ready for pickup") : partlyShipped ? tt('order.partiallyShipped', "Partially shipped") : tt('order.shipped', "Shipped"), date: formatOrderDate(pickup ? (earliest(subs.map(s => s.pickupReadyAt)) ?? shippedAt) : shippedAt), done: shipped });
   steps.push({ label: pickup ? tt('order.pickedUp', "Picked up") : tt('order.delivered', "Delivered"), date: formatOrderDate(deliveredAt), done: delivered });
   return steps;

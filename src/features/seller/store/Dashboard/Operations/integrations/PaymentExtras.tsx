@@ -195,15 +195,17 @@ export function ManualPaymentMethodsSection({ storeId, methods, onChanged }: {
       ) : (
         <ul className="flex flex-col divide-y divide-bone">
           {methods.map(m => (
-            <li key={m.id} className="py-3 flex items-start justify-between gap-3">
+            <li key={m.id} className="py-3.5 sm:py-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-carbon truncate">{m.name}</p>
-                {m.instructions && <p className="text-[11.5px] text-slate whitespace-pre-line line-clamp-2">{m.instructions}</p>}
+                <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-carbon sm:truncate">{m.name}</p>
+                {m.instructions && <p className="text-[11.5px] pointer-coarse:text-[13px] text-slate whitespace-pre-line line-clamp-2">{m.instructions}</p>}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center justify-between gap-2 shrink-0 sm:justify-end">
                 <Toggle checked={m.isActive} onChange={v => toggle(m, v)} ariaLabel={`Offer ${m.name} at checkout`} />
-                <Button size="sm" variant="outline" icon={<Pencil size={12} />} onClick={() => setEditing(m)}>Edit</Button>
-                <Button size="sm" variant="outline" icon={<Trash2 size={12} />} onClick={() => setDeleting(m)} aria-label={`Delete ${m.name}`} />
+                <span className="flex items-center gap-2 shrink-0">
+                  <Button size="sm" variant="outline" icon={<Pencil size={12} className="pointer-coarse:size-4" />} onClick={() => setEditing(m)}>Edit</Button>
+                  <Button size="sm" variant="outline" icon={<Trash2 size={12} className="pointer-coarse:size-4" />} onClick={() => setDeleting(m)} aria-label={`Delete ${m.name}`} className="pointer-coarse:size-11" />
+                </span>
               </div>
             </li>
           ))}
@@ -379,10 +381,10 @@ export function StripePayoutsPanel({ storeId }: { storeId: string }) {
         ) : (
           <ul className="flex flex-col divide-y divide-bone">
             {data.payouts.map(p => (
-              <li key={p.id} className="py-2 flex items-center justify-between gap-3 text-[12px]">
-                <span className="text-charcoal">{p.arrivalDate ? new Date(p.arrivalDate).toLocaleDateString() : new Date(p.created).toLocaleDateString()}</span>
-                <span className="text-slate capitalize">{p.status.replace('_', ' ')}{p.failureMessage ? ` — ${p.failureMessage}` : ''}</span>
-                <span className="font-semibold text-carbon">{money(p.amount, p.currency)}</span>
+              <li key={p.id} className="py-2 flex items-center justify-between gap-3 text-[12px] pointer-coarse:text-[13px]">
+                <span className="text-charcoal shrink-0">{p.arrivalDate ? new Date(p.arrivalDate).toLocaleDateString() : new Date(p.created).toLocaleDateString()}</span>
+                <span className="text-slate capitalize min-w-0">{p.status.replace('_', ' ')}{p.failureMessage ? ` — ${p.failureMessage}` : ''}</span>
+                <span className="font-semibold text-carbon shrink-0 pointer-coarse:text-[15px]">{money(p.amount, p.currency)}</span>
               </li>
             ))}
           </ul>
@@ -509,7 +511,7 @@ export function WhatsAppNotificationsPanel({ storeId }: { storeId: string }) {
           {settings.events.map(ev => (
             <li key={ev.event} className="py-3 flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[12.5px] font-semibold text-carbon">{EVENT_LABELS[ev.event]}</span>
+                <span className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-carbon">{EVENT_LABELS[ev.event]}</span>
                 <Toggle checked={ev.enabled} onChange={v => save(ev.event, { enabled: v })} ariaLabel={`Send ${EVENT_LABELS[ev.event]} on WhatsApp`} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -553,15 +555,15 @@ export function WhatsAppNotificationsPanel({ storeId }: { storeId: string }) {
         ) : (
           <ul className="flex flex-col divide-y divide-bone">
             {templates.map(t => (
-              <li key={`${t.name}:${t.language}`} className="py-2 flex items-start justify-between gap-3">
+              <li key={`${t.name}:${t.language}`} className="py-3 sm:py-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                 <div className="min-w-0">
-                  <p className="text-[12.5px] font-mono text-carbon">{t.name} <span className="text-slate">· {t.language} · {t.category.toLowerCase()}</span></p>
-                  <p className="text-[11.5px] text-slate line-clamp-2">{t.bodyText}</p>
-                  {t.rejectedReason && <p className="text-[11px] text-error">Rejected: {t.rejectedReason}</p>}
+                  <p className="text-[12.5px] pointer-coarse:text-[15px] font-mono text-carbon break-words">{t.name} <span className="text-slate">· {t.language} · {t.category.toLowerCase()}</span></p>
+                  <p className="text-[11.5px] pointer-coarse:text-[13px] text-slate line-clamp-2">{t.bodyText}</p>
+                  {t.rejectedReason && <p className="text-[11px] pointer-coarse:text-[13px] text-error">Rejected: {t.rejectedReason}</p>}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10.5px] font-semibold px-2 py-[2px] rounded-full" style={t.status === 'APPROVED' ? { background: '#E3F4EA', color: '#1E7A3C' } : t.status === 'REJECTED' ? { background: '#FDECEA', color: '#C0392B' } : { background: '#FDF3E7', color: '#9A6A17' }}>{t.status}</span>
-                  <Button size="sm" variant="outline" icon={<Trash2 size={12} />} aria-label={`Delete ${t.name}`} onClick={() => setDeleting(t)} />
+                <div className="flex items-center justify-between gap-2 shrink-0 sm:justify-end">
+                  <span className="text-[10.5px] pointer-coarse:text-[12px] font-semibold px-2 py-[2px] rounded-full" style={t.status === 'APPROVED' ? { background: '#E3F4EA', color: '#1E7A3C' } : t.status === 'REJECTED' ? { background: '#FDECEA', color: '#C0392B' } : { background: '#FDF3E7', color: '#9A6A17' }}>{t.status}</span>
+                  <Button size="sm" variant="outline" icon={<Trash2 size={12} className="pointer-coarse:size-4" />} aria-label={`Delete ${t.name}`} onClick={() => setDeleting(t)} className="pointer-coarse:size-11" />
                 </div>
               </li>
             ))}

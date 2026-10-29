@@ -79,7 +79,8 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
           </span>
         </label>
         {error && <p className="text-[12px] text-error">{error}</p>}
-        <div className="flex justify-end gap-2 mt-2">
+        {/* Bottom sheet on a phone: stacked, primary on top, full-width. */}
+        <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={handleSave} loading={saving}>{editing ? 'Save Changes' : 'Create Field'}</Button>
         </div>
@@ -129,17 +130,20 @@ export function MetafieldDefinitionsPage({ embedded = false }: { embedded?: bool
     { key: 'required', header: 'Required', render: d => d.required ? 'Yes' : '—' },
     {
       key: 'actions', header: '', render: d => (
+        // p-1 around a 15px icon is a ~23px target — under half the 44px a thumb
+        // needs. Bumped for coarse pointers only, so the dense desktop table's
+        // action strip keeps its current size.
         <div className="flex items-center gap-1">
           <button
             type="button" onClick={() => setEditingDef(d)}
-            className="text-slate bg-transparent border-none cursor-pointer p-1 hover:text-charcoal"
+            className="text-slate bg-transparent border-none cursor-pointer p-1 rounded-lg hover:text-charcoal pointer-coarse:size-11 pointer-coarse:p-0 pointer-coarse:flex pointer-coarse:items-center pointer-coarse:justify-center"
             aria-label={`Edit ${d.name}`}
           >
             <Pencil size={15} />
           </button>
           <button
             type="button" onClick={() => { setDeleteError(''); setDeleting(d); }}
-            className="text-error bg-transparent border-none cursor-pointer p-1"
+            className="text-error bg-transparent border-none cursor-pointer p-1 rounded-lg pointer-coarse:size-11 pointer-coarse:p-0 pointer-coarse:flex pointer-coarse:items-center pointer-coarse:justify-center"
             aria-label={`Delete ${d.name}`}
           >
             <Trash2 size={15} />
@@ -162,43 +166,51 @@ export function MetafieldDefinitionsPage({ embedded = false }: { embedded?: bool
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className={embedded ? 'flex flex-col gap-5' : 'flex flex-col'}>
       {!embedded && (
         <StorePageHeader
           title="Custom Fields"
           subtitle="Add your own fields to products, categories, collections, or pages — no developer needed."
           actions={(
+            // The header's right cluster is shrink-0 (these buttons + store
+            // switcher + bell + avatar), so a labelled CTA here would widen the
+            // page past a phone. Icon-only under `sm`, like BulkImportButton.
             <div className="flex items-center gap-2">
               {importButton}
-              <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
-                New Field
+              <Button variant="primary" icon={<Plus size={14} />} aria-label="New Field" onClick={() => setModalOpen(true)}>
+                <span className="hidden sm:inline">New Field</span>
               </Button>
             </div>
           )}
         />
       )}
 
-      {embedded && definitions !== null && (
-        <div className="flex justify-end items-center gap-2">
-          {importButton}
-          {definitions.length > 0 && (
-            <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
-              New Field
-            </Button>
-          )}
-        </div>
-      )}
+      {/* Standalone route: nothing above this pads the page, so the body owns
+          its gutters. Inside SettingsHub the pane already pads it (`px-4
+          lg:px-7 py-6`) — padding here too would double it. */}
+      <div className={embedded ? 'flex flex-col gap-5' : 'px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5'}>
+        {embedded && definitions !== null && (
+          <div className="flex items-center justify-end gap-2 overflow-x-auto scrollbar-hide overscroll-x-contain">
+            {importButton}
+            {definitions.length > 0 && (
+              <Button variant="primary" icon={<Plus size={14} />} onClick={() => setModalOpen(true)}>
+                New Field
+              </Button>
+            )}
+          </div>
+        )}
 
-      {definitions === null ? null : definitions.length === 0 ? (
-        <EmptyState
-          icon={<Layers size={28} />}
-          title="No custom fields yet"
-          description="Create one to add data like Fabric, Care Instructions, or a Launch Date to your products."
-          action={{ label: 'New Field', icon: <Plus size={14} />, onClick: () => setModalOpen(true) }}
-        />
-      ) : (
-        <Table columns={columns} data={definitions} keyExtractor={d => d._id} />
-      )}
+        {definitions === null ? null : definitions.length === 0 ? (
+          <EmptyState
+            icon={<Layers size={28} />}
+            title="No custom fields yet"
+            description="Create one to add data like Fabric, Care Instructions, or a Launch Date to your products."
+            action={{ label: 'New Field', icon: <Plus size={14} />, onClick: () => setModalOpen(true) }}
+          />
+        ) : (
+          <Table columns={columns} data={definitions} keyExtractor={d => d._id} />
+        )}
+      </div>
 
       {modalOpen && (
         <DefinitionFormModal storeId={storeId} onClose={() => setModalOpen(false)} onSaved={() => { setModalOpen(false); load(); }} />
@@ -214,7 +226,7 @@ export function MetafieldDefinitionsPage({ embedded = false }: { embedded?: bool
             "{deleting.name}" and every value set on it will be permanently removed. This can't be undone.
           </p>
           {deleteError && <p className="text-[12px] text-error mb-3">{deleteError}</p>}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="ghost" onClick={() => { setDeleting(null); setDeleteError(''); }} disabled={deleteBusy}>Cancel</Button>
             <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete</Button>
           </div>

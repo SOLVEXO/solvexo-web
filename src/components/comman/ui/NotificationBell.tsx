@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import { TokenStorage } from '@/api/services/auth';
 import {
-  Bell, Check, X
+  Bell, Check, X, ChevronLeft
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
@@ -45,9 +45,10 @@ export function NotificationBell() {
   } = useNotification();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [sheet, setSheet] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const pos = useDropdownPosition(containerRef, isOpen);
+  const pos = useDropdownPosition(containerRef, isOpen && !sheet);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -77,10 +78,12 @@ export function NotificationBell() {
   }, [toast, clearToast]);
 
   const handleBellClick = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen) {
-      fetchNotifications();
-    }
+    const opening = !isOpen;
+    // Below `sm` a 330px floating panel reads as desktop chrome — a phone app
+    // pushes a full screen and pops back, so the same list gets that shape.
+    if (opening) setSheet(window.matchMedia('(max-width: 639px)').matches);
+    setIsOpen(opening);
+    if (opening) fetchNotifications();
   };
 
   const handleViewAll = () => {
@@ -126,7 +129,7 @@ export function NotificationBell() {
         onClick={handleBellClick}
         aria-label="Notifications"
         className={clsx(
-          'group relative w-9 h-9 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer shrink-0 border-none transition-all duration-200 hover:bg-brand-pale-orange hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
+          'group relative w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer shrink-0 border-none transition-all duration-200 hover:bg-brand-pale-orange hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
           isOpen && 'bg-brand-pale-orange ring-2 ring-brand-orange/30'
         )}
       >
@@ -142,13 +145,27 @@ export function NotificationBell() {
       {isOpen && createPortal(
         <div
           ref={panelRef}
-          style={pos}
-          className="dropdown-enter fixed z-[9999] bg-white border border-bone rounded-[14px] w-[330px] md:w-[356px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
+          style={sheet ? { top: 0, left: 0, right: 0, bottom: 0 } : pos}
+          className={clsx(
+            'dropdown-enter fixed z-[9999] bg-white overflow-hidden flex flex-col',
+            sheet
+              ? ''
+              : 'border border-bone rounded-[14px] w-[330px] md:w-[356px] max-w-[calc(100vw-2rem)]',
+          )}
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-bone flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] font-bold text-carbon">Notifications</span>
+          <div className="px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
+            {sheet && (
+              <button
+                onClick={() => setIsOpen(false)}
+                aria-label="Back"
+                className="size-8 pointer-coarse:size-11 -ml-2 rounded-md flex items-center justify-center border-0 bg-transparent text-charcoal cursor-pointer hover:bg-cream transition-colors shrink-0"
+              >
+                <ChevronLeft size={19} />
+              </button>
+            )}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-[15px] pointer-coarse:text-[16px] font-bold text-carbon">Notifications</span>
               {unreadCount > 0 && (
                 <span className="px-1.5 py-[2px] rounded-full text-[9.5px] font-bold bg-brand-pale-orange text-brand-deep-orange leading-none">
                   {unreadCount} new
@@ -158,7 +175,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-[11px] font-semibold text-brand-orange hover:text-brand-deep-orange border-none bg-transparent cursor-pointer flex items-center gap-1"
+                className="text-[11px] pointer-coarse:text-[12.5px] font-semibold text-brand-orange hover:text-brand-deep-orange border-none bg-transparent cursor-pointer flex items-center gap-1 shrink-0"
               >
                 <Check size={12} /> Mark all read
               </button>
@@ -166,9 +183,9 @@ export function NotificationBell() {
           </div>
 
           {/* List content */}
-          <div className="max-h-[340px] overflow-y-auto divide-y divide-fog">
-            {recentNotifications.length > 0 ? (
-              recentNotifications.map((notif) => (
+          <div className={clsx('overflow-y-auto overscroll-contain divide-y divide-fog', sheet ? 'flex-1' : 'max-h-[340px]')}>
+            {(sheet ? notifications : recentNotifications).length > 0 ? (
+              (sheet ? notifications : recentNotifications).map((notif) => (
                 <div
                   key={notif._id}
                   onClick={() => openNotification(notif)}
@@ -185,17 +202,17 @@ export function NotificationBell() {
                   <span aria-hidden className="shrink-0 mt-[2px]">{getNotificationIcon(notif.type, 15)}</span>
 
                   {/* Body text */}
-                  <div className="flex-1 min-w-0 pr-6">
+                  <div className="flex-1 min-w-0 pr-6 pointer-coarse:pr-11">
                     <p className={clsx(
-                      'text-[12.5px] leading-snug',
+                      'text-[12.5px] leading-snug pointer-coarse:text-[15px]',
                       notif.isRead ? 'font-semibold text-charcoal' : 'font-bold text-carbon',
                     )}>
                       {notif.title}
                     </p>
-                    <p className="text-[11.5px] text-slate mt-1 leading-normal break-words line-clamp-2">
+                    <p className="text-[11.5px] text-slate mt-1 leading-normal break-words line-clamp-2 pointer-coarse:text-[13.5px]">
                       {notif.body}
                     </p>
-                    <p className="text-[10.5px] text-slate/80 mt-1.5">{formatRelativeTime(notif.createdAt)}</p>
+                    <p className="text-[10.5px] text-slate/80 mt-1.5 pointer-coarse:text-[12px]">{formatRelativeTime(notif.createdAt)}</p>
                   </div>
 
                   {/* One action instead of two — opening the row already marks
@@ -209,7 +226,7 @@ export function NotificationBell() {
                       e.stopPropagation();
                       deleteNotification(notif._id);
                     }}
-                    className="absolute right-2 top-2 size-6 rounded-md flex items-center justify-center cursor-pointer border-0 bg-transparent text-slate opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-cream hover:text-carbon outline-none transition-[opacity,background-color,color] duration-150"
+                    className="absolute right-2 top-2 size-6 rounded-md flex items-center justify-center cursor-pointer border-0 bg-transparent text-slate opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 pointer-coarse:size-11 pointer-coarse:opacity-100 hover:bg-cream hover:text-carbon outline-none transition-[opacity,background-color,color] duration-150"
                   >
                     <X size={13} />
                   </button>
@@ -227,7 +244,10 @@ export function NotificationBell() {
           {/* Footer */}
           <button
             onClick={handleViewAll}
-            className="w-full py-2.5 border-t border-bone bg-cream/40 text-center text-[12px] font-semibold text-brand-orange hover:text-brand-deep-orange hover:bg-cream cursor-pointer"
+            className={clsx(
+              'w-full py-2.5 border-t border-bone bg-cream/40 text-center text-[12px] font-semibold text-brand-orange hover:text-brand-deep-orange hover:bg-cream cursor-pointer',
+              sheet && 'pb-[calc(10px+env(safe-area-inset-bottom))]',
+            )}
           >
             View all notification settings
           </button>

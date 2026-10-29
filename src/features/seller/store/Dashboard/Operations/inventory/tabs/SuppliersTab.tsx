@@ -83,10 +83,10 @@ export default function SuppliersTab() {
 
   return (
     <div className="px-4 lg:px-7 pt-4 pb-8 flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] text-slate max-w-[520px]">The suppliers you buy stock from. Pick them on purchase orders and supplier returns.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <p className="text-[12px] pointer-coarse:text-[13px] text-slate max-w-[520px]">The suppliers you buy stock from. Pick them on purchase orders and supplier returns.</p>
         {canManage && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <BulkImportButton
               entityLabel="suppliers"
               basePath={`/api/purchase-orders/${storeId}/suppliers`}
@@ -110,15 +110,19 @@ export default function SuppliersTab() {
       ) : (
         <div className="bg-white rounded-xl border border-bone divide-y divide-bone overflow-hidden">
           {rows.map(s => (
-            <div key={s._id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div key={s._id} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 sm:py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-charcoal truncate">{s.name}</p>
-                <p className="text-[11px] text-slate truncate">{[s.email, s.phone, s.address].filter(Boolean).join(' · ') || 'No contact details'}</p>
+                <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{s.name}</p>
+                <p className="text-[11px] pointer-coarse:text-[13px] text-slate sm:truncate">{[s.email, s.phone, s.address].filter(Boolean).join(' · ') || 'No contact details'}</p>
               </div>
               <div className="flex items-center gap-2 justify-between sm:justify-end">
                 <Badge color={s.status === 'active' ? 'green' : 'gray'} size="sm">{s.status === 'active' ? 'Active' : 'Archived'}</Badge>
-                {canManage && <Button size="sm" variant="secondary" onClick={() => open(s)}>Edit</Button>}
-                {canManage && <Button size="sm" variant="secondary" loading={busyId === s._id} onClick={() => void toggleArchive(s)}>{s.status === 'active' ? 'Archive' : 'Restore'}</Button>}
+                {canManage && (
+                  <span className="flex items-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => open(s)}>Edit</Button>
+                    <Button size="sm" variant="secondary" loading={busyId === s._id} onClick={() => void toggleArchive(s)}>{s.status === 'active' ? 'Archive' : 'Restore'}</Button>
+                  </span>
+                )}
               </div>
             </div>
           ))}

@@ -47,7 +47,7 @@ interface DropdownPos {
 
 // ── Portal dropdown ───────────────────────────────────────────────────────────
 function DropdownPortal({
-  items, pos, portalRef, onClose, menuId, triggerId, align, searchable, searchPlaceholder, query, onQueryChange,
+  items, pos, portalRef, onClose, menuId, triggerId, align, searchable, searchPlaceholder, query, onQueryChange, sheet,
 }: {
   items:     ActionMenuItem[];
   pos:       DropdownPos;
@@ -60,6 +60,7 @@ function DropdownPortal({
   searchPlaceholder?: string;
   query:              string;
   onQueryChange:      (v: string) => void;
+  sheet:              boolean;
 }) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -97,15 +98,29 @@ function DropdownPortal({
   };
 
   return createPortal(
-    <div
-      ref={portalRef}
-      id={menuId}
-      role="menu"
-      aria-labelledby={triggerId}
-      onKeyDown={onKeyDown}
-      className="dropdown-enter fixed z-[9999] bg-white border border-bone rounded-[10px] py-1 min-w-[160px] flex flex-col"
-      style={{ ...pos, transformOrigin: align === 'right' ? 'top right' : 'top left', maxHeight: searchable ? 328 : 288 }}
-    >
+    <>
+      {sheet && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={onClose}
+          className="fixed inset-0 z-[9998] bg-carbon/35 border-0 cursor-default"
+        />
+      )}
+      <div
+        ref={portalRef}
+        id={menuId}
+        role="menu"
+        aria-labelledby={triggerId}
+        onKeyDown={onKeyDown}
+        className={clsx(
+          'dropdown-enter fixed z-[9999] bg-white flex flex-col',
+          sheet
+            ? 'left-0 right-0 bottom-0 w-full max-h-[72dvh] rounded-t-[18px] border-x border-t border-bone pt-2 pb-[calc(8px+env(safe-area-inset-bottom))]'
+            : 'border border-bone rounded-[10px] py-1 min-w-[160px] max-w-[calc(100vw-24px)]',
+        )}
+        style={sheet ? undefined : { ...pos, transformOrigin: align === 'right' ? 'top right' : 'top left', maxHeight: searchable ? 328 : 288 }}
+      >
       {searchable && (
         <div className="px-2.5 pt-1 pb-2 border-b border-bone shrink-0">
           <div className="relative">
@@ -116,7 +131,7 @@ function DropdownPortal({
               value={query}
               onChange={e => onQueryChange(e.target.value)}
               placeholder={searchPlaceholder ?? 'Search…'}
-              className="w-full pl-7 pr-2.5 py-[7px] rounded-md border border-bone bg-cream text-[12px] text-charcoal outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+              className="w-full pl-7 pr-2.5 py-[7px] rounded-md border border-bone bg-cream text-[12px] pointer-coarse:text-[16px] text-charcoal outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
             />
           </div>
         </div>
@@ -136,7 +151,7 @@ function DropdownPortal({
               aria-disabled={item.disabled}
               onClick={e => { e.stopPropagation(); if (item.disabled) return; item.onClick(); onClose(); }}
               className={clsx(
-                'w-full flex items-center gap-2 px-4 py-[9px] text-[13px] font-medium text-left border-none bg-transparent transition-colors',
+                'w-full flex items-center gap-2 px-4 py-[9px] pointer-coarse:min-h-11 text-[13px] pointer-coarse:text-[15px] font-medium text-left border-none bg-transparent transition-colors',
                 item.disabled
                   ? 'text-slate/60 cursor-not-allowed'
                   : item.danger
@@ -150,7 +165,8 @@ function DropdownPortal({
           ))
         )}
       </div>
-    </div>,
+      </div>
+    </>,
     document.body,
   );
 }
@@ -173,6 +189,7 @@ export function ActionMenu({
   items, align = 'right', className, trigger, triggerClassName, ariaLabel, searchable, searchPlaceholder,
 }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
+  const [sheet, setSheet] = useState(false);
   const [pos,  setPos]  = useState<DropdownPos>({});
   const [query, setQuery] = useState('');
 
@@ -196,9 +213,14 @@ export function ActionMenu({
   // than running off-screen, so positioning only needs to reason about a capped size.
   const calcPos = useCallback(() => {
     if (!btnRef.current) return;
+    // The sheet is anchored to the viewport edges, so trigger/clip-box
+    // measurement is meaningless there.
+    if (sheet) return;
     const rect          = btnRef.current.getBoundingClientRect();
     const container     = getContainerRect(btnRef.current);
-    const ESTIMATED_H   = Math.min(items.length * 42 + 8, searchable ? 328 : 288);
+    // 44 matches the tallest an item can get (touch min-h-11), so the upward
+    // flip decision never under-estimates and strands the menu off-screen.
+    const ESTIMATED_H   = Math.min(items.length * 44 + 8, searchable ? 328 : 288);
     const GAP           = 4;
     const spaceBelow    = container.bottom - rect.bottom;
     const spaceAbove    = rect.top - container.top;
@@ -209,12 +231,18 @@ export function ActionMenu({
       ? window.innerHeight - rect.top + GAP
       : rect.bottom + GAP;
 
+    // Vertical flip has been handled for years; horizontal never was, so a
+    // right-aligned menu near the left edge (or any 160px menu on a 320px
+    // phone) could hang off the side of the screen.
+    const EDGE       = 12;
+    const MENU_WIDTH = 160;
+    const maxEdge    = Math.max(EDGE, window.innerWidth - MENU_WIDTH - EDGE);
     next[align === 'right' ? 'right' : 'left'] = align === 'right'
-      ? window.innerWidth - rect.right
-      : rect.left;
+      ? Math.min(window.innerWidth - rect.right, maxEdge)
+      : Math.min(rect.left, maxEdge);
 
     setPos(next);
-  }, [items.length, align, searchable]);
+  }, [items.length, align, searchable, sheet]);
 
   useEffect(() => {
     if (!open) return;
@@ -256,9 +284,17 @@ export function ActionMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         aria-label={ariaLabel ?? 'Open actions menu'}
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        onClick={e => {
+          e.stopPropagation();
+          // Below `sm`, inside the store dashboard, a kebab menu is an action
+          // sheet off the bottom edge the way every phone app lays out row
+          // actions. Gated to `/store/` because this menu is also used by
+          // storefront chrome (locale switcher), which is out of scope.
+          if (!open) setSheet(window.matchMedia('(max-width: 639px)').matches && window.location.pathname.startsWith('/store/'));
+          setOpen(o => !o);
+        }}
         className={triggerClassName ?? clsx(
-          'w-8 h-8 rounded-[7px] border flex items-center justify-center transition-colors cursor-pointer',
+          'w-8 h-8 pointer-coarse:size-11 rounded-[7px] border flex items-center justify-center transition-colors cursor-pointer',
           open
             ? 'bg-brand-pale-orange border-brand-orange text-brand-orange'
             : 'bg-white border-bone text-slate hover:bg-cream hover:border-[#c5c4bc]',
@@ -280,6 +316,7 @@ export function ActionMenu({
           searchPlaceholder={searchPlaceholder}
           query={query}
           onQueryChange={setQuery}
+          sheet={sheet}
         />
       )}
     </div>

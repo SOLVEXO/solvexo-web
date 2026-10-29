@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import {
   Wallet, ShoppingBag, Palette, CreditCard, Truck, Globe2,
   Check, ArrowRight, ChevronDown, ChevronUp, ListChecks,
@@ -48,6 +49,10 @@ interface SetupTask {
   manual: boolean;
 }
 
+// On a phone each task card is its own full-width row, so the checklist shows a capped preview there and the rest is
+// one tap away inside the same card — there is no "all setup steps" dashboard route to link out to.
+const PHONE_TASK_CAP = 4;
+
 function useCustomizeDone(storeId: string): [boolean, () => void] {
   const key = `solvexo:setup-guide:${storeId}:customized`;
   const [done, setDone] = useState(() => {
@@ -76,6 +81,7 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
   const [shippingZoneCount, setShippingZoneCount] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [customized, toggleCustomized] = useCustomizeDone(storeId);
   // This THIS store's own subscription is actually 'locked' (no free trial —
   // the seller already used their one-per-account trial on an earlier
@@ -183,7 +189,7 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
         </div>
         <div className="flex-1 min-w-0 flex items-baseline gap-2">
           <p className="text-[13px] font-bold text-charcoal shrink-0">Setup Guide</p>
-          <span className="text-[11px] text-slate truncate">{doneCount} of {tasks.length} done</span>
+          <span className="text-[12px] sm:text-[11px] text-slate truncate">{doneCount} of {tasks.length} done</span>
         </div>
         {collapsed ? <ChevronDown size={15} className="text-slate shrink-0" /> : <ChevronUp size={15} className="text-slate shrink-0" />}
       </button>
@@ -195,10 +201,14 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
         // one, so a 3rd column would keep trying to squeeze into half the
         // page width and crowd every task's text/button.
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 content-start flex-1">
-          {tasks.map(task => (
+          {tasks.map((task, i) => (
             <div
               key={task.id}
-              className={`flex flex-col gap-2.5 rounded-xl border p-3 transition-colors duration-150 ${task.done ? 'border-[#eae8de] bg-[#fafaf6]' : 'border-bone bg-white hover:border-brand-orange/30'}`}
+              className={clsx(
+                'flex-col gap-2.5 rounded-xl border p-3 transition-colors duration-150',
+                i >= PHONE_TASK_CAP && !showAll ? 'hidden sm:flex' : 'flex',
+                task.done ? 'border-[#eae8de] bg-[#fafaf6]' : 'border-bone bg-white hover:border-brand-orange/30',
+              )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className={`w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 ${task.done ? 'bg-success-bg text-success' : 'bg-brand-pale-orange text-brand-orange'}`}>
@@ -208,26 +218,35 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
                   <button
                     type="button"
                     onClick={toggleCustomized}
-                    className="text-[10px] font-medium text-slate hover:text-brand-orange bg-transparent border-0 cursor-pointer underline-offset-2 hover:underline"
+                    className="text-[11.5px] sm:text-[10px] pointer-coarse:py-1 font-medium text-slate hover:text-brand-orange bg-transparent border-0 cursor-pointer underline-offset-2 hover:underline"
                   >
                     {task.done ? 'Mark as not done' : 'Mark as done'}
                   </button>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-[12.5px] font-semibold leading-[1.3] ${task.done ? 'text-slate line-through' : 'text-charcoal'}`}>{task.label}</p>
-                <p className="text-[11px] text-slate mt-0.5 leading-[1.4]">{task.desc}</p>
+                <p className={`text-[13px] sm:text-[12.5px] font-semibold leading-[1.3] ${task.done ? 'text-slate line-through' : 'text-charcoal'}`}>{task.label}</p>
+                <p className="text-[12.5px] sm:text-[11px] text-slate mt-0.5 leading-[1.4]">{task.desc}</p>
               </div>
               <button
                 type="button"
                 onClick={() => navigate(`/store/${storeId}/${task.path}`)}
-                className="self-start flex items-center gap-1.5 px-2.5 py-[5px] rounded-lg text-[11px] font-semibold bg-cream border border-bone text-charcoal cursor-pointer transition-colors duration-150 hover:border-brand-orange/40 hover:bg-brand-pale-orange"
+                className="self-start flex items-center gap-1.5 px-2.5 py-[5px] pointer-coarse:px-3.5 pointer-coarse:py-2.5 rounded-lg text-[12px] sm:text-[11px] font-semibold bg-cream border border-bone text-charcoal cursor-pointer transition-colors duration-150 hover:border-brand-orange/40 hover:bg-brand-pale-orange"
               >
                 {task.done ? 'View' : task.cta}
                 <ArrowRight size={10} />
               </button>
             </div>
           ))}
+          {!showAll && tasks.length > PHONE_TASK_CAP && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="sm:hidden text-center rounded-xl border border-dashed border-slate/40 py-2.5 text-[12.5px] font-semibold text-brand-orange cursor-pointer"
+            >
+              Show all {tasks.length} steps
+            </button>
+          )}
         </div>
       )}
     </div>
