@@ -53,3 +53,22 @@ export interface ActivationFunnel {
 
 export const apiGetActivationFunnel = (months: number) =>
   client.get<never, { success: boolean; data: ActivationFunnel }>(`${ENDPOINTS.ANALYTICS.ADMIN.ACTIVATION_FUNNEL}?months=${months}`);
+
+// ── Revenue model (SaaS Metrics → Revenue model; finance.view). Must match admin-finance/revenue-model.{util,service}.ts. ──
+export type RevenueStream = 'plans' | 'transactionFees' | 'commission' | 'addons' | 'posPlans' | 'promotions';
+export interface RevenueModel {
+  months: number; from: string;
+  summary: {
+    totalRevenue: number; totalGmv: number; takeRatePercent: number | null; transactionalTakeRatePercent: number | null;
+    subscriptionSharePercent: number | null; thisMonthSoFar: number;
+    lastFullMonth: { month: string; revenue: number; takeRatePercent: number | null } | null;
+    revenuePerPayingStore: number | null; payingStores: number;
+  };
+  monthly: { month: string; streams: Record<RevenueStream, number>; total: number; subscription: number; transactional: number; gmv: number; orders: number; takeRatePercent: number | null; transactionalTakeRatePercent: number | null }[];
+  streams: { stream: RevenueStream; label: string; total: number; sharePercent: number | null; lastMonth: number; previousMonth: number; changePercent: number | null }[];
+  concentration: { top10SharePercent: number | null; top: { storeId: string; storeName: string; sellerId: string | null; amount: number; sharePercent: number | null }[] };
+  notes: { excluded: string[]; unconvertedCurrencies?: string[] };
+}
+
+export const apiGetRevenueModel = (months: number) =>
+  client.get<never, { success: boolean; data: RevenueModel }>(`${ENDPOINTS.FINANCE.ADMIN.REVENUE_MODEL}?months=${months}`);

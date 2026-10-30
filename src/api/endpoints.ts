@@ -780,6 +780,12 @@ export const ENDPOINTS = {
     DELETE_BIN: (storeId: string, binId: string) => `/api/inventory/${storeId}/bins/${binId}`,
   },
 
+  ADMIN_DIGEST: {
+    SETTINGS: '/api/admin/digest/settings',
+    PREVIEW: '/api/admin/digest/preview',
+    SEND_TEST: '/api/admin/digest/send-test',
+  },
+
   ADMIN_TWO_FACTOR: {
     VERIFY_LOGIN: '/api/auth/admin/2fa/verify',
     STATUS: '/api/admin/2fa',
@@ -1270,6 +1276,7 @@ export const ENDPOINTS = {
     ADMIN: {
       OVERVIEW:              '/api/admin/finance/overview',
       PLATFORM_REVENUE:      '/api/admin/finance/platform-revenue',
+      REVENUE_MODEL:         '/api/admin/finance/revenue-model',
       TRANSACTION_FEE_BILLS: '/api/admin/finance/transaction-fee-bills',
       REVENUE_OVER_TIME:     '/api/admin/finance/revenue-over-time',
       COMMISSION_OVER_TIME:  '/api/admin/finance/commission-over-time',

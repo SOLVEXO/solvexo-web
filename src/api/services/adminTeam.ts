@@ -101,3 +101,9 @@ export const apiEnableAdminTwoFactor = (code: string) => client.post<never, ApiR
 export const apiDisableAdminTwoFactor = (password: string, code: string) => client.post<never, ApiResponse<unknown>>(ENDPOINTS.ADMIN_TWO_FACTOR.DISABLE, { password, code });
 export const apiNewAdminRecoveryCodes = (password: string, code: string) =>
   client.post<never, ApiResponse<{ recoveryCodes: string[] }>>(ENDPOINTS.ADMIN_TWO_FACTOR.RECOVERY_CODES, { password, code });
+
+// ── weekly business digest (own account) ──
+export const apiGetDigestSettings = () => client.get<never, ApiResponse<{ weeklyDigest: boolean }>>(ENDPOINTS.ADMIN_DIGEST.SETTINGS);
+export const apiUpdateDigestSettings = (weeklyDigest: boolean) => client.put<never, ApiResponse<{ weeklyDigest: boolean }>>(ENDPOINTS.ADMIN_DIGEST.SETTINGS, { weeklyDigest });
+export const apiPreviewDigest = () => client.get<never, ApiResponse<{ subject: string; html: string }>>(ENDPOINTS.ADMIN_DIGEST.PREVIEW);
+export const apiSendTestDigest = () => client.post<never, ApiResponse<{ sent: number }> & { message?: string }>(ENDPOINTS.ADMIN_DIGEST.SEND_TEST);
