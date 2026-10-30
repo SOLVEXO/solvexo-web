@@ -37,10 +37,10 @@ export function DigitalAccessCard({ storeId, orderId, customerId }: { storeId: s
     setBusy(id + action);
     try {
       await client.post(`${base(storeId)}/access/${id}/${action}`);
-      toast.show('success', action === 'revoke' ? 'Access revoked' : action === 'resend' ? 'Access renewed' : 'Download limit reset');
+      toast.success(action === 'revoke' ? 'Access revoked' : action === 'resend' ? 'Access renewed' : 'Download limit reset');
       await load();
     } catch (e: any) {
-      toast.show('error', e?.response?.data?.message ?? 'Action failed');
+      toast.error(e?.response?.data?.message ?? 'Action failed');
     } finally {
       setBusy(null);
     }
