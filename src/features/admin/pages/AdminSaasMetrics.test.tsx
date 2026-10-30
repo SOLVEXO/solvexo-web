@@ -7,6 +7,9 @@ import type { SaasMetrics, SaasMonth } from '@/api/services/analytics/saasMetric
 
 const api = vi.hoisted(() => ({ apiGetSaasMetrics: vi.fn(), apiExportSaasMetrics: vi.fn() }));
 vi.mock('@/api/services/analytics/saasMetrics', () => api);
+const perm = vi.hoisted(() => ({ finance: true }));
+vi.mock('@/hooks/auth/useCan', () => ({ can: (p: string) => (p === 'finance.view' ? perm.finance : true) }));
+vi.mock('./saas/RevenueModelTab', () => ({ RevenueModelTab: () => <p>revenue model pane</p> }));
 // The real header carries the notification bell (needs app providers); the page only passes it title + actions.
 vi.mock('@/components/comman/ui/AdminPageHeader', () => ({
   AdminPageHeader: ({ title, actions }: { title: string; actions?: React.ReactNode }) => <header><h1>{title}</h1>{actions}</header>,
@@ -37,7 +40,7 @@ const fixture: SaasMetrics = {
 
 const renderPage = () => render(<MemoryRouter><AdminSaasMetrics /></MemoryRouter>);
 
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); perm.finance = true; });
 
 describe('AdminSaasMetrics', () => {
   it('shows the headline numbers, falling back to this month\'s NRR when there is no 12-month history', async () => {
@@ -80,5 +83,17 @@ describe('AdminSaasMetrics', () => {
     api.apiGetSaasMetrics.mockRejectedValue(new Error('Your admin role doesn\'t have permission to do this'));
     renderPage();
     expect(await screen.findByText(/doesn't have permission/)).toBeInTheDocument();
+  });
+
+  it('shows the Revenue model tab only to admins with finance.view', async () => {
+    api.apiGetSaasMetrics.mockResolvedValue({ success: true, data: fixture });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /Revenue model/ }));
+    expect(await screen.findByText('revenue model pane')).toBeInTheDocument();
+    cleanup();
+    perm.finance = false;
+    renderPage();
+    await screen.findByText('MRR by plan');
+    expect(screen.queryByRole('button', { name: /Revenue model/ })).not.toBeInTheDocument();
   });
 });
