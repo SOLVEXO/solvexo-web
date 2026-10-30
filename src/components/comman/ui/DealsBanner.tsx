@@ -188,7 +188,7 @@ export function DealsBanner({ className, storeType, compact = false, label = fal
   const discountHeadline = hasPercentOff
     ? `UP TO ${campaign.discountValue}% OFF`
     : hasFixedOff
-      ? `${currencySymbol(displayCurrency)}${displayedFixedOff} OFF`
+      ? `${currencySymbol(displayCurrency)} ${displayedFixedOff} OFF`
       : 'SPECIAL DEALS';
 
   const showStoreCount = campaign.sponsorType === 'platform' || campaign.storeCount >= MIN_STORE_COUNT_TO_SHOW;

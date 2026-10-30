@@ -211,7 +211,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const campaignAmount = campaign?.discountType && campaign.discountValue != null
     ? (campaign.discountType === 'percentage'
         ? `${campaign.discountValue}%`
-        : `${priceSymbol}${convert(campaign.discountValue, campaign.currency ?? 'USD')}`)
+        : `${priceSymbol} ${convert(campaign.discountValue, campaign.currency ?? 'USD')}`)
     : null;
 
   return (
@@ -387,7 +387,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               {lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="text-[10px] text-slate/70 line-through shrink-0">{priceSymbol}{compareAt.toLocaleString()}</span>
+              <span className="text-[10px] text-slate/70 line-through shrink-0">{priceSymbol}{' '}{compareAt.toLocaleString()}</span>
             )}
           </div>
 

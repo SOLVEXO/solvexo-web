@@ -127,8 +127,8 @@ function usePrice() {
   // No rate for the buyer's currency: the amount stays in the store's own currency (right symbol, true number).
   return (n?: number | null) => {
     if (n == null) return '—';
-    if (!cp || !cp.canConvert(native, shown)) return `${currencySymbol(native)}${fmt2(n)}`;
-    return `${currencySymbol(shown)}${fmt2(cp.convert(n, native))}`;
+    if (!cp || !cp.canConvert(native, shown)) return `${currencySymbol(native)} ${fmt2(n)}`;
+    return `${currencySymbol(shown)} ${fmt2(cp.convert(n, native))}`;
   };
 }
 

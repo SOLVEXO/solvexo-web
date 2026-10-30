@@ -673,7 +673,7 @@ export function StoreMarketing() {
                       })()}
                     </div>
                     <p className="text-[13px] font-semibold text-carbon mb-3">
-                      {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `${currencySymbol(store?.baseCurrency)}${coupon.discountValue} Off`}
+                      {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `${currencySymbol(store?.baseCurrency)} ${coupon.discountValue} Off`}
                     </p>
                     <table className="w-full border-collapse text-xs mb-3">
                       <tbody>
@@ -796,7 +796,7 @@ export function StoreMarketing() {
                     <p className="text-[11px] text-slate mb-2">
                       {new Date(c.startDate).toLocaleDateString()} – {new Date(c.endDate).toLocaleDateString()}
                       {c.discountType && c.discountValue != null && (
-                        <> · {c.discountType === 'percentage' ? `${c.discountValue}% off` : `${currencySymbol(c.currency ?? 'USD')}${c.discountValue} off`}</>
+                        <> · {c.discountType === 'percentage' ? `${c.discountValue}% off` : `${currencySymbol(c.currency ?? 'USD')} ${c.discountValue} off`}</>
                       )}
                     </p>
                     {c.sponsorType === 'platform' ? (
@@ -951,7 +951,7 @@ export function StoreMarketing() {
                               {item.customerEmail && <p className="text-slate text-[11px]">{item.customerEmail}</p>}
                             </td>
                             <td className="px-3.5 py-2.5 text-charcoal">{item.itemCount}</td>
-                            <td className="px-3.5 py-2.5 text-charcoal">{currencySymbol(item.currency)}{item.cartValue.toFixed(2)}</td>
+                            <td className="px-3.5 py-2.5 text-charcoal">{currencySymbol(item.currency)}{' '}{item.cartValue.toFixed(2)}</td>
                             <td className="px-3.5 py-2.5 text-slate">{new Date(item.abandonedAt).toLocaleDateString()}</td>
                             <td className="px-3.5 py-2.5">
                               <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: status.bg, color: status.color }}>

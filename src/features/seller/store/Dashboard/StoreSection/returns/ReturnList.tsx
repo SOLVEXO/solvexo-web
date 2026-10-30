@@ -94,7 +94,7 @@ export function StoreReturnList() {
     { key: 'customer', header: 'Customer', render: r => <span className="text-graphite whitespace-nowrap">{r.customer.name}</span> },
     { key: 'productName', header: 'Product', render: r => <span className="text-graphite max-w-[180px] truncate block">{r.productName}</span> },
     { key: 'returnReason', header: 'Reason', render: r => <span className="text-slate max-w-[180px] truncate block">{r.returnReason}</span> },
-    { key: 'amount', header: 'Amount', render: r => <span className="font-semibold text-carbon whitespace-nowrap">{currencySymbol(store?.baseCurrency)}{r.amount.toLocaleString()}</span> },
+    { key: 'amount', header: 'Amount', render: r => <span className="font-semibold text-carbon whitespace-nowrap">{currencySymbol(store?.baseCurrency)}{' '}{r.amount.toLocaleString()}</span> },
     {
       key: 'returnStatus', header: 'Status',
       render: r => {
@@ -144,7 +144,7 @@ export function StoreReturnList() {
           {[
             { label: 'Open Returns',  value: stats?.openRequests ?? 0 },
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },
-            { label: 'Total Refunded (30d)', value: stats ? `${currencySymbol(store?.baseCurrency)}${stats.totalRefunded.toLocaleString()}` : '—' },
+            { label: 'Total Refunded (30d)', value: stats ? `${currencySymbol(store?.baseCurrency)} ${stats.totalRefunded.toLocaleString()}` : '—' },
           ].map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>

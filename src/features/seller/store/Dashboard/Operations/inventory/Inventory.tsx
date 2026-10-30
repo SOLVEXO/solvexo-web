@@ -635,7 +635,7 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
     },
     {
       key: 'price', header: 'Price', align: 'right',
-      render: l => <span className="font-semibold text-charcoal">{currencySymbol(store?.baseCurrency)}{l.price.toLocaleString()}</span>,
+      render: l => <span className="font-semibold text-charcoal">{currencySymbol(store?.baseCurrency)}{' '}{l.price.toLocaleString()}</span>,
     },
     {
       key: 'stock', header: 'Available', align: 'right',

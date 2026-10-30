@@ -93,7 +93,7 @@ function CartDrawerPanel({ theme: t, Button, onClose }: { theme: CartDrawerTheme
   const items = cart?.items ?? [];
   // Never print a native amount with the buyer-currency symbol: until rates load, show a dash.
   const ratesOk = ratesLoaded || items.every(i => !i.currency || i.currency === displayCurrency);
-  const money = (n: number) => (ratesOk ? `${currencySymbol(displayCurrency)}${fmt2(n)}` : '—');
+  const money = (n: number) => (ratesOk ? `${currencySymbol(displayCurrency)} ${fmt2(n)}` : '—');
   const subtotal = items.reduce((s, i) => s + convert(i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity, i.currency), 0);
 
   const run = (key: string, fn: () => Promise<void | boolean>) => { setBusy(key); fn().finally(() => setBusy(null)); };

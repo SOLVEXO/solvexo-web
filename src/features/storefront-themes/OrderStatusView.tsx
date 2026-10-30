@@ -91,7 +91,7 @@ export function OrderStatusView({ look: t }: { look: OrderStatusLook }) {
     );
   } else {
     const sym = currencySymbol(order.currency);
-    const money = (n: number) => `${sym}${fmt2(n)}`;
+    const money = (n: number) => `${sym} ${fmt2(n)}`;
     const timeline = buildOrderTimeline(order);
     const subs = order.sellerOrders ?? [];
     const addr = formatShippingAddress(order.shippingAddress);

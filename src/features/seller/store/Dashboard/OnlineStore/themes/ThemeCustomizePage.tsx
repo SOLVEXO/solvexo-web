@@ -248,7 +248,7 @@ export function ThemeCustomizePage() {
         const { product, variants, defaultVariant } = res.data;
         const v = defaultVariant ?? variants?.[0] ?? null;
         // Same formatter the storefront's product cards use.
-        const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)}${fmt2(n)}`);
+        const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)} ${fmt2(n)}`);
         const optionValues = Array.from(new Set((variants ?? []).flatMap(x => (x.options ?? []).map(o => String(o.value))))).slice(0, 8);
         setPreviewProduct({
           name: product.name,

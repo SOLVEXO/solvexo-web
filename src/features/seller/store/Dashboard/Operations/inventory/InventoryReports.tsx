@@ -43,8 +43,8 @@ export default function InventoryReports({ embedded = false }: { embedded?: bool
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <MetricCard
             label="Inventory Value" icon={<DollarSign size={16} />} loading={loading}
-            value={data ? `${symbol}${data.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
-            sub={data ? `${data.valuedSkuCount} of ${data.totalSkuCount} SKUs have a cost set${data.expiredUnits ? ` · ${symbol}${(data.expiredValue ?? 0).toLocaleString()} of expired stock not counted` : ''}` : undefined}
+            value={data ? `${symbol} ${data.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
+            sub={data ? `${data.valuedSkuCount} of ${data.totalSkuCount} SKUs have a cost set${data.expiredUnits ? ` · ${symbol} ${(data.expiredValue ?? 0).toLocaleString()} of expired stock not counted` : ''}` : undefined}
           />
           <MetricCard label="Dead Stock SKUs" icon={<PackageX size={16} />} loading={loading} value={data?.deadStock.length ?? 0} sub="0 sales in 90 days" />
           <MetricCard label="Top Movers Tracked" icon={<TrendingUp size={16} />} loading={loading} value={data?.topMovers.length ?? 0} sub="Last 30 days" />
@@ -72,9 +72,9 @@ export default function InventoryReports({ embedded = false }: { embedded?: bool
           ) : movement && (
             <div className="p-5 flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <MetricCard label="Expired stock" icon={<PackageX size={16} />} value={`${symbol}${movement.expired.value.toLocaleString()}`} sub={`${movement.expired.units} units · ${movement.expired.lots} lots`} />
-                <MetricCard label="Expiring in 30 days" icon={<PackageX size={16} />} value={`${symbol}${movement.expiringIn30Days.value.toLocaleString()}`} sub={`${movement.expiringIn30Days.units} units · ${movement.expiringIn30Days.lots} lots`} />
-                <MetricCard label="Supplier returns" icon={<DollarSign size={16} />} value={`${symbol}${movement.supplierReturns.totalCredit.toLocaleString()}`} sub={`${movement.supplierReturns.count} returns · ${symbol}${movement.supplierReturns.pendingCredit.toLocaleString()} credit pending`} />
+                <MetricCard label="Expired stock" icon={<PackageX size={16} />} value={`${symbol} ${movement.expired.value.toLocaleString()}`} sub={`${movement.expired.units} units · ${movement.expired.lots} lots`} />
+                <MetricCard label="Expiring in 30 days" icon={<PackageX size={16} />} value={`${symbol} ${movement.expiringIn30Days.value.toLocaleString()}`} sub={`${movement.expiringIn30Days.units} units · ${movement.expiringIn30Days.lots} lots`} />
+                <MetricCard label="Supplier returns" icon={<DollarSign size={16} />} value={`${symbol} ${movement.supplierReturns.totalCredit.toLocaleString()}`} sub={`${movement.supplierReturns.count} returns · ${symbol} ${movement.supplierReturns.pendingCredit.toLocaleString()} credit pending`} />
               </div>
               {movement.adjustmentsByReason.length === 0 ? (
                 <p className="text-[12.5px] text-slate">No stock adjustments in this period.</p>
@@ -142,7 +142,7 @@ export default function InventoryReports({ embedded = false }: { embedded?: bool
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[12.5px] font-bold text-charcoal">{d.stock} units</p>
-                      {d.value != null && <p className="text-[10.5px] text-slate">{symbol}{d.value.toLocaleString()}</p>}
+                      {d.value != null && <p className="text-[10.5px] text-slate">{symbol}{' '}{d.value.toLocaleString()}</p>}
                     </div>
                   </div>
                 ))}

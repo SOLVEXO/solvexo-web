@@ -60,7 +60,7 @@ export function getCurrencyDecimals(code?: string | null): number {
 
 /** Formats a plain number to always show exactly 2 decimals with thousands
  *  separators (e.g. `2999.9` → `2,999.90`, `134.1` → `134.10`) — pairs with
- *  `currencySymbol()` at call sites that build their own `{symbol}{amount}`
+ *  `currencySymbol()` at call sites that build their own `{symbol} {amount}`
  *  string rather than using `formatMoney`. Fixes the inconsistency where a
  *  bare `.toLocaleString()` silently drops a trailing zero. */
 export function fmt2(amount: number): string {
@@ -73,7 +73,7 @@ export function formatAmount(amount: number, code?: string | null): string {
   const symbol = currencySymbol(code);
   const d = getCurrencyDecimals(code);
   const n = amount.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
-  return `${symbol}${/^[A-Za-z]/.test(symbol) ? ' ' : ''}${n}`;
+  return `${symbol} ${n}`;
 }
 
 /** Formats an amount with the correct symbol for a given currency code. */
@@ -90,12 +90,12 @@ export function formatMoneyCompact(amount: number | null | undefined, code?: str
   const symbol = currencySymbol(code);
   const abs = Math.abs(amount);
   const sign = amount < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000) return `${sign}${symbol}${(abs / 1_000).toFixed(1)}k`;
+  if (abs >= 1_000_000) return `${sign}${symbol} ${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}${symbol} ${(abs / 1_000).toFixed(1)}k`;
   // Below 1,000 — the only range where the real per-currency precision
   // actually matters visually (a JPY/KRW total should never show a fake
   // ".00", a KWD/BHD/OMR one needs its real 3rd decimal) — the abbreviated
   // K/M branches above stay at their existing fixed precision, matching
   // this function's original look for large figures.
-  return `${sign}${symbol}${abs.toFixed(getCurrencyDecimals(code))}`;
+  return `${sign}${symbol} ${abs.toFixed(getCurrencyDecimals(code))}`;
 }

@@ -751,7 +751,7 @@ export default function StoreCustomerList() {
                             <span className="block text-[10.5px] text-slate">{fmtDate(o.date)}</span>
                           </span>
                           <span className="shrink-0 text-right">
-                            <span className="block text-[12px] font-bold text-charcoal">{currencySymbol(o.currency)}{fmt2(o.amount)}</span>
+                            <span className="block text-[12px] font-bold text-charcoal">{currencySymbol(o.currency)}{' '}{fmt2(o.amount)}</span>
                             <StatusBadge status={o.status} size="sm" />
                           </span>
                         </button>

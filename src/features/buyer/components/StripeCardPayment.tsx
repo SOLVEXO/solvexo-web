@@ -74,7 +74,7 @@ function PaymentForm({ amount, currency, onConfirmed }: Omit<StripeCardPaymentPr
       )}
 
       <Button variant="primary" size="lg" fullWidth type="submit" loading={submitting} disabled={!stripe || !elements}>
-        Pay {currencySymbol(currency)}{amount.toLocaleString()}
+        Pay {currencySymbol(currency)}{' '}{amount.toLocaleString()}
       </Button>
 
       <p className="flex items-center justify-center gap-[6px] text-[11px] text-slate">

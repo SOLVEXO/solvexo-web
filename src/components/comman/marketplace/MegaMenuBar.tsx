@@ -63,9 +63,9 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
       <div className={isSm ? 'px-[7px] py-[6px]' : 'px-[9px] py-[8px]'}>
         <p className={clsx('font-semibold text-carbon leading-tight line-clamp-2', isSm ? 'text-[10px] mb-[3px] min-h-[24px]' : 'text-[11px] mb-[5px] min-h-[28px]')}>{product.name}</p>
         <div className="flex items-baseline gap-[4px]">
-          <span className={clsx('font-bold text-carbon', isSm ? 'text-[11px]' : 'text-[12px]')}>{price != null ? `${priceSymbol}${price.toLocaleString()}` : '—'}</span>
+          <span className={clsx('font-bold text-carbon', isSm ? 'text-[11px]' : 'text-[12px]')}>{price != null ? `${priceSymbol} ${price.toLocaleString()}` : '—'}</span>
           {compareAt != null && compareAt > (price ?? 0) && (
-            <span className="text-[9.5px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+            <span className="text-[9.5px] text-slate line-through">{priceSymbol}{' '}{compareAt.toLocaleString()}</span>
           )}
         </div>
         <span className="flex items-center gap-[2px] text-[9.5px] text-slate mt-[3px]">

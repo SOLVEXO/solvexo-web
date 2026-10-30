@@ -89,7 +89,7 @@ export default function SupplierReturnsTab() {
               </div>
               <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
                 <span className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <span className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal shrink-0">{symbol}{r.totalCredit.toLocaleString()}</span>
+                  <span className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal shrink-0">{symbol}{' '}{r.totalCredit.toLocaleString()}</span>
                   <Badge color={r.creditStatus === 'received' ? 'green' : 'orange'} size="sm">{r.creditStatus === 'received' ? 'Credit received' : 'Credit pending'}</Badge>
                 </span>
                 {r.creditStatus === 'pending' && canManage && <Button size="sm" variant="secondary" loading={busyId === r._id} onClick={() => void markCredit(r._id)}>Mark received</Button>}

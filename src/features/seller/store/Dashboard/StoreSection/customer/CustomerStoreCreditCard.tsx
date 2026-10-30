@@ -64,7 +64,7 @@ export function CustomerStoreCreditCard({ storeId, customerId, fallbackCurrency,
   useEffect(() => load(), [load]);
 
   const currency = data?.currency ?? fallbackCurrency;
-  const money = (n: number) => `${currencySymbol(currency)}${fmt2(n)}`;
+  const money = (n: number) => `${currencySymbol(currency)} ${fmt2(n)}`;
 
   function openModal() {
     setMode('add'); setAmount(''); setNote(''); setExpiresAt(''); setFormError('');

@@ -78,7 +78,7 @@ export function FunnelChart({
               >
                 <span className="text-[12px] font-semibold text-white truncate pr-2">{step.label}</span>
                 <span className="text-[13px] font-bold text-white shrink-0">
-                  {valuePrefix}{step.value.toLocaleString()}{valueSuffix}
+                  {valuePrefix}{valuePrefix ? ' ' : ''}{step.value.toLocaleString()}{valueSuffix}
                 </span>
               </div>
             </div>
