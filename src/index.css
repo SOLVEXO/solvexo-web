@@ -897,3 +897,10 @@
 @media (min-width: 640px) {
   .sheet-panel-enter.sheet-panel-sm-fade { animation: dialog-panel-enter 220ms var(--ease-out); }
 }
+
+/* Inline-styled small text on phone (Tailwind classes are handled above). */
+@media (max-width: 639px) {
+  html.store-app [style*="font-size:9px"], html.store-app [style*="font-size: 9px"],
+  html.store-app [style*="font-size:10px"], html.store-app [style*="font-size: 10px"],
+  html.store-app [style*="font-size:11px"], html.store-app [style*="font-size: 11px"] { font-size: 12px !important; }
+}

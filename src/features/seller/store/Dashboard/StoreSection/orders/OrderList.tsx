@@ -61,6 +61,7 @@ export function StoreOrderList() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
   const [refreshKey,    setRefreshKey]    = useState(0);
@@ -549,10 +550,13 @@ export function StoreOrderList() {
                   placeholder="Search orders…"
                   className="w-[180px] sm:w-[200px] shrink-0"
                 />
+                <button type="button" onClick={() => setFiltersOpen(true)} className="sm:hidden shrink-0 px-3 py-2 rounded-lg border border-bone bg-white text-[13px] text-charcoal cursor-pointer">
+                  Filters{(statusF ? 1 : 0) + (typeF ? 1 : 0) > 0 ? ` (${(statusF ? 1 : 0) + (typeF ? 1 : 0)})` : ''}
+                </button>
                 <select
                   value={statusF || 'All Status'}
                   onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
-                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
+                  className="max-sm:hidden text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
                   {['All Status', 'pending', 'processing', 'shipped', 'completed', 'cancelled'].map(o => (
                     <option key={o} value={o}>{o === 'All Status' ? 'All Status' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
@@ -561,7 +565,7 @@ export function StoreOrderList() {
                 <select
                   value={typeF || 'All Types'}
                   onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)}
-                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
+                  className="max-sm:hidden text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
                   {['All Types', 'digital', 'physical'].map(o => (
                     <option key={o} value={o}>{o === 'All Types' ? 'All Types' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
@@ -613,6 +617,30 @@ export function StoreOrderList() {
         )}
 
       </div>
+
+      {filtersOpen && (
+        <Modal
+          title="Filters"
+          onClose={() => setFiltersOpen(false)}
+          footer={<>
+            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setFiltersOpen(false); }}>Reset</Button>
+            <Button size="sm" onClick={() => setFiltersOpen(false)}>Done</Button>
+          </>}
+        >
+          <div className="flex flex-col gap-3">
+            <label className="text-[13px] text-slate">Status
+              <select value={statusF} onChange={e => setStatusF(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-bone bg-white text-charcoal">
+                {['', 'pending', 'processing', 'shipped', 'completed', 'cancelled'].map(o => <option key={o} value={o}>{o ? o.charAt(0).toUpperCase() + o.slice(1) : 'All Status'}</option>)}
+              </select>
+            </label>
+            <label className="text-[13px] text-slate">Type
+              <select value={typeF} onChange={e => setTypeF(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-bone bg-white text-charcoal">
+                {['', 'digital', 'physical'].map(o => <option key={o} value={o}>{o ? o.charAt(0).toUpperCase() + o.slice(1) : 'All Types'}</option>)}
+              </select>
+            </label>
+          </div>
+        </Modal>
+      )}
 
       {shippingOrder && (
         <Modal

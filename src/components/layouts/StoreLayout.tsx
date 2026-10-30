@@ -1711,7 +1711,13 @@ export function StoreLayout() {
   // Phone-only app-feel rules in index.css (`html.store-app`) cover the whole workspace, portals (sheets/modals) included.
   useEffect(() => {
     document.documentElement.classList.add('store-app');
-    return () => document.documentElement.classList.remove('store-app');
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (!el || !window.matchMedia('(max-width: 639px)').matches || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      window.setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+    };
+    document.addEventListener('focusin', onFocus);
+    return () => { document.documentElement.classList.remove('store-app'); document.removeEventListener('focusin', onFocus); };
   }, []);
 
   const accessRedirect = resolveStoreAccessRedirect(routeStoreId, currentPath);
