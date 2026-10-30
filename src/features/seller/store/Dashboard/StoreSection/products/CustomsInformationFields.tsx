@@ -26,7 +26,7 @@ export function CustomsInformationFields({ countryOfOrigin, hsCode, customsDescr
       )}
       <p className="block text-[12px] font-semibold text-charcoal mb-1.5">Customs information</p>
       <p className="text-[11px] text-slate mb-2">Used on the customs declaration when you buy an international shipping label. Optional for domestic selling.</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         <label className="block">
           <span className="block text-[11px] text-slate mb-1">Country/region of origin</span>
           <select value={countryOfOrigin} onChange={e => onChange('countryOfOrigin', e.target.value)} className={inp}>

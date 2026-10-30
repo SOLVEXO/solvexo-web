@@ -16,7 +16,7 @@ export function PackageDimensionsFields({ length, width, height, onChange }: Pro
   ];
   return (
     <div>
-      <p className="block text-[12px] font-semibold text-charcoal mb-1.5">Package dimensions</p>
+      <p className="block text-[12px] font-semibold text-charcoal mb-1.5">Package dimensions <span className="font-normal text-slate">(optional)</span></p>
       <div className="grid grid-cols-3 gap-3">
         {fields.map(f => (
           <label key={f.key} className="block">
@@ -25,7 +25,7 @@ export function PackageDimensionsFields({ length, width, height, onChange }: Pro
               type="number" min={0} step="any" inputMode="decimal"
               value={f.value}
               onChange={e => onChange(f.key, e.target.value)}
-              placeholder="Optional"
+              placeholder="0.00"
               className={inp}
             />
           </label>
