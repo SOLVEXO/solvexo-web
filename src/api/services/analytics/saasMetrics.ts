@@ -72,3 +72,37 @@ export interface RevenueModel {
 
 export const apiGetRevenueModel = (months: number) =>
   client.get<never, { success: boolean; data: RevenueModel }>(`${ENDPOINTS.FINANCE.ADMIN.REVENUE_MODEL}?months=${months}`);
+
+// ── Plan insights (SaaS Metrics → Plans). Must match admin-analytics/plan-insights.{util,service}.ts. ──
+export type PlanMoveKind = 'new' | 'upgrade' | 'downgrade' | 'interval' | 'lateral';
+export interface PlanInsightRow {
+  planId: string; name: string; status: string; isFree: boolean; isPublic: boolean; isCustomPricing: boolean;
+  monthlyPriceUSD: number | null; yearlyPriceUSD: number | null; yearlyDiscountPercent: number | null;
+  transactionFeePercent: number | null; maxProducts: number | null;
+  stores: number; payingStores: number; yearlyStores: number; pastDueStores: number;
+  mrr: number; mrrSharePercent: number | null; arpu: number | null;
+  belowListStores: number; belowListGapMrr: number; cancelingStores: number; cancelingMrr: number;
+  scheduledDowngrades: number; scheduledDowngradeMrr: number;
+  newStores: number; upgradesIn: number; downgradesIn: number; upgradesOut: number; downgradesOut: number;
+  payingAtStart: number; stoppedPaying: number; stoppedPayingPercent: number | null;
+}
+export interface PlanInsights {
+  months: number; from: string;
+  summary: {
+    mrr: number; payingStores: number; trialingStores: number; freePlanStores: number; yearlySharePercent: number | null;
+    newStores: number; newMrr: number; upgrades: number; upgradeMrr: number; downgrades: number; downgradeMrr: number;
+    upgradeToDowngradeRatio: number | null; intervalSwitches: number; switchedToYearly: number;
+    belowListStores: number; belowListGapMrr: number; cancelingStores: number; cancelingMrr: number;
+    scheduledDowngrades: number; scheduledDowngradeMrr: number; outgrowingStores: number; upgradeOpportunityMrr: number;
+  };
+  plans: PlanInsightRow[];
+  moves: { fromPlanId: string | null; fromName: string; toPlanId: string | null; toName: string; kind: PlanMoveKind; moves: number; mrrChange: number }[];
+  monthly: { month: string; new: number; upgrades: number; downgrades: number; newMrr: number; upgradeMrr: number; downgradeMrr: number }[];
+  candidates: {
+    storeId: string; storeName: string; sellerId: string | null; planId: string; planName: string; products: number; maxProducts: number;
+    usagePercent: number; suggestedPlanId: string | null; suggestedPlanName: string | null; mrrIfUpgraded: number | null; currentMrr: number;
+  }[];
+}
+
+export const apiGetPlanInsights = (months: number) =>
+  client.get<never, { success: boolean; data: PlanInsights }>(`${ENDPOINTS.ANALYTICS.ADMIN.PLAN_INSIGHTS}?months=${months}`);

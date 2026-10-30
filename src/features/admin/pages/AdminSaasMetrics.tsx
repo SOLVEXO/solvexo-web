@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bar, BarChart as RechartsBar, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { Coins, Download, Gauge, Info, Rocket } from 'lucide-react';
+import { Coins, Download, Gauge, Info, Layers, Rocket } from 'lucide-react';
 import { Button, MetricCard, TabBar, type Tab } from '@/components/comman/ui';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { ActivationTab } from './saas/ActivationTab';
 import { RevenueModelTab } from './saas/RevenueModelTab';
+import { PlansTab } from './saas/PlansTab';
 import { can } from '@/hooks/auth/useCan';
 import { Card, Empty } from './saas/parts';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
@@ -35,15 +36,16 @@ const MOVEMENT = [
 
 const RANGE_OPTIONS = [6, 12, 24];
 
-type SaasTab = 'revenue' | 'revenue-model' | 'activation';
+type SaasTab = 'revenue' | 'revenue-model' | 'plans' | 'activation';
 const TABS: Tab[] = [
   { id: 'revenue', label: 'Revenue', icon: <Gauge size={14} /> },
   { id: 'revenue-model', label: 'Revenue model', icon: <Coins size={14} /> },
+  { id: 'plans', label: 'Plans', icon: <Layers size={14} /> },
   { id: 'activation', label: 'Activation', icon: <Rocket size={14} /> },
 ];
 
 /** Admin → SaaS Metrics: Solvexo's own subscription business (Revenue), every revenue stream and the take rate
- *  (Revenue model, finance.view only) and how new merchants get started (Activation). */
+ *  (Revenue model, finance.view only), how each plan sells (Plans) and how new merchants get started (Activation). */
 export function AdminSaasMetrics() {
   usePageTitle('SaaS Metrics');
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs<SaasTab>('revenue');
@@ -58,6 +60,7 @@ export function AdminSaasMetrics() {
       <TabBar tabs={tabs} active={activeTab} onChange={t => setActiveTab(t as SaasTab)} className="px-4 sm:px-7 mt-4" />
       {isVisited('revenue') && <div className={paneClassName('revenue')}><RevenueTab /></div>}
       {isVisited('revenue-model') && <div className={paneClassName('revenue-model')}><RevenueModelTab /></div>}
+      {isVisited('plans') && <div className={paneClassName('plans')}><PlansTab /></div>}
       {isVisited('activation') && <div className={paneClassName('activation')}><ActivationTab /></div>}
     </>
   );
