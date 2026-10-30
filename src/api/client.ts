@@ -22,6 +22,7 @@ const AUTH_ATTEMPT_PATHS = [
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
   '/api/auth/resend-otp',
+  '/api/auth/admin/2fa/verify',
 ];
 
 // ── Axios instance ────────────────────────────────────────────────────────────

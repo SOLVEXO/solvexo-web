@@ -284,7 +284,10 @@ export interface LoginPayload {
 }
 interface LoginUser   { id: string; name: string; email: string; role: AppRole; image: string | null; isGuest?: boolean }
 interface AuthTokens  { accessToken: string; refreshToken: string }
-interface LoginData   { user: LoginUser; token: AuthTokens }
+interface LoginData   { user: LoginUser; token: AuthTokens; twoFactor?: { usedRecoveryCode: boolean; recoveryCodesLeft: number } }
+/** An admin with two-factor on gets this from the password step instead of a session. */
+export interface TwoFactorChallenge { twoFactorRequired: true; challengeToken: string }
+export const isTwoFactorChallenge = (d: unknown): d is TwoFactorChallenge => !!d && (d as TwoFactorChallenge).twoFactorRequired === true;
 interface GuestSessionData { user: Omit<LoginUser, 'email'> & { email: string | null }; token: AuthTokens }
 
 export interface VerifyOtpPayload { email: string; role: AppRole; otp: string; storeId?: string }
@@ -310,6 +313,11 @@ export function apiRegister(payload: RegisterPayload) {
 /** POST /auth/login — returns user + tokens */
 export function apiLogin(payload: LoginPayload) {
   return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.AUTH.LOGIN, payload);
+}
+
+/** POST /auth/admin/2fa/verify — second admin sign-in step: authenticator or recovery code */
+export function apiVerifyAdminTwoFactor(challengeToken: string, code: string) {
+  return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.ADMIN_TWO_FACTOR.VERIFY_LOGIN, { challengeToken, code });
 }
 
 /** True when the stored session is a password-less guest-checkout session. */

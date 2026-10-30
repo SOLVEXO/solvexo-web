@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { User, Settings as SettingsIcon, Percent, Coins, Activity, Bell, Mail, Users, MonitorSmartphone, Landmark } from 'lucide-react';
+import { User, Settings as SettingsIcon, Percent, Coins, Activity, Bell, Mail, Users, MonitorSmartphone, Landmark, ShieldCheck } from 'lucide-react';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { AdminNavMenu } from '@/components/layouts/AdminLayout';
 import { SettingsShell, type SettingsNavGroup } from '@/components/comman/settings';
@@ -14,8 +14,10 @@ import { NotificationsPanel } from '@/components/comman/ui';
 import { AdminEmailHealth } from './AdminEmailHealth';
 import { AdminTeam } from './AdminTeam';
 import { AdminSessions } from './AdminSessions';
+import { AdminTwoFactor } from './AdminTwoFactor';
 import { AdminPlatformTax } from './AdminPlatformTax';
 import { can } from '@/hooks/auth/useCan';
+import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 
 // Grouped for the desktop tab rail (eyebrow + one-line hint per row); mobile
 // flattens it back into the single "Settings" list the panel already showed.
@@ -24,6 +26,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     label: 'Account',
     items: [
       { id: 'account',        label: 'My Account', icon: <User size={13} />,             hint: 'Your profile and password' },
+      { id: 'two-factor',     label: 'Two-factor sign-in', icon: <ShieldCheck size={13} />, hint: 'Authenticator app codes' },
       { id: 'sessions',       label: 'Sessions',   icon: <MonitorSmartphone size={13} />, hint: 'Devices signed in' },
     ],
   },
@@ -56,7 +59,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     ],
   },
 ];
-// A team admin only gets the tabs their role allows (the owner / Super Admin gets all). Account, Notifications and Sessions are always open.
+// A team admin only gets the tabs their role allows (the owner / Super Admin gets all). Account, Two-factor, Notifications and Sessions are always open.
 const TAB_PERMISSION: Record<string, string> = {
   'platform-config': 'config.manage', email: 'config.manage', 'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', tax: 'billing.manage',
   'activity-log': 'activity.view', team: 'team.manage',
@@ -105,16 +108,17 @@ export default function AdminSettingsHub() {
         onBack={closeTab}
         mobileFooter={<AdminNavMenu excludeItemIds={['settings']} />}
       >
-        {isVisited('account')          && <div className={paneClassName('account')}><AdminSettings embedded /></div>}
-        {isVisited('platform-config')  && <div className={paneClassName('platform-config')}><AdminConfig embedded /></div>}
-        {isVisited('commission-rules') && <div className={paneClassName('commission-rules')}><AdminCommissionRules embedded /></div>}
-        {isVisited('fx-settings')      && <div className={paneClassName('fx-settings')}><AdminFxSettings embedded /></div>}
-        {isVisited('tax')              && <div className={paneClassName('tax')}><AdminPlatformTax /></div>}
-        {isVisited('notifications')    && <div className={paneClassName('notifications') + ' px-4 sm:px-7 py-6'}><NotificationsPanel /></div>}
-        {isVisited('email')            && <div className={paneClassName('email')}><AdminEmailHealth /></div>}
-        {isVisited('activity-log')     && <div className={paneClassName('activity-log')}><AdminActivityLog embedded /></div>}
-        {isVisited('team')             && <div className={paneClassName('team')}><AdminTeam /></div>}
-        {isVisited('sessions')         && <div className={paneClassName('sessions')}><AdminSessions /></div>}
+        {isVisited('account')          && <div className={paneClassName('account')}><ErrorBoundary section="My Account"><AdminSettings embedded /></ErrorBoundary></div>}
+        {isVisited('platform-config')  && <div className={paneClassName('platform-config')}><ErrorBoundary section="Platform Config"><AdminConfig embedded /></ErrorBoundary></div>}
+        {isVisited('commission-rules') && <div className={paneClassName('commission-rules')}><ErrorBoundary section="Commission Rules"><AdminCommissionRules embedded /></ErrorBoundary></div>}
+        {isVisited('fx-settings')      && <div className={paneClassName('fx-settings')}><ErrorBoundary section="FX Settings"><AdminFxSettings embedded /></ErrorBoundary></div>}
+        {isVisited('tax')              && <div className={paneClassName('tax')}><ErrorBoundary section="Tax"><AdminPlatformTax /></ErrorBoundary></div>}
+        {isVisited('notifications')    && <div className={paneClassName('notifications') + ' px-4 sm:px-7 py-6'}><ErrorBoundary section="Notifications"><NotificationsPanel /></ErrorBoundary></div>}
+        {isVisited('email')            && <div className={paneClassName('email')}><ErrorBoundary section="Email"><AdminEmailHealth /></ErrorBoundary></div>}
+        {isVisited('activity-log')     && <div className={paneClassName('activity-log')}><ErrorBoundary section="Activity Log"><AdminActivityLog embedded /></ErrorBoundary></div>}
+        {isVisited('team')             && <div className={paneClassName('team')}><ErrorBoundary section="Team"><AdminTeam /></ErrorBoundary></div>}
+        {isVisited('sessions')         && <div className={paneClassName('sessions')}><ErrorBoundary section="Sessions"><AdminSessions /></ErrorBoundary></div>}
+        {isVisited('two-factor')       && <div className={paneClassName('two-factor')}><ErrorBoundary section="Two-factor sign-in"><AdminTwoFactor /></ErrorBoundary></div>}
       </SettingsShell>
     </>
   );

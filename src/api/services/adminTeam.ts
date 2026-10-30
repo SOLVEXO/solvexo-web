@@ -49,7 +49,7 @@ export interface AdminMember {
   _id: string; name: string; email: string; phone: string; profileImage: string | null; isSuperAdmin: boolean;
   roleId: string | null; roleName: string | null; status: 'active' | 'inactive'; state: AdminMemberState;
   accessExpiresAt: string | null; inviteSentAt: string | null; inviteTokenExpiresAt: string | null;
-  lastLoginAt: string | null; lastLoginIp: string | null; sessionCount: number; createdAt: string;
+  lastLoginAt: string | null; lastLoginIp: string | null; sessionCount: number; twoFactorEnabled?: boolean; createdAt: string;
 }
 export interface AdminApproval {
   _id: string; action: string; actionLabel: string; status: 'pending' | 'approved' | 'rejected' | 'used' | 'expired';
@@ -70,6 +70,7 @@ export const apiUpdateAdmin = (id: string, b: { name?: string; roleId?: string; 
   client.patch<never, ApiResponse<AdminMember>>(ENDPOINTS.ADMIN_TEAM.ADMIN(id), b);
 export const apiResendAdminInvite = (id: string) => client.post<never, { success: boolean; emailSent?: boolean; inviteUrl?: string }>(ENDPOINTS.ADMIN_TEAM.RESEND(id));
 export const apiRevokeAdminSessions = (id: string) => client.post<never, ApiResponse<unknown>>(ENDPOINTS.ADMIN_TEAM.REVOKE_SESSIONS(id));
+export const apiResetAdminTwoFactor = (id: string) => client.post<never, ApiResponse<unknown>>(ENDPOINTS.ADMIN_TEAM.RESET_2FA(id));
 export const apiSetAdminSuper = (id: string, isSuperAdmin: boolean) => client.put<never, ApiResponse<unknown>>(ENDPOINTS.ADMIN_TEAM.SUPER(id), { isSuperAdmin });
 export const apiDeleteAdmin = (id: string) => client.delete<never, ApiResponse<unknown>>(ENDPOINTS.ADMIN_TEAM.ADMIN(id));
 
@@ -90,3 +91,13 @@ export const apiRevokeAllMyAdminSessions = () => client.post<never, ApiResponse<
 
 export interface ViewAsStoreResult { accessToken: string; storeId: string; storeName: string; minutes: number; staff: Record<string, unknown> }
 export const apiViewAsStore = (storeId: string) => client.post<never, ApiResponse<ViewAsStoreResult>>(ENDPOINTS.ADMIN_TEAM.VIEW_AS_STORE(storeId));
+
+// ── two-factor sign-in (own account) ──
+export interface AdminTwoFactorStatus { enabled: boolean; enabledAt: string | null; recoveryCodesLeft: number }
+export interface AdminTwoFactorSetup { secret: string; otpauthUri: string; issuer: string; account: string }
+export const apiAdminTwoFactorStatus = () => client.get<never, ApiResponse<AdminTwoFactorStatus>>(ENDPOINTS.ADMIN_TWO_FACTOR.STATUS);
+export const apiStartAdminTwoFactor = () => client.post<never, ApiResponse<AdminTwoFactorSetup>>(ENDPOINTS.ADMIN_TWO_FACTOR.SETUP);
+export const apiEnableAdminTwoFactor = (code: string) => client.post<never, ApiResponse<{ recoveryCodes: string[] }>>(ENDPOINTS.ADMIN_TWO_FACTOR.ENABLE, { code });
+export const apiDisableAdminTwoFactor = (password: string, code: string) => client.post<never, ApiResponse<unknown>>(ENDPOINTS.ADMIN_TWO_FACTOR.DISABLE, { password, code });
+export const apiNewAdminRecoveryCodes = (password: string, code: string) =>
+  client.post<never, ApiResponse<{ recoveryCodes: string[] }>>(ENDPOINTS.ADMIN_TWO_FACTOR.RECOVERY_CODES, { password, code });
