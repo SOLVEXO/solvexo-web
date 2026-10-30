@@ -42,7 +42,9 @@ export function FashionPredictiveSearch({ inputId, placeholder, maxWidth, onDone
   const failed = ready && failedTerm === term;
   const loading = ready && !data && !failed;
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  // Only the pop-up search (opened by the user, has onDone) takes focus on mount; the inline header bar must not open its panel on page load.
+  useEffect(() => { if (onDone) inputRef.current?.focus(); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (term.length < MIN_CHARS) return;
