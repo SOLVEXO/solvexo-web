@@ -40,3 +40,16 @@ export async function apiExportSaasMetrics(months: number) {
   a.href = url; a.download = 'solvexo-saas-metrics.csv'; a.click();
   URL.revokeObjectURL(url);
 }
+
+// ── Merchant activation funnel (SaaS Metrics → Activation). Must match activation-funnel.util.ts. ──
+export type FunnelStep = 'signed_up' | 'verified' | 'store' | 'product' | 'sale' | 'paying';
+export interface ActivationFunnel {
+  from: string; months: number;
+  steps: { step: FunnelStep; label: string; merchants: number; percentOfSignups: number | null; percentOfPrevious: number | null; medianDaysFromSignup: number | null }[];
+  byCohort: { month: string; signups: number; percent: Record<FunnelStep, number | null> }[];
+  bySource: { source: string; signups: number; storePercent: number | null; salePercent: number | null; payingPercent: number | null }[];
+  stuck: { sellerId: string; name: string | null; email: string | null; stuckAt: FunnelStep; nextStep: FunnelStep; daysStuck: number; signedUpDaysAgo: number }[];
+}
+
+export const apiGetActivationFunnel = (months: number) =>
+  client.get<never, { success: boolean; data: ActivationFunnel }>(`${ENDPOINTS.ANALYTICS.ADMIN.ACTIVATION_FUNNEL}?months=${months}`);

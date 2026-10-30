@@ -36,6 +36,9 @@ export const ENDPOINTS = {
     FINANCE:    (sellerId: string) => `/api/admin/clients/${sellerId}/finance`,
     MODERATION: (sellerId: string) => `/api/admin/clients/${sellerId}/moderation`,
     ACTIVITY:   (sellerId: string) => `/api/admin/clients/${sellerId}/activity`,
+    HEALTH:        '/api/admin/clients/health',
+    HEALTH_EXPORT: '/api/admin/clients/health/export',
+    STORE_HEALTH:  (storeId: string) => `/api/admin/clients/health/store/${storeId}`,
   },
 
   // ── PLATFORM CONFIG (Admin) ────────────────────────────────────────────────
@@ -1239,6 +1242,7 @@ export const ENDPOINTS = {
       EXPORT:                      '/api/admin/analytics/export',
       SAAS_METRICS:                '/api/admin/analytics/saas-metrics',
       SAAS_METRICS_EXPORT:         '/api/admin/analytics/saas-metrics/export',
+      ACTIVATION_FUNNEL:           '/api/admin/analytics/activation-funnel',
     },
   },
 

@@ -4,6 +4,7 @@ import {
   apiAdminAnalyticsOverview, apiAdminAnalyticsPlatformAlerts, apiAdminAnalyticsPlatformHealth,
 } from '@/api/services/analytics/adminAnalytics';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
+import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { DashboardCanvas } from '@/components/comman/dashboard/DashboardCanvas';
 import { CustomizeButton, CustomizeToolbar } from '@/components/comman/dashboard/CustomizeToolbar';
@@ -67,7 +68,10 @@ export function AdminOverview() {
             <CustomizeButton layout={layout} />
           </div>
         ) : (
-          <DashboardCanvas defs={ADMIN_WIDGET_DEFS} layout={layout} renderWidget={(def, w) => <AdminWidget def={def} w={w} data={data} canOpen={canOpen} />} />
+          <DashboardCanvas defs={ADMIN_WIDGET_DEFS} layout={layout} renderWidget={(def, w) => (
+            // One widget with bad data shows its own error card instead of blanking the whole dashboard.
+            <ErrorBoundary section={def.title} sectionClassName="h-full"><AdminWidget def={def} w={w} data={data} canOpen={canOpen} /></ErrorBoundary>
+          )} />
         )}
       </div>
     </>

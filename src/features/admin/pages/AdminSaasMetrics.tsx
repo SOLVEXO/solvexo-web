@@ -2,8 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bar, BarChart as RechartsBar, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { Download, Gauge, Info } from 'lucide-react';
-import { Button, MetricCard } from '@/components/comman/ui';
+import { Download, Gauge, Info, Rocket } from 'lucide-react';
+import { Button, MetricCard, TabBar, type Tab } from '@/components/comman/ui';
+import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
+import { ActivationTab } from './saas/ActivationTab';
+import { Card, Empty } from './saas/parts';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { AreaChart } from '@/components/comman/charts';
 import { CHART_GRID, CHART_TICK } from '@/components/comman/charts/chartTheme';
@@ -30,9 +33,31 @@ const MOVEMENT = [
 
 const RANGE_OPTIONS = [6, 12, 24];
 
-/** Admin → SaaS Metrics: Solvexo's own subscription business (stores paying for platform plans). */
+type SaasTab = 'revenue' | 'activation';
+const TABS: Tab[] = [
+  { id: 'revenue', label: 'Revenue', icon: <Gauge size={14} /> },
+  { id: 'activation', label: 'Activation', icon: <Rocket size={14} /> },
+];
+
+/** Admin → SaaS Metrics: Solvexo's own subscription business (Revenue) and how new merchants get started (Activation). */
 export function AdminSaasMetrics() {
   usePageTitle('SaaS Metrics');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs<SaasTab>('revenue');
+  return (
+    <>
+      <AdminPageHeader
+        title="SaaS Metrics"
+        subtitle="Solvexo's own subscription business: what stores pay, how it grows, who stays, and how new merchants get started."
+        icon={<Gauge size={18} />}
+      />
+      <TabBar tabs={TABS} active={activeTab} onChange={t => setActiveTab(t as SaasTab)} className="px-4 sm:px-7 mt-4" />
+      {isVisited('revenue') && <div className={paneClassName('revenue')}><RevenueTab /></div>}
+      {isVisited('activation') && <div className={paneClassName('activation')}><ActivationTab /></div>}
+    </>
+  );
+}
+
+function RevenueTab() {
   const [months, setMonths] = useState(12);
   const [data, setData] = useState<SaasMetrics | null>(null);
   const [error, setError] = useState('');
@@ -58,24 +83,15 @@ export function AdminSaasMetrics() {
   const mrrSeries = useMemo(() => data?.monthly.map(m => m.mrr) ?? [], [data]);
 
   return (
-    <>
-      <AdminPageHeader
-        title="SaaS Metrics"
-        subtitle="Solvexo's own subscription business: what stores pay for their plans, how it grows, and who stays."
-        icon={<Gauge size={18} />}
-        actions={
-          <div className="flex items-center gap-2">
-            <label htmlFor="saas-range" className="sr-only">Months shown</label>
-            <select id="saas-range" value={months} onChange={e => setMonths(Number(e.target.value))}
-              className="h-8 rounded-lg border border-bone bg-white px-2.5 text-[12.5px] text-charcoal">
-              {RANGE_OPTIONS.map(n => <option key={n} value={n}>Last {n} months</option>)}
-            </select>
-            <Button size="sm" variant="outline" onClick={exportCsv} loading={exporting} disabled={!data}><Download size={13} /> CSV</Button>
-          </div>
-        }
-      />
-
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          <label htmlFor="saas-range" className="sr-only">Months shown</label>
+          <select id="saas-range" value={months} onChange={e => setMonths(Number(e.target.value))}
+            className="h-8 rounded-lg border border-bone bg-white px-2.5 text-[12.5px] text-charcoal">
+            {RANGE_OPTIONS.map(n => <option key={n} value={n}>Last {n} months</option>)}
+          </select>
+          <Button size="sm" variant="outline" onClick={exportCsv} loading={exporting} disabled={!data}><Download size={13} /> CSV</Button>
+        </div>
         {error && !data && <AnalyticsErrorState message={error} onRetry={load} />}
 
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
@@ -132,22 +148,8 @@ export function AdminSaasMetrics() {
         {data && <CohortTable cohorts={data.cohorts} />}
         {data && <MonthlyTable monthly={data.monthly} />}
       </div>
-    </>
   );
 }
-
-function Card({ title, subtitle, children, action }: { title: string; subtitle?: string; children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <section className="bg-white border border-bone rounded-[10px] px-5 py-4">
-      <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
-        <div><h2 className="text-[14px] font-bold text-charcoal">{title}</h2>{subtitle && <p className="text-[11.5px] text-slate mt-0.5">{subtitle}</p>}</div>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-const Empty = ({ text }: { text: string }) => <p className="text-[12.5px] text-slate py-6 text-center">{text}</p>;
 
 function MovementChart({ monthly, totals }: { monthly: SaasMonth[]; totals: SaasMetrics['periodTotals'] }) {
   const rows = monthly.map(m => ({
