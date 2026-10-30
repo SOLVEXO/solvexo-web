@@ -903,7 +903,7 @@ export function ThemeCustomizePage() {
           // even on a 390px viewport. The whole cluster still wraps beneath
           // the title if there's truly no room for either group at all.
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <PreviewButton storeId={storeId} installedThemeId={installedThemeId} />
+            <PreviewButton storeId={storeId} installedThemeId={installedThemeId} page={scope !== 'theme' ? { label: scopeLabel(scope), sections: editor.workingCopy ?? [] } : null} />
             <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
               <ScopePicker scopeDefs={scopeDefs} scope={scope} onChange={changeScope} currentLabel={scopeLabel(scope)} />
 

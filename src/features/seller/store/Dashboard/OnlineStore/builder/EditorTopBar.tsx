@@ -66,7 +66,9 @@ export function EditorTopBar({ exitTo, title, subtitle, children }: {
  * mechanism yet for Home/Product/Collection/etc. section content, and
  * building one is out of scope for this pass (shell/chrome only).
  */
-export function PreviewButton({ storeId, installedThemeId }: { storeId: string; installedThemeId?: string }) {
+export const PAGE_PREVIEW_KEY = (storeId: string) => `solvexo:page-preview:${storeId}`;
+
+export function PreviewButton({ storeId, installedThemeId, page }: { storeId: string; installedThemeId?: string; page?: { label: string; sections: unknown[] } | null }) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -74,7 +76,12 @@ export function PreviewButton({ storeId, installedThemeId }: { storeId: string; 
     setLoading(true);
     try {
       const res = await apiCreatePreviewLink(storeId, installedThemeId);
-      window.open(`${window.location.origin}/theme-preview/${storeId}/${res.data.token}`, '_blank', 'noopener');
+      // Hand the page being edited (with unsaved changes) to the new tab, so it shows THAT page and not always Home.
+      let withPage = false;
+      if (page && page.sections.length > 0) {
+        try { localStorage.setItem(PAGE_PREVIEW_KEY(storeId), JSON.stringify({ label: page.label, sections: page.sections, at: Date.now() })); withPage = true; } catch { /* storage blocked: falls back to Home */ }
+      }
+      window.open(`${window.location.origin}/theme-preview/${storeId}/${res.data.token}${withPage ? '?page=1' : ''}`, '_blank');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to open preview.');
     } finally {
@@ -87,7 +94,7 @@ export function PreviewButton({ storeId, installedThemeId }: { storeId: string; 
       type="button"
       onClick={handleClick}
       disabled={loading}
-      title="Preview your draft theme colors, header & footer over sample content in a new tab (not your live product catalog)"
+      title="Preview this page with your draft changes in a new tab"
       className="shrink-0 flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal disabled:opacity-60 cursor-pointer"
     >
       {loading ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} Preview

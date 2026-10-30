@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { PAGE_PREVIEW_KEY } from '../builder/EditorTopBar';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import type { PublicStoreData } from '@/api/services/store';
 import { apiGetPublicStore } from '@/api/services/store';
@@ -27,6 +28,15 @@ export function ThemeSharePreviewPage() {
   const [data, setData] = useState<PreviewByTokenData | null>(null);
   const [store, setStore] = useState<PublicStoreData | null>(null);
   const [error, setError] = useState('');
+  const [searchParams] = useSearchParams();
+  // "Preview" from Customize hands over the page being edited (even unsaved); without it this shows Home.
+  const [pagePreview] = useState<{ label: string; sections: PreviewByTokenData['homeSections'] } | null>(() => {
+    if (searchParams.get('page') !== '1') return null;
+    try {
+      const raw = JSON.parse(localStorage.getItem(PAGE_PREVIEW_KEY(storeId)) ?? 'null');
+      return raw && Array.isArray(raw.sections) && Date.now() - Number(raw.at) < 3_600_000 ? { label: String(raw.label ?? ''), sections: raw.sections } : null;
+    } catch { return null; }
+  });
 
   useEffect(() => {
     apiGetPreviewByToken(storeId, token)
@@ -111,13 +121,13 @@ export function ThemeSharePreviewPage() {
                 borderRadius: t.buttonRadiusPx,
               }}
             >
-              Draft Preview — not live
+              {pagePreview?.label ? `Draft: ${pagePreview.label} — not live` : 'Draft Preview — not live'}
             </span>
           </div>
         </header>
 
         <main onClick={event => event.preventDefault()} onSubmit={event => event.preventDefault()}>
-          <SectionRenderer sections={data.homeSections} />
+          <SectionRenderer sections={pagePreview?.sections ?? data.homeSections} />
         </main>
 
         <footer style={{ background: t.colors.ink, color: t.colors.bg, marginTop: 0 }}>
