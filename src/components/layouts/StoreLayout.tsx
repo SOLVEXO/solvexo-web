@@ -492,10 +492,12 @@ function StoreBottomNav() {
             className="pointer-events-none absolute bottom-[calc(100%-1px)] h-[36px] w-[104px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring"
             style={{ left: `calc(12px + ${(activeIndex + 0.5) / tabs.length} * (100% - 24px))` }}
           >
-            {/* only the active tab's orange squircle: nothing is drawn behind it */}
-            <span className="absolute left-1/2 top-[6px] size-[44px] -translate-x-1/2 rounded-[16px] bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-[0_4px_10px_rgba(193,83,48,0.3)]">
-              <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
-              {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-white text-brand-deep-orange text-[9px] font-bold leading-4 text-center shadow">{activeCount > 99 ? '99+' : activeCount}</span>}
+            {/* the orange squircle sits in a white ring (same white as the bar, so it joins it) with a 3px gap all round */}
+            <span className="absolute left-1/2 top-[3px] -translate-x-1/2 rounded-[19px] bg-white p-[3px] shadow-[0_0_0_1px_rgba(20,15,10,0.04),0_4px_12px_rgba(20,15,10,0.1)]">
+              <span className="relative size-[44px] rounded-[16px] bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center">
+                <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
+                {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-white text-brand-deep-orange text-[9px] font-bold leading-4 text-center shadow">{activeCount > 99 ? '99+' : activeCount}</span>}
+              </span>
             </span>
           </span>
         )}
