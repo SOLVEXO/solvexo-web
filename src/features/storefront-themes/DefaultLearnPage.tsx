@@ -8,7 +8,7 @@ import {
 } from '@/api/services/courses';
 
 const msg = (e: any, d: string) => e?.response?.data?.message ?? e?.message ?? d;
-const btn = 'rounded-lg border border-black/30 px-3 py-1.5 text-sm disabled:opacity-50';
+const btn = 'rounded-lg border border-current/40 px-3 py-1.5 text-sm disabled:opacity-50';
 
 function Lesson({ storeId, courseId, lesson, onChange }: { storeId: string; courseId: string; lesson: LessonView; onChange: () => void }) {
   const [media, setMedia] = useState<string | null>(null);
@@ -23,10 +23,10 @@ function Lesson({ storeId, courseId, lesson, onChange }: { storeId: string; cour
   }
 
   if (lesson.locked) {
-    return <li className="rounded-lg border border-black/10 p-3 text-sm opacity-70">{lesson.title} · opens {lesson.unlockAt ? new Date(lesson.unlockAt).toLocaleDateString() : 'later'}</li>;
+    return <li className="rounded-lg border border-current/10 p-3 text-sm opacity-70">{lesson.title} · opens {lesson.unlockAt ? new Date(lesson.unlockAt).toLocaleDateString() : 'later'}</li>;
   }
   return (
-    <li className="rounded-lg border border-black/15 p-3 text-sm flex flex-col gap-2">
+    <li className="rounded-lg border border-current/20 p-3 text-sm flex flex-col gap-2">
       <p className="font-medium">{lesson.title} {lesson.completed && <span className="opacity-60">· done{lesson.score != null ? ` (${lesson.score}%)` : ''}</span>}</p>
       {error && <p role="alert" className="text-red-600">{error}</p>}
       {lesson.type === 'text' && <p className="whitespace-pre-wrap">{lesson.text}</p>}
@@ -89,7 +89,7 @@ export function DefaultLearnPage() {
       {!courseId && (
         <ul className="flex flex-col gap-3">
           {courses?.map((c) => (
-            <li key={c.courseId} className="rounded-xl border border-black/15 p-4 text-sm flex items-center gap-3">
+            <li key={c.courseId} className="rounded-xl border border-current/20 p-4 text-sm flex items-center gap-3">
               <div className="flex-1"><p className="font-medium">{c.title}</p><p className="opacity-70">{c.done} of {c.lessons} lessons{c.completed ? ' · completed' : ''}</p></div>
               <button className={btn} onClick={() => setParams({ course: c.courseId })}>{c.done ? 'Continue' : 'Start'}</button>
             </li>

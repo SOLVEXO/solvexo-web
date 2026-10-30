@@ -35,12 +35,12 @@ export function DefaultLicensesPage() {
       {rows?.length === 0 && !error && <p className="text-sm opacity-70">You have no license keys yet.</p>}
       <ul className="flex flex-col gap-3">
         {rows?.map((r) => (
-          <li key={r.id} className="rounded-xl border border-black/15 p-4 text-sm flex items-center gap-3">
+          <li key={r.id} className="rounded-xl border border-current/20 p-4 text-sm flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <code className="font-mono text-base select-all">{r.key}</code>
               <p className="opacity-70">{r.activations} of {r.activationLimit} devices activated</p>
             </div>
-            <button type="button" onClick={() => void copy(r)} className="rounded-lg border border-black/30 px-3 py-1.5">{copied === r.id ? 'Copied' : 'Copy'}</button>
+            <button type="button" onClick={() => void copy(r)} className="rounded-lg border border-current/40 px-3 py-1.5">{copied === r.id ? 'Copied' : 'Copy'}</button>
           </li>
         ))}
       </ul>

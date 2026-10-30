@@ -66,7 +66,7 @@ export function DefaultLibraryPage() {
     }
   }
 
-  const field = 'w-full rounded-lg border border-black/20 bg-transparent px-3 py-2 text-sm';
+  const field = 'w-full rounded-lg border border-current/30 bg-transparent px-3 py-2 text-sm';
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
@@ -86,7 +86,7 @@ export function DefaultLibraryPage() {
           <label className="text-sm">Email used at checkout
             <input className={field} type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </label>
-          <button type="submit" className="rounded-lg bg-black text-white px-4 py-2 text-sm">Email me a link</button>
+          <button type="submit" className="rounded-lg border border-current font-medium px-4 py-2 text-sm">Email me a link</button>
         </form>
       )}
 
@@ -95,7 +95,7 @@ export function DefaultLibraryPage() {
 
       <ul className="flex flex-col gap-4">
         {items?.map((it) => (
-          <li key={it.accessId} className="rounded-xl border border-black/15 p-4">
+          <li key={it.accessId} className="rounded-xl border border-current/20 p-4">
             <div className="flex items-center gap-3 mb-3">
               {it.image && <img src={it.image} alt="" className="size-12 rounded object-cover" />}
               <div className="flex-1">
@@ -112,7 +112,7 @@ export function DefaultLibraryPage() {
                   <span className="flex-1 min-w-0 truncate">
                     {f.label || f.name}
                     {f.version && <span className="opacity-60"> v{f.version}</span>}
-                    {isRecent(f.updatedAt) && <span className="ml-2 rounded bg-black text-white px-1.5 py-0.5 text-[10px]">Updated</span>}
+                    {isRecent(f.updatedAt) && <span className="ml-2 rounded border border-current px-1.5 py-0.5 text-[10px]">Updated</span>}
                     <span className="opacity-60"> {mb(f.size)}</span>
                     {isRecent(f.updatedAt) && f.changelog && <span className="block text-xs opacity-70">{f.changelog}</span>}
                   </span>
@@ -120,7 +120,7 @@ export function DefaultLibraryPage() {
                     type="button"
                     disabled={busy === `${it.productId}:${f.fileIndex}`}
                     onClick={() => void download(it.productId, f.fileIndex)}
-                    className="rounded-lg border border-black/30 px-3 py-1.5 disabled:opacity-50"
+                    className="rounded-lg border border-current/40 px-3 py-1.5 disabled:opacity-50"
                   >
                     Download
                   </button>

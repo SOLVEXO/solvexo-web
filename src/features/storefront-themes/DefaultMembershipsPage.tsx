@@ -39,7 +39,7 @@ export function DefaultMembershipsPage() {
 
   const planOf = (id: string) => plans?.find((p) => p._id === id);
   const price = (p: PublicPlan) => (p.type === 'free' ? 'Free' : `${p.currency} ${p.amount}${p.type === 'recurring' ? ` / ${p.intervalCount > 1 ? p.intervalCount + ' ' : ''}${p.interval}` : ' one-time'}`);
-  const btn = 'rounded-lg border border-black/30 px-3 py-1.5 text-sm disabled:opacity-50';
+  const btn = 'rounded-lg border border-current/40 px-3 py-1.5 text-sm disabled:opacity-50';
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
@@ -57,7 +57,7 @@ export function DefaultMembershipsPage() {
               const p = planOf(s.planId);
               const upgrades = (plans ?? []).filter((x) => p && x.type === 'recurring' && x._id !== s.planId);
               return (
-                <li key={s._id} className="rounded-xl border border-black/15 p-4 text-sm">
+                <li key={s._id} className="rounded-xl border border-current/20 p-4 text-sm">
                   <p className="font-medium">{p?.name ?? 'Plan'} <span className="opacity-60 capitalize">· {s.status.replace('_', ' ')}</span></p>
                   {s.awaitingFirstPayment && <p className="opacity-70">Waiting for the store to confirm your payment.</p>}
                   {s.currentPeriodEnd && <p className="opacity-70">{s.cancelAtPeriodEnd ? 'Ends' : 'Renews'} on {new Date(s.currentPeriodEnd).toLocaleDateString()}</p>}
@@ -88,7 +88,7 @@ export function DefaultMembershipsPage() {
             {plans.map((p) => {
               const has = subs.some((s) => s.planId === p._id && LIVE.includes(s.status));
               return (
-                <li key={p._id} className="rounded-xl border border-black/15 p-4 text-sm flex flex-col gap-2">
+                <li key={p._id} className="rounded-xl border border-current/20 p-4 text-sm flex flex-col gap-2">
                   <p className="font-medium">{p.name}</p>
                   <p>{price(p)}{p.trialDays > 0 ? ` · ${p.trialDays}-day trial` : ''}</p>
                   {p.description && <p className="opacity-70">{p.description}</p>}

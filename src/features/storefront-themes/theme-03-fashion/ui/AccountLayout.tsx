@@ -9,10 +9,10 @@ import { Page, PageTitle } from './primitives';
 /** Digital pages only appear for stores that sell digital downloads or educational resources. */
 const buildLinks = (digital: boolean) => [
   ...(digital ? [
-    { to: '/library', label: 'Library', icon: Library, end: false },
-    { to: '/learn', label: 'Courses', icon: GraduationCap, end: false },
-    { to: '/memberships', label: 'Memberships', icon: Crown, end: false },
-    { to: '/licenses', label: 'Licenses', icon: KeyRound, end: false },
+    { to: '/library', label: ts('dg.nav_library', 'Library'), icon: Library, end: false },
+    { to: '/learn', label: ts('dg.nav_courses', 'Courses'), icon: GraduationCap, end: false },
+    { to: '/memberships', label: ts('dg.nav_memberships', 'Memberships'), icon: Crown, end: false },
+    { to: '/licenses', label: ts('dg.nav_licenses', 'Licenses'), icon: KeyRound, end: false },
   ] : []),
   { to: '/account', label: ts('account.profile', 'Profile'), icon: User, end: true },
   { to: '/orders', label: ts('account.orders', 'Orders'), icon: Package },
