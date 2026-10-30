@@ -544,13 +544,9 @@ export default function StoreEditProduct() {
               value={cur.images}
               onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
               maxFiles={5}
-              showCover
+              showCover={!(cur.videoUrl && cur.videoFirst)}
               storeId={storeId}
             />
-          </Card>
-
-          {/* Product video */}
-          <Card title="Product Video">
             <ProductVideoField
               value={{ videoUrl: cur.videoUrl, videoFirst: cur.videoFirst }}
               onChange={v => {

@@ -266,7 +266,14 @@ function ProductPageInner({ slug }: { slug: string }) {
                     <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: '4 / 5', background: '#000', borderRadius: 24 }}>
                       {video.kind === 'file'
                         ? <video key={video.src} src={video.src} poster={video.poster ?? images[0]} controls playsInline preload="metadata" className="size-full object-contain" aria-label={tr('product.video', 'Product video')} />
-                        : <iframe key={video.src} src={video.src} title={tr('product.video', 'Product video')} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="size-full border-0" />}
+                        : video.kind === 'link'
+                          ? (
+                            <a href={video.src} target="_blank" rel="noopener noreferrer" aria-label={tr('product.video', 'Product video')} className="relative block size-full">
+                              {images[0] && <img {...imgProps(images[0], [480, 768, 1024], '(min-width: 1024px) 58vw, 100vw')} alt="" className="size-full object-cover opacity-80" />}
+                              <span className="absolute inset-0 grid place-items-center"><span className="grid size-16 place-items-center rounded-full" style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}><Play size={26} fill="currentColor" /></span></span>
+                            </a>
+                          )
+                          : <iframe key={video.src} src={video.src} title={tr('product.video', 'Product video')} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="size-full border-0" />}
                     </div>
                   ) : (
                     <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>

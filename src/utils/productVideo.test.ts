@@ -22,10 +22,16 @@ describe('parseProductVideo', () => {
     expect(p?.poster).toBe('https://res.cloudinary.com/demo/video/upload/v1/clip.jpg');
   });
 
-  it('rejects empty, non-https, image and unknown hosts', () => {
+  it('rejects empty, non-https, image and local addresses', () => {
     expect(parseProductVideo('')).toBeNull();
     expect(parseProductVideo('http://youtu.be/dQw4w9WgXcQ')).toBeNull();
     expect(parseProductVideo('https://res.cloudinary.com/demo/image/upload/v1/pic.jpg')).toBeNull();
-    expect(parseProductVideo('https://evil.example.com/video.mp4')).toBeNull();
+    expect(parseProductVideo('https://localhost/video.mp4')).toBeNull();
+    expect(parseProductVideo('https://127.0.0.1/v.mp4')).toBeNull();
+  });
+
+  it('accepts any other https link: a file link plays, a page link opens in a new tab', () => {
+    expect(parseProductVideo('https://cdn.example.com/clips/a.mp4?x=1')?.kind).toBe('file');
+    expect(parseProductVideo('https://www.tiktok.com/@shop/video/123')?.kind).toBe('link');
   });
 });
