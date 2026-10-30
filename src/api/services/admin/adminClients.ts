@@ -68,3 +68,40 @@ export interface ClientActivityData {
 export function apiGetClientActivity(sellerId: string, query: ClientActivityQuery = {}) {
   return client.get<never, ApiResponse<ClientActivityData>>(ENDPOINTS.CLIENTS.ACTIVITY(sellerId), { params: query });
 }
+
+// ── Merchant health (Clients → Health tab) ───────────────────────────────────
+// Must match solvexo-api/src/admin-clients/merchant-health.{util,service}.ts.
+
+export type HealthBand = 'healthy' | 'attention' | 'at_risk';
+export type HealthFactor = 'sales' | 'engagement' | 'billing' | 'catalog' | 'customers';
+export interface MerchantHealthRow {
+  storeId: string; storeName: string; storeSlug: string | null; storeStatus: string; storeCreatedAt: string;
+  sellerId: string; sellerName: string | null; sellerEmail: string | null;
+  score: number; band: HealthBand; mrr: number;
+  parts: Record<HealthFactor, { points: number; max: number }>;
+  reasons: { factor: HealthFactor; lost: number; text: string }[];
+  planStatus: string | null; lastOrderAt: string | null; lastSellerLoginAt: string | null; activeProducts: number; revenueLast30: number;
+}
+export interface MerchantHealthData {
+  summary: { stores: number; averageScore: number | null; healthy: number; attention: number; atRisk: number; mrrAtRisk: number; mrrNeedsAttention: number };
+  total: number; page: number; limit: number; items: MerchantHealthRow[]; computedAt: string;
+}
+export interface MerchantHealthQuery { band?: HealthBand | 'all'; search?: string; sort?: 'score' | 'mrr' | 'name'; order?: 'asc' | 'desc'; page?: number; limit?: number }
+
+const healthQs = (q: MerchantHealthQuery) => {
+  const p = new URLSearchParams();
+  Object.entries(q).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) p.set(k, String(v)); });
+  const s = p.toString();
+  return s ? `?${s}` : '';
+};
+
+export const apiGetMerchantHealth = (q: MerchantHealthQuery) =>
+  client.get<never, ApiResponse<MerchantHealthData>>(`${ENDPOINTS.CLIENTS.HEALTH}${healthQs(q)}`);
+
+export async function apiExportMerchantHealth(q: MerchantHealthQuery) {
+  const blob = await client.get<never, Blob>(`${ENDPOINTS.CLIENTS.HEALTH_EXPORT}${healthQs({ ...q, page: undefined, limit: undefined })}`, { responseType: 'blob' } as never);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'solvexo-merchant-health.csv'; a.click();
+  URL.revokeObjectURL(url);
+}

@@ -41,6 +41,7 @@ export const ADMIN_WIDGET_DEFS: AdminWidgetDef[] = [
     settings: [{ key: 'range', label: 'Period', options: RANGE_OPTIONS }], defaultSettings: { range: '30d' },
   },
   { id: 'plan_distribution', title: 'Plan distribution', category: 'Subscription revenue', perm: 'billing.manage', description: 'Paying stores and MRR per platform plan.', sizes: ['third', 'medium', 'large'], defaultSize: 'third' },
+  { id: 'merchant_health', title: 'Merchants at risk', category: 'Merchant growth', perm: 'clients.view', description: 'Stores with the lowest health score, why, and the MRR at stake.', sizes: ['third', 'medium', 'large'], defaultSize: 'medium' },
   { id: 'platform_alerts', title: 'Platform alerts', category: 'System health', perm: 'analytics.view', description: 'Failed jobs, integration and payment problems and other rule-based alerts.', sizes: ['third', 'medium', 'large', 'full'], defaultSize: 'medium' },
   { id: 'system_health', title: 'System health', category: 'System health', perm: 'analytics.view', description: 'Database and cache status, webhook failures and background queue backlog.', sizes: ['third', 'medium', 'large'], defaultSize: 'medium' },
   {
@@ -60,14 +61,14 @@ export const ADMIN_DEFAULT_WIDGETS: LayoutWidget[] = sized([
   'kpi.total_stores', 'kpi.active_stores', 'kpi.mrr', 'kpi.critical_alerts',
   'merchant_growth', { id: 'platform_revenue', size: 'third' },
   { id: 'platform_alerts', size: 'medium' }, { id: 'system_health', size: 'medium' },
-  'plan_distribution', 'top_categories', { id: 'recent_activity', size: 'third' },
+  { id: 'merchant_health', size: 'medium' }, { id: 'plan_distribution', size: 'medium' }, 'top_categories', { id: 'recent_activity', size: 'third' },
   'growth_forecast', 'quick_links',
 ]);
 
 export const ADMIN_PRESETS: DashboardPreset[] = [
   { id: 'default', label: 'Default', description: 'Key numbers, growth and revenue, then alerts and system health.', widgets: ADMIN_DEFAULT_WIDGETS.map(w => ({ id: w.id, size: w.size })) },
   { id: 'operations', label: 'Operations', description: 'Alerts, system health and activity first.',
-    widgets: ['kpi.critical_alerts', 'kpi.active_stores', 'kpi.total_stores', 'kpi.new_users', { id: 'platform_alerts', size: 'large' }, { id: 'system_health', size: 'third' }, { id: 'recent_activity', size: 'medium' }, 'quick_links'] },
+    widgets: ['kpi.critical_alerts', 'kpi.active_stores', 'kpi.total_stores', 'kpi.new_users', { id: 'platform_alerts', size: 'large' }, { id: 'system_health', size: 'third' }, { id: 'recent_activity', size: 'medium' }, { id: 'merchant_health', size: 'medium' }, 'quick_links'] },
   { id: 'finance', label: 'Finance', description: 'Subscription revenue, plans and churn.',
     widgets: ['kpi.mrr', 'kpi.plan_arr', 'kpi.paid_subscribers', 'kpi.churn', { id: 'platform_revenue', size: 'medium' }, { id: 'plan_distribution', size: 'medium' }, 'kpi.critical_alerts', 'kpi.gmv'] },
   { id: 'growth', label: 'Growth', description: 'Merchant growth and categories.',

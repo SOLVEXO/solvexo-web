@@ -14,6 +14,8 @@ interface ErrorBoundaryProps {
   /** Set for a boundary around ONE section of a page (e.g. a settings tab): the fallback is a compact card naming that
    *  section and its error, so the rest of the page keeps working instead of the whole screen going blank. */
   section?: string;
+  /** Classes for the section fallback card; defaults to the page-section margin. */
+  sectionClassName?: string;
 }
 
 interface ErrorBoundaryState {
@@ -46,9 +48,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     if (this.props.section) {
       return (
-        <div role="alert" className="m-4 sm:m-7 border border-error-border bg-error-bg rounded-xl p-4 flex items-start gap-3">
+        <div role="alert" className={`${this.props.sectionClassName ?? 'm-4 sm:m-7'} border border-error-border bg-error-bg rounded-xl p-4 flex flex-wrap items-start gap-x-3 gap-y-2`}>
           <AlertTriangle size={16} className="text-error shrink-0 mt-0.5" />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[140px] flex-1">
             <p className="text-[13px] font-semibold text-error">{this.props.section} couldn't be shown</p>
             <p className="text-[12px] text-slate mt-0.5 break-words">{this.state.error.message || 'Unexpected error.'}</p>
           </div>

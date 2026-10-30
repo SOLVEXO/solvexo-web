@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, ArrowRight, Bell, Building2, CheckCircle2, DollarSign, Layers, Percent, Shield, Store, TrendingUp, UserCheck, UserPlus, Users, Wallet } from 'lucide-react';
+import { Activity, ArrowRight, Bell, Building2, CheckCircle2, DollarSign, HeartPulse, Layers, Percent, Shield, Store, TrendingUp, UserCheck, UserPlus, Users, Wallet } from 'lucide-react';
 import {
   apiAdminAnalyticsSellerRegistrationTrends, apiAdminAnalyticsTopCategories,
   type AdminOverviewData, type AdminPlatformAlertsData, type AdminPlatformHealthData,
@@ -8,6 +8,7 @@ import {
 import { apiAdminFinancePlatformRevenue } from '@/api/services/finance/adminFinance';
 import { apiAdminGetPlatformPlanRevenue } from '@/api/services/platformPlans';
 import { apiGetAdminActivityLog } from '@/api/services/activityLog';
+import { apiGetMerchantHealth } from '@/api/services/admin/adminClients';
 import { useAdminAnalyticsGrowthForecast } from '@/hooks/admin/useAdminAnalytics';
 import type { AnalyticsRangePreset } from '@/components/comman/analytics/analyticsFilters';
 import { AreaChart } from '@/components/comman/charts';
@@ -133,6 +134,41 @@ function PlanDistribution() {
               </li>
             ))}
           </ul>
+        )}
+      </Body>
+    </Panel>
+  );
+}
+
+function MerchantHealth() {
+  const navigate = useNavigate();
+  const load = useKeyedLoad(() => apiGetMerchantHealth({ band: 'at_risk', limit: 5 }), 'merchant-health');
+  return (
+    <Panel title="Merchants at risk" icon={<HeartPulse size={14} />} to={{ label: 'Clients', path: '/admin/clients' }}>
+      <Body load={{ data: load.data?.data ?? null, error: load.error, loading: load.loading, retry: load.retry }}>
+        {d => (
+          <>
+            <p className="text-[12px] text-slate mb-2.5">
+              <span className="font-semibold text-error">{formatNumber(d.summary.atRisk)} at risk</span> · {formatCurrency(d.summary.mrrAtRisk)} MRR at stake · {formatNumber(d.summary.attention)} need attention
+            </p>
+            {d.items.length === 0 ? <Empty text="No store is at risk right now." /> : (
+              <ul className="flex flex-col gap-1 list-none p-0 m-0">
+                {d.items.map(m => (
+                  <li key={m.storeId}>
+                    <button type="button" onClick={() => navigate(`/admin/clients/${m.sellerId}`)}
+                      className="w-full flex items-center gap-3 py-1.5 bg-transparent border-none cursor-pointer text-left rounded-lg hover:bg-cream/60">
+                      <span className="text-[13px] font-bold text-carbon tabular-nums w-6 text-right">{m.score}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[12.5px] font-semibold text-charcoal truncate">{m.storeName}</span>
+                        <span className="block text-[11px] text-slate truncate">{m.reasons[0]?.text ?? ''}</span>
+                      </span>
+                      {m.mrr > 0 && <span className="text-[11.5px] text-graphite tabular-nums">{formatCurrency(m.mrr)}/mo</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </Body>
     </Panel>
@@ -274,6 +310,7 @@ export function AdminWidget({ def, w, data, canOpen }: { def: DashboardWidgetDef
     case 'merchant_growth': return <MerchantGrowth range={range} />;
     case 'platform_revenue': return <PlatformRevenue range={range} />;
     case 'plan_distribution': return <PlanDistribution />;
+    case 'merchant_health': return <MerchantHealth />;
     case 'platform_alerts': return <PlatformAlerts data={data} />;
     case 'system_health': return <SystemHealth data={data} />;
     case 'recent_activity': return <RecentPlatformActivity limit={limit} />;

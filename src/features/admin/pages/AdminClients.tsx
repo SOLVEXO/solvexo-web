@@ -11,7 +11,8 @@ import {
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate, formatNumber } from '@/components/comman/analytics/format';
-import { Users2, Store as StoreIcon, ChevronRight, Shield } from 'lucide-react';
+import { Users2, Store as StoreIcon, ChevronRight, Shield, HeartPulse } from 'lucide-react';
+import { MerchantHealthTab } from './clients/MerchantHealthTab';
 import { AdminModeration } from './AdminModeration';
 
 const STATUS_OPTIONS = [
@@ -22,6 +23,7 @@ const STATUS_OPTIONS = [
 
 const TABS: Tab[] = [
   { id: 'clients', label: 'Clients', icon: <Users2 size={14} /> },
+  { id: 'health', label: 'Health', icon: <HeartPulse size={14} /> },
   { id: 'moderation', label: 'Moderation', icon: <Shield size={14} /> },
 ];
 
@@ -39,7 +41,7 @@ function initialsOf(name: string) {
 export function AdminClients() {
   usePageTitle('Clients Manage');
   const navigate = useNavigate();
-  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs<'clients' | 'moderation'>('clients');
+  const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs<'clients' | 'health' | 'moderation'>('clients');
 
   const { data: stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useAdminUsersStats();
 
@@ -93,7 +95,7 @@ export function AdminClients() {
   return (
     <>
       <AdminPageHeader title="Clients Manage" subtitle="Every business on Solvexo — stores, billing, finance, activity, and moderation in one place." />
-      <TabBar tabs={TABS} active={activeTab} onChange={(t) => setActiveTab(t as 'clients' | 'moderation')} className="px-4 sm:px-7 mt-5" />
+      <TabBar tabs={TABS} active={activeTab} onChange={(t) => setActiveTab(t as 'clients' | 'health' | 'moderation')} className="px-4 sm:px-7 mt-5" />
 
       {isVisited('clients') && (
         <div className={paneClassName('clients')}>
@@ -135,6 +137,12 @@ export function AdminClients() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {isVisited('health') && (
+        <div className={paneClassName('health')}>
+          <MerchantHealthTab />
         </div>
       )}
 
