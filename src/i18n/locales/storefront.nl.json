@@ -1331,6 +1331,8 @@
     "share": "Delen",
     "shippingFrom": "Verzending {{price}}",
     "showImageN": "Afbeelding {{n}} tonen",
+    "showVideo": "Video tonen",
+    "video": "Productvideo",
     "sizeChart": "Maattabel",
     "sku": "Artikelnummer",
     "soldOut": "Uitverkocht",

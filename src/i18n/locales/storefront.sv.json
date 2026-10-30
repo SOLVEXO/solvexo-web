@@ -1331,6 +1331,8 @@
     "share": "Dela",
     "shippingFrom": "Frakt {{price}}",
     "showImageN": "Visa bild {{n}}",
+    "showVideo": "Visa video",
+    "video": "Produktvideo",
     "sizeChart": "Storlekstabell",
     "sku": "Artikelnummer",
     "soldOut": "Slutsåld",

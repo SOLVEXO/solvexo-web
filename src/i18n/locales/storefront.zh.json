@@ -1319,6 +1319,8 @@
     "share": "分享",
     "shippingFrom": "运费 {{price}}",
     "showImageN": "显示第 {{n}} 张图片",
+    "showVideo": "显示视频",
+    "video": "商品视频",
     "sizeChart": "尺码表",
     "sku": "SKU",
     "soldOut": "已售罄",

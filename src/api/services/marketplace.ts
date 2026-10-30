@@ -85,6 +85,9 @@ export interface MarketplaceProduct {
   customLevel?:      string | null;
   normalizedCustomLevel?: string | null;
   images:            string[];
+  /** Optional gallery video (uploaded file or YouTube / Vimeo link). */
+  videoUrl?:         string;
+  videoFirst?:       boolean;
   tags?:             string[];
   digital?:          DigitalProduct | null;
   viewCount:         number;

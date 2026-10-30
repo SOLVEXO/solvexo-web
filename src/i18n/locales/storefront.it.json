@@ -1343,6 +1343,8 @@
     "share": "Condividi",
     "shippingFrom": "Spedizione {{price}}",
     "showImageN": "Mostra immagine {{n}}",
+    "showVideo": "Mostra video",
+    "video": "Video del prodotto",
     "sizeChart": "Guida alle taglie",
     "sku": "SKU",
     "soldOut": "Esaurito",

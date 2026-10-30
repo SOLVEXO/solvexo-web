@@ -1343,6 +1343,8 @@
     "share": "Compartilhar",
     "shippingFrom": "Frete {{price}}",
     "showImageN": "Mostrar imagem {{n}}",
+    "showVideo": "Mostrar vídeo",
+    "video": "Vídeo do produto",
     "sizeChart": "Tabela de medidas",
     "sku": "SKU",
     "soldOut": "Esgotado",

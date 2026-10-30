@@ -27,6 +27,7 @@ import { CustomsInformationFields } from './CustomsInformationFields';
 import { customsPayload } from './customsInfo';
 import { ShippingProfileField } from './ShippingProfileField';
 import { SellingOptionsField, initSellingOptions, sellingOptionsPayload } from './SellingOptionsField';
+import { ProductVideoField } from './ProductVideoField';
 import { dimensionPayload } from './packageDimensions';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
@@ -87,6 +88,7 @@ const initPhys = {
   stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', taxable: 'yes', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
+  videoUrl: '', videoFirst: false,
   shippingProfileId: '',
   selling: initSellingOptions,
   // Non-empty optionTypes switches the Pricing/Inventory cards over to the
@@ -100,6 +102,7 @@ const initDig = {
   name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
+  videoUrl: '', videoFirst: false,
   files: [] as DigitalFileRow[],
   licenseEnabled: false, licenseLimit: '1',
   downloadLimit: 'unlimited', linkExpiryDays: '',
@@ -215,7 +218,7 @@ export default function StoreAddProduct() {
         const res = await apiCreatePhysicalProduct({
           storeId, name: phys.name, description: phys.description,
           categoryId: phys.categoryId || null,
-          subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
+          subCategoryId: phys.subCategoryId || null, images: phys.images, videoUrl: phys.videoUrl, videoFirst: phys.videoFirst, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           shippingProfileId: phys.shippingProfileId || null,
@@ -229,7 +232,7 @@ export default function StoreAddProduct() {
           storeId, name: dig.name, description: dig.description,
           productType: pType === 'educational' ? 'educational' : 'digital',
           categoryId: dig.categoryId || null,
-          subCategoryId: dig.subCategoryId || null, images: dig.images, tags: dig.tags,
+          subCategoryId: dig.subCategoryId || null, images: dig.images, videoUrl: dig.videoUrl, videoFirst: dig.videoFirst, tags: dig.tags,
           educationLevel: pType === 'educational' ? (dig.educationLevel || null) : null,
           customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : null,
           isListedOnSolvexo: dig.isListedOnSolvexo, status: finalStatus,
@@ -346,6 +349,17 @@ export default function StoreAddProduct() {
               maxFiles={5}
               showCover
               storeId={storeId}
+            />
+          </Card>
+
+          {/* Product video */}
+          <Card title="Product Video">
+            <ProductVideoField
+              value={{ videoUrl: cur.videoUrl, videoFirst: cur.videoFirst }}
+              onChange={v => {
+                if (pType === 'physical') { sp('videoUrl', v.videoUrl); sp('videoFirst', v.videoFirst); }
+                else { sd('videoUrl', v.videoUrl); sd('videoFirst', v.videoFirst); }
+              }}
             />
           </Card>
 

@@ -1319,6 +1319,8 @@
     "share": "共有",
     "shippingFrom": "送料 {{price}}",
     "showImageN": "画像 {{n}} を表示",
+    "showVideo": "動画を表示",
+    "video": "商品動画",
     "sizeChart": "サイズ表",
     "sku": "SKU",
     "soldOut": "売り切れ",

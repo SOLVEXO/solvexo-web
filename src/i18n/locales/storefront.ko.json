@@ -1319,6 +1319,8 @@
     "share": "공유",
     "shippingFrom": "배송비 {{price}}",
     "showImageN": "이미지 {{n}} 표시",
+    "showVideo": "동영상 보기",
+    "video": "상품 동영상",
     "sizeChart": "사이즈 가이드",
     "sku": "SKU",
     "soldOut": "품절",

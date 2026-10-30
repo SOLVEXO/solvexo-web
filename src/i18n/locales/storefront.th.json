@@ -1319,6 +1319,8 @@
     "share": "แชร์",
     "shippingFrom": "ค่าจัดส่ง {{price}}",
     "showImageN": "แสดงรูปที่ {{n}}",
+    "showVideo": "แสดงวิดีโอ",
+    "video": "วิดีโอสินค้า",
     "sizeChart": "ตารางไซส์",
     "sku": "SKU",
     "soldOut": "ขายหมดแล้ว",

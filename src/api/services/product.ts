@@ -141,6 +141,9 @@ export interface StoreProduct extends ProductSellingOptions {
   customLevel:       string | null;
   normalizedCustomLevel: string | null;
   images:            string[];
+  /** Optional gallery video (uploaded file or YouTube / Vimeo link). */
+  videoUrl?:         string;
+  videoFirst?:       boolean;
   tags:              string[];
   /** Shopify shipping profile (physical products); null/absent = General. */
   shippingProfileId?: string | null;
@@ -171,6 +174,9 @@ export interface CreatePhysicalPayload extends ProductSellingOptions {
   categoryId?:       string | null;
   subCategoryId:     string | null;
   images:            string[];
+  /** Optional gallery video (uploaded file or YouTube / Vimeo link). */
+  videoUrl?:         string;
+  videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
@@ -193,6 +199,9 @@ export interface CreateDigitalPayload {
   educationLevel?:   EducationLevel | null;
   customLevel?:      string | null;
   images:            string[];
+  /** Optional gallery video (uploaded file or YouTube / Vimeo link). */
+  videoUrl?:         string;
+  videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
@@ -212,6 +221,9 @@ export interface EditPhysicalPayload extends ProductSellingOptions {
   categoryId?:       string | null;
   subCategoryId:     string | null;
   images:            string[];
+  /** Optional gallery video (uploaded file or YouTube / Vimeo link). */
+  videoUrl?:         string;
+  videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
@@ -229,6 +241,8 @@ export interface EditDigitalPayload {
   description:    string;
   categoryId?:    string | null;
   subCategoryId:  string | null;
+  videoUrl?:      string;
+  videoFirst?:    boolean;
   educationLevel?: EducationLevel | null;
   customLevel?:   string | null;
   status:         'draft' | 'active' | 'scheduled';
