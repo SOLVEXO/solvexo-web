@@ -489,15 +489,12 @@ function StoreBottomNav() {
         {activeTab && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[calc(100%-1px)] h-[36px] w-[88px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring"
+            className="pointer-events-none absolute bottom-[calc(100%-1px)] h-[36px] w-[104px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring"
             style={{ left: `calc(12px + ${(activeIndex + 0.5) / tabs.length} * (100% - 24px))` }}
           >
-            <svg viewBox="0 0 88 36" className="absolute inset-0 size-full overflow-visible">
-              <path d="M0 36C12 36 16 30 20 22A26 26 0 0 1 68 22C72 30 76 36 88 36L88 37L0 37Z" fill="#fff" />
-            </svg>
-            {/* gradient bubble sitting in the swell, rim of bar colour around it */}
-            <span className="absolute left-1/2 top-[11px] size-[46px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-[0_4px_12px_rgba(193,83,48,0.35)]">
-              <activeTab.Icon size={21} strokeWidth={2} className="text-white" />
+            {/* only the active tab's orange squircle: nothing is drawn behind it */}
+            <span className="absolute left-1/2 top-[6px] size-[44px] -translate-x-1/2 rounded-[16px] bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-[0_4px_10px_rgba(193,83,48,0.3)]">
+              <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
               {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-white text-brand-deep-orange text-[9px] font-bold leading-4 text-center shadow">{activeCount > 99 ? '99+' : activeCount}</span>}
             </span>
           </span>
