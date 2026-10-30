@@ -1,7 +1,7 @@
 const nativeRoutes = new Set([
   '/checkout', '/login', '/register', '/verify-otp', '/forgot-password', '/new-password',
   '/account', '/wishlist', '/loyalty', '/messages', '/notifications', '/faqs',
-  '/returns', '/gift-cards', '/store-credit', '/orders', '/addresses', '/reviews',
+  '/returns', '/library', '/gift-cards', '/store-credit', '/orders', '/addresses', '/reviews',
 ]);
 
 export function isLiquidStorefrontRoute(pathname: string): boolean {
