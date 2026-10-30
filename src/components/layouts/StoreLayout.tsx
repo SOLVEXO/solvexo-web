@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useId, lazy, Suspense, type ReactNode, type CSSProperties } from 'react';
-import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useNavigationType, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1704,6 +1704,8 @@ export function resolveStoreAccessRedirect(routeStoreId: string | undefined, cur
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
   const { pathname: currentPath } = useLocation();
+  // Back/forward (POP) slides the page in from the left, a normal navigation from the right, like a native stack.
+  const goingBack = useNavigationType() === 'POP';
   const { storeId: routeStoreId } = useParams<{ storeId: string }>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);
@@ -1740,7 +1742,7 @@ export function StoreLayout() {
                 animation re-fires on every navigation. Only the page content is
                 inside this key — the sidebar and tab bar above/below it keep
                 their state, so the chrome stays put while the screen turns. */}
-            <div key={currentPath} className="page-route-enter">
+            <div key={currentPath} className={goingBack ? 'page-route-enter page-route-enter-back' : 'page-route-enter'}>
               <GatedOutlet />
             </div>
           </div>
