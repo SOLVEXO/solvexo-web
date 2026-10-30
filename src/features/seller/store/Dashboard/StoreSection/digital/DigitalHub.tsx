@@ -16,8 +16,8 @@ const TABS: { id: Tab; label: string; perm: string }[] = [
 ];
 
 const errText = (e: any) => e?.response?.data?.message ?? e?.message ?? 'Something went wrong';
-const inp = 'h-9 rounded-lg border border-line px-3 text-[13px] bg-white';
-const btn = 'rounded-md border border-line px-2.5 py-1 text-[12px] disabled:opacity-50';
+const inp = 'h-9 rounded-lg border border-bone px-3 text-[13px] bg-white text-carbon outline-none focus:ring-2 focus:ring-brand-orange/30';
+const btn = 'rounded-md border border-bone bg-white text-carbon px-2.5 py-1 text-[12px] hover:bg-cream disabled:opacity-50 cursor-pointer';
 
 /** Reads one list endpoint with loading / error + retry states. */
 function useList<T>(url: string) {
@@ -33,7 +33,7 @@ function useList<T>(url: string) {
 }
 
 function State({ error, loading, empty, retry }: { error: string | null; loading: boolean; empty?: boolean; retry: () => void }) {
-  if (error) return <p role="alert" className="text-[13px] text-red-600">{error} <button className="underline" onClick={retry}>Retry</button></p>;
+  if (error) return <p role="alert" className="text-[13px] text-error">{error} <button className="underline" onClick={retry}>Retry</button></p>;
   if (loading) return <p aria-busy="true" className="text-[13px] text-slate">Loading...</p>;
   if (empty) return <p className="text-[13px] text-slate">Nothing here yet.</p>;
   return null;
@@ -53,10 +53,10 @@ function Overview({ base }: { base: string }) {
     <div className="flex flex-col gap-4">
       <ul className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {cards.map(([k, v]) => (
-          <li key={k} className="rounded-xl border border-line bg-white p-3"><p className="text-[11px] text-slate">{k}</p><p className="text-[20px] font-semibold">{v}</p></li>
+          <li key={k} className="surface-panel rounded-xl p-3"><p className="text-[11px] text-slate">{k}</p><p className="text-[20px] font-semibold">{v}</p></li>
         ))}
       </ul>
-      <section className="rounded-xl border border-line bg-white p-3 text-[13px]">
+      <section className="surface-panel rounded-xl p-3 text-[13px]">
         <h3 className="font-semibold mb-1">Needs attention</h3>
         {attention.pastDue + attention.awaitingPayment + attention.flaggedAccess === 0 ? <p className="text-slate">All clear.</p> : (
           <ul className="list-disc ps-5">
@@ -96,7 +96,7 @@ function Plans({ storeId }: { storeId: string }) {
   return (
     <div className="flex flex-col gap-4">
       {canEdit && (
-        <form onSubmit={create} className="rounded-xl border border-line bg-white p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
+        <form onSubmit={create} className="surface-panel rounded-xl p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
           <label className="text-[12px] col-span-2">Name<input required maxLength={80} className={`${inp} w-full`} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
           <label className="text-[12px]">Type
             <select className={`${inp} w-full`} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>
@@ -120,7 +120,7 @@ function Plans({ storeId }: { storeId: string }) {
       <State error={error} loading={!data} empty={data?.length === 0} retry={reload} />
       <ul className="flex flex-col gap-2">
         {data?.map((p) => (
-          <li key={p._id} className="rounded-xl border border-line bg-white p-3 flex items-center gap-3 text-[13px]">
+          <li key={p._id} className="surface-panel rounded-xl p-3 flex items-center gap-3 text-[13px]">
             <span className="flex-1"><b>{p.name}</b> · {p.type === 'free' ? 'Free' : `${p.currency} ${p.amount}${p.type === 'recurring' ? ` / ${p.interval}` : ''}`} · tier {p.tier} · {p.status}</span>
             {canEdit && <button className={btn} onClick={() => void archive(p)}>{p.status === 'active' ? 'Archive' : 'Restore'}</button>}
           </li>
@@ -147,10 +147,10 @@ function Subscribers({ storeId }: { storeId: string }) {
       <State error={error} loading={!data} empty={data?.length === 0} retry={reload} />
       <ul className="flex flex-col gap-2">
         {data?.map((s) => (
-          <li key={s._id} className="rounded-xl border border-line bg-white p-3 flex flex-wrap items-center gap-2 text-[13px]">
+          <li key={s._id} className="surface-panel rounded-xl p-3 flex flex-wrap items-center gap-2 text-[13px]">
             <span className="flex-1">Customer {String(s.customerId).slice(-6)} · <b>{s.status.replace('_', ' ')}</b>{s.awaitingFirstPayment ? ' · awaiting first payment' : ''}{s.currentPeriodEnd ? ` · until ${new Date(s.currentPeriodEnd).toLocaleDateString()}` : ''}</span>
             {['trialing', 'active', 'past_due'].includes(s.status) && <button className={btn} onClick={() => void act(s._id, 'mark-paid')}>Mark paid</button>}
-            {['trialing', 'active', 'past_due', 'paused'].includes(s.status) && <button className={`${btn} text-red-600`} onClick={() => void act(s._id, 'revoke')}>Revoke</button>}
+            {['trialing', 'active', 'past_due', 'paused'].includes(s.status) && <button className={`${btn} text-error`} onClick={() => void act(s._id, 'revoke')}>Revoke</button>}
           </li>
         ))}
       </ul>
@@ -172,7 +172,7 @@ function Licenses({ storeId }: { storeId: string }) {
   }
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-xl border border-line bg-white p-3 text-[13px] flex flex-col gap-2">
+      <div className="surface-panel rounded-xl p-3 text-[13px] flex flex-col gap-2">
         <p>Your software checks keys with <code>POST /api/license/validate</code> and the header <code>x-license-token</code>.</p>
         <button className={`${btn} self-start`} onClick={() => void newToken()}>Generate API token</button>
         {token && <p>Copy it now, it is shown once: <code className="select-all break-all">{token}</code></p>}
@@ -180,10 +180,10 @@ function Licenses({ storeId }: { storeId: string }) {
       <State error={error} loading={!data} empty={data?.length === 0} retry={reload} />
       <ul className="flex flex-col gap-2">
         {data?.map((k) => (
-          <li key={k.id} className="rounded-xl border border-line bg-white p-3 flex flex-wrap items-center gap-2 text-[13px]">
+          <li key={k.id} className="surface-panel rounded-xl p-3 flex flex-wrap items-center gap-2 text-[13px]">
             <span className="flex-1">…{k.keyHint} · {k.status} · {k.activations}/{k.activationLimit} devices</span>
             <button className={btn} onClick={() => void act(k.id, 'reset-activations')}>Reset devices</button>
-            {k.status === 'active' && <button className={`${btn} text-red-600`} onClick={() => void act(k.id, 'revoke')}>Revoke</button>}
+            {k.status === 'active' && <button className={`${btn} text-error`} onClick={() => void act(k.id, 'revoke')}>Revoke</button>}
           </li>
         ))}
       </ul>
@@ -197,7 +197,7 @@ function DeliveryLog({ base }: { base: string }) {
     <div>
       <State error={error} loading={!data} empty={data?.length === 0} retry={reload} />
       <ul className="flex flex-col gap-1 text-[12px]">
-        {data?.map((l) => <li key={l._id} className="rounded-lg border border-line bg-white px-3 py-2">{new Date(l.at).toLocaleString()} · <b>{l.outcome}</b>{l.reason ? ` (${l.reason})` : ''}{l.flagged ? ' · flagged' : ''} · {l.ip}</li>)}
+        {data?.map((l) => <li key={l._id} className="rounded-lg border border-bone bg-white px-3 py-2">{new Date(l.at).toLocaleString()} · <b>{l.outcome}</b>{l.reason ? ` (${l.reason})` : ''}{l.flagged ? ' · flagged' : ''} · {l.ip}</li>)}
       </ul>
     </div>
   );
@@ -214,7 +214,7 @@ export default function DigitalHub() {
       <div className="px-4 lg:px-7 pt-5 pb-8 w-full flex flex-col gap-4">
         <div role="tablist" className="flex gap-1 flex-wrap">
           {visible.map((t) => (
-            <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={`rounded-lg px-3 py-1.5 text-[13px] border ${tab === t.id ? 'bg-black text-white border-black' : 'border-line bg-white'}`}>{t.label}</button>
+            <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={`rounded-lg px-3 py-1.5 text-[13px] border cursor-pointer ${tab === t.id ? 'bg-brand-orange text-white border-brand-orange' : 'border-bone bg-white text-carbon hover:bg-cream'}`}>{t.label}</button>
           ))}
         </div>
         {tab === 'overview' && <Overview base={base} />}

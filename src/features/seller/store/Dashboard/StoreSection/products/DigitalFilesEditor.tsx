@@ -12,7 +12,7 @@ export interface DigitalFileRow {
   stampPdf: boolean;
 }
 
-const inp = 'w-full h-9 px-3 rounded-lg border border-line text-[13px] bg-white';
+const inp = 'w-full h-9 px-3 rounded-lg border border-bone text-[13px] bg-white text-carbon outline-none focus:ring-2 focus:ring-brand-orange/30';
 
 export const rowFromUpload = (u: PrivateUploadData): DigitalFileRow => ({
   url: u.publicId, name: u.fileName, size: u.fileSize ?? null, mimeType: u.mimeType ?? null, label: '', version: '', stampPdf: false,
@@ -43,12 +43,12 @@ export function DigitalFilesEditor({ value, onChange }: { value: DigitalFileRow[
   return (
     <div className="flex flex-col gap-3">
       {value.map((r, i) => (
-        <div key={r.url} className="rounded-xl border border-line p-3 flex flex-col gap-2">
+        <div key={r.url} className="rounded-xl border border-bone p-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="flex-1 truncate text-[13px] font-medium">{r.name}</span>
             <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)} className="p-1 disabled:opacity-30"><ArrowUp size={14} /></button>
             <button type="button" aria-label="Move down" disabled={i === value.length - 1} onClick={() => move(i, 1)} className="p-1 disabled:opacity-30"><ArrowDown size={14} /></button>
-            <button type="button" aria-label={`Remove ${r.name}`} onClick={() => onChange(value.filter((_, j) => j !== i))} className="p-1 text-red-600"><Trash2 size={14} /></button>
+            <button type="button" aria-label={`Remove ${r.name}`} onClick={() => onChange(value.filter((_, j) => j !== i))} className="p-1 text-error"><Trash2 size={14} /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input aria-label="Label" value={r.label} maxLength={100} onChange={(e) => patch(i, { label: e.target.value })} placeholder="Label (e.g. Source files)" className={inp} />

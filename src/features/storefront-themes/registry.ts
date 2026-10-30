@@ -37,6 +37,10 @@ const FashionWishlistPage = lazy(() => import('./theme-03-fashion/pages/FashionW
 const FashionNotificationsPage = lazy(() => import('./theme-03-fashion/pages/FashionNotificationsPage').then(m => ({ default: m.FashionNotificationsPage })));
 const FashionMessagesPage = lazy(() => import('./theme-03-fashion/pages/FashionMessagesPage').then(m => ({ default: m.FashionMessagesPage })));
 const FashionFaqsPage = lazy(() => import('./theme-03-fashion/pages/FashionFaqsPage').then(m => ({ default: m.FashionFaqsPage })));
+const FashionLibraryPage = lazy(() => import('./theme-03-fashion/pages/FashionDigitalPages').then(m => ({ default: m.FashionLibraryPage })));
+const FashionMembershipsPage = lazy(() => import('./theme-03-fashion/pages/FashionDigitalPages').then(m => ({ default: m.FashionMembershipsPage })));
+const FashionLicensesPage = lazy(() => import('./theme-03-fashion/pages/FashionDigitalPages').then(m => ({ default: m.FashionLicensesPage })));
+const FashionLearnPage = lazy(() => import('./theme-03-fashion/pages/FashionDigitalPages').then(m => ({ default: m.FashionLearnPage })));
 const FashionBlogIndexPage = lazy(() => import('./theme-03-fashion/pages/FashionBlogIndexPage').then(m => ({ default: m.FashionBlogIndexPage })));
 const FashionBlogPostPage = lazy(() => import('./theme-03-fashion/pages/FashionBlogPostPage').then(m => ({ default: m.FashionBlogPostPage })));
 const FashionCustomPage = lazy(() => import('./theme-03-fashion/pages/FashionCustomPage').then(m => ({ default: m.FashionCustomPage })));
@@ -103,6 +107,10 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       myReviews: FashionMyReviewsPage,
       orders: FashionOrdersPage,
       orderDetail: FashionOrderDetailPage,
+      library: FashionLibraryPage,
+      memberships: FashionMembershipsPage,
+      licenses: FashionLicensesPage,
+      learn: FashionLearnPage,
       orderStatus: FashionOrderStatusPage,
       returns: FashionReturnsPage,
       storeCredit: FashionStoreCreditPage,

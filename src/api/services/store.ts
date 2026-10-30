@@ -560,6 +560,8 @@ export interface PublicStoreData {
   /** "Markets" — null means every supported currency is accepted. */
   enabledCurrencies: SupportedCurrency[] | null;
   sellerType:     string | null;
+  /** True when the store sells digital downloads or educational resources. */
+  sellsDigital?:  boolean;
   badges:         string[];
   createdAt:      string;
   activeCampaign: ActiveCampaignBadge | null;

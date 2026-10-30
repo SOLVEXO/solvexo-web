@@ -57,9 +57,9 @@ export function DigitalAccessCard({ storeId, orderId, customerId }: { storeId: s
   }
 
   if (!rows?.length) return null;
-  const btn = 'rounded-md border border-line px-2 py-1 text-[11px] disabled:opacity-50';
+  const btn = 'rounded-md border border-bone bg-white text-carbon px-2 py-1 text-[11px] hover:bg-cream disabled:opacity-50 cursor-pointer';
   return (
-    <section className="rounded-xl border border-line bg-white p-4 flex flex-col gap-3" aria-label="Digital access">
+    <section className="surface-panel rounded-xl p-4 flex flex-col gap-3" aria-label="Digital access">
       <h3 className="text-[14px] font-semibold">Digital access</h3>
       {rows.map((r) => (
         <div key={r._id} className="flex flex-wrap items-center gap-2 text-[12px]">
@@ -70,7 +70,7 @@ export function DigitalAccessCard({ storeId, orderId, customerId }: { storeId: s
             <span className="ml-auto flex gap-1">
               {r.status !== 'revoked' && <button type="button" className={btn} disabled={!!busy} onClick={() => void act(r._id, 'resend')}>Resend</button>}
               <button type="button" className={btn} disabled={!!busy} onClick={() => void act(r._id, 'reset-limit')}>Reset limit</button>
-              {r.status !== 'revoked' && <button type="button" className={`${btn} text-red-600`} disabled={!!busy} onClick={() => void act(r._id, 'revoke')}>Revoke</button>}
+              {r.status !== 'revoked' && <button type="button" className={`${btn} text-error`} disabled={!!busy} onClick={() => void act(r._id, 'revoke')}>Revoke</button>}
             </span>
           )}
         </div>
