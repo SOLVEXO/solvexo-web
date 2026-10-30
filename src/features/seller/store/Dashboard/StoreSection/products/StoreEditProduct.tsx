@@ -13,7 +13,8 @@ import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_ca
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
-import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
+import { ImageUpload, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
+import { DigitalFilesEditor, DigitalDeliveryFields, filesPayload, rowsFromServer, type DigitalFileRow } from './DigitalFilesEditor';
 import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
@@ -102,7 +103,7 @@ const blankDig = {
   name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
-  fileData: null as PrivateUploadData | null,
+  files: [] as DigitalFileRow[],
   downloadLimit: 'unlimited', linkExpiryDays: '',
   pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
   buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
@@ -174,7 +175,7 @@ async function loadPhysicalVariants(productId: string): Promise<{ optionTypes: O
   return { optionTypes, variantRows, idByKey };
 }
 function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
-  const d = p.digital, f0 = d?.files?.[0];
+  const d = p.digital;
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
@@ -182,7 +183,7 @@ function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
-    fileData: f0 ? { publicId: f0.url, resourceType: 'raw', fileName: f0.name, fileSize: f0.size, mimeType: f0.mimeType } : null,
+    files: rowsFromServer(d?.files),
     downloadLimit: d?.downloadLimit ?? 'unlimited',
     linkExpiryDays: d?.linkExpiryDays != null ? String(d.linkExpiryDays) : '',
     pdfStampingEnabled: d?.pdfStampingEnabled ?? false,
@@ -381,7 +382,7 @@ export default function StoreEditProduct() {
         variant = representativeVariant ?? variant;
         updateCachedProduct(storeId, productId, { product: res.data.product, variant });
       } else {
-        const files = dig.fileData ? [{ url: dig.fileData.publicId, name: dig.fileData.fileName, size: dig.fileData.fileSize, mimeType: dig.fileData.mimeType }] : [];
+        const files = filesPayload(dig.files);
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
           name: dig.name, description: dig.description,
@@ -539,9 +540,9 @@ export default function StoreEditProduct() {
 
           {/* Digital/Educational: File Upload */}
           {(pType === 'digital' || pType === 'educational') && (
-            <Card title={pType === 'educational' ? 'Resource File' : 'Digital File'}>
-              <p className="text-[12px] text-slate mb-3">Upload the file buyers will receive instantly after purchase.</p>
-              <FileUpload value={dig.fileData} onChange={v => sd('fileData', v)} label="Click to upload your digital file" />
+            <Card title={pType === 'educational' ? 'Resource Files' : 'Digital Files'}>
+              <p className="text-[12px] text-slate mb-3">Upload the files buyers will receive after purchase. Add labels and versions, and reorder them.</p>
+              <DigitalFilesEditor value={dig.files} onChange={v => sd('files', v)} />
             </Card>
           )}
 
@@ -576,14 +577,7 @@ export default function StoreEditProduct() {
           {(pType === 'digital' || pType === 'educational') && (
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <F label="Download Limit">
-                    <input value={dig.downloadLimit} onChange={e => sd('downloadLimit', e.target.value)} placeholder="unlimited" className={inp} />
-                  </F>
-                  <F label="Link Expiry (days)">
-                    <input type="number" min="0" value={dig.linkExpiryDays} onChange={e => sd('linkExpiryDays', e.target.value)} placeholder="No expiry" className={inp} />
-                  </F>
-                </div>
+                <DigitalDeliveryFields downloadLimit={dig.downloadLimit} linkExpiryDays={dig.linkExpiryDays} onLimit={v => sd('downloadLimit', v)} onExpiry={v => sd('linkExpiryDays', v)} />
                 <F label="License Type">
                   <div className="flex gap-2 mt-0.5 flex-wrap">
                     {(pType === 'educational'

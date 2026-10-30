@@ -10,7 +10,8 @@ import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
-import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
+import { ImageUpload, DateTimePickerModal } from '@/components/comman/ui';
+import { DigitalFilesEditor, DigitalDeliveryFields, filesPayload, type DigitalFileRow } from './DigitalFilesEditor';
 import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
@@ -98,7 +99,7 @@ const initDig = {
   name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
-  fileData: null as PrivateUploadData | null,
+  files: [] as DigitalFileRow[],
   downloadLimit: 'unlimited', linkExpiryDays: '',
   pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
   buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
@@ -221,7 +222,7 @@ export default function StoreAddProduct() {
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       } else {
-        const files = dig.fileData ? [{ url: dig.fileData.publicId, name: dig.fileData.fileName, size: dig.fileData.fileSize, mimeType: dig.fileData.mimeType }] : [];
+        const files = filesPayload(dig.files);
         const res = await apiCreateDigitalProduct({
           storeId, name: dig.name, description: dig.description,
           productType: pType === 'educational' ? 'educational' : 'digital',
@@ -348,9 +349,9 @@ export default function StoreAddProduct() {
 
           {/* Digital/Educational: File Upload */}
           {(pType === 'digital' || pType === 'educational') && (
-            <Card title={pType === 'educational' ? 'Resource File' : 'Digital File'}>
-              <p className="text-[12px] text-slate mb-3">Upload the file buyers will receive instantly after purchase.</p>
-              <FileUpload value={dig.fileData} onChange={v => sd('fileData', v)} label="Click to upload your digital file" />
+            <Card title={pType === 'educational' ? 'Resource Files' : 'Digital Files'}>
+              <p className="text-[12px] text-slate mb-3">Upload the files buyers will receive after purchase. Add labels and versions, and reorder them.</p>
+              <DigitalFilesEditor value={dig.files} onChange={v => sd('files', v)} />
             </Card>
           )}
 
@@ -385,14 +386,7 @@ export default function StoreAddProduct() {
           {(pType === 'digital' || pType === 'educational') && (
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <F label="Download Limit">
-                    <input value={dig.downloadLimit} onChange={e => sd('downloadLimit', e.target.value)} placeholder="unlimited" className={inp} />
-                  </F>
-                  <F label="Link Expiry (days)">
-                    <input type="number" min="0" value={dig.linkExpiryDays} onChange={e => sd('linkExpiryDays', e.target.value)} placeholder="No expiry" className={inp} />
-                  </F>
-                </div>
+                <DigitalDeliveryFields downloadLimit={dig.downloadLimit} linkExpiryDays={dig.linkExpiryDays} onLimit={v => sd('downloadLimit', v)} onExpiry={v => sd('linkExpiryDays', v)} />
                 <F label="License Type">
                   <div className="flex gap-2 mt-0.5 flex-wrap">
                     {(pType === 'educational'
