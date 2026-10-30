@@ -30,7 +30,7 @@ function ChartTooltip({ active, payload, label, valuePrefix = '', valueSuffix = 
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
             <span className="text-graphite">{p.name}</span>
           </span>
-          <span className="font-bold text-charcoal">{valuePrefix}{p.value.toLocaleString()}{valueSuffix}</span>
+          <span className="font-bold text-charcoal">{valuePrefix}{valuePrefix ? ' ' : ''}{p.value.toLocaleString()}{valueSuffix}</span>
         </div>
       ))}
     </div>
@@ -63,7 +63,7 @@ export function LineChart({
   showLegend = true,
 }: LineChartProps) {
   const defaultYFmt = (v: number) =>
-    v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
+    v >= 1000 ? `${valuePrefix}${valuePrefix ? ' ' : ''}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${valuePrefix ? ' ' : ''}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
   const ariaLabel = title ? `${title} chart` : 'Chart';
   const hasValue = data.some(d => lines.some(line => Number(d[line.dataKey]) !== 0));

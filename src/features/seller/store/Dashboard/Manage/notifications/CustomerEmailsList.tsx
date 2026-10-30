@@ -7,6 +7,7 @@ const GROUPS: { id: CustomerEmailGroup; title: string }[] = [
   { id: 'orders', title: 'Orders' },
   { id: 'returns', title: 'Returns & exchanges' },
   { id: 'invoices', title: 'Invoices & gift cards' },
+  { id: 'digital', title: 'Digital products & memberships' },
 ];
 
 interface Props {

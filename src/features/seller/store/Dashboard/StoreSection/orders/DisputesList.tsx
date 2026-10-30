@@ -145,7 +145,7 @@ export default function DisputesList() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
-                  <p className="text-[14px] font-bold text-charcoal">{symbol}{d.amount.toLocaleString()}</p>
+                  <p className="text-[14px] font-bold text-charcoal">{symbol}{' '}{d.amount.toLocaleString()}</p>
                   {(d.status === 'needs_response' || d.status === 'warning_needs_response') && (
                     <Button size="sm" onClick={() => openEvidenceModal(d)}>Submit Evidence</Button>
                   )}

@@ -238,7 +238,7 @@ export default function StoreProductList() {
       key: 'price', header: 'Price', align: 'right', sortable: true,
       render: p => (
         <span className="font-semibold text-charcoal">
-          {currencySymbol(store?.baseCurrency)}{p.price.toLocaleString()}
+          {currencySymbol(store?.baseCurrency)}{' '}{p.price.toLocaleString()}
         </span>
       ),
     },

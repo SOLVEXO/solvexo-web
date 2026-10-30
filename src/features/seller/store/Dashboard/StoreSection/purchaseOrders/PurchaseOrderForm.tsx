@@ -422,7 +422,7 @@ export default function PurchaseOrderForm() {
                         </button>
                       </>
                     ) : (
-                      <p className="text-[12px] font-semibold text-charcoal shrink-0">{item.quantityOrdered} × {symbol}{item.unitCost.toFixed(2)}</p>
+                      <p className="text-[12px] font-semibold text-charcoal shrink-0">{item.quantityOrdered} × {symbol}{' '}{item.unitCost.toFixed(2)}</p>
                     )}
                   </div>
                 ))}
@@ -438,7 +438,7 @@ export default function PurchaseOrderForm() {
 
         <div className="bg-white rounded-xl border border-bone p-4 h-fit flex flex-col gap-3">
           <p className="text-[13px] font-bold text-charcoal">Summary</p>
-          <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal font-medium">{symbol}{subtotal.toFixed(2)}</span></div>
+          <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal font-medium">{symbol}{' '}{subtotal.toFixed(2)}</span></div>
           <div className="flex items-center justify-between gap-2">
             <label className="text-[12px] text-slate">Shipping</label>
             <input type="number" min={0} className="w-24 px-2 py-1.5 text-[12.5px] border border-bone rounded-lg text-right" value={shippingCost}
@@ -450,7 +450,7 @@ export default function PurchaseOrderForm() {
               onChange={e => setTaxCost(Math.max(0, Number(e.target.value)))} disabled={!isEditable} />
           </div>
           <div className="h-px bg-bone" />
-          <div className="flex justify-between text-[16px] font-bold text-charcoal"><span>Total</span><span>{symbol}{total.toFixed(2)}</span></div>
+          <div className="flex justify-between text-[16px] font-bold text-charcoal"><span>Total</span><span>{symbol}{' '}{total.toFixed(2)}</span></div>
         </div>
       </div>
 

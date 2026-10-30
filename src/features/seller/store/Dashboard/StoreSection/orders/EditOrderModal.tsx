@@ -31,7 +31,7 @@ interface Props {
 const isEditable = (i: SellerOrderDetailItem) =>
   (i.status === 'pending' || i.status === 'processing') && !i.cancelledAt && i.returnStatus === 'none';
 
-const money = (symbol: string, n: number) => `${symbol}${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const money = (symbol: string, n: number) => `${symbol} ${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 function QtyStepper({ value, onChange, disabled }: { value: number; onChange: (n: number) => void; disabled?: boolean }) {
   return (

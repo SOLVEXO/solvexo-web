@@ -1022,7 +1022,7 @@ export default function StoreDashboard() {
             subtitle={revenueOverviewLoading ? 'Loading…' : REVENUE_RANGE_OPTIONS.find(o => o.value === range)?.label}
             height={300} loading={revenueOverviewLoading}
             valuePrefix={currencySymbol(currency)}
-            yTickFormatter={v => v >= 1000 ? `${currencySymbol(currency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(currency)}${v}`}
+            yTickFormatter={v => v >= 1000 ? `${currencySymbol(currency)} ${(v / 1000).toFixed(0)}k` : `${currencySymbol(currency)} ${v}`}
           />
         );
       }

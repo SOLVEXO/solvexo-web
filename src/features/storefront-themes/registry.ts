@@ -48,7 +48,7 @@ import './theme-03-fashion/theme.demoPreview';
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
-  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'orderStatus' | 'addresses' | 'myReviews'
+  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'library' | 'memberships' | 'licenses' | 'learn' | 'orderStatus' | 'addresses' | 'myReviews'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 

@@ -24,6 +24,7 @@ import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { OrderTimelineCard } from './OrderTimelineCard';
 import { OrderNotesCard } from './OrderNotesCard';
+import { DigitalAccessCard } from './DigitalAccessCard';
 import { EditOrderModal } from './EditOrderModal';
 import { ExchangeModal } from './ExchangeModal';
 import { EditShippingAddressModal } from './EditShippingAddressModal';
@@ -79,7 +80,7 @@ export function StoreOrderDetail() {
   // Same precision and symbol spacing everywhere ("$52.50", "AED 36.00", "Rs 8,900").
   const money = (n: number) => {
     const d = getCurrencyDecimals(orderCurrency);
-    return `${symbol}${/^[A-Za-z]/.test(symbol) ? ' ' : ''}${n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+    return `${symbol} ${/^[A-Za-z]/.test(symbol) ? ' ' : ''}${n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}`;
   };
 
   const [loading, setLoading] = useState(true);
@@ -610,7 +611,7 @@ export function StoreOrderDetail() {
                   <InfoRow label="Shipping Label" value={<a href={so.tracking.labelUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Print label</a>} />
                 )}
                 {so.tracking.labelCost != null && (
-                  <InfoRow label="Label Cost" value={`${currencySymbol(so.tracking.labelCurrency ?? undefined)}${so.tracking.labelCost.toFixed(2)}`} />
+                  <InfoRow label="Label Cost" value={`${currencySymbol(so.tracking.labelCurrency ?? undefined)} ${so.tracking.labelCost.toFixed(2)}`} />
                 )}
                 {so.tracking.trackingUrl && (
                   <InfoRow label="Tracking Link" value={<a href={so.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Open link</a>} />
@@ -682,7 +683,7 @@ export function StoreOrderDetail() {
                       <InfoRow label="Return Label" value={<a href={i.returnLabel.labelUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Print label</a>} />
                     )}
                     {i.returnLabel?.cost != null && (
-                      <InfoRow label="Label Cost" value={`${currencySymbol(i.returnLabel.currency ?? undefined)}${i.returnLabel.cost.toFixed(2)}`} />
+                      <InfoRow label="Label Cost" value={`${currencySymbol(i.returnLabel.currency ?? undefined)} ${i.returnLabel.cost.toFixed(2)}`} />
                     )}
                   </div>
                 ))}
@@ -709,6 +710,7 @@ export function StoreOrderDetail() {
               <InfoRow label="Email" value={detail.buyer.email} />
               {detail.buyer.phone && <InfoRow label="Phone" value={detail.buyer.phone} />}
             </Card>
+            <DigitalAccessCard storeId={storeId} orderId={orderId} />
 
             {isPickup && (
               <Card title="Pickup location" icon={StoreIcon}>
@@ -858,7 +860,7 @@ export function StoreOrderDetail() {
             <>
               <Button variant="outline" size="sm" onClick={() => setShowCaptureModal(false)} disabled={busy}>Cancel</Button>
               <Button size="sm" onClick={() => handleCapturePayment(false)} loading={busyAction === 'capture'} disabled={busy}>
-                Capture {currencySymbol(detail.currency)}{captureAmount || '0'} {detail.currency}
+                Capture {currencySymbol(detail.currency)}{' '}{captureAmount || '0'} {detail.currency}
               </Button>
             </>
           }

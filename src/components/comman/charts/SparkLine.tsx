@@ -13,7 +13,7 @@ function SparkTooltip({ active, payload, valuePrefix = '', valueSuffix = '' }: S
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border border-bone rounded-md px-2 py-1 text-[11px]">
-      <span className="font-bold text-charcoal">{valuePrefix}{payload[0].value.toLocaleString()}{valueSuffix}</span>
+      <span className="font-bold text-charcoal">{valuePrefix}{valuePrefix ? ' ' : ''}{payload[0].value.toLocaleString()}{valueSuffix}</span>
     </div>
   );
 }

@@ -119,6 +119,7 @@ const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Man
 const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
+const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
@@ -239,6 +240,10 @@ const storefrontRouter = createBrowserRouter([
           { path: 'store-credit', element: <ThemedRoute routeKey="storeCredit" /> },
           { path: 'orders/:orderId', element: <ThemedRoute routeKey="orderDetail" /> },
           { path: 'orders', element: <ThemedRoute routeKey="orders" /> },
+          { path: 'library', element: <ThemedRoute routeKey="library" /> },
+          { path: 'memberships', element: <ThemedRoute routeKey="memberships" /> },
+          { path: 'licenses', element: <ThemedRoute routeKey="licenses" /> },
+          { path: 'learn', element: <ThemedRoute routeKey="learn" /> },
           { path: 'order-status/:token', element: <ThemedRoute routeKey="orderStatus" /> },
           { path: 'addresses', element: <ThemedRoute routeKey="addresses" /> },
           { path: 'reviews', element: <ThemedRoute routeKey="myReviews" /> },
@@ -363,6 +368,7 @@ const mainRouter = createBrowserRouter([
           { index: true,                              element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',                        element: <StoreDashboard /> },
           { path: 'orders',                           element: <StoreOrderList /> },
+          { path: 'digital',                          element: <DigitalHub /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },

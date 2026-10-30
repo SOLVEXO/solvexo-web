@@ -26,7 +26,7 @@ interface Props {
   onDone: (exchangeOrderId: string | undefined) => void;
 }
 
-const money = (symbol: string, n: number) => `${symbol}${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const money = (symbol: string, n: number) => `${symbol} ${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 /** Shopify "Create exchange": pick the returned lines, pick replacement variants, review the price difference, confirm. */
 export function ExchangeModal({ storeId, orderId, orderNumber, lines, symbol, currency, isPaid, onClose, onDone }: Props) {

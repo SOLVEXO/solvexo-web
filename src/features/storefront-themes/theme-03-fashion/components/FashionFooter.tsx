@@ -9,6 +9,7 @@ import { fashionTheme as t } from '../theme.config';
 import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from './nav/FooterColumns';
 import { FashionLocaleControls } from './FashionLocaleControls';
 import { BackToTop } from './nav/HeaderExtras';
+import { PaymentBadges } from './nav/FooterParts';
 import { FashionSectionRenderer } from '../sections';
 import { EditableText, useInlineEditActive } from '../../inlineEdit';
 
@@ -32,6 +33,7 @@ export function FashionFooter() {
   // Social icons live in the Brand block; with no Brand block they go in the bottom bar so they never vanish.
   const footerBlocks = visibleFooterBlocks(theme?.footer);
   const bottomSocials = footerBlocks.some(b => b.type === 'footer_brand') ? [] : footerBlocks.filter(b => b.type === 'social_link');
+  const paymentIcons = footerBlocks.filter(b => b.type === 'footer_payment_icons').flatMap(b => (Array.isArray(b.settings?.icons) ? b.settings.icons as string[] : []));
   const editing = useInlineEditActive();
   const legal = [...pages.filter(p => p.showInFooter && !p.policyType), ...(opts.showPolicyLinks ? pages.filter(p => p.policyType) : [])];
 
@@ -57,6 +59,7 @@ export function FashionFooter() {
           <div className="flex flex-col items-center justify-between gap-3 text-[13px] md:flex-row" style={{ padding: '20px clamp(24px, 4vw, 56px)', color: muted }}>
             <p className="m-0">{copyright && copyrightBlock?._id && editing ? <EditableText value={copyright} settingKey="text" blockId={copyrightBlock._id} /> : copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>
             {bottomSocials.length > 0 && <div className="[&>div]:mt-0"><SocialRow socials={bottomSocials} k={{ fg, muted }} look={opts.socialStyle} center color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} /></div>}
+            {paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />}
             <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
               {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
               {opts.showCurrency && <FashionLocaleControls />}

@@ -392,7 +392,7 @@ export default function DraftOrderForm() {
                         </button>
                       </>
                     ) : (
-                      <p className="text-[12px] font-semibold text-charcoal shrink-0">{item.quantity} × {symbol}{item.unitPrice.toFixed(2)}</p>
+                      <p className="text-[12px] font-semibold text-charcoal shrink-0">{item.quantity} × {symbol}{' '}{item.unitPrice.toFixed(2)}</p>
                     )}
                   </div>
                 ))}
@@ -443,7 +443,7 @@ export default function DraftOrderForm() {
 
         <div className="bg-white rounded-xl border border-bone p-4 h-fit flex flex-col gap-3">
           <p className="text-[13px] font-bold text-charcoal">Summary</p>
-          <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal font-medium">{symbol}{subtotal.toFixed(2)}</span></div>
+          <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal font-medium">{symbol}{' '}{subtotal.toFixed(2)}</span></div>
 
           <div className="flex items-center gap-2">
             <select className={inp} value={discountType} onChange={e => setDiscountType(e.target.value as '' | 'percentage' | 'fixed')} disabled={!isEditable}>
@@ -456,7 +456,7 @@ export default function DraftOrderForm() {
                 onChange={e => setDiscountValue(Math.max(0, Number(e.target.value)))} disabled={!isEditable} />
             )}
           </div>
-          {discountAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Discount</span><span className="text-[#16a34a]">-{symbol}{discountAmount.toFixed(2)}</span></div>}
+          {discountAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Discount</span><span className="text-[#16a34a]">-{symbol}{' '}{discountAmount.toFixed(2)}</span></div>}
 
           <div className="flex items-center justify-between gap-2">
             <label className="text-[12px] text-slate">Shipping</label>
@@ -470,7 +470,7 @@ export default function DraftOrderForm() {
           </div>
 
           <div className="h-px bg-bone" />
-          <div className="flex justify-between text-[16px] font-bold text-charcoal"><span>Total</span><span>{symbol}{total.toFixed(2)}</span></div>
+          <div className="flex justify-between text-[16px] font-bold text-charcoal"><span>Total</span><span>{symbol}{' '}{total.toFixed(2)}</span></div>
         </div>
       </div>
 
@@ -494,7 +494,7 @@ export default function DraftOrderForm() {
       {confirmingComplete && (
         <ConfirmDialog
           title="Complete this order?"
-          message={`This will create a real order for ${symbol}${total.toFixed(2)} and reduce stock for each item. This cannot be undone.${draft && !draft.isPaid ? ' This draft has not been marked as paid — the order will be created with payment pending, not paid.' : ''}`}
+          message={`This will create a real order for ${symbol} ${total.toFixed(2)} and reduce stock for each item. This cannot be undone.${draft && !draft.isPaid ? ' This draft has not been marked as paid — the order will be created with payment pending, not paid.' : ''}`}
           confirmLabel="Complete Order"
           loading={completing}
           onConfirm={handleComplete}

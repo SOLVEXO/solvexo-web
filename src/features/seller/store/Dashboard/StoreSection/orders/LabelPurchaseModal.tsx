@@ -125,7 +125,7 @@ export function LabelPurchaseModal({ storeId, title, buyLabel, intro, loadRates,
                   {r.estimatedDays != null ? `${r.estimatedDays} day${r.estimatedDays === 1 ? '' : 's'}` : 'Delivery estimate unavailable'}
                 </span>
               </span>
-              <span className="text-[13px] font-bold text-carbon shrink-0">{currencySymbol(r.currency)}{r.amount.toFixed(2)}</span>
+              <span className="text-[13px] font-bold text-carbon shrink-0">{currencySymbol(r.currency)}{' '}{r.amount.toFixed(2)}</span>
             </label>
           ))}
         </div>

@@ -236,7 +236,7 @@ function AdjustBalanceModal({
         <p className="mb-3 text-[12.5px] text-error bg-error-bg border border-error-border rounded-md px-3 py-2">{error}</p>
       )}
       <p className="text-[12px] text-slate mb-3">
-        Current balance: {currencySymbol(giftCard.currency)}{fmt2(giftCard.balance)}. Enter a positive amount to add credit, or a negative amount to deduct.
+        Current balance: {currencySymbol(giftCard.currency)}{' '}{fmt2(giftCard.balance)}. Enter a positive amount to add credit, or a negative amount to deduct.
       </p>
       <Field label="Adjustment amount" required hint="e.g. 10 to add, -10 to deduct">
         <Input type="number" value={delta} onChange={e => setDelta(e.target.value)} leftAddon={currencySymbol(giftCard.currency)} />
@@ -369,8 +369,8 @@ export default function StoreGiftCards() {
     {
       key: 'balance', header: 'Balance', render: gc => (
         <span>
-          {currencySymbol(gc.currency)}{fmt2(gc.balance)}{' '}
-          <span className="text-slate">/ {currencySymbol(gc.currency)}{fmt2(gc.initialValue)}</span>
+          {currencySymbol(gc.currency)}{' '}{fmt2(gc.balance)}{' '}
+          <span className="text-slate">/ {currencySymbol(gc.currency)}{' '}{fmt2(gc.initialValue)}</span>
         </span>
       ),
     },

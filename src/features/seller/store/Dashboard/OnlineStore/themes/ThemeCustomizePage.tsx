@@ -248,7 +248,7 @@ export function ThemeCustomizePage() {
         const { product, variants, defaultVariant } = res.data;
         const v = defaultVariant ?? variants?.[0] ?? null;
         // Same formatter the storefront's product cards use.
-        const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)}${fmt2(n)}`);
+        const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)} ${fmt2(n)}`);
         const optionValues = Array.from(new Set((variants ?? []).flatMap(x => (x.options ?? []).map(o => String(o.value))))).slice(0, 8);
         setPreviewProduct({
           name: product.name,
@@ -903,7 +903,7 @@ export function ThemeCustomizePage() {
           // even on a 390px viewport. The whole cluster still wraps beneath
           // the title if there's truly no room for either group at all.
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <PreviewButton storeId={storeId} installedThemeId={installedThemeId} />
+            <PreviewButton storeId={storeId} installedThemeId={installedThemeId} page={scope !== 'theme' ? { label: scopeLabel(scope), sections: editor.workingCopy ?? [] } : null} />
             <div className="flex items-center gap-2 overflow-x-auto min-w-0 py-0.5" style={{ scrollbarWidth: 'none' }}>
               <ScopePicker scopeDefs={scopeDefs} scope={scope} onChange={changeScope} currentLabel={scopeLabel(scope)} />
 

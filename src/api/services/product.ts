@@ -23,8 +23,14 @@ export type EducationLevel = (typeof EDUCATION_LEVELS)[number]['value'];
 export interface DigitalFile {
   url:      string;
   name:     string;
-  size:     number;
-  mimeType: string;
+  size:     number | null;
+  mimeType: string | null;
+  label?:   string | null;
+  version?: string | null;
+  stampPdf?: boolean;
+  requiresPlan?: string | null;
+  position?: number;
+  archived?: boolean;
 }
 
 export interface DigitalPreviewMeta {

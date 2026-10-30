@@ -20,7 +20,7 @@ function ChartTooltip({ active, payload, label, valuePrefix = '', valueSuffix = 
   return (
     <div className="bg-white border border-bone rounded-lg px-3 py-[6px] text-xs">
       <p className="text-slate mb-0.5">{label}</p>
-      <p className="font-bold text-charcoal">{valuePrefix}{payload[0].value.toLocaleString()}{valueSuffix}</p>
+      <p className="font-bold text-charcoal">{valuePrefix}{valuePrefix ? ' ' : ''}{payload[0].value.toLocaleString()}{valueSuffix}</p>
     </div>
   );
 }
@@ -64,7 +64,7 @@ export function AreaChart({
 }: AreaChartProps) {
   const gradId = `area-grad-${dataKey}`;
   const defaultYFmt = (v: number) =>
-    v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
+    v >= 1000 ? `${valuePrefix}${valuePrefix ? ' ' : ''}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${valuePrefix ? ' ' : ''}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
   const ariaLabel = title ? `${title} chart` : 'Chart';
   const hasPoints = data.length > 0;

@@ -225,9 +225,9 @@ export default function StoreProductDetail() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[24px] font-bold text-brand-orange">{currencySymbol(store?.baseCurrency)}{v.price.toLocaleString()}</p>
+                  <p className="text-[24px] font-bold text-brand-orange">{currencySymbol(store?.baseCurrency)}{' '}{v.price.toLocaleString()}</p>
                   {v.compareAtPrice != null && (
-                    <p className="text-[12px] text-slate line-through mt-0.5">{currencySymbol(store?.baseCurrency)}{v.compareAtPrice.toLocaleString()}</p>
+                    <p className="text-[12px] text-slate line-through mt-0.5">{currencySymbol(store?.baseCurrency)}{' '}{v.compareAtPrice.toLocaleString()}</p>
                   )}
                   {discountPct !== null && (
                     <span className="inline-block text-[11px] font-bold text-[#1e7a3c] bg-[#e3f4ea] px-2 py-0.5 rounded-[5px] mt-1">{discountPct}% OFF</span>
@@ -292,11 +292,11 @@ export default function StoreProductDetail() {
             {/* Pricing */}
             <Card title="Pricing" icon={Tag}>
               <InfoRow label="Selling Price" value={
-                <span className="font-bold text-charcoal">{currencySymbol(store?.baseCurrency)}{v.price.toLocaleString()}</span>
+                <span className="font-bold text-charcoal">{currencySymbol(store?.baseCurrency)}{' '}{v.price.toLocaleString()}</span>
               } />
               <InfoRow label="Compare At Price" value={
                 v.compareAtPrice != null
-                  ? <span className="line-through text-slate">{currencySymbol(store?.baseCurrency)}{v.compareAtPrice.toLocaleString()}</span>
+                  ? <span className="line-through text-slate">{currencySymbol(store?.baseCurrency)}{' '}{v.compareAtPrice.toLocaleString()}</span>
                   : '—'
               } />
               {discountPct !== null && (
@@ -332,7 +332,7 @@ export default function StoreProductDetail() {
                         <Download size={14} className="text-brand-orange shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-[12px] font-medium text-charcoal truncate">{f.name}</p>
-                          <p className="text-[11px] text-slate mt-0.5">{f.mimeType} · {f.size > 0 ? `${(f.size / 1024 / 1024).toFixed(2)} MB` : '—'}</p>
+                          <p className="text-[11px] text-slate mt-0.5">{f.mimeType} · {(f.size ?? 0) > 0 ? `${((f.size ?? 0) / 1024 / 1024).toFixed(2)} MB` : '—'}</p>
                         </div>
                       </div>
                     ))}

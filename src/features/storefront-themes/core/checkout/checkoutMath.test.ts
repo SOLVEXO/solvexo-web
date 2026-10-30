@@ -5,8 +5,8 @@ const base = { currency: 'USD', subtotal: 100, shipping: 10, tax: 8, coupon: 0, 
 
 describe('moneyText', () => {
   it('formats in the given currency without converting', () => {
-    expect(moneyText(1234.5, 'USD')).toBe('$1,234.50');
-    expect(moneyText(-5, 'USD')).toBe('-$5.00');
+    expect(moneyText(1234.5, 'USD')).toBe('$ 1,234.50');
+    expect(moneyText(-5, 'USD')).toBe('-$ 5.00');
   });
   it('uses zero decimals for PKR and a spaced letter symbol', () => {
     expect(moneyText(1200, 'PKR')).toBe('Rs 1,200');

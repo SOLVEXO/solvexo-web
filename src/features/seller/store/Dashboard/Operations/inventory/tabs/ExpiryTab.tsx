@@ -82,7 +82,7 @@ export default function ExpiryTab() {
             <div key={l._id} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 sm:py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{l.productName}{l.options.length ? ` — ${l.options.map(o => o.value).join(' / ')}` : ''}</p>
-                <p className="text-[11px] pointer-coarse:text-[13px] text-slate">Lot {l.lotNumber} · SKU {l.sku ?? '—'} · {l.quantityRemaining} of {l.quantityReceived} left · {symbol}{l.valueRemaining.toLocaleString()}</p>
+                <p className="text-[11px] pointer-coarse:text-[13px] text-slate">Lot {l.lotNumber} · SKU {l.sku ?? '—'} · {l.quantityRemaining} of {l.quantityReceived} left · {symbol}{' '}{l.valueRemaining.toLocaleString()}</p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
                 {l.expiryDate ? (

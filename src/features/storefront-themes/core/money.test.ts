@@ -9,7 +9,7 @@ const make = (currency: string, have: string[] = ['USD', 'PKR']): MoneyConverter
 });
 
 describe('displayMoney', () => {
-  it('converts when rates exist', () => expect(displayMoney(make('USD'), 2800, 'PKR')).toBe('$10.00'));
+  it('converts when rates exist', () => expect(displayMoney(make('USD'), 2800, 'PKR')).toBe('$ 10.00'));
   it('keeps the native currency (right symbol) when there is no rate', () => {
     const t = displayMoney(make('USD', []), 2800, 'PKR');
     expect(t).not.toContain('$');
@@ -19,6 +19,6 @@ describe('displayMoney', () => {
 });
 
 describe('displayMoneySum', () => {
-  it('sums converted lines', () => expect(displayMoneySum(make('USD'), [{ amount: 280, from: 'PKR' }, { amount: 560, from: 'PKR' }])).toBe('$3.00'));
+  it('sums converted lines', () => expect(displayMoneySum(make('USD'), [{ amount: 280, from: 'PKR' }, { amount: 560, from: 'PKR' }])).toBe('$ 3.00'));
   it('sums natively without rates', () => expect(displayMoneySum(make('USD', []), [{ amount: 100, from: 'PKR' }, { amount: 50, from: 'PKR' }])).toContain('150'));
 });

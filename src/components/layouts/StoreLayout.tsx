@@ -133,6 +133,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     groupIcon: Package,
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
+      { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
       // Only shows up once this store connects its own "Bank Transfer" in
       // Integrations — buyers who pay that way upload a proof here for the

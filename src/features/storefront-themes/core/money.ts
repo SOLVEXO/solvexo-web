@@ -17,9 +17,8 @@ export function moneyText(amount: number | null | undefined, currency?: string |
   const code = String(currency ?? '').toUpperCase();
   const sign = amount < 0 ? '-' : '';
   if (display === 'code' && code) return `${sign}${code} ${body}`;
-  const gap = /^[A-Za-z]/.test(symbol) ? ' ' : '';
-  if (display === 'symbol_code' && code) return `${sign}${symbol}${gap}${body} ${code}`;
-  return `${sign}${symbol}${gap}${body}`;
+  if (display === 'symbol_code' && code) return `${sign}${symbol} ${body} ${code}`;
+  return `${sign}${symbol} ${body}`;
 }
 
 /** The slice of the currency context the display helpers need. */

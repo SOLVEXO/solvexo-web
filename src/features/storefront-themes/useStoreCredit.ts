@@ -64,7 +64,7 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
       const res = await apiApplyStoreCredit(checkout._id);
       absorb(res.data);
       setMsg(res.data.storeCreditApplied
-        ? ts('pg.applied_amount_used_2', 'Applied — {{amount}} used.', { amount: `${currencySymbol(checkout.currency)}${fmt2(res.data.storeCreditDiscountUSD)}` })
+        ? ts('pg.applied_amount_used_2', 'Applied — {{amount}} used.', { amount: `${currencySymbol(checkout.currency)} ${fmt2(res.data.storeCreditDiscountUSD)}` })
         : ts('pg.store_credit_could_not_be_applied_to', 'Store credit could not be applied to this order.'));
       setMsgApplied(!!res.data.storeCreditApplied);
     } catch (err) {

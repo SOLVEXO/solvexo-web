@@ -76,16 +76,16 @@ export default function PayInvoicePage() {
                 <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.name}</p>
                 <p className="text-[11px] text-slate">Qty {item.quantity}</p>
               </div>
-              <p className="text-[12.5px] font-bold text-charcoal">{symbol}{(item.unitPrice * item.quantity).toFixed(2)}</p>
+              <p className="text-[12.5px] font-bold text-charcoal">{symbol}{' '}{(item.unitPrice * item.quantity).toFixed(2)}</p>
             </div>
           ))}
 
           <div className="h-px bg-bone my-1" />
-          <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal">{symbol}{invoice.subtotal.toFixed(2)}</span></div>
-          {invoice.discountAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Discount</span><span className="text-[#16a34a]">-{symbol}{invoice.discountAmount.toFixed(2)}</span></div>}
-          {invoice.shippingAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Shipping</span><span className="text-charcoal">{symbol}{invoice.shippingAmount.toFixed(2)}</span></div>}
-          {invoice.taxAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Tax</span><span className="text-charcoal">{symbol}{invoice.taxAmount.toFixed(2)}</span></div>}
-          <div className="flex justify-between text-[16px] font-bold text-charcoal pt-1"><span>Total</span><span>{symbol}{invoice.total.toFixed(2)}</span></div>
+          <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal">{symbol}{' '}{invoice.subtotal.toFixed(2)}</span></div>
+          {invoice.discountAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Discount</span><span className="text-[#16a34a]">-{symbol}{' '}{invoice.discountAmount.toFixed(2)}</span></div>}
+          {invoice.shippingAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Shipping</span><span className="text-charcoal">{symbol}{' '}{invoice.shippingAmount.toFixed(2)}</span></div>}
+          {invoice.taxAmount > 0 && <div className="flex justify-between text-[12.5px]"><span className="text-slate">Tax</span><span className="text-charcoal">{symbol}{' '}{invoice.taxAmount.toFixed(2)}</span></div>}
+          <div className="flex justify-between text-[16px] font-bold text-charcoal pt-1"><span>Total</span><span>{symbol}{' '}{invoice.total.toFixed(2)}</span></div>
           {invoice.dueDate && <p className="text-[11px] text-slate">Due {new Date(invoice.dueDate).toLocaleDateString()}</p>}
         </div>
 
@@ -100,7 +100,7 @@ export default function PayInvoicePage() {
           ) : clientSecret ? (
             <StripeCardPayment
               clientSecret={clientSecret}
-              submitLabel={`Pay ${symbol}${invoice.total.toFixed(2)}`}
+              submitLabel={`Pay ${symbol} ${invoice.total.toFixed(2)}`}
               onConfirmed={() => setPaid(true)}
             />
           ) : (
@@ -110,7 +110,7 @@ export default function PayInvoicePage() {
                 type="button" onClick={startPayment} disabled={starting}
                 className="w-full py-3 rounded-lg bg-[#D97757] text-white text-[13px] font-bold cursor-pointer disabled:opacity-60"
               >
-                {starting ? 'Starting…' : `Pay ${symbol}${invoice.total.toFixed(2)}`}
+                {starting ? 'Starting…' : `Pay ${symbol} ${invoice.total.toFixed(2)}`}
               </button>
             </>
           )}

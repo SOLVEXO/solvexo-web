@@ -10,7 +10,7 @@ import { Badge } from '@/components/comman/ui/Badge';
 import type { BadgeColor } from '@/types';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useToast } from '@/contexts/ToastContext';
 import { StripeMoneySection } from './StripeMoneySection';
 import {
@@ -60,7 +60,7 @@ const PAYOUT_STATUS_COLOR: Record<PayoutStatus, BadgeColor> = {
 // — never summed across a seller's separate PKR/USD wallets into one
 // misleading number (see FinanceDashboard.wallets, StoreFinance's wallet
 // selector).
-function fmt(n: number, currency?: string | null) { return `${currencySymbol(currency)}${n.toFixed(2)}`; }
+function fmt(n: number, currency?: string | null) { return `${currencySymbol(currency)} ${fmt2(n)}`; }
 
 // ── Payout method modal (add or edit) ────────────────────────────────────────
 function PayoutMethodModal({

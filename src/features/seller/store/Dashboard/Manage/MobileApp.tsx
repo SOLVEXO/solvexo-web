@@ -108,9 +108,9 @@ function PlatformPayFlow({ label, priceLabel, onCreateIntent, onConfirm }: {
       <div className="max-w-[400px]">
         <div className="rounded-lg border border-bone bg-white px-3 py-2.5 mb-2.5 flex items-center justify-between gap-3">
           <span className="text-[11.5px] font-semibold text-charcoal">{priceLabel}</span>
-          <span className="text-[14px] font-bold text-charcoal shrink-0">{currencySymbol(currency)}{(amount ?? 0).toFixed(2)}</span>
+          <span className="text-[14px] font-bold text-charcoal shrink-0">{currencySymbol(currency)}{' '}{(amount ?? 0).toFixed(2)}</span>
         </div>
-        <StripeCardSetup intent="payment" clientSecret={clientSecret} submitLabel={`Pay ${currencySymbol(currency)}${(amount ?? 0).toFixed(2)}`} footnote="Secured by Stripe — your card is charged right away" onConfirmed={handleConfirmed} />
+        <StripeCardSetup intent="payment" clientSecret={clientSecret} submitLabel={`Pay ${currencySymbol(currency)} ${(amount ?? 0).toFixed(2)}`} footnote="Secured by Stripe — your card is charged right away" onConfirmed={handleConfirmed} />
         {paying && <p className="mt-2 text-[11.5px] text-slate">Confirming your payment…</p>}
         {error && <p className="mt-2 text-[12px] text-error">{error}</p>}
       </div>

@@ -172,14 +172,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
               <div className="min-w-0">
                 <div className="flex items-baseline gap-[4px] flex-wrap">
                   <span className={'text-[13px] font-bold tracking-tight text-carbon'}>
-                    {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
+                    {displayPrice != null ? `${priceSymbol} ${displayPrice.toLocaleString()}` : '—'}
                   </span>
                   {compareAt != null && compareAt > (displayPrice ?? 0) && (
-                    <span className="text-[9px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+                    <span className="text-[9px] text-slate line-through">{priceSymbol}{' '}{compareAt.toLocaleString()}</span>
                   )}
                 </div>
                 {savings != null && savings > 0 && (
-                  <p className="text-[8px] font-semibold text-success">Save {priceSymbol}{savings.toLocaleString()}</p>
+                  <p className="text-[8px] font-semibold text-success">Save {priceSymbol}{' '}{savings.toLocaleString()}</p>
                 )}
               </div>
               <button
@@ -237,14 +237,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
             <div className="min-w-0">
               <div className="flex items-baseline gap-[5px] flex-wrap">
                 <span className={'text-[14.5px] font-bold tracking-tight text-carbon'}>
-                  {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
+                  {displayPrice != null ? `${priceSymbol} ${displayPrice.toLocaleString()}` : '—'}
                 </span>
                 {compareAt != null && compareAt > (displayPrice ?? 0) && (
-                  <span className="text-[10.5px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+                  <span className="text-[10.5px] text-slate line-through">{priceSymbol}{' '}{compareAt.toLocaleString()}</span>
                 )}
               </div>
               {savings != null && savings > 0 && (
-                <p className="text-[9px] font-semibold text-success mt-[2px]">Save {priceSymbol}{savings.toLocaleString()}</p>
+                <p className="text-[9px] font-semibold text-success mt-[2px]">Save {priceSymbol}{' '}{savings.toLocaleString()}</p>
               )}
             </div>
 

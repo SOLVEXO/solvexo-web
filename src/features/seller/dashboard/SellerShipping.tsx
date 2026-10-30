@@ -349,16 +349,16 @@ function ZoneList({ storeId, zoneType, profileRef }: { storeId: string; zoneType
                       {isPickup
                         ? (zone.estimatedDeliveryTime ? `Ready in ${zone.estimatedDeliveryTime}` : 'No ready time set')
                         : (zone.estimatedDeliveryTime ? `Est. delivery ${zone.estimatedDeliveryTime}` : 'No ETA set')}
-                      {zone.minOrderAmount != null && zone.minOrderAmount > 0 && ` · Min order ${symbol}${fmt2(zone.minOrderAmount)}`}
+                      {zone.minOrderAmount != null && zone.minOrderAmount > 0 && ` · Min order ${symbol} ${fmt2(zone.minOrderAmount)}`}
                       {zone.postalCodes && zone.postalCodes.length > 0 && ` · ${zone.postalCodes.length} postcode${zone.postalCodes.length === 1 ? '' : 's'}`}
-                      {zone.freeShippingThreshold != null && ` · Free over ${symbol}${fmt2(zone.freeShippingThreshold)}`}
+                      {zone.freeShippingThreshold != null && ` · Free over ${symbol} ${fmt2(zone.freeShippingThreshold)}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm font-bold text-brand-orange">
                       {isPickup ? 'Free'
                         : zone.rateType === 'weight' || zone.rateType === 'price' ? `By ${zone.rateType} · ${zone.rateTiers?.length ?? 0} tiers`
-                        : `${symbol}${fmt2(zone.shippingPrice)}`}
+                        : `${symbol} ${fmt2(zone.shippingPrice)}`}
                     </span>
                     <span className={`px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold ${zone.status === 'active' ? 'bg-[#e3f4ea] text-[#1e7a3c]' : 'bg-bone text-slate'}`}>
                       {zone.status === 'active' ? 'Active' : 'Inactive'}

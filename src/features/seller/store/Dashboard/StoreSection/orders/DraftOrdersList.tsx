@@ -70,7 +70,7 @@ export default function DraftOrdersList() {
                   <p className="text-[11px] text-slate">{d.items.length} item{d.items.length !== 1 ? 's' : ''} · {new Date(d.createdAt).toLocaleDateString()}{d.orderNumber ? ` · ${d.orderNumber}` : ''}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3 shrink-0">
-                  <span className="text-[13px] font-bold text-charcoal">{currencySymbol(d.currency ?? store?.baseCurrency ?? 'USD')}{d.total.toFixed(2)}</span>
+                  <span className="text-[13px] font-bold text-charcoal">{currencySymbol(d.currency ?? store?.baseCurrency ?? 'USD')}{' '}{d.total.toFixed(2)}</span>
                   <Badge color={STATUS_COLOR[d.status]} size="sm">{d.status}</Badge>
                 </div>
               </button>

@@ -57,7 +57,7 @@ function discountStatus(d: AutomaticDiscount): { label: string; color: 'green' |
 
 function formatValue(d: AutomaticDiscount, storeCurrency: string): string {
   if (d.discountType === 'percentage') return `${d.discountValue}% off`;
-  if (d.discountType === 'fixed') return `${currencySymbol(d.currency ?? storeCurrency)}${d.discountValue} off`;
+  if (d.discountType === 'fixed') return `${currencySymbol(d.currency ?? storeCurrency)} ${d.discountValue} off`;
   if (d.discountType === 'bogo') {
     const pct = d.getDiscountPercent ?? 100;
     return `Buy ${d.buyQuantity} get ${d.getQuantity} ${pct >= 100 ? 'free' : `${pct}% off`}`;

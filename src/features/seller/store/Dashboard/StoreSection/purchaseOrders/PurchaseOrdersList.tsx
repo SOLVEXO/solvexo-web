@@ -117,7 +117,7 @@ export default function PurchaseOrdersList({ embedded = false }: { embedded?: bo
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end shrink-0">
-                  <span className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal">{currencySymbol(po.currency ?? store?.baseCurrency ?? 'USD')}{po.total.toFixed(2)}</span>
+                  <span className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal">{currencySymbol(po.currency ?? store?.baseCurrency ?? 'USD')}{' '}{po.total.toFixed(2)}</span>
                   <Badge color={STATUS_META[po.status].color} size="sm">{STATUS_META[po.status].label}</Badge>
                 </div>
               </button>
