@@ -448,19 +448,22 @@ function StoreBottomNav() {
     return () => { document.documentElement.style.removeProperty('--store-tabbar-h'); };
   }, []);
 
-  // Floating pill bar (rounded, inset from the screen edges). The active tab's
-  // icon rides in a bubble; the bar's own top edge swells up around it through
-  // concave shoulders (one SVG, same fill as the bar), and ONE drop-shadow on
-  // the wrapper outlines bar + swell as a single shape. The bubble is the
-  // brand-orange gradient; inactive icons stay quiet.
+  // Floating pill bar (rounded, inset from the screen edges). The active tab gets a round
+  // NOTCH cut out of the bar's top edge (a CSS mask, so the page shows through) and its
+  // orange bubble sits in the notch with a 4px ring of page colour around it. The wrapper's
+  // drop-shadow follows the notched silhouette.
   const activeIndex = tabs.findIndex(tab => isActive(tab.path));
   const activeTab = activeIndex >= 0 ? tabs[activeIndex] : null;
   const activeCount = activeTab ? badges[activeTab.id] ?? 0 : 0;
+  // Centre of the active tab along the bar (the bar has 12px side padding).
+  const activeX = activeTab ? `calc(12px + ${(activeIndex + 0.5) / tabs.length} * (100% - 24px))` : null;
+  const notchMask = activeX ? `radial-gradient(circle 27px at ${activeX} 6px, transparent 26.5px, #000 27.5px)` : undefined;
+  const notchStyle = notchMask ? { WebkitMaskImage: notchMask, maskImage: notchMask } : undefined;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] px-3 pb-[calc(env(safe-area-inset-bottom)+8px)] pointer-events-none">
       <div className="relative pointer-events-auto [filter:drop-shadow(0_-1px_2px_rgba(20,15,10,0.06))_drop-shadow(0_6px_16px_rgba(20,15,10,0.14))]">
-        <div className="relative h-[62px] flex items-stretch px-3 bg-white rounded-[26px]">
+        <div className="relative h-[62px] flex items-stretch px-3 bg-white rounded-[26px]" style={notchStyle}>
           {tabs.map(tab => {
             const active = isActive(tab.path);
             const count = badges[tab.id] ?? 0;
@@ -472,8 +475,8 @@ function StoreBottomNav() {
                 aria-label={tab.label}
                 className="relative flex-1 min-w-0 flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-transparent border-none rounded-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange"
               >
-                {/* the active tab's icon floats up into the swell, so this only
-                    holds the slot open to keep every label on one baseline */}
+                {/* the active tab's icon lives in the bubble above, this only holds the slot open
+                    so every label sits on one baseline */}
                 {active
                   ? <span aria-hidden="true" className="size-[21px]" />
                   : <tab.Icon size={21} strokeWidth={1.7} className="text-slate transition-colors duration-150" />}
@@ -489,16 +492,11 @@ function StoreBottomNav() {
         {activeTab && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[calc(100%-1px)] h-[36px] w-[104px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring"
-            style={{ left: `calc(12px + ${(activeIndex + 0.5) / tabs.length} * (100% - 24px))` }}
+            className="pointer-events-none absolute top-[-17px] size-[46px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-[0_4px_10px_rgba(193,83,48,0.3)]"
+            style={{ left: activeX ?? undefined }}
           >
-            {/* the orange squircle sits in a white ring (same white as the bar, so it joins it) with a 3px gap all round */}
-            <span className="absolute left-1/2 top-[3px] -translate-x-1/2 rounded-[19px] bg-white p-[3px] shadow-[0_0_0_1px_rgba(20,15,10,0.04),0_4px_12px_rgba(20,15,10,0.1)]">
-              <span className="relative size-[44px] rounded-[16px] bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center">
-                <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
-                {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-white text-brand-deep-orange text-[9px] font-bold leading-4 text-center shadow">{activeCount > 99 ? '99+' : activeCount}</span>}
-              </span>
-            </span>
+            <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
+            {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-white text-brand-deep-orange text-[9px] font-bold leading-4 text-center shadow">{activeCount > 99 ? '99+' : activeCount}</span>}
           </span>
         )}
       </div>
