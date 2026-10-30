@@ -240,6 +240,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'orders', element: <ThemedRoute routeKey="orders" /> },
           { path: 'library', element: <ThemedRoute routeKey="library" /> },
           { path: 'memberships', element: <ThemedRoute routeKey="memberships" /> },
+          { path: 'licenses', element: <ThemedRoute routeKey="licenses" /> },
           { path: 'order-status/:token', element: <ThemedRoute routeKey="orderStatus" /> },
           { path: 'addresses', element: <ThemedRoute routeKey="addresses" /> },
           { path: 'reviews', element: <ThemedRoute routeKey="myReviews" /> },
