@@ -5,13 +5,14 @@ import { useToast } from '@/contexts/ToastContext';
 import { CoursesTab } from './CoursesTab';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 
-type Tab = 'overview' | 'plans' | 'subscribers' | 'courses' | 'licenses' | 'log';
+type Tab = 'overview' | 'plans' | 'subscribers' | 'courses' | 'licenses' | 'reports' | 'log';
 const TABS: { id: Tab; label: string; perm: string }[] = [
   { id: 'overview', label: 'Overview', perm: 'digital.view' },
   { id: 'plans', label: 'Plans', perm: 'members.manage' },
   { id: 'subscribers', label: 'Subscribers', perm: 'members.manage' },
   { id: 'courses', label: 'Courses', perm: 'courses.manage' },
   { id: 'licenses', label: 'Licenses', perm: 'licenses.manage' },
+  { id: 'reports', label: 'Reports', perm: 'digital.view' },
   { id: 'log', label: 'Delivery log', perm: 'digital.view' },
 ];
 
@@ -75,7 +76,7 @@ function Plans({ storeId }: { storeId: string }) {
   const toast = useToast();
   const url = `/api/memberships/store/${storeId}/plans`;
   const { data, error, reload } = useList<any[]>(url);
-  const [f, setF] = useState({ name: '', type: 'recurring', amount: '', interval: 'month', trialDays: '0', graceDays: '0', tier: '1' });
+  const [f, setF] = useState({ name: '', type: 'recurring', amount: '', interval: 'month', trialDays: '0', graceDays: '0', tier: '1', productId: '' });
   const [busy, setBusy] = useState(false);
   const canEdit = can('members.manage');
 
@@ -83,7 +84,7 @@ function Plans({ storeId }: { storeId: string }) {
     e.preventDefault();
     setBusy(true);
     try {
-      await client.post(url, { ...f, amount: Number(f.amount) || 0, trialDays: Number(f.trialDays), graceDays: Number(f.graceDays), tier: Number(f.tier) });
+      await client.post(url, { ...f, productId: f.productId || null, amount: Number(f.amount) || 0, trialDays: Number(f.trialDays), graceDays: Number(f.graceDays), tier: Number(f.tier) });
       toast.success('Plan created');
       setF({ ...f, name: '', amount: '' });
       reload();
@@ -114,6 +115,7 @@ function Plans({ storeId }: { storeId: string }) {
             </>
           )}
           <label className="text-[12px]">Tier<input type="number" min={1} max={100} className={`${inp} w-full`} value={f.tier} onChange={(e) => setF({ ...f, tier: e.target.value })} /></label>
+          <label className="text-[12px] col-span-2">Sold by product ID (optional: buying this product through checkout starts or renews the plan)<input className={`${inp} w-full`} value={f.productId} onChange={(e) => setF({ ...f, productId: e.target.value.trim() })} /></label>
           <button type="submit" disabled={busy} className={`${btn} h-9`}>Create plan</button>
         </form>
       )}
@@ -191,6 +193,31 @@ function Licenses({ storeId }: { storeId: string }) {
   );
 }
 
+function Reports({ base }: { base: string }) {
+  const { data, error, reload } = useList<{ topProducts: { productId: string; name: string; deliveries: number; customers: number }[]; perDay: { day: string; outcome: string; count: number }[] }>(`${base}/reports`);
+  if (!data) return <State error={error} loading retry={reload} />;
+  const days = Array.from(new Set(data.perDay.map((d) => d.day)));
+  const count = (day: string, o: string) => data.perDay.find((d) => d.day === day && d.outcome === o)?.count ?? 0;
+  return (
+    <div className="flex flex-col gap-4">
+      <section className="surface-panel rounded-xl p-3">
+        <h3 className="mb-2 text-[14px] font-semibold text-carbon">Most downloaded (30 days)</h3>
+        {data.topProducts.length === 0 ? <p className="text-[13px] text-slate">No downloads yet.</p> : (
+          <table className="w-full text-[13px]"><thead><tr className="text-left text-slate"><th className="py-1">Product</th><th>Downloads</th><th>Customers</th></tr></thead>
+            <tbody>{data.topProducts.map((p) => <tr key={p.productId} className="border-t border-bone"><td className="py-1.5">{p.name}</td><td>{p.deliveries}</td><td>{p.customers}</td></tr>)}</tbody></table>
+        )}
+      </section>
+      <section className="surface-panel rounded-xl p-3">
+        <h3 className="mb-2 text-[14px] font-semibold text-carbon">Deliveries per day</h3>
+        {days.length === 0 ? <p className="text-[13px] text-slate">Nothing to show yet.</p> : (
+          <table className="w-full text-[13px]"><thead><tr className="text-left text-slate"><th className="py-1">Day</th><th>Delivered</th><th>Denied</th><th>Failed</th></tr></thead>
+            <tbody>{days.map((d) => <tr key={d} className="border-t border-bone"><td className="py-1.5">{d}</td><td>{count(d, 'ok')}</td><td>{count(d, 'denied')}</td><td>{count(d, 'failed')}</td></tr>)}</tbody></table>
+        )}
+      </section>
+    </div>
+  );
+}
+
 function DeliveryLog({ base }: { base: string }) {
   const { data, error, reload } = useList<any[]>(`${base}/delivery-log?limit=100`);
   return (
@@ -222,8 +249,9 @@ export default function DigitalHub() {
         {tab === 'subscribers' && <Subscribers storeId={storeId} />}
         {tab === 'courses' && <CoursesTab storeId={storeId} />}
         {tab === 'licenses' && <Licenses storeId={storeId} />}
+        {tab === 'reports' && <Reports base={base} />}
         {tab === 'log' && <DeliveryLog base={base} />}
-        <p className="text-[11px] text-slate">Reports are not available yet.</p>
+        
       </div>
     </>
   );

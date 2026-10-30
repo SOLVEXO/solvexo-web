@@ -16,6 +16,7 @@ import { AdminTeam } from './AdminTeam';
 import { AdminSessions } from './AdminSessions';
 import { AdminTwoFactor } from './AdminTwoFactor';
 import { AdminPlatformTax } from './AdminPlatformTax';
+import { AdminDigital } from './AdminDigital';
 import { can } from '@/hooks/auth/useCan';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 
@@ -34,6 +35,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     label: 'Platform',
     items: [
       { id: 'platform-config', label: 'Platform Config', icon: <SettingsIcon size={13} />, hint: 'Maintenance, AI, limits' },
+      { id: 'digital', label: 'Digital delivery', icon: <ShieldCheck size={13} />, hint: 'Abuse and piracy controls' },
     ],
   },
   {
@@ -61,7 +63,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
 ];
 // A team admin only gets the tabs their role allows (the owner / Super Admin gets all). Account, Two-factor, Notifications and Sessions are always open.
 const TAB_PERMISSION: Record<string, string> = {
-  'platform-config': 'config.manage', email: 'config.manage', 'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', tax: 'billing.manage',
+  'platform-config': 'config.manage', digital: 'config.manage', email: 'config.manage', 'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', tax: 'billing.manage',
   'activity-log': 'activity.view', team: 'team.manage',
 };
 const GROUPS = NAV_GROUPS
@@ -110,6 +112,7 @@ export default function AdminSettingsHub() {
       >
         {isVisited('account')          && <div className={paneClassName('account')}><ErrorBoundary section="My Account"><AdminSettings embedded /></ErrorBoundary></div>}
         {isVisited('platform-config')  && <div className={paneClassName('platform-config')}><ErrorBoundary section="Platform Config"><AdminConfig embedded /></ErrorBoundary></div>}
+        {isVisited('digital')          && <div className={paneClassName('digital')}><ErrorBoundary section="Digital delivery"><AdminDigital /></ErrorBoundary></div>}
         {isVisited('commission-rules') && <div className={paneClassName('commission-rules')}><ErrorBoundary section="Commission Rules"><AdminCommissionRules embedded /></ErrorBoundary></div>}
         {isVisited('fx-settings')      && <div className={paneClassName('fx-settings')}><ErrorBoundary section="FX Settings"><AdminFxSettings embedded /></ErrorBoundary></div>}
         {isVisited('tax')              && <div className={paneClassName('tax')}><ErrorBoundary section="Tax"><AdminPlatformTax /></ErrorBoundary></div>}

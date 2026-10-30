@@ -2,7 +2,7 @@ import client from '../client';
 
 export interface PublicPlan {
   _id: string; name: string; description: string; type: 'free' | 'one_time' | 'recurring';
-  amount: number; currency: string; interval: string; intervalCount: number; trialDays: number; benefits: string[]; tier: number;
+  amount: number; currency: string; productSlug?: string | null; interval: string; intervalCount: number; trialDays: number; benefits: string[]; tier: number;
 }
 export interface MySubscription {
   _id: string; planId: string; status: 'trialing' | 'active' | 'past_due' | 'paused' | 'cancelled' | 'expired';
