@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiDownloadUrl, apiGetLibrary, apiRecoverLibrary, type LibraryItem } from '@/api/services/digitalLibrary';
@@ -18,7 +18,9 @@ export function DefaultLibraryPage() {
   const { store } = useStorefront();
   const storeId = store.storeId;
   const signedIn = !!TokenStorage.getToken();
-  const [recovery, setRecovery] = useState<string | undefined>(undefined);
+  const [params] = useSearchParams();
+  const recovery = params.get('recovery') || undefined; // from the emailed link
+  const [sentNote, setSentNote] = useState(false);
   const [items, setItems] = useState<LibraryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -57,8 +59,8 @@ export function DefaultLibraryPage() {
     e.preventDefault();
     setError(null);
     try {
-      const r = await apiRecoverLibrary(storeId, form.orderRef, form.email);
-      setRecovery(r.recoveryToken);
+      await apiRecoverLibrary(storeId, form.orderRef, form.email);
+      setSentNote(true);
     } catch (err: any) {
       setError(errMsg(err, 'We could not find a matching order'));
     }
@@ -72,7 +74,8 @@ export function DefaultLibraryPage() {
       <h1 className="text-2xl font-semibold mb-6">My library</h1>
       {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
 
-      {!signedIn && !recovery && (
+      {sentNote && <p role="status" className="mb-4 text-sm">If we found a matching order, we emailed you a link to your downloads. It works for 30 minutes.</p>}
+      {!signedIn && !recovery && !sentNote && (
         <form onSubmit={recover} className="flex flex-col gap-3 max-w-md">
           <p className="text-sm opacity-80">
             <Link to="/login" className="underline">Sign in</Link> to see your downloads, or find them with your order number and email.
@@ -83,7 +86,7 @@ export function DefaultLibraryPage() {
           <label className="text-sm">Email used at checkout
             <input className={field} type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </label>
-          <button type="submit" className="rounded-lg bg-black text-white px-4 py-2 text-sm">Find my downloads</button>
+          <button type="submit" className="rounded-lg bg-black text-white px-4 py-2 text-sm">Email me a link</button>
         </form>
       )}
 

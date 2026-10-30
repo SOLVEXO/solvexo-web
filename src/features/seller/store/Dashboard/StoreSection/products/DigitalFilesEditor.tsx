@@ -102,3 +102,17 @@ export function DigitalDeliveryFields({
     </div>
   );
 }
+
+/** Per-sale license keys: each paid order gets its own key, valid on a limited number of devices. */
+export function LicenseKeyFields({ enabled, limit, onEnabled, onLimit }: { enabled: boolean; limit: string; onEnabled: (v: boolean) => void; onLimit: (v: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2 text-[12px]">
+      <label className="flex items-center gap-2"><input type="checkbox" checked={enabled} onChange={(e) => onEnabled(e.target.checked)} /> Give each buyer a license key</label>
+      {enabled && (
+        <label className="flex items-center gap-2">Devices per key
+          <input type="number" min={1} max={1000} step={1} value={limit} onChange={(e) => onLimit(e.target.value)} className={`${inp} w-24`} />
+        </label>
+      )}
+    </div>
+  );
+}

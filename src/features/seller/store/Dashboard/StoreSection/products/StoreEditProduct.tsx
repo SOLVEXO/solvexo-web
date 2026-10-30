@@ -14,7 +14,7 @@ import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
-import { DigitalFilesEditor, DigitalDeliveryFields, filesPayload, rowsFromServer, type DigitalFileRow } from './DigitalFilesEditor';
+import { DigitalFilesEditor, DigitalDeliveryFields, LicenseKeyFields, filesPayload, rowsFromServer, type DigitalFileRow } from './DigitalFilesEditor';
 import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
@@ -104,6 +104,7 @@ const blankDig = {
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   files: [] as DigitalFileRow[],
+  licenseEnabled: false, licenseLimit: '1',
   downloadLimit: 'unlimited', linkExpiryDays: '',
   pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
   buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
@@ -184,6 +185,8 @@ function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
     files: rowsFromServer(d?.files),
+    licenseEnabled: !!d?.licenseKeys?.enabled,
+    licenseLimit: String(d?.licenseKeys?.activationLimit ?? 1),
     downloadLimit: d?.downloadLimit ?? 'unlimited',
     linkExpiryDays: d?.linkExpiryDays != null ? String(d.linkExpiryDays) : '',
     pdfStampingEnabled: d?.pdfStampingEnabled ?? false,
@@ -396,7 +399,7 @@ export default function StoreEditProduct() {
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
           templateKey,
           complementaryProductIds: complementaryReady ? complementaryIds : undefined,
-          digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
+          digital: { files, licenseKeys: { enabled: dig.licenseEnabled, activationLimit: Math.max(1, Number(dig.licenseLimit) || 1) }, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
       }
@@ -578,6 +581,7 @@ export default function StoreEditProduct() {
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
                 <DigitalDeliveryFields downloadLimit={dig.downloadLimit} linkExpiryDays={dig.linkExpiryDays} onLimit={v => sd('downloadLimit', v)} onExpiry={v => sd('linkExpiryDays', v)} />
+                <LicenseKeyFields enabled={dig.licenseEnabled} limit={dig.licenseLimit} onEnabled={v => sd('licenseEnabled', v)} onLimit={v => sd('licenseLimit', v)} />
                 <F label="License Type">
                   <div className="flex gap-2 mt-0.5 flex-wrap">
                     {(pType === 'educational'

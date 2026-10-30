@@ -29,8 +29,9 @@ export const apiGetLibrary = (storeId: string, recoveryToken?: string): Promise<
     ? (client.get(`${BASE}/recovered/${encodeURIComponent(recoveryToken)}/library`) as Promise<LibraryItem[]>)
     : (client.get(`${BASE}/library`, { params: { storeId } }) as Promise<LibraryItem[]>);
 
-export const apiRecoverLibrary = (storeId: string, orderRef: string, email: string): Promise<{ recoveryToken: string }> =>
-  client.post(`${BASE}/recover`, { storeId, orderRef, email }) as Promise<{ recoveryToken: string }>;
+/** The server always answers `{ sent: true }`; the access link only travels by email. */
+export const apiRecoverLibrary = (storeId: string, orderRef: string, email: string): Promise<{ sent: boolean }> =>
+  client.post(`${BASE}/recover`, { storeId, orderRef, email }) as Promise<{ sent: boolean }>;
 
 /** Mints a single-use token, then returns the browser download URL for it. */
 export async function apiDownloadUrl(storeId: string, productId: string, fileIndex: number, recoveryToken?: string): Promise<string> {

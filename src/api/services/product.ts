@@ -40,6 +40,7 @@ export interface DigitalPreviewMeta {
 
 export interface DigitalMeta {
   files:                DigitalFile[];
+  licenseKeys?:         { enabled: boolean; activationLimit: number };
   downloadLimit:        string;          // 'unlimited' or a number as string
   linkExpiryDays:       number | null;
   pdfStampingEnabled:   boolean;

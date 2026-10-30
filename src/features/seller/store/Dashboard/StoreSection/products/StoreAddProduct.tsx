@@ -11,7 +11,7 @@ import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, DateTimePickerModal } from '@/components/comman/ui';
-import { DigitalFilesEditor, DigitalDeliveryFields, filesPayload, type DigitalFileRow } from './DigitalFilesEditor';
+import { DigitalFilesEditor, DigitalDeliveryFields, LicenseKeyFields, filesPayload, type DigitalFileRow } from './DigitalFilesEditor';
 import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
@@ -100,6 +100,7 @@ const initDig = {
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   files: [] as DigitalFileRow[],
+  licenseEnabled: false, licenseLimit: '1',
   downloadLimit: 'unlimited', linkExpiryDays: '',
   pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
   buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
@@ -233,7 +234,7 @@ export default function StoreAddProduct() {
           isListedOnSolvexo: dig.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price), compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
-          digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
+          digital: { files, licenseKeys: { enabled: dig.licenseEnabled, activationLimit: Math.max(1, Number(dig.licenseLimit) || 1) }, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       }
@@ -387,6 +388,7 @@ export default function StoreAddProduct() {
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
                 <DigitalDeliveryFields downloadLimit={dig.downloadLimit} linkExpiryDays={dig.linkExpiryDays} onLimit={v => sd('downloadLimit', v)} onExpiry={v => sd('linkExpiryDays', v)} />
+                <LicenseKeyFields enabled={dig.licenseEnabled} limit={dig.licenseLimit} onEnabled={v => sd('licenseEnabled', v)} onLimit={v => sd('licenseLimit', v)} />
                 <F label="License Type">
                   <div className="flex gap-2 mt-0.5 flex-wrap">
                     {(pType === 'educational'
