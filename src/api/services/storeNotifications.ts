@@ -1,7 +1,7 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 
-export type CustomerEmailGroup = 'orders' | 'returns' | 'invoices';
+export type CustomerEmailGroup = 'orders' | 'returns' | 'invoices' | 'digital';
 
 export interface CustomerEmailSetting {
   key: string;
