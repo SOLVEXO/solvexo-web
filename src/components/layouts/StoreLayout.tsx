@@ -492,7 +492,7 @@ function StoreBottomNav() {
         {activeTab && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute top-[-17px] size-[46px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-[0_4px_10px_rgba(193,83,48,0.3)]"
+            className="pointer-events-none absolute top-[-17px] size-[46px] -translate-x-1/2 rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--color-brand-orange),white_22%)] to-[color-mix(in_srgb,var(--color-brand-deep-orange),white_22%)] flex items-center justify-center shadow-[0_3px_8px_rgba(193,83,48,0.12)]"
             style={{ left: activeX ?? undefined }}
           >
             <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
