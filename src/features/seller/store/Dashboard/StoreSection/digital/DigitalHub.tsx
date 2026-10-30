@@ -2,13 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import client from '@/api/client';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
+import { CoursesTab } from './CoursesTab';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 
-type Tab = 'overview' | 'plans' | 'subscribers' | 'licenses' | 'log';
+type Tab = 'overview' | 'plans' | 'subscribers' | 'courses' | 'licenses' | 'log';
 const TABS: { id: Tab; label: string; perm: string }[] = [
   { id: 'overview', label: 'Overview', perm: 'digital.view' },
   { id: 'plans', label: 'Plans', perm: 'members.manage' },
   { id: 'subscribers', label: 'Subscribers', perm: 'members.manage' },
+  { id: 'courses', label: 'Courses', perm: 'courses.manage' },
   { id: 'licenses', label: 'Licenses', perm: 'licenses.manage' },
   { id: 'log', label: 'Delivery log', perm: 'digital.view' },
 ];
@@ -218,9 +220,10 @@ export default function DigitalHub() {
         {tab === 'overview' && <Overview base={base} />}
         {tab === 'plans' && <Plans storeId={storeId} />}
         {tab === 'subscribers' && <Subscribers storeId={storeId} />}
+        {tab === 'courses' && <CoursesTab storeId={storeId} />}
         {tab === 'licenses' && <Licenses storeId={storeId} />}
         {tab === 'log' && <DeliveryLog base={base} />}
-        <p className="text-[11px] text-slate">Courses and reports are not available yet.</p>
+        <p className="text-[11px] text-slate">Reports are not available yet.</p>
       </div>
     </>
   );
