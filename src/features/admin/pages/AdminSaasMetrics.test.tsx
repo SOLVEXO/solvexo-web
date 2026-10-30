@@ -67,7 +67,7 @@ describe('AdminSaasMetrics', () => {
     api.apiExportSaasMetrics.mockResolvedValue(undefined);
     renderPage();
     expect(await screen.findByText('75%')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Revenue' }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Retention measure' })).getByRole('button', { name: 'Revenue' }));
     expect(screen.getByText('110%')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Months shown'), { target: { value: '24' } });
