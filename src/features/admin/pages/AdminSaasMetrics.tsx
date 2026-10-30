@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bar, BarChart as RechartsBar, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { Download, Gauge, Info, Rocket } from 'lucide-react';
+import { Coins, Download, Gauge, Info, Rocket } from 'lucide-react';
 import { Button, MetricCard, TabBar, type Tab } from '@/components/comman/ui';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { ActivationTab } from './saas/ActivationTab';
+import { RevenueModelTab } from './saas/RevenueModelTab';
+import { can } from '@/hooks/auth/useCan';
 import { Card, Empty } from './saas/parts';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { AreaChart } from '@/components/comman/charts';
@@ -33,16 +35,19 @@ const MOVEMENT = [
 
 const RANGE_OPTIONS = [6, 12, 24];
 
-type SaasTab = 'revenue' | 'activation';
+type SaasTab = 'revenue' | 'revenue-model' | 'activation';
 const TABS: Tab[] = [
   { id: 'revenue', label: 'Revenue', icon: <Gauge size={14} /> },
+  { id: 'revenue-model', label: 'Revenue model', icon: <Coins size={14} /> },
   { id: 'activation', label: 'Activation', icon: <Rocket size={14} /> },
 ];
 
-/** Admin → SaaS Metrics: Solvexo's own subscription business (Revenue) and how new merchants get started (Activation). */
+/** Admin → SaaS Metrics: Solvexo's own subscription business (Revenue), every revenue stream and the take rate
+ *  (Revenue model, finance.view only) and how new merchants get started (Activation). */
 export function AdminSaasMetrics() {
   usePageTitle('SaaS Metrics');
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs<SaasTab>('revenue');
+  const tabs = useMemo(() => (can('finance.view') ? TABS : TABS.filter(t => t.id !== 'revenue-model')), []);
   return (
     <>
       <AdminPageHeader
@@ -50,8 +55,9 @@ export function AdminSaasMetrics() {
         subtitle="Solvexo's own subscription business: what stores pay, how it grows, who stays, and how new merchants get started."
         icon={<Gauge size={18} />}
       />
-      <TabBar tabs={TABS} active={activeTab} onChange={t => setActiveTab(t as SaasTab)} className="px-4 sm:px-7 mt-4" />
+      <TabBar tabs={tabs} active={activeTab} onChange={t => setActiveTab(t as SaasTab)} className="px-4 sm:px-7 mt-4" />
       {isVisited('revenue') && <div className={paneClassName('revenue')}><RevenueTab /></div>}
+      {isVisited('revenue-model') && <div className={paneClassName('revenue-model')}><RevenueModelTab /></div>}
       {isVisited('activation') && <div className={paneClassName('activation')}><ActivationTab /></div>}
     </>
   );

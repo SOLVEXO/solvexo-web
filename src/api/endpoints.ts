@@ -1276,6 +1276,7 @@ export const ENDPOINTS = {
     ADMIN: {
       OVERVIEW:              '/api/admin/finance/overview',
       PLATFORM_REVENUE:      '/api/admin/finance/platform-revenue',
+      REVENUE_MODEL:         '/api/admin/finance/revenue-model',
       TRANSACTION_FEE_BILLS: '/api/admin/finance/transaction-fee-bills',
       REVENUE_OVER_TIME:     '/api/admin/finance/revenue-over-time',
       COMMISSION_OVER_TIME:  '/api/admin/finance/commission-over-time',
