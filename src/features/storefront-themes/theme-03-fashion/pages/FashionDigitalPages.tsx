@@ -7,7 +7,7 @@ import { errorMessage } from '@/api/errorMessage';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiDownloadUrl, apiGetLibrary, apiRecoverLibrary, type LibraryItem } from '@/api/services/digitalLibrary';
-import { apiChangePlan, apiJoinPlan, apiMembershipAction, apiMyMemberships, apiPublicPlans, type MySubscription, type PublicPlan } from '@/api/services/memberships';
+import { apiChangePlan, apiJoinPlan, apiMembershipAction, apiMyMemberships, apiPaymentMethodUrl, apiPublicPlans, apiStartCheckout, type MySubscription, type PublicPlan } from '@/api/services/memberships';
 import { apiCompleteLesson, apiCourseOutline, apiLessonMedia, apiMyCourses, apiOpenCertificate, apiSubmitQuiz, type CourseOutline, type LessonView } from '@/api/services/courses';
 import client from '@/api/client';
 import { fashionTheme as t } from '../theme.config';
@@ -161,6 +161,7 @@ function Memberships_() {
                       {s.amountDue > 0 && <p className="m-0 mt-1 text-sm" style={muted}>{ts('dg.upgrade_due', 'Upgrade amount due: {{amount}}', { amount: `${p?.currency ?? ''} ${s.amountDue}` })}</p>}
                       {LIVE.includes(s.status) && (
                         <div className="mt-4 flex flex-wrap gap-2">
+                          {s.provider === 'stripe' && <PillButton variant="outline" disabled={busy} onClick={() => void run(async () => { window.location.assign((await apiPaymentMethodUrl(storeId, s._id)).url); })}>{ts('dg.update_card', 'Update card')}</PillButton>}
                           {s.status === 'active' && <PillButton variant="outline" disabled={busy} onClick={() => void run(() => apiMembershipAction(storeId, s._id, 'pause'))}>{ts('dg.pause', 'Pause')}</PillButton>}
                           {s.status === 'paused' && <PillButton variant="outline" disabled={busy} onClick={() => void run(() => apiMembershipAction(storeId, s._id, 'resume'))}>{ts('dg.resume', 'Resume')}</PillButton>}
                           {!s.cancelAtPeriodEnd && <PillButton variant="ghost" disabled={busy} onClick={() => void run(() => apiMembershipAction(storeId, s._id, 'cancel'), ts('dg.cancel_saved', 'Cancellation saved. Access continues until the end of the period.'))}>{ts('dg.cancel', 'Cancel')}</PillButton>}
@@ -183,10 +184,11 @@ function Memberships_() {
                   return (
                     <li key={p._id}><Card className="flex h-full flex-col gap-2">
                       <p className="m-0 text-base font-semibold fx-bidi">{p.name}</p>
+                      {p.autoRenew && <p className="m-0 text-xs" style={muted}>{ts('dg.auto_renews', 'Renews automatically by card. Cancel any time.')}</p>}
                       <p className="m-0 text-sm font-medium">{price(p)}{p.trialDays > 0 ? ` · ${ts('dg.trial_days', '{{n}}-day trial', { n: p.trialDays })}` : ''}</p>
                       {p.description && <p className="m-0 text-sm fx-bidi" style={muted}>{p.description}</p>}
                       {p.benefits.length > 0 && <ul className="m-0 ps-5 text-sm">{p.benefits.map((b) => <li key={b} className="fx-bidi">{b}</li>)}</ul>}
-                      <div className="mt-auto pt-3">{p.type !== 'free' && p.productSlug ? <Link to={`/product/${p.productSlug}`} className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx, width: '100%' }}>{has ? ts('dg.renew', 'Renew') : ts('dg.buy', 'Buy')}</Link> : <PillButton full disabled={busy || has} onClick={() => void run(() => apiJoinPlan(storeId, p._id), p.type === 'free' ? ts('dg.you_are_in', 'You are in.') : ts('dg.request_sent', 'Request sent. The store will confirm your payment.'))}>{has ? ts('dg.joined', 'Joined') : ts('dg.join', 'Join')}</PillButton>}</div>
+                      <div className="mt-auto pt-3">{p.autoRenew ? <PillButton full disabled={busy || has} onClick={() => void run(async () => { window.location.assign((await apiStartCheckout(storeId, p._id)).url); })}>{has ? ts('dg.joined', 'Joined') : ts('dg.subscribe', 'Subscribe')}</PillButton> : p.type !== 'free' && p.productSlug ? <Link to={`/product/${p.productSlug}`} className="fx-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx, width: '100%' }}>{has ? ts('dg.renew', 'Renew') : ts('dg.buy', 'Buy')}</Link> : <PillButton full disabled={busy || has} onClick={() => void run(() => apiJoinPlan(storeId, p._id), p.type === 'free' ? ts('dg.you_are_in', 'You are in.') : ts('dg.request_sent', 'Request sent. The store will confirm your payment.'))}>{has ? ts('dg.joined', 'Joined') : ts('dg.join', 'Join')}</PillButton>}</div>
                     </Card></li>
                   );
                 })}

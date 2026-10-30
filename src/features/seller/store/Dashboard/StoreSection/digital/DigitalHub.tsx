@@ -26,7 +26,7 @@ const PAGE_SIZE = 20;
 
 const errText = (e: unknown) => errorMessage(e);
 
-interface Plan { _id: string; name: string; type: string; amount: number; currency: string; interval: string; tier: number; status: string; productId: string | null }
+interface Plan { autoRenew?: boolean; _id: string; name: string; type: string; amount: number; currency: string; interval: string; tier: number; status: string; productId: string | null }
 interface Subscriber { _id: string; customerName: string | null; customerEmail: string | null; planName: string; status: string; awaitingFirstPayment: boolean; currentPeriodEnd: string | null }
 interface LicenseRow { id: string; keyHint: string; productName: string; activations: number; activationLimit: number; status: string }
 interface LogRow { _id: string; at: string; outcome: 'ok' | 'denied' | 'failed'; reason: string; ip: string; flagged?: boolean }
@@ -141,13 +141,14 @@ function Overview({ base }: { base: string }) {
 
 // ── Plans ──────────────────────────────────────────────────────────────────
 
-const BLANK_PLAN = { name: '', type: 'recurring', amount: '', interval: 'month', trialDays: '0', graceDays: '0', tier: '1', productId: '' };
+const BLANK_PLAN = { name: '', type: 'recurring', amount: '', interval: 'month', trialDays: '0', graceDays: '0', tier: '1', productId: '', autoRenew: false };
 
 function Plans({ storeId }: { storeId: string }) {
   const toast = useToast();
   const url = `/api/memberships/store/${storeId}/plans`;
   const { rows: planRows, total, page, setPage, error, loading, reload } = usePaged<Plan>(url, {});
   const [f, setF] = useState(BLANK_PLAN);
+  const mode = useApi<{ mode: 'auto' | 'manual'; autoAvailable: boolean; reason: string | null }>(`/api/memberships/store/${storeId}/billing-mode`);
   const [busy, setBusy] = useState(false);
   const canEdit = can('members.manage');
 
@@ -164,12 +165,13 @@ function Plans({ storeId }: { storeId: string }) {
   async function toggle(p: Plan) {
     try { await client.patch(`${url}/${p._id}`, { status: p.status === 'active' ? 'archived' : 'active' }); reload(); } catch (err) { toast.error(errText(err)); }
   }
-  const set = (k: keyof typeof BLANK_PLAN) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
+  const set = (k: Exclude<keyof typeof BLANK_PLAN, 'autoRenew'>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
 
   const columns: TableColumn<Plan>[] = [
     { key: 'name', header: 'Plan', render: (p) => <span className="font-medium text-carbon">{p.name}</span> },
     { key: 'price', header: 'Price', render: (p) => (p.type === 'free' ? 'Free' : `${p.currency} ${p.amount}${p.type === 'recurring' ? ` / ${p.interval}` : ' one-time'}`) },
     { key: 'tier', header: 'Tier' },
+    { key: 'billing', header: 'Billing', render: (p) => (p.autoRenew ? <Badge color="green" size="sm">Auto (card)</Badge> : <Badge color="gray" size="sm">Manual</Badge>) },
     { key: 'sold', header: 'Sold by', render: (p) => (p.productId ? 'Product (checkout)' : 'Manual request') },
     { key: 'status', header: 'Status', render: (p) => <StatusBadge status={p.status} size="sm" /> },
     { key: 'a', header: '', align: 'right', render: (p) => (canEdit ? <Button size="xs" variant="outline" onClick={() => void toggle(p)}>{p.status === 'active' ? 'Archive' : 'Restore'}</Button> : null) },
@@ -178,7 +180,11 @@ function Plans({ storeId }: { storeId: string }) {
   return (
     <div className="flex flex-col gap-4">
       <Card padding="md">
-        <p className="m-0 text-[13px] text-carbon"><Badge color="orange">Manual billing</Badge> Members pay you directly (your own payment method). Each period you confirm the payment with <b>Mark paid</b>, or link a product so buying it through your checkout starts and renews the plan. Automatic card renewal is not available yet.</p>
+        {mode.data?.autoAvailable ? (
+          <p className="m-0 text-[13px] text-carbon"><Badge color="green">Auto billing available</Badge> Plans marked "Charge cards automatically" are billed by Stripe straight into your connected Stripe account: Solvexo takes no cut. Other plans use <b>manual billing</b>: you confirm each payment with <b>Mark paid</b>, or link a product so buying it through your checkout starts and renews the plan.</p>
+        ) : (
+          <p className="m-0 text-[13px] text-carbon"><Badge color="orange">Manual billing</Badge> Members pay you directly (your own payment method). Each period you confirm the payment with <b>Mark paid</b>, or link a product so buying it through your checkout starts and renews the plan.{mode.data?.reason ? ' ' + mode.data.reason : ''}</p>
+        )}
       </Card>
       {canEdit && (
         <Card padding="md">
@@ -193,6 +199,12 @@ function Plans({ storeId }: { storeId: string }) {
             </>)}
             <Input label="Tier" type="number" min={1} max={100} value={f.tier} onChange={set('tier')} />
             <div className="col-span-2"><Input label="Product ID (optional)" value={f.productId} onChange={set('productId')} /></div>
+            {f.type === 'recurring' && (
+              <label className={`col-span-2 flex items-center gap-2 text-[12px] ${mode.data?.autoAvailable ? 'text-carbon' : 'text-slate'}`}>
+                <input type="checkbox" disabled={!mode.data?.autoAvailable} checked={f.autoRenew && !!mode.data?.autoAvailable} onChange={(e) => setF({ ...f, autoRenew: e.target.checked })} />
+                Charge cards automatically (Stripe){!mode.data?.autoAvailable && mode.data?.reason ? ' - not available for this store' : ''}
+              </label>
+            )}
             <Button type="submit" size="sm" loading={busy}>Create plan</Button>
           </form>
         </Card>
