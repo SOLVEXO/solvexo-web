@@ -864,3 +864,10 @@
   90%  { transform: rotate(2deg); }
   100% { transform: rotate(0deg); }
 }
+
+/* animatable x of the mobile tab-bar notch (see StoreBottomNav) */
+@property --notch-x {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 0px;
+}

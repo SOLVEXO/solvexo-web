@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useId, lazy, Suspense, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useId, lazy, Suspense, type ReactNode, type CSSProperties } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
@@ -444,7 +444,7 @@ function StoreBottomNav() {
   // property on :root is the only channel between two unrelated subtrees.
   // Unset everywhere else, so storefront toasts keep their old bottom-6.
   useEffect(() => {
-    document.documentElement.style.setProperty('--store-tabbar-h', '72px');
+    document.documentElement.style.setProperty('--store-tabbar-h', '64px');
     return () => { document.documentElement.style.removeProperty('--store-tabbar-h'); };
   }, []);
 
@@ -457,13 +457,13 @@ function StoreBottomNav() {
   const activeCount = activeTab ? badges[activeTab.id] ?? 0 : 0;
   // Centre of the active tab along the bar (the bar has 12px side padding).
   const activeX = activeTab ? `calc(12px + ${(activeIndex + 0.5) / tabs.length} * (100% - 24px))` : null;
-  const notchMask = activeX ? `radial-gradient(circle 27px at ${activeX} 6px, transparent 26.5px, #000 27.5px)` : undefined;
-  const notchStyle = notchMask ? { WebkitMaskImage: notchMask, maskImage: notchMask } : undefined;
+  const notchMask = 'radial-gradient(circle 27px at var(--notch-x) 6px, transparent 26.5px, #000 27.5px)';
+  const notchStyle = (activeX ? { '--notch-x': activeX, WebkitMaskImage: notchMask, maskImage: notchMask, transition: '--notch-x 320ms cubic-bezier(0.4, 0, 0.2, 1)' } : undefined) as CSSProperties | undefined;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] px-3 pb-[calc(env(safe-area-inset-bottom)+8px)] pointer-events-none">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] px-3 pb-[env(safe-area-inset-bottom)] pointer-events-none">
       <div className="relative pointer-events-auto [filter:drop-shadow(0_-1px_2px_rgba(20,15,10,0.06))_drop-shadow(0_6px_16px_rgba(20,15,10,0.14))]">
-        <div className="relative h-[62px] flex items-stretch px-3 bg-white rounded-[26px]" style={notchStyle}>
+        <div className="relative h-[62px] flex items-stretch px-3 bg-white rounded-t-[26px] rounded-b-[1px]" style={notchStyle}>
           {tabs.map(tab => {
             const active = isActive(tab.path);
             const count = badges[tab.id] ?? 0;
@@ -492,7 +492,7 @@ function StoreBottomNav() {
         {activeTab && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute top-[-17px] size-[46px] -translate-x-1/2 rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--color-brand-orange),white_22%)] to-[color-mix(in_srgb,var(--color-brand-deep-orange),white_22%)] flex items-center justify-center shadow-[0_3px_8px_rgba(193,83,48,0.12)]"
+            className="pointer-events-none absolute top-[-17px] size-[46px] -translate-x-1/2 transition-[left] duration-[320ms] ease-[cubic-bezier(0.4,0,0.2,1)] rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--color-brand-orange),white_22%)] to-[color-mix(in_srgb,var(--color-brand-deep-orange),white_22%)] flex items-center justify-center shadow-[0_3px_8px_rgba(193,83,48,0.12)]"
             style={{ left: activeX ?? undefined }}
           >
             <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
