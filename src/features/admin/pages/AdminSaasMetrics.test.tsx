@@ -10,6 +10,7 @@ vi.mock('@/api/services/analytics/saasMetrics', () => api);
 const perm = vi.hoisted(() => ({ finance: true }));
 vi.mock('@/hooks/auth/useCan', () => ({ can: (p: string) => (p === 'finance.view' ? perm.finance : true) }));
 vi.mock('./saas/RevenueModelTab', () => ({ RevenueModelTab: () => <p>revenue model pane</p> }));
+vi.mock('./saas/PlansTab', () => ({ PlansTab: () => <p>plans pane</p> }));
 // The real header carries the notification bell (needs app providers); the page only passes it title + actions.
 vi.mock('@/components/comman/ui/AdminPageHeader', () => ({
   AdminPageHeader: ({ title, actions }: { title: string; actions?: React.ReactNode }) => <header><h1>{title}</h1>{actions}</header>,

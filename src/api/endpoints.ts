@@ -1249,6 +1249,7 @@ export const ENDPOINTS = {
       SAAS_METRICS:                '/api/admin/analytics/saas-metrics',
       SAAS_METRICS_EXPORT:         '/api/admin/analytics/saas-metrics/export',
       ACTIVATION_FUNNEL:           '/api/admin/analytics/activation-funnel',
+      PLAN_INSIGHTS:               '/api/admin/analytics/plan-insights',
     },
   },
 
