@@ -444,68 +444,61 @@ function StoreBottomNav() {
   // property on :root is the only channel between two unrelated subtrees.
   // Unset everywhere else, so storefront toasts keep their old bottom-6.
   useEffect(() => {
-    document.documentElement.style.setProperty('--store-tabbar-h', '62px');
+    document.documentElement.style.setProperty('--store-tabbar-h', '72px');
     return () => { document.documentElement.style.removeProperty('--store-tabbar-h'); };
   }, []);
 
-  // Fluid curved cutout: the bubble sits ON TOP of the bar and the bar's edge
-  // sweeps up into it through two inverted-radius shoulders, so the curve reads
-  // as coming from BELOW the icon, never arcing over it. border-radius/clip-path
-  // can't do this (the seam where bump meets flat bar always shows), so it's one
-  // small SVG: feet land ON the bar's top edge, fill dips 2px below it to hide
-  // the bar's outline, and the stroked arc continues that outline so bar + notch
-  // read as one shape. Apex stays shallow — it hides behind the bubble.
+  // Floating pill bar (rounded, inset from the screen edges). The active tab's
+  // icon rides in a bubble; the bar's own top edge swells up around it through
+  // concave shoulders (one SVG, same fill as the bar), and ONE drop-shadow on
+  // the wrapper outlines bar + swell as a single shape. The bubble is the
+  // brand-orange gradient; inactive icons stay quiet.
   const activeIndex = tabs.findIndex(tab => isActive(tab.path));
   const activeTab = activeIndex >= 0 ? tabs[activeIndex] : null;
   const activeCount = activeTab ? badges[activeTab.id] ?? 0 : 0;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] pb-[env(safe-area-inset-bottom)]">
-      <div className="relative h-[62px] flex items-stretch px-5 bg-white shadow-[0_-1px_0_var(--color-bone),0_-8px_20px_rgba(20,15,10,0.07)]">
-        {tabs.map(tab => {
-          const active = isActive(tab.path);
-          const count = badges[tab.id] ?? 0;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => goToTab(tab.path)}
-              aria-current={active ? 'page' : undefined}
-              aria-label={tab.label}
-              className={clsx(
-                'relative flex-1 flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-transparent border-none rounded-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange',
-                active && 'peer/tab',
-              )}
-            >
-              {/* the active tab's icon floats up into the cutout, so this only
-                  holds the slot open to keep every label on one baseline */}
-              {active
-                ? <span aria-hidden="true" className="size-[21px]" />
-                : <tab.Icon size={21} strokeWidth={1.8} className="text-slate transition-colors duration-150" />}
-              {!active && count > 0 && <span className="absolute ml-4 -mt-3 min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center">{count > 99 ? '99+' : count}</span>}
-              <span className={clsx('text-[10px] leading-none transition-colors duration-150', active ? 'font-semibold text-charcoal' : 'font-medium text-slate')}>
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] px-3 pb-[calc(env(safe-area-inset-bottom)+8px)] pointer-events-none">
+      <div className="relative pointer-events-auto [filter:drop-shadow(0_-1px_2px_rgba(20,15,10,0.06))_drop-shadow(0_6px_16px_rgba(20,15,10,0.14))]">
+        <div className="relative h-[62px] flex items-stretch px-3 bg-white rounded-[26px]">
+          {tabs.map(tab => {
+            const active = isActive(tab.path);
+            const count = badges[tab.id] ?? 0;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => goToTab(tab.path)}
+                aria-current={active ? 'page' : undefined}
+                aria-label={tab.label}
+                className="relative flex-1 min-w-0 flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-transparent border-none rounded-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange"
+              >
+                {/* the active tab's icon floats up into the swell, so this only
+                    holds the slot open to keep every label on one baseline */}
+                {active
+                  ? <span aria-hidden="true" className="size-[21px]" />
+                  : <tab.Icon size={21} strokeWidth={1.7} className="text-slate transition-colors duration-150" />}
+                {!active && count > 0 && <span className="absolute ml-4 -mt-3 min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center">{count > 99 ? '99+' : count}</span>}
+                <span className={clsx('text-[10px] leading-none truncate max-w-full transition-colors duration-150', active ? 'font-bold text-charcoal' : 'font-medium text-slate')}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {activeTab && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute -top-[44px] left-0 h-[46px] w-[72px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring peer-hover/tab:[&>span]:translate-y-0"
-            style={{ left: `calc(20px + ${(activeIndex + 0.5) / tabs.length} * (100% - 40px))` }}
+            className="pointer-events-none absolute bottom-[calc(100%-1px)] h-[36px] w-[88px] -translate-x-1/2 transition-[left] duration-[280ms] ease-spring"
+            style={{ left: `calc(12px + ${(activeIndex + 0.5) / tabs.length} * (100% - 24px))` }}
           >
-            <svg viewBox="0 0 72 46" className="absolute inset-0 size-full overflow-visible">
-              <path d="M6 43C19 43 19 30 36 30C53 30 53 43 66 43L66 45L6 45Z" fill="#fff" />
-              <path d="M6 43C19 43 19 30 36 30C53 30 53 43 66 43" fill="none" stroke="var(--color-bone)" strokeWidth="1" />
+            <svg viewBox="0 0 88 36" className="absolute inset-0 size-full overflow-visible">
+              <path d="M0 36C12 36 16 30 20 22A26 26 0 0 1 68 22C72 30 76 36 88 36L88 37L0 37Z" fill="#fff" />
             </svg>
-            {/* perched on the bump: its centre clears the bar's top edge, so the
-                only visible curve is the pair of shoulders underneath it */}
-            <span className="absolute left-1/2 top-[10px] size-[46px] -translate-x-1/2 translate-y-[3px] rounded-full bg-white shadow-[0_3px_12px_rgba(20,15,10,0.13)] flex items-center justify-center transition-transform duration-200 ease-spring">
-              <span className="size-[30px] rounded-[11px] bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center">
-                <activeTab.Icon size={16} strokeWidth={2.1} className="text-white" />
-              </span>
-              {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-bold leading-4 text-center border border-white">{activeCount > 99 ? '99+' : activeCount}</span>}
+            {/* gradient bubble sitting in the swell, rim of bar colour around it */}
+            <span className="absolute left-1/2 top-[11px] size-[46px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-[0_4px_12px_rgba(193,83,48,0.35)]">
+              <activeTab.Icon size={21} strokeWidth={2} className="text-white" />
+              {activeCount > 0 && <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-4 px-1 rounded-full bg-white text-brand-deep-orange text-[9px] font-bold leading-4 text-center shadow">{activeCount > 99 ? '99+' : activeCount}</span>}
             </span>
           </span>
         )}
