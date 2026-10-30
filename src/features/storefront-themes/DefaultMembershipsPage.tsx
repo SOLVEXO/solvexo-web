@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { errorMessage } from '@/api/errorMessage';
 import { Link } from 'react-router-dom';
+import { useRenewalInvoices } from './core/useRenewalInvoices';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
 import {
@@ -10,6 +11,53 @@ import {
 
 const msg = errorMessage;
 const LIVE = ['trialing', 'active', 'past_due', 'paused'];
+
+/** "Payments due" for the neutral fallback page: inherits the page colours. */
+function DefaultRenewalPayments({ storeId }: { storeId: string }) {
+  const r = useRenewalInvoices(storeId);
+  const [forms, setForms] = useState<Record<string, { file: File | null; reference: string; senderName: string }>>({});
+  const form = (id: string) => forms[id] ?? { file: null, reference: '', senderName: '' };
+  const patch = (id: string, p: Partial<{ file: File | null; reference: string; senderName: string }>) => setForms((f) => ({ ...f, [id]: { ...form(id), ...p } }));
+  const open = r.invoices.filter((i) => i.status !== 'paid');
+  const field = 'w-full rounded-lg border border-current/30 bg-transparent px-3 py-2 text-sm';
+  const label = (s: string) => (s === 'submitted' ? 'Receipt sent' : s === 'overdue' ? 'Overdue' : 'Awaiting payment');
+  if (r.loading) return <p aria-busy="true" className="text-sm opacity-70">Loading...</p>;
+  if (r.loadFailed) return <p role="alert" className="text-sm text-red-600">We could not load your payments. <button className="underline" onClick={r.retry}>Try again</button></p>;
+  if (open.length === 0) return null;
+  return (
+    <section className="mb-8"><h2 className="font-medium mb-3">Payments due</h2>
+      <ul className="flex flex-col gap-3">
+        {open.map((i) => {
+          const f = form(i.id);
+          const err = r.formError?.id === i.id ? r.formError.message : null;
+          return (
+            <li key={i.id} className="rounded-xl border border-current/20 p-4 text-sm flex flex-col gap-3">
+              <p className="font-medium">{i.planName} <span className="opacity-60">· {label(i.status)}</span></p>
+              <p className="opacity-70">Amount: {i.currency} {i.amount} · Due {new Date(i.dueAt).toLocaleDateString()}</p>
+              {i.status === 'submitted' ? (
+                <div className="flex flex-col gap-2"><p>Your receipt is being reviewed by the store.</p>{i.hasProof && <button className="rounded-lg border border-current/40 px-3 py-1.5 self-start" onClick={() => void r.openReceipt(i.id)}>View my receipt</button>}</div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {i.rejectionReason && <p role="alert" className="text-red-600">The store could not confirm it: {i.rejectionReason}</p>}
+                  <p className="opacity-70">Pay the store directly, then upload your receipt here. Your access continues after the store confirms.</p>
+                  <div><p className="font-medium">How to pay</p>
+                    {i.instructions.length === 0 ? <p className="opacity-70">The store has not added payment details yet. Please contact the store.</p> : <ul className="flex flex-col gap-2">{i.instructions.map((x, k) => <li key={k}><b>{x.label}</b><span className="block whitespace-pre-line opacity-70">{x.details}</span></li>)}</ul>}
+                  </div>
+                  <label>Transaction reference<input className={field} maxLength={100} value={f.reference} onChange={(e) => patch(i.id, { reference: e.target.value })} /></label>
+                  <label>Name of sender (optional)<input className={field} maxLength={100} value={f.senderName} onChange={(e) => patch(i.id, { senderName: e.target.value })} /></label>
+                  <label>Receipt (JPG, PNG, WebP or PDF, up to 10 MB)<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="block mt-1" onChange={(e) => patch(i.id, { file: e.target.files?.[0] ?? null })} /></label>
+                  {err && <p role="alert" className="text-red-600">{err}</p>}
+                  {r.sentId === i.id && !err && <p role="status">Receipt sent. The store will confirm your payment.</p>}
+                  <button className="rounded-lg border border-current font-medium px-4 py-2 self-start disabled:opacity-50" disabled={r.busyId === i.id || i.submissionsLeft <= 0} onClick={() => void r.submit(i.id, f, { missing: 'Add a receipt or a transaction reference.', type: 'The receipt must be a JPG, PNG, WebP or PDF file.', size: 'The receipt is larger than 10 MB.' })}>Send receipt</button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
 
 /** Theme-neutral memberships page (route key `memberships`): plans, own memberships, cancel / pause / resume / upgrade. */
 export function DefaultMembershipsPage() {
@@ -51,6 +99,7 @@ export function DefaultMembershipsPage() {
       {note && <p role="status" className="mb-4 text-sm">{note}</p>}
       {plans === null && <p aria-busy="true" className="text-sm opacity-70">Loading...</p>}
 
+      {signedIn && <DefaultRenewalPayments storeId={storeId} />}
       {subs.length > 0 && (
         <section className="mb-8">
           <h2 className="font-medium mb-3">Your memberships</h2>

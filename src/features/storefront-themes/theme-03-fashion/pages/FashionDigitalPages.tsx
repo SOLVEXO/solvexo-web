@@ -13,6 +13,7 @@ import client from '@/api/client';
 import { fashionTheme as t } from '../theme.config';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useLoad } from '../../core/pageHooks';
+import { useRenewalInvoices } from '../../core/useRenewalInvoices';
 import { activeLocale } from '../../core/locale';
 import { AccountLayout } from '../ui/AccountLayout';
 import { Card, EmptyState, ErrorState, Field, Notice, PillButton, SkeletonBlock, StatusPill, TextInput } from '../ui/primitives';
@@ -106,6 +107,61 @@ export const FashionLibraryPage = () => <Library_ />;
 
 // ---------------------------------------------------------------- memberships
 
+/** "Payments due": the buyer pays the store directly, then uploads the receipt here. */
+function RenewalPayments({ storeId }: { storeId: string }) {
+  const r = useRenewalInvoices(storeId);
+  const [forms, setForms] = useState<Record<string, { file: File | null; reference: string; senderName: string }>>({});
+  const form = (id: string) => forms[id] ?? { file: null, reference: '', senderName: '' };
+  const patch = (id: string, p: Partial<{ file: File | null; reference: string; senderName: string }>) => setForms((f) => ({ ...f, [id]: { ...form(id), ...p } }));
+  const statusText = (s: string) => (s === 'paid' ? ts('dg.invoice_paid', 'Paid') : s === 'submitted' ? ts('dg.invoice_submitted', 'Receipt sent') : s === 'overdue' ? ts('dg.invoice_overdue', 'Overdue') : ts('dg.invoice_awaiting', 'Awaiting payment'));
+  const open = r.invoices.filter((i) => i.status !== 'paid');
+  if (r.loading) return <SkeletonBlock h={110} />;
+  if (r.loadFailed) return <ErrorState message={ts('dg.invoices_load_error', 'We could not load your payments.')} onRetry={r.retry} />;
+  if (open.length === 0) return null;
+  return (
+    <section><h2 className="mb-3 text-lg font-semibold">{ts('dg.pay_invoices_title', 'Payments due')}</h2>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+        {open.map((i) => {
+          const f = form(i.id);
+          const err = r.formError?.id === i.id ? r.formError.message : null;
+          return (
+            <li key={i.id}><Card className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="m-0 text-base font-semibold fx-bidi">{i.planName}</p>
+                <StatusPill tone={i.status === 'overdue' ? 'bad' : i.status === 'submitted' ? 'good' : 'warn'}>{statusText(i.status)}</StatusPill>
+              </div>
+              <p className="m-0 text-sm" style={muted}>{ts('dg.invoice_amount', 'Amount: {{amount}}', { amount: `${i.currency} ${i.amount}` })} · {ts('dg.invoice_due', 'Due {{date}}', { date: day(i.dueAt) })}</p>
+              {i.status === 'submitted' ? (
+                <div className="flex flex-col gap-2">
+                  <Notice tone="info">{ts('dg.receipt_under_review', 'Your receipt is being reviewed by the store.')}</Notice>
+                  {i.hasProof && <div><PillButton variant="outline" onClick={() => void r.openReceipt(i.id)}>{ts('dg.view_receipt', 'View my receipt')}</PillButton></div>}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {i.rejectionReason && <Notice tone="error">{ts('dg.receipt_rejected', 'The store could not confirm it: {{reason}}', { reason: i.rejectionReason })}</Notice>}
+                  <p className="m-0 text-sm" style={muted}>{ts('dg.pay_note', 'Pay the store directly, then upload your receipt here. Your access continues after the store confirms.')}</p>
+                  <div>
+                    <p className="m-0 mb-1 text-sm font-medium">{ts('dg.how_to_pay', 'How to pay')}</p>
+                    {i.instructions.length === 0 ? <p className="m-0 text-sm" style={muted}>{ts('dg.no_instructions', 'The store has not added payment details yet. Please contact the store.')}</p> : (
+                      <ul className="m-0 flex list-none flex-col gap-2 p-0">{i.instructions.map((x, k) => <li key={k} className="text-sm"><b className="fx-bidi">{x.label}</b><span className="fx-bidi block whitespace-pre-line" style={muted}>{x.details}</span></li>)}</ul>
+                    )}
+                  </div>
+                  <Field label={ts('dg.reference', 'Transaction reference')}>{(p) => <TextInput {...p} maxLength={100} value={f.reference} onChange={(e) => patch(i.id, { reference: e.target.value })} />}</Field>
+                  <Field label={ts('dg.sender_name', 'Name of sender (optional)')}>{(p) => <TextInput {...p} maxLength={100} value={f.senderName} onChange={(e) => patch(i.id, { senderName: e.target.value })} />}</Field>
+                  <Field label={ts('dg.receipt', 'Receipt (JPG, PNG, WebP or PDF, up to 10 MB)')}>{(p) => <input {...p} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e) => patch(i.id, { file: e.target.files?.[0] ?? null })} className="text-sm" />}</Field>
+                  {err && <Notice tone="error">{err}</Notice>}
+                  {r.sentId === i.id && !err && <Notice tone="success">{ts('dg.receipt_sent', 'Receipt sent. The store will confirm your payment.')}</Notice>}
+                  <div><PillButton loading={r.busyId === i.id} disabled={r.busyId === i.id || i.submissionsLeft <= 0} onClick={() => void r.submit(i.id, f, { missing: ts('dg.receipt_missing', 'Add a receipt or a transaction reference.'), type: ts('dg.receipt_type', 'The receipt must be a JPG, PNG, WebP or PDF file.'), size: ts('dg.receipt_size', 'The receipt is larger than 10 MB.') })}>{ts('dg.send_receipt', 'Send receipt')}</PillButton></div>
+                </div>
+              )}
+            </Card></li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function Memberships_() {
   useStorefrontSeo({ title: ts('dg.memberships_seo', 'Memberships'), noindex: true });
   const { store } = useStorefront();
@@ -146,6 +202,7 @@ function Memberships_() {
       {note && <div className="mb-4"><Notice tone="success">{note}</Notice></div>}
       {loading ? <SkeletonBlock h={110} rows={2} /> : loadError ? <ErrorState message={ts('dg.memberships_load_error', 'We could not load memberships.')} onRetry={retry} /> : (
         <div className="flex flex-col gap-8">
+          <RenewalPayments storeId={storeId} />
           {subs.length > 0 && (
             <section><h2 className="mb-3 text-lg font-semibold">{ts('dg.your_memberships', 'Your memberships')}</h2>
               <ul className="m-0 flex list-none flex-col gap-3 p-0">
@@ -185,6 +242,7 @@ function Memberships_() {
                     <li key={p._id}><Card className="flex h-full flex-col gap-2">
                       <p className="m-0 text-base font-semibold fx-bidi">{p.name}</p>
                       {p.autoRenew && <p className="m-0 text-xs" style={muted}>{ts('dg.auto_renews', 'Renews automatically by card. Cancel any time.')}</p>}
+                      {!p.autoRenew && p.type !== 'free' && <p className="m-0 text-xs" style={muted}>{ts('dg.manual_plan_note', 'You pay the store directly for each period.')}</p>}
                       <p className="m-0 text-sm font-medium">{price(p)}{p.trialDays > 0 ? ` · ${ts('dg.trial_days', '{{n}}-day trial', { n: p.trialDays })}` : ''}</p>
                       {p.description && <p className="m-0 text-sm fx-bidi" style={muted}>{p.description}</p>}
                       {p.benefits.length > 0 && <ul className="m-0 ps-5 text-sm">{p.benefits.map((b) => <li key={b} className="fx-bidi">{b}</li>)}</ul>}

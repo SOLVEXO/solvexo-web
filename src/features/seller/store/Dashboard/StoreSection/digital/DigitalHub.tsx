@@ -11,6 +11,7 @@ import { Badge, Button, Card, EmptyState, Input, MetricCard, Select, StatusBadge
 import { Modal } from '@/components/comman/ui/Modal';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { CoursesTab } from './CoursesTab';
+import { RenewalQueue } from './RenewalQueue';
 
 type Tab = 'overview' | 'plans' | 'subscribers' | 'courses' | 'licenses' | 'reports' | 'log';
 const TABS: { id: Tab; label: string; perm: string }[] = [
@@ -220,7 +221,7 @@ function Plans({ storeId }: { storeId: string }) {
 
 // ── Subscribers ────────────────────────────────────────────────────────────
 
-function Subscribers({ storeId }: { storeId: string }) {
+function MembersList({ storeId }: { storeId: string }) {
   const toast = useToast();
   const [status, setStatus] = useState('');
   const { rows, total, page, setPage, loading, error, reload } = usePaged<Subscriber>(`/api/memberships/store/${storeId}/subscribers`, status ? { status } : {});
@@ -256,6 +257,24 @@ function Subscribers({ storeId }: { storeId: string }) {
           emptyState={{ title: 'No subscribers yet', description: status ? 'No memberships with this status.' : 'Members will appear here after they join a plan.' }} />
       )}
       {confirm && <Confirm title="Revoke this membership?" text="The member loses access to plan-locked content immediately." confirmLabel="Revoke" onConfirm={() => void act(confirm.id, 'revoke')} onClose={() => setConfirm(null)} />}
+    </div>
+  );
+}
+
+function Subscribers({ storeId }: { storeId: string }) {
+  const [section, setSection] = useState<'members' | 'payments'>('members');
+  const mode = useApi<{ mode: 'auto' | 'manual'; autoAvailable: boolean; reason: string | null }>(`/api/memberships/store/${storeId}/billing-mode`);
+  const plans = useApi<Paged<Plan>>(`/api/memberships/store/${storeId}/plans?page=1&limit=100`);
+  const queue = useApi<{ summary: Record<string, number> }>(`/api/memberships/store/${storeId}/invoices?limit=1`);
+  const pending = (queue.data?.summary?.submitted ?? 0) + (queue.data?.summary?.awaiting ?? 0) + (queue.data?.summary?.overdue ?? 0);
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2 text-[12px] text-slate">
+        {mode.data?.autoAvailable ? <Badge color="green">Auto card billing available</Badge> : <Badge color="orange">Manual billing</Badge>}
+        <span>{mode.data?.autoAvailable ? 'Plans set to "Charge cards automatically" are billed by Stripe; all other plans are manual.' : (mode.data?.reason ?? 'Members pay you directly and you confirm each payment.')}</span>
+      </div>
+      <TabBar dense tabs={[{ id: 'members', label: 'Members' }, { id: 'payments', label: 'Payments to confirm', count: pending }]} active={section} onChange={(id) => setSection(id as 'members' | 'payments')} />
+      {section === 'members' ? <MembersList storeId={storeId} /> : <RenewalQueue storeId={storeId} plans={(plans.data?.items ?? []).map((p) => ({ _id: p._id, name: p.name }))} />}
     </div>
   );
 }
