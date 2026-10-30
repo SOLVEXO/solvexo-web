@@ -63,7 +63,7 @@ export function RenewalQueue({ storeId, plans }: { storeId: string; plans: PlanO
     { key: 'a', header: 'Amount', render: (i) => `${i.currency} ${i.amount}` },
     { key: 'd', header: 'Due', render: (i) => new Date(i.dueAt).toLocaleDateString() },
     { key: 's', header: 'Status', render: (i) => <div className="flex flex-col gap-1"><Badge color={STATUS_COLOR[i.status]} size="sm">{STATUS_LABEL[i.status]}</Badge>{i.reference && <span className="text-[11px] text-slate">Ref: {i.reference}</span>}{i.rejectionReason && <span className="text-[11px] text-slate">Last rejection: {i.rejectionReason}</span>}</div> },
-    { key: 'x', header: '', align: 'right', render: (i) => (!canEdit ? null : (
+    { key: 'x', header: 'Review', align: 'right', render: (i) => (!canEdit ? null : (
       <div className="flex flex-wrap justify-end gap-1.5">
         {i.hasProof && <Button size="xs" variant="outline" onClick={() => void viewProof(i.id)}>View receipt</Button>}
         {['awaiting', 'submitted', 'overdue'].includes(i.status) && <Button size="xs" onClick={() => setDialog({ kind: 'approve', invoice: i })}>{i.status === 'submitted' ? 'Approve' : 'Mark paid'}</Button>}
