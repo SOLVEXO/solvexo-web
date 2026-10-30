@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/media-has-caption -- lesson videos are seller uploads and carry no caption track */
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
