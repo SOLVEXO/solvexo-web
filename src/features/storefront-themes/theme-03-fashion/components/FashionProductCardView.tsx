@@ -1,4 +1,4 @@
-import type { MouseEventHandler } from 'react';
+import { useRef, type MouseEventHandler } from 'react';
 import { imgProps, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES } from './imgProps';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -29,12 +29,15 @@ export interface ProductCardViewProps {
   /** Colour options of the product; hovering one calls `onSwatch` with that colour's photo (undefined on leave). */
   swatches?: { value: string; image?: string }[];
   onSwatch?: (image?: string) => void;
+  /** An uploaded product video (file URL): muted, looping preview played over the photo while the card is hovered. */
+  hoverVideo?: string;
 }
 
 const BORDER: Record<string, string> = { theme: '1px solid var(--fx-b)', flat: 'none', outlined: '1px solid var(--fx-b)', elevated: 'none' };
 
 /** Presentational product card shared by the live storefront and the Theme Library demo (no store/cart context needed). */
-export function FashionProductCardView({ to, name, image, secondImage, tag, rating = 0, price, comparePrice, percentOff = 0, soldOut, wished = null, onWish, onAdd, adding, onQuickView, swatches, onSwatch }: ProductCardViewProps) {
+export function FashionProductCardView({ to, name, image, secondImage, tag, rating = 0, price, comparePrice, percentOff = 0, soldOut, wished = null, onWish, onAdd, adding, onQuickView, swatches, onSwatch, hoverVideo }: ProductCardViewProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const onSale = t.saleBadge && !!comparePrice && percentOff > 0;
   const stars = Math.round(rating);
   const ratio = PRODUCT_CARD_RATIO[t.productImageRatio] ?? '1 / 1';
@@ -42,8 +45,11 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
   return (
     <article data-fx-card data-fx-hover={t.cardHover} data-fx-align={t.cardTextAlign} className="group flex h-full flex-col overflow-hidden transition-[box-shadow,transform] duration-300"
       style={{ ['--fx-b' as string]: t.colors.border, border: BORDER[t.cardStyle ?? 'theme'], boxShadow: t.cardStyle === 'elevated' ? '0 4px 24px -8px rgba(0,0,0,.14)' : undefined, borderRadius: t.productCardRadiusPx, background: t.colors.cardBg, color: t.colors.ink, fontFamily: t.fonts.body }}>
-      <Link to={to} className="relative block overflow-hidden" style={{ aspectRatio: ratio === 'auto' ? undefined : ratio, background: t.colors.bgAlt }} aria-label={name}>
+      <Link to={to} className="relative block overflow-hidden" style={{ aspectRatio: ratio === 'auto' ? undefined : ratio, background: t.colors.bgAlt }} aria-label={name}
+        onMouseEnter={hoverVideo ? () => { void videoRef.current?.play().catch(() => {}); } : undefined}
+        onMouseLeave={hoverVideo ? () => { const v = videoRef.current; if (v) { v.pause(); v.currentTime = 0; } } : undefined}>
         {image ? <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={name} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="absolute inset-0" />}
+        {hoverVideo && <video ref={videoRef} src={hoverVideo} muted loop playsInline preload="none" aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100" />}
         {secondImage && <img {...imgProps(secondImage, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100" />}
         <div className="absolute left-4 top-4 flex flex-col items-start gap-1.5">
           {soldOut && t.soldOutBadge && <Chip tone="dark">{ts('product.soldOut', 'Sold out')}</Chip>}

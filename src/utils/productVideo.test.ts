@@ -11,9 +11,9 @@ describe('parseProductVideo', () => {
     }
   });
 
-  it('reads a Vimeo link (no poster)', () => {
+  it('reads a Vimeo link', () => {
     const p = parseProductVideo('https://vimeo.com/123456789');
-    expect(p).toEqual({ kind: 'vimeo', src: 'https://player.vimeo.com/video/123456789', poster: null });
+    expect(p).toEqual({ kind: 'vimeo', src: 'https://player.vimeo.com/video/123456789', poster: 'https://vumbnail.com/123456789.jpg' });
   });
 
   it('reads an uploaded Cloudinary video and derives a still frame', () => {

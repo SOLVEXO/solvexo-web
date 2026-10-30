@@ -200,7 +200,7 @@ export default function StoreAddProduct() {
               ...customsPayload(phys),
               sku: r.sku.trim() || undefined,
               barcode: r.barcode.trim() || undefined,
-              images: r.image ? [r.image] : [],
+              images: r.image ? [r.image] : [], videoUrl: r.video.trim(),
             }))
           : [{
               price: Number(phys.price),

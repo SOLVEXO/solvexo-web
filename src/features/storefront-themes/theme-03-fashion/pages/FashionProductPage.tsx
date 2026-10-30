@@ -99,7 +99,7 @@ function ProductPageInner({ slug }: { slug: string }) {
     return [...own, ...all.filter(i => !own.includes(i))];
   }, [variant, detail?.product.images]);
   // Optional product video: one more item in the gallery, first or last as the seller chose.
-  const video = useMemo(() => parseProductVideo(detail?.product.videoUrl), [detail?.product.videoUrl]);
+  const video = useMemo(() => parseProductVideo(variant?.videoUrl || detail?.product.videoUrl), [variant?.videoUrl, detail?.product.videoUrl]);
   const videoAt = video ? (detail?.product.videoFirst ? 0 : images.length) : -1;
   const mediaCount = images.length + (video ? 1 : 0);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, mediaCount - 1)) : 0;

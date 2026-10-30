@@ -631,6 +631,7 @@ export interface PublicStoreProduct {
   slug:        string;
   name:        string;
   images?:     string[];
+  videoUrl?:         string;
   type?:       'physical' | 'digital';
   productType?: 'physical' | 'digital' | 'educational';
   tags?:       string[];

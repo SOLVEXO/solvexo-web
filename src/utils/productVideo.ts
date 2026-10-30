@@ -7,7 +7,7 @@ export interface ParsedProductVideo {
   kind: ProductVideoKind;
   /** What to put in a <video src> (file) or <iframe src> (youtube / vimeo). */
   src: string;
-  /** A still frame for the thumbnail / player poster, or null when none can be derived (Vimeo). */
+  /** A still frame for the thumbnail / player poster (Vimeo's comes from the free vumbnail.com service). */
   poster: string | null;
 }
 
@@ -41,7 +41,7 @@ export function parseProductVideo(raw: string | null | undefined): ParsedProduct
     return { kind: 'youtube', src: `https://www.youtube-nocookie.com/embed/${yt}?rel=0&modestbranding=1`, poster: `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` };
   }
   const vm = vimeoId(u);
-  if (vm) return { kind: 'vimeo', src: `https://player.vimeo.com/video/${vm}`, poster: null };
+  if (vm) return { kind: 'vimeo', src: `https://player.vimeo.com/video/${vm}`, poster: `https://vumbnail.com/${vm}.jpg` };
 
   if (u.hostname === 'res.cloudinary.com' && /\/video\/upload\//.test(u.pathname)) {
     // Cloudinary serves a still frame of a video when the extension is swapped for .jpg

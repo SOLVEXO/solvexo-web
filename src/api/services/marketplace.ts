@@ -24,6 +24,7 @@ export interface ProductVariant {
   allowBackorder?: boolean;
   shippingWeight: string | null;
   images:         string[];
+  videoUrl?:      string;
   isDefault?:     boolean;
   status:         string;
   isDelete:       boolean;

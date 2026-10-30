@@ -78,10 +78,12 @@ export interface VariantRow {
   unlimitedStock: boolean;
   /** One of the product's own images shown when a shopper picks this variant ('' = none). */
   image: string;
+  /** Optional video for this variant (uploaded file or YouTube / Vimeo link); '' = use the product's video. */
+  video: string;
 }
 
 export function blankVariantRow(combo: VariantCombination): VariantRow {
-  return { key: combo.key, options: combo.options, price: '', compareAtPrice: '', sku: '', barcode: '', stock: '', unlimitedStock: false, image: '' };
+  return { key: combo.key, options: combo.options, price: '', compareAtPrice: '', sku: '', barcode: '', stock: '', unlimitedStock: false, image: '', video: '' };
 }
 
 export function mergeExistingRows<Row extends { key: string }>(

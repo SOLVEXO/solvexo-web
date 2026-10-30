@@ -10,9 +10,16 @@ import { displayMoney, saleInfo } from '../../core/money';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { fashionTheme as t } from '../theme.config';
 import { FashionProductCardView } from './FashionProductCardView';
+import { parseProductVideo } from '@/utils/productVideo';
 import { FashionQuickView } from './product/FashionQuickView';
 
 /** Card for every real product grid (collection, search, featured): wires cart, wishlist and currency into the view. */
+/** Only an uploaded file can preview silently inside a card (YouTube / Vimeo links are not played in the grid). */
+function previewVideoSrc(url?: string): string | undefined {
+  const v = parseProductVideo(url);
+  return v?.kind === 'file' ? v.src : undefined;
+}
+
 export function FashionProductCard({ product, currency }: { product: PublicStoreProduct; currency: string }) {
   const { store } = useStorefront();
   const { convert, canConvert, fixedPriceFor } = useCurrencyPreference();
@@ -65,6 +72,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
       swatches={swatches}
       onSwatch={setHoverImage}
       secondImage={t.productImageHover === 'second-image' ? product.images?.[1] : undefined}
+      hoverVideo={previewVideoSrc(product.videoUrl)}
       tag={product.tags?.[0]}
       rating={product.averageRating ?? 0}
       price={price != null ? show(price) : undefined}

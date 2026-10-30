@@ -164,6 +164,7 @@ async function loadPhysicalVariants(productId: string): Promise<{ optionTypes: O
       sku: v.sku ?? '', barcode: v.barcode ?? '',
       stock: String(v.stock), unlimitedStock: v.unlimitedStock,
       image: v.images?.find(Boolean) ?? '',
+      video: v.videoUrl ?? '',
     };
   });
 
@@ -348,7 +349,7 @@ export default function StoreEditProduct() {
                 ...customsPayload(phys),
                 sku: r.sku.trim() || undefined,
                 barcode: r.barcode.trim() || undefined,
-                images: r.image ? [r.image] : [],
+                images: r.image ? [r.image] : [], videoUrl: r.video.trim(),
               },
             }))
           : [{

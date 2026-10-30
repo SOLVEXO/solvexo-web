@@ -84,6 +84,7 @@ export interface ProductVariant {
   /** Shopify "Charge tax on this product" (default true). */
   taxable?:       boolean;
   images:         string[];
+  videoUrl?:      string;
   isDefault:      boolean;
   status:         string;
   isDelete:       boolean;
@@ -107,6 +108,8 @@ export interface VariantInput {
   customsDescription?: string | null;
   taxable?:       boolean;
   images?:        string[];
+  /** Optional variant video (uploaded file or YouTube / Vimeo link). */
+  videoUrl?:      string;
   sku?:           string;
   barcode?:       string;
   isDefault?:     boolean;
