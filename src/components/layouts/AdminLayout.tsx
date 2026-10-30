@@ -1,4 +1,4 @@
-import { useState, useId } from 'react';
+import { useState, useId, type CSSProperties } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
@@ -268,28 +268,50 @@ function AdminBottomNav() {
   const { pathname } = useLocation();
   const isActive = (path: string) => (path === '/admin' ? pathname === '/admin' : pathname.startsWith(path));
 
+  // Same bar as the store workspace: a rounded-top bar with a round notch cut out of its top
+  // edge (CSS mask) at the active tab, the orange bubble sitting in the notch; both slide
+  // to the next tab (--notch-x is a registered property, see index.css).
+  const activeIndex = ADMIN_TABS.findIndex(tab => isActive(tab.path));
+  const activeTab = activeIndex >= 0 ? ADMIN_TABS[activeIndex] : null;
+  const activeX = activeTab ? `calc(12px + ${(activeIndex + 0.5) / ADMIN_TABS.length} * (100% - 24px))` : null;
+  const notchMask = 'radial-gradient(circle 27px at var(--notch-x) 6px, transparent 26.5px, #000 27.5px)';
+  const notchStyle = (activeX ? { '--notch-x': activeX, WebkitMaskImage: notchMask, maskImage: notchMask, transition: '--notch-x 320ms cubic-bezier(0.4, 0, 0.2, 1)' } : undefined) as CSSProperties | undefined;
+
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
-      <div className="flex items-stretch">
-        {ADMIN_TABS.map(tab => {
-          const active = isActive(tab.path);
-          return (
-            <button
-              key={tab.id}
-              onClick={() => navigate(tab.path)}
-              aria-current={active ? 'page' : undefined}
-              aria-label={tab.label}
-              className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
-            >
-              <tab.Icon
-                size={21}
-                strokeWidth={active ? 2.2 : 1.8}
-                className={clsx('transition-colors duration-150', active ? 'text-brand-orange' : 'text-slate')}
-              />
-              <span className={clsx('w-[16px] h-[3px] rounded-full transition-colors duration-150', active ? 'bg-brand-orange' : 'bg-transparent')} />
-            </button>
-          );
-        })}
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-3 pb-[env(safe-area-inset-bottom)] pointer-events-none">
+      <div className="relative pointer-events-auto [filter:drop-shadow(0_-1px_2px_rgba(20,15,10,0.06))_drop-shadow(0_6px_16px_rgba(20,15,10,0.14))]">
+        <div className="relative h-[62px] flex items-stretch px-3 bg-white rounded-t-[26px] rounded-b-[1px]" style={notchStyle}>
+          {ADMIN_TABS.map(tab => {
+            const active = isActive(tab.path);
+            return (
+              <button
+                key={tab.id}
+                onClick={() => navigate(tab.path)}
+                aria-current={active ? 'page' : undefined}
+                aria-label={tab.label}
+                className="relative flex-1 min-w-0 flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-transparent border-none rounded-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange"
+              >
+                {/* the active tab's icon lives in the bubble above, this only holds the slot open */}
+                {active
+                  ? <span aria-hidden="true" className="size-[21px]" />
+                  : <tab.Icon size={21} strokeWidth={1.7} className="text-slate transition-colors duration-150" />}
+                <span className={clsx('text-[10px] leading-none truncate max-w-full transition-colors duration-150', active ? 'font-bold text-charcoal' : 'font-medium text-slate')}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {activeTab && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-[-17px] size-[46px] -translate-x-1/2 transition-[left] duration-[320ms] ease-[cubic-bezier(0.4,0,0.2,1)] rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--color-brand-orange),white_22%)] to-[color-mix(in_srgb,var(--color-brand-deep-orange),white_22%)] flex items-center justify-center shadow-[0_3px_8px_rgba(193,83,48,0.12)]"
+            style={{ left: activeX ?? undefined }}
+          >
+            <activeTab.Icon size={20} strokeWidth={2} className="text-white" />
+          </span>
+        )}
       </div>
     </nav>
   );
@@ -578,7 +600,7 @@ export function AdminLayout() {
     <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
       <AdminSidebar open={sidebarOpen} onToggle={toggle} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+        <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[84px] lg:pb-0">
           <Outlet />
         </div>
       </div>
