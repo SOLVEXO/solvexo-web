@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Lock } from 'lucide-react';
+import type { StaffPermission } from '@/api/services/staff';
 import client from '@/api/client';
+import { errorMessage } from '@/api/errorMessage';
+import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
@@ -21,30 +24,33 @@ const TABS: { id: Tab; label: string; perm: string }[] = [
 ];
 const PAGE_SIZE = 20;
 
-const errText = (e: any) => e?.response?.data?.message ?? e?.message ?? 'Something went wrong';
+const errText = (e: unknown) => errorMessage(e);
+
+interface Plan { _id: string; name: string; type: string; amount: number; currency: string; interval: string; tier: number; status: string; productId: string | null }
+interface Subscriber { _id: string; customerName: string | null; customerEmail: string | null; planName: string; status: string; awaitingFirstPayment: boolean; currentPeriodEnd: string | null }
+interface LicenseRow { id: string; keyHint: string; productName: string; activations: number; activationLimit: number; status: string }
+interface LogRow { _id: string; at: string; outcome: 'ok' | 'denied' | 'failed'; reason: string; ip: string; flagged?: boolean }
+interface TopProduct { productId: string; name: string; deliveries: number; customers: number }
+interface OverviewData {
+  last30Days: { digitalRevenue: number; digitalItemsSold: number; deliveries: number; deniedOrFailed: number };
+  memberships: { mrr: number; churned: number; counts: Record<string, number> };
+  needsAttention: { pastDue: number; awaitingPayment: number; flaggedAccess: number };
+}
 
 /** Loads one endpoint; keeps loading / error (with retry) state in one place. */
 function useApi<T>(url: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    let off = false;
-    setError(null);
-    (client.get(url) as Promise<T>).then((d) => { if (!off) setData(d); }).catch((e) => { if (!off) { setData(null); setError(errText(e)); } });
-    return () => { off = true; };
-  }, [url, tick]);
-  return { data, error, loading: !data && !error, reload: () => setTick((t) => t + 1) };
+  const r = useKeyedLoad<T>(() => client.get(url) as Promise<T>, url);
+  return { data: r.data, error: r.error || null, loading: r.loading, reload: r.retry };
 }
 
 interface Paged<T> { items: T[]; total: number; page: number; limit: number }
 function usePaged<T>(base: string, params: Record<string, string>) {
-  const [page, setPage] = useState(1);
+  const key = JSON.stringify(params);
+  const [pg, setPg] = useState({ key, page: 1 });
+  const page = pg.key === key ? pg.page : 1; // a new filter starts again on page 1
   const qs = new URLSearchParams({ ...params, page: String(page), limit: String(PAGE_SIZE) }).toString();
   const res = useApi<Paged<T>>(`${base}?${qs}`);
-  const key = JSON.stringify(params);
-  useEffect(() => setPage(1), [key]);
-  return { ...res, page, setPage, rows: res.data?.items ?? [], total: res.data?.total ?? 0 };
+  return { ...res, page, setPage: (p: number) => setPg({ key, page: p }), rows: res.data?.items ?? [], total: res.data?.total ?? 0 };
 }
 
 function ErrorLine({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -103,7 +109,7 @@ function Protection({ base }: { base: string }) {
 // ── Overview ───────────────────────────────────────────────────────────────
 
 function Overview({ base }: { base: string }) {
-  const { data, error, loading, reload } = useApi<any>(`${base}/overview`);
+  const { data, error, loading, reload } = useApi<OverviewData>(`${base}/overview`);
   if (error) return <ErrorLine message={error} onRetry={reload} />;
   const m = data?.memberships;
   const a = data?.needsAttention;
@@ -140,7 +146,7 @@ const BLANK_PLAN = { name: '', type: 'recurring', amount: '', interval: 'month',
 function Plans({ storeId }: { storeId: string }) {
   const toast = useToast();
   const url = `/api/memberships/store/${storeId}/plans`;
-  const { data, error, loading, reload } = useApi<any[]>(url);
+  const { rows: planRows, total, page, setPage, error, loading, reload } = usePaged<Plan>(url, {});
   const [f, setF] = useState(BLANK_PLAN);
   const [busy, setBusy] = useState(false);
   const canEdit = can('members.manage');
@@ -155,12 +161,12 @@ function Plans({ storeId }: { storeId: string }) {
       reload();
     } catch (err) { toast.error(errText(err)); } finally { setBusy(false); }
   }
-  async function toggle(p: any) {
+  async function toggle(p: Plan) {
     try { await client.patch(`${url}/${p._id}`, { status: p.status === 'active' ? 'archived' : 'active' }); reload(); } catch (err) { toast.error(errText(err)); }
   }
   const set = (k: keyof typeof BLANK_PLAN) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
 
-  const columns: TableColumn<any>[] = [
+  const columns: TableColumn<Plan>[] = [
     { key: 'name', header: 'Plan', render: (p) => <span className="font-medium text-carbon">{p.name}</span> },
     { key: 'price', header: 'Price', render: (p) => (p.type === 'free' ? 'Free' : `${p.currency} ${p.amount}${p.type === 'recurring' ? ` / ${p.interval}` : ' one-time'}`) },
     { key: 'tier', header: 'Tier' },
@@ -192,7 +198,8 @@ function Plans({ storeId }: { storeId: string }) {
         </Card>
       )}
       {error ? <ErrorLine message={error} onRetry={reload} /> : (
-        <Table columns={columns} data={data ?? []} keyExtractor={(p) => p._id} loading={loading}
+        <Table columns={columns} data={planRows} keyExtractor={(p) => p._id} loading={loading}
+          pagination={{ page, total, perPage: PAGE_SIZE, onChange: setPage, label: 'plans' }}
           emptyState={{ title: 'No plans yet', description: 'Create a plan above to start selling memberships.' }} />
       )}
     </div>
@@ -204,14 +211,14 @@ function Plans({ storeId }: { storeId: string }) {
 function Subscribers({ storeId }: { storeId: string }) {
   const toast = useToast();
   const [status, setStatus] = useState('');
-  const { rows, total, page, setPage, loading, error, reload } = usePaged<any>(`/api/memberships/store/${storeId}/subscribers`, status ? { status } : {});
+  const { rows, total, page, setPage, loading, error, reload } = usePaged<Subscriber>(`/api/memberships/store/${storeId}/subscribers`, status ? { status } : {});
   const [confirm, setConfirm] = useState<{ id: string } | null>(null);
   const canEdit = can('members.manage');
 
   async function act(id: string, action: 'mark-paid' | 'revoke') {
     try { await client.post(`/api/memberships/store/${storeId}/subscribers/${id}/${action}`); toast.success(action === 'revoke' ? 'Membership revoked' : 'Marked as paid'); reload(); } catch (e) { toast.error(errText(e)); }
   }
-  const columns: TableColumn<any>[] = [
+  const columns: TableColumn<Subscriber>[] = [
     { key: 'c', header: 'Customer', render: (s) => <div><div className="font-medium text-carbon">{s.customerName ?? 'Customer'}</div><div className="text-[11px] text-slate">{s.customerEmail ?? ''}</div></div> },
     { key: 'p', header: 'Plan', render: (s) => s.planName },
     { key: 's', header: 'Status', render: (s) => <div className="flex flex-wrap gap-1"><StatusBadge status={s.status} size="sm" />{s.awaitingFirstPayment && <Badge color="orange" size="sm">Awaiting first payment</Badge>}</div> },
@@ -247,7 +254,7 @@ function Licenses({ storeId }: { storeId: string }) {
   const toast = useToast();
   const base = `/api/licenses/store/${storeId}`;
   const [status, setStatus] = useState('');
-  const { rows, total, page, setPage, loading, error, reload } = usePaged<any>(base, status ? { status } : {});
+  const { rows, total, page, setPage, loading, error, reload } = usePaged<LicenseRow>(base, status ? { status } : {});
   const [token, setToken] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<'token' | { id: string } | null>(null);
 
@@ -257,7 +264,7 @@ function Licenses({ storeId }: { storeId: string }) {
   async function act(id: string, action: 'revoke' | 'reset-activations') {
     try { await client.post(`${base}/${id}/${action}`); toast.success(action === 'revoke' ? 'License revoked' : 'Devices reset'); reload(); } catch (e) { toast.error(errText(e)); }
   }
-  const columns: TableColumn<any>[] = [
+  const columns: TableColumn<LicenseRow>[] = [
     { key: 'k', header: 'Key', render: (k) => <code className="text-[12px]">…{k.keyHint}</code> },
     { key: 'p', header: 'Product', render: (k) => k.productName },
     { key: 'd', header: 'Devices', render: (k) => `${k.activations} / ${k.activationLimit}` },
@@ -293,7 +300,7 @@ function Licenses({ storeId }: { storeId: string }) {
 // ── Reports ────────────────────────────────────────────────────────────────
 
 function Reports({ base }: { base: string }) {
-  const { data, error, loading, reload } = useApi<{ topProducts: { productId: string; name: string; deliveries: number; customers: number }[]; perDay: { day: string; outcome: string; count: number }[] }>(`${base}/reports`);
+  const { data, error, loading, reload } = useApi<{ topProducts: TopProduct[]; perDay: { day: string; outcome: string; count: number }[] }>(`${base}/reports`);
   if (error) return <ErrorLine message={error} onRetry={reload} />;
   const days = Array.from(new Set((data?.perDay ?? []).map((d) => d.day))).map((day) => ({ day }));
   const count = (day: string, o: string) => data?.perDay.find((d) => d.day === day && d.outcome === o)?.count ?? 0;
@@ -301,13 +308,13 @@ function Reports({ base }: { base: string }) {
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
         <h3 className="m-0 text-[14px] font-semibold text-carbon">Most downloaded (30 days)</h3>
-        <Table columns={[{ key: 'n', header: 'Product', render: (p: any) => p.name }, { key: 'd', header: 'Downloads', render: (p: any) => p.deliveries }, { key: 'c', header: 'Customers', render: (p: any) => p.customers }]}
-          data={data?.topProducts ?? []} keyExtractor={(p: any) => p.productId} loading={loading} emptyState={{ title: 'No downloads yet' }} />
+        <Table columns={[{ key: 'n', header: 'Product', render: (p: TopProduct) => p.name }, { key: 'd', header: 'Downloads', render: (p: TopProduct) => p.deliveries }, { key: 'c', header: 'Customers', render: (p: TopProduct) => p.customers }]}
+          data={data?.topProducts ?? []} keyExtractor={(p: TopProduct) => p.productId} loading={loading} emptyState={{ title: 'No downloads yet' }} />
       </section>
       <section className="flex flex-col gap-2">
         <h3 className="m-0 text-[14px] font-semibold text-carbon">Deliveries per day</h3>
-        <Table columns={[{ key: 'day', header: 'Day', render: (d: any) => d.day }, { key: 'ok', header: 'Delivered', render: (d: any) => count(d.day, 'ok') }, { key: 'dn', header: 'Denied', render: (d: any) => count(d.day, 'denied') }, { key: 'f', header: 'Failed', render: (d: any) => count(d.day, 'failed') }]}
-          data={days} keyExtractor={(d: any) => d.day} loading={loading} emptyState={{ title: 'Nothing to show yet' }} />
+        <Table columns={[{ key: 'day', header: 'Day', render: (d: { day: string }) => d.day }, { key: 'ok', header: 'Delivered', render: (d: { day: string }) => count(d.day, 'ok') }, { key: 'dn', header: 'Denied', render: (d: { day: string }) => count(d.day, 'denied') }, { key: 'f', header: 'Failed', render: (d: { day: string }) => count(d.day, 'failed') }]}
+          data={days} keyExtractor={(d: { day: string }) => d.day} loading={loading} emptyState={{ title: 'Nothing to show yet' }} />
       </section>
     </div>
   );
@@ -317,8 +324,8 @@ function Reports({ base }: { base: string }) {
 
 function DeliveryLog({ base }: { base: string }) {
   const [outcome, setOutcome] = useState('');
-  const { rows, total, page, setPage, loading, error, reload } = usePaged<any>(`${base}/delivery-log`, outcome ? { outcome } : {});
-  const columns: TableColumn<any>[] = [
+  const { rows, total, page, setPage, loading, error, reload } = usePaged<LogRow>(`${base}/delivery-log`, outcome ? { outcome } : {});
+  const columns: TableColumn<LogRow>[] = [
     { key: 'at', header: 'When', render: (l) => new Date(l.at).toLocaleString() },
     { key: 'o', header: 'Result', render: (l) => <div className="flex gap-1"><Badge color={l.outcome === 'ok' ? 'green' : l.outcome === 'denied' ? 'yellow' : 'red'} size="sm">{l.outcome === 'ok' ? 'Delivered' : l.outcome === 'denied' ? 'Denied' : 'Failed'}</Badge>{l.flagged && <Badge color="red" size="sm">Flagged</Badge>}</div> },
     { key: 'r', header: 'Reason', render: (l) => (l.reason ? String(l.reason).replace(/_/g, ' ') : '—') },
@@ -342,7 +349,7 @@ function DeliveryLog({ base }: { base: string }) {
 
 export default function DigitalHub() {
   const { storeId } = useStoreWorkspace();
-  const visible = TABS.filter((t) => can(t.perm as any));
+  const visible = TABS.filter((t) => can(t.perm as StaffPermission));
   const [tab, setTab] = useState<Tab>(visible[0]?.id ?? 'overview');
   const base = `/api/digital/${storeId}`;
   const change = useCallback((id: string) => setTab(id as Tab), []);

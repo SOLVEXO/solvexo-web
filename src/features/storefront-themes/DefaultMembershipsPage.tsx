@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '@/api/errorMessage';
 import { Link } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
@@ -7,7 +8,7 @@ import {
   type MySubscription, type PublicPlan,
 } from '@/api/services/memberships';
 
-const msg = (e: any, d: string) => e?.response?.data?.message ?? e?.message ?? d;
+const msg = errorMessage;
 const LIVE = ['trialing', 'active', 'past_due', 'paused'];
 
 /** Theme-neutral memberships page (route key `memberships`): plans, own memberships, cancel / pause / resume / upgrade. */
@@ -25,16 +26,17 @@ export function DefaultMembershipsPage() {
     try {
       setPlans(await apiPublicPlans(storeId));
       if (signedIn) setSubs(await apiMyMemberships(storeId));
-    } catch (e: any) {
+    } catch (e) {
       setPlans([]);
       setError(msg(e, 'Could not load memberships'));
     }
   }, [storeId, signedIn]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loads once per key; the state is only set after the request resolves
   useEffect(() => { void load(); }, [load]);
 
   async function run(fn: () => Promise<unknown>, done?: string) {
     setBusy(true); setError(null); setNote(null);
-    try { await fn(); if (done) setNote(done); await load(); } catch (e: any) { setError(msg(e, 'Something went wrong')); } finally { setBusy(false); }
+    try { await fn(); if (done) setNote(done); await load(); } catch (e) { setError(msg(e, 'Something went wrong')); } finally { setBusy(false); }
   }
 
   const planOf = (id: string) => plans?.find((p) => p._id === id);

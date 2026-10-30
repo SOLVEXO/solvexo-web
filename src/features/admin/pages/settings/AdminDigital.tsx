@@ -1,29 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import client from '@/api/client';
+import { errorMessage } from '@/api/errorMessage';
+import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
 import { Button } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 
 interface Overview {
   activeAccess: number; flaggedAccess: number; last30Days: { deliveries: number; deniedOrFailed: number }; storesWithDigitalDisabled: number;
 }
-const errText = (e: any) => e?.response?.data?.message ?? e?.message ?? 'Something went wrong';
+const errText = (e: unknown) => errorMessage(e);
 const input = 'h-9 w-full rounded-lg border border-bone bg-white px-3 text-[13px] text-carbon outline-none focus:ring-2 focus:ring-brand-orange/30';
 
 /** Platform side of digital delivery: aggregate counters only (no customer data) and two safety actions. */
 export function AdminDigital() {
   const toast = useToast();
-  const [data, setData] = useState<Overview | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const res = useKeyedLoad<Overview>(() => client.get('/api/admin/digital/overview') as Promise<Overview>, 'admin-digital');
+  const data = res.data;
+  const error = res.error || null;
+  const load = res.retry;
   const [storeId, setStoreId] = useState('');
   const [reason, setReason] = useState('');
   const [productId, setProductId] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = () => {
-    setError(null); setData(null);
-    (client.get('/api/admin/digital/overview') as Promise<Overview>).then(setData).catch((e) => setError(errText(e)));
-  };
-  useEffect(load, []);
 
   async function run(fn: () => Promise<unknown>, done: string) {
     setBusy(true);

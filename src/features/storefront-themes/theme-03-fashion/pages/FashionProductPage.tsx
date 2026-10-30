@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { imgProps } from '../components/imgProps';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Minus, Plus, Star, ZoomIn } from 'lucide-react';
+import { Minus, Play, Plus, Star, ZoomIn } from 'lucide-react';
+import { parseProductVideo } from '@/utils/productVideo';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { apiGetProductReviews, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -97,7 +98,14 @@ function ProductPageInner({ slug }: { slug: string }) {
     const all = detail?.product.images ?? [];
     return [...own, ...all.filter(i => !own.includes(i))];
   }, [variant, detail?.product.images]);
-  const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
+  // Optional product video: one more item in the gallery, first or last as the seller chose.
+  const video = useMemo(() => parseProductVideo(detail?.product.videoUrl), [detail?.product.videoUrl]);
+  const videoAt = video ? (detail?.product.videoFirst ? 0 : images.length) : -1;
+  const mediaCount = images.length + (video ? 1 : 0);
+  const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, mediaCount - 1)) : 0;
+  const videoActive = !!video && imageIndex === videoAt;
+  const photoIndex = video && imageIndex > videoAt ? imageIndex - 1 : imageIndex; // position among the photos only
+  const mediaOfPhoto = (i: number) => (video && videoAt === 0 ? i + 1 : i);
   const setImageIndex = (i: number) => setGallery({ vid: variant?._id ?? '', i });
 
   // Fetch every gallery photo up front so switching thumbnails or variants shows the next one at once.
@@ -252,20 +260,34 @@ function ProductPageInner({ slug }: { slug: string }) {
         <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
           {layout.mediaOn && (
             <div className="lg:sticky lg:top-24 lg:col-span-7">
-              {images.length === 0 ? <div style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }} /> : (
+              {mediaCount === 0 ? <div style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }} /> : (
                 <div className="flex flex-col gap-4 md:flex-row-reverse">
-                  <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
-                    <img key={images[imageIndex] ?? images[0]} {...imgProps(images[imageIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="fx-fade size-full object-cover" fetchPriority="high" />
-                    <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bg }}><ZoomIn size={18} /></span>
-                  </button>
-                  {images.length > 1 && (
+                  {videoActive && video ? (
+                    <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: '4 / 5', background: '#000', borderRadius: 24 }}>
+                      {video.kind === 'file'
+                        ? <video key={video.src} src={video.src} poster={video.poster ?? images[0]} controls playsInline preload="metadata" className="size-full object-contain" aria-label={tr('product.video', 'Product video')} />
+                        : <iframe key={video.src} src={video.src} title={tr('product.video', 'Product video')} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="size-full border-0" />}
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
+                      <img key={images[photoIndex] ?? images[0]} {...imgProps(images[photoIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="fx-fade size-full object-cover" fetchPriority="high" />
+                      <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bg }}><ZoomIn size={18} /></span>
+                    </button>
+                  )}
+                  {mediaCount > 1 && (
                     <div className="fx-hide-scroll flex gap-3 overflow-x-auto md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden" style={{ maxHeight: 'min(640px, 70vh)' }}>
-                      {images.map((src, i) => (
-                        <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={tr('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex}
-                          className="size-20 shrink-0 cursor-pointer overflow-hidden p-0 md:size-[84px]" style={{ borderRadius: 14, background: t.colors.bgAlt, border: `2px solid ${i === imageIndex ? t.colors.selected : 'transparent'}` }}>
-                          <img {...imgProps(src, [160, 240], '84px')} alt="" loading="lazy" className="size-full object-cover" />
-                        </button>
-                      ))}
+                      {Array.from({ length: mediaCount }, (_, i) => {
+                        const isVideo = i === videoAt;
+                        const photo = video && i > videoAt ? i - 1 : i;
+                        const src = isVideo ? (video?.poster ?? images[0]) : images[photo];
+                        return (
+                          <button key={(isVideo ? 'video' : src) + i} type="button" onClick={() => setImageIndex(i)} aria-label={isVideo ? tr('product.showVideo', 'Show video') : tr('product.showImageN', 'Show image {{n}}', { n: photo + 1 })} aria-current={i === imageIndex}
+                            className="relative size-20 shrink-0 cursor-pointer overflow-hidden p-0 md:size-[84px]" style={{ borderRadius: 14, background: isVideo ? '#000' : t.colors.bgAlt, border: `2px solid ${i === imageIndex ? t.colors.selected : 'transparent'}` }}>
+                            {src && <img {...imgProps(src, [160, 240], '84px')} alt="" loading="lazy" className="size-full object-cover" />}
+                            {isVideo && <span className="absolute inset-0 grid place-items-center"><span className="grid size-8 place-items-center rounded-full" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}><Play size={14} fill="currentColor" /></span></span>}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -327,7 +349,7 @@ function ProductPageInner({ slug }: { slug: string }) {
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
           onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />
       )}
-      {zoom && <FashionImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
+      {zoom && <FashionImageLightbox images={images} index={photoIndex} alt={product.name} onIndexChange={i => setImageIndex(mediaOfPhoto(i))} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>
   );
 }

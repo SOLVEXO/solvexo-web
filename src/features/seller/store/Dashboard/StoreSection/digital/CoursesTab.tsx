@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Pagination } from '@/components/comman/ui';
 import client from '@/api/client';
+import { errorMessage } from '@/api/errorMessage';
+import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
 import { useToast } from '@/contexts/ToastContext';
 import { FileUpload } from '@/components/comman/ui';
 
@@ -11,7 +14,8 @@ interface Lesson {
 interface Module { id?: string; title: string; lessons: Lesson[] }
 interface CourseForm { _id?: string; title: string; description: string; status: 'draft' | 'published'; productId: string; modules: Module[] }
 
-const errText = (e: any) => e?.response?.data?.message ?? e?.message ?? 'Something went wrong';
+const errText = (e: unknown) => errorMessage(e);
+interface CourseListItem { _id: string; title: string; status: string }
 const inp = 'h-9 rounded-lg border border-bone px-3 text-[13px] bg-white text-carbon outline-none focus:ring-2 focus:ring-brand-orange/30';
 const btn = 'rounded-md border border-bone bg-white text-carbon px-2.5 py-1 text-[12px] hover:bg-cream disabled:opacity-50 cursor-pointer';
 const blank = (): CourseForm => ({ title: '', description: '', status: 'draft', productId: '', modules: [{ title: 'Module 1', lessons: [] }] });
@@ -43,7 +47,7 @@ function LessonEditor({ l, onChange, onRemove }: { l: Lesson; onChange: (l: Less
       {(l.type === 'video' || l.type === 'file') && (
         <div>
           <p className="text-[12px] mb-1">{(l.type === 'video' ? l.videoPublicId : l.filePublicId) ? `Uploaded: ${l.fileName ?? 'file'}` : 'Upload the file'}</p>
-          <FileUpload value={null} label={l.type === 'video' ? 'Upload video' : 'Upload file'} onChange={(u: any) => u && set(l.type === 'video' ? { videoPublicId: u.publicId, fileName: u.fileName } : { filePublicId: u.publicId, fileName: u.fileName })} />
+          <FileUpload value={null} label={l.type === 'video' ? 'Upload video' : 'Upload file'} onChange={(u: { publicId: string; fileName: string } | null) => u && set(l.type === 'video' ? { videoPublicId: u.publicId, fileName: u.fileName } : { filePublicId: u.publicId, fileName: u.fileName })} />
         </div>
       )}
       {l.type === 'quiz' && (
@@ -66,20 +70,19 @@ function LessonEditor({ l, onChange, onRemove }: { l: Lesson; onChange: (l: Less
 export function CoursesTab({ storeId }: { storeId: string }) {
   const toast = useToast();
   const base = `/api/courses/store/${storeId}`;
-  const [list, setList] = useState<any[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<CourseForm | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(() => {
-    setError(null); setList(null);
-    (client.get(base) as Promise<any[]>).then(setList).catch((e) => setError(errText(e)));
-  }, [base]);
-  useEffect(load, [load]);
+  const [page, setPage] = useState(1);
+  const listRes = useKeyedLoad<{ items: CourseListItem[]; total: number }>(() => client.get(`${base}?page=${page}&limit=20`) as Promise<{ items: CourseListItem[]; total: number }>, `${base}:${page}`);
+  const list = listRes.data?.items ?? null;
+  const total = listRes.data?.total ?? 0;
+  const error = listRes.error || null;
+  const load = listRes.retry;
 
   async function edit(id: string) {
     try {
-      const c: any = await client.get(`${base}/${id}`);
+      const c = (await client.get(`${base}/${id}`)) as CourseForm;
       setForm({ ...c, productId: c.productId ?? '', modules: c.modules });
     } catch (e) { toast.error(errText(e)); }
   }
@@ -110,6 +113,7 @@ export function CoursesTab({ storeId }: { storeId: string }) {
             </li>
           ))}
         </ul>
+        {total > 20 && <Pagination page={page} total={total} perPage={20} onChange={setPage} />}
       </div>
     );
   }

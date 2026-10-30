@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '@/api/errorMessage';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
@@ -6,7 +7,7 @@ import { apiDownloadUrl, apiGetLibrary, apiRecoverLibrary, type LibraryItem } fr
 
 const UPDATED_DAYS = 14;
 const isRecent = (iso: string | null) => !!iso && Date.now() - new Date(iso).getTime() < UPDATED_DAYS * 86_400_000;
-const errMsg = (e: any, fallback: string) => e?.response?.data?.message ?? e?.message ?? fallback;
+const errMsg = errorMessage;
 const mb = (n: number | null) => (n ? `${(n / 1024 / 1024).toFixed(1)} MB` : '');
 
 /**
@@ -31,13 +32,14 @@ export function DefaultLibraryPage() {
     setItems(null);
     try {
       setItems(await apiGetLibrary(storeId, recovery));
-    } catch (e: any) {
+    } catch (e) {
       setItems([]);
       setError(errMsg(e, 'Could not load your library'));
     }
   }, [storeId, recovery]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loads once per key; the state is only set after the request resolves
     if (signedIn || recovery) void load();
   }, [signedIn, recovery, load]);
 
@@ -48,7 +50,7 @@ export function DefaultLibraryPage() {
     try {
       window.location.assign(await apiDownloadUrl(storeId, productId, fileIndex, recovery));
       setTimeout(() => void load(), 3000);
-    } catch (e: any) {
+    } catch (e) {
       setError(errMsg(e, 'Download failed'));
     } finally {
       setBusy(null);
@@ -61,7 +63,7 @@ export function DefaultLibraryPage() {
     try {
       await apiRecoverLibrary(storeId, form.orderRef, form.email);
       setSentNote(true);
-    } catch (err: any) {
+    } catch (err) {
       setError(errMsg(err, 'We could not find a matching order'));
     }
   }

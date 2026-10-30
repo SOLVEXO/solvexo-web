@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { errorMessage } from '@/api/errorMessage';
 import { Link } from 'react-router-dom';
 import client from '@/api/client';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -18,7 +19,7 @@ export function DefaultLicensesPage() {
     if (!signedIn) return;
     (client.get('/api/licenses/me', { params: { storeId: store.storeId } }) as Promise<Row[]>)
       .then(setRows)
-      .catch((e: any) => { setRows([]); setError(e?.response?.data?.message ?? 'Could not load your licenses'); });
+      .catch((e: unknown) => { setRows([]); setError(errorMessage(e, 'Could not load your licenses')); });
   }, [signedIn, store.storeId]);
 
   async function copy(r: Row) {

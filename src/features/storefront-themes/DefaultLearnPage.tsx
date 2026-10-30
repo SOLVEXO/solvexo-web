@@ -1,5 +1,6 @@
 /* eslint-disable jsx-a11y/media-has-caption -- lesson videos are seller uploads and carry no caption track */
 import { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '@/api/errorMessage';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
@@ -8,7 +9,7 @@ import {
   type CourseOutline, type CourseSummary, type LessonView,
 } from '@/api/services/courses';
 
-const msg = (e: any, d: string) => e?.response?.data?.message ?? e?.message ?? d;
+const msg = errorMessage;
 const btn = 'rounded-lg border border-current/40 px-3 py-1.5 text-sm disabled:opacity-50';
 
 function Lesson({ storeId, courseId, lesson, onChange }: { storeId: string; courseId: string; lesson: LessonView; onChange: () => void }) {
@@ -20,7 +21,7 @@ function Lesson({ storeId, courseId, lesson, onChange }: { storeId: string; cour
 
   async function run(fn: () => Promise<void>) {
     setBusy(true); setError(null);
-    try { await fn(); } catch (e: any) { setError(msg(e, 'Something went wrong')); } finally { setBusy(false); }
+    try { await fn(); } catch (e) { setError(msg(e, 'Something went wrong')); } finally { setBusy(false); }
   }
 
   if (lesson.locked) {
@@ -74,8 +75,9 @@ export function DefaultLearnPage() {
     try {
       if (courseId) setOutline(await apiCourseOutline(storeId, courseId));
       else setCourses(await apiMyCourses(storeId));
-    } catch (e: any) { setError(msg(e, 'Could not load')); if (!courseId) setCourses([]); }
+    } catch (e) { setError(msg(e, 'Could not load')); if (!courseId) setCourses([]); }
   }, [storeId, courseId]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loads once per key; the state is only set after the request resolves
   useEffect(() => { setOutline(null); if (signedIn) void load(); }, [signedIn, load]);
 
   return (

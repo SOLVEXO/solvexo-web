@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Download, GraduationCap, KeyRound, Library, Crown, Play, Lock } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
+import { errorMessage } from '@/api/errorMessage';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiDownloadUrl, apiGetLibrary, apiRecoverLibrary, type LibraryItem } from '@/api/services/digitalLibrary';
@@ -17,7 +18,7 @@ import { AccountLayout } from '../ui/AccountLayout';
 import { Card, EmptyState, ErrorState, Field, Notice, PillButton, SkeletonBlock, StatusPill, TextInput } from '../ui/primitives';
 import { RequireAccount } from './orders/OrderParts';
 
-const msg = (e: any, d: string) => e?.response?.data?.message ?? e?.message ?? d;
+const msg = errorMessage;
 const muted = { color: t.colors.inkMuted } as const;
 const RECENT_DAYS = 14;
 const isRecent = (iso: string | null) => !!iso && Date.now() - new Date(iso).getTime() < RECENT_DAYS * 86_400_000;
@@ -206,7 +207,7 @@ function Licenses_() {
   const { store } = useStorefront();
   const [copied, setCopied] = useState<string | null>(null);
   const { data, loading, error, retry } = useLoad<{ id: string; key: string; activationLimit: number; activations: number }[]>(
-    () => client.get('/api/licenses/me', { params: { storeId: store.storeId } }) as Promise<any>, [store.storeId]);
+    () => client.get('/api/licenses/me', { params: { storeId: store.storeId } }) as Promise<{ id: string; key: string; activationLimit: number; activations: number }[]>, [store.storeId]);
   return (
     <AccountLayout title={ts('dg.licenses_title', 'My *licenses*')} subtitle={ts('dg.licenses_subtitle', 'Keys for the software you bought.')}>
       {loading ? <SkeletonBlock h={84} rows={2} /> : error ? <ErrorState message={ts('dg.licenses_load_error', 'We could not load your licenses.')} onRetry={retry} />
@@ -284,6 +285,7 @@ function Learn_() {
     setOutlineError(null);
     try { setOutline(await apiCourseOutline(storeId, courseId)); } catch (e) { setOutlineError(msg(e, ts('dg.course_load_error', 'Could not load this course'))); }
   }, [storeId, courseId]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loads once per key; the state is only set after the request resolves
   useEffect(() => { setOutline(null); void loadOutline(); }, [loadOutline]);
 
   if (courseId) {

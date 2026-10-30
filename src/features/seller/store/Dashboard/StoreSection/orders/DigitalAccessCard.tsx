@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '@/api/errorMessage';
 import client from '@/api/client';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
@@ -31,6 +32,7 @@ export function DigitalAccessCard({ storeId, orderId, customerId }: { storeId: s
       setRows([]);
     }
   }, [storeId, orderId]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loads the access rows once per order; load() sets state only after its request resolves
   useEffect(() => { void load(); }, [load]);
 
   async function act(id: string, action: 'resend' | 'reset-limit' | 'revoke') {
@@ -39,8 +41,8 @@ export function DigitalAccessCard({ storeId, orderId, customerId }: { storeId: s
       await client.post(`${base(storeId)}/access/${id}/${action}`);
       toast.success(action === 'revoke' ? 'Access revoked' : action === 'resend' ? 'Access renewed' : 'Download limit reset');
       await load();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'Action failed');
+    } catch (e) {
+      toast.error(errorMessage(e, 'Action failed'));
     } finally {
       setBusy(null);
     }
@@ -50,7 +52,7 @@ export function DigitalAccessCard({ storeId, orderId, customerId }: { storeId: s
     setShowLog((v) => !v);
     if (log) return;
     try {
-      setLog((await client.get(`${base(storeId)}/delivery-log`, { params: { customerId, limit: 20 } })) as LogRow[]);
+      setLog(((await client.get(`${base(storeId)}/delivery-log`, { params: { customerId, limit: 20 } })) as { items: LogRow[] }).items);
     } catch {
       setLog([]);
     }
