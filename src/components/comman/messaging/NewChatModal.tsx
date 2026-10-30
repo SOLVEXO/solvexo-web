@@ -19,14 +19,14 @@ export function NewChatModal({ onClose, onStart, starting }: NewChatModalProps) 
   useFocusTrap(dialogRef, onClose);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 starting:opacity-0">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4 transition-opacity duration-200 starting:opacity-0">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="w-full max-w-[380px] bg-white border border-bone rounded-[16px] overflow-hidden outline-none transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
+        className="w-full max-w-[380px] bg-white border border-bone rounded-t-[16px] sm:rounded-[16px] pb-[env(safe-area-inset-bottom)] sm:pb-0 overflow-hidden outline-none transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
       >
         <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#eeece4]">
           <p id={titleId} className="text-[15px] font-bold text-charcoal">New message</p>

@@ -35,7 +35,8 @@ export function Modal({ title, onClose, children, footer, width = 440, mobileShe
       className={clsx('max-h-[86dvh] sm:max-h-[90vh]', mobileSheet && 'max-w-full sm:max-w-[var(--modal-w)]')}
       style={style}
     >
-      <div className="flex items-center justify-between px-5 py-4 border-b border-bone shrink-0">
+      {mobileSheet && <span aria-hidden className="sm:hidden mx-auto mt-2 -mb-1 block h-1 w-9 rounded-full bg-bone shrink-0" />}
+      <div className="flex items-center justify-between px-5 py-4 max-sm:py-3 border-b border-bone shrink-0">
         <p id={titleId} className="text-subheading font-semibold text-carbon">{title}</p>
         <button
           onClick={onClose}
@@ -49,7 +50,7 @@ export function Modal({ title, onClose, children, footer, width = 440, mobileShe
       <div className="px-5 py-4 overflow-y-auto overscroll-contain">{children}</div>
 
       {footer && (
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-bone shrink-0">
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-bone shrink-0 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>*]:w-full">
           {footer}
         </div>
       )}

@@ -40,14 +40,14 @@ export function ProductShareModal({ storeId, onClose, onShare, sharing }: Produc
     : products;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 starting:opacity-0">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4 transition-opacity duration-200 starting:opacity-0">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Share a product"
         tabIndex={-1}
-        className="w-full max-w-[420px] max-h-[80vh] bg-white border border-bone rounded-[16px] overflow-hidden outline-none flex flex-col transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
+        className="w-full max-w-[420px] max-h-[86dvh] sm:max-h-[80vh] bg-white border border-bone rounded-t-[16px] sm:rounded-[16px] pb-[env(safe-area-inset-bottom)] sm:pb-0 overflow-hidden outline-none flex flex-col transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
       >
         <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#eeece4] shrink-0">
           <p className="text-[15px] font-bold text-charcoal">Share a product</p>

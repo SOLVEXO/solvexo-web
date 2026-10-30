@@ -199,16 +199,21 @@ function MobileRow<T>({
             className="accent-brand-orange shrink-0 cursor-pointer size-5 pointer-coarse:size-6 mt-[3px]"
           />
         )}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
-          {labeledColumns.map(col => (
-            <div key={col.key} className="flex items-start justify-between gap-3">
-              <span className="text-[11.5px] font-semibold text-slate uppercase tracking-[0.04em] shrink-0 pt-[3px]">{col.header}</span>
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+          {labeledColumns.map((col, ci) => ci === 0 ? (
+            // First column is the row's title: full width, no label, like a native list row.
+            <div key={col.key} className="min-w-0 text-[15px] font-medium text-carbon leading-[1.35] [&_span]:max-w-none [&_span]:overflow-visible [&_span]:whitespace-normal [&_span]:break-words">
+              {col.render ? col.render(row, index) : String((row as Record<string, unknown>)[col.key] ?? '')}
+            </div>
+          ) : (
+            <div key={col.key} className="flex items-center justify-between gap-3">
+              <span className="text-[12px] font-medium text-slate shrink-0">{col.header}</span>
               {/* Callers write these cells for a fixed-width desktop column, so
                   many of them carry `max-w-[180px] truncate`. Inside a stacked
                   phone card there is no column to fit, and clipped names read as
                   broken — the descendant overrides below neutralise that truncation
                   for small screens only (this branch is `sm:hidden`). */}
-              <span className="text-[15px] text-carbon text-right min-w-0 leading-[1.35] [&_span]:max-w-none [&_span]:overflow-visible [&_span]:whitespace-normal [&_span]:break-words">
+              <span className="text-[14px] text-carbon text-right min-w-0 leading-[1.35] [&_span]:max-w-none [&_span]:overflow-visible [&_span]:whitespace-normal [&_span]:break-words">
                 {col.render ? col.render(row, index) : String((row as Record<string, unknown>)[col.key] ?? '')}
               </span>
             </div>
@@ -259,8 +264,10 @@ export function Table<T = Record<string, unknown>>({
   // of forcing a horizontally-scrolling table — a column with no header (an
   // actions/icon-only column) has nothing meaningful to label, so its cells
   // render together in a trailing unlabeled strip instead of a blank-labeled row.
-  const labeledColumns   = columns.filter(c => c.header);
-  const unlabeledColumns = columns.filter(c => !c.header);
+  // A "#" counter has no meaning on a phone card, and an "Actions" column belongs in the swipe strip, not in a labelled row.
+  const isActionCol      = (c: TableColumn<T>) => !c.header || /^actions?$/i.test(c.header.trim());
+  const labeledColumns   = columns.filter(c => c.header && !isActionCol(c) && c.header.trim() !== '#');
+  const unlabeledColumns = columns.filter(isActionCol);
 
   const showEmptyState = !loading && data.length === 0 && emptyState !== false;
 

@@ -455,7 +455,7 @@ export function StoreOrderList() {
       <div className="px-4 lg:px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Total Orders"
             value={stats?.totalOrders ?? 0}

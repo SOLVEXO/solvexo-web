@@ -436,7 +436,12 @@ function StoreBottomNav() {
   const user = TokenStorage.getUser();
   const tabs = STORE_TABS.filter(tab => tab.alwaysVisible || hasNavPermission(user, tab.requiredPermission));
 
-  const isActive = (path: string) => pathname === `/store/${storeId}/${path}`;
+  // A sub-page (orders/detail/..., settings/billing, any page that is not its own tab) keeps its parent tab lit; every page that
+  // belongs to no tab is reached through More, so More stays active there.
+  const base = `/store/${storeId}/`;
+  const ownTab = tabs.find(t => t.id !== 'settings' && (pathname === base + t.path || pathname.startsWith(base + t.path + '/')));
+  const activeId = ownTab ? ownTab.id : pathname.startsWith(base) ? 'settings' : null;
+  const isActive = (path: string) => tabs.find(t => t.path === path)?.id === activeId;
 
   const goToTab = (path: string) => navigate(`/store/${storeId}/${path}`);
 
@@ -1195,7 +1200,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sticky top-0 z-10 shrink-0">
+    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] max-sm:py-2 max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
@@ -1218,8 +1223,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           </button>
         )}
         <div key={title} className="min-w-0">
-          <h1 className="solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.3] truncate">{title}</h1>
-          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate">{subtitle}</p>}
+          <h1 className="solvexo-title-reveal text-[18px] max-sm:text-[17px] max-sm:font-semibold font-bold text-carbon leading-[1.3] truncate">{title}</h1>
+          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]">{subtitle}</p>}
         </div>
       </div>
       {/* Page actions get their own scrollable row below `sm`: three or four
@@ -1229,7 +1234,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           markup, and every one of the ~40 pages that pass `actions` is fixed at
           once. */}
       {actions && (
-        <div className="order-last w-full min-w-0 sm:order-none sm:contents flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0">
+        <div className="order-last w-full min-w-0 sm:order-none sm:contents flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0 max-sm:-mx-4 max-sm:px-4 max-sm:pb-1">
           {actions}
         </div>
       )}
@@ -1702,6 +1707,12 @@ export function StoreLayout() {
   const { storeId: routeStoreId } = useParams<{ storeId: string }>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);
+
+  // Phone-only app-feel rules in index.css (`html.store-app`) cover the whole workspace, portals (sheets/modals) included.
+  useEffect(() => {
+    document.documentElement.classList.add('store-app');
+    return () => document.documentElement.classList.remove('store-app');
+  }, []);
 
   const accessRedirect = resolveStoreAccessRedirect(routeStoreId, currentPath);
   if (accessRedirect) return <Navigate to={accessRedirect} replace />;

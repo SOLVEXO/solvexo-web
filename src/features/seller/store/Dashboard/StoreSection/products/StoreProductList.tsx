@@ -352,9 +352,9 @@ export default function StoreProductList() {
         {!error && (
           <Card padding="none">
             {/* Toolbar */}
-            <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-3">
+            <div className="px-5 max-sm:px-4 pt-4 pb-3 flex max-sm:flex-wrap items-center justify-between gap-3">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Products</p>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 ml-auto max-sm:ml-0 max-sm:w-full max-sm:flex-wrap">
                 <FilterDropdown
                   value={statusFilter}
                   onChange={handleStatusFilter}
@@ -369,7 +369,7 @@ export default function StoreProductList() {
                   value={search}
                   onChange={setSearch}
                   placeholder="Search title, tag, SKU or barcode…"
-                  className="w-[220px]"
+                  className="w-[220px] max-sm:w-full max-sm:order-last"
                 />
                 <button
                   onClick={() => handleRetry()}

@@ -438,8 +438,8 @@ function ReplyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-[420px] bg-white rounded-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 sm:p-4">
+      <div className="w-full max-w-[420px] max-h-[86dvh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-2xl pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="px-5 py-4 border-b border-bone">
           <p className="text-[15px] font-bold text-charcoal">{title}</p>
         </div>

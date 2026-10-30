@@ -63,7 +63,7 @@ export function DialogShell({ onClose, children, align = 'center', className, st
           align === 'bottom'
             ? 'sheet-panel-enter rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)]'
             : align === 'bottom-mobile'
-              ? 'sheet-panel-enter rounded-t-2xl sm:rounded-2xl border-t sm:border pb-[env(safe-area-inset-bottom)] sm:pb-0'
+              ? 'sheet-panel-enter sheet-panel-sm-fade rounded-t-2xl sm:rounded-2xl border-t sm:border pb-[env(safe-area-inset-bottom)] sm:pb-0'
               : 'dialog-panel-enter rounded-2xl border',
           className,
         )}

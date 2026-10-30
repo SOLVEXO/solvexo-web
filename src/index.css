@@ -871,3 +871,29 @@
   inherits: false;
   initial-value: 0px;
 }
+
+/* ── Store workspace: phone "app feel" (<640px only; desktop and tablet untouched) ──
+   `html.store-app` is set by StoreLayout, so portals (sheets, modals) are covered.
+   Sizes follow the phone scale: body 15, secondary 13, caption never below 12,
+   taps >= 44px, inputs 16px (stops iOS Safari zooming on focus). */
+@media (max-width: 639px) {
+  html.store-app body { font-size: 15px; overflow-x: clip; }
+  html.store-app .text-\[9px\],
+  html.store-app .text-\[10px\],
+  html.store-app .text-\[11px\] { font-size: 12px; }
+  html.store-app :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { font-size: 16px; }
+  html.store-app :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select) { min-height: 44px; }
+  html.store-app :is(button, [role=button], [role=tab], summary):not(nav *) { min-height: 44px; }
+  html.store-app :is(button, [role=button]):not(nav *):has(> svg:only-child) { min-width: 44px; }
+  /* Press feedback like a native app: a small dip while the finger is down. */
+  html.store-app :is(button, [role=button], a[href]):not(:disabled):active {
+    opacity: .72;
+    transition: opacity var(--duration-micro) var(--ease-out);
+  }
+}
+
+/* Modal/DialogShell `bottom-mobile` is a sheet only below sm; from sm it is a
+   centered dialog, so it must use the dialog's fade/scale, not the slide-up. */
+@media (min-width: 640px) {
+  .sheet-panel-enter.sheet-panel-sm-fade { animation: dialog-panel-enter 220ms var(--ease-out); }
+}

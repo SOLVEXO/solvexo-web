@@ -329,7 +329,7 @@ export function ThemeLibraryPage() {
               const isActive = row?.status === 'active';
               const isInstalled = !!row;
               return (
-                <div key={entry.id} className="group relative rounded-2xl overflow-hidden border border-bone bg-white">
+                <div key={entry.id} className="group relative isolate rounded-2xl overflow-hidden border border-bone bg-white">
                   {/* Live thumbnail of the theme's own real demo homepage —
                      what WordPress/Shopify theme pickers show as a
                      screenshot, so a seller can actually see the design
@@ -479,7 +479,7 @@ export function ThemeLibraryPage() {
               const busy = busyRowId === row._id;
               const ghost = 'flex items-center justify-center gap-1.5 px-2.5 py-[7px] rounded-lg text-[11.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer no-underline disabled:opacity-60';
               return (
-                <article key={row._id} className="group relative rounded-2xl overflow-hidden border border-bone bg-white">
+                <article key={row._id} className="group relative isolate rounded-2xl overflow-hidden border border-bone bg-white">
                   <ThemeThumbnail themeId={row.themeDefinitionId ?? ''} className="w-full" />
                   {isLive ? (
                     <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full bg-emerald-600 text-[10.5px] font-bold tracking-wide text-white shadow-md">
