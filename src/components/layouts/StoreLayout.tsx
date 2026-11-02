@@ -1200,7 +1200,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] max-sm:py-2 max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0">
+    <div className="store-hdr bg-white border-b border-bone max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:to-brand-deep-orange max-lg:border-b-0 max-lg:pb-7 px-4 md:px-7 py-[14px] max-sm:py-2 max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
@@ -1217,14 +1217,14 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
               else navigate(dashboardPath);
             }}
             aria-label="Go back"
-            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
+            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal max-lg:text-white hover:bg-cream max-lg:hover:bg-white/15 transition-colors cursor-pointer shrink-0"
           >
             <ChevronLeft size={19} />
           </button>
         )}
         <div key={title} className="min-w-0">
-          <h1 className="solvexo-title-reveal text-[18px] max-sm:text-[17px] max-sm:font-semibold font-bold text-carbon leading-[1.3] truncate">{title}</h1>
-          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]">{subtitle}</p>}
+          <h1 className="solvexo-title-reveal text-[18px] max-sm:text-[20px] max-sm:font-semibold font-bold text-carbon max-lg:text-white leading-[1.3] truncate">{title}</h1>
+          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate max-lg:text-white/80 mt-0.5 truncate max-sm:text-[13px]">{subtitle}</p>}
         </div>
       </div>
       {/* Page actions get their own scrollable row below `sm`: three or four
@@ -1275,6 +1275,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           )}
         </button>
       </div>
+      <div aria-hidden className="lg:hidden pointer-events-none absolute inset-x-0 bottom-0 h-5 translate-y-px rounded-t-[24px] bg-cream" />
     </div>
   );
 }
