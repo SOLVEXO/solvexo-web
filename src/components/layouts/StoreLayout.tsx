@@ -1225,9 +1225,9 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
             <ChevronLeft size={19} />
           </button>
         )}
-        <div key={title} className={clsx('min-w-0', !app && 'max-lg:hidden')}>
-          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[28px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
-          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:hidden')}>{subtitle}</p>}
+        <div key={title} className="min-w-0">
+          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', 'max-lg:font-bold max-lg:text-white', app ? 'max-lg:text-[28px]' : 'max-lg:text-[24px]')}>{title}</h1>
+          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', 'max-lg:hidden')}>{subtitle}</p>}
         </div>
       </div>
       {/* Page actions get their own scrollable row below `sm`: three or four
