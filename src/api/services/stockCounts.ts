@@ -15,6 +15,8 @@ export interface StockCountItem {
   productId: string;
   sku: string | null;
   productName: string;
+  /** Variant name such as "Black" or "Black / M"; null for a single-variant product. */
+  variantLabel?: string | null;
   image: string | null;
   systemQty: number;
   countedQty: number | null;

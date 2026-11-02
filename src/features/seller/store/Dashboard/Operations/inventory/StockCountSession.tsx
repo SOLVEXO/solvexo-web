@@ -48,7 +48,7 @@ export default function StockCountSession() {
   const matches = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.trim().toLowerCase();
-    return items.filter(i => i.sku?.toLowerCase().includes(q) || i.productName.toLowerCase().includes(q));
+    return items.filter(i => i.sku?.toLowerCase().includes(q) || i.productName.toLowerCase().includes(q) || i.variantLabel?.toLowerCase().includes(q));
   }, [items, search]);
 
   const jumpToFirstMatch = () => {
@@ -139,7 +139,7 @@ export default function StockCountSession() {
                   {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : null}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{item.productName}</p>
+                  <p className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{item.productName}{item.variantLabel && <span className="ml-2 rounded-md bg-brand-pale-orange px-1.5 py-0.5 text-[11px] pointer-coarse:text-[13px] font-semibold text-brand-orange">{item.variantLabel}</span>}</p>
                   <p className="text-[11px] pointer-coarse:text-[13px] text-slate">SKU: {item.sku ?? '—'} · System: {item.systemQty}</p>
                 </div>
                 {item.countedQty != null && (
@@ -198,7 +198,7 @@ export default function StockCountSession() {
                   return (
                     <div key={item._id} className="py-2.5 flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.productName}</p>
+                        <p className="text-[12.5px] font-semibold text-charcoal truncate">{item.productName}{item.variantLabel ? ` — ${item.variantLabel}` : ''}</p>
                         <p className="text-[11px] text-slate">System: {item.systemQty} → Counted: {item.countedQty}</p>
                       </div>
                       <span className={`text-[12px] font-bold shrink-0 ${delta > 0 ? 'text-success' : 'text-error'}`}>
