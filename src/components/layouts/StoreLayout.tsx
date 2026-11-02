@@ -1203,8 +1203,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] max-sm:py-2 max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app && 'store-hdr--app max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10')}>
-      <div className={clsx('flex items-center gap-3 min-w-0 flex-1', app && 'max-lg:order-2 max-lg:basis-full max-lg:mt-2')}>
+    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app ? 'store-hdr--app max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10' : 'max-sm:pb-2')}>
+      <div className={'flex items-center gap-3 min-w-0 flex-1'}>
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
            hamburger that used to open a copy of the desktop sidebar. */}
@@ -1226,8 +1226,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           </button>
         )}
         <div key={title} className="min-w-0">
-          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[26px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
-          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:text-white/80 max-lg:whitespace-normal max-lg:text-[13.5px] max-lg:leading-snug max-lg:mt-1')}>{subtitle}</p>}
+          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[22px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
+          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:text-white/80 max-lg:whitespace-normal max-lg:line-clamp-2 max-lg:text-[12.5px] max-lg:leading-snug max-lg:mt-0.5')}>{subtitle}</p>}
         </div>
       </div>
       {/* Page actions get their own scrollable row below `sm`: three or four
@@ -1241,11 +1241,11 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           {actions}
         </div>
       )}
-      <div className={clsx('flex flex-nowrap items-center gap-[10px] shrink-0', app && 'max-lg:order-1 max-lg:basis-full max-lg:justify-between')}>
+      <div className={'flex flex-nowrap items-center gap-[10px] shrink-0'}>
         {/* Shopify-style store switcher — jump to another of this seller's
            stores right from the navbar, on every store page. */}
         {!isStaffSession() && <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />}
-        <div className="flex items-center gap-[10px] max-lg:ml-auto">
+        <div className="flex items-center gap-[10px]">
         <NotificationBell />
         {/* Account moved here from the sidebar NAV list — it's the seller's
            own personal identity/profile, not a store workspace section, so
