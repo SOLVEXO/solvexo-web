@@ -5,7 +5,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { Button, Modal } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { TokenStorage } from '@/api/services/auth';
-import { buildCountReportHtml, buildCountSheetHtml, openCountDocument, type SheetOptions } from '@/utils/stockCountDocuments';
+import { buildCountReportHtml, buildCountSheetHtml, openCountDocument, PAPER_LABEL, type PaperSize, type SheetOptions } from '@/utils/stockCountDocuments';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import {
   apiGetStockCount, apiSubmitStockCountItem, apiCancelStockCount, apiFinishStockCount,
@@ -30,8 +30,8 @@ export default function StockCountSession() {
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [finishing, setFinishing] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [sheetOpts, setSheetOpts] = useState<SheetOptions>({ showSystemQty: false, showPhotos: false });
+  const [docDialog, setDocDialog] = useState<'sheet' | 'report' | null>(null);
+  const [sheetOpts, setSheetOpts] = useState<SheetOptions>({ showSystemQty: false, showPhotos: false, paper: 'A4' });
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   // Generated once per page mount (one count session = one finish action,
   // retried at most) — reused across a retry so the backend's
@@ -101,11 +101,12 @@ export default function StockCountSession() {
   const printSheet = () => {
     if (!count) return;
     if (!openCountDocument(buildCountSheetHtml(count, docStore(), sheetOpts))) toast.error('Allow pop-ups for this site to print.');
-    setSheetOpen(false);
+    setDocDialog(null);
   };
   const printReport = () => {
     if (!count) return;
-    if (!openCountDocument(buildCountReportHtml(count, docStore()))) toast.error('Allow pop-ups for this site to print.');
+    if (!openCountDocument(buildCountReportHtml(count, docStore(), sheetOpts.paper))) toast.error('Allow pop-ups for this site to print.');
+    setDocDialog(null);
   };
 
   if (loading) return <div className="px-4 lg:px-7 py-8 text-[13px] text-slate">Loading…</div>;
@@ -118,8 +119,8 @@ export default function StockCountSession() {
         subtitle={`${countedCount} / ${items.length} counted`}
         actions={
           <div className="flex flex-wrap gap-2">
-            {count.status === 'open' && <Button variant="outline" size="sm" icon={<Printer size={13} />} onClick={() => setSheetOpen(true)}>Print count sheet</Button>}
-            <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={printReport}>Count report</Button>
+            {count.status === 'open' && <Button variant="outline" size="sm" icon={<Printer size={13} />} onClick={() => setDocDialog('sheet')}>Print count sheet</Button>}
+            <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={() => setDocDialog('report')}>Count report</Button>
             {count.status === 'open' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setConfirmingCancel(true)}>Cancel Count</Button>
@@ -191,21 +192,32 @@ export default function StockCountSession() {
         />
       )}
 
-      {sheetOpen && (
-        <Modal title="Print count sheet" onClose={() => setSheetOpen(false)} footer={
+      {docDialog && (
+        <Modal title={docDialog === 'sheet' ? 'Print count sheet' : 'Count report'} onClose={() => setDocDialog(null)} footer={
           <>
-            <Button variant="ghost" onClick={() => setSheetOpen(false)}>Cancel</Button>
-            <Button variant="primary" icon={<Printer size={13} />} onClick={printSheet}>Print / Save as PDF</Button>
+            <Button variant="ghost" onClick={() => setDocDialog(null)}>Cancel</Button>
+            <Button variant="primary" icon={<Printer size={13} />} onClick={docDialog === 'sheet' ? printSheet : printReport}>Print / Save as PDF</Button>
           </>
         }>
-          <p className="text-[13px] text-slate mb-3">A sheet with every line and an empty box to write the counted quantity by hand. Take it to the shelves, then enter the numbers here.</p>
-          <label className="flex items-start gap-2 text-[13px] text-charcoal mb-2 cursor-pointer">
-            <input type="checkbox" className="mt-0.5" checked={sheetOpts.showSystemQty} onChange={e => setSheetOpts(o => ({ ...o, showSystemQty: e.target.checked }))} />
-            <span>Show the system quantity<span className="block text-[12px] text-slate">Off is better: the counter writes what is really there, not what the computer says.</span></span>
-          </label>
-          <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
-            <input type="checkbox" checked={sheetOpts.showPhotos} onChange={e => setSheetOpts(o => ({ ...o, showPhotos: e.target.checked }))} />
-            <span>Show small product photos</span>
+          {docDialog === 'sheet' ? (
+            <>
+              <p className="text-[13px] text-slate mb-3">A sheet with every line and an empty box to write the counted quantity by hand. Take it to the shelves, then enter the numbers here.</p>
+              <label className="flex items-start gap-2 text-[13px] text-charcoal mb-2 cursor-pointer">
+                <input type="checkbox" className="mt-0.5" checked={sheetOpts.showSystemQty} onChange={e => setSheetOpts(o => ({ ...o, showSystemQty: e.target.checked }))} />
+                <span>Show the system quantity<span className="block text-[12px] text-slate">Off is better: the counter writes what is really there, not what the computer says.</span></span>
+              </label>
+              <label className="flex items-center gap-2 text-[13px] text-charcoal mb-3 cursor-pointer">
+                <input type="checkbox" checked={sheetOpts.showPhotos} onChange={e => setSheetOpts(o => ({ ...o, showPhotos: e.target.checked }))} />
+                <span>Show small product photos</span>
+              </label>
+            </>
+          ) : (
+            <p className="text-[13px] text-slate mb-3">Totals, every difference between the system and the physical count, and the full list of lines.</p>
+          )}
+          <label className="flex flex-col gap-1 text-[12px] font-medium text-graphite">Paper
+            <select value={sheetOpts.paper} onChange={e => setSheetOpts(o => ({ ...o, paper: e.target.value as PaperSize }))} className="border border-bone rounded-lg px-3 py-2 text-[13px] bg-white">
+              {(Object.keys(PAPER_LABEL) as PaperSize[]).map(p => <option key={p} value={p}>{PAPER_LABEL[p]}</option>)}
+            </select>
           </label>
         </Modal>
       )}
@@ -214,7 +226,7 @@ export default function StockCountSession() {
         <Modal title="Review Discrepancies" onClose={() => setReviewing(false)} footer={
           <>
             <Button variant="ghost" onClick={() => setReviewing(false)}>Back</Button>
-            <Button variant="outline" icon={<FileText size={13} />} onClick={printReport}>Download report</Button>
+            <Button variant="outline" icon={<FileText size={13} />} onClick={() => setDocDialog('report')}>Download report</Button>
             <Button variant="primary" onClick={handleFinish} loading={finishing}>
               {discrepancies.length > 0 ? `Apply ${discrepancies.length} Adjustment(s)` : 'Finish Count'}
             </Button>

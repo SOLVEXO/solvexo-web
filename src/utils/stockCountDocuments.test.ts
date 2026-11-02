@@ -21,7 +21,7 @@ describe('summarizeCount', () => {
 
 describe('count sheet', () => {
   it('is blind by default: no system quantity, but has product, variant and SKU', () => {
-    const html = buildCountSheetHtml(count([item(1)]), store, { showSystemQty: false, showPhotos: false });
+    const html = buildCountSheetHtml(count([item(1)]), store, { showSystemQty: false, showPhotos: false, paper: 'A4' });
     expect(html).toContain('Smart Ring');
     expect(html).toContain('Silver');
     expect(html).toContain('SKU-1');
@@ -30,7 +30,7 @@ describe('count sheet', () => {
   });
 
   it('can include the system quantity and escapes the store name', () => {
-    const html = buildCountSheetHtml(count([item(1)]), store, { showSystemQty: true, showPhotos: false });
+    const html = buildCountSheetHtml(count([item(1)]), store, { showSystemQty: true, showPhotos: false, paper: 'A4' });
     expect(html).toContain('<th class="n">System</th>');
     expect(html).toContain('Amara &lt;Wears&gt;');
     expect(html).not.toContain('Amara <Wears>');
@@ -50,5 +50,23 @@ describe('count report', () => {
     const html = buildCountReportHtml(count([item(1, { countedQty: 20 }), item(2)]), store);
     expect(html).toContain('No differences');
     expect(html).toContain('not counted');
+  });
+});
+
+describe('paper sizes and names', () => {
+  it('sets the page rule per paper size', () => {
+    const c = count([item(1)]);
+    expect(buildCountSheetHtml(c, store, { showSystemQty: false, showPhotos: false, paper: 'A5' })).toContain('@page{size:A5');
+    expect(buildCountSheetHtml(c, store, { showSystemQty: false, showPhotos: false, paper: '80mm' })).toContain('size:80mm auto');
+    expect(buildCountReportHtml(c, store)).toContain('@page{size:A4');
+  });
+
+  it('prints who started and who applied the count', () => {
+    const c = { ...count([item(1, { countedQty: 19 })], 'completed'), startedByName: 'Bilal', completedByName: 'Sana', completedAt: '2026-11-02T12:00:00Z' };
+    const html = buildCountReportHtml(c, store);
+    expect(html).toContain('by <b>Bilal</b>');
+    expect(html).toContain('by <b>Sana</b>');
+    expect(html).toContain('Counted by: Bilal');
+    expect(html).toContain('Approved by: Sana');
   });
 });
