@@ -940,9 +940,9 @@
   .is-closing.sheet-panel-enter.sheet-panel-sm-fade { animation: dialog-panel-leave 190ms var(--ease-in) forwards; }
 }
 
-/* App-bar header (phone + tablet): the bell and avatar sit on the brand colour as translucent circles. */
+/* App-bar header (phone + tablet): bell and avatar are outlined circles on the brand colour. */
 @media (max-width: 1023px) {
-  html.store-app .store-hdr button[aria-label="Notifications"] { background: rgba(255, 255, 255, 0.22); box-shadow: none; }
+  html.store-app .store-hdr button[aria-label="Notifications"] { width: 40px; height: 40px; background: transparent; border: 1.5px solid rgba(255, 255, 255, 0.9); box-shadow: none; }
   html.store-app .store-hdr button[aria-label="Notifications"] svg { color: #fff; }
-  html.store-app .store-hdr button[aria-label="Account settings"] { border-color: rgba(255, 255, 255, 0.55); }
+  html.store-app .store-hdr button[aria-label="Account settings"] { width: 40px; height: 40px; border: 1.5px solid rgba(255, 255, 255, 0.9); }
 }
