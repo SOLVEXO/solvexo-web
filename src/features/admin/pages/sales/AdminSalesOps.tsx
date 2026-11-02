@@ -16,9 +16,10 @@ import { CampaignsTab } from './CampaignsTab';
 import { TeamTab } from './TeamTab';
 import { PartnersTab } from './PartnersTab';
 import { AgentTab } from './AgentTab';
+import { WhatsAppTab } from './WhatsAppTab';
 import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
-type TabId = 'pipeline' | 'tasks' | 'campaigns' | 'team' | 'partners' | 'agent' | 'templates';
+type TabId = 'pipeline' | 'tasks' | 'whatsapp' | 'campaigns' | 'team' | 'partners' | 'agent' | 'templates';
 
 /** Super Admin → Sales Ops: the lead pipeline, follow-up tasks and email templates. Reps see only their own leads. */
 export function AdminSalesOps() {
@@ -33,7 +34,7 @@ export function AdminSalesOps() {
       <AdminPageHeader title="Sales Ops" subtitle={isManager ? 'Every lead, follow-up and deal across the sales team.' : 'Your leads, follow-ups and deals.'} icon={<Target size={18} />} />
       <div className="px-4 sm:px-7 pt-2">
         <TabBar
-          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'tasks', label: 'Follow-ups' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, ...(isManager ? [{ id: 'partners', label: 'Partners' }, { id: 'agent', label: 'AI agent' }] : []), { id: 'templates', label: 'Email templates' }]}
+          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'tasks', label: 'Follow-ups' }, { id: 'whatsapp', label: 'WhatsApp' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, ...(isManager ? [{ id: 'partners', label: 'Partners' }, { id: 'agent', label: 'AI agent' }] : []), { id: 'templates', label: 'Email templates' }]}
           active={tab}
           onChange={id => setParams(id === 'pipeline' ? {} : { tab: id }, { replace: true })}
         />
@@ -45,6 +46,7 @@ export function AdminSalesOps() {
         {tab === 'team' && <TeamTab isManager={isManager} owners={owners} />}
         {tab === 'partners' && isManager && <PartnersTab />}
         {tab === 'agent' && isManager && <AgentTab />}
+        {tab === 'whatsapp' && <WhatsAppTab isManager={isManager} />}
         {tab === 'templates' && <TemplatesTab isManager={isManager} />}
       </div>
     </>
