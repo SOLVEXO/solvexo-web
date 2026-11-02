@@ -9,6 +9,7 @@ import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { RevealStagger } from '@/components/comman/motion/Reveal';
 import { apiDemoRequest } from '@/api/services/salesOps';
 import { campaignTags } from '@/utils/campaignTags';
+import { capturePartnerCode, getPartnerCode } from '@/utils/sellerAcquisitionAttribution';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 
 const BUSINESS_TYPES = ['Clothing & fashion', 'Beauty & cosmetics', 'Grocery & food', 'Electronics', 'Home & furniture', 'Books & education', 'Handmade & crafts', 'Services', 'Other'];
@@ -40,10 +41,12 @@ export function BookDemoPage() {
     setError(''); setSending(true);
     try {
       const opt = (v: string) => v.trim() || undefined;
+      capturePartnerCode(search);
+      const partnerCode = getPartnerCode() ?? undefined;
       const r = await apiDemoRequest({
         name: f.name.trim(), phone: f.phone.trim(), email: opt(f.email), businessName: opt(f.businessName), city: opt(f.city),
         businessType: opt(f.businessType), message: opt(f.message), preferredTime: f.preferredTime, website: opt(f.website),
-        page: window.location.pathname, ...campaignTags(search),
+        page: window.location.pathname, ...campaignTags(search), partnerCode,
       });
       setDone(r.message);
     } catch (err) {
