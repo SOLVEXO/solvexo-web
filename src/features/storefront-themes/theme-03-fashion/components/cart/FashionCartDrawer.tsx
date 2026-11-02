@@ -59,6 +59,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
   const { currency: displayCurrency, convert, canConvert } = useCurrencyPreference();
   const [busy, setBusy] = useState<string | null>(null);
   const items = cart?.items ?? [];
+  const hasUnavailable = items.some(i => i.unavailable);
   const count = items.reduce((s, i) => s + i.quantity, 0);
   // No rate for the buyer's currency: amounts stay in the store's own currency (never a wrong symbol).
   const conv = { currency: displayCurrency, convert, canConvert };
@@ -138,6 +139,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                       {(item.options?.length ?? 0) > 0 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{item.options?.map(o => o.value).join(' / ')}</p>}
                       {item.quantity > 1 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{unit} {ts('cart.each', 'each')}</p>}
                       {hint && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
+                      {item.unavailable && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
                       {item.type === 'digital' && (
                         <span className="inline-flex items-center gap-1 self-start rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: t.colors.bgAlt, color: t.colors.inkMuted }}>
                           <Download size={11} /> {tr('cart.digital', 'Digital')}
@@ -169,7 +171,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                   <span className="text-xl font-semibold tracking-tight">{subtotalText}</span>
                 </div>
                 <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{tr('cart.taxesNote', 'Taxes and shipping are calculated at checkout.')}</p>
-                <FashionButton arrow fullWidth onClick={() => { onClose(); navigate('/checkout'); }}>{tr('cart.checkOut', 'Check out')}</FashionButton>
+                <FashionButton arrow fullWidth disabled={hasUnavailable} onClick={() => { onClose(); navigate('/checkout'); }}>{tr('cart.checkOut', 'Check out')}</FashionButton>
                 <Link to="/cart" onClick={onClose} className="text-center text-[13px] underline" style={{ color: t.colors.inkMuted }}>{tr('cart.viewCart', 'View cart')}</Link>
               </div>
             </div>

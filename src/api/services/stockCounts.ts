@@ -15,6 +15,8 @@ export interface StockCountItem {
   productId: string;
   sku: string | null;
   productName: string;
+  /** Variant name such as "Black" or "Black / M"; null for a single-variant product. */
+  variantLabel?: string | null;
   image: string | null;
   systemQty: number;
   countedQty: number | null;
@@ -27,6 +29,9 @@ export interface StockCount {
   items: StockCountItem[];
   status: StockCountStatus;
   startedBy: string;
+  /** Name of whoever started / applied the count (empty on counts made before this was saved). */
+  startedByName?: string | null;
+  completedByName?: string | null;
   startedAt: string;
   completedAt: string | null;
   cancelledAt: string | null;

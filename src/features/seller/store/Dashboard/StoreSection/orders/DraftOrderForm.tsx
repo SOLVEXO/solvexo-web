@@ -8,7 +8,8 @@ import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/bui
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { useToast } from '@/contexts/ToastContext';
 import { currencySymbol } from '@/utils/currency';
-import { apiListVariants, apiGetStoreInventory, type ProductVariant } from '@/api/services/product';
+import { apiGetMyProductById, type ProductVariant, type StoreProduct } from '@/api/services/product';
+import { VariantPickModal } from './VariantPickModal';
 import {
   apiSearchDraftOrderCustomers, apiCreateDraftOrder, apiGetDraftOrder, apiUpdateDraftOrder,
   apiCancelDraftOrder, apiCompleteDraftOrder, apiMarkDraftOrderPaid,
@@ -172,24 +173,42 @@ export default function DraftOrderForm() {
 
   useEffect(() => { if (!loadedOnce.current) { loadedOnce.current = true; loadDraft(); } }, [loadDraft]);
 
+  const [pickQueue, setPickQueue] = useState<{ product: StoreProduct; variants: ProductVariant[] }[]>([]);
+
+  const addVariants = (product: StoreProduct, picked: ProductVariant[]) => {
+    setItems(prev => {
+      const next = [...prev];
+      for (const v of picked) {
+        const at = next.findIndex(i => i.variantId === v._id);
+        if (at >= 0) { next[at] = { ...next[at], quantity: next[at].quantity + 1 }; continue; }
+        next.push({
+          productId: product._id, variantId: v._id, type: (product.type as 'physical' | 'digital' | undefined) ?? 'physical', name: product.name,
+          image: v.images?.[0] ?? product.images?.[0] ?? null, sku: v.sku, options: v.options.map(o => ({ name: o.name, value: o.value })),
+          quantity: 1, unitPrice: v.price,
+        });
+      }
+      return next;
+    });
+  };
+
   const addProduct = async (productIds: string[]) => {
     setPickerOpen(false);
-    const productId = productIds[0];
-    if (!productId) return;
+    if (productIds.length === 0) return;
     try {
-      const [variantsRes, inventoryRes] = await Promise.all([
-        apiListVariants(productId),
-        apiGetStoreInventory(storeId, 1, 200),
-      ]);
-      const variants: ProductVariant[] = variantsRes.data;
-      const variant = variants.find(v => v.isDefault) ?? variants[0];
-      if (!variant) { toast.error('This product has no purchasable variant.'); return; }
-      const productRow = inventoryRes.data.products.find(p => p.productId === productId);
-      setItems(prev => [...prev, {
-        productId, variantId: variant._id, type: productRow?.type ?? 'physical', name: productRow?.name ?? 'Product',
-        image: variant.images?.[0] ?? productRow?.image ?? null, sku: variant.sku, options: variant.options.map(o => ({ name: o.name, value: o.value })),
-        quantity: 1, unitPrice: variant.price,
-      }]);
+      const queue: { product: StoreProduct; variants: ProductVariant[] }[] = [];
+      let skipped = 0;
+      // Fetched a few at a time so selecting a whole catalogue does not fire everything at once.
+      for (let at = 0; at < productIds.length; at += 8) {
+        const chunk = await Promise.all(productIds.slice(at, at + 8).map(id => apiGetMyProductById(id).then(r => r.data)));
+        for (const { product, variants } of chunk) {
+          if (variants.length === 0) skipped++;
+          // One variant: add it straight away. Several: the seller chooses which ones, product by product.
+          else if (variants.length === 1) addVariants(product, variants);
+          else queue.push({ product, variants });
+        }
+      }
+      if (skipped > 0) toast.error(`${skipped} product${skipped === 1 ? ' has' : 's have'} no purchasable variant and ${skipped === 1 ? 'was' : 'were'} skipped.`);
+      setPickQueue(queue);
     } catch {
       toast.error('Failed to load product details.');
     }
@@ -475,7 +494,13 @@ export default function DraftOrderForm() {
       </div>
 
       {pickerOpen && (
-        <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple={false} initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" currencySymbol={symbol} />
+        <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" currencySymbol={symbol} />
+      )}
+
+      {pickQueue.length > 0 && (
+        <VariantPickModal key={pickQueue[0].product._id} productName={pickQueue[0].product.name} variants={pickQueue[0].variants} currencySymbol={symbol}
+          step={pickQueue.length > 1 ? `${pickQueue.length} left` : undefined}
+          onClose={() => setPickQueue([])} onAdd={picked => { addVariants(pickQueue[0].product, picked); setPickQueue(q => q.slice(1)); }} />
       )}
 
       {confirmingCancel && (

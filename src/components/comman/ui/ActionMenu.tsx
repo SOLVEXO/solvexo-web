@@ -104,7 +104,7 @@ function DropdownPortal({
           type="button"
           aria-label="Close menu"
           onClick={onClose}
-          className="fixed inset-0 z-[9998] bg-carbon/35 border-0 cursor-default"
+          className="dialog-overlay-enter fixed inset-0 z-[9998] bg-carbon/35 border-0 cursor-default"
         />
       )}
       <div
@@ -114,7 +114,8 @@ function DropdownPortal({
         aria-labelledby={triggerId}
         onKeyDown={onKeyDown}
         className={clsx(
-          'dropdown-enter fixed z-[9999] bg-white flex flex-col',
+          sheet ? 'sheet-panel-enter' : 'dropdown-enter',
+          'fixed z-[9999] bg-white flex flex-col',
           sheet
             ? 'left-0 right-0 bottom-0 w-full max-h-[72dvh] rounded-t-[18px] border-x border-t border-bone pt-2 pb-[calc(8px+env(safe-area-inset-bottom))]'
             : 'border border-bone rounded-[10px] py-1 min-w-[160px] max-w-[calc(100vw-24px)]',

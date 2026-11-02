@@ -84,12 +84,13 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 }
 
 const initPhys = {
-  name: '', description: '', price: '', compareAtPrice: '',
+  name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '',
   stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', taxable: 'yes', categoryId: '', subCategoryId: '',
   status: 'active' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
   shippingProfileId: '',
+  supplierId: '',
   selling: initSellingOptions,
   // Non-empty optionTypes switches the Pricing/Inventory cards over to the
   // real variant matrix (VariantMatrixEditor) — see the "Variants" card
@@ -218,12 +219,13 @@ export default function StoreAddProduct() {
               barcode: phys.barcode.trim() || undefined,
             }];
         const res = await apiCreatePhysicalProduct({
-          storeId, name: phys.name, description: phys.description,
+          storeId, name: phys.name, description: phys.description, shortDescription: phys.shortDescription, tabs: phys.tabs,
           categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, videoUrl: phys.videoUrl, videoFirst: phys.videoFirst, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           shippingProfileId: phys.shippingProfileId || null,
+          supplierId: phys.supplierId || null,
           ...sellingOptionsPayload(phys.selling),
           variants,
         });
@@ -231,7 +233,7 @@ export default function StoreAddProduct() {
       } else {
         const files = filesPayload(dig.files);
         const res = await apiCreateDigitalProduct({
-          storeId, name: dig.name, description: dig.description,
+          storeId, name: dig.name, description: dig.description, shortDescription: dig.shortDescription, tabs: dig.tabs,
           productType: pType === 'educational' ? 'educational' : 'digital',
           categoryId: dig.categoryId || null,
           subCategoryId: dig.subCategoryId || null, images: dig.images, videoUrl: dig.videoUrl, videoFirst: dig.videoFirst, tags: dig.tags,
@@ -322,11 +324,18 @@ export default function StoreAddProduct() {
                   placeholder={pType === 'physical' ? 'e.g. Premium Cotton T-Shirt' : 'e.g. Complete Web Design Course'}
                   className={clsx(inp, nameError && 'border-error')} />
               </F>
-              <F label="Description">
-                <textarea value={cur.description}
-                  onChange={e => pType === 'physical' ? sp('description', e.target.value) : sd('description', e.target.value)}
-                  placeholder="Describe your product — what it includes, who it's for, and what makes it special…"
+              <F label="Short description">
+                <textarea value={cur.shortDescription} maxLength={500} rows={2}
+                  onChange={e => pType === 'physical' ? sp('shortDescription', e.target.value) : sd('shortDescription', e.target.value)}
+                  placeholder="One or two lines shown under the price"
                   className={ta} />
+              </F>
+              <F label="Description">
+                <ProductRichEditor label="Description" value={cur.description} onChange={v => pType === 'physical' ? sp('description', v) : sd('description', v)}
+                  placeholder="Describe your product — what it includes, who it's for, and what makes it special…" />
+              </F>
+              <F label="Extra tabs">
+                <ProductTabsEditor tabs={cur.tabs} onChange={v => pType === 'physical' ? sp('tabs', v) : sd('tabs', v)} />
               </F>
             </div>
           </Card>
@@ -452,6 +461,8 @@ export default function StoreAddProduct() {
           {pType === 'physical' && (
             <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />
           )}
+
+          {pType === 'physical' && <SupplierField storeId={storeId} value={phys.supplierId} onChange={v => sp('supplierId', v)} />}
 
           {/* Tags */}
           <Card title="Tags & SEO">

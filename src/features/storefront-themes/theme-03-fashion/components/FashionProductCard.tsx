@@ -73,7 +73,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
       onSwatch={setHoverImage}
       secondImage={t.productImageHover === 'second-image' ? product.images?.[1] : undefined}
       hoverVideo={previewVideoSrc(product.videoUrl)}
-      tag={product.tags?.[0]}
+      tag={product.vendor}
       rating={product.averageRating ?? 0}
       price={price != null ? show(price) : undefined}
       comparePrice={sale.onSale ? show(sale.compareAmount, true) : undefined}

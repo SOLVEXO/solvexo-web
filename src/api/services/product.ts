@@ -150,6 +150,8 @@ export interface StoreProduct extends ProductSellingOptions {
   tags:              string[];
   /** Shopify shipping profile (physical products); null/absent = General. */
   shippingProfileId?: string | null;
+  /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */
+  supplierId?: string | null;
   digital:           DigitalMeta | null;
   status:            'draft' | 'active' | 'archived' | 'scheduled';
   scheduledAt:       string | null;
@@ -165,11 +167,15 @@ export interface StoreProduct extends ProductSellingOptions {
   templateKey?:      string;
   /** Products picked to go with this one — shown by a Related Products section set to "complementary". */
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
 }
 
 // ── Request payloads ──────────────────────────────────────────────────────────
 
 export interface CreatePhysicalPayload extends ProductSellingOptions {
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   storeId:           string;
   name:              string;
   description:       string;
@@ -182,16 +188,20 @@ export interface CreatePhysicalPayload extends ProductSellingOptions {
   videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active' | 'scheduled';
+  status:            'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:      string | null;
   /** Shipping profile id; null/omitted = General profile. */
   shippingProfileId?: string | null;
+  /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */
+  supplierId?: string | null;
   // At least one variant is required — every variant must share the same
   // set of attribute names (e.g. all "Color"+"Size", not a mix).
   variants:          VariantInput[];
 }
 
 export interface CreateDigitalPayload {
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   storeId:           string;
   name:              string;
   description:       string;
@@ -207,7 +217,7 @@ export interface CreateDigitalPayload {
   videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active' | 'scheduled';
+  status:            'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:      string | null;
   price:             number;
   compareAtPrice:    number | null;
@@ -229,12 +239,16 @@ export interface EditPhysicalPayload extends ProductSellingOptions {
   videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active' | 'scheduled';
+  status:            'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:      string | null;
   templateKey?:      string;
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   /** Shipping profile id; null = General profile. */
   shippingProfileId?: string | null;
+  /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */
+  supplierId?: string | null;
 }
 
 export interface EditDigitalPayload {
@@ -248,13 +262,15 @@ export interface EditDigitalPayload {
   videoFirst?:    boolean;
   educationLevel?: EducationLevel | null;
   customLevel?:   string | null;
-  status:         'draft' | 'active' | 'scheduled';
+  status:         'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:   string | null;
   price:          number;
   compareAtPrice: number | null;
   digital:        DigitalMeta;
   templateKey?:   string;
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
 }
 
 // ── Response shapes ───────────────────────────────────────────────────────────
@@ -444,11 +460,17 @@ export interface ReorderSuggestionItem {
    *  history existed); 'simple_average' = the plain last-30-days average
    *  fallback (not enough history yet to forecast responsibly). */
   forecastMethod: 'trend_seasonal' | 'simple_average';
+  /** Enough to cover the supplier's lead time plus two weeks of sales. */
+  suggestedQty?: number;
+  /** Stock runs out before a new order could arrive (days left <= lead time). */
+  urgent?: boolean;
 }
 
 export interface ReorderSuggestionGroup {
   supplierId: string | null;
   supplierName: string;
+  leadTimeDays?: number | null;
+  paymentTerms?: string | null;
   items: ReorderSuggestionItem[];
 }
 
@@ -462,10 +484,10 @@ export function apiGetReorderSuggestions(storeId: string) {
 }
 
 export interface DeadStockItem {
-  productId: string; variantId: string; productName: string; sku: string | null; stock: number; value: number | null;
+  productId: string; variantId: string; productName: string; variantLabel?: string | null; sku: string | null; stock: number; value: number | null;
 }
 export interface TopMoverItem {
-  variantId: string; productName: string; sku: string | null; qty: number;
+  variantId: string; productName: string; variantLabel?: string | null; sku: string | null; qty: number;
 }
 export interface InventoryValuationData {
   totalValue: number;
@@ -664,6 +686,7 @@ export interface StockTransfer {
   _id: string;
   variantId: string;
   productName: string;
+  variantLabel?: string | null;
   sku: string | null;
   fromLocationId: string;
   fromLocationName: string;
@@ -993,3 +1016,9 @@ export function apiGetTrendingProducts(storeId: string, limit = 12) {
   return client.get<never, ApiResponse<StorefrontProductsData>>(ENDPOINTS.PRODUCT.STORE_TRENDING(storeId), { params: { limit } });
 }
 
+
+/** What archiving products would leave pointing at them (GET .../store-products/:storeId/archive-impact). */
+export interface ArchiveImpact { draftOrders: number; purchaseOrders: number; menus: number; carts: number; total: number }
+export function apiArchiveImpact(storeId: string, ids: string[]) {
+  return client.get<never, ApiResponse<ArchiveImpact>>(`/api/products/store-products/${storeId}/archive-impact`, { params: { ids: ids.join(',') } });
+}

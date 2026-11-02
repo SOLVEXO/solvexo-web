@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { DialogShell } from './DialogShell';
+import { DialogShell, useDialogClose } from './DialogShell';
 
 export interface ModalProps {
   title:    string;
@@ -18,9 +18,32 @@ export interface ModalProps {
   mobileSheet?: boolean;
 }
 
+function ModalHeader({ titleId, title, onClose, mobileSheet }: { titleId: string; title: string; onClose: () => void; mobileSheet: boolean }) {
+  const close = useDialogClose(onClose);
+  const dragY = useRef(0);
+  return (
+    <>
+      {mobileSheet && (
+        <div className="sm:hidden shrink-0 py-2 touch-none" onTouchStart={e => { dragY.current = e.touches[0].clientY; }} onTouchEnd={e => { if (e.changedTouches[0].clientY - dragY.current > 70) close(); }}>
+          <span aria-hidden className="mx-auto block h-1 w-9 rounded-full bg-bone" />
+        </div>
+      )}
+      <div className="flex items-center justify-between px-5 py-4 max-sm:py-3 border-b border-bone shrink-0">
+        <p id={titleId} className="text-subheading font-semibold text-carbon">{title}</p>
+        <button
+          onClick={close}
+          aria-label="Close dialog"
+          className="w-7 h-7 pointer-coarse:size-11 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-fog transition-[background-color,color,transform] duration-fast ease-spring hover:rotate-90 hover:text-carbon"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </>
+  );
+}
+
 export function Modal({ title, onClose, children, footer, width = 440, mobileSheet = true }: ModalProps) {
   const titleId = useId();
-  const dragY = useRef(0);
 
   const style: CSSProperties = mobileSheet
     ? { '--modal-w': `${width}px` } as CSSProperties
@@ -36,21 +59,7 @@ export function Modal({ title, onClose, children, footer, width = 440, mobileShe
       className={clsx('max-h-[86dvh] sm:max-h-[90vh]', mobileSheet && 'max-w-full sm:max-w-[var(--modal-w)]')}
       style={style}
     >
-      {mobileSheet && (
-        <div className="sm:hidden shrink-0 py-2 touch-none" onTouchStart={e => { dragY.current = e.touches[0].clientY; }} onTouchEnd={e => { if (e.changedTouches[0].clientY - dragY.current > 70) onClose(); }}>
-          <span aria-hidden className="mx-auto block h-1 w-9 rounded-full bg-bone" />
-        </div>
-      )}
-      <div className="flex items-center justify-between px-5 py-4 max-sm:py-3 border-b border-bone shrink-0">
-        <p id={titleId} className="text-subheading font-semibold text-carbon">{title}</p>
-        <button
-          onClick={onClose}
-          aria-label="Close dialog"
-          className="w-7 h-7 pointer-coarse:size-11 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-fog transition-[background-color,color,transform] duration-fast ease-spring hover:rotate-90 hover:text-carbon"
-        >
-          <X size={16} />
-        </button>
-      </div>
+      <ModalHeader titleId={titleId} title={title} onClose={onClose} mobileSheet={mobileSheet} />
 
       <div className="px-5 py-4 overflow-y-auto overscroll-contain">{children}</div>
 

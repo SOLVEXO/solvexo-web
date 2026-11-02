@@ -577,7 +577,7 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }
+.dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) backwards; }
 
 /* ── Route change ── A phone never hard-cuts between screens, it cross-fades
    them in with a slight rise. Deliberately shorter and shallower than
@@ -588,7 +588,8 @@
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.page-route-enter { animation: page-route-enter 220ms var(--ease-out) both; }
+/* `backwards`, not `both`: a kept final transform makes this wrapper the containing block of every position:fixed modal inside it. */
+.page-route-enter { animation: page-route-enter 220ms var(--ease-out) backwards; }
 
 /* ── Solvexo signature surface — replaces "white rounded rectangle + shadow."
    Resting state is a warm --color-paper tone with a 1px hairline and a
@@ -883,8 +884,8 @@
   html.store-app .text-\[11px\] { font-size: 12px; }
   html.store-app :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { font-size: 16px; }
   html.store-app :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select) { min-height: 44px; }
-  html.store-app :is(button, [role=button], [role=tab], summary):not(nav *) { min-height: 44px; }
-  html.store-app :is(button, [role=button]):not(nav *):has(> svg:only-child) { min-width: 44px; }
+  html.store-app :is(button, [role=button], [role=tab], summary):not(nav *):not([role=switch]):not([role=checkbox]):not([role=radio]) { min-height: 44px; }
+  html.store-app :is(button, [role=button]):not(nav *):not([role=switch]):not([role=checkbox]):not([role=radio]):has(> svg:only-child) { min-width: 44px; }
   /* Press feedback like a native app: a small dip while the finger is down. */
   html.store-app :is(button, [role=button], a[href]):not(:disabled):active {
     opacity: .72;
@@ -912,4 +913,29 @@
 }
 @media (max-width: 1023px) {
   .page-route-enter.page-route-enter-back { animation-name: page-route-enter-back; }
+}
+
+/* Phone/tablet: opening a page slides it in from the right (push), going back slides it in from the left (pop), like a native stack. */
+@keyframes page-route-enter-fwd {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-route-enter-back {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (max-width: 1023px) {
+  .page-route-enter { animation: page-route-enter-fwd 260ms var(--ease-out) backwards; }
+  .page-route-enter.page-route-enter-back { animation: page-route-enter-back 260ms var(--ease-out) backwards; }
+}
+
+/* Exit motion for DialogShell (Modal and every dialog built on it). */
+@keyframes dialog-overlay-leave { to { opacity: 0; } }
+@keyframes sheet-panel-leave { to { transform: translateY(100%); } }
+@keyframes dialog-panel-leave { to { opacity: 0; transform: scale(0.96) translateY(10px); } }
+.dialog-overlay-leave { animation: dialog-overlay-leave 190ms var(--ease-in) forwards; }
+.is-closing.sheet-panel-enter { animation: sheet-panel-leave 190ms var(--ease-in) forwards; }
+.is-closing.dialog-panel-enter { animation: dialog-panel-leave 190ms var(--ease-in) forwards; }
+@media (min-width: 640px) {
+  .is-closing.sheet-panel-enter.sheet-panel-sm-fade { animation: dialog-panel-leave 190ms var(--ease-in) forwards; }
 }

@@ -189,7 +189,8 @@
     "viewCart": "장바구니 보기",
     "yourAccent": "장바구니",
     "yourCart": "장바구니",
-    "yourLead": "나의"
+    "yourLead": "나의",
+    "itemUnavailable": "이 상품은 더 이상 구매할 수 없습니다. 결제하려면 삭제해 주세요."
   },
   "category": {
     "notFound": "카테고리를 찾을 수 없습니다",
@@ -1104,6 +1105,7 @@
     "share_a_product": "상품 공유",
     "share_by_email": "이메일로 공유",
     "share_on_facebook": "Facebook에 공유",
+    "share_on_pinterest": "Pinterest에 공유",
     "share_on_whatsapp": "WhatsApp으로 공유",
     "share_on_x": "X에 공유",
     "share_this_article": "이 기사 공유",
@@ -1357,7 +1359,9 @@
     "tags": "태그",
     "unavailable": "이 상품은 이용할 수 없습니다.",
     "yes": "예",
-    "zoomImage": "이미지 확대"
+    "zoomImage": "이미지 확대",
+    "description": "설명",
+    "details": "상품 상세"
   },
   "returns": {
     "approved": "반품 승인됨",

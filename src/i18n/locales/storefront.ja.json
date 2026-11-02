@@ -189,7 +189,8 @@
     "viewCart": "カートを見る",
     "yourAccent": "カート",
     "yourCart": "カート",
-    "yourLead": "あなたの"
+    "yourLead": "あなたの",
+    "itemUnavailable": "この商品は現在ご利用いただけません。ご注文手続きの前に削除してください。"
   },
   "category": {
     "notFound": "カテゴリが見つかりません",
@@ -1104,6 +1105,7 @@
     "share_a_product": "商品を共有",
     "share_by_email": "メールで共有",
     "share_on_facebook": "Facebookで共有",
+    "share_on_pinterest": "Pinterestでシェア",
     "share_on_whatsapp": "WhatsAppで共有",
     "share_on_x": "Xで共有",
     "share_this_article": "この記事を共有",
@@ -1357,7 +1359,9 @@
     "tags": "タグ",
     "unavailable": "この商品は利用できません。",
     "yes": "はい",
-    "zoomImage": "画像を拡大"
+    "zoomImage": "画像を拡大",
+    "description": "説明",
+    "details": "商品詳細"
   },
   "returns": {
     "approved": "返品が承認されました",

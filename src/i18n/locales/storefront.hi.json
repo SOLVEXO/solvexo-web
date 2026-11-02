@@ -190,7 +190,8 @@
     "viewCart": "कार्ट देखें",
     "yourAccent": "कार्ट",
     "yourCart": "आपका कार्ट",
-    "yourLead": "आपका"
+    "yourLead": "आपका",
+    "itemUnavailable": "यह आइटम अब उपलब्ध नहीं है। चेकआउट के लिए इसे हटाएँ।"
   },
   "category": {
     "notFound": "श्रेणी नहीं मिली",
@@ -1114,6 +1115,7 @@
     "share_a_product": "कोई उत्पाद साझा करें",
     "share_by_email": "ईमेल से शेयर करें",
     "share_on_facebook": "Facebook पर शेयर करें",
+    "share_on_pinterest": "Pinterest पर शेयर करें",
     "share_on_whatsapp": "WhatsApp पर शेयर करें",
     "share_on_x": "X पर शेयर करें",
     "share_this_article": "यह लेख साझा करें",
@@ -1369,7 +1371,9 @@
     "tags": "टैग",
     "unavailable": "यह उत्पाद उपलब्ध नहीं है।",
     "yes": "हाँ",
-    "zoomImage": "छवि बड़ी करें"
+    "zoomImage": "छवि बड़ी करें",
+    "description": "विवरण",
+    "details": "उत्पाद विवरण"
   },
   "returns": {
     "approved": "रिटर्न स्वीकृत",

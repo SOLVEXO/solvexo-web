@@ -113,7 +113,7 @@ export default function InventoryReports({ embedded = false }: { embedded?: bool
                 {data.topMovers.map(m => (
                   <div key={m.variantId} className="px-5 py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[12.5px] font-semibold text-charcoal truncate">{m.productName}</p>
+                      <p className="text-[12.5px] font-semibold text-charcoal truncate">{m.productName}{m.variantLabel ? ` — ${m.variantLabel}` : ''}</p>
                       <p className="text-[11px] text-slate">SKU: {m.sku ?? '—'}</p>
                     </div>
                     <span className="text-[12.5px] font-bold text-charcoal shrink-0">{m.qty} sold</span>
@@ -137,7 +137,7 @@ export default function InventoryReports({ embedded = false }: { embedded?: bool
                 {data.deadStock.map(d => (
                   <div key={d.variantId} className="px-5 py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[12.5px] font-semibold text-charcoal truncate">{d.productName}</p>
+                      <p className="text-[12.5px] font-semibold text-charcoal truncate">{d.productName}{d.variantLabel ? ` — ${d.variantLabel}` : ''}</p>
                       <p className="text-[11px] text-slate">SKU: {d.sku ?? '—'}</p>
                     </div>
                     <div className="text-right shrink-0">

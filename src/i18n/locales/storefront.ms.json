@@ -189,7 +189,8 @@
     "viewCart": "Lihat troli",
     "yourAccent": "troli",
     "yourCart": "Troli anda",
-    "yourLead": "Anda"
+    "yourLead": "Anda",
+    "itemUnavailable": "Item ini tidak lagi tersedia. Sila buangkannya untuk teruskan pembayaran."
   },
   "category": {
     "notFound": "Kategori tidak ditemui",
@@ -1104,6 +1105,7 @@
     "share_a_product": "Kongsi produk",
     "share_by_email": "Kongsi melalui e-mel",
     "share_on_facebook": "Kongsi di Facebook",
+    "share_on_pinterest": "Kongsi di Pinterest",
     "share_on_whatsapp": "Kongsi di WhatsApp",
     "share_on_x": "Kongsi di X",
     "share_this_article": "Kongsi artikel ini",
@@ -1357,7 +1359,9 @@
     "tags": "Teg",
     "unavailable": "Produk ini tidak tersedia.",
     "yes": "Ya",
-    "zoomImage": "Besarkan imej"
+    "zoomImage": "Besarkan imej",
+    "description": "Penerangan",
+    "details": "Butiran produk"
   },
   "returns": {
     "approved": "Pemulangan diluluskan",

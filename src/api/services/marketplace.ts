@@ -82,6 +82,8 @@ export interface MarketplaceProduct {
   subCategoryId?:    string | null;
   /** Products the seller hand-picked to go with this one (Shopify's "Complementary products"). */
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   educationLevel?:   string | null;
   customLevel?:      string | null;
   normalizedCustomLevel?: string | null;

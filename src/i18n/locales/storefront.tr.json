@@ -190,7 +190,8 @@
     "viewCart": "Sepeti görüntüle",
     "yourAccent": "sepet",
     "yourCart": "Sepetiniz",
-    "yourLead": "Sizin"
+    "yourLead": "Sizin",
+    "itemUnavailable": "Bu ürün artık mevcut değil. Ödemeye geçmek için lütfen kaldırın."
   },
   "category": {
     "notFound": "Kategori bulunamadı",
@@ -1114,6 +1115,7 @@
     "share_a_product": "Bir ürün paylaş",
     "share_by_email": "E-postayla paylaş",
     "share_on_facebook": "Facebook'ta paylaş",
+    "share_on_pinterest": "Pinterest'te paylaş",
     "share_on_whatsapp": "WhatsApp'ta paylaş",
     "share_on_x": "X'te paylaş",
     "share_this_article": "Bu makaleyi paylaş",
@@ -1369,7 +1371,9 @@
     "tags": "Etiketler",
     "unavailable": "Bu ürün mevcut değil.",
     "yes": "Evet",
-    "zoomImage": "Görseli büyüt"
+    "zoomImage": "Görseli büyüt",
+    "description": "Açıklama",
+    "details": "Ürün ayrıntıları"
   },
   "returns": {
     "approved": "İade onaylandı",

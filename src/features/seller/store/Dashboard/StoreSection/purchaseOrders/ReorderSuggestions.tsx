@@ -10,6 +10,9 @@ import { apiGetReorderSuggestions, type ReorderSuggestionGroup } from '@/api/ser
 // supplier it was last received from, so a seller generates ONE purchase
 // order per supplier covering everything that's low, instead of hunting
 // through the Inventory list SKU by SKU (the real Shopify/Zoho pattern).
+/** Calendar date (YYYY-MM-DD) this many days from today. */
+const dayFromNow = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
 export default function ReorderSuggestions({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const navigate = useNavigate();
@@ -25,12 +28,14 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
       state: {
         supplierId: group.supplierId,
         supplierName: group.supplierId ? group.supplierName : '',
+        // Delivery date = today + the supplier's usual lead time (the seller can change it on the order).
+        expectedAt: group.leadTimeDays != null ? dayFromNow(group.leadTimeDays) : undefined,
         items: group.items.map(i => ({
           productId: i.productId, variantId: i.variantId, name: i.productName, image: i.image, sku: i.sku,
           // A sensible starting order quantity: bring stock back up to
           // 2x the reorder point — a real starting point the seller can
           // still edit before saving, never auto-submitted.
-          quantityOrdered: Math.max(1, i.reorderPoint * 2 - i.available),
+          quantityOrdered: i.suggestedQty ?? Math.max(1, i.reorderPoint * 2 - i.available),
         })),
       },
     });
@@ -52,7 +57,8 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
           groups.map(group => (
             <div key={group.supplierId ?? 'unassigned'} className="bg-white rounded-xl border border-bone overflow-hidden">
               <div className="px-4 py-4 flex flex-col gap-3 border-b border-bone bg-cream sm:flex-row sm:items-center sm:justify-between sm:py-3">
-                <p className="text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal min-w-0">{group.supplierName}</p>
+                <div className="min-w-0"><p className="m-0 text-[13px] pointer-coarse:text-[15px] font-bold text-charcoal">{group.supplierName}</p>
+                  {(group.leadTimeDays != null || group.paymentTerms) && <p className="m-0 text-[11px] pointer-coarse:text-[13px] text-slate">{[group.leadTimeDays != null ? `Lead time ${group.leadTimeDays} day${group.leadTimeDays === 1 ? '' : 's'}` : null, group.paymentTerms].filter(Boolean).join(' · ')}</p>}</div>
                 <Button size="xs" className="self-start sm:self-auto" variant="primary" onClick={() => createPoForGroup(group)}>Create Purchase Order</Button>
               </div>
               <div className="divide-y divide-bone">
@@ -63,7 +69,7 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[12.5px] pointer-coarse:text-[15px] font-semibold text-charcoal sm:truncate">{item.productName}</p>
-                      <p className="text-[11px] pointer-coarse:text-[13px] text-slate">SKU: {item.sku}</p>
+                      <p className="text-[11px] pointer-coarse:text-[13px] text-slate">SKU: {item.sku}{item.suggestedQty ? ` · suggest ${item.suggestedQty}` : ''}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[12px] pointer-coarse:text-[15px] font-semibold text-charcoal">{item.available} left</p>
@@ -71,7 +77,7 @@ export default function ReorderSuggestions({ embedded = false }: { embedded?: bo
                         <>
                           <Badge color={item.daysOfStockLeft <= 7 ? 'red' : 'orange'} size="sm">
                             <AlertTriangle size={9} className="inline mr-1" />
-                            ~{item.daysOfStockLeft}d left
+                            {item.urgent ? 'Order now · ' : ''}~{item.daysOfStockLeft}d left
                           </Badge>
                           <p
                             className="text-[9px] pointer-coarse:text-[11px] text-slate mt-0.5"

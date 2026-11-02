@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { imgProps } from '../components/imgProps';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,6 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useLocalize } from '@/hooks/useLocalize';
-import { renderRichText } from '@/utils/richText';
 import { displayMoney, saleInfo } from '../../core/money';
 import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
@@ -24,6 +23,7 @@ import { clampQty, preorderLabel, qtyRuleHint, resolveQtyRules } from '../../sel
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../components/product/ProductParts';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../components/product/ProductExtraBlocks';
+import { ProductDescriptionTabs, type DescriptionTab } from '../components/product/ProductDescriptionTabs';
 import { FashionImageLightbox } from '../components/product/FashionImageLightbox';
 import { StickyBuyBar } from '../components/product/StickyBuyBar';
 import { ProductDelivery } from '../components/product/ProductDelivery';
@@ -86,6 +86,17 @@ function ProductPageInner({ slug }: { slug: string }) {
     return exact ?? detail?.defaultVariant ?? variants[0];
   }, [variants, optionNames, picked, detail?.defaultVariant]);
 
+  // A shared link carries ?variant=<id>: start on that option (once per product).
+  const linkedFor = useRef('');
+  useEffect(() => {
+    const pid = detail?.product._id;
+    if (!pid || linkedFor.current === pid) return;
+    linkedFor.current = pid;
+    const wanted = new URLSearchParams(window.location.search).get('variant');
+    const v = wanted ? variants.find(x => x._id === wanted) : null;
+    if (v?.options?.length) setPicked(Object.fromEntries(v.options.map(o => [o.name, o.value])));
+  }, [detail?.product._id, variants]);
+
   useEffect(() => {
     if (!detail?.product._id) return;
     let off = false;
@@ -129,6 +140,16 @@ function ProductPageInner({ slug }: { slug: string }) {
   }) : null);
   useJsonLd('breadcrumb', product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
 
+  // Description first, then this product's own tabs, then the store-wide "Show as a tab" blocks.
+  const descriptionTabs = useMemo<DescriptionTab[]>(() => {
+    if (!product) return [];
+    const own = (detail?.product.tabs ?? []).map((x, i) => ({ key: `own-${i}`, title: x.title, content: x.content, html: true }));
+    const shared = layout.infoItems.filter(i => i.type === 'product_collapsible_tab' && i.settings.showAsTab === true && typeof i.settings.title === 'string' && typeof i.settings.content === 'string' && i.settings.content.trim())
+      .map(i => ({ key: `store-${i.key}`, title: String(i.settings.title), content: String(i.settings.content), html: false }));
+    const main: DescriptionTab[] = product.description ? [{ key: 'description', title: tr('product.description', 'Description'), content: product.description, html: true }] : [];
+    return [...main, ...own, ...shared];
+  }, [product, detail?.product.tabs, layout.infoItems, tr]);
+
   if (loading) return <PageSkeleton />;
   if (error && !detail) return /not found|404/i.test(error) ? <FashionNotFoundPage /> : <ErrorBlock message={tr('product.loadError', "We couldn't load this product.")} onRetry={refetch} />;
   if (!detail || !product || !variant) return <FashionNotFoundPage />;
@@ -166,17 +187,15 @@ function ProductPageInner({ slug }: { slug: string }) {
       </a>
     ) : null,
     product_price: () => (
+      <>
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[28px] font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>
         {onSale && <><span className="text-xl line-through opacity-50">{show(sale.compareAmount, true)}</span><span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}>{tr('product.savePercent', 'Save {{percent}}%', { percent: percentOff })}</span></>}
       </div>
+      {product.shortDescription?.trim() && <p className="m-0 mt-3 text-[15px] leading-[1.7]" style={{ color: t.colors.inkMuted }}>{product.shortDescription}</p>}
+      </>
     ),
-    product_description: s => product.description ? (
-      <div>
-        {typeof s.heading === 'string' && s.heading.trim() && <h2 className="m-0 mb-3 text-lg font-semibold">{s.heading}</h2>}
-        <div className="text-base leading-[1.75]" style={{ color: t.colors.inkMuted }}>{renderRichText(product.description)}</div>
-      </div>
-    ) : null,
+    product_description: s => descriptionTabs.length > 0 ? <ProductDescriptionTabs tabs={descriptionTabs} heading={typeof s.heading === 'string' ? s.heading : undefined} /> : null,
     product_variant_picker: s => optionNames.length === 0 ? null : (
       <div className="flex flex-col gap-5">
         {optionNames.map(name => {
@@ -240,10 +259,10 @@ function ProductPageInner({ slug }: { slug: string }) {
     },
     product_buy_now: s => <ProductBuyNowButton settings={s} disabled={!canBuy} loading={busy} onBuy={() => add(true)} />,
     product_wishlist: () => <ProductWishlistButton productId={detail.product._id} variantId={variant._id} />,
-    product_share: () => <ProductShareButton title={product.name} />,
+    product_share: () => <ProductShareButton title={product.name} image={product.images?.[0]} variantId={variants.length > 1 ? variant._id : undefined} />,
     product_sku: () => <ProductSku sku={variant.sku} />,
     product_specs: () => <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
-    product_collapsible_tab: s => <ProductCollapsibleTab settings={s} />,
+    product_collapsible_tab: s => s.showAsTab === true ? null : <ProductCollapsibleTab settings={s} />,
     product_size_chart: s => <ProductSizeChart settings={s} />,
     product_pickup: s => <ProductPickup storeId={store.storeId} storeName={store.name} settings={s} available={canBuy && !isDigital} />,
     // An empty note renders nothing at all (a blank wrapper would still add a gap in the buy box).

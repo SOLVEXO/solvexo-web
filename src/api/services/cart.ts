@@ -24,6 +24,8 @@ export interface CartItem {
   orderMinQuantity?:  number | null;
   orderMaxQuantity?:  number | null;
   orderQuantityStep?: number | null;
+  /** The product was archived, set to draft or deleted after it was added. */
+  unavailable?: boolean;
 }
 
 export interface Cart {

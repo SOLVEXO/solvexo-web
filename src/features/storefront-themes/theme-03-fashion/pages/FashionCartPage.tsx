@@ -30,6 +30,7 @@ export function FashionCartPage() {
   useStorefrontSeo({ title: ts('footer.cart', 'Cart'), noindex: true });
 
   const items = cart?.items ?? [];
+  const hasUnavailable = items.some(i => i.unavailable);
   const base = String(store.baseCurrency ?? currency);
   const unit = (i: (typeof items)[number]) => i.unitPrice ?? i.price ?? 0;
   // No rate for the buyer's currency: amounts stay in the store's own currency (never a wrong symbol).
@@ -78,6 +79,7 @@ export function FashionCartPage() {
                           <Link to={`/product/${i.productId}`} className="no-underline" style={{ color: t.colors.ink }}><h2 className="m-0 truncate text-base font-medium">{i.name}</h2></Link>
                           {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
                           {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
+                          {i.unavailable && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
                           {i.quantity > 1 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{displayMoney(conv, unit(i), i.currency ?? base, lineOf(i).ref)} {tr('cart.each', 'each')}</p>}
                         </div>
                         <p className="m-0 shrink-0 text-base font-semibold">{displayMoneyLine(conv, lineOf(i))}</p>
@@ -107,7 +109,7 @@ export function FashionCartPage() {
               </dl>
               <div className="my-5 border-0 border-t" style={{ borderColor: t.colors.border, borderTopWidth: 1, borderStyle: 'solid' }} />
               <div className="mb-6 flex items-baseline justify-between"><span className="text-base font-semibold">{tr('cart.estimatedTotal', 'Estimated total')}</span><span className="text-2xl font-semibold">{subtotalText}</span></div>
-              <FashionButton arrow fullWidth onClick={() => navigate('/checkout')}>{tr('cart.checkout', 'Checkout')}</FashionButton>
+              <FashionButton arrow fullWidth disabled={hasUnavailable} onClick={() => navigate('/checkout')}>{tr('cart.checkout', 'Checkout')}</FashionButton>
               <p className="m-0 mt-4 text-center text-xs" style={{ color: t.colors.inkMuted }}><Link to="/search" style={{ color: 'inherit' }}>{tr('cart.continueShoppingLower', 'Continue shopping')}</Link></p>
             </aside>
           </div>

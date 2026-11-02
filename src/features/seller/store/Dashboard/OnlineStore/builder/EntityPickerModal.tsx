@@ -109,6 +109,11 @@ export function EntityPickerModal({
     }
   };
 
+  const allShownSelected = filtered.length > 0 && filtered.every(r => selected.includes(r.id));
+  const toggleAllShown = () => setSelected(prev => allShownSelected
+    ? prev.filter(id => !filtered.some(r => r.id === id))
+    : [...prev, ...filtered.map(r => r.id).filter(id => !prev.includes(id))]);
+
   if (!open) return null;
 
   const Icon = MODE_ICON[mode];
@@ -137,6 +142,13 @@ export function EntityPickerModal({
             className="w-full pl-9 pr-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
           />
         </div>
+
+        {multiple && !loading && !error && filtered.length > 1 && (
+          <label className="flex items-center gap-2 px-1 text-[12.5px] font-medium text-charcoal cursor-pointer">
+            <input type="checkbox" checked={allShownSelected} onChange={toggleAllShown} />
+            {allShownSelected ? 'Clear selection' : `Select all (${filtered.length})`}
+          </label>
+        )}
 
         <div className="max-h-[360px] overflow-y-auto flex flex-col gap-1 -mx-1 px-1">
           {loading ? (

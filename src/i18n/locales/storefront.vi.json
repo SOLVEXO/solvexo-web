@@ -189,7 +189,8 @@
     "viewCart": "Xem giỏ hàng",
     "yourAccent": "giỏ hàng",
     "yourCart": "Giỏ hàng của bạn",
-    "yourLead": "Của bạn"
+    "yourLead": "Của bạn",
+    "itemUnavailable": "Sản phẩm này không còn nữa. Vui lòng xóa để thanh toán."
   },
   "category": {
     "notFound": "Không tìm thấy danh mục",
@@ -1104,6 +1105,7 @@
     "share_a_product": "Chia sẻ sản phẩm",
     "share_by_email": "Chia sẻ qua email",
     "share_on_facebook": "Chia sẻ trên Facebook",
+    "share_on_pinterest": "Chia sẻ trên Pinterest",
     "share_on_whatsapp": "Chia sẻ trên WhatsApp",
     "share_on_x": "Chia sẻ trên X",
     "share_this_article": "Chia sẻ bài viết này",
@@ -1357,7 +1359,9 @@
     "tags": "Thẻ",
     "unavailable": "Sản phẩm này không khả dụng.",
     "yes": "Có",
-    "zoomImage": "Phóng to hình ảnh"
+    "zoomImage": "Phóng to hình ảnh",
+    "description": "Mô tả",
+    "details": "Chi tiết sản phẩm"
   },
   "returns": {
     "approved": "Đã duyệt trả hàng",

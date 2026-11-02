@@ -625,6 +625,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'title', kind: 'text', label: 'Heading', required: true, maxLength: 80, placeholder: 'Materials & care' },
     { key: 'content', kind: 'textarea', label: 'Content', rows: 5, maxLength: 5000 },
     { key: 'openByDefault', kind: 'checkbox', label: 'Open by default', defaultOff: true },
+    { key: 'showAsTab', kind: 'checkbox', label: 'Show as a tab next to Description', defaultOff: true, hint: 'Shows this on every product as a tab beside Description (e.g. Delivery policy, Shipping and Return).' },
   ],
   product_pickup: [
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Pickup', hint: 'Shown when you have an active Local pickup option in Shipping and the item is in stock. The place, address and instructions come from that pickup option.' },

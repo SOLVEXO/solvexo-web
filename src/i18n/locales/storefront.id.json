@@ -189,7 +189,8 @@
     "viewCart": "Lihat keranjang",
     "yourAccent": "keranjang",
     "yourCart": "Keranjang Anda",
-    "yourLead": "Anda"
+    "yourLead": "Anda",
+    "itemUnavailable": "Item ini sudah tidak tersedia. Hapus untuk melanjutkan checkout."
   },
   "category": {
     "notFound": "Kategori tidak ditemukan",
@@ -1104,6 +1105,7 @@
     "share_a_product": "Bagikan produk",
     "share_by_email": "Bagikan lewat email",
     "share_on_facebook": "Bagikan di Facebook",
+    "share_on_pinterest": "Bagikan di Pinterest",
     "share_on_whatsapp": "Bagikan di WhatsApp",
     "share_on_x": "Bagikan di X",
     "share_this_article": "Bagikan artikel ini",
@@ -1357,7 +1359,9 @@
     "tags": "Tag",
     "unavailable": "Produk ini tidak tersedia.",
     "yes": "Ya",
-    "zoomImage": "Perbesar gambar"
+    "zoomImage": "Perbesar gambar",
+    "description": "Deskripsi",
+    "details": "Detail produk"
   },
   "returns": {
     "approved": "Pengembalian disetujui",

@@ -63,6 +63,8 @@ const STATIC_DEFAULTS = {
     position: 'bottom-right' as 'bottom-right' | 'bottom-center' | 'top-right' | 'top-center',
     progress: true,
   },
+  /** Share popup networks; seller settings `custom.share*` (hide = off). */
+  share: { facebook: true, x: true, pinterest: true, whatsapp: true, email: true },
   colors: {
     bg: '#FFFFFF',
     bgAlt: '#F4F4F5',
@@ -206,6 +208,11 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.toast.color = typeof toastColor === 'string' && HEX6.test(toastColor) ? toastColor : null;
   fashionTheme.toast.position = ts?.toastPosition === 'bottom-center' || ts?.toastPosition === 'top-right' || ts?.toastPosition === 'top-center' ? ts.toastPosition : 'bottom-right';
   fashionTheme.toast.progress = ts?.toastProgress !== 'hide';
+  fashionTheme.share.facebook = ts?.shareFacebook !== 'hide';
+  fashionTheme.share.x = ts?.shareX !== 'hide';
+  fashionTheme.share.pinterest = ts?.sharePinterest !== 'hide';
+  fashionTheme.share.whatsapp = ts?.shareWhatsapp !== 'hide';
+  fashionTheme.share.email = ts?.shareEmail !== 'hide';
   if (c?.priceColor) fashionTheme.colors.price = c.priceColor;
   if (c?.cardBgColor) fashionTheme.colors.cardBg = c.cardBgColor;
   fashionTheme.colors.danger = c?.saleColor || d.colors.danger;
