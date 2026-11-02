@@ -8,7 +8,7 @@ interface ApiResponse<T> { success: boolean; message?: string; data: T }
 export const ADMIN_PERMISSIONS = [
   'analytics.view', 'clients.view', 'clients.manage', 'finance.view', 'finance.payouts', 'billing.manage',
   'commission.manage', 'seo.manage', 'ai.manage', 'content.manage', 'marketing.manage', 'marketplace.manage',
-  'themes.manage', 'apps.manage', 'config.manage', 'activity.view', 'audit.view', 'team.manage',
+  'themes.manage', 'apps.manage', 'config.manage', 'activity.view', 'audit.view', 'team.manage', 'sales.access', 'sales.manage',
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
@@ -31,6 +31,8 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, { label: string; h
   'activity.view':      { label: 'Activity log', hint: 'Platform activity log' },
   'audit.view':         { label: 'Audit trail', hint: 'What every admin changed' },
   'team.manage':        { label: 'Team', hint: 'Admins, roles and approvals' },
+  'sales.access':       { label: 'Sales Ops', hint: 'Work their own leads, follow-ups and emails' },
+  'sales.manage':       { label: 'Manage sales team', hint: 'See every lead, assign owners, edit email templates' },
 };
 
 export const ADMIN_PERMISSION_AREAS: { area: string; keys: AdminPermission[] }[] = [
@@ -38,6 +40,7 @@ export const ADMIN_PERMISSION_AREAS: { area: string; keys: AdminPermission[] }[]
   { area: 'Clients', keys: ['clients.view', 'clients.manage'] },
   { area: 'Money', keys: ['finance.view', 'finance.payouts', 'billing.manage', 'commission.manage'] },
   { area: 'Growth & content', keys: ['seo.manage', 'ai.manage', 'content.manage', 'marketing.manage', 'marketplace.manage', 'themes.manage', 'apps.manage'] },
+  { area: 'Sales', keys: ['sales.access', 'sales.manage'] },
   { area: 'Platform', keys: ['config.manage', 'team.manage'] },
 ];
 

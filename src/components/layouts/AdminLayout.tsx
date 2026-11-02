@@ -7,7 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
-  Tag,
+  Tag, Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -29,6 +29,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'overview',      Icon: LayoutDashboard, label: 'Overview',        path: '/admin'               },
   { id: 'analytics',     Icon: BarChart3,       label: 'Analytics',       path: '/admin/analytics'     },
   { id: 'saas-metrics',  Icon: Gauge,           label: 'SaaS Metrics',    path: '/admin/saas-metrics'  },
+  { id: 'sales',         Icon: Target,          label: 'Sales Ops',       path: '/admin/sales'         },
   // Moderation is a tab inside this page now (AdminClients.tsx), not its
   // own nav destination — see that file's own comment.
   { id: 'clients',       Icon: Users,           label: 'Clients Manage',  path: '/admin/clients'       },
@@ -137,6 +138,9 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
   { id: 'saas-metrics', label: 'SaaS Metrics',       Icon: Gauge,           ids: ['saas-metrics'] },
+  // Leads, pipeline, follow-ups and email templates (SalesOpsModule). Reps
+  // (sales.access) see only their own leads; managers see the whole team.
+  { id: 'sales',     label: 'Sales Ops',             Icon: Target,          ids: ['sales'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance'] },
   { id: 'billing',   label: 'Billing',               Icon: RefreshCw,      ids: ['billing'] },
   // Just one destination now (Moderation moved inside it as a tab — see
@@ -188,7 +192,8 @@ const VISIBLE_ADMIN_NAV = ADMIN_NAV.filter(item => VISIBLE_NAV_IDS.has(item.id))
 
 // Platform-team admins only see the pages their role allows (the owner / Super Admin sees all). The backend
 // enforces the same permissions; this only hides what would answer 403. 'settings' (own account) is always open.
-const NAV_PERMISSION: Record<string, string> = {
+const NAV_PERMISSION: Record<string, string | string[]> = {
+  sales: ['sales.access', 'sales.manage'],
   overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
   'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',

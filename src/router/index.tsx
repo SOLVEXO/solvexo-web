@@ -159,6 +159,8 @@ const MetaobjectEntriesPage = lazy(() => import('@/features/seller/store/Dashboa
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
 const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminSalesOps = lazy(() => import('@/features/admin/pages/sales/AdminSalesOps').then(m => ({ default: m.AdminSalesOps })));
+const SalesLeadDetail = lazy(() => import('@/features/admin/pages/sales/SalesLeadDetail').then(m => ({ default: m.SalesLeadDetail })));
 const AdminSaasMetrics = lazy(() => import('@/features/admin/pages/AdminSaasMetrics').then(m => ({ default: m.AdminSaasMetrics })));
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
@@ -523,6 +525,8 @@ const mainRouter = createBrowserRouter([
           { index: true,          element: <AdminOverview /> },
           { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
           { path: 'saas-metrics', element: <RequireRole role="admin"><AdminSaasMetrics /></RequireRole> },
+          { path: 'sales',        element: <RequireRole role="admin"><AdminSalesOps /></RequireRole> },
+          { path: 'sales/leads/:id', element: <RequireRole role="admin"><SalesLeadDetail /></RequireRole> },
           // "Users & Sellers" is now the "Clients" workspace — same seller
           // data, opening into a full per-client workspace instead of a
           // modal. Old URL redirected (bookmarks/deep-links still land
