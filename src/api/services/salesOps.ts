@@ -114,3 +114,58 @@ export const formatPKR = (n: number | null | undefined) => `PKR ${Math.round(n ?
 /** Fill `{{name}}`-style fields the same way the server does, for the composer preview. */
 export const fillTemplate = (text: string, vars: Record<string, string | null | undefined>) =>
   text.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k: string) => (vars[k] != null ? String(vars[k]) : m));
+
+// ── Campaigns & team ────────────────────────────────────────────────────────
+
+export const CAMPAIGN_CHANNELS = ['facebook', 'instagram', 'google', 'tiktok', 'youtube', 'whatsapp', 'email', 'sms', 'influencer', 'event', 'other'] as const;
+export type CampaignChannel = (typeof CAMPAIGN_CHANNELS)[number];
+export const CHANNEL_LABELS: Record<CampaignChannel, string> = {
+  facebook: 'Facebook', instagram: 'Instagram', google: 'Google', tiktok: 'TikTok', youtube: 'YouTube', whatsapp: 'WhatsApp',
+  email: 'Email', sms: 'SMS', influencer: 'Influencer', event: 'Event', other: 'Other',
+};
+
+export interface CampaignResult {
+  id: string; code: string; name: string; channel: CampaignChannel; isArchived: boolean;
+  startDate: string | null; endDate: string | null; budgetPKR: number | null;
+  spendPKR: number; leads: number; wonLeads: number; signups: number; trials: number; paying: number; payingNow: number;
+  mrrUSD: number; mrrPKR: number | null;
+  costPerLeadPKR: number | null; costPerSignupPKR: number | null; costPerPayingPKR: number | null; paybackMonths: number | null;
+  link: string | null;
+}
+export interface CampaignList {
+  campaigns: CampaignResult[];
+  totals: { spendPKR: number; leads: number; signups: number; paying: number; mrrUSD: number; costPerPayingPKR: number | null };
+  untracked: { code: string; leads: number; signups: number }[];
+  pkrPerUSD: number | null;
+}
+export interface CampaignDetail extends CampaignResult {
+  utmSource: string | null; utmMedium: string | null; landingPath: string; notes: string | null;
+  spend: { _id: string; date: string; amountPKR: number; note: string | null }[];
+  recentLeads: { _id: string; name: string; businessName: string | null; stage: LeadStage; createdAt: string }[];
+}
+export interface CampaignInput {
+  name?: string; code?: string; channel?: CampaignChannel; utmSource?: string | null; utmMedium?: string | null; landingPath?: string;
+  startDate?: string | null; endDate?: string | null; budgetPKR?: number | null; notes?: string | null; isArchived?: boolean;
+}
+
+export const apiListCampaigns = (archived = false) => client.get<never, ApiResponse<CampaignList>>(`${BASE}/campaigns`, { params: archived ? { archived: 'true' } : {} });
+export const apiGetCampaign = (id: string) => client.get<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns/${id}`);
+export const apiSaveCampaign = (id: string | null, body: CampaignInput) =>
+  id ? client.patch<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns/${id}`, body) : client.post<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns`, body);
+export const apiAddSpend = (id: string, body: { date: string; amountPKR: number; note?: string }) =>
+  client.post<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns/${id}/spend`, body);
+export const apiRemoveSpend = (id: string, spendId: string) => client.delete<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns/${id}/spend/${spendId}`);
+
+export interface Target { adminId: string; wonDeals: number | null; wonValuePKR: number | null; activities: number | null }
+export interface LeaderRow {
+  adminId: string; name: string; newLeads: number; activities: number; demos: number; won: number; wonValuePKR: number; lost: number;
+  winRate: number | null; openLeads: number; openValuePKR: number; overdue: number; target: Target | null;
+  progress: { wonDeals: number | null; wonValuePKR: number | null; activities: number | null };
+}
+export interface TeamReport { month: string; reps: LeaderRow[]; unassignedOpen: number }
+export interface SalesSettings { autoAssign: boolean; assigneeIds: string[] }
+
+export const apiSalesTeam = (month?: string) => client.get<never, ApiResponse<TeamReport>>(`${BASE}/team`, { params: month ? { month } : {} });
+export const apiSaveTargets = (month: string, targets: Target[]) => client.put<never, ApiResponse<TeamReport>>(`${BASE}/targets`, { month, targets });
+export const apiSalesSettings = () => client.get<never, ApiResponse<SalesSettings>>(`${BASE}/settings`);
+export const apiSaveSalesSettings = (s: SalesSettings) => client.put<never, ApiResponse<SalesSettings>>(`${BASE}/settings`, s);

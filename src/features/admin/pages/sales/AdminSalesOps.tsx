@@ -12,9 +12,11 @@ import {
 } from '@/api/services/salesOps';
 import { LeadFormModal, LostReasonModal, StageBadge } from './parts';
 import { ImportLeadsModal } from './ImportLeadsModal';
+import { CampaignsTab } from './CampaignsTab';
+import { TeamTab } from './TeamTab';
 import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
-type TabId = 'pipeline' | 'tasks' | 'templates';
+type TabId = 'pipeline' | 'tasks' | 'campaigns' | 'team' | 'templates';
 
 /** Super Admin → Sales Ops: the lead pipeline, follow-up tasks and email templates. Reps see only their own leads. */
 export function AdminSalesOps() {
@@ -29,7 +31,7 @@ export function AdminSalesOps() {
       <AdminPageHeader title="Sales Ops" subtitle={isManager ? 'Every lead, follow-up and deal across the sales team.' : 'Your leads, follow-ups and deals.'} icon={<Target size={18} />} />
       <div className="px-4 sm:px-7 pt-2">
         <TabBar
-          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'tasks', label: 'Follow-ups' }, { id: 'templates', label: 'Email templates' }]}
+          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'tasks', label: 'Follow-ups' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, { id: 'templates', label: 'Email templates' }]}
           active={tab}
           onChange={id => setParams(id === 'pipeline' ? {} : { tab: id }, { replace: true })}
         />
@@ -37,6 +39,8 @@ export function AdminSalesOps() {
       <div className="px-4 sm:px-7 py-5">
         {tab === 'pipeline' && <PipelineTab owners={owners} isManager={isManager} />}
         {tab === 'tasks' && <TasksTab isManager={isManager} />}
+        {tab === 'campaigns' && isManager && <CampaignsTab />}
+        {tab === 'team' && <TeamTab isManager={isManager} owners={owners} />}
         {tab === 'templates' && <TemplatesTab isManager={isManager} />}
       </div>
     </>
