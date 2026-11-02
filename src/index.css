@@ -884,8 +884,8 @@
   html.store-app .text-\[11px\] { font-size: 12px; }
   html.store-app :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { font-size: 16px; }
   html.store-app :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select) { min-height: 44px; }
-  html.store-app :is(button, [role=button], [role=tab], summary):not(nav *) { min-height: 44px; }
-  html.store-app :is(button, [role=button]):not(nav *):has(> svg:only-child) { min-width: 44px; }
+  html.store-app :is(button, [role=button], [role=tab], summary):not(nav *):not([role=switch]):not([role=checkbox]):not([role=radio]) { min-height: 44px; }
+  html.store-app :is(button, [role=button]):not(nav *):not([role=switch]):not([role=checkbox]):not([role=radio]):has(> svg:only-child) { min-width: 44px; }
   /* Press feedback like a native app: a small dip while the finger is down. */
   html.store-app :is(button, [role=button], a[href]):not(:disabled):active {
     opacity: .72;
