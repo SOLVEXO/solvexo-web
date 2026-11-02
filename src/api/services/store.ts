@@ -630,6 +630,7 @@ export interface PublicStoreProduct {
   _id:         string;
   slug:        string;
   name:        string;
+  vendor?:     string;
   images?:     string[];
   videoUrl?:         string;
   type?:       'physical' | 'digital';

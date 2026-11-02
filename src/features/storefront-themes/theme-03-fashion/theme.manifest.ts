@@ -153,7 +153,7 @@ export const fashionThemeManifest: ThemeManifest = {
     { key: 'colorSwatches', label: 'Colour swatches', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Shows the available colours on product cards; hovering one previews its photo.' },
     { key: 'soldOutBadge', label: 'Sold out badge', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show a Sold out badge on unavailable products.' },
     { key: 'cardRating', label: 'Star rating', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show stars on product cards.' },
-    { key: 'cardTag', label: 'Category label', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show the category label on product cards.' },
+    { key: 'cardTag', label: 'Vendor', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show the vendor name on product cards.' },
     { key: 'cardButton', label: 'Add to cart button', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Hide it for a cleaner, image-led grid.' },
     { key: 'badgeStyle', label: 'Badge shape', group: 'Product cards', control: { kind: 'select', options: [{ value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }] }, helpText: 'Shape of Sale and Sold out badges.' },
     { key: 'inputRadius', label: 'Form field corners', group: 'Buttons', control: { kind: 'select', options: RADIUS }, helpText: 'Corners of form fields (checkout, login, search).' },
