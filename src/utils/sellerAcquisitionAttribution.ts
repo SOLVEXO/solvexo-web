@@ -51,6 +51,7 @@ function readSnapshot(): SellerAcquisitionSnapshot | null {
  *  still-valid snapshot, matching how AffiliateReferral/promotionAttribution.ts
  *  both credit the FIRST attribution touch, not the most recent one. */
 export function captureSellerAcquisitionAttribution(): void {
+  capturePartnerCode();
   try {
     if (typeof window === 'undefined') return;
     if (readSnapshot()) return; // already have a live snapshot — leave it alone
@@ -98,13 +99,45 @@ export function getSellerAcquisitionFields(): {
   acquisitionMedium?: string;
   acquisitionCampaign?: string;
   acquisitionLandingPage?: string;
+  partnerCode?: string;
 } {
+  const partnerCode = getPartnerCode() ?? undefined;
   const snapshot = readSnapshot();
-  if (!snapshot) return {};
+  if (!snapshot) return partnerCode ? { partnerCode } : {};
   return {
+    ...(partnerCode ? { partnerCode } : {}),
     ...(snapshot.source ? { acquisitionSource: snapshot.source } : {}),
     ...(snapshot.medium ? { acquisitionMedium: snapshot.medium } : {}),
     ...(snapshot.campaign ? { acquisitionCampaign: snapshot.campaign } : {}),
     acquisitionLandingPage: snapshot.landingPage,
   };
+}
+
+// ── Sales Ops partner referrals ─────────────────────────────────────────────
+// A reseller's or agent's link carries ?partner=CODE. The FIRST partner link a
+// visitor uses is kept for 60 days (a partner shouldn't lose a merchant they
+// brought because the merchant later clicked someone else's link), then sent
+// with the seller sign-up and the Book-a-demo form so the partner is credited.
+
+const PARTNER_KEY = 'solvexo:partnerRef';
+const PARTNER_TTL_MS = 60 * 24 * 60 * 60 * 1000;
+
+const cleanCode = (s: string | null) => (s ?? '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 40) || null;
+
+export function capturePartnerCode(search = typeof window === 'undefined' ? '' : window.location.search): void {
+  try {
+    const code = cleanCode(new URLSearchParams(search).get('partner'));
+    if (!code || getPartnerCode()) return;
+    localStorage.setItem(PARTNER_KEY, JSON.stringify({ code, expiresAt: Date.now() + PARTNER_TTL_MS }));
+  } catch { /* storage blocked: best-effort */ }
+}
+
+export function getPartnerCode(): string | null {
+  try {
+    const raw = localStorage.getItem(PARTNER_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as { code?: string; expiresAt?: number };
+    if (!v?.code || typeof v.expiresAt !== 'number' || v.expiresAt < Date.now()) { localStorage.removeItem(PARTNER_KEY); return null; }
+    return v.code;
+  } catch { return null; }
 }

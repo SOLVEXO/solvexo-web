@@ -103,7 +103,7 @@ export const apiSyncStalled = () => client.post<never, { success: boolean; check
 
 export interface DemoRequest {
   name: string; phone: string; email?: string; businessName?: string; city?: string; businessType?: string; message?: string;
-  preferredTime?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; page?: string; website?: string;
+  preferredTime?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; page?: string; website?: string; partnerCode?: string;
 }
 /** Public, no login: the Book-a-demo form on solvexo.store. */
 export const apiDemoRequest = (body: DemoRequest) => client.post<never, { success: boolean; message: string }>('/api/sales/demo-request', body);
@@ -169,3 +169,68 @@ export const apiSalesTeam = (month?: string) => client.get<never, ApiResponse<Te
 export const apiSaveTargets = (month: string, targets: Target[]) => client.put<never, ApiResponse<TeamReport>>(`${BASE}/targets`, { month, targets });
 export const apiSalesSettings = () => client.get<never, ApiResponse<SalesSettings>>(`${BASE}/settings`);
 export const apiSaveSalesSettings = (s: SalesSettings) => client.put<never, ApiResponse<SalesSettings>>(`${BASE}/settings`, s);
+
+// ── Partners & commissions ──────────────────────────────────────────────────
+
+export const PARTNER_KINDS = ['rep', 'reseller', 'agent'] as const;
+export type PartnerKind = (typeof PARTNER_KINDS)[number];
+export const PARTNER_KIND_LABELS: Record<PartnerKind, string> = { rep: 'Sales rep', reseller: 'Reseller', agent: 'Agent' };
+export const PAYOUT_METHODS = ['bank', 'jazzcash', 'easypaisa', 'cash', 'other'] as const;
+export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
+export const PAYOUT_LABELS: Record<PayoutMethod, string> = { bank: 'Bank transfer', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', cash: 'Cash', other: 'Other' };
+export const REFERRAL_SOURCE_LABELS: Record<string, string> = { code: 'Signed up with their link', demo_form: 'Booked a demo with their link', lead_owner: 'Their sales lead', manual: 'Added by a manager' };
+export const LINE_STATUS_LABELS: Record<string, string> = { pending: 'On hold', payable: 'Payable', paid: 'Paid', void: 'Void' };
+
+export interface CommissionPlan {
+  _id: string; name: string; description: string | null; bountyPKR: number | null; percent: number | null; percentMonths: number | null;
+  tiers: { minPaying: number; percent: number }[]; holdDays: number; minPayoutPKR: number; isArchived: boolean; partners?: number;
+}
+export type CommissionPlanInput = Partial<Omit<CommissionPlan, '_id' | 'partners'>>;
+export interface Partner {
+  _id: string; name: string; kind: PartnerKind; code: string; adminId: string | null; email: string | null; phone: string | null; city: string | null;
+  planId: string | null; payoutMethod: PayoutMethod; payoutDetails: string | null; status: 'active' | 'paused'; notes?: string | null; createdAt: string;
+}
+export type PartnerInput = Partial<Omit<Partner, '_id' | 'createdAt'>>;
+export interface PartnerRow extends Partner { planName: string | null; referred: number; payingNow: number; pendingPKR: number; payablePKR: number; paidPKR: number }
+export interface CommissionLine { _id: string; earnedAt: string; payableAt: string; type: 'bounty' | 'percent' | 'adjustment'; description: string | null; merchant: string | null; amountPKR: number; status: string }
+export interface PartnerPayout { _id: string; amountPKR: number; paidAt: string; method: PayoutMethod; reference: string | null; note?: string | null }
+export interface PartnerDetail {
+  partner: Partner; link: string; plan: CommissionPlan | null;
+  balances: { pendingPKR: number; payablePKR: number; paidPKR: number; earnedPKR: number };
+  referrals: { sellerId: string; merchant: string; source: string; effectiveFrom: string; payingNow: boolean; earnedPKR: number }[];
+  lines: CommissionLine[]; payouts: PartnerPayout[];
+}
+export interface PartnerStatement {
+  month: string; openingPKR: number; earnedPKR: number; paidPKR: number; closingPKR: number;
+  lines: CommissionLine[]; payouts: PartnerPayout[];
+}
+
+export const apiCommissionPlans = () => client.get<never, ApiResponse<CommissionPlan[]>>(`${BASE}/commission-plans`);
+export const apiSaveCommissionPlan = (id: string | null, body: CommissionPlanInput) =>
+  id ? client.patch<never, ApiResponse<CommissionPlan[]>>(`${BASE}/commission-plans/${id}`, body) : client.post<never, ApiResponse<CommissionPlan[]>>(`${BASE}/commission-plans`, body);
+export const apiPartners = () => client.get<never, ApiResponse<PartnerRow[]>>(`${BASE}/partners`);
+export const apiPartner = (id: string) => client.get<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}`);
+export const apiSavePartner = (id: string | null, body: PartnerInput) =>
+  id ? client.patch<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}`, body) : client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners`, body);
+export const apiAddReferral = (id: string, body: { sellerEmail: string; effectiveFrom?: string | null }) => client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/referrals`, body);
+export const apiRemoveReferral = (id: string, sellerId: string) => client.delete<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/referrals/${sellerId}`);
+export const apiAddAdjustment = (id: string, body: { amountPKR: number; description: string }) => client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/adjustments`, body);
+export const apiPartnerStatement = (id: string, month: string) => client.get<never, ApiResponse<PartnerStatement>>(`${BASE}/partners/${id}/statement`, { params: { month } });
+export const apiRecordPayout = (id: string, body: { method?: PayoutMethod; reference?: string; paidAt?: string; note?: string }) =>
+  client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/payouts`, body);
+export const apiRunCommissions = () => client.post<never, { success: boolean; attributed: number; created: number; matured: number; skipped?: string }>(`${BASE}/commissions/run`);
+
+/** The signed-in admin's own partner account (null when they are not a partner). */
+export const apiMyPartner = (month?: string) => client.get<never, ApiResponse<(PartnerDetail & { statement: PartnerStatement }) | null>>('/api/admin/partner-portal', { params: month ? { month } : {} });
+export const apiMyStatement = (month: string) => client.get<never, ApiResponse<PartnerStatement>>('/api/admin/partner-portal/statement', { params: { month } });
+
+/** "20% for 12 months · PKR 5,000 per new paying merchant" */
+export function describePlan(p: Pick<CommissionPlan, 'bountyPKR' | 'percent' | 'percentMonths' | 'tiers' | 'holdDays'>): string {
+  const parts: string[] = [];
+  if (p.bountyPKR) parts.push(`${formatPKR(p.bountyPKR)} per new paying merchant`);
+  if (p.percent) parts.push(`${p.percent}% of what they pay ${p.percentMonths === null ? 'for as long as they pay' : p.percentMonths === 0 ? 'on their first payment' : `for ${p.percentMonths} months`}`);
+  if (p.tiers?.length) parts.push(p.tiers.map(t => `${t.percent}% from ${t.minPaying} paying`).join(', '));
+  return parts.join(' · ') || 'Nothing set';
+}
+export interface PartnerLogin { _id: string; name: string; email: string; status: string; roleName: string | null; partnerName: string | null }
+export const apiPartnerLogins = () => client.get<never, ApiResponse<PartnerLogin[]>>(`${BASE}/partner-logins`);

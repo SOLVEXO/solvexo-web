@@ -6,6 +6,7 @@ import { BrandSplashReadyProvider } from '@/components/comman/motion/BrandSplash
 import { Cursor } from '@/components/comman/motion/Cursor';
 import { clsx } from 'clsx';
 import { rememberCampaignTags } from '@/utils/campaignTags';
+import { capturePartnerCode } from '@/utils/sellerAcquisitionAttribution';
 
 // Public marketing/product/solutions pages share one navigation system —
 // PublicMegaNavbar's Products/Solutions/Resources mega-menus — instead of
@@ -23,7 +24,7 @@ export function PublicLayout() {
   const [splashReady, setSplashReady] = useState(() => !willShowBrandSplash());
   const { pathname, search } = useLocation();
   // Ad links carry utm_* tags; keep them for the Book-a-demo form a few clicks later.
-  useEffect(() => { rememberCampaignTags(search); }, [search]);
+  useEffect(() => { rememberCampaignTags(search); capturePartnerCode(search); }, [search]);
   // PublicMegaNavbar is `fixed`, not `sticky`, so it no longer reserves its
   // own space in flow — every route needs that space compensated with real
   // padding, except the dark-hero routes (see DARK_HERO_ROUTES), whose hero
