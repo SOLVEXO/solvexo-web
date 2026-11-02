@@ -49,7 +49,10 @@ import {
 import { currencySymbol } from '@/utils/currency';
 import { apiStartStockCount } from '@/api/services/stockCounts';
 import { apiListBins, apiCreateBin, apiDeleteBin, type Bin } from '@/api/services/staff';
+
 
+/** " — Black / M" for a variant's options; empty for a single-variant product. */
+const optionSuffix = (options?: { value: string }[]) => (options?.length ? ` — ${options.map(o => o.value).join(' / ')}` : '');
 const STATUS_META: Record<StockLine['status'], { label: string; color: 'green' | 'orange' | 'red' | 'blue' }> = {
   in_stock:     { label: 'In Stock',     color: 'green'  },
   low_stock:    { label: 'Low Stock',    color: 'orange' },
@@ -924,7 +927,7 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
         }>
           <div className="flex flex-col gap-4">
             <div>
-              <p className="text-[13px] font-semibold text-charcoal">{adjustTarget.productName}</p>
+              <p className="text-[13px] font-semibold text-charcoal">{adjustTarget.productName}{optionSuffix(adjustTarget.options)}</p>
               <p className="text-[12px] text-slate">SKU: {adjustTarget.sku} · Current stock: {adjustTarget.stock} units</p>
             </div>
 
@@ -1019,7 +1022,7 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
         }>
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-[13px] font-semibold text-charcoal">{historyTarget.productName}</p>
+              <p className="text-[13px] font-semibold text-charcoal">{historyTarget.productName}{optionSuffix(historyTarget.options)}</p>
               <p className="text-[12px] text-slate">SKU: {historyTarget.sku}</p>
             </div>
 
@@ -1072,7 +1075,7 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
         }>
           <div className="flex flex-col gap-4">
             <div>
-              <p className="text-[13px] font-semibold text-charcoal">{transferTarget.productName}</p>
+              <p className="text-[13px] font-semibold text-charcoal">{transferTarget.productName}{optionSuffix(transferTarget.options)}</p>
               <p className="text-[12px] text-slate">SKU: {transferTarget.sku}</p>
             </div>
 
@@ -1185,7 +1188,7 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
                     <div key={t._id} className="py-3 flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[12.5px] font-semibold text-charcoal truncate">{t.productName}</p>
+                          <p className="text-[12.5px] font-semibold text-charcoal truncate">{t.productName}{t.variantLabel ? ` — ${t.variantLabel}` : ''}</p>
                           <p className="text-[11px] text-slate">
                             SKU: {t.sku} · {t.fromLocationName} → {t.toLocationName}
                           </p>
@@ -1271,7 +1274,7 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
         }>
           <div className="flex flex-col gap-4">
             <div>
-              <p className="text-[13px] font-semibold text-charcoal">{settingsTarget.productName}</p>
+              <p className="text-[13px] font-semibold text-charcoal">{settingsTarget.productName}{optionSuffix(settingsTarget.options)}</p>
               <p className="text-[12px] text-slate">SKU: {settingsTarget.sku}</p>
             </div>
             <div>

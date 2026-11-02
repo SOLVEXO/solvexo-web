@@ -472,10 +472,10 @@ export function apiGetReorderSuggestions(storeId: string) {
 }
 
 export interface DeadStockItem {
-  productId: string; variantId: string; productName: string; sku: string | null; stock: number; value: number | null;
+  productId: string; variantId: string; productName: string; variantLabel?: string | null; sku: string | null; stock: number; value: number | null;
 }
 export interface TopMoverItem {
-  variantId: string; productName: string; sku: string | null; qty: number;
+  variantId: string; productName: string; variantLabel?: string | null; sku: string | null; qty: number;
 }
 export interface InventoryValuationData {
   totalValue: number;
@@ -674,6 +674,7 @@ export interface StockTransfer {
   _id: string;
   variantId: string;
   productName: string;
+  variantLabel?: string | null;
   sku: string | null;
   fromLocationId: string;
   fromLocationName: string;
