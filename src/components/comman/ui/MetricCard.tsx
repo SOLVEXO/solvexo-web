@@ -39,7 +39,7 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, c
   const { display, ref: valueRef } = useCountUp<HTMLParagraphElement>(value);
 
   return (
-    <Card className="metric-card-enter flex-1 min-w-[140px] group" padding="none" hover>
+    <Card className="metric-card-enter flex-1 min-w-[140px] min-h-[172px] group" padding="none" hover>
       <div className="px-5 py-5 max-sm:px-3.5 max-sm:py-3.5 relative overflow-hidden">
         {/* A faint directional glow anchored to the icon corner — the one
            deliberate "surprise" per card (rule 27: 90% precision / 10%

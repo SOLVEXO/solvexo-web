@@ -41,7 +41,7 @@ export function DashboardCanvas({ defs, layout, renderWidget }: Props) {
 
         if (!editing) {
           return (
-            <div key={w.id} className={clsx(SIZE_CLASS[w.size], 'min-w-0 empty:hidden')}>
+            <div key={w.id} className={clsx(SIZE_CLASS[w.size], 'min-w-0 empty:hidden flex flex-col [&>*]:flex-1')}>
               {renderWidget(def, w)}
             </div>
           );

@@ -1739,7 +1739,7 @@ export function StoreLayout() {
           <PlatformBillingBanner />
           {/* pb clears the whole tab bar: 62px flush bar + the ~31px the active
               bubble protrudes above it. */}
-          <div data-lenis-prevent className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-[100px] lg:pb-0">
+          <div data-lenis-prevent className="store-scroll flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-[100px] lg:pb-0">
             {/* Keyed by path so the subtree actually remounts and the entrance
                 animation re-fires on every navigation. Only the page content is
                 inside this key — the sidebar and tab bar above/below it keep

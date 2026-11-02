@@ -957,3 +957,9 @@
   html.store-app .store-hdr--app .store-hdr-actions button:disabled { opacity: .7; }
   html.store-app .store-hdr--app .store-hdr-actions svg { color: currentColor; }
 }
+
+/* Phone/tablet: no scrollbar track over the coloured header, like a native app (the page still scrolls). */
+@media (max-width: 1023px) {
+  html.store-app .store-scroll { scrollbar-width: none; }
+  html.store-app .store-scroll::-webkit-scrollbar { display: none; }
+}
