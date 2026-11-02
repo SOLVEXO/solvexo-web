@@ -914,3 +914,17 @@
 @media (max-width: 1023px) {
   .page-route-enter.page-route-enter-back { animation-name: page-route-enter-back; }
 }
+
+/* Phone/tablet: opening a page slides it in from the right (push), going back slides it in from the left (pop), like a native stack. */
+@keyframes page-route-enter-fwd {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-route-enter-back {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (max-width: 1023px) {
+  .page-route-enter { animation: page-route-enter-fwd 260ms var(--ease-out) backwards; }
+  .page-route-enter.page-route-enter-back { animation: page-route-enter-back 260ms var(--ease-out) backwards; }
+}

@@ -1400,6 +1400,25 @@ function PlatformBillingBanner() {
   return isStaffSession() ? null : <OwnerBillingBanner />;
 }
 
+// One bar for every billing state: on a phone it reads like an app banner (icon, left-aligned text, a pill button on the right);
+// from sm it stays the centred full-width strip it always was.
+function BillingBar({ tone, text, action, onClick }: { tone: 'error' | 'warn'; text: string; action: string; onClick: () => void }) {
+  const Icon = tone === 'error' ? AlertTriangle : XCircle;
+  return (
+    <div role="alert" className={clsx(
+      'flex w-full items-center gap-2.5 px-4 py-2.5 sm:justify-center sm:py-2 border-b text-[12.5px] font-medium',
+      tone === 'error' ? 'text-error bg-error-bg border-error-border' : 'text-[#946200] bg-[#fdf2da] border-[#f5dfa6]',
+    )}>
+      <Icon size={16} className="shrink-0" />
+      <span className="min-w-0 flex-1 text-left leading-[1.35] sm:flex-none sm:text-center">{text}</span>
+      <button type="button" onClick={onClick} className={clsx(
+        'shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold border-0 cursor-pointer sm:bg-transparent sm:px-0 sm:py-0 sm:underline',
+        tone === 'error' ? 'bg-error text-white sm:text-error' : 'bg-[#946200] text-white sm:text-[#946200]',
+      )}>{action}</button>
+    </div>
+  );
+}
+
 function OwnerBillingBanner() {
   const navigate = useNavigate();
   const { storeId } = useStoreWorkspace();
@@ -1418,40 +1437,16 @@ function OwnerBillingBanner() {
   const goToBilling = () => navigate(`/store/${storeId}/plan-billing`);
 
   if (sub.status === 'trial_ended') {
-    return (
-      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
-        <AlertTriangle size={14} className="shrink-0" />
-        Your free trial has ended — choose a plan to continue selling. Your data is safe.
-        <span className="underline font-semibold">Choose a plan</span>
-      </button>
-    );
+    return <BillingBar tone="error" onClick={goToBilling} text="Your free trial has ended — choose a plan to continue selling. Your data is safe." action="Choose a plan" />;
   }
   if (sub.status === 'locked') {
-    return (
-      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
-        <AlertTriangle size={14} className="shrink-0" />
-        This store is locked — choose a plan and complete payment to resume selling. Your data is safe.
-        <span className="underline font-semibold">Unlock now</span>
-      </button>
-    );
+    return <BillingBar tone="error" onClick={goToBilling} text="This store is locked — choose a plan and complete payment to resume selling. Your data is safe." action="Unlock now" />;
   }
   if (sub.status === 'past_due') {
-    return (
-      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
-        <AlertTriangle size={14} className="shrink-0" />
-        Your plan payment failed{sub.failedPaymentAttempts > 0 ? ` (attempt ${sub.failedPaymentAttempts})` : ''} — update your payment method to avoid losing access.
-        <span className="underline font-semibold">Fix now</span>
-      </button>
-    );
+    return <BillingBar tone="error" onClick={goToBilling} text={`Your plan payment failed${sub.failedPaymentAttempts > 0 ? ` (attempt ${sub.failedPaymentAttempts})` : ''} — update your payment method to avoid losing access.`} action="Fix now" />;
   }
   if (sub.cancelAtPeriodEnd) {
-    return (
-      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-[#fdf2da] border-b border-[#f5dfa6] cursor-pointer">
-        <XCircle size={14} className="shrink-0" />
-        Your plan is set to cancel on {new Date(sub.currentPeriodEnd).toDateString()}.
-        <span className="underline font-semibold">Reactivate</span>
-      </button>
-    );
+    return <BillingBar tone="warn" onClick={goToBilling} text={`Your plan is set to cancel on ${new Date(sub.currentPeriodEnd).toDateString()}.`} action="Reactivate" />;
   }
   // A still-running trial (any days left) is deliberately NOT a full-width
   // banner here any more — see `TrialBillingPill` in `StorePageHeader`
@@ -1737,7 +1732,7 @@ export function StoreLayout() {
           <PlatformBillingBanner />
           {/* pb clears the whole tab bar: 62px flush bar + the ~31px the active
               bubble protrudes above it. */}
-          <div data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain pb-[100px] lg:pb-0">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-[100px] lg:pb-0">
             {/* Keyed by path so the subtree actually remounts and the entrance
                 animation re-fires on every navigation. Only the page content is
                 inside this key — the sidebar and tab bar above/below it keep
