@@ -104,7 +104,7 @@ const GROUP_GRID: Record<number, string> = {
  *  can be — a theme's manifest can list its fields in any order; they
  *  always render grouped into these sections, in this order, and a group
  *  with zero fields for the active theme is simply skipped. */
-const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Product page', 'Effects', 'Cart', 'Pop-up messages', 'Share popup'];
+const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Product page', 'Effects', 'Cart', 'Pop-up messages', 'Login popup', 'Share popup'];
 
 /** Renders one manifest-declared field against the theme's live working
  *  copy — a `color` control becomes a `ColorField`, a `select` control
@@ -122,6 +122,17 @@ function ThemeSettingsField({ field, colors, onChange }: {
   }
   if (field.control.kind === 'color') {
     return <div className="flex flex-col gap-1.5"><ColorField heading={field.label} value={value} onChange={v => onChange(themeSettingPatch(colors, field, v))} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
+  }
+  if (field.control.kind === 'text') {
+    const c = field.control;
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Field heading={field.label}>
+          <input className={inp} type="text" maxLength={c.maxLength} placeholder={c.placeholder} value={value} onChange={e => onChange(themeSettingPatch(colors, field, e.target.value.trim() === '' ? null : e.target.value))} />
+        </Field>
+        {field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}
+      </div>
+    );
   }
   return (
     <div className="flex flex-col gap-1.5">
@@ -356,7 +367,9 @@ function SettingsTransfer({ manifest, current, onImport, onError }: {
         const v = parsed.settings[f.key];
         const ok = f.control.kind === 'select'
           ? typeof v === 'string' && f.control.options.some(o => o.value === v)
-          : v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v));
+          : f.control.kind === 'text'
+            ? v === null || (typeof v === 'string' && v.length <= (f.control.maxLength ?? 500))
+            : v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v));
         if (!ok) continue;
         patch = { ...patch, ...themeSettingPatch({ ...current, ...patch }, f, v as string | null) };
         count += 1;

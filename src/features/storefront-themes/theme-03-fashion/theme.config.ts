@@ -63,6 +63,10 @@ const STATIC_DEFAULTS = {
     position: 'bottom-right' as 'bottom-right' | 'bottom-center' | 'top-right' | 'top-center',
     progress: true,
   },
+  /** Sign-in pop-up; seller settings `custom.auth*`. Empty text = the default wording. */
+  authGate: { title: '', button: '', size: 'standard' as 'compact' | 'standard' | 'large', social: true },
+  /** Quick view pop-up width; seller setting `custom.quickViewSize`. */
+  quickViewSize: 'standard' as 'compact' | 'standard' | 'large',
   /** Share popup networks; seller settings `custom.share*` (hide = off). */
   share: { facebook: true, x: true, pinterest: true, whatsapp: true, email: true },
   colors: {
@@ -208,6 +212,12 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.toast.color = typeof toastColor === 'string' && HEX6.test(toastColor) ? toastColor : null;
   fashionTheme.toast.position = ts?.toastPosition === 'bottom-center' || ts?.toastPosition === 'top-right' || ts?.toastPosition === 'top-center' ? ts.toastPosition : 'bottom-right';
   fashionTheme.toast.progress = ts?.toastProgress !== 'hide';
+  const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : fallback);
+  fashionTheme.authGate.title = typeof ts?.authTitle === 'string' ? ts.authTitle.trim().slice(0, 60) : '';
+  fashionTheme.authGate.button = typeof ts?.authButton === 'string' ? ts.authButton.trim().slice(0, 30) : '';
+  fashionTheme.authGate.size = oneOf(ts?.authSize, ['compact', 'standard', 'large'] as const, 'standard');
+  fashionTheme.authGate.social = ts?.authSocial !== 'hide';
+  fashionTheme.quickViewSize = oneOf(ts?.quickViewSize, ['compact', 'standard', 'large'] as const, 'standard');
   fashionTheme.share.facebook = ts?.shareFacebook !== 'hide';
   fashionTheme.share.x = ts?.shareX !== 'hide';
   fashionTheme.share.pinterest = ts?.sharePinterest !== 'hide';

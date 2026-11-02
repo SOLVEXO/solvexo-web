@@ -14,6 +14,7 @@ import { FashionSearchPage } from './theme-03-fashion/pages/FashionSearchPage';
 import { FashionNotFoundPage } from './theme-03-fashion/pages/FashionNotFoundPage';
 import { FashionStorefrontGate } from './theme-03-fashion/pages/FashionStorefrontGate';
 import { FashionCookieBanner } from './theme-03-fashion/components/FashionCookieBanner';
+import { FashionAuthGateModal } from './theme-03-fashion/components/FashionAuthGateModal';
 // Pages a visitor rarely opens first (checkout, account, orders, blog, auth...) load on demand so the storefront opens faster.
 const FashionCheckoutPage = lazy(() => import('./theme-03-fashion/pages/FashionCheckoutPage').then(m => ({ default: m.FashionCheckoutPage })));
 const FashionCheckoutReturnPage = lazy(() => import('./theme-03-fashion/pages/FashionCheckoutReturnPage').then(m => ({ default: m.FashionCheckoutReturnPage })));
@@ -73,6 +74,8 @@ interface NewThemeImpl {
   GatePage: ComponentType<{ store: PublicStoreData; onUnlocked: () => void }>;
   /** The visitor's cookie-consent banner in this theme's own look. A theme without one gets the platform banner. */
   CookieBanner?: ComponentType<CookieBannerProps>;
+  /** The "sign in to continue" pop-up in this theme's own look. A theme without one gets the platform pop-up. */
+  AuthGateModal?: ComponentType;
   /** Theme Library card metadata; `builtRouteCount` is the honest build progress shown on the card. */
   display: { name: string; description: string; builtRouteCount: number; totalRouteCount: number };
   /** Sent as `theme` in `apiInstallTheme(...)` so a fresh install starts with this theme's own look, not the backend schema defaults. */
@@ -87,6 +90,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     Layout: FashionLayout,
     GatePage: FashionStorefrontGate,
     CookieBanner: FashionCookieBanner,
+    AuthGateModal: FashionAuthGateModal,
     pages: {
       home: FashionHomePage,
       product: FashionProductPage,

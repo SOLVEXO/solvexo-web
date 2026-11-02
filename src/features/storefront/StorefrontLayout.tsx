@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useMemo, type ComponentType } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -30,6 +30,7 @@ import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
 import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout, getStorefrontToken, setStorefrontToken } from '@/utils/currentStorefront';
 import { PublishedLiquidStorefront } from './PublishedLiquidStorefront';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import { isLiquidStorefrontRoute } from './liquidStorefrontRouting';
 import { readBootSnapshot, writeBootSnapshot, clearBootSnapshot } from '@/utils/storefrontBootCache';
 
@@ -75,6 +76,13 @@ function readSavedConsent(storeId: string): CookieConsentCategories | null {
 // Fetches the store + its StoreTheme ONCE, provides both via context to
 // every child route (home, custom pages, blog), and renders the seller's
 // own zero-Solvexo-branding navbar/footer around them.
+/** Mounts the theme's own sign-in prompt and tells the platform one to step aside while it is there. */
+function ThemedAuthGateHost({ Gate }: { Gate: ComponentType }) {
+  const { setThemed } = useAuthGate();
+  useEffect(() => { setThemed(true); return () => setThemed(false); }, [setThemed]);
+  return <Gate />;
+}
+
 export function StorefrontLayout() {
   const location = useLocation();
   const slug = getStoreSlugFromHost();
@@ -357,6 +365,7 @@ export function StorefrontLayout() {
           {theme?.sourcePackageVersion != null && liquidRoute
             ? <PublishedLiquidStorefront key={`${store.storeId}:${theme.sourcePackageVersion}`} storeId={store.storeId} />
             : <Layout><Outlet /></Layout>}
+          {impl.AuthGateModal && <ThemedAuthGateHost Gate={impl.AuthGateModal} />}
           {store.cookieBannerEnabled && !cookieConsent && (
             <CookieBanner
               message={store.cookieBannerMessage}

@@ -174,13 +174,13 @@ export function FashionNavbar() {
                     const plain = item.children.filter(c => c.children.length === 0 && !c.imageUrl);
                     return (
                       <MegaPanel className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
-                        <div style={{ background: t.colors.bg, borderTop: `1px solid ${t.colors.border}`, borderBottom: `1px solid ${t.colors.border}` }}>
-                          <div className="mx-auto grid gap-x-10 gap-y-7" style={{ maxWidth: t.layout.maxWidth, padding: `32px ${t.layout.containerPadX}`, gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', maxHeight: '72vh', overflowY: 'auto' }}>
+                        <div style={{ padding: `0 ${t.layout.containerPadX}` }}>
+                          <div className="mx-auto grid gap-x-8 gap-y-5 p-5" style={{ maxWidth: t.layout.maxWidth, gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
                             {plain.length > 0 && (
                               <div>
-                                <p className="mb-3 text-[11px] font-semibold uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.08em' }}>{item.label}</p>
+                                <p className="mb-1 px-4 text-[11px] font-semibold uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.08em' }}>{item.label}</p>
                                 {plain.map(c => (
-                                  <NavAnchor key={c.id} link={c.link} className="block py-1.5 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                                  <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
                                 ))}
                               </div>
                             )}
@@ -191,9 +191,9 @@ export function FashionNavbar() {
                                     <img src={c.imageUrl} alt="" loading="lazy" className="size-full object-cover" />
                                   </NavAnchor>
                                 )}
-                                <NavAnchor link={c.link} className="mb-2 block text-sm font-semibold no-underline" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                                <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] font-semibold" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
                                 {c.children.map(g => (
-                                  <NavAnchor key={g.id} link={g.link} className="block py-1 text-[13px] no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
+                                  <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
                                 ))}
                               </div>
                             ))}

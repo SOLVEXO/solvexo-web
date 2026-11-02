@@ -24,6 +24,9 @@ interface AuthGateContextValue {
   requireAuth: (run: () => void, reason: string, opts?: { allowGuest?: boolean }) => boolean;
   cancel:      () => void;
   resolve:     () => void; // called by the modal right after a successful sign-in
+  /** True while a storefront theme shows its own prompt; the platform one then renders nothing. */
+  themed:      boolean;
+  setThemed:   (v: boolean) => void;
 }
 
 const AuthGateContext = createContext<AuthGateContextValue | null>(null);
@@ -42,6 +45,7 @@ export function AuthGateProvider({ children }: { children: ReactNode }) {
   // instead of a second call silently overwriting the first's pending action.
   const queueRef = useRef<PendingAction[]>([]);
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [themed, setThemed] = useState(false);
 
   const requireAuth = useCallback((run: () => void, reason: string, opts?: { allowGuest?: boolean }) => {
     const enqueue = () => {
@@ -73,7 +77,7 @@ export function AuthGateProvider({ children }: { children: ReactNode }) {
     queue.forEach(item => item.run());
   }, []);
 
-  const value: AuthGateContextValue = { pending, requireAuth, cancel, resolve };
+  const value: AuthGateContextValue = { pending, requireAuth, cancel, resolve, themed, setThemed };
 
   return (
     <AuthGateContext.Provider value={value}>

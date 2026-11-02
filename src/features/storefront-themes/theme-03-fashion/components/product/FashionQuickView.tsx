@@ -115,5 +115,5 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
     );
   }
 
-  return <Dialog title={ts('pg.quick_view', 'Quick view')} size="lg" onClose={onClose}>{body}</Dialog>;
+  return <Dialog title={ts('pg.quick_view', 'Quick view')} size={{ compact: 760, standard: 880, large: 1000 }[t.quickViewSize]} onClose={onClose}>{body}</Dialog>;
 }

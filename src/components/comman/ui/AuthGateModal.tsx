@@ -1,13 +1,7 @@
-import { useState } from 'react';
-import { PasswordToggleButton } from './PasswordField';
-import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Info, Lock } from 'lucide-react';
-import { apiLogin, TokenStorage, LastRolePreference, type AppRole } from '@/api/services/auth';
-import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
-import { useForm } from '@/hooks/useForm';
-import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
+import { PasswordToggleButton } from './PasswordField';
+import { useAuthGateForm } from '@/hooks/auth/useAuthGateForm';
 import { useAuthGate } from '@/contexts/AuthGateContext';
-import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
 import { SocialLoginRow } from './SocialIcons';
 import { Modal } from './Modal';
 import { Input } from './Input';
@@ -18,53 +12,15 @@ import { Button } from './Button';
 // in without ever navigating away — the gated action itself carries the user
 // back to what they were doing, so browsing position is never lost and the
 // intended action is never silently dropped.
+//
+// A storefront theme that ships its own prompt (NewThemeImpl.AuthGateModal)
+// flips `themed` on while it is mounted; this platform version then steps aside.
 export function AuthGateModal() {
-  const navigate = useNavigate();
-  const { pending, cancel, resolve } = useAuthGate();
-  // Buyer-only surface (cart/wishlist/follow/message gate) — matches the
-  // hardcoded role: 'user' in the email/password submit below. useSocialLogin
-  // defaults to 'seller' for the (now seller-only) main LoginPage, so this
-  // needs the buyer role explicitly.
-  const social = useSocialLogin('user');
+  const { themed } = useAuthGate();
+  const { pending, close, goRegister, form, submitting, submitError, showPass, setShowPass, social } = useAuthGateForm();
+  const { values, errors, set, blur, handleSubmit } = form;
 
-  // Local rather than reusing useLogin()'s loading/error — useLogin() also
-  // navigates on success, which is exactly the "lose your position" behavior
-  // this modal exists to avoid, so the submit here is handled by hand instead.
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const [showPass, setShowPass] = useState(false);
-
-  const { values, errors, set, blur, handleSubmit, reset } = useForm<LoginFormData>(
-    loginSchema,
-    { email: '', password: '' },
-    {
-      onSubmit: async (data: LoginFormData) => {
-        setSubmitError('');
-        setSubmitting(true);
-        try {
-          const res = await apiLogin({ email: data.email, password: data.password, role: 'user', storeId: getCurrentStorefrontStoreId() });
-          const { token, user } = res.data;
-          TokenStorage.save(token.accessToken, token.refreshToken);
-          TokenStorage.saveUser(user);
-          LastRolePreference.set((user.role ?? 'user') as AppRole);
-          reset();
-          resolve();
-        } catch (err) {
-          setSubmitError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.');
-        } finally {
-          setSubmitting(false);
-        }
-      },
-    },
-  );
-
-  if (!pending) return null;
-
-  const close = () => {
-    cancel();
-    reset();
-    setSubmitError('');
-  };
+  if (!pending || themed) return null;
 
   return (
     <Modal title="Sign in to continue" onClose={close} width={400}>
@@ -129,7 +85,7 @@ export function AuthGateModal() {
           </button>
           <button
             type="button"
-            onClick={() => { close(); navigate('/register'); }}
+            onClick={goRegister}
             className="text-[12px] font-medium text-brand-orange bg-transparent border-none cursor-pointer p-0 hover:text-brand-deep-orange transition-colors"
           >
             Create Account
