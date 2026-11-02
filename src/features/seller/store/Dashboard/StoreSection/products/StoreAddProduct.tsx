@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react';
+import { SupplierField } from './SupplierField';
+import { ProductRichEditor, ProductTabsEditor, type ProductTabInput } from './ProductContentFields';
 import { Link, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
@@ -100,7 +102,7 @@ const initPhys = {
   variantRows: [] as VariantRow[],
 };
 const initDig = {
-  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
+  name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'active' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
