@@ -54,6 +54,7 @@ const NewPasswordPage    = lazy(() => import('@/features/auth/pages/NewPasswordP
 
 // Public marketing pages
 const Homepage             = lazy(() => import('@/features/buyer/pages/Homepage').then(m => ({ default: m.Homepage })));
+const BookDemoPage         = lazy(() => import('@/features/buyer/pages/BookDemoPage').then(m => ({ default: m.BookDemoPage })));
 const PricingPage          = lazy(() => import('@/features/buyer/pages/PricingPage').then(m => ({ default: m.PricingPage })));
 const ForSellersPage       = lazy(() => import('@/features/buyer/pages/ForSellersPage').then(m => ({ default: m.ForSellersPage })));
 const FaqPage              = lazy(() => import('@/features/buyer/pages/FaqPage').then(m => ({ default: m.FaqPage })));
@@ -294,6 +295,8 @@ const mainRouter = createBrowserRouter([
               { path: 'terms-of-service', element: <TermsOfServicePage /> },
               { path: 'cookie-policy',   element: <CookiePolicyPage /> },
               { path: 'contact-us',      element: <ContactUsPage /> },
+              { path: 'book-demo',       element: <BookDemoPage /> },
+              { path: 'demo',            element: <Navigate to="/book-demo" replace /> },
               { path: 'contact',         element: <Navigate to="/contact-us" replace /> },
               { path: 'about',           element: <AboutPage /> },
               { path: 'security',        element: <SecurityPage /> },

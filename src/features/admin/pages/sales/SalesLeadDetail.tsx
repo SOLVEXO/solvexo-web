@@ -114,6 +114,7 @@ export function SalesLeadDetail() {
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 mt-4 pt-3 border-t border-bone text-[12px]">
               <dt className="text-slate">Deal value</dt><dd className="text-charcoal font-medium text-right">{lead.dealValuePKR ? formatPKR(lead.dealValuePKR) : '—'}</dd>
               <dt className="text-slate">Source</dt><dd className="text-charcoal text-right">{SOURCE_LABELS[lead.source]}{lead.sourceDetail ? ` · ${lead.sourceDetail}` : ''}</dd>
+              {lead.utm && <><dt className="text-slate">Campaign</dt><dd className="text-charcoal text-right break-words">{[lead.utm.campaign, lead.utm.source, lead.utm.medium].filter(Boolean).join(' · ')}</dd></>}
               {isManager && <><dt className="text-slate">Owner</dt><dd className="text-charcoal text-right">{lead.ownerName ?? 'Unassigned'}</dd></>}
               <dt className="text-slate">Added</dt><dd className="text-charcoal text-right">{new Date(lead.createdAt).toLocaleDateString()}</dd>
               <dt className="text-slate">Last touch</dt><dd className="text-charcoal text-right">{relDay(lead.lastActivityAt) || '—'}</dd>

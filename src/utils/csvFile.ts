@@ -29,3 +29,37 @@ export function downloadTextFile(filename: string, text: string): void {
   a.remove();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Reads CSV text into rows of cells (RFC 4180: quoted cells may hold commas, quotes as "" and line breaks).
+ * Handles a UTF-8 BOM, \r\n or \n line ends, and a `;` or tab separator when the header row uses one
+ * (Excel in some locales). Blank lines are dropped.
+ */
+export function parseCsv(text: string): string[][] {
+  const src = text.replace(/^\uFEFF/, '');
+  const firstLine = src.split(/\r?\n/, 1)[0] ?? '';
+  const count = (ch: string) => firstLine.split(ch).length - 1;
+  const sep = count(',') >= count(';') && count(',') >= count('\t') ? ',' : count(';') >= count('\t') ? ';' : '\t';
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (quoted) {
+      if (ch === '"' && src[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"' && cell === '') quoted = true;
+    else if (ch === sep) { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && src[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.some(c => c.trim() !== '')) rows.push(row);
+      row = [];
+    } else cell += ch;
+  }
+  row.push(cell);
+  if (row.some(c => c.trim() !== '')) rows.push(row);
+  return rows;
+}
