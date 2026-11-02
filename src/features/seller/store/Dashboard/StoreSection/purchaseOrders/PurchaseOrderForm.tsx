@@ -11,7 +11,8 @@ import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/bui
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { useToast } from '@/contexts/ToastContext';
 import { currencySymbol } from '@/utils/currency';
-import { apiListVariants, apiGetStoreInventory, apiListActiveLocations, type ProductVariant, type StoreLocation } from '@/api/services/product';
+import { apiGetMyProductById, apiListActiveLocations, type ProductVariant, type StoreLocation, type StoreProduct } from '@/api/services/product';
+import { VariantPickModal } from '../orders/VariantPickModal';
 import {
   apiCreatePurchaseOrder, apiGetPurchaseOrder, apiUpdatePurchaseOrder,
   apiMarkPurchaseOrderOrdered, apiCancelPurchaseOrder, apiCloseShortPurchaseOrder, apiReceivePurchaseOrder,
@@ -161,27 +162,37 @@ export default function PurchaseOrderForm() {
 
   useEffect(() => { if (!loadedOnce.current) { loadedOnce.current = true; loadPo(); } }, [loadPo]);
 
+  const [pendingPick, setPendingPick] = useState<{ product: StoreProduct; variants: ProductVariant[] } | null>(null);
+
+  const addVariants = (product: StoreProduct, picked: ProductVariant[]) => {
+    setItems(prev => {
+      const next = [...prev];
+      for (const v of picked) {
+        const at = next.findIndex(i => i.variantId === v._id);
+        if (at >= 0) { next[at] = { ...next[at], quantityOrdered: next[at].quantityOrdered + 1 }; continue; }
+        next.push({
+          _id: `new-${Date.now()}-${v._id}`,
+          productId: product._id, variantId: v._id, name: product.name,
+          image: v.images?.[0] ?? product.images?.[0] ?? null, sku: v.sku,
+          options: v.options.map(o => ({ name: o.name, value: o.value })),
+          quantityOrdered: 1, quantityReceived: 0, quantityDamaged: 0,
+          unitCost: v.price,
+        });
+      }
+      return next;
+    });
+  };
+
   const addProduct = async (productIds: string[]) => {
     setPickerOpen(false);
     const productId = productIds[0];
     if (!productId) return;
     try {
-      const [variantsRes, inventoryRes] = await Promise.all([
-        apiListVariants(productId),
-        apiGetStoreInventory(storeId, 1, 200),
-      ]);
-      const variants: ProductVariant[] = variantsRes.data;
-      const variant = variants.find(v => v.isDefault) ?? variants[0];
-      if (!variant) { toast.error('This product has no purchasable variant.'); return; }
-      const productRow = inventoryRes.data.products.find(p => p.productId === productId);
-      setItems(prev => [...prev, {
-        _id: `new-${Date.now()}`,
-        productId, variantId: variant._id, name: productRow?.name ?? 'Product',
-        image: variant.images?.[0] ?? productRow?.image ?? null, sku: variant.sku,
-        options: variant.options.map(o => ({ name: o.name, value: o.value })),
-        quantityOrdered: 1, quantityReceived: 0, quantityDamaged: 0,
-        unitCost: variant.price,
-      }]);
+      const { product, variants } = (await apiGetMyProductById(productId)).data;
+      if (variants.length === 0) { toast.error('This product has no purchasable variant.'); return; }
+      // One variant: add it straight away. Several: let the seller choose which ones.
+      if (variants.length === 1) addVariants(product, variants);
+      else setPendingPick({ product, variants });
     } catch {
       toast.error('Failed to load product details.');
     }
@@ -456,6 +467,11 @@ export default function PurchaseOrderForm() {
 
       {pickerOpen && (
         <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple={false} initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" currencySymbol={symbol} />
+      )}
+
+      {pendingPick && (
+        <VariantPickModal productName={pendingPick.product.name} variants={pendingPick.variants} currencySymbol={symbol}
+          onClose={() => setPendingPick(null)} onAdd={picked => { addVariants(pendingPick.product, picked); setPendingPick(null); }} />
       )}
 
       {confirmingCancel && (
