@@ -12,7 +12,7 @@ export const STAGE_LABELS: Record<LeadStage, string> = {
 export const LEAD_SOURCES = ['website_form', 'contact_message', 'manual', 'import', 'stalled_signup', 'whatsapp', 'social', 'referral', 'event', 'other'] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 export const SOURCE_LABELS: Record<LeadSource, string> = {
-  website_form: 'Website form', contact_message: 'Contact message', manual: 'Added by hand', import: 'Import',
+  website_form: 'Book-a-demo form', contact_message: 'Contact message', manual: 'Added by hand', import: 'Import',
   stalled_signup: 'Stalled sign-up', whatsapp: 'WhatsApp', social: 'Social media', referral: 'Referral', event: 'Event', other: 'Other',
 };
 
@@ -30,6 +30,7 @@ export interface SalesLead {
   ownerAdminId: string | null; ownerName: string | null; dealValuePKR: number | null; tags: string[];
   nextFollowUpAt: string | null; lastActivityAt: string | null; stageChangedAt: string | null; wonAt: string | null;
   sellerId: string | null; storeId: string | null; linkedAt: string | null; createdAt: string;
+  utm?: { source: string | null; medium: string | null; campaign: string | null } | null;
 }
 export interface LeadSummary {
   stages: { stage: LeadStage; count: number; valuePKR: number }[];
@@ -85,6 +86,27 @@ export const apiSaveTemplate = (id: string | null, t: { name: string; subject: s
   id ? client.patch<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates/${id}`, t)
      : client.post<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates`, t);
 export const apiDeleteTemplate = (id: string) => client.delete<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates/${id}`);
+
+// ── Lead capture ───────────────────────────────────────────────────────────
+
+export interface ImportRow { name?: string; email?: string; phone?: string; businessName?: string; city?: string; businessType?: string; dealValuePKR?: string; note?: string }
+export interface ImportResult {
+  total: number; created: number; wouldCreate: number; dryRun: boolean;
+  duplicates: { row: number; name: string; existingLeadId: string | null; inFile?: boolean }[];
+  invalid: { row: number; reason: string }[];
+}
+export const apiImportLeads = (body: { rows: ImportRow[]; ownerAdminId?: string | null; sourceDetail?: string | null; tags?: string[]; dryRun?: boolean }) =>
+  client.post<never, ApiResponse<ImportResult>>(`${BASE}/imports`, body);
+export const apiAddContactToPipeline = (contactId: string) =>
+  client.post<never, ApiResponse<{ leadId: string; created: boolean; visible: boolean }>>(`${BASE}/contact-messages/${contactId}/lead`);
+export const apiSyncStalled = () => client.post<never, { success: boolean; checked: number; added: number }>(`${BASE}/stalled/sync`);
+
+export interface DemoRequest {
+  name: string; phone: string; email?: string; businessName?: string; city?: string; businessType?: string; message?: string;
+  preferredTime?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; page?: string; website?: string;
+}
+/** Public, no login: the Book-a-demo form on solvexo.store. */
+export const apiDemoRequest = (body: DemoRequest) => client.post<never, { success: boolean; message: string }>('/api/sales/demo-request', body);
 
 /** "PKR 1,250,000" — whole rupees, grouped the way Pakistan reads them. */
 export const formatPKR = (n: number | null | undefined) => `PKR ${Math.round(n ?? 0).toLocaleString('en-PK')}`;

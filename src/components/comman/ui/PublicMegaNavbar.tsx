@@ -411,6 +411,15 @@ export function PublicMegaNavbar() {
                 >
                   Log in
                 </button>
+                <button
+                  onClick={() => navigate('/book-demo')}
+                  className={clsx(
+                    'text-[13px] font-medium transition-colors duration-300 bg-transparent border-none cursor-pointer',
+                    overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
+                  )}
+                >
+                  Book a demo
+                </button>
                 <MagneticButton>
                   <button
                     onClick={sellEntry.go}
@@ -777,6 +786,14 @@ export function PublicMegaNavbar() {
                         </button>
                       </motion.div>
                     </MagneticButton>
+                    <motion.div whileTap={{ scale: 0.97 }}>
+                      <button
+                        onClick={() => { closeMenu(); navigate('/book-demo'); }}
+                        className="w-full text-[13.5px] font-semibold text-brand-deep-orange bg-brand-pale-orange border-none rounded-xl py-3 cursor-pointer"
+                      >
+                        Book a free demo
+                      </button>
+                    </motion.div>
                     <motion.div whileTap={{ scale: 0.97 }}>
                       <button
                         onClick={() => { closeMenu(); navigate('/products'); }}

@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { CalendarClock, Columns3, List, Plus, Target, Trash2 } from 'lucide-react';
+import { CalendarClock, Columns3, FileUp, List, Plus, Target, Trash2, UserRoundSearch } from 'lucide-react';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { Button, EmptyState, Input, MetricCard, Modal, SearchInput, Select, TabBar, Textarea } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import {
-  LEAD_SOURCES, LEAD_STAGES, SOURCE_LABELS, STAGE_LABELS, apiChangeStage, apiCreateLead, apiDeleteTemplate, apiListLeads,
+  LEAD_SOURCES, LEAD_STAGES, SOURCE_LABELS, STAGE_LABELS, apiChangeStage, apiCreateLead, apiSyncStalled, apiDeleteTemplate, apiListLeads,
   apiListTasks, apiListTemplates, apiSalesOwners, apiSaveTemplate, apiUpdateTask, formatPKR,
   type LeadList, type LeadQuery, type LeadSource, type LeadStage, type SalesLead, type SalesOwner, type SalesTask, type SalesTemplate,
 } from '@/api/services/salesOps';
 import { LeadFormModal, LostReasonModal, StageBadge } from './parts';
+import { ImportLeadsModal } from './ImportLeadsModal';
 import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
 type TabId = 'pipeline' | 'tasks' | 'templates';
@@ -53,6 +54,8 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
   const [data, setData] = useState<LeadList | null>(null);
   const [error, setError] = useState('');
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [losing, setLosing] = useState<SalesLead | null>(null);
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
 
@@ -113,11 +116,20 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
         <div className="w-[calc(50%-4px)] sm:w-40"><Select aria-label="Follow-up" value={filters.due ?? ''} onChange={e => setFilter('due', e.target.value)}>
           <option value="">Any follow-up</option><option value="overdue">Overdue</option><option value="today">Due today</option>
         </Select></div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
           <div className="flex rounded-md border border-bone overflow-hidden" role="group" aria-label="View">
             <button aria-pressed={view === 'board'} onClick={() => switchView('board')} className={clsx('px-2.5 py-1.5 border-0 cursor-pointer', view === 'board' ? 'bg-brand-pale-orange text-brand-deep-orange' : 'bg-white text-slate')} title="Board"><Columns3 size={15} /></button>
             <button aria-pressed={view === 'list'} onClick={() => switchView('list')} className={clsx('px-2.5 py-1.5 border-0 cursor-pointer', view === 'list' ? 'bg-brand-pale-orange text-brand-deep-orange' : 'bg-white text-slate')} title="List"><List size={15} /></button>
           </div>
+          {isManager && (
+            <Button variant="ghost" loading={syncing} title="Add merchants who signed up but stalled (runs every morning on its own)" onClick={async () => {
+              setSyncing(true);
+              try { const r = await apiSyncStalled(); toast.success(r.added ? `${r.added} stalled sign-up${r.added === 1 ? '' : 's'} added.` : 'No new stalled sign-ups.'); if (r.added) void load(); }
+              catch (e) { toast.error(errMsg(e, 'Could not check sign-ups.')); }
+              setSyncing(false);
+            }}><UserRoundSearch size={14} /> Stalled sign-ups</Button>
+          )}
+          <Button variant="outline" onClick={() => setImporting(true)}><FileUp size={14} /> Import</Button>
           <Button onClick={() => setAdding(true)}><Plus size={14} /> Add lead</Button>
         </div>
       </div>
@@ -125,7 +137,7 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
       {error ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center"><p className="text-[13px] text-slate">{error}</p><Button onClick={load}>Retry</Button></div>
       ) : data && data.total === 0 && !search && !filters.owner && !filters.source && !filters.due ? (
-        <EmptyState icon={<Target size={28} />} title="No leads yet" description="Add your first lead by hand. Website forms, imports and stalled sign-ups will flow in here too." action={{ label: 'Add lead', onClick: () => setAdding(true) }} />
+        <EmptyState icon={<Target size={28} />} title="No leads yet" description="Add a lead by hand or import a CSV. Demo requests from solvexo.store, Contact Us messages about selling, and stalled sign-ups arrive here on their own." action={{ label: 'Add lead', onClick: () => setAdding(true) }} />
       ) : view === 'board' ? (
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
           {LEAD_STAGES.map(stage => {
@@ -158,6 +170,11 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
       )}
       {data && data.total > data.items.length && <p className="text-[12px] text-slate">Showing {data.items.length} of {data.total}. Narrow the filters to see the rest.</p>}
 
+      {importing && (
+        <ImportLeadsModal owners={owners} canAssign={isManager} onClose={() => setImporting(false)} onImported={n => {
+          setImporting(false); toast.success(`${n} lead${n === 1 ? '' : 's'} imported.`); void load();
+        }} />
+      )}
       {adding && (
         <LeadFormModal owners={owners} canAssign={isManager} onClose={() => setAdding(false)} onSave={async input => {
           const r = await apiCreateLead(input);

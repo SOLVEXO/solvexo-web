@@ -1,5 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { MessageCircle, Eye, Trash2 } from 'lucide-react';
+import { MessageCircle, Eye, Trash2, Target } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { can } from '@/hooks/auth/useCan';
+import { apiAddContactToPipeline } from '@/api/services/salesOps';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminContact } from '@/hooks/admin/useAdminContact';
 import { apiUpdateContactStatus, apiDeleteContactSubmission, type ContactSubmission, type ContactSubmissionStatus } from '@/api/services/contact';
@@ -14,9 +17,10 @@ function formatDate(iso: string) {
 }
 
 // ── Detail modal ─────────────────────────────────────────────────────────────
-function DetailModal({ submission, onClose }: { submission: ContactSubmission; onClose: () => void }) {
+function DetailModal({ submission, onClose, onAddToSales }: { submission: ContactSubmission; onClose: () => void; onAddToSales?: () => void }) {
   return (
-    <Modal mobileSheet title={submission.topic} width={520} onClose={onClose} footer={<Button variant="outline" onClick={onClose}>Close</Button>}>
+    <Modal mobileSheet title={submission.topic} width={520} onClose={onClose}
+      footer={<div className="flex justify-end gap-2">{onAddToSales && <Button variant="outline" onClick={onAddToSales}><Target size={14} /> Add to Sales Ops</Button>}<Button variant="outline" onClick={onClose}>Close</Button></div>}>
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div>
@@ -41,6 +45,20 @@ export function AdminContactMessages({ tabs }: { tabs?: ReactNode } = {}) {
   const [deleting, setDeleting] = useState<ContactSubmission | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const navigate = useNavigate();
+  // Sales conversations ("Selling on Solvexo") go to Sales Ops on their own; any other message can be added here.
+  const canSales = can(['sales.access', 'sales.manage']);
+
+  async function addToSales(submission: ContactSubmission) {
+    setActionError('');
+    try {
+      const r = await apiAddContactToPipeline(submission._id);
+      if (r.data.visible) navigate(`/admin/sales/leads/${r.data.leadId}`);
+      else setActionError(r.message ?? 'Already in the pipeline.');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not add to Sales Ops.');
+    }
+  }
 
   const filtered = useMemo(
     () => statusFilter ? submissions.filter(s => s.status === statusFilter) : submissions,
@@ -99,6 +117,7 @@ export function AdminContactMessages({ tabs }: { tabs?: ReactNode } = {}) {
             align="right"
             items={[
               { label: 'View', icon: <Eye size={13} />, onClick: () => openDetail(s) },
+              ...(canSales ? [{ label: 'Add to Sales Ops', icon: <Target size={13} />, onClick: () => void addToSales(s) }] : []),
               ...(s.status !== 'resolved' ? [{ label: 'Mark Resolved', icon: <MessageCircle size={13} />, onClick: () => handleStatusChange(s, 'resolved' as ContactSubmissionStatus) }] : []),
               { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeleting(s); setActionError(''); } },
             ]}
@@ -146,7 +165,7 @@ export function AdminContactMessages({ tabs }: { tabs?: ReactNode } = {}) {
         </div>
       </div>
 
-      {viewing && <DetailModal submission={viewing} onClose={() => setViewing(null)} />}
+      {viewing && <DetailModal submission={viewing} onClose={() => setViewing(null)} onAddToSales={canSales ? () => { const v = viewing; setViewing(null); void addToSales(v); } : undefined} />}
 
       {deleting && (
         <Modal mobileSheet
