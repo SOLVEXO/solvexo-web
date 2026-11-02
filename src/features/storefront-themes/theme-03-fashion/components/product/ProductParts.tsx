@@ -28,6 +28,29 @@ export function ProductWishlistButton({ productId, variantId }: { productId: str
   );
 }
 
+/** Round heart in the corner of the main product photo, like the hearts on product cards. */
+export function ProductWishlistHeart({ productId, variantId }: { productId: string; variantId?: string | null }) {
+  const { t: tr } = useTranslation('storefront');
+  const { isWishlisted, toggleWishlist, wishlisting } = useWishlistContext();
+  if (!variantId) return null;
+  const saved = isWishlisted(productId, variantId);
+  const label = saved ? tr('product.savedToWishlist', 'Saved to wishlist') : tr('product.addToWishlist', 'Add to wishlist');
+  return (
+    <button
+      type="button"
+      onClick={() => toggleWishlist(productId, variantId)}
+      disabled={wishlisting === variantId}
+      aria-pressed={saved}
+      aria-label={label}
+      title={label}
+      className="absolute right-4 top-4 z-[2] grid size-11 place-items-center rounded-full border-0 p-0"
+      style={{ background: t.colors.bg, color: t.colors.ink, cursor: 'pointer', boxShadow: '0 1px 6px rgba(0,0,0,.12)', opacity: wishlisting === variantId ? 0.6 : 1 }}
+    >
+      <Heart size={19} fill={saved ? t.colors.danger : 'none'} color={saved ? t.colors.danger : t.colors.ink} aria-hidden />
+    </button>
+  );
+}
+
 /** This page's address without the hash, carrying the chosen variant so the receiver sees the same option. */
 function shareUrl(variantId?: string) {
   const u = new URL(window.location.href);

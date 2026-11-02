@@ -21,7 +21,7 @@ import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
 import { clampQty, preorderLabel, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
-import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../components/product/ProductParts';
+import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton, ProductWishlistHeart } from '../components/product/ProductParts';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../components/product/ProductExtraBlocks';
 import { ProductDescriptionTabs, type DescriptionTab } from '../components/product/ProductDescriptionTabs';
 import { FashionImageLightbox } from '../components/product/FashionImageLightbox';
@@ -295,10 +295,13 @@ function ProductPageInner({ slug }: { slug: string }) {
                           : <iframe key={video.src} src={video.src} title={tr('product.video', 'Product video')} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="size-full border-0" />}
                     </div>
                   ) : (
-                    <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative flex-1 cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
+                    <div className="relative flex-1">
+                    <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative w-full cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
                       <img key={images[photoIndex] ?? images[0]} {...imgProps(images[photoIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="fx-fade size-full object-cover" fetchPriority="high" />
                       <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bg }}><ZoomIn size={18} /></span>
                     </button>
+                    <ProductWishlistHeart productId={detail.product._id} variantId={variant?._id} />
+                    </div>
                   )}
                   {mediaCount > 1 && (
                     <div className="fx-hide-scroll flex gap-3 overflow-x-auto md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden" style={{ maxHeight: 'min(640px, 70vh)' }}>
