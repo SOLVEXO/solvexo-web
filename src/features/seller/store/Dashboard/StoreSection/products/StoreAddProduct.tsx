@@ -1,7 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { SupplierField } from './SupplierField';
-import { ProductRichEditor, ProductTabsEditor, type ProductTabInput } from './ProductContentFields';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -88,7 +86,7 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 const initPhys = {
   name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '',
   stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', taxable: 'yes', categoryId: '', subCategoryId: '',
-  status: 'draft' as ProductStatus, isListedOnSolvexo: false,
+  status: 'active' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
   shippingProfileId: '',
@@ -102,8 +100,8 @@ const initPhys = {
   variantRows: [] as VariantRow[],
 };
 const initDig = {
-  name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
-  status: 'draft' as ProductStatus, isListedOnSolvexo: false,
+  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
+  status: 'active' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
   files: [] as DigitalFileRow[],
@@ -187,7 +185,9 @@ export default function StoreAddProduct() {
     if (pType === 'educational' && dig.educationLevel === 'other' && !dig.customLevel.trim()) { setError('Please describe the custom education level.'); return; }
     setSaving(true);
     try {
-      const finalStatus = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
+      // "Publish Listing" publishes (or keeps a chosen schedule); only "Save Draft" saves a draft.
+      const chosen = pType === 'physical' ? phys.status : dig.status;
+      const finalStatus = statusOverride ?? (chosen === 'scheduled' ? 'scheduled' : 'active');
       if (pType === 'physical') {
         const variants: VariantInput[] = hasVariants
           ? phys.variantRows.map(r => ({
@@ -302,11 +302,17 @@ export default function StoreAddProduct() {
                       <TIcon size={20} style={{ color: sel ? '#D97757' : '#8C8A82' }} />
                     </div>
                     <p className="text-[13px] font-semibold" style={{ color: sel ? '#D97757' : '#141413' }}>{label}</p>
-                    <p className="text-[11px] text-slate">{enabled ? desc : 'Not available in your plan'}</p>
+                    <p className="text-[11px] text-slate">{enabled ? desc : 'Turn on in Settings → Product Types'}</p>
                   </button>
                 );
               })}
             </div>
+            {!(supportsPhysical && supportsDigital && supportsEducational) && (
+              <p className="text-[11.5px] text-slate mt-3">
+                Greyed-out types are switched off for this store.{' '}
+                <Link to={`/store/${storeId}/settings/product-types`} className="text-brand-orange font-semibold hover:underline">Manage product types</Link>
+              </p>
+            )}
           </Card>
 
           {/* Basic Information */}

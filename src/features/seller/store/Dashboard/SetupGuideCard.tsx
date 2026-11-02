@@ -8,6 +8,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { apiGetOnboardingProgress, apiGetStorePlatformPlan } from '@/api/services/platformPlans';
 import { apiGetStripeConnectStatus } from '@/api/services/stripeConnect';
+import { apiListStoreIntegrations } from '@/api/services/integrations';
 import { apiListStoreShippingZones } from '@/api/services/shipping';
 import type { StoreData } from '@/api/services/store';
 
@@ -29,7 +30,7 @@ import type { StoreData } from '@/api/services/store';
 // Every task below is backed by REAL data already fetched elsewhere in this
 // codebase — nothing here is a fake/cosmetic checkbox:
 //  - `hasPlatformPaymentMethod` / `planStatus` — SellerPlatformSubscriptionsService.getOnboardingProgress / getStorePlatformPlan
-//  - Stripe Connect `chargesEnabled` — StripeConnectService (whether the store can accept a real customer payment yet)
+//  - payments — Stripe Connect `chargesEnabled`, or any gateway / transfer method switched on in Integrations
 //  - `totalProducts` — the store's own catalog count (passed in, already fetched by StoreDashboard)
 //  - `store.customDomainStatus` — StoreService's real DNS-verified custom-domain flow
 //  - shipping zone count — ShippingZonesService, the store's own configured rates
@@ -77,7 +78,7 @@ function daysUntil(dateStr: string | null | undefined): number | null {
 export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: string; totalProducts: number; store: StoreData | null }) {
   const navigate = useNavigate();
   const [hasPlatformPaymentMethod, setHasPlatformPaymentMethod] = useState(false);
-  const [chargesEnabled, setChargesEnabled] = useState(false);
+  const [paymentsReady, setPaymentsReady] = useState(false);
   const [shippingZoneCount, setShippingZoneCount] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -99,10 +100,16 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       apiGetStripeConnectStatus(storeId).catch(() => null),
       apiGetStorePlatformPlan(storeId).catch(() => null),
       apiListStoreShippingZones(storeId, 'shipping').catch(() => null),
-    ]).then(([progressRes, connectRes, planRes, shippingRes]) => {
+      apiListStoreIntegrations(storeId).catch(() => null),
+    ]).then(([progressRes, connectRes, planRes, shippingRes, integrationsRes]) => {
       if (cancelled) return;
       setHasPlatformPaymentMethod(!!progressRes?.data?.hasPlatformPaymentMethod);
-      setChargesEnabled(!!connectRes?.data?.chargesEnabled);
+      // Any way for buyers to pay beyond the default Cash on Delivery counts: Stripe, a connected gateway
+      // (Safepay, PayFast, bank transfer, …) switched on at checkout, or an active custom transfer method.
+      const list = integrationsRes?.data;
+      setPaymentsReady(!!connectRes?.data?.chargesEnabled
+        || !!list?.payment?.some(p => p.status === 'connected' && p.isEnabledForCheckout)
+        || !!list?.manualMethods?.some(m => m.isActive));
       setStoreLocked(planRes?.data?.status === 'locked');
       setTrialDaysLeft(planRes?.data?.status === 'trialing' ? daysUntil(planRes.data.trialEndsAt) : null);
       setShippingZoneCount(shippingRes?.data?.length ?? 0);
@@ -143,8 +150,8 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
     },
     {
       id: 'get-paid', label: 'Set up payments',
-      desc: 'Connect Stripe so buyers can pay you directly at checkout.',
-      cta: 'Activate payments', Icon: Wallet, path: 'integrations', done: chargesEnabled, manual: false,
+      desc: 'Cash on Delivery is already on. Connect an online payment provider, or add bank or wallet transfer details, so buyers can pay you at checkout.',
+      cta: 'Activate payments', Icon: Wallet, path: 'integrations', done: paymentsReady, manual: false,
     },
     {
       id: 'product', label: 'Add your first product',
@@ -154,7 +161,7 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
     {
       id: 'domain', label: 'Get a custom domain',
       desc: "Give your store a branded URL that's easy to find, trust, and remember.",
-      cta: 'Set up domain', Icon: Globe2, path: 'settings', done: domainDone, manual: false,
+      cta: 'Set up domain', Icon: Globe2, path: 'settings/domains', done: domainDone, manual: false,
     },
     {
       id: 'shipping', label: 'Review shipping rates',

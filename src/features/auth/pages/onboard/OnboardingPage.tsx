@@ -27,6 +27,7 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { AnimatePresence } from 'motion/react';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { FEATURES } from '@/constants/features';
 
 const ONBOARDING_HIGHLIGHTS = [
   { Icon: Store,     text: 'A store built around how you sell' },
@@ -114,13 +115,14 @@ const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; de
   { id: 'mix',      Icon: Globe,     title: 'Mix of the above', desc: 'I sell across multiple categories and formats' },
 ];
 
-const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; desc: string }[] = [
+const PRODUCT_TYPES = ([
   { id: 'physical_products', Icon: Package,           title: 'Physical Products',     desc: 'Ship items to customers' },
   { id: 'digital_downloads', Icon: Download,          title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
-  { id: 'digital_downloads', Icon: BookOpen,          title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
+  { id: 'educational_resources', Icon: BookOpen,      title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
   { id: 'services_bookings', Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
   { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
-];
+  // Bookings is hidden until it returns as an App (FEATURES.bookings), so it isn't offered here either.
+] as { id: ProductType; Icon: React.ElementType; title: string; desc: string }[]).filter(t => t.id !== 'services_bookings' || FEATURES.bookings);
 
 /** Seller kind for the live background photo. "Educator" shares the `creator`
  *  id in SELLER_TYPES, so it is told apart by its list index in `sellerKey`. */
@@ -457,7 +459,7 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
               {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Digital Delivery</span>}
               {form.productTypes.includes('educational_resources') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Worksheet Builder</span>}
               {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">POS Register</span>}
-              {form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
+              {FEATURES.bookings && form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Studio</span>
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Marketplace</span>
             </div>
@@ -472,7 +474,8 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
             ? `Your store goes live immediately — no waiting on review. You're already on the ${selectedPlan.name} plan.`
             : selectedPlan
             ? `Your store goes live immediately — no waiting on review. You'll launch on the ${selectedPlan.name} plan.`
-            : `Your store goes live immediately — no waiting on review, no card needed. Your free ${trialDurationDays}-day trial starts the moment you launch.`}
+            // During the trial the storefront shows "Coming soon" and checkout is closed until a plan is chosen.
+            : `Your store is created right away — no waiting on review, no card needed. Build it during your free ${trialDurationDays}-day trial; buyers can order once you choose a plan.`}
         </p>
       </div>
 
@@ -739,7 +742,7 @@ export function OnboardingPage() {
         panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
         pageContext="onboarding"
         heading="Your store, your way."
-        subtext="A few quick steps and your store goes live — no waiting on review."
+        subtext="A few quick steps and your store is ready — no waiting on review."
         highlights={ONBOARDING_HIGHLIGHTS}
         bare
       >
@@ -792,7 +795,7 @@ export function OnboardingPage() {
       pageContext={step === 1 ? 'onboarding_store' : step === 3 ? 'onboarding_seller_type' : 'onboarding_products'}
       visualTopic={step === 4 ? visualTopicFor(form) : undefined}
       heading="Your store, your way."
-      subtext="A few quick steps and your store goes live — no waiting on review."
+      subtext="A few quick steps and your store is ready — no waiting on review."
       highlights={ONBOARDING_HIGHLIGHTS}
       bare
     >

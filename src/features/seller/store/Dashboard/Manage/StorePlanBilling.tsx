@@ -569,7 +569,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
                   </div>
                   <p className="text-[20px] font-bold text-brand-orange">
-                    {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : interval === 'yearly' ? `${formatUsd(yearlyMonthlyEquivalent(plan))}/mo` : `${price}/mo`}
+                    {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : interval === 'yearly' ? `${formatUsd(yearlyMonthlyEquivalent(plan))}/mo` : `${formatUsd(price ?? 0)}/mo`}
                   </p>
                   {interval === 'yearly' && !plan.isFree && !plan.isCustomPricing && (
                     <p className="text-[11.5px] text-slate -mt-0.5">Billed {formatUsd(yearlyTotal(plan))} yearly{savings > 0 ? ` · save ${savings}%` : ''}</p>
