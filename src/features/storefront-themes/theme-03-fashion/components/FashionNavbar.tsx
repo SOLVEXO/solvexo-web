@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
@@ -146,7 +146,7 @@ export function FashionNavbar() {
   return (
     <>
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
-      <header ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
+      <header className="relative" ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
         <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o)}</style>
         <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
@@ -168,30 +168,45 @@ export function FashionNavbar() {
                     </button>
                   )}
                   </div>
-                  {isMegaItem(item) && (
-                    <div data-nav-panel className="invisible absolute left-1/2 top-full z-50 w-[min(880px,92vw)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
-                      <div className="grid gap-x-8 gap-y-6 p-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 20 }}>
-                        {item.children.map(c => (
-                          <div key={c.id}>
-                            {c.imageUrl && (
-                              <NavAnchor link={c.link} className="mb-3 block overflow-hidden" style={{ borderRadius: 14, aspectRatio: '4 / 3', background: t.colors.bgAlt }}>
-                                <img src={c.imageUrl} alt="" loading="lazy" className="size-full object-cover" />
+                  {isMegaItem(item) && (() => {
+                    // Plain links (no sub-links, no photo) share ONE tidy column under the item's own name; items that carry sub-links or a photo keep their own column.
+                    const columns = item.children.filter(c => c.children.length > 0 || c.imageUrl);
+                    const plain = item.children.filter(c => c.children.length === 0 && !c.imageUrl);
+                    return (
+                      <MegaPanel className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
+                        <div style={{ background: t.colors.bg, borderTop: `1px solid ${t.colors.border}`, borderBottom: `1px solid ${t.colors.border}` }}>
+                          <div className="mx-auto grid gap-x-10 gap-y-7" style={{ maxWidth: t.layout.maxWidth, padding: `32px ${t.layout.containerPadX}`, gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', maxHeight: '72vh', overflowY: 'auto' }}>
+                            {plain.length > 0 && (
+                              <div>
+                                <p className="mb-3 text-[11px] font-semibold uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.08em' }}>{item.label}</p>
+                                {plain.map(c => (
+                                  <NavAnchor key={c.id} link={c.link} className="block py-1.5 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                                ))}
+                              </div>
+                            )}
+                            {columns.map(c => (
+                              <div key={c.id}>
+                                {c.imageUrl && (
+                                  <NavAnchor link={c.link} className="mb-3 block overflow-hidden" style={{ borderRadius: 14, aspectRatio: '4 / 3', background: t.colors.bgAlt }}>
+                                    <img src={c.imageUrl} alt="" loading="lazy" className="size-full object-cover" />
+                                  </NavAnchor>
+                                )}
+                                <NavAnchor link={c.link} className="mb-2 block text-sm font-semibold no-underline" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                                {c.children.map(g => (
+                                  <NavAnchor key={g.id} link={g.link} className="block py-1 text-[13px] no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
+                                ))}
+                              </div>
+                            ))}
+                            {item.imageUrl && (
+                              <NavAnchor link={item.link} className="relative block overflow-hidden" style={{ borderRadius: 14, minHeight: 180, background: t.colors.bgAlt }}>
+                                <img src={item.imageUrl} alt={item.label} loading="lazy" className="absolute inset-0 size-full object-cover" />
                               </NavAnchor>
                             )}
-                            <NavAnchor link={c.link} className="mb-2 block text-sm font-semibold no-underline" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
-                            {c.children.map(g => (
-                              <NavAnchor key={g.id} link={g.link} className="block py-1 text-[13px] no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
-                            ))}
                           </div>
-                        ))}
-                        {item.imageUrl && (
-                          <NavAnchor link={item.link} className="relative block overflow-hidden" style={{ borderRadius: 14, minHeight: 160, background: t.colors.bgAlt }}>
-                            <img src={item.imageUrl} alt={item.label} loading="lazy" className="absolute inset-0 size-full object-cover" />
-                          </NavAnchor>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      </MegaPanel>
+                    );
+                  })()}
                   {item.children.length > 0 && !isMegaItem(item) && (
                     <div data-nav-panel className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                       <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
@@ -260,4 +275,30 @@ export function FashionNavbar() {
       />
     </>
   );
+}
+
+/** Mega panel shell: sits under its menu item but is stretched (left/width measured against the header) to span the full header, like a real mega menu. */
+function MegaPanel({ className, children }: { className: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ left: number; width: number } | null>(null);
+  useLayoutEffect(() => {
+    const group = ref.current?.parentElement;
+    const header = group?.closest('header');
+    if (!group || !header) return;
+    const measure = () => {
+      const g = group.getBoundingClientRect();
+      const h = header.getBoundingClientRect();
+      setBox(prev => (prev && prev.left === h.left - g.left && prev.width === h.width ? prev : { left: h.left - g.left, width: h.width }));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    group.addEventListener('mouseenter', measure);
+    group.addEventListener('focusin', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      group.removeEventListener('mouseenter', measure);
+      group.removeEventListener('focusin', measure);
+    };
+  }, []);
+  return <div ref={ref} data-nav-panel className={className} style={box ? { left: box.left, width: box.width } : undefined}>{children}</div>;
 }
