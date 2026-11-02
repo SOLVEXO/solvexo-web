@@ -946,3 +946,14 @@
   html.store-app .store-hdr--app button[aria-label="Notifications"] svg { color: #fff; }
   html.store-app .store-hdr--app button[aria-label="Account settings"] { width: 40px; height: 40px; border: 1.5px solid rgba(255, 255, 255, 0.9); }
 }
+
+/* Page action buttons on the coloured app bar: every button is a white pill/square with the brand colour on it (an orange button on orange was unreadable). */
+@media (max-width: 1023px) {
+  html.store-app .store-hdr--app .store-hdr-actions { gap: 10px; padding-top: 2px; padding-bottom: 4px; justify-content: safe flex-end; }
+  html.store-app .store-hdr--app .store-hdr-actions button,
+  html.store-app .store-hdr--app .store-hdr-actions a {
+    background: #fff; color: var(--color-brand-deep-orange); border: 0; border-radius: 14px; font-weight: 600; box-shadow: none;
+  }
+  html.store-app .store-hdr--app .store-hdr-actions button:disabled { opacity: .7; }
+  html.store-app .store-hdr--app .store-hdr-actions svg { color: currentColor; }
+}

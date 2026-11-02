@@ -1226,8 +1226,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           </button>
         )}
         <div key={title} className="min-w-0">
-          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[22px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
-          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:text-white/80 max-lg:whitespace-normal max-lg:line-clamp-2 max-lg:text-[12.5px] max-lg:leading-snug max-lg:mt-0.5')}>{subtitle}</p>}
+          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[28px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
+          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:hidden')}>{subtitle}</p>}
         </div>
       </div>
       {/* Page actions get their own scrollable row below `sm`: three or four
@@ -1237,7 +1237,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           markup, and every one of the ~40 pages that pass `actions` is fixed at
           once. */}
       {actions && (
-        <div className={clsx('order-last w-full min-w-0 flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0 max-sm:-mx-4 max-sm:px-4 max-sm:pb-1', app ? 'max-lg:order-3 lg:order-none lg:contents' : 'sm:order-none sm:contents')}>
+        <div className={clsx('store-hdr-actions order-last w-full min-w-0 flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0 max-sm:-mx-4 max-sm:px-4 max-sm:pb-1', app ? 'max-lg:order-3 lg:order-none lg:contents' : 'sm:order-none sm:contents')}>
           {actions}
         </div>
       )}
@@ -1280,6 +1280,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
         </button>
         </div>
       </div>
+      {app && subtitle && <p className="lg:hidden order-2 basis-full min-w-0 truncate text-[14px] leading-snug text-white/90 -mt-1">{subtitle}</p>}
       {app && <div aria-hidden className="lg:hidden pointer-events-none absolute inset-x-0 bottom-0 h-7 translate-y-px rounded-t-[28px] bg-cream" />}
     </div>
   );
