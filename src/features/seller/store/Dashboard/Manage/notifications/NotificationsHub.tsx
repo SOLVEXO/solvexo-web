@@ -1,6 +1,7 @@
+import { SenderEmailPane } from './SenderEmailPane';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, Bell, Mail, Palette } from 'lucide-react';
+import { AlertCircle, Bell, Mail, Palette, AtSign } from 'lucide-react';
 import { Button, NotificationsPanel } from '@/components/comman/ui';
 import { SettingsCard } from '@/components/comman/settings';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
@@ -20,6 +21,7 @@ const NO_SHADOWS = '[&_.surface-panel]:!shadow-none [&_.surface-panel:hover]:!sh
 const VIEWS: Tab[] = [
   { id: 'emails', label: 'Customer emails', icon: <Mail size={13} /> },
   { id: 'look', label: 'Look & sender', icon: <Palette size={13} /> },
+  { id: 'sender', label: 'Sender email', icon: <AtSign size={13} /> },
   { id: 'alerts', label: 'My alerts', icon: <Bell size={13} /> },
 ];
 
@@ -33,6 +35,7 @@ interface Props {
  * Settings → Notifications. Three panes instead of one endless page:
  *  - Customer emails: every email the store sends to customers (switch + click a row to edit it)
  *  - Look & sender: sender name, reply-to, logo/colour/footer, extra new-order recipients
+ *  - Sender email: send the store's customer emails from the store's own mailbox (SMTP)
  *  - My alerts: the signed-in person's own notification preferences and history
  */
 export function NotificationsHub({ storeId, canManage }: Props) {
@@ -97,6 +100,12 @@ export function NotificationsHub({ storeId, canManage }: Props) {
           ) : (
             <LookAndSender settings={data.settings} onSave={data.saveLook} />
           )}
+        </div>
+      )}
+
+      {isVisited('sender') && (
+        <div className={`${paneClassName('sender')} w-full`}>
+          <SenderEmailPane storeId={storeId} />
         </div>
       )}
 

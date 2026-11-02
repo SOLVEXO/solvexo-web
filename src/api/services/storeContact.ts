@@ -11,6 +11,8 @@ export interface ContactMessage {
   phone: string | null;
   message: string;
   status: ContactMessageStatus;
+  /** What the store answered from the inbox (oldest first). */
+  replies?: { message: string; sentAt: string; sentBy: string }[];
   createdAt: string;
 }
 
@@ -39,3 +41,6 @@ export const apiDeleteContactMessage = (storeId: string, id: string) =>
 /** A visitor sends a message to the store (public). `website` is the bot-trap field and must stay empty. */
 export const apiSubmitContactMessage = (storeId: string, body: { name: string; email: string; phone?: string; message: string; website?: string }) =>
   client.post<never, ApiResponse<null>>(`/api/public/store-contact/${storeId}`, body);
+
+export const apiReplyContactMessage = (storeId: string, id: string, message: string) =>
+  client.post<never, ApiResponse<ContactMessage>>(`/api/store-contact/${storeId}/${id}/reply`, { message });

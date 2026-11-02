@@ -7,7 +7,7 @@ import { SkeletonBox } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  apiListContactMessages, apiSetContactMessageStatus, apiDeleteContactMessage,
+  apiListContactMessages, apiSetContactMessageStatus, apiDeleteContactMessage, apiReplyContactMessage,
   type ContactMessage, type ContactMessageStatus,
 } from '@/api/services/storeContact';
 
@@ -17,7 +17,7 @@ const FILTERS: { value: ContactMessageStatus | ''; label: string }[] = [
 
 /** Online Store → Contact Messages: what visitors sent through the storefront contact form. */
 export default function ContactMessages() {
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
   const toast = useToast();
   const [filter, setFilter] = useState<ContactMessageStatus | ''>('');
   const [page, setPage] = useState(1);
@@ -26,6 +26,11 @@ export default function ContactMessages() {
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<ContactMessage | null>(null);
+  const [replyingId, setReplyingId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [replyError, setReplyError] = useState('');
+  const noContactEmail = !String((store as { contactEmail?: string | null } | null)?.contactEmail ?? '').trim();
 
   const load = useCallback(() => {
     setError('');
@@ -42,6 +47,25 @@ export default function ContactMessages() {
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not update this message.');
+    }
+  }
+
+  function startReply(m: ContactMessage) {
+    setReplyingId(m._id); setReplyText(''); setReplyError('');
+    if (m.status === 'new') void setStatus(m, 'read');
+  }
+
+  async function sendReply(m: ContactMessage) {
+    setSending(true); setReplyError('');
+    try {
+      await apiReplyContactMessage(storeId, m._id, replyText.trim());
+      toast.success(`Reply sent to ${m.email}`);
+      setReplyingId(null); setReplyText('');
+      load();
+    } catch (err) {
+      setReplyError(err instanceof Error ? err.message : 'The reply could not be sent.');
+    } finally {
+      setSending(false);
     }
   }
 
@@ -85,14 +109,33 @@ export default function ContactMessages() {
                     <p className="text-[12px] text-slate m-0">{m.email}{m.phone ? ` · ${m.phone}` : ''} · {new Date(m.createdAt).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <a href={`mailto:${m.email}?subject=${encodeURIComponent('Re: your message')}`} onClick={() => m.status === 'new' && setStatus(m, 'read')}
-                      className="px-2.5 py-1.5 rounded-md text-[12px] font-medium text-charcoal bg-cream border border-bone no-underline flex items-center gap-1"><Mail size={12} /> Reply</a>
+                    <button type="button" onClick={() => startReply(m)} aria-expanded={replyingId === m._id} className="px-2.5 py-1.5 rounded-md text-[12px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center gap-1"><Mail size={12} /> Reply</button>
                     {m.status !== 'read' && <button type="button" onClick={() => setStatus(m, 'read')} className="px-2.5 py-1.5 rounded-md text-[12px] text-slate bg-transparent border border-bone cursor-pointer">Mark read</button>}
                     {m.status !== 'archived' && <button type="button" onClick={() => setStatus(m, 'archived')} aria-label="Archive" title="Archive" className="p-1.5 text-slate bg-transparent border-0 cursor-pointer"><Archive size={14} /></button>}
                     <button type="button" onClick={() => setPendingDelete(m)} aria-label="Delete" title="Delete" className="p-1.5 text-error bg-transparent border-0 cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>
                 <p className="text-[13px] text-charcoal m-0 whitespace-pre-line">{m.message}</p>
+                {(m.replies ?? []).map((r, i) => (
+                  <div key={i} className="ml-4 pl-3 border-l-2 border-brand-orange/50">
+                    <p className="text-[11px] text-slate m-0">You replied · {new Date(r.sentAt).toLocaleString()}{r.sentBy ? ` · ${r.sentBy}` : ''}</p>
+                    <p className="text-[13px] text-charcoal m-0 whitespace-pre-line">{r.message}</p>
+                  </div>
+                ))}
+                {replyingId === m._id && (
+                  <div className="flex flex-col gap-2 border-t border-bone pt-3">
+                    {noContactEmail && <p role="alert" className="m-0 text-[12px] text-error">Your store has no contact email, so {m.name} cannot reply to this mail. Add one in Settings → Basic information.</p>}
+                    <label htmlFor={`reply-${m._id}`} className="text-[12px] font-medium text-charcoal">Reply to {m.name} ({m.email})</label>
+                    <textarea id={`reply-${m._id}`} value={replyText} onChange={e => setReplyText(e.target.value)} rows={5} maxLength={5000}
+                      className="w-full border border-bone rounded-lg px-3 py-2 text-[16px] sm:text-[13px] outline-none focus:border-brand-orange" />
+                    {replyError && <p role="alert" className="m-0 text-[12px] text-error">{replyError}</p>}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" onClick={() => void sendReply(m)} loading={sending} disabled={!replyText.trim()}>Send reply</Button>
+                      <Button size="sm" variant="outline" onClick={() => setReplyingId(null)}>Cancel</Button>
+                      <a href={`mailto:${m.email}?subject=${encodeURIComponent('Re: your message')}`} className="text-[12px] text-slate underline ml-auto">Open in my email app instead</a>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
