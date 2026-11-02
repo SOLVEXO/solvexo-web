@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import {
   Smartphone, CheckCircle2, ExternalLink, CreditCard,
   Send, Search, Hammer, UploadCloud, Rocket, XCircle, Check, Sparkles, Wrench, Zap, Clock,
-  Barcode, Users, Wallet, RotateCcw, BarChart2, ShieldCheck,
+  ChevronDown, Barcode, Users, Wallet, RotateCcw, BarChart2, ShieldCheck,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Card, Button, Field, Input, Textarea, FileDropSelect, EmptyState } from '@/components/comman/ui';
@@ -233,15 +233,17 @@ function PlatformPipeline({ state, platform }: { state: StoreAppPlatformState; p
                   </span>
                 )}
               </div>
-              <p className={clsx('text-[12px] leading-[1.55] mt-1', (isDone || isCurrent) ? 'text-graphite' : 'text-slate')}>
-                {step.description}
-              </p>
-              <p className="text-[11px] text-slate mt-1 italic">{step.duration}</p>
-              {reachedAt && (
-                <p className="text-[11px] font-semibold text-charcoal mt-1.5">
-                  Reached: {formatStageTimestamp(reachedAt)}
+              <PhoneCollapse label="Details" defaultOpen={isCurrent}>
+                <p className={clsx('text-[12px] leading-[1.55] mt-1', (isDone || isCurrent) ? 'text-graphite' : 'text-slate')}>
+                  {step.description}
                 </p>
-              )}
+                <p className="text-[11px] text-slate mt-1 italic">{step.duration}</p>
+                {reachedAt && (
+                  <p className="text-[11px] font-semibold text-charcoal mt-1.5">
+                    Reached: {formatStageTimestamp(reachedAt)}
+                  </p>
+                )}
+              </PhoneCollapse>
             </div>
           </div>
         );
@@ -251,6 +253,25 @@ function PlatformPipeline({ state, platform }: { state: StoreAppPlatformState; p
 }
 
 // ── Per-platform status card ─────────────────────────────────────────────
+// Phone only: long explanatory text hides behind a small toggle (the current stage / summary stays visible); from sm everything is shown as before.
+function PhoneCollapse({ label, defaultOpen = false, children }: { label: string; defaultOpen?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+        className="sm:hidden mt-1 inline-flex items-center gap-1 p-0 border-0 bg-transparent text-[13px] font-semibold text-brand-orange cursor-pointer"
+      >
+        {open ? 'Hide' : label}
+        <ChevronDown size={14} className={clsx('transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      <div className={open ? '' : 'max-sm:hidden'}>{children}</div>
+    </>
+  );
+}
+
 function PlatformStatusCard({ label, platform, state, payFlow }: {
   label: string; platform: 'android' | 'ios'; state: StoreAppPlatformState;
   // Present only when this platform hasn't been paid for/requested yet —
@@ -614,7 +635,9 @@ function PosAccessSection({ storeId }: { storeId: string }) {
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-1 min-[440px]:grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
+      <div className="mt-4">
+      <PhoneCollapse label="What's included">
+      <div className="mt-3 sm:mt-1 grid grid-cols-1 min-[440px]:grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
         {POS_FEATURES.map(f => (
           <div key={f.label} className="flex items-start gap-2">
             <div className="w-6 h-6 rounded-md bg-[#faf9f5] flex items-center justify-center shrink-0 mt-0.5">
@@ -626,6 +649,8 @@ function PosAccessSection({ storeId }: { storeId: string }) {
             </div>
           </div>
         ))}
+      </div>
+      </PhoneCollapse>
       </div>
 
       <div className="mt-5 flex flex-col sm:flex-row gap-4">
@@ -708,7 +733,7 @@ function PosPlatformPanel({ label, platform, storeName, badgeLabel, badgeEyebrow
         </span>
       )}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-        <div className="w-[120px] h-[120px] rounded-xl border border-bone bg-white flex items-center justify-center shrink-0 p-2 shadow-sm">
+        <div className="max-sm:hidden w-[120px] h-[120px] rounded-xl border border-bone bg-white flex items-center justify-center shrink-0 p-2 shadow-sm">
           {qrDataUrl ? (
             <img src={qrDataUrl} alt={altText} className="w-full h-full" />
           ) : (
@@ -722,7 +747,7 @@ function PosPlatformPanel({ label, platform, storeName, badgeLabel, badgeEyebrow
           <p className="text-[11px] text-slate leading-[1.5]">
             {isDemo
               ? "Preview only — this QR/badge doesn't point to a real App Store listing yet."
-              : `Scan with your phone's camera, or tap the badge. Payment for the app itself happens on ${storeName} — nothing to pay here in your Solvexo dashboard.`}
+              : <><span className="max-sm:hidden">Scan with your phone's camera, or tap the badge.</span><span className="sm:hidden">Tap the badge to open {storeName}.</span> Payment for the app itself happens on {storeName} — nothing to pay here in your Solvexo dashboard.</>}
           </p>
           <StoreBadge href={url} platform={platform} eyebrow={badgeEyebrow} label={badgeLabel} />
         </div>
