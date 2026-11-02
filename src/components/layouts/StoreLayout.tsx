@@ -1171,9 +1171,12 @@ export interface StorePageHeaderProps {
    *  SellerSettings' `variant="store"`) — that page is about the SELLER,
    *  not the store, so its tab title shouldn't claim to be either. */
   titleContext?: 'store' | 'seller';
+  /** Pages that bring their own orange hero below the header (Settings menu, Account) keep the plain white bar on phone/tablet, so there is only one coloured block. */
+  plain?: boolean;
 }
 
-export function StorePageHeader({ title, subtitle, actions, titleContext = 'store' }: StorePageHeaderProps) {
+export function StorePageHeader({ title, subtitle, actions, titleContext = 'store', plain: plainProp }: StorePageHeaderProps) {
+  const app = !(plainProp || titleContext === 'seller');
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { storeId, store } = useStoreWorkspace();
@@ -1200,8 +1203,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className="store-hdr bg-white border-b border-bone max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:to-brand-deep-orange max-lg:border-b-0 max-lg:pb-10 px-4 md:px-7 py-[14px] max-sm:py-2 max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0">
-      <div className="flex items-center gap-3 min-w-0 flex-1 max-lg:order-2 max-lg:basis-full max-lg:mt-2">
+    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] max-sm:py-2 max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app && 'store-hdr--app max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10')}>
+      <div className={clsx('flex items-center gap-3 min-w-0 flex-1', app && 'max-lg:order-2 max-lg:basis-full max-lg:mt-2')}>
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
            hamburger that used to open a copy of the desktop sidebar. */}
@@ -1217,14 +1220,14 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
               else navigate(dashboardPath);
             }}
             aria-label="Go back"
-            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal max-lg:text-white hover:bg-cream max-lg:hover:bg-white/15 transition-colors cursor-pointer shrink-0"
+            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0 data-[app=true]:max-lg:text-white data-[app=true]:max-lg:hover:bg-white/15" data-app={app}
           >
             <ChevronLeft size={19} />
           </button>
         )}
         <div key={title} className="min-w-0">
-          <h1 className="solvexo-title-reveal text-[18px] max-lg:text-[26px] max-lg:font-bold font-bold text-carbon max-lg:text-white leading-[1.2] truncate">{title}</h1>
-          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate max-lg:text-white/80 mt-0.5 truncate max-lg:whitespace-normal max-lg:text-[13.5px] max-lg:leading-snug max-lg:mt-1">{subtitle}</p>}
+          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[26px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
+          {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:text-white/80 max-lg:whitespace-normal max-lg:text-[13.5px] max-lg:leading-snug max-lg:mt-1')}>{subtitle}</p>}
         </div>
       </div>
       {/* Page actions get their own scrollable row below `sm`: three or four
@@ -1234,11 +1237,11 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           markup, and every one of the ~40 pages that pass `actions` is fixed at
           once. */}
       {actions && (
-        <div className="order-last max-lg:order-3 w-full min-w-0 lg:order-none lg:contents flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0 max-sm:-mx-4 max-sm:px-4 max-sm:pb-1">
+        <div className={clsx('order-last w-full min-w-0 flex items-center gap-[10px] overflow-x-auto scrollbar-hide [&>*]:shrink-0 max-sm:-mx-4 max-sm:px-4 max-sm:pb-1', app ? 'max-lg:order-3 lg:order-none lg:contents' : 'sm:order-none sm:contents')}>
           {actions}
         </div>
       )}
-      <div className="flex flex-nowrap items-center gap-[10px] shrink-0 max-lg:order-1 max-lg:basis-full max-lg:justify-between">
+      <div className={clsx('flex flex-nowrap items-center gap-[10px] shrink-0', app && 'max-lg:order-1 max-lg:basis-full max-lg:justify-between')}>
         {/* Shopify-style store switcher — jump to another of this seller's
            stores right from the navbar, on every store page. */}
         {!isStaffSession() && <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />}
@@ -1277,7 +1280,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
         </button>
         </div>
       </div>
-      <div aria-hidden className="lg:hidden pointer-events-none absolute inset-x-0 bottom-0 h-7 translate-y-px rounded-t-[28px] bg-cream" />
+      {app && <div aria-hidden className="lg:hidden pointer-events-none absolute inset-x-0 bottom-0 h-7 translate-y-px rounded-t-[28px] bg-cream" />}
     </div>
   );
 }

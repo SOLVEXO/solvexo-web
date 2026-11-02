@@ -942,7 +942,7 @@
 
 /* App-bar header (phone + tablet): bell and avatar are outlined circles on the brand colour. */
 @media (max-width: 1023px) {
-  html.store-app .store-hdr button[aria-label="Notifications"] { width: 40px; height: 40px; background: transparent; border: 1.5px solid rgba(255, 255, 255, 0.9); box-shadow: none; }
-  html.store-app .store-hdr button[aria-label="Notifications"] svg { color: #fff; }
-  html.store-app .store-hdr button[aria-label="Account settings"] { width: 40px; height: 40px; border: 1.5px solid rgba(255, 255, 255, 0.9); }
+  html.store-app .store-hdr--app button[aria-label="Notifications"] { width: 40px; height: 40px; background: transparent; border: 1.5px solid rgba(255, 255, 255, 0.9); box-shadow: none; }
+  html.store-app .store-hdr--app button[aria-label="Notifications"] svg { color: #fff; }
+  html.store-app .store-hdr--app button[aria-label="Account settings"] { width: 40px; height: 40px; border: 1.5px solid rgba(255, 255, 255, 0.9); }
 }

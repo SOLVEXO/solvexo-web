@@ -250,7 +250,7 @@ export default function SettingsHub() {
 
   return (
     <>
-      <StorePageHeader title="Settings" subtitle="Your store's configuration, billing, integrations, and team access — all in one place." />
+      <StorePageHeader plain={!validTab} title="Settings" subtitle="Your store's configuration, billing, integrations, and team access — all in one place." />
 
       {/* `SettingsShell` owns both navigation surfaces from these groups: the
          mobile menu screen (hero + flat rows list + the rest of the dashboard
