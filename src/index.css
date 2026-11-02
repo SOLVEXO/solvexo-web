@@ -577,7 +577,7 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }
+.dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) backwards; }
 
 /* ── Route change ── A phone never hard-cuts between screens, it cross-fades
    them in with a slight rise. Deliberately shorter and shallower than
@@ -588,7 +588,8 @@
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.page-route-enter { animation: page-route-enter 220ms var(--ease-out) both; }
+/* `backwards`, not `both`: a kept final transform makes this wrapper the containing block of every position:fixed modal inside it. */
+.page-route-enter { animation: page-route-enter 220ms var(--ease-out) backwards; }
 
 /* ── Solvexo signature surface — replaces "white rounded rectangle + shadow."
    Resting state is a warm --color-paper tone with a 1px hairline and a

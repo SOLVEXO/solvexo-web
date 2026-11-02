@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { useFocusTrap } from './useFocusTrap';
@@ -30,7 +31,8 @@ export function DialogShell({ onClose, children, align = 'center', className, st
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, onClose);
 
-  return (
+  // Portaled to <body>: a transformed/filtered ancestor (page transitions, cards) would otherwise become the containing block of this fixed overlay and push the dialog off-centre.
+  return createPortal(
     <div
       className={clsx(
         'fixed inset-0 z-[9999] flex justify-center',
@@ -70,6 +72,7 @@ export function DialogShell({ onClose, children, align = 'center', className, st
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
