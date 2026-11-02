@@ -1203,8 +1203,8 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] max-sm:pt-[max(8px,env(safe-area-inset-top))] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app ? 'store-hdr--app max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10' : 'max-sm:pb-2')}>
-      <div className={'flex items-center gap-3 min-w-0 flex-1'}>
+    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app ? 'store-hdr--app max-sm:pt-[max(8px,env(safe-area-inset-top))] max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10' : 'store-hdr--app max-lg:static! max-lg:h-0 max-lg:p-0! max-lg:border-0 max-lg:bg-transparent max-lg:z-20 max-lg:items-start')}>
+      <div className={clsx('flex items-center gap-3 min-w-0 flex-1', !app && 'max-lg:mt-[max(12px,env(safe-area-inset-top))] max-lg:px-4')}>
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
            hamburger that used to open a copy of the desktop sidebar. */}
@@ -1220,12 +1220,12 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
               else navigate(dashboardPath);
             }}
             aria-label="Go back"
-            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0 data-[app=true]:max-lg:text-white data-[app=true]:max-lg:hover:bg-white/15" data-app={app}
+            className="lg:hidden size-8 pointer-coarse:size-11 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0 max-lg:text-white max-lg:hover:bg-white/15"
           >
             <ChevronLeft size={19} />
           </button>
         )}
-        <div key={title} className="min-w-0">
+        <div key={title} className={clsx('min-w-0', !app && 'max-lg:hidden')}>
           <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', app && 'max-lg:text-[28px] max-lg:font-bold max-lg:text-white')}>{title}</h1>
           {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', app && 'max-lg:hidden')}>{subtitle}</p>}
         </div>
@@ -1241,7 +1241,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           {actions}
         </div>
       )}
-      <div className={'flex flex-nowrap items-center gap-[10px] shrink-0'}>
+      <div className={clsx('flex flex-nowrap items-center gap-[10px] shrink-0', !app && 'max-lg:mt-[max(12px,env(safe-area-inset-top))] max-lg:px-4')}>
         {/* Shopify-style store switcher — jump to another of this seller's
            stores right from the navbar, on every store page. */}
         {!isStaffSession() && <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />}
