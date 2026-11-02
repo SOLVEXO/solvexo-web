@@ -18,10 +18,33 @@ export interface Supplier {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  contactName?: string | null;
+  city?: string | null;
+  country?: string | null;
+  leadTimeDays?: number | null;
+  paymentTerms?: string | null;
   status: 'active' | 'archived';
+  /** Filled by the list endpoint: what was bought from this supplier. */
+  stats?: { poCount: number; openPoCount: number; spent: number; lastOrderAt: string | null };
 }
 
-export function apiCreateSupplier(storeId: string, payload: { name: string; email?: string; phone?: string; address?: string; notes?: string }) {
+export type SupplierInput = Partial<{
+  name: string; email: string; phone: string; address: string; notes: string;
+  contactName: string; city: string; country: string; leadTimeDays: number; paymentTerms: string;
+}>;
+
+export interface SupplierDetail {
+  supplier: Supplier;
+  recentPurchaseOrders: { _id: string; poNumber: string; status: string; total: number; currency: string; createdAt: string; expectedAt: string | null }[];
+  recentReturns: { _id: string; createdAt: string; status: string | null; total: number | null }[];
+  products: { variantId: string; productId: string; name: string; sku: string | null; options: { name: string; value: string }[]; lastUnitCost: number; lastOrderedAt: string; quantity: number }[];
+}
+
+export function apiGetSupplierDetail(storeId: string, supplierId: string) {
+  return client.get<never, ApiResponse<SupplierDetail>>(`${ENDPOINTS.PURCHASE_ORDERS.LIST_SUPPLIERS(storeId)}/${supplierId}`);
+}
+
+export function apiCreateSupplier(storeId: string, payload: SupplierInput & { name: string }) {
   return client.post<never, ApiResponse<Supplier>>(ENDPOINTS.PURCHASE_ORDERS.CREATE_SUPPLIER(storeId), payload);
 }
 
@@ -29,7 +52,7 @@ export function apiListSuppliers(storeId: string) {
   return client.get<never, ApiResponse<Supplier[]>>(ENDPOINTS.PURCHASE_ORDERS.LIST_SUPPLIERS(storeId));
 }
 
-export function apiUpdateSupplier(storeId: string, supplierId: string, payload: Partial<{ name: string; email: string; phone: string; address: string; notes: string; status: 'active' | 'archived' }>) {
+export function apiUpdateSupplier(storeId: string, supplierId: string, payload: SupplierInput & { status?: 'active' | 'archived' }) {
   return client.patch<never, ApiResponse<Supplier>>(ENDPOINTS.PURCHASE_ORDERS.UPDATE_SUPPLIER(storeId, supplierId), payload);
 }
 
