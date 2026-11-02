@@ -1,10 +1,13 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { PublicMegaNavbar, isDarkHeroRoute } from '@/components/comman/ui/PublicMegaNavbar';
 import { BrandSplash, willShowBrandSplash } from '@/components/comman/motion/BrandSplash';
 import { BrandSplashReadyProvider } from '@/components/comman/motion/BrandSplashContext';
 import { Cursor } from '@/components/comman/motion/Cursor';
 import { clsx } from 'clsx';
+import { rememberCampaignTags } from '@/utils/campaignTags';
+import { capturePartnerCode } from '@/utils/sellerAcquisitionAttribution';
+import { SalesChatWidget } from '@/components/comman/sales/SalesChatWidget';
 
 // Public marketing/product/solutions pages share one navigation system —
 // PublicMegaNavbar's Products/Solutions/Resources mega-menus — instead of
@@ -20,7 +23,9 @@ export function PublicLayout() {
   // synchronous check BrandSplash itself uses) and only flips true once the
   // splash has actually finished, via `onDone` below.
   const [splashReady, setSplashReady] = useState(() => !willShowBrandSplash());
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  // Ad links carry utm_* tags; keep them for the Book-a-demo form a few clicks later.
+  useEffect(() => { rememberCampaignTags(search); capturePartnerCode(search); }, [search]);
   // PublicMegaNavbar is `fixed`, not `sticky`, so it no longer reserves its
   // own space in flow — every route needs that space compensated with real
   // padding, except the dark-hero routes (see DARK_HERO_ROUTES), whose hero
@@ -50,6 +55,8 @@ export function PublicLayout() {
           </BrandSplashReadyProvider>
         </Suspense>
       </main>
+      {/* Solvexo's AI sales assistant: shows only when switched on in Super Admin → Sales Ops → AI agent. */}
+      {splashReady && <SalesChatWidget />}
     </div>
   );
 }

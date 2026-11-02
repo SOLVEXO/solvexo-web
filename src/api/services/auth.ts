@@ -272,6 +272,8 @@ export interface RegisterPayload {
   acquisitionMedium?: string;
   acquisitionCampaign?: string;
   acquisitionLandingPage?: string;
+  /** Sales Ops partner referral code (?partner=CODE on the link they arrived through). */
+  partnerCode?: string;
 }
 interface RegisterData { userId: string; otp?: string }
 

@@ -228,6 +228,7 @@ export function ForSellersPage() {
               See All Plans
             </button>
           </div>
+          <p className="mt-3 text-[12.5px] text-[#d7d4cc] hover:text-white">Prefer a walkthrough? <button type="button" onClick={() => navigate('/book-demo')} className="font-semibold underline underline-offset-2 bg-transparent border-0 p-0 cursor-pointer text-inherit">Book a free demo</button></p>
         </Reveal>
       </div>
     </div>

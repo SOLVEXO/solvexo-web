@@ -121,7 +121,14 @@ export function ContactUsPage() {
               {/* ── FAQ cross-link — inside the same white block, right below
                   the form, so it reads as one connected section instead of a
                   card floating alone in open space. */}
-              <PremiumCard onClick={() => navigate('/faq')} className="p-5 flex items-center justify-between gap-3 mt-8">
+              <PremiumCard onClick={() => navigate('/book-demo')} className="p-5 flex items-center justify-between gap-3 mt-8">
+                <div>
+                  <p className="text-[13px] font-semibold text-carbon">Thinking of selling on Solvexo?</p>
+                  <p className="text-[12px] text-slate mt-0.5">Book a free 30-minute demo and we’ll show you your store, payments and delivery.</p>
+                </div>
+                <ArrowRight size={16} className="text-slate shrink-0" />
+              </PremiumCard>
+              <PremiumCard onClick={() => navigate('/faq')} className="p-5 flex items-center justify-between gap-3 mt-3">
                 <div>
                   <p className="text-[13px] font-semibold text-carbon">Looking for a quick answer?</p>
                   <p className="text-[12px] text-slate mt-0.5">Check our Frequently Asked Questions first — you might not need to wait for a reply.</p>
