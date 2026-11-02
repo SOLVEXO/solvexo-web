@@ -136,6 +136,9 @@ client.interceptors.response.use(
       isNetworkError: !err.response,
       status: err.response?.status,
       apiCode: err.response?.data?.code as string | undefined,
+      // The full error body, for the few callers that need more than the
+      // message (e.g. Sales Ops' duplicate-lead check returns existingLeadId).
+      details: err.response?.data as Record<string, unknown> | undefined,
     }));
   },
 );
