@@ -928,3 +928,14 @@
   .page-route-enter { animation: page-route-enter-fwd 260ms var(--ease-out) backwards; }
   .page-route-enter.page-route-enter-back { animation: page-route-enter-back 260ms var(--ease-out) backwards; }
 }
+
+/* Exit motion for DialogShell (Modal and every dialog built on it). */
+@keyframes dialog-overlay-leave { to { opacity: 0; } }
+@keyframes sheet-panel-leave { to { transform: translateY(100%); } }
+@keyframes dialog-panel-leave { to { opacity: 0; transform: scale(0.96) translateY(10px); } }
+.dialog-overlay-leave { animation: dialog-overlay-leave 190ms var(--ease-in) forwards; }
+.is-closing.sheet-panel-enter { animation: sheet-panel-leave 190ms var(--ease-in) forwards; }
+.is-closing.dialog-panel-enter { animation: dialog-panel-leave 190ms var(--ease-in) forwards; }
+@media (min-width: 640px) {
+  .is-closing.sheet-panel-enter.sheet-panel-sm-fade { animation: dialog-panel-leave 190ms var(--ease-in) forwards; }
+}

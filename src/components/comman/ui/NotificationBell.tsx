@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -28,6 +28,37 @@ function formatRelativeTime(dateStr: string): string {
   } catch {
     return '';
   }
+}
+
+/** Phone: drag a row left to dismiss it, like a native list. Desktop/mouse is untouched. */
+function SwipeDismiss({ enabled, onDismiss, children }: { enabled: boolean; onDismiss: () => void; children: ReactNode }) {
+  const [dx, setDx] = useState(0);
+  const [gone, setGone] = useState(false);
+  const start = useRef<{ x: number; y: number; axis: 'h' | 'v' | null } | null>(null);
+  if (!enabled) return <>{children}</>;
+  return (
+    <div className="relative overflow-hidden" style={gone ? { maxHeight: 0, opacity: 0, transition: 'max-height 200ms ease-out, opacity 200ms' } : undefined}>
+      <div aria-hidden className="absolute inset-0 flex items-center justify-end pr-5 bg-error text-white text-[13px] font-semibold">Remove</div>
+      <div
+        className="relative bg-white"
+        style={{ transform: `translateX(${dx}px)`, transition: start.current ? 'none' : 'transform 200ms var(--ease-out)' }}
+        onTouchStart={e => { const t = e.touches[0]; start.current = { x: t.clientX, y: t.clientY, axis: null }; }}
+        onTouchMove={e => {
+          const s = start.current; if (!s) return;
+          const t = e.touches[0]; const mx = t.clientX - s.x; const my = t.clientY - s.y;
+          if (!s.axis && (Math.abs(mx) > 10 || Math.abs(my) > 10)) s.axis = Math.abs(mx) > Math.abs(my) ? 'h' : 'v';
+          if (s.axis === 'h') setDx(Math.min(0, mx));
+        }}
+        onTouchEnd={() => {
+          const swiped = start.current?.axis === 'h' && dx < -90;
+          start.current = null;
+          if (swiped) { setDx(-480); setGone(true); window.setTimeout(onDismiss, 200); } else setDx(0);
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export function NotificationBell() {
@@ -187,8 +218,8 @@ export function NotificationBell() {
           <div className={clsx('overflow-y-auto overscroll-contain divide-y divide-fog', sheet ? 'flex-1' : 'max-h-[340px]')}>
             {(sheet ? notifications : recentNotifications).length > 0 ? (
               (sheet ? notifications : recentNotifications).map((notif) => (
+                <SwipeDismiss key={notif._id} enabled={sheet} onDismiss={() => deleteNotification(notif._id)}>
                 <div
-                  key={notif._id}
                   onClick={() => openNotification(notif)}
                   className="group relative flex gap-3 px-3.5 py-3 cursor-pointer transition-colors duration-150 hover:bg-cream/50"
                 >
@@ -232,6 +263,7 @@ export function NotificationBell() {
                     <X size={13} />
                   </button>
                 </div>
+                </SwipeDismiss>
               ))
             ) : (
               <div className="py-9 px-4 text-center">

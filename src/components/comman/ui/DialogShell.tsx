@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { useFocusTrap } from './useFocusTrap';
 
@@ -27,12 +27,28 @@ export interface DialogShellProps {
  * those previously reimplemented this exact shell independently. Callers
  * still own their own header/body/footer markup via `children`.
  */
+/** Lets a dialog's own close buttons play the exit animation too (falls back to a plain close outside a DialogShell). */
+const DialogCloseContext = createContext<(() => void) | null>(null);
+export function useDialogClose(fallback: () => void): () => void {
+  return useContext(DialogCloseContext) ?? fallback;
+}
+
 export function DialogShell({ onClose, children, align = 'center', className, style, ariaLabel, ariaLabelledBy, onKeyDown }: DialogShellProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(dialogRef, onClose);
+  const [closing, setClosing] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  // Backdrop / Esc / the dialog's own close button play a short exit animation, then really close.
+  const requestClose = useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+    timer.current = window.setTimeout(onClose, 190);
+  }, [closing, onClose]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  useFocusTrap(dialogRef, requestClose);
 
   // Portaled to <body>: a transformed/filtered ancestor (page transitions, cards) would otherwise become the containing block of this fixed overlay and push the dialog off-centre.
   return createPortal(
+    <DialogCloseContext.Provider value={requestClose}>
     <div
       className={clsx(
         'fixed inset-0 z-[9999] flex justify-center',
@@ -46,7 +62,7 @@ export function DialogShell({ onClose, children, align = 'center', className, st
           is swallowed instead of scrolling the page behind the dialog, which
           is what makes a sheet feel modal. Cheaper and side-effect-free than
           patching `overflow:hidden` onto every scroll ancestor. */}
-      <div className="dialog-overlay-enter absolute inset-0 touch-none bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className={clsx('absolute inset-0 touch-none bg-black/50 backdrop-blur-sm', closing ? 'dialog-overlay-leave' : 'dialog-overlay-enter')} onClick={requestClose} aria-hidden="true" />
 
       <div
         ref={dialogRef}
@@ -67,12 +83,14 @@ export function DialogShell({ onClose, children, align = 'center', className, st
             : align === 'bottom-mobile'
               ? 'sheet-panel-enter sheet-panel-sm-fade rounded-t-2xl sm:rounded-2xl border-t sm:border pb-[env(safe-area-inset-bottom)] sm:pb-0'
               : 'dialog-panel-enter rounded-2xl border',
+          closing && 'is-closing',
           className,
         )}
       >
         {children}
       </div>
-    </div>,
+    </div>
+    </DialogCloseContext.Provider>,
     document.body,
   );
 }
