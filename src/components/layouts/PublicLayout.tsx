@@ -7,6 +7,7 @@ import { Cursor } from '@/components/comman/motion/Cursor';
 import { clsx } from 'clsx';
 import { rememberCampaignTags } from '@/utils/campaignTags';
 import { capturePartnerCode } from '@/utils/sellerAcquisitionAttribution';
+import { SalesChatWidget } from '@/components/comman/sales/SalesChatWidget';
 
 // Public marketing/product/solutions pages share one navigation system —
 // PublicMegaNavbar's Products/Solutions/Resources mega-menus — instead of
@@ -54,6 +55,8 @@ export function PublicLayout() {
           </BrandSplashReadyProvider>
         </Suspense>
       </main>
+      {/* Solvexo's AI sales assistant: shows only when switched on in Super Admin → Sales Ops → AI agent. */}
+      {splashReady && <SalesChatWidget />}
     </div>
   );
 }

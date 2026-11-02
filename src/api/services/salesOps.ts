@@ -9,10 +9,10 @@ export const STAGE_LABELS: Record<LeadStage, string> = {
   new: 'New', contacted: 'Contacted', demo: 'Demo', trial: 'Trial', won: 'Won', lost: 'Lost',
 };
 
-export const LEAD_SOURCES = ['website_form', 'contact_message', 'manual', 'import', 'stalled_signup', 'whatsapp', 'social', 'referral', 'event', 'other'] as const;
+export const LEAD_SOURCES = ['website_form', 'website_chat', 'contact_message', 'manual', 'import', 'stalled_signup', 'whatsapp', 'social', 'referral', 'event', 'other'] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 export const SOURCE_LABELS: Record<LeadSource, string> = {
-  website_form: 'Book-a-demo form', contact_message: 'Contact message', manual: 'Added by hand', import: 'Import',
+  website_form: 'Book-a-demo form', website_chat: 'Website chat', contact_message: 'Contact message', manual: 'Added by hand', import: 'Import',
   stalled_signup: 'Stalled sign-up', whatsapp: 'WhatsApp', social: 'Social media', referral: 'Referral', event: 'Event', other: 'Other',
 };
 
@@ -31,6 +31,7 @@ export interface SalesLead {
   nextFollowUpAt: string | null; lastActivityAt: string | null; stageChangedAt: string | null; wonAt: string | null;
   sellerId: string | null; storeId: string | null; linkedAt: string | null; createdAt: string;
   utm?: { source: string | null; medium: string | null; campaign: string | null } | null;
+  aiDraft?: { channel: 'whatsapp' | 'email'; text: string; createdAt: string } | null;
 }
 export interface LeadSummary {
   stages: { stage: LeadStage; count: number; valuePKR: number }[];
@@ -40,6 +41,8 @@ export interface LeadList { items: SalesLead[]; total: number; page: number; lim
 export interface SalesActivity {
   _id: string; leadId: string; type: string; subject: string | null; body: string; outcome: string | null;
   adminId: string | null; adminName: string | null; createdAt: string;
+  /** Older entries kept the outcome here; `ai` marks what the AI assistant wrote. */
+  meta?: { outcome?: string | null; ai?: boolean } | null;
 }
 export interface SalesTask {
   _id: string; leadId: string; title: string; dueAt: string; doneAt: string | null; assigneeAdminId: string | null;
@@ -234,3 +237,32 @@ export function describePlan(p: Pick<CommissionPlan, 'bountyPKR' | 'percent' | '
 }
 export interface PartnerLogin { _id: string; name: string; email: string; status: string; roleName: string | null; partnerName: string | null }
 export const apiPartnerLogins = () => client.get<never, ApiResponse<PartnerLogin[]>>(`${BASE}/partner-logins`);
+
+// ── AI sales agent ──────────────────────────────────────────────────────────
+
+export interface AgentConfig {
+  connected: boolean; aiEnabled: boolean; aiFirstReply: boolean; aiChat: boolean; aiAgentName: string; aiGreeting: string | null;
+  aiKnowledge: string | null; defaultKnowledge: string; aiRules: string | null; aiSignOff: string | null; aiReplyTo: string | null;
+  aiChatDailyLimit: number; chatsToday: number;
+}
+export type AgentConfigInput = Partial<Omit<AgentConfig, 'connected' | 'defaultKnowledge' | 'chatsToday'>>;
+export interface ChatMessage { role: 'visitor' | 'agent'; text: string; at?: string }
+export interface ChatTranscript {
+  _id: string; leadId: string | null; status: 'open' | 'handed_over'; summary: string | null; language: string | null;
+  details: Record<string, string>; page: string | null; createdAt: string; updatedAt: string; messages: ChatMessage[];
+}
+export interface AgentPreview { reply: string; language: string | null; details: Record<string, string>; wantsDemo: boolean; wantsHuman: boolean; preferredTime: string; summary: string }
+
+export const apiAgentConfig = () => client.get<never, ApiResponse<AgentConfig>>(`${BASE}/ai-agent`);
+export const apiSaveAgentConfig = (body: AgentConfigInput) => client.put<never, ApiResponse<AgentConfig>>(`${BASE}/ai-agent`, body);
+export const apiPreviewAgent = (message: string, history: ChatMessage[]) => client.post<never, ApiResponse<AgentPreview>>(`${BASE}/ai-agent/preview`, { message, history: history.map(h => ({ role: h.role, text: h.text })) });
+export const apiAgentChats = () => client.get<never, ApiResponse<ChatTranscript[]>>(`${BASE}/ai-agent/chats`);
+export const apiLeadChats = (leadId: string) => client.get<never, ApiResponse<ChatTranscript[]>>(`${BASE}/leads/${leadId}/chats`);
+export const apiResolveAiDraft = (leadId: string, sent: boolean) => client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${leadId}/ai-draft`, { sent });
+
+/** Public (no login): the website chat. */
+export const apiChatConfig = () => client.get<never, ApiResponse<{ enabled: boolean; agentName: string; greeting: string }>>('/api/sales/chat/config');
+export const apiChatStart = (body: { page?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; partnerCode?: string }) =>
+  client.post<never, ApiResponse<{ token: string; agentName: string; greeting: string }>>('/api/sales/chat/start', body);
+export const apiChatSend = (token: string, message: string) =>
+  client.post<never, ApiResponse<{ reply: string; leadCreated: boolean; handedOver: boolean }>>(`/api/sales/chat/${token}/message`, { message });

@@ -10,10 +10,11 @@ import { can } from '@/hooks/auth/useCan';
 import { TokenStorage } from '@/api/services/auth';
 import {
   LEAD_STAGES, LOST_REASON_LABELS, SOURCE_LABELS, STAGE_LABELS, apiChangeStage, apiCreateTask, apiDeleteLead, apiDeleteTask,
-  apiGetLead, apiListTemplates, apiLogActivity, apiSalesOwners, apiSendLeadEmail, apiUpdateLead, apiUpdateTask, fillTemplate, formatPKR,
-  type LeadDetail, type LeadStage, type LogType, type SalesActivity, type SalesOwner, type SalesTemplate,
+  apiGetLead, apiLeadChats, apiResolveAiDraft, apiListTemplates, apiLogActivity, apiSalesOwners, apiSendLeadEmail, apiUpdateLead, apiUpdateTask, fillTemplate, formatPKR,
+  type ChatTranscript, type LeadDetail, type LeadStage, type LogType, type SalesActivity, type SalesOwner, type SalesTemplate,
 } from '@/api/services/salesOps';
 import { LeadFormModal, LostReasonModal, StageBadge } from './parts';
+import { Transcript } from './AgentTab';
 import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
@@ -134,8 +135,10 @@ export function SalesLeadDetail() {
 
         {/* What happened */}
         <main className="flex flex-col gap-4 min-w-0">
+          {lead.aiDraft && <AiDraftCard leadId={lead._id} draft={lead.aiDraft} wa={wa} act={act} />}
           <Composer leadId={lead._id} leadName={lead.name} businessName={lead.businessName} hasEmail={!!lead.email} act={act} />
           <Timeline items={d.activities} />
+          <LeadChats leadId={lead._id} />
         </main>
 
         {/* What's next */}
@@ -254,7 +257,8 @@ function Timeline({ items }: { items: SalesActivity[] }) {
               <div className="pb-4 min-w-0 flex-1">
                 <p className="text-[12px] text-slate">
                   <span className="font-medium text-charcoal">{ACTIVITY_LABEL[a.type] ?? a.type}</span>
-                  {a.outcome && <> · {a.outcome}</>}
+                  {(a.outcome ?? a.meta?.outcome) && <> · {a.outcome ?? a.meta?.outcome}</>}
+                  {a.meta?.ai && <> · <span className="text-brand-orange">AI assistant</span></>}
                   {a.adminName && <> · {a.adminName}</>}
                   {' · '}<time dateTime={a.createdAt} title={new Date(a.createdAt).toLocaleString()}>{relDay(a.createdAt)}, {new Date(a.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>
                 </p>
@@ -314,5 +318,41 @@ function Tasks({ leadId, tasks, act, reload }: { leadId: string; tasks: LeadDeta
         </details>
       )}
     </aside>
+  );
+}
+
+/** The AI assistant's draft (e.g. a WhatsApp first message): a person sends it. */
+function AiDraftCard({ leadId, draft, wa, act }: { leadId: string; draft: NonNullable<LeadDetail['lead']['aiDraft']>; wa: string | null; act: Act }) {
+  const [busy, setBusy] = useState<'sent' | 'discard' | null>(null);
+  const openWa = wa ? `${wa}?text=${encodeURIComponent(draft.text)}` : null;
+  return (
+    <section className="rounded-xl border border-brand-orange/40 bg-brand-pale-orange/30 p-4">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-brand-deep-orange mb-1.5">AI draft · {draft.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</p>
+      <p dir="auto" className="text-[13px] text-charcoal whitespace-pre-line">{draft.text}</p>
+      <div className="flex flex-wrap gap-2 mt-3">
+        {openWa && <a href={openWa} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md bg-success text-white px-3 py-1.5 text-[12.5px] font-semibold no-underline"><MessageCircle size={13} /> Open in WhatsApp</a>}
+        <Button size="sm" variant="outline" loading={busy === 'sent'} onClick={async () => { setBusy('sent'); await act(() => apiResolveAiDraft(leadId, true), 'Logged as sent.', 'Could not update.'); setBusy(null); }}>I sent it</Button>
+        <Button size="sm" variant="ghost" loading={busy === 'discard'} onClick={async () => { setBusy('discard'); await act(() => apiResolveAiDraft(leadId, false), 'Draft discarded.', 'Could not update.'); setBusy(null); }}>Discard</Button>
+      </div>
+      <p className="text-[11px] text-slate mt-2">Read it first: edit it in WhatsApp before sending if anything is off.</p>
+    </section>
+  );
+}
+
+/** Website chats this lead had with the AI assistant. */
+function LeadChats({ leadId }: { leadId: string }) {
+  const [chats, setChats] = useState<ChatTranscript[] | null>(null);
+  useEffect(() => { apiLeadChats(leadId).then(r => setChats(r.data)).catch(() => setChats([])); }, [leadId]);
+  if (!chats?.length) return null;
+  return (
+    <section className="rounded-xl border border-bone bg-white p-4">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-2">Website chat with the AI assistant</p>
+      {chats.map(c => (
+        <div key={c._id} className="mb-3 last:mb-0">
+          <p className="text-[11.5px] text-slate mb-1">{new Date(c.createdAt).toLocaleString()}{c.page ? ` · on ${c.page}` : ''}{c.summary ? ` · ${c.summary}` : ''}</p>
+          <Transcript messages={c.messages} />
+        </div>
+      ))}
+    </section>
   );
 }
