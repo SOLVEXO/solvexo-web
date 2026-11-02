@@ -150,6 +150,8 @@ export interface StoreProduct extends ProductSellingOptions {
   tags:              string[];
   /** Shopify shipping profile (physical products); null/absent = General. */
   shippingProfileId?: string | null;
+  /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */
+  supplierId?: string | null;
   digital:           DigitalMeta | null;
   status:            'draft' | 'active' | 'archived' | 'scheduled';
   scheduledAt:       string | null;
@@ -190,6 +192,8 @@ export interface CreatePhysicalPayload extends ProductSellingOptions {
   scheduledAt?:      string | null;
   /** Shipping profile id; null/omitted = General profile. */
   shippingProfileId?: string | null;
+  /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */
+  supplierId?: string | null;
   // At least one variant is required — every variant must share the same
   // set of attribute names (e.g. all "Color"+"Size", not a mix).
   variants:          VariantInput[];
@@ -243,6 +247,8 @@ export interface EditPhysicalPayload extends ProductSellingOptions {
   tabs?: { title: string; content: string }[];
   /** Shipping profile id; null = General profile. */
   shippingProfileId?: string | null;
+  /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */
+  supplierId?: string | null;
 }
 
 export interface EditDigitalPayload {
@@ -454,11 +460,17 @@ export interface ReorderSuggestionItem {
    *  history existed); 'simple_average' = the plain last-30-days average
    *  fallback (not enough history yet to forecast responsibly). */
   forecastMethod: 'trend_seasonal' | 'simple_average';
+  /** Enough to cover the supplier's lead time plus two weeks of sales. */
+  suggestedQty?: number;
+  /** Stock runs out before a new order could arrive (days left <= lead time). */
+  urgent?: boolean;
 }
 
 export interface ReorderSuggestionGroup {
   supplierId: string | null;
   supplierName: string;
+  leadTimeDays?: number | null;
+  paymentTerms?: string | null;
   items: ReorderSuggestionItem[];
 }
 

@@ -138,6 +138,7 @@ const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/s
 const StoreFinance = lazy(() => import('@/features/seller/store/Dashboard/Operations/finance/Finance').then(m => ({ default: m.StoreFinance })));
 const StoreReviews = lazy(() => import('@/features/seller/store/Dashboard/Operations/reviews/reviews').then(m => ({ default: m.StoreReviews })));
 const InventoryHub = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryHub').then(m => ({ default: m.InventoryHub })));
+const SupplierDetailPage = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/SupplierDetailPage'));
 const StockCountSession = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/StockCountSession'));
 const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
 const StoreLoyalty = lazy(() => import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty').then(m => ({ default: m.StoreLoyalty })));
@@ -448,6 +449,7 @@ const mainRouter = createBrowserRouter([
           { path: 'finance',                          element: <StoreFinance /> },
           { path: 'inventory/:tab?',                  element: <InventoryHub /> },
           { path: 'inventory/count/:countId',          element: <StockCountSession /> },
+          { path: 'inventory/suppliers/:supplierId',   element: <SupplierDetailPage /> },
           { path: 'inventory/reports',                 element: <InventoryHub forcedTab="reports" /> },
           { path: 'marketing/:tab?',                  element: <StoreMarketing /> },
           { path: 'discounts',                        element: <StoreDiscounts /> },

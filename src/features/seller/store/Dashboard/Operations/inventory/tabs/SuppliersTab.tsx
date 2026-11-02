@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Building2, Plus } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, EmptyState, Badge, Input, SearchInput } from '@/components/comman/ui';
@@ -10,7 +10,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TokenStorage } from '@/api/services/auth';
 import { formatMoney } from '@/utils/currency';
 import {
-  apiListSuppliers, apiCreateSupplier, apiUpdateSupplier, apiGetSupplierDetail, type Supplier, type SupplierDetail,
+  apiListSuppliers, apiCreateSupplier, apiUpdateSupplier, type Supplier,
 } from '@/api/services/purchaseOrders';
 
 type Form = { name: string; contactName: string; email: string; phone: string; address: string; city: string; country: string; leadTimeDays: string; paymentTerms: string; notes: string };
@@ -19,13 +19,13 @@ const TERMS = ['Cash on delivery', 'Advance payment', 'Net 7', 'Net 15', 'Net 30
 type Filter = 'all' | 'active' | 'archived';
 
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—');
-const optionText = (o: { value: string }[]) => (o.length ? ` — ${o.map(x => x.value).join(' / ')}` : '');
 
 /** The people you buy stock from. Purchase orders and supplier returns pick from this list; archiving hides a supplier from
  *  those pickers without deleting its history. A supplier's own page shows what was bought from it. */
 export default function SuppliersTab() {
   const { storeId, store } = useStoreWorkspace();
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const currency = store?.baseCurrency ?? 'USD';
   const user = TokenStorage.getUser<{ role?: 'admin' | 'seller' | 'staff' | 'user'; permissions?: string[] }>();
@@ -40,9 +40,6 @@ export default function SuppliersTab() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<Supplier | null>(null);
-  const [detail, setDetail] = useState<SupplierDetail | null>(null);
-  const [detailError, setDetailError] = useState('');
 
   const load = useCallback(() => {
     apiListSuppliers(storeId)
@@ -69,10 +66,18 @@ export default function SuppliersTab() {
   };
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const openDetail = (s: Supplier) => {
-    setViewing(s); setDetail(null); setDetailError('');
-    apiGetSupplierDetail(storeId, s._id).then(res => setDetail(res.data)).catch((err: unknown) => setDetailError(err instanceof Error ? err.message : 'Could not load this supplier.'));
-  };
+  const openDetail = (s: Supplier) => navigate(`/store/${storeId}/inventory/suppliers/${s._id}`);
+
+  // "Edit" on a supplier's own page comes back here and opens the form once the list has loaded.
+  const wantedEdit = (location.state as { editSupplierId?: string } | null)?.editSupplierId;
+  useEffect(() => {
+    if (!wantedEdit || rows.length === 0) return;
+    const target = rows.find(r => r._id === wantedEdit);
+    // One-shot: opens the form for the supplier the detail page asked to edit, then clears the request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (target) { openForm(target); navigate(location.pathname, { replace: true, state: null }); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantedEdit, rows]);
 
   const save = async () => {
     if (!form.name.trim()) return;
@@ -213,90 +218,6 @@ export default function SuppliersTab() {
           </div>
         </Modal>
       )}
-
-      {viewing && (
-        <Modal title={viewing.name} onClose={() => setViewing(null)} width={680} mobileSheet
-          footer={<div className="flex justify-end gap-2">
-            {canManage && <Button variant="secondary" onClick={() => { const s = viewing; setViewing(null); openForm(s); }}>Edit</Button>}
-            <Button onClick={() => navigate(`/store/${storeId}/purchase-orders/new`)}>New purchase order</Button>
-          </div>}
-        >
-          {detailError ? (
-            <p role="alert" className="text-[12.5px] text-error">{detailError}</p>
-          ) : !detail ? (
-            <div className="flex flex-col gap-2"><SkeletonBox height={56} rounded="10px" /><SkeletonBox height={120} rounded="10px" /></div>
-          ) : (
-            <SupplierDetailBody detail={detail} currency={currency} onOpenPo={id => navigate(`/store/${storeId}/purchase-orders/${id}`)} />
-          )}
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-function SupplierDetailBody({ detail, currency, onOpenPo }: { detail: SupplierDetail; currency: string; onOpenPo: (id: string) => void }) {
-  const s = detail.supplier;
-  const facts: [string, string | null | undefined][] = [
-    ['Contact', s.contactName], ['Email', s.email], ['Phone', s.phone], ['Address', [s.address, s.city, s.country].filter(Boolean).join(', ') || null],
-    ['Lead time', s.leadTimeDays != null ? `${s.leadTimeDays} day${s.leadTimeDays === 1 ? '' : 's'}` : null], ['Payment terms', s.paymentTerms], ['Notes', s.notes],
-  ];
-  const head = 'text-[11px] uppercase tracking-wide text-slate font-semibold mb-1.5';
-  return (
-    <div className="flex flex-col gap-5">
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 m-0">
-        {facts.filter(([, v]) => v).map(([k, v]) => (
-          <div key={k}><dt className="text-[11px] text-slate">{k}</dt><dd className="m-0 text-[13px] text-charcoal break-words">{v}</dd></div>
-        ))}
-        {facts.every(([, v]) => !v) && <p className="m-0 text-[12.5px] text-slate">No contact details saved yet.</p>}
-      </dl>
-
-      <section>
-        <p className={head}>Recent purchase orders</p>
-        {detail.recentPurchaseOrders.length === 0 ? <p className="m-0 text-[12.5px] text-slate">No purchase orders yet.</p> : (
-          <ul className="m-0 p-0 list-none border border-bone rounded-lg divide-y divide-bone">
-            {detail.recentPurchaseOrders.map(po => (
-              <li key={po._id}>
-                <button type="button" onClick={() => onOpenPo(po._id)} className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-transparent border-0 cursor-pointer text-left hover:bg-mist">
-                  <span className="text-[13px] font-medium text-charcoal">{po.poNumber}</span>
-                  <span className="text-[12px] text-slate">{when(po.createdAt)} · {po.status.replace(/_/g, ' ')} · {formatMoney(po.total, po.currency || currency)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <p className={head}>Products bought from this supplier</p>
-        {detail.products.length === 0 ? <p className="m-0 text-[12.5px] text-slate">Nothing ordered yet.</p> : (
-          <div className="border border-bone rounded-lg overflow-x-auto">
-            <table className="w-full text-[12.5px]">
-              <thead><tr className="text-left text-slate"><th className="px-3 py-2 font-medium">Product</th><th className="px-3 py-2 font-medium">SKU</th><th className="px-3 py-2 font-medium text-right">Last cost</th><th className="px-3 py-2 font-medium text-right">Qty ordered</th></tr></thead>
-              <tbody>
-                {detail.products.map(p => (
-                  <tr key={p.variantId} className="border-t border-bone">
-                    <td className="px-3 py-2 text-charcoal">{p.name}{optionText(p.options)}</td>
-                    <td className="px-3 py-2 text-slate">{p.sku ?? '—'}</td>
-                    <td className="px-3 py-2 text-right">{formatMoney(p.lastUnitCost, currency)}</td>
-                    <td className="px-3 py-2 text-right">{p.quantity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section>
-        <p className={head}>Recent returns to this supplier</p>
-        {detail.recentReturns.length === 0 ? <p className="m-0 text-[12.5px] text-slate">No returns.</p> : (
-          <ul className="m-0 p-0 list-none border border-bone rounded-lg divide-y divide-bone">
-            {detail.recentReturns.map(r => (
-              <li key={r._id} className="px-3 py-2 flex items-center justify-between text-[12.5px]"><span className="text-charcoal">{when(r.createdAt)}</span><span className="text-slate">{r.total != null ? formatMoney(r.total, currency) : ''}{r.status ? ` · ${r.status}` : ''}</span></li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }

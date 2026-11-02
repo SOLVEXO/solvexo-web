@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { SupplierField } from './SupplierField';
 import { ProductRichEditor, ProductTabsEditor, type ProductTabInput } from './ProductContentFields';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
@@ -91,6 +92,7 @@ const initPhys = {
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
   shippingProfileId: '',
+  supplierId: '',
   selling: initSellingOptions,
   // Non-empty optionTypes switches the Pricing/Inventory cards over to the
   // real variant matrix (VariantMatrixEditor) — see the "Variants" card
@@ -223,6 +225,7 @@ export default function StoreAddProduct() {
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           shippingProfileId: phys.shippingProfileId || null,
+          supplierId: phys.supplierId || null,
           ...sellingOptionsPayload(phys.selling),
           variants,
         });
@@ -452,6 +455,8 @@ export default function StoreAddProduct() {
           {pType === 'physical' && (
             <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />
           )}
+
+          {pType === 'physical' && <SupplierField storeId={storeId} value={phys.supplierId} onChange={v => sp('supplierId', v)} />}
 
           {/* Tags */}
           <Card title="Tags & SEO">

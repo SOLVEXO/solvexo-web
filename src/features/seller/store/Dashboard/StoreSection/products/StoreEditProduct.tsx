@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useArchiveGuard } from './useArchiveGuard';
+import { SupplierField } from './SupplierField';
 import { ProductRichEditor, ProductTabsEditor, type ProductTabInput } from './ProductContentFields';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
@@ -96,6 +97,7 @@ const blankPhys = {
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
   shippingProfileId: '',
+  supplierId: '',
   selling: initSellingOptions,
   // Non-empty optionTypes switches Pricing/Inventory over to the real
   // variant matrix — same convention as StoreAddProduct.tsx. Reconstructed
@@ -139,6 +141,7 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
     videoUrl: p.videoUrl ?? '', videoFirst: !!p.videoFirst,
     shippingProfileId: p.shippingProfileId ?? '',
+    supplierId: p.supplierId ?? '',
     selling: sellingOptionsFromProduct(p),
     optionTypes: [], variantRows: [],
   };
@@ -333,6 +336,7 @@ export default function StoreEditProduct() {
           templateKey,
           complementaryProductIds: complementaryReady ? complementaryIds : undefined,
           shippingProfileId: phys.shippingProfileId || null,
+          supplierId: phys.supplierId || null,
           ...sellingOptionsPayload(phys.selling),
         });
 
@@ -658,6 +662,8 @@ export default function StoreEditProduct() {
           {pType === 'physical' && (
             <ShippingProfileField storeId={storeId} value={phys.shippingProfileId} onChange={v => sp('shippingProfileId', v)} />
           )}
+
+          {pType === 'physical' && <SupplierField storeId={storeId} value={phys.supplierId} onChange={v => sp('supplierId', v)} />}
 
           {/* Tags */}
           <Card title="Tags & SEO">

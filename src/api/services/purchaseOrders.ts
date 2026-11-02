@@ -37,6 +37,8 @@ export interface SupplierDetail {
   supplier: Supplier;
   recentPurchaseOrders: { _id: string; poNumber: string; status: string; total: number; currency: string; createdAt: string; expectedAt: string | null }[];
   recentReturns: { _id: string; createdAt: string; status: string | null; total: number | null }[];
+  /** Products that name this supplier as their preferred supplier. */
+  preferredProducts: { _id: string; name: string }[];
   products: { variantId: string; productId: string; name: string; sku: string | null; options: { name: string; value: string }[]; lastUnitCost: number; lastOrderedAt: string; quantity: number }[];
 }
 

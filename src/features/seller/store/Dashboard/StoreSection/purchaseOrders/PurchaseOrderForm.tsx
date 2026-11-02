@@ -99,7 +99,7 @@ export default function PurchaseOrderForm() {
   // for every other way of reaching this page (the plain "New Purchase
   // Order" button), which just starts blank as before.
   const prefill = isNew ? (location.state as {
-    supplierId?: string | null; supplierName?: string;
+    supplierId?: string | null; supplierName?: string; expectedAt?: string;
     items?: { productId: string; variantId: string; name: string; image: string | null; sku: string; quantityOrdered: number }[];
   } | null) : null;
 
@@ -124,7 +124,7 @@ export default function PurchaseOrderForm() {
   const [shippingCost, setShippingCost] = useState(0);
   const [taxCost, setTaxCost] = useState(0);
   const [notes, setNotes] = useState('');
-  const [expectedAt, setExpectedAt] = useState('');
+  const [expectedAt, setExpectedAt] = useState(prefill?.expectedAt ?? '');
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
