@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Heart, Share2 } from 'lucide-react';
+import { Heart, Share2 } from 'lucide-react';
+import { ShareDialog } from './ShareDialog';
 import { tt } from '@/utils/tStatic';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { apiGetPublicMetafieldValues, type MetafieldValueEntry } from '@/api/services/metafields';
@@ -27,27 +28,27 @@ export function ProductWishlistButton({ productId, variantId }: { productId: str
   );
 }
 
-/** Phone share sheet when available, otherwise copies the link. */
-export function ProductShareButton({ title }: { title: string }) {
+/** This page's address without the hash, carrying the chosen variant so the receiver sees the same option. */
+function shareUrl(variantId?: string) {
+  const u = new URL(window.location.href);
+  u.hash = '';
+  if (variantId) u.searchParams.set('variant', variantId);
+  return u.toString();
+}
+
+/** Opens the share popup: copy link + Facebook / X / Pinterest / WhatsApp / email. */
+export function ProductShareButton({ title, image, variantId }: { title: string; image?: string; variantId?: string }) {
   const { t: tr } = useTranslation('storefront');
-  const [copied, setCopied] = useState(false);
-  const timer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-  const share = async () => {
-    const url = window.location.href;
-    try {
-      if (typeof navigator.share === 'function') { await navigator.share({ title, url }); return; }
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => setCopied(false), 2000);
-    } catch { /* the shopper closed the share sheet */ }
-  };
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
   return (
-    <button type="button" onClick={share} style={chip()} aria-live="polite">
-      {copied ? <Check size={15} aria-hidden /> : <Share2 size={15} aria-hidden />}
-      {copied ? tr('product.linkCopied', "Link copied") : tr('product.share', "Share")}
-    </button>
+    <>
+      <button type="button" onClick={() => setOpen(true)} style={chip()} aria-haspopup="dialog">
+        <Share2 size={15} aria-hidden />
+        {tr('product.share', "Share")}
+      </button>
+      {open && <ShareDialog url={shareUrl(variantId)} title={title} image={image} onClose={close} />}
+    </>
   );
 }
 

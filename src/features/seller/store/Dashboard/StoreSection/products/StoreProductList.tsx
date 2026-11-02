@@ -23,6 +23,7 @@ import {
   apiGetStoreInventory,
   apiDeleteProduct,
   apiDuplicateProduct,
+
   apiExportProductsCsv,
   type InventoryProduct,
 } from '@/api/services/product';
@@ -30,6 +31,12 @@ import { currencySymbol } from '@/utils/currency';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { can } from '@/hooks/auth/useCan';
 import { BulkActionsBar } from './BulkActionsBar';
+import { useArchiveGuard } from './useArchiveGuard';
+
+/** The API stores Archived as 'inactive' (the typed union still says 'archived'). */
+const isArchived = (s: string) => s === 'inactive' || s === 'archived';
+import { apiBulkSetStatus } from '@/api/services/productsBulk';
+import { Archive as ArchiveIcon, ArchiveRestore } from 'lucide-react';
 import { BulkEditModal } from './BulkEditModal';
 import { BULK_EDIT_MAX_PRODUCTS, type BulkTarget } from '@/api/services/productsBulk';
 import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
@@ -47,6 +54,8 @@ export default function StoreProductList() {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
   const [deleteTarget,  setDeleteTarget]  = useState<InventoryProduct | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const guard = useArchiveGuard(storeId);
   const [deleting,      setDeleting]      = useState(false);
   const [deleteError,   setDeleteError]   = useState('');
 
@@ -103,6 +112,7 @@ export default function StoreProductList() {
         if (cancelled) return;
         setProducts(res.data.products ?? []);
         setStats(res.data.stats);
+        setStatusCounts((res.data as { statusCounts?: Record<string, number> }).statusCounts ?? {});
         setTotalProducts(res.data.pagination.totalProducts);
       })
       .catch((err: unknown) => {
@@ -183,6 +193,15 @@ export default function StoreProductList() {
       setError(err instanceof Error ? err.message : 'Failed to duplicate product.');
     } finally {
       setDuplicatingId(null);
+    }
+  };
+
+  const setProductStatus = async (p: InventoryProduct, status: 'active' | 'inactive') => {
+    try {
+      await apiBulkSetStatus(storeId, status, { productIds: [p.productId] });
+      setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update the product.');
     }
   };
 
@@ -272,6 +291,8 @@ export default function StoreProductList() {
             { label: 'View Detail',    onClick: () => goDetail(p),                icon: <Eye    size={13} /> },
             ...(canEdit ? [{ label: 'Edit Product',   onClick: () => goEdit(p),                  icon: <Pencil size={13} /> }] : []),
             ...(canCreate ? [{ label: duplicatingId === p.productId ? 'Duplicating…' : 'Duplicate', onClick: () => handleDuplicate(p), icon: <Copy size={13} />, disabled: duplicatingId === p.productId }] : []),
+            ...(canEdit && isArchived(p.status) ? [{ label: 'Unarchive (set active)', onClick: () => { void setProductStatus(p, 'active'); }, icon: <ArchiveRestore size={13} /> }] : []),
+            ...(canEdit && !isArchived(p.status) ? [{ label: 'Archive', onClick: () => { void guard.request([p.productId], () => { void setProductStatus(p, 'inactive'); }); }, icon: <ArchiveIcon size={13} /> }] : []),
             ...(canDelete ? [{ label: 'Delete Product', onClick: () => { setDeleteError(''); setDeleteTarget(p); }, icon: <Trash2 size={13} />, danger: true }] : []),
           ]}
         />
@@ -360,9 +381,9 @@ export default function StoreProductList() {
                   onChange={handleStatusFilter}
                   placeholder="All statuses"
                   options={[
-                    { value: 'active',   label: 'Active' },
-                    { value: 'draft',    label: 'Draft' },
-                    { value: 'inactive', label: 'Archived' },
+                    { value: 'active',   label: `Active${statusCounts.active != null ? ` (${statusCounts.active})` : ''}` },
+                    { value: 'draft',    label: `Draft${statusCounts.draft != null ? ` (${statusCounts.draft})` : ''}` },
+                    { value: 'inactive', label: `Archived${statusCounts.inactive != null ? ` (${statusCounts.inactive})` : ''}` },
                   ]}
                 />
                 <SearchInput
@@ -466,15 +487,17 @@ export default function StoreProductList() {
         />
       )}
 
+      {guard.modal}
       {deleteTarget && (
         <Modal title="Delete this product?" onClose={() => setDeleteTarget(null)} footer={
           <>
             <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            {canEdit && !isArchived(deleteTarget.status) && <Button variant="outline" onClick={() => { const p = deleteTarget; setDeleteTarget(null); void guard.request([p.productId], () => { void setProductStatus(p, 'inactive'); }); }}>Archive instead</Button>}
             <Button variant="danger" onClick={handleDeleteConfirm} loading={deleting}>Delete Product</Button>
           </>
         }>
           <p className="text-[13px] text-slate">
-            <span className="font-semibold text-charcoal">{deleteTarget.name}</span> will be removed from your store and the marketplace. This can't be undone.
+            <span className="font-semibold text-charcoal">{deleteTarget.name}</span> will be removed from your store and the marketplace. This can't be undone. To keep its sales history and bring it back later, archive it instead.
           </p>
           {deleteError && (
             <p className="text-[12px] text-error mt-3">{deleteError}</p>

@@ -194,7 +194,8 @@
     "maxQty": "الحد الأقصى {{count}}",
     "minQty": "الحد الأدنى {{count}}",
     "quantityOf": "كمية {{name}}",
-    "stepQty": "مضاعفات {{count}}"
+    "stepQty": "مضاعفات {{count}}",
+    "itemUnavailable": "هذا المنتج لم يعد متاحًا. يرجى إزالته لإتمام الشراء."
   },
   "category": {
     "notFound": "الفئة غير موجودة",
@@ -1140,6 +1141,7 @@
     "session_expired_please_start_again": "انتهت الجلسة. يرجى البدء من جديد.",
     "share_by_email": "المشاركة عبر البريد الإلكتروني",
     "share_on_facebook": "المشاركة على Facebook",
+    "share_on_pinterest": "المشاركة على Pinterest",
     "share_on_whatsapp": "المشاركة على WhatsApp",
     "share_on_x": "المشاركة على X",
     "shared_a_product": "شارك منتجًا",
@@ -1369,7 +1371,9 @@
     "unavailable": "هذا المنتج غير متاح.",
     "yes": "نعم",
     "zoomImage": "تكبير الصورة",
-    "enlarged": "{{alt}} — مكبّرة"
+    "enlarged": "{{alt}} — مكبّرة",
+    "description": "الوصف",
+    "details": "تفاصيل المنتج"
   },
   "returns": {
     "approved": "تمت الموافقة على الإرجاع",

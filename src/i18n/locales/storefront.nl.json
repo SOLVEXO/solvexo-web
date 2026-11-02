@@ -190,7 +190,8 @@
     "viewCart": "Winkelwagen bekijken",
     "yourAccent": "winkelwagen",
     "yourCart": "Je winkelwagen",
-    "yourLead": "Je"
+    "yourLead": "Je",
+    "itemUnavailable": "Dit artikel is niet meer beschikbaar. Verwijder het om af te rekenen."
   },
   "category": {
     "notFound": "Categorie niet gevonden",
@@ -1114,6 +1115,7 @@
     "share_a_product": "Een product delen",
     "share_by_email": "Delen via e-mail",
     "share_on_facebook": "Delen op Facebook",
+    "share_on_pinterest": "Delen op Pinterest",
     "share_on_whatsapp": "Delen op WhatsApp",
     "share_on_x": "Delen op X",
     "share_this_article": "Dit artikel delen",
@@ -1369,7 +1371,9 @@
     "tags": "Tags",
     "unavailable": "Dit product is niet beschikbaar.",
     "yes": "Ja",
-    "zoomImage": "Afbeelding vergroten"
+    "zoomImage": "Afbeelding vergroten",
+    "description": "Beschrijving",
+    "details": "Productdetails"
   },
   "returns": {
     "approved": "Retour goedgekeurd",

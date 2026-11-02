@@ -190,7 +190,8 @@
     "viewCart": "کارٹ دیکھیں",
     "yourAccent": "کارٹ",
     "yourCart": "آپ کی کارٹ",
-    "yourLead": "آپ کا"
+    "yourLead": "آپ کا",
+    "itemUnavailable": "یہ آئٹم اب دستیاب نہیں ہے۔ چیک آؤٹ کے لیے اسے ہٹا دیں۔"
   },
   "category": {
     "notFound": "زمرہ نہیں ملا",
@@ -1114,6 +1115,7 @@
     "share_a_product": "پروڈکٹ شیئر کریں",
     "share_by_email": "ای میل سے شیئر کریں",
     "share_on_facebook": "Facebook پر شیئر کریں",
+    "share_on_pinterest": "Pinterest پر شیئر کریں",
     "share_on_whatsapp": "WhatsApp پر شیئر کریں",
     "share_on_x": "X پر شیئر کریں",
     "share_this_article": "یہ مضمون شیئر کریں",
@@ -1369,7 +1371,9 @@
     "tags": "ٹیگز",
     "unavailable": "یہ پروڈکٹ دستیاب نہیں ہے۔",
     "yes": "ہاں",
-    "zoomImage": "تصویر بڑی کریں"
+    "zoomImage": "تصویر بڑی کریں",
+    "description": "تفصیل",
+    "details": "پروڈکٹ کی تفصیلات"
   },
   "returns": {
     "approved": "واپسی منظور",

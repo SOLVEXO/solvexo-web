@@ -165,11 +165,15 @@ export interface StoreProduct extends ProductSellingOptions {
   templateKey?:      string;
   /** Products picked to go with this one — shown by a Related Products section set to "complementary". */
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
 }
 
 // ── Request payloads ──────────────────────────────────────────────────────────
 
 export interface CreatePhysicalPayload extends ProductSellingOptions {
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   storeId:           string;
   name:              string;
   description:       string;
@@ -182,7 +186,7 @@ export interface CreatePhysicalPayload extends ProductSellingOptions {
   videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active' | 'scheduled';
+  status:            'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:      string | null;
   /** Shipping profile id; null/omitted = General profile. */
   shippingProfileId?: string | null;
@@ -192,6 +196,8 @@ export interface CreatePhysicalPayload extends ProductSellingOptions {
 }
 
 export interface CreateDigitalPayload {
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   storeId:           string;
   name:              string;
   description:       string;
@@ -207,7 +213,7 @@ export interface CreateDigitalPayload {
   videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active' | 'scheduled';
+  status:            'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:      string | null;
   price:             number;
   compareAtPrice:    number | null;
@@ -229,10 +235,12 @@ export interface EditPhysicalPayload extends ProductSellingOptions {
   videoFirst?:       boolean;
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active' | 'scheduled';
+  status:            'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:      string | null;
   templateKey?:      string;
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
   /** Shipping profile id; null = General profile. */
   shippingProfileId?: string | null;
 }
@@ -248,13 +256,15 @@ export interface EditDigitalPayload {
   videoFirst?:    boolean;
   educationLevel?: EducationLevel | null;
   customLevel?:   string | null;
-  status:         'draft' | 'active' | 'scheduled';
+  status:         'draft' | 'active' | 'scheduled' | 'inactive';
   scheduledAt?:   string | null;
   price:          number;
   compareAtPrice: number | null;
   digital:        DigitalMeta;
   templateKey?:   string;
   complementaryProductIds?: string[];
+  shortDescription?: string;
+  tabs?: { title: string; content: string }[];
 }
 
 // ── Response shapes ───────────────────────────────────────────────────────────
@@ -993,3 +1003,9 @@ export function apiGetTrendingProducts(storeId: string, limit = 12) {
   return client.get<never, ApiResponse<StorefrontProductsData>>(ENDPOINTS.PRODUCT.STORE_TRENDING(storeId), { params: { limit } });
 }
 
+
+/** What archiving products would leave pointing at them (GET .../store-products/:storeId/archive-impact). */
+export interface ArchiveImpact { draftOrders: number; purchaseOrders: number; menus: number; carts: number; total: number }
+export function apiArchiveImpact(storeId: string, ids: string[]) {
+  return client.get<never, ApiResponse<ArchiveImpact>>(`/api/products/store-products/${storeId}/archive-impact`, { params: { ids: ids.join(',') } });
+}

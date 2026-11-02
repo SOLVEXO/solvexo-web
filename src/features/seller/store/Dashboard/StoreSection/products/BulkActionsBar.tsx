@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, Pencil, AlertCircle, CheckCircle2, Archive, FileEdit, Tag, Trash2 } from 'lucide-react';
 import { ActionMenu, Button, Modal, TagInput } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
+import { useArchiveGuard } from './useArchiveGuard';
 import {
   apiBulkSetStatus, apiBulkUpdateTags, apiBulkDeleteProducts,
   type BulkProductStatus, type BulkTarget,
@@ -43,6 +44,7 @@ interface Props {
 
 export function BulkActionsBar({ storeId, count, target, canEdit, canDelete, onEditProducts, onClear, onDone }: Props) {
   const toast = useToast();
+  const guard = useArchiveGuard(storeId);
   const [busy, setBusy]   = useState(false);
   const [error, setError] = useState('');
   const [tagMode, setTagMode] = useState<'add' | 'remove' | null>(null);
@@ -106,7 +108,7 @@ export function BulkActionsBar({ storeId, count, target, canEdit, canDelete, onE
     ...(canEdit ? [
       { label: 'Set as active',   icon: <CheckCircle2 size={13} />, onClick: () => { void setStatus('active', 'set to active'); } },
       { label: 'Set as draft',    icon: <FileEdit size={13} />,     onClick: () => { void setStatus('draft', 'set to draft'); } },
-      { label: 'Archive',         icon: <Archive size={13} />,      onClick: () => { void setStatus('inactive', 'archived'); } },
+      { label: 'Archive',         icon: <Archive size={13} />,      onClick: () => { const ids = target.productIds; if (ids && ids.length > 0 && !target.selectAll) { void guard.request(ids, () => { void setStatus('inactive', 'archived'); }); } else { void setStatus('inactive', 'archived'); } } },
       { label: 'Add tags',        icon: <Tag size={13} />,          onClick: () => { setError(''); setTags([]); setTagMode('add'); } },
       { label: 'Remove tags',     icon: <Tag size={13} />,          onClick: () => { setError(''); setTags([]); setTagMode('remove'); } },
     ] : []),
@@ -117,6 +119,7 @@ export function BulkActionsBar({ storeId, count, target, canEdit, canDelete, onE
 
   return (
     <>
+      {guard.modal}
       <div className="px-5 py-2.5 border-y border-bone bg-brand-pale-orange/40 flex flex-wrap items-center gap-3" role="region" aria-label="Bulk actions">
         <span className="text-[12px] font-medium text-charcoal">{count.toLocaleString()} selected</span>
         <button

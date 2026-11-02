@@ -191,7 +191,8 @@
     "viewCart": "Voir le panier",
     "yourAccent": "panier",
     "yourCart": "Votre panier",
-    "yourLead": "Votre"
+    "yourLead": "Votre",
+    "itemUnavailable": "Cet article n'est plus disponible. Veuillez le retirer pour passer commande."
   },
   "category": {
     "notFound": "Catégorie introuvable",
@@ -1124,6 +1125,7 @@
     "share_a_product": "Partager un produit",
     "share_by_email": "Partager par e-mail",
     "share_on_facebook": "Partager sur Facebook",
+    "share_on_pinterest": "Partager sur Pinterest",
     "share_on_whatsapp": "Partager sur WhatsApp",
     "share_on_x": "Partager sur X",
     "share_this_article": "Partager cet article",
@@ -1381,7 +1383,9 @@
     "tags": "Étiquettes",
     "unavailable": "Ce produit n'est pas disponible.",
     "yes": "Oui",
-    "zoomImage": "Agrandir l'image"
+    "zoomImage": "Agrandir l'image",
+    "description": "Description",
+    "details": "Détails du produit"
   },
   "returns": {
     "approved": "Retour approuvé",

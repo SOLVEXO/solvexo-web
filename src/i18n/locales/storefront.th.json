@@ -189,7 +189,8 @@
     "viewCart": "ดูตะกร้า",
     "yourAccent": "ตะกร้า",
     "yourCart": "ตะกร้าของคุณ",
-    "yourLead": "ของคุณ"
+    "yourLead": "ของคุณ",
+    "itemUnavailable": "สินค้านี้ไม่มีจำหน่ายแล้ว โปรดนำออกเพื่อชำระเงิน"
   },
   "category": {
     "notFound": "ไม่พบหมวดหมู่",
@@ -1104,6 +1105,7 @@
     "share_a_product": "แชร์สินค้า",
     "share_by_email": "แชร์ทางอีเมล",
     "share_on_facebook": "แชร์บน Facebook",
+    "share_on_pinterest": "แชร์ไปยัง Pinterest",
     "share_on_whatsapp": "แชร์บน WhatsApp",
     "share_on_x": "แชร์บน X",
     "share_this_article": "แชร์บทความนี้",
@@ -1357,7 +1359,9 @@
     "tags": "แท็ก",
     "unavailable": "ไม่มีสินค้านี้",
     "yes": "ใช่",
-    "zoomImage": "ขยายรูปภาพ"
+    "zoomImage": "ขยายรูปภาพ",
+    "description": "รายละเอียด",
+    "details": "รายละเอียดสินค้า"
   },
   "returns": {
     "approved": "อนุมัติการคืนสินค้าแล้ว",

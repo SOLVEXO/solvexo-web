@@ -55,12 +55,16 @@ export function relatedPosts(posts: BlogPostSummary[], currentSlug: string, curr
 
 export interface ShareTarget { key: string; label: string; href: string }
 
-export function shareTargets(url: string, title: string): ShareTarget[] {
+export function shareTargets(url: string, title: string, image?: string): ShareTarget[] {
   const u = encodeURIComponent(url);
   const t = encodeURIComponent(title);
+  const pinterest: ShareTarget[] = image
+    ? [{ key: 'pinterest', label: ts('pg.share_on_pinterest', 'Share on Pinterest'), href: `https://pinterest.com/pin/create/button/?url=${u}&media=${encodeURIComponent(image)}&description=${t}` }]
+    : [];
   return [
     { key: 'x', label: ts('pg.share_on_x', 'Share on X'), href: `https://twitter.com/intent/tweet?url=${u}&text=${t}` },
     { key: 'facebook', label: ts('pg.share_on_facebook', 'Share on Facebook'), href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    ...pinterest,
     { key: 'whatsapp', label: ts('pg.share_on_whatsapp', 'Share on WhatsApp'), href: `https://wa.me/?text=${t}%20${u}` },
     { key: 'email', label: ts('pg.share_by_email', 'Share by email'), href: `mailto:?subject=${t}&body=${u}` },
   ];

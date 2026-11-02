@@ -192,7 +192,8 @@
     "viewCart": "Посмотреть корзину",
     "yourAccent": "корзина",
     "yourCart": "Ваша корзина",
-    "yourLead": "Ваша"
+    "yourLead": "Ваша",
+    "itemUnavailable": "Этот товар больше недоступен. Удалите его, чтобы оформить заказ."
   },
   "category": {
     "notFound": "Категория не найдена",
@@ -1134,6 +1135,7 @@
     "share_a_product": "Поделиться товаром",
     "share_by_email": "Поделиться по эл. почте",
     "share_on_facebook": "Поделиться в Facebook",
+    "share_on_pinterest": "Поделиться в Pinterest",
     "share_on_whatsapp": "Поделиться в WhatsApp",
     "share_on_x": "Поделиться в X",
     "share_this_article": "Поделиться статьёй",
@@ -1393,7 +1395,9 @@
     "tags": "Теги",
     "unavailable": "Этот товар недоступен.",
     "yes": "Да",
-    "zoomImage": "Увеличить изображение"
+    "zoomImage": "Увеличить изображение",
+    "description": "Описание",
+    "details": "Сведения о товаре"
   },
   "returns": {
     "approved": "Возврат одобрен",

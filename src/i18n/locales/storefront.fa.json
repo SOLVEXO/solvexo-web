@@ -190,7 +190,8 @@
     "viewCart": "مشاهده سبد خرید",
     "yourAccent": "سبد خرید",
     "yourCart": "سبد خرید شما",
-    "yourLead": "این"
+    "yourLead": "این",
+    "itemUnavailable": "این محصول دیگر موجود نیست. برای ادامه خرید آن را حذف کنید."
   },
   "category": {
     "notFound": "دسته‌بندی یافت نشد",
@@ -1114,6 +1115,7 @@
     "share_a_product": "اشتراک‌گذاری محصول",
     "share_by_email": "اشتراک‌گذاری با ایمیل",
     "share_on_facebook": "اشتراک‌گذاری در Facebook",
+    "share_on_pinterest": "اشتراک‌گذاری در Pinterest",
     "share_on_whatsapp": "اشتراک‌گذاری در WhatsApp",
     "share_on_x": "اشتراک‌گذاری در X",
     "share_this_article": "اشتراک‌گذاری این مقاله",
@@ -1369,7 +1371,9 @@
     "tags": "برچسب‌ها",
     "unavailable": "این محصول موجود نیست.",
     "yes": "بله",
-    "zoomImage": "بزرگ‌نمایی تصویر"
+    "zoomImage": "بزرگ‌نمایی تصویر",
+    "description": "توضیحات",
+    "details": "جزئیات محصول"
   },
   "returns": {
     "approved": "مرجوعی تأیید شد",

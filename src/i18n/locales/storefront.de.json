@@ -190,7 +190,8 @@
     "viewCart": "Warenkorb anzeigen",
     "yourAccent": "Warenkorb",
     "yourCart": "Ihr Warenkorb",
-    "yourLead": "Ihr"
+    "yourLead": "Ihr",
+    "itemUnavailable": "Dieser Artikel ist nicht mehr verfügbar. Bitte entferne ihn, um zur Kasse zu gehen."
   },
   "category": {
     "notFound": "Kategorie nicht gefunden",
@@ -1114,6 +1115,7 @@
     "share_a_product": "Produkt teilen",
     "share_by_email": "Per E-Mail teilen",
     "share_on_facebook": "Auf Facebook teilen",
+    "share_on_pinterest": "Auf Pinterest teilen",
     "share_on_whatsapp": "Auf WhatsApp teilen",
     "share_on_x": "Auf X teilen",
     "share_this_article": "Diesen Artikel teilen",
@@ -1369,7 +1371,9 @@
     "tags": "Tags",
     "unavailable": "Dieses Produkt ist nicht verfügbar.",
     "yes": "Ja",
-    "zoomImage": "Bild vergrößern"
+    "zoomImage": "Bild vergrößern",
+    "description": "Beschreibung",
+    "details": "Produktdetails"
   },
   "returns": {
     "approved": "Rücksendung genehmigt",

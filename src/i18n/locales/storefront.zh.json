@@ -189,7 +189,8 @@
     "viewCart": "查看购物车",
     "yourAccent": "购物车",
     "yourCart": "您的购物车",
-    "yourLead": "您的"
+    "yourLead": "您的",
+    "itemUnavailable": "此商品已不再提供。请移除后再结账。"
   },
   "category": {
     "notFound": "未找到分类",
@@ -1104,6 +1105,7 @@
     "share_a_product": "分享商品",
     "share_by_email": "通过邮件分享",
     "share_on_facebook": "分享到 Facebook",
+    "share_on_pinterest": "分享到 Pinterest",
     "share_on_whatsapp": "分享到 WhatsApp",
     "share_on_x": "分享到 X",
     "share_this_article": "分享这篇文章",
@@ -1357,7 +1359,9 @@
     "tags": "标签",
     "unavailable": "此商品暂不可用。",
     "yes": "是",
-    "zoomImage": "放大图片"
+    "zoomImage": "放大图片",
+    "description": "描述",
+    "details": "商品详情"
   },
   "returns": {
     "approved": "退货已批准",

@@ -1,4 +1,6 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useArchiveGuard } from './useArchiveGuard';
+import { ProductRichEditor, ProductTabsEditor, type ProductTabInput } from './ProductContentFields';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
@@ -24,7 +26,7 @@ import { EntityPickerField } from '@/features/seller/store/Dashboard/OnlineStore
 import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
-type ProductStatus = 'draft' | 'active' | 'scheduled';
+type ProductStatus = 'draft' | 'active' | 'scheduled' | 'inactive';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
 
 import { PackageDimensionsFields } from './PackageDimensionsFields';
@@ -88,7 +90,7 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 }
 
 const blankPhys = {
-  name: '', description: '', price: '', compareAtPrice: '',
+  name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '',
   stock: '', sku: '', barcode: '', shippingWeight: '', length: '', width: '', height: '', countryOfOrigin: '', hsCode: '', customsDescription: '', taxable: 'yes', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
@@ -103,7 +105,7 @@ const blankPhys = {
   variantRows: [] as VariantRow[],
 };
 const blankDig = {
-  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
+  name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   videoUrl: '', videoFirst: false,
@@ -126,7 +128,7 @@ type DigForm  = typeof blankDig;
  */
 function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
   return {
-    name: p.name, description: p.description,
+    name: p.name, description: p.description, shortDescription: p.shortDescription ?? '', tabs: p.tabs ?? [],
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     stock: String(v.stock), sku: v.sku ?? '', barcode: v.barcode ?? '', shippingWeight: v.shippingWeight ?? '',
     length: dimensionText(v.length), width: dimensionText(v.width), height: dimensionText(v.height),
@@ -184,7 +186,7 @@ async function loadPhysicalVariants(productId: string): Promise<{ optionTypes: O
 function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
   const d = p.digital;
   return {
-    name: p.name, description: p.description,
+    name: p.name, description: p.description, shortDescription: p.shortDescription ?? '', tabs: p.tabs ?? [],
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     categoryId: p.categoryId ?? '',
     subCategoryId: p.subCategoryId ?? '',
@@ -300,7 +302,14 @@ export default function StoreEditProduct() {
     return p > 0 && c > p ? Math.round((1 - p / c) * 100) : null;
   })();
 
-  const handleSubmit = async (statusOverride?: ProductStatus) => {
+  const archiveGuard = useArchiveGuard(storeId);
+  const archiveConfirmed = useRef(false);
+  const handleSubmit = async (statusOverride?: ProductStatus): Promise<void> => {
+    const wanted = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
+    if (wanted === 'inactive' && !archiveConfirmed.current) {
+      void archiveGuard.request([productId], () => { archiveConfirmed.current = true; void handleSubmit(statusOverride).finally(() => { archiveConfirmed.current = false; }); });
+      return;
+    }
     setError('');
     if (pType === 'physical' && !hasVariants && (!phys.price || !phys.stock)) { setError('Price and stock are required.'); return; }
     if (hasVariants) {
@@ -316,7 +325,7 @@ export default function StoreEditProduct() {
       const finalStatus = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
-          productId, name: phys.name, description: phys.description,
+          productId, name: phys.name, description: phys.description, shortDescription: phys.shortDescription, tabs: phys.tabs,
           categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, videoUrl: phys.videoUrl, videoFirst: phys.videoFirst, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
@@ -395,7 +404,7 @@ export default function StoreEditProduct() {
         const files = filesPayload(dig.files);
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
-          name: dig.name, description: dig.description,
+          name: dig.name, description: dig.description, shortDescription: dig.shortDescription, tabs: dig.tabs,
           categoryId: dig.categoryId || null,
           subCategoryId: dig.subCategoryId || null,
           educationLevel: pType === 'educational' ? (dig.educationLevel || null) : undefined,
@@ -512,10 +521,18 @@ export default function StoreEditProduct() {
                   onChange={e => pType === 'physical' ? sp('name', e.target.value) : sd('name', e.target.value)}
                   placeholder="Product name" className={inp} />
               </F>
+              <F label="Short description">
+                <textarea value={cur.shortDescription} maxLength={500} rows={2}
+                  onChange={e => pType === 'physical' ? sp('shortDescription', e.target.value) : sd('shortDescription', e.target.value)}
+                  placeholder="One or two lines shown under the price"
+                  className={ta} />
+              </F>
               <F label="Description">
-                <textarea value={cur.description}
-                  onChange={e => pType === 'physical' ? sp('description', e.target.value) : sd('description', e.target.value)}
-                  placeholder="Describe your product…" className={ta} />
+                <ProductRichEditor label="Description" value={cur.description} onChange={v => pType === 'physical' ? sp('description', v) : sd('description', v)}
+                  placeholder="Describe your product — what it includes, who it's for, and what makes it special…" />
+              </F>
+              <F label="Extra tabs">
+                <ProductTabsEditor tabs={cur.tabs} onChange={v => pType === 'physical' ? sp('tabs', v) : sd('tabs', v)} />
               </F>
             </div>
           </Card>
@@ -857,6 +874,7 @@ export default function StoreEditProduct() {
                     { val: 'draft'     as const, label: 'Draft',     dotCls: 'bg-[#b5b3ac]',   selCls: 'bg-[#f5f4ef] border-[#b5b3ac]',   chkCls: 'bg-[#b5b3ac]'    },
                     { val: 'active'    as const, label: 'Active',    dotCls: 'bg-[#22c55e]',   selCls: 'bg-[#edfbf3] border-[#22c55e]',   chkCls: 'bg-[#22c55e]'    },
                     { val: 'scheduled' as const, label: 'Scheduled', dotCls: 'bg-brand-orange', selCls: 'bg-brand-pale-orange border-brand-orange', chkCls: 'bg-brand-orange' },
+                    { val: 'inactive'  as const, label: 'Archived',  dotCls: 'bg-[#6B7280]',   selCls: 'bg-[#f3f4f6] border-[#6B7280]',   chkCls: 'bg-[#6B7280]'    },
                   ]).map(({ val, label, dotCls, selCls, chkCls }) => {
                     const sel = cur.status === val;
                     return (
@@ -920,6 +938,7 @@ export default function StoreEditProduct() {
         </div>
       </div>
 
+      {archiveGuard.modal}
       {showScheduleModal && (
         <DateTimePickerModal
           value={pType === 'physical' ? phys.scheduledAt : dig.scheduledAt}

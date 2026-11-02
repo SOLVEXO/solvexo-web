@@ -190,7 +190,8 @@
     "viewCart": "Visa varukorgen",
     "yourAccent": "varukorg",
     "yourCart": "Din varukorg",
-    "yourLead": "Din"
+    "yourLead": "Din",
+    "itemUnavailable": "Den här varan finns inte längre. Ta bort den för att gå till kassan."
   },
   "category": {
     "notFound": "Kategorin hittades inte",
@@ -1114,6 +1115,7 @@
     "share_a_product": "Dela en produkt",
     "share_by_email": "Dela via e-post",
     "share_on_facebook": "Dela på Facebook",
+    "share_on_pinterest": "Dela på Pinterest",
     "share_on_whatsapp": "Dela på WhatsApp",
     "share_on_x": "Dela på X",
     "share_this_article": "Dela den här artikeln",
@@ -1369,7 +1371,9 @@
     "tags": "Taggar",
     "unavailable": "Den här produkten är inte tillgänglig.",
     "yes": "Ja",
-    "zoomImage": "Förstora bilden"
+    "zoomImage": "Förstora bilden",
+    "description": "Beskrivning",
+    "details": "Produktinformation"
   },
   "returns": {
     "approved": "Retur godkänd",
