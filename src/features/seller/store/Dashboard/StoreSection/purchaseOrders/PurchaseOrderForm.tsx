@@ -162,7 +162,7 @@ export default function PurchaseOrderForm() {
 
   useEffect(() => { if (!loadedOnce.current) { loadedOnce.current = true; loadPo(); } }, [loadPo]);
 
-  const [pendingPick, setPendingPick] = useState<{ product: StoreProduct; variants: ProductVariant[] } | null>(null);
+  const [pickQueue, setPickQueue] = useState<{ product: StoreProduct; variants: ProductVariant[] }[]>([]);
 
   const addVariants = (product: StoreProduct, picked: ProductVariant[]) => {
     setItems(prev => {
@@ -185,14 +185,22 @@ export default function PurchaseOrderForm() {
 
   const addProduct = async (productIds: string[]) => {
     setPickerOpen(false);
-    const productId = productIds[0];
-    if (!productId) return;
+    if (productIds.length === 0) return;
     try {
-      const { product, variants } = (await apiGetMyProductById(productId)).data;
-      if (variants.length === 0) { toast.error('This product has no purchasable variant.'); return; }
-      // One variant: add it straight away. Several: let the seller choose which ones.
-      if (variants.length === 1) addVariants(product, variants);
-      else setPendingPick({ product, variants });
+      const queue: { product: StoreProduct; variants: ProductVariant[] }[] = [];
+      let skipped = 0;
+      // Fetched a few at a time so selecting a whole catalogue does not fire everything at once.
+      for (let at = 0; at < productIds.length; at += 8) {
+        const chunk = await Promise.all(productIds.slice(at, at + 8).map(id => apiGetMyProductById(id).then(r => r.data)));
+        for (const { product, variants } of chunk) {
+          if (variants.length === 0) skipped++;
+          // One variant: add it straight away. Several: the seller chooses which ones, product by product.
+          else if (variants.length === 1) addVariants(product, variants);
+          else queue.push({ product, variants });
+        }
+      }
+      if (skipped > 0) toast.error(`${skipped} product${skipped === 1 ? ' has' : 's have'} no purchasable variant and ${skipped === 1 ? 'was' : 'were'} skipped.`);
+      setPickQueue(queue);
     } catch {
       toast.error('Failed to load product details.');
     }
@@ -466,12 +474,13 @@ export default function PurchaseOrderForm() {
       </div>
 
       {pickerOpen && (
-        <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple={false} initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" currencySymbol={symbol} />
+        <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" currencySymbol={symbol} />
       )}
 
-      {pendingPick && (
-        <VariantPickModal productName={pendingPick.product.name} variants={pendingPick.variants} currencySymbol={symbol}
-          onClose={() => setPendingPick(null)} onAdd={picked => { addVariants(pendingPick.product, picked); setPendingPick(null); }} />
+      {pickQueue.length > 0 && (
+        <VariantPickModal key={pickQueue[0].product._id} productName={pickQueue[0].product.name} variants={pickQueue[0].variants} currencySymbol={symbol}
+          step={pickQueue.length > 1 ? `${pickQueue.length} left` : undefined}
+          onClose={() => setPickQueue([])} onAdd={picked => { addVariants(pickQueue[0].product, picked); setPickQueue(q => q.slice(1)); }} />
       )}
 
       {confirmingCancel && (

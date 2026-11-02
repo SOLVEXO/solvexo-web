@@ -9,8 +9,10 @@ const label = (v: ProductVariant) => v.options.map(o => o.value).join(' / ') || 
  * Second step after picking a product that has several variants (Shopify: "Select variants"):
  * tick the ones to add. Used by draft orders and purchase orders.
  */
-export function VariantPickModal({ productName, variants, currencySymbol, onAdd, onClose }: {
+export function VariantPickModal({ productName, step, variants, currencySymbol, onAdd, onClose }: {
   productName: string;
+  /** "2 of 5" when several products are being added one after another. */
+  step?: string;
   variants: ProductVariant[];
   currencySymbol: string;
   onAdd: (picked: ProductVariant[]) => void;
@@ -21,7 +23,7 @@ export function VariantPickModal({ productName, variants, currencySymbol, onAdd,
   const toggle = (id: string) => setIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
   return (
-    <Modal title={`Select variants — ${productName}`} onClose={onClose} width={560} mobileSheet
+    <Modal title={`Select variants — ${productName}${step ? ` (${step})` : ''}`} onClose={onClose} width={560} mobileSheet
       footer={<div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
         <Button disabled={ids.size === 0} onClick={() => onAdd(variants.filter(v => ids.has(v._id)))}>{ids.size > 0 ? `Add ${ids.size} variant${ids.size === 1 ? '' : 's'}` : 'Add'}</Button>
