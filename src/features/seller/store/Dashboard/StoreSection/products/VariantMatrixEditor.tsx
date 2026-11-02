@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Trash2 } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import {
@@ -128,22 +129,55 @@ export function VariantOptionsEditor({
   );
 }
 
-/** Pick which of the product's own photos a shopper sees when they choose this variant (Shopify: "assign image"). */
+/** Pick which of the product's own photos a shopper sees when they choose this variant (Shopify: "assign image"). One small thumbnail; the choices open in a popup. */
 function VariantImagePicker({ images, value, onChange, label }: { images: string[]; value: string; onChange: (url: string) => void; label: string }) {
-  if (images.length === 0) {
-    return <span className="text-[11px] text-slate">Add product images first</span>;
-  }
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => { setPos(null); btn.current?.focus(); }, []);
+  useEffect(() => {
+    if (!pos) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const hide = () => setPos(null);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', hide);
+    window.addEventListener('scroll', hide, true);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('resize', hide); window.removeEventListener('scroll', hide, true); };
+  }, [pos, close]);
+
+  if (images.length === 0) return <span className="text-[11px] text-slate">Add product images first</span>;
+  const open = () => {
+    const r = btn.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = 232;
+    setPos({ top: Math.min(r.bottom + 6, window.innerHeight - 200), left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)) });
+  };
+  const pick = (url: string) => { onChange(url); close(); };
   return (
-    <div className="flex flex-wrap items-center gap-1" role="radiogroup" aria-label={`Image for ${label}`}>
-      <button type="button" role="radio" aria-checked={!value} onClick={() => onChange('')}
-        className={`h-8 px-2 text-[11px] rounded-md border cursor-pointer bg-white ${!value ? 'border-brand-orange text-brand-orange font-semibold' : 'border-bone text-slate'}`}>None</button>
-      {images.map((src, i) => (
-        <button key={src + i} type="button" role="radio" aria-checked={value === src} aria-label={`Use image ${i + 1} for ${label}`} onClick={() => onChange(src)}
-          className={`size-8 p-0 overflow-hidden rounded-md border-2 cursor-pointer bg-white ${value === src ? 'border-brand-orange' : 'border-transparent'}`}>
-          <img src={src} alt="" loading="lazy" className="size-full object-cover" />
-        </button>
-      ))}
-    </div>
+    <>
+      <button ref={btn} type="button" onClick={open} aria-haspopup="dialog" aria-expanded={!!pos} aria-label={`Image for ${label}: ${value ? 'change' : 'choose'}`}
+        className="size-10 p-0 overflow-hidden rounded-md border border-bone bg-white cursor-pointer flex items-center justify-center text-[11px] text-slate hover:border-brand-orange">
+        {value ? <img src={value} alt="" className="size-full object-cover" /> : <span>None</span>}
+      </button>
+      {pos && createPortal(
+        <div className="fixed inset-0 z-[1000]">
+          <button type="button" tabIndex={-1} aria-label="Close" onClick={close} className="fixed inset-0 cursor-default border-0 bg-transparent p-0" />
+          <div role="dialog" aria-label={`Choose image for ${label}`} style={{ top: pos.top, left: pos.left, width: 232 }}
+            className="fixed rounded-lg border border-bone bg-white p-2 max-h-[220px] overflow-y-auto">
+            <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label={`Image for ${label}`}>
+              <button type="button" role="radio" aria-checked={!value} onClick={() => pick('')}
+                className={`size-12 rounded-md border-2 cursor-pointer bg-white text-[11px] ${!value ? 'border-brand-orange text-brand-orange font-semibold' : 'border-bone text-slate'}`}>None</button>
+              {images.map((src, i) => (
+                <button key={src + i} type="button" role="radio" aria-checked={value === src} aria-label={`Use image ${i + 1} for ${label}`} onClick={() => pick(src)}
+                  className={`size-12 p-0 overflow-hidden rounded-md border-2 cursor-pointer bg-white ${value === src ? 'border-brand-orange' : 'border-transparent'}`}>
+                  <img src={src} alt="" loading="lazy" className="size-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
@@ -186,7 +220,6 @@ export function VariantTableEditor({
               <p className="text-[13px] font-semibold text-charcoal mb-2 break-words">{name}</p>
               <div className="mb-2 flex flex-col gap-1 text-[11px] font-medium text-graphite">Image
                 <VariantImagePicker images={productImages} value={row.image} onChange={image => updateRow(row.key, { image })} label={name} />
-                <input value={row.video} onChange={e => updateRow(row.key, { video: e.target.value })} className={inp} placeholder="Video link (YouTube / Vimeo / uploaded)" aria-label="Video link for this variant" />
               </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Price ({currencySymbol})
@@ -234,7 +267,7 @@ export function VariantTableEditor({
             {rows.map(row => (
               <tr key={row.key} className="border-t border-bone">
                 <td className="px-3 py-2 font-medium text-charcoal break-words">{row.options.map(o => o.value).join(' / ')}</td>
-                <td className="px-2 py-1.5"><div className="flex flex-col gap-1.5"><VariantImagePicker images={productImages} value={row.image} onChange={image => updateRow(row.key, { image })} label={row.options.map(o => o.value).join(' / ')} /><input value={row.video} onChange={e => updateRow(row.key, { video: e.target.value })} className={inp} placeholder="Video link (YouTube / Vimeo / uploaded)" aria-label="Video link for this variant" /></div></td>
+                <td className="px-2 py-1.5"><div className="flex flex-col gap-1.5"><VariantImagePicker images={productImages} value={row.image} onChange={image => updateRow(row.key, { image })} label={row.options.map(o => o.value).join(' / ')} /></div></td>
                 <td className="px-2 py-1.5"><input type="number" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" aria-label="Price" /></td>
                 <td className="px-2 py-1.5"><input type="number" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" aria-label="Compare-at price" /></td>
                 <td className="px-2 py-1.5"><input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" aria-label="SKU" /></td>
