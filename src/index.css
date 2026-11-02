@@ -949,10 +949,10 @@
 
 /* Page action buttons on the coloured app bar: every button is a white pill/square with the brand colour on it (an orange button on orange was unreadable). */
 @media (max-width: 1023px) {
-  html.store-app .store-hdr--app .store-hdr-actions { gap: 10px; padding-top: 2px; padding-bottom: 4px; justify-content: safe flex-end; }
+  html.store-app .store-hdr--app .store-hdr-actions { gap: 10px; padding-top: 2px; padding-bottom: 4px; justify-content: safe center; }
   html.store-app .store-hdr--app .store-hdr-actions button,
   html.store-app .store-hdr--app .store-hdr-actions a {
-    background: #fff; color: var(--color-brand-deep-orange); border: 0; border-radius: 14px; font-weight: 600; box-shadow: none;
+    background: #fff; color: var(--color-brand-deep-orange); border: 0; border-radius: 14px; font-weight: 600; font-size: 13px; line-height: 1.2; padding-left: 14px; padding-right: 14px; box-shadow: none;
   }
   html.store-app .store-hdr--app .store-hdr-actions button:disabled { opacity: .7; }
   html.store-app .store-hdr--app .store-hdr-actions svg { color: currentColor; }
