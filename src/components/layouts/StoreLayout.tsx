@@ -1203,7 +1203,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
   }, [titleContext, store?.name, profile?.name, title]);
 
   return (
-    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app ? 'store-hdr--app max-sm:pt-[max(8px,env(safe-area-inset-top))] max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10' : 'store-hdr--app max-lg:static! max-lg:h-0 max-lg:p-0! max-lg:border-0 max-lg:bg-transparent max-lg:z-20 max-lg:items-start')}>
+    <div className={clsx('store-hdr bg-white border-b border-bone px-4 md:px-7 py-[14px] flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-3 gap-y-1 sticky top-0 z-10 shrink-0', app ? 'store-hdr--app max-sm:pt-[max(8px,env(safe-area-inset-top))] max-lg:bg-gradient-to-br max-lg:from-brand-orange max-lg:via-[#d98a6f] max-lg:to-[#f0b8a0] max-lg:border-b-0 max-lg:pb-10' : 'store-hdr--app max-lg:relative! max-lg:h-0 max-lg:p-0! max-lg:border-0 max-lg:bg-transparent max-lg:z-20 max-lg:items-start')}>
       <div className={clsx('flex items-center gap-3 min-w-0 flex-1', !app && 'max-lg:mt-[max(12px,env(safe-area-inset-top))] max-lg:px-4')}>
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
