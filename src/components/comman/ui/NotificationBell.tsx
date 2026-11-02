@@ -147,7 +147,8 @@ export function NotificationBell() {
           ref={panelRef}
           style={sheet ? { top: 0, left: 0, right: 0, bottom: 0 } : pos}
           className={clsx(
-            'dropdown-enter fixed z-[9999] bg-white overflow-hidden flex flex-col',
+            sheet ? 'drawer-enter-right' : 'dropdown-enter',
+            'fixed z-[9999] bg-white overflow-hidden flex flex-col',
             sheet
               ? ''
               : 'border border-bone rounded-[14px] w-[330px] md:w-[356px] max-w-[calc(100vw-2rem)]',

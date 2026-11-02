@@ -198,13 +198,16 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
       </button>
 
       {open && createPortal(
+        <>
+        {sheet && <div aria-hidden onClick={() => setOpen(false)} className="dialog-overlay-enter fixed inset-0 z-[9998] bg-carbon/35" />}
         <div
           ref={panelRef}
           role="group"
           aria-label="Switch store"
           style={sheet ? { top: 'auto', left: 0, right: 0, bottom: 0 } : { top: pos.top, left: pos.left }}
           className={clsx(
-            'dropdown-enter fixed z-[9999] flex flex-col overflow-hidden',
+            sheet ? 'sheet-panel-enter' : 'dropdown-enter',
+            'fixed z-[9999] flex flex-col overflow-hidden',
             sheet
               ? 'w-full max-h-[76dvh] rounded-t-[18px] border-x border-t pb-[env(safe-area-inset-bottom)]'
               : 'w-[340px] max-w-[calc(100vw-24px)] rounded-[16px] border',
@@ -348,7 +351,8 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
               {stores.length} store{stores.length !== 1 ? 's' : ''}
             </span>
           </div>
-        </div>,
+        </div>
+        </>,
         document.body,
       )}
     </div>
