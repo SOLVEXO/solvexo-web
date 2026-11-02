@@ -325,6 +325,13 @@ export function RegisterPage() {
           Sign In
         </Button>
       </p>
+      {/* Covers email and Google sign-up alike. Opens in a new tab so the half-filled form isn't lost. */}
+      <p className="text-center text-[11px] text-slate mt-2 leading-[1.5]">
+        By creating an account, you agree to Solvexo's{' '}
+        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">Terms of Service</a>
+        {' '}and{' '}
+        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">Privacy Policy</a>.
+      </p>
     </AuthSplitLayout>
   );
 }

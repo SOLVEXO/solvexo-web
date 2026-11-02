@@ -20,7 +20,7 @@ import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders, apiGet
 import { apiGetSellerReturns } from '@/api/services/orders';
 import { apiGetOpenDisputeCount, apiGetHighRiskOrderCount, apiGetAwaitingCaptureCount } from '@/api/services/payment';
 import { type PublicStoreProduct } from '@/api/services/store';
-import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
+import { apiGetStoreEntitlements, apiGetStorePlatformPlan, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetFinanceDashboard, type FinanceWallet } from '@/api/services/finance';
 import { apiGetActivityLog, type ActivityLogEntry, type ActivityCategory } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
@@ -36,6 +36,7 @@ import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 import { SetupGuideCard } from './SetupGuideCard';
+import { storeLiveStatus } from './storeLiveStatus';
 import { useTestimonialPrompt } from '@/hooks/seller/useTestimonialPrompt';
 import { TestimonialPromptCard } from '@/features/seller/components/TestimonialPromptCard';
 
@@ -879,14 +880,15 @@ function getTimeGreeting(countryCode?: string | null): string {
 
 function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWorkspace>['store']; storeId: string }) {
   const navigate = useNavigate();
-  const isLive = store?.status === 'active';
-  const statusLabel = isLive
-    ? 'Store is live'
-    : store?.status === 'pending'
-      ? 'Store is pending review'
-      : store?.status === 'suspended'
-        ? 'Store is suspended'
-        : 'Store is not live yet';
+  const [planStatus, setPlanStatus] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId)
+      .then(r => { if (!cancelled) setPlanStatus(r?.data?.status ?? null); })
+      .catch(() => { if (!cancelled) setPlanStatus(null); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+  const { live: isLive, label: statusLabel } = storeLiveStatus({ storeStatus: store?.status, privacyMode: store?.privacyMode, planStatus });
   const storefrontUrl = store?.slug ? getStorefrontUrl(store.slug) : '';
 
   return (

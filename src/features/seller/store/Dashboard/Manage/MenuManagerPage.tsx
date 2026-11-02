@@ -218,7 +218,7 @@ export function MenuManagerPage() {
   return (
     <>
       <StorePageHeader
-        title="Menus"
+        title="Navigation"
         subtitle="Build reusable navigation menus, then attach one to your storefront's header or footer."
         actions={(
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setEditing('new')}>
