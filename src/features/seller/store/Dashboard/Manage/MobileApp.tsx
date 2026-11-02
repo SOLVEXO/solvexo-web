@@ -270,7 +270,7 @@ function PlatformStatusCard({ label, platform, state, payFlow }: {
     );
   }
   return (
-    <div className="flex-1 min-w-0 flex flex-col gap-3 px-3.5 py-3.5 rounded-xl border border-bone bg-white">
+    <div className="flex-1 min-w-0 flex flex-col gap-3 px-3.5 py-3.5 rounded-xl border border-bone bg-white max-sm:border-0 max-sm:rounded-none max-sm:px-0 max-sm:py-1">
       <div className="flex items-center gap-2">
         {platform === 'ios' ? <AppleGlyph size={16} className="text-charcoal" /> : <AndroidGlyph size={16} />}
         <span className="flex-1 text-[13px] font-bold text-charcoal">{label}</span>
@@ -394,7 +394,7 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
   };
 
   return (
-    <Card>
+    <Card className="max-sm:p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="w-11 h-11 rounded-2xl bg-brand-pale-orange flex items-center justify-center shrink-0">
@@ -431,7 +431,7 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
       {latest && (
         <div className="mt-5 flex flex-col gap-3">
           <p className="text-[13px] font-bold text-carbon">{latest.appName}</p>
-          <div className="flex flex-col lg:flex-row gap-4 items-start">
+          <div className="flex flex-col lg:flex-row gap-4 items-start w-full max-sm:[&>*+*]:border-t max-sm:[&>*+*]:border-bone max-sm:[&>*+*]:pt-4">
             <PlatformStatusCard
               label="Android" platform="android" state={latest.android}
               payFlow={!latest.android.requested ? (
@@ -577,7 +577,7 @@ function PosAccessSection({ storeId }: { storeId: string }) {
   if (loading) return <Card className="h-[360px] animate-pulse" />;
 
   return (
-    <Card>
+    <Card className="max-sm:p-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-start gap-3 min-w-0 flex-[1_1_260px]">
           <div className="w-11 h-11 rounded-2xl bg-info-bg flex items-center justify-center shrink-0">
@@ -614,7 +614,7 @@ function PosAccessSection({ storeId }: { storeId: string }) {
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
+      <div className="mt-5 grid grid-cols-1 min-[440px]:grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
         {POS_FEATURES.map(f => (
           <div key={f.label} className="flex items-start gap-2">
             <div className="w-6 h-6 rounded-md bg-[#faf9f5] flex items-center justify-center shrink-0 mt-0.5">
