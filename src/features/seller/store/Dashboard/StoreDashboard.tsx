@@ -1063,7 +1063,7 @@ export default function StoreDashboard() {
       )}
 
       {loading || metricsLoading || layout.loading ? <DashSkeleton /> : (
-        <div className="px-4 lg:px-7 py-6 flex flex-col gap-6 max-w-[1440px] mx-auto">
+        <div className="px-4 lg:px-7 py-6 max-lg:pt-1 flex flex-col gap-6 max-lg:gap-4 max-w-[1440px] mx-auto">
 
           {layout.editing && <CustomizeToolbar layout={layout} defs={STORE_WIDGET_DEFS} presets={STORE_PRESETS} />}
 
@@ -1071,7 +1071,7 @@ export default function StoreDashboard() {
           {!staff && <TrialBillingPill />}
 
           {!layout.editing && (
-            <div className="flex justify-end -mb-4">
+            <div className="flex justify-end -mb-4 max-lg:-mb-2">
               <CustomizeButton layout={layout} />
             </div>
           )}
