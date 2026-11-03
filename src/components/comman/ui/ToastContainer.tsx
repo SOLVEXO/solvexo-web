@@ -73,7 +73,7 @@ export function ToastContainer() {
 
   return (
     // Top right, solid colour cards with a round badge pinned over the corner (no shadows).
-    <div className="fixed top-[calc(12px+env(safe-area-inset-top))] right-6 lg:top-[88px] z-[9999] flex flex-col gap-4 items-end pointer-events-none max-sm:right-5">
+    <div className="fixed top-[calc(12px+env(safe-area-inset-top))] right-6 z-[9999] flex flex-col gap-4 items-end pointer-events-none max-sm:right-5">
       {toasts.map(t => {
         const style = resolveStyle(t.variant, t.message);
         const Icon = style.icon;
