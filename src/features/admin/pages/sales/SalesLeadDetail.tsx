@@ -10,7 +10,7 @@ import { can } from '@/hooks/auth/useCan';
 import { TokenStorage } from '@/api/services/auth';
 import {
   LEAD_STAGES, LOST_REASON_LABELS, SOURCE_LABELS, STAGE_LABELS, apiChangeStage, apiCreateTask, apiDeleteLead, apiDeleteTask,
-  apiGetLead, apiLeadChats, apiResolveAiDraft, apiListTemplates, apiLogActivity, apiSalesOwners, apiSendLeadEmail, apiUpdateLead, apiUpdateTask, fillTemplate, formatPKR,
+  apiGetLead, apiLeadChats, apiResolveAiDraft, apiWaOpenForLead, apiListTemplates, apiLogActivity, apiSalesOwners, apiSendLeadEmail, apiUpdateLead, apiUpdateTask, fillTemplate, formatPKR,
   type ChatTranscript, type LeadDetail, type LeadStage, type LogType, type SalesActivity, type SalesOwner, type SalesTemplate,
 } from '@/api/services/salesOps';
 import { LeadFormModal, LostReasonModal, StageBadge } from './parts';
@@ -112,6 +112,12 @@ export function SalesLeadDetail() {
             {lead.email && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange mb-2 break-all" href={`mailto:${lead.email}`}><Mail size={14} className="text-slate shrink-0" />{lead.email}</a>}
             {lead.phone && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange mb-2" href={`tel:${lead.phone}`}><Phone size={14} className="text-slate shrink-0" />{lead.phone}</a>}
             {wa && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange" href={wa} target="_blank" rel="noreferrer"><MessageCircle size={14} className="text-slate shrink-0" />Open WhatsApp</a>}
+            {wa && (
+              <button className="flex items-center gap-2 mt-2 text-[12.5px] font-medium text-brand-orange bg-transparent border-0 p-0 cursor-pointer hover:underline"
+                onClick={async () => { try { const r = await apiWaOpenForLead(lead._id); navigate(`/admin/sales?tab=whatsapp&c=${r.data.conversationId}`); } catch (e) { toast.error(errMsg(e, 'Could not open the WhatsApp chat.')); } }}>
+                <MessageCircle size={14} className="shrink-0" />Chat in Sales Ops (Solvexo number)
+              </button>
+            )}
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 mt-4 pt-3 border-t border-bone text-[12px]">
               <dt className="text-slate">Deal value</dt><dd className="text-charcoal font-medium text-right">{lead.dealValuePKR ? formatPKR(lead.dealValuePKR) : '—'}</dd>
               <dt className="text-slate">Source</dt><dd className="text-charcoal text-right">{SOURCE_LABELS[lead.source]}{lead.sourceDetail ? ` · ${lead.sourceDetail}` : ''}</dd>
