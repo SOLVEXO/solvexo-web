@@ -8,6 +8,7 @@ import {
   BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
   Tag, Target, Handshake,
+  MousePointerClick,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -29,6 +30,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'overview',      Icon: LayoutDashboard, label: 'Overview',        path: '/admin'               },
   { id: 'analytics',     Icon: BarChart3,       label: 'Analytics',       path: '/admin/analytics'     },
   { id: 'saas-metrics',  Icon: Gauge,           label: 'SaaS Metrics',    path: '/admin/saas-metrics'  },
+  { id: 'visitors',      Icon: MousePointerClick, label: 'Website Visitors', path: '/admin/visitors'     },
   { id: 'sales',         Icon: Target,          label: 'Sales Ops',       path: '/admin/sales'         },
   { id: 'earnings',      Icon: Handshake,       label: 'My earnings',     path: '/admin/earnings'      },
   // Moderation is a tab inside this page now (AdminClients.tsx), not its
@@ -139,6 +141,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
   { id: 'saas-metrics', label: 'SaaS Metrics',       Icon: Gauge,           ids: ['saas-metrics'] },
+  { id: 'visitors',  label: 'Website Visitors',      Icon: MousePointerClick, ids: ['visitors'] },
   // Leads, pipeline, follow-ups and email templates (SalesOpsModule). Reps
   // (sales.access) see only their own leads; managers see the whole team.
   { id: 'sales',     label: 'Sales Ops',             Icon: Target,          ids: ['sales', 'earnings'] },
@@ -197,7 +200,7 @@ const NAV_PERMISSION: Record<string, string | string[]> = {
   sales: ['sales.access', 'sales.manage'],
   // Partners (resellers / agents) and reps see their own commissions; the owner sees it too (it explains how to set it up).
   earnings: ['partner.portal', 'sales.access', 'sales.manage'],
-  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
+  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
   'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',
   content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage',

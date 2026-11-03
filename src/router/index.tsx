@@ -159,6 +159,7 @@ const MetaobjectEntriesPage = lazy(() => import('@/features/seller/store/Dashboa
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
+const AdminVisitors = lazy(() => import('@/features/admin/pages/AdminVisitors').then(m => ({ default: m.AdminVisitors })));
 const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
 const AdminSalesOps = lazy(() => import('@/features/admin/pages/sales/AdminSalesOps').then(m => ({ default: m.AdminSalesOps })));
 const MyEarnings = lazy(() => import('@/features/admin/pages/sales/MyEarnings').then(m => ({ default: m.MyEarnings })));
@@ -529,6 +530,7 @@ const mainRouter = createBrowserRouter([
           { index: true,          element: <AdminOverview /> },
           { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
           { path: 'saas-metrics', element: <RequireRole role="admin"><AdminSaasMetrics /></RequireRole> },
+          { path: 'visitors',     element: <RequireRole role="admin"><AdminVisitors /></RequireRole> },
           { path: 'sales',        element: <RequireRole role="admin"><AdminSalesOps /></RequireRole> },
           { path: 'sales/leads/:id', element: <RequireRole role="admin"><SalesLeadDetail /></RequireRole> },
           { path: 'earnings',     element: <RequireRole role="admin"><MyEarnings /></RequireRole> },
