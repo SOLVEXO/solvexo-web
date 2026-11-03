@@ -7,6 +7,7 @@ import { SmoothScroll } from '@/components/comman/motion/SmoothScroll';
 import { AuthGateModal } from '@/components/comman/ui/AuthGateModal';
 import { ToastContainer } from '@/components/comman/ui/ToastContainer';
 import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
+import { SiteAnalyticsTracker } from '@/components/comman/SiteAnalyticsTracker';
 
 // A store's own host must never show the platform's orange loader: its visitors never signed up to Solvexo.
 const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate());
@@ -66,6 +67,7 @@ export function RootLayout() {
       <AuthGateModal />
       <ToastContainer />
       <GoogleOneTapPrompt />
+      <SiteAnalyticsTracker />
       {/* Eases wheel/touch input on the scroll container below instead of
          jumping the raw delta — the same Lenis smooth-scroll layer the
          reference design runs site-wide. Mounted once here so it wraps

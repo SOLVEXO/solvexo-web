@@ -1,3 +1,4 @@
+import { trackSiteEvent } from '@/utils/siteAnalytics';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRegister, AuthContext, LastRolePreference, RememberedAccount, type RegisterPayload } from '@/api/services/auth';
@@ -23,6 +24,7 @@ export function useRegister() {
       // in-progress signup. useVerifyOtp re-sets the same data once the
       // account is actually confirmed, which is harmless.
       RememberedAccount.set({ name: payload.name, email: payload.email, role: payload.role, image: null });
+      if (payload.role === 'seller') trackSiteEvent('sign_up_start');
       navigate('/verify-otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : ts('common.somethingWrong', 'Something went wrong.'));

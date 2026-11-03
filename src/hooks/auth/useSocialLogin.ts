@@ -1,3 +1,4 @@
+import { trackSiteEvent } from '@/utils/siteAnalytics';
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
@@ -61,6 +62,10 @@ export function useSocialLogin(role: AppRole = 'seller') {
       const res = await apiSocialLogin({ ...payload, role, ...(role === 'user' && !payload.storeId ? { storeId: getCurrentStorefrontStoreId() } : {}) });
       const { token, user } = res.data;
       const serverRole = (user.role ?? role) as AppRole;
+      if (serverRole === 'seller' && (res.data as { isNewUser?: boolean }).isNewUser) {
+        trackSiteEvent('sign_up_start', { method: 'google' });
+        trackSiteEvent('sign_up', { method: 'google' });
+      }
       TokenStorage.save(token.accessToken, token.refreshToken);
       TokenStorage.saveUser(user);
       LastRolePreference.set(serverRole);

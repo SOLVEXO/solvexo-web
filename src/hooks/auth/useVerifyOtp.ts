@@ -1,3 +1,4 @@
+import { trackSiteEvent } from '@/utils/siteAnalytics';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiVerifyOtp, AuthContext, TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
@@ -33,6 +34,7 @@ export function useVerifyOtp() {
       LastRolePreference.set(role);
       RememberedAccount.set({ name: res.data.user.name, email: res.data.user.email, role, image: null, authMethod: 'password' });
       AuthContext.clear();
+      if (role === 'seller') trackSiteEvent('sign_up', { method: 'email' });
       // Inspect the seller's REAL store state instead of assuming — this
       // path runs right after fresh registration (an already-verified
       // account is rejected earlier by the backend), so a seller here

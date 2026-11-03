@@ -1,3 +1,4 @@
+import { trackSiteEvent } from '@/utils/siteAnalytics';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useLocation, useSearchParams, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
@@ -669,6 +670,7 @@ export function OnboardingPage() {
         country:      form.country || undefined,
       });
       if (!store) throw new Error('We could not create your store. Please try again.');
+      trackSiteEvent('store_created');
       storeId = store._id;
       const withStore = { ...form, createdStoreId: storeId };
       setForm(withStore);
@@ -714,6 +716,7 @@ export function OnboardingPage() {
           country:      form.country || undefined,
         });
         if (!store) { setSubmitError(createStore.error || 'Failed to create store. Please try again.'); return; }
+        trackSiteEvent('store_created');
         const freePlan = plans.find(p => p._id === form.selectedPlanId && p.isFree);
         if (freePlan) {
           try {
