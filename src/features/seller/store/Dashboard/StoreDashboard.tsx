@@ -47,6 +47,7 @@ interface StoreMetrics {
   today:         SellerTodaySummaryData;
   lowStockCount: number;
   pendingOrdersCount: number;
+  unpaidDeliveredCount: number;
   openReturnsCount: number;
   openDisputeCount: number;
   highRiskOrderCount: number;
@@ -141,6 +142,7 @@ function useStoreDashboardMetrics(storeId: string) {
           today: todayRes?.data ?? EMPTY_TODAY,
           lowStockCount: lowStockRes?.data.count ?? 0,
           pendingOrdersCount: ordersRes?.data.stats.pending ?? 0,
+          unpaidDeliveredCount: ordersRes?.data.stats.unpaidDelivered ?? 0,
           openReturnsCount: returnsRes?.data.stats.openRequests ?? 0,
           openDisputeCount: disputesRes?.data.count ?? 0,
           highRiskOrderCount: riskRes?.data.count ?? 0,
@@ -171,8 +173,8 @@ function useStoreDashboardMetrics(storeId: string) {
 // on is never hidden.
 interface AttentionItem { label: string; okLabel: string; count: number; path: string; Icon: LucideIcon; color: string; perm: string }
 
-function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount, openDisputeCount, highRiskOrderCount, awaitingCaptureCount }: {
-  storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number; awaitingCaptureCount: number;
+function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, unpaidDeliveredCount, openReturnsCount, openDisputeCount, highRiskOrderCount, awaitingCaptureCount }: {
+  storeId: string; lowStockCount: number; pendingOrdersCount: number; unpaidDeliveredCount: number; openReturnsCount: number; openDisputeCount: number; highRiskOrderCount: number; awaitingCaptureCount: number;
 }) {
   const navigate = useNavigate();
   // Collapsible, same header pattern as SetupGuideCard/RecentActivityCard.
@@ -182,6 +184,7 @@ function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openRe
   // same real signals, easier to scan at a glance.
   const allItems: AttentionItem[] = [
     { label: 'order(s) need payment capture', okLabel: 'No payments awaiting capture', count: awaitingCaptureCount, path: 'orders', Icon: AlertTriangle, color: '#B45309', perm: 'orders.capture_payment' },
+    { label: 'shipped order(s) not marked as paid — confirm the payment', okLabel: 'All shipped orders are paid', count: unpaidDeliveredCount, path: 'orders', Icon: AlertTriangle, color: '#B45309', perm: 'orders.record_payment' },
     { label: 'order(s) need fulfillment', okLabel: 'No orders awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6', perm: 'orders.view' },
     { label: 'order(s) flagged high-risk — review before shipping', okLabel: 'No high-risk orders', count: highRiskOrderCount, path: 'orders', Icon: AlertTriangle, color: '#B91C1C' , perm: 'orders.view' },
     { label: 'payment dispute(s) need a response', okLabel: 'No open disputes', count: openDisputeCount, path: 'disputes', Icon: AlertTriangle, color: '#DC2626', perm: 'orders.disputes_manage' },
@@ -1031,7 +1034,7 @@ export default function StoreDashboard() {
       case 'needs_attention':
         return metrics ? (
           <NeedsAttentionCard
-            storeId={storeId} lowStockCount={metrics.lowStockCount} pendingOrdersCount={metrics.pendingOrdersCount}
+            storeId={storeId} lowStockCount={metrics.lowStockCount} pendingOrdersCount={metrics.pendingOrdersCount} unpaidDeliveredCount={metrics.unpaidDeliveredCount}
             openReturnsCount={metrics.openReturnsCount} openDisputeCount={metrics.openDisputeCount}
             highRiskOrderCount={metrics.highRiskOrderCount} awaitingCaptureCount={metrics.awaitingCaptureCount}
           />

@@ -780,6 +780,8 @@ export interface SellerOrderStats {
   totalOrders: number;
   revenue:     number;
   pending:     number;
+  /** Shipped / delivered / completed but not yet marked paid (COD, bank transfer). */
+  unpaidDelivered?: number;
   avgOrder:    number;
 }
 
