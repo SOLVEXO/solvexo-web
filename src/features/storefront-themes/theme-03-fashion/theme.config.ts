@@ -67,6 +67,8 @@ const STATIC_DEFAULTS = {
   authGate: { title: '', button: '', size: 'standard' as 'compact' | 'standard' | 'large', social: true },
   /** Quick view pop-up width; seller setting `custom.quickViewSize`. */
   quickViewSize: 'standard' as 'compact' | 'standard' | 'large',
+  /** Mega menu look; seller settings `custom.mega*`. */
+  mega: { featured: true, columns: 4, heading: 'upper' as 'upper' | 'normal', photo: 'square' as 'square' | 'landscape' | 'portrait' },
   /** Share popup networks; seller settings `custom.share*` (hide = off). */
   share: { facebook: true, x: true, pinterest: true, whatsapp: true, email: true, linkedin: false, telegram: false },
   colors: {
@@ -218,6 +220,10 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.authGate.size = oneOf(ts?.authSize, ['compact', 'standard', 'large'] as const, 'standard');
   fashionTheme.authGate.social = ts?.authSocial !== 'hide';
   fashionTheme.quickViewSize = oneOf(ts?.quickViewSize, ['compact', 'standard', 'large'] as const, 'standard');
+  fashionTheme.mega.featured = ts?.megaFeatured !== 'hide';
+  fashionTheme.mega.columns = Number(oneOf(ts?.megaColumns, ['3', '4', '5'] as const, '4'));
+  fashionTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');
+  fashionTheme.mega.photo = oneOf(ts?.megaPhoto, ['square', 'landscape', 'portrait'] as const, 'square');
   fashionTheme.share.facebook = ts?.shareFacebook !== 'hide';
   fashionTheme.share.x = ts?.shareX !== 'hide';
   fashionTheme.share.pinterest = ts?.sharePinterest !== 'hide';

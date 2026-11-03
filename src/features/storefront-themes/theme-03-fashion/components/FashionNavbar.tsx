@@ -175,31 +175,32 @@ export function FashionNavbar() {
                     return (
                       <MegaPanel className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
-                          <div className="mx-auto grid gap-x-8 gap-y-5 p-6" style={{ maxWidth: 1840, gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
-                            {plain.length > 0 && (
-                              <div>
-                                <p className="mb-1 px-4 text-[11px] font-semibold uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.08em' }}>{item.label}</p>
-                                {plain.map(c => (
-                                  <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
-                                ))}
-                              </div>
-                            )}
-                            {columns.map(c => (
-                              <div key={c.id}>
-                                {c.imageUrl && (
-                                  <NavAnchor link={c.link} className="mb-3 block overflow-hidden" style={{ borderRadius: 14, aspectRatio: '4 / 3', background: t.colors.bgAlt }}>
-                                    <img src={c.imageUrl} alt="" loading="lazy" className="size-full object-cover" />
-                                  </NavAnchor>
-                                )}
-                                <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] font-semibold" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
-                                {c.children.map(g => (
-                                  <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
-                                ))}
-                              </div>
-                            ))}
-                            {item.imageUrl && (
-                              <NavAnchor link={item.link} className="relative block overflow-hidden" style={{ borderRadius: 14, minHeight: 180, background: t.colors.bgAlt }}>
-                                <img src={item.imageUrl} alt={item.label} loading="lazy" className="absolute inset-0 size-full object-cover" />
+                          <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
+                            <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: `repeat(${t.mega.columns}, minmax(0, 1fr))` }}>
+                              {plain.length > 0 && (
+                                <div>
+                                  <MegaHeading label={item.label} />
+                                  {plain.map(c => (
+                                    <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                                  ))}
+                                </div>
+                              )}
+                              {columns.map(c => (
+                                <div key={c.id}>
+                                  <MegaHeading label={c.label} link={c.link} imageUrl={c.imageUrl} />
+                                  {c.children.map(g => (
+                                    <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                            {item.imageUrl && t.mega.featured && (
+                              <NavAnchor link={item.link} className="relative hidden shrink-0 self-stretch overflow-hidden no-underline lg:block" style={{ width: 300, minHeight: 240, borderRadius: 16, background: t.colors.bgAlt }}>
+                                <img src={item.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                                <span className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-4" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.6))', color: '#fff' }}>
+                                  <span className="text-base font-semibold" style={{ fontFamily: t.fonts.display }}>{item.label}</span>
+                                  <span className="rounded-full px-4 py-1.5 text-xs font-semibold uppercase" style={{ background: '#fff', color: '#111', letterSpacing: '.06em' }}>{ts('pg.shop_now', 'Shop now')}</span>
+                                </span>
                               </NavAnchor>
                             )}
                           </div>
@@ -278,6 +279,19 @@ export function FashionNavbar() {
 }
 
 /** Mega panel shell: sits under its menu item but is stretched (left/width measured against the header) to span the full header, like a real mega menu. */
+/** Column heading of the mega menu; a column's photo shows as a small picture beside it, so rows always line up. */
+function MegaHeading({ label, link, imageUrl }: { label: string; link?: ResolvedStorefrontNavItem['link']; imageUrl?: string | null }) {
+  const size = { square: [40, 40], landscape: [52, 38], portrait: [36, 48] }[t.mega.photo];
+  const upper = t.mega.heading === 'upper';
+  const text = <span className={upper ? 'text-[12px] font-semibold uppercase' : 'text-sm font-semibold'} style={{ color: t.colors.ink, letterSpacing: upper ? '.08em' : undefined }}>{label}</span>;
+  return (
+    <div className="mb-2 flex items-center gap-3 px-3" style={{ minHeight: 48 }}>
+      {imageUrl && <img src={imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: size[0], height: size[1], borderRadius: 10, background: t.colors.bgAlt }} />}
+      {link ? <NavAnchor link={link} className="no-underline" style={{ color: t.colors.ink }}>{text}</NavAnchor> : text}
+    </div>
+  );
+}
+
 function MegaPanel({ className, children }: { className: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ left: number; width: number } | null>(null);
