@@ -89,6 +89,21 @@ function baseDomain(): string {
   return matchingApex(hostname) ?? PLATFORM_APEX_DOMAINS[0];
 }
 
+/**
+ * The address buyers really use for a store: its verified PRIMARY custom domain when it has one
+ * (the platform subdomain redirects there), otherwise the platform subdomain.
+ */
+export function getStoreLiveUrl(
+  store: { slug?: string; customDomain?: string | null; customDomainStatus?: string; customDomains?: { domain: string; status: string; isPrimary?: boolean }[] },
+  path = '',
+): string {
+  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+  const primary = store.customDomains?.find(d => d.isPrimary && d.status === 'verified')?.domain
+    ?? (store.customDomainStatus === 'verified' ? store.customDomain : null);
+  if (primary) return `https://${primary}${cleanPath}`;
+  return store.slug ? getStorefrontUrl(store.slug, path) : '';
+}
+
 export function getStorefrontUrl(slug: string, path = ''): string {
   const { protocol, port } = window.location;
   const portSuffix = port ? `:${port}` : '';

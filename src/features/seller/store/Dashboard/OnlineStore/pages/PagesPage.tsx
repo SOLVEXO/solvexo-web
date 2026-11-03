@@ -3,7 +3,7 @@ import { Loader2, Eye, EyeOff, ExternalLink, UploadCloud, RotateCcw, Undo2, Redo
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
-import { getStorefrontUrl } from '@/utils/storefrontUrl';
+import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import {
   apiListStorePages, apiCreateStorePage, apiUpdateStorePageSections,
   apiPublishStorePage, apiUnpublishStorePage, apiRevertStorePageDraft, apiDeleteStorePage, apiDuplicateStorePage,
@@ -315,7 +315,7 @@ export function PagesPage() {
             {/* One button, not an embedded side-by-side preview panel — opens
                 the real, currently-live storefront in a new tab. */}
             <a
-              href={getStorefrontUrl(store.slug)}
+              href={getStoreLiveUrl(store)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline transition-colors whitespace-nowrap"

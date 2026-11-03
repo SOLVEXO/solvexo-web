@@ -1,4 +1,5 @@
-import { createContext, useContext, useCallback, useState, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useEffect, useState, useRef, type ReactNode } from 'react';
+import { noteManualToast, registerToastBridge } from '@/utils/toastBridge';
 
 export type ToastVariant = 'success' | 'error' | 'info';
 
@@ -6,13 +7,15 @@ interface ToastEntry {
   id:      number;
   variant: ToastVariant;
   message: string;
+  /** Optional click action (e.g. jump to the thing the message is about). */
+  onClick?: () => void;
   leaving: boolean;
   paused:  boolean;
 }
 
 interface ToastContextValue {
   toasts:  ToastEntry[];
-  show:    (variant: ToastVariant, message: string) => void;
+  show:    (variant: ToastVariant, message: string, onClick?: () => void) => void;
   dismiss: (id: number) => void;
   pause:   (id: number) => void;
   resume:  (id: number) => void;
@@ -73,14 +76,23 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts(prev => prev.map(t => (t.id === id ? { ...t, paused: false } : t)));
   }, [schedule]);
 
-  const show = useCallback((variant: ToastVariant, message: string) => {
+  const push = useCallback((variant: ToastVariant, message: string, onClick?: () => void) => {
     const id = nextId.current++;
     // A double click / double-fired handler must not stack two identical toasts.
     setToasts(prev => prev.some(t => !t.leaving && t.variant === variant && t.message === message)
       ? prev
-      : [...prev, { id, variant, message, leaving: false, paused: false }].slice(-MAX_VISIBLE));
+      : [...prev, { id, variant, message, onClick, leaving: false, paused: false }].slice(-MAX_VISIBLE));
     schedule(id, TOAST_DURATION_MS);
   }, [schedule]);
+
+  // A page's own toast: remembered, so the API client stays quiet for that action.
+  const show = useCallback((variant: ToastVariant, message: string, onClick?: () => void) => {
+    noteManualToast();
+    push(variant, message, onClick);
+  }, [push]);
+
+  // Automatic toasts from the API client (api/client.ts) go through here without marking themselves as "manual".
+  useEffect(() => registerToastBridge(push), [push]);
 
   return (
     <ToastCtx.Provider value={{ toasts, show, dismiss, pause, resume, customHosts, claimHost }}>
@@ -97,9 +109,9 @@ export function useToast() {
   const ctx = useContext(ToastCtx);
   if (!ctx) throw new Error('useToast must be used inside ToastProvider');
   return {
-    success: (message: string) => ctx.show('success', message),
-    error:   (message: string) => ctx.show('error', message),
-    info:    (message: string) => ctx.show('info', message),
+    success: (message: string, onClick?: () => void) => ctx.show('success', message, onClick),
+    error:   (message: string, onClick?: () => void) => ctx.show('error', message, onClick),
+    info:    (message: string, onClick?: () => void) => ctx.show('info', message, onClick),
   };
 }
 

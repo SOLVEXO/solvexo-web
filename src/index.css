@@ -668,6 +668,16 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .toast-enter { animation: toast-enter 340ms var(--ease-out) both; }
+@keyframes toast-enter-right {
+  from { opacity: 0; transform: translateX(48px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-enter-right { animation: toast-enter-right 220ms var(--ease-out) backwards; }
+@keyframes toast-leave-right {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(48px); }
+}
+.toast-leave-right { animation: toast-leave-right 180ms var(--ease-out) both; }
 
 /* Guest sign-in bar (BuyerLayout) — rises up from behind the bottom nav
    pill rather than just fading in in place: starts translated down far

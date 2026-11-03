@@ -50,6 +50,8 @@ const CATEGORY_RULES: { test: RegExp; style: ToastStyle; icon: LucideIcon }[] = 
   { test: /plan|subscription|credit/i,                         style: GREEN,  icon: CreditCard },
 ];
 
+const TITLE: Record<ToastVariant, string> = { success: 'Done!', error: 'Oh snap!', info: 'Heads up' };
+
 function resolveStyle(variant: ToastVariant, message: string): ToastStyle {
   if (variant === 'error') return BASE.error;
   const match = CATEGORY_RULES.find(r => r.test.test(message));
@@ -57,7 +59,7 @@ function resolveStyle(variant: ToastVariant, message: string): ToastStyle {
 }
 
 /** Stacked action-feedback toasts (Added to cart, Removed, Coupon applied,
- *  etc.) — bottom-right, light editorial-card styling that matches the rest
+ *  etc.) — top-right, solid-colour cards with a corner badge, that matches the rest
  *  of the app's soft-tint icon chips (Badge/StatusBadge). Each kind of
  *  action gets its own icon + accent color (commerce = orange, identity/
  *  account = violet, orders/messages = blue, reviews/rewards = amber,
@@ -70,11 +72,8 @@ export function ToastContainer() {
   if (toasts.length === 0 || customHosts > 0) return null;
 
   return (
-    // On the seller dashboard the tab bar owns the bottom 62px (+ safe area) and
-    // both layers are z-[9999], so the stack has to clear it or the toast lands
-    // behind it. `--store-tabbar-h` is only set while that bar is mounted, so
-    // everywhere else this resolves to the original bottom-6 (24px).
-    <div className="fixed bottom-[calc(12px+var(--store-tabbar-h,12px)+env(safe-area-inset-bottom))] right-6 z-[9999] flex flex-col gap-3 items-end pointer-events-none lg:bottom-6">
+    // Top right, solid colour cards with a round badge pinned over the corner (no shadows).
+    <div className="fixed top-[calc(12px+env(safe-area-inset-top))] right-6 lg:top-[88px] z-[9999] flex flex-col gap-4 items-end pointer-events-none max-sm:right-5">
       {toasts.map(t => {
         const style = resolveStyle(t.variant, t.message);
         const Icon = style.icon;
@@ -85,27 +84,34 @@ export function ToastContainer() {
             aria-atomic="true"
             onMouseEnter={() => pause(t.id)}
             onMouseLeave={() => resume(t.id)}
+            onClick={t.onClick ? () => { t.onClick?.(); dismiss(t.id); } : undefined}
+            onKeyDown={t.onClick ? e => { if (e.key === 'Enter') { t.onClick?.(); dismiss(t.id); } } : undefined}
+            tabIndex={t.onClick ? 0 : undefined}
             className={clsx(
-              t.leaving ? 'toast-leave' : 'toast-enter',
-              'pointer-events-auto relative flex items-start gap-3 w-[340px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-bone bg-white/95 backdrop-blur-md pl-4 pr-3 py-3.5',
-              style.shadow,
+              t.onClick && 'cursor-pointer',
+              t.leaving ? 'toast-leave-right' : 'toast-enter-right',
+              'pointer-events-auto relative ml-4 mt-3 flex items-center gap-3 w-[380px] max-w-[calc(100vw-3.5rem)] min-h-[76px] rounded-2xl pl-8 pr-3 py-5 text-white',
+              style.accent,
             )}
           >
-            <span className={clsx('absolute left-0 top-0 bottom-0 w-[3px]', style.accent)} />
-            <span className={clsx('flex items-center justify-center size-9 rounded-xl shrink-0 ring-1 ring-inset ring-black/[0.04]', style.tint)}>
-              <Icon size={17} strokeWidth={2.2} />
+            <span className={clsx('absolute -left-4 -top-3 flex items-center justify-center size-9 rounded-full bg-white border-2 border-current', style.accent.replace('bg-', 'text-'))} aria-hidden>
+              <Icon size={17} strokeWidth={2.4} />
             </span>
-            <p className="text-[13px] font-semibold text-charcoal leading-snug flex-1 min-w-0 pt-[7px]">{t.message}</p>
+            <div className="flex-1 min-w-0">
+              <p className="m-0 text-[15px] font-bold leading-tight">{TITLE[t.variant]}</p>
+              <p className="m-0 mt-0.5 text-[13px] font-medium leading-snug text-white/90">{t.message}</p>
+              {t.onClick && <p className="m-0 mt-1 text-[12px] font-semibold underline underline-offset-2">Click to go there</p>}
+            </div>
             <button
-              onClick={() => dismiss(t.id)}
+              onClick={e => { e.stopPropagation(); dismiss(t.id); }}
               aria-label="Dismiss"
-              className="text-slate hover:text-charcoal hover:bg-fog bg-transparent border-0 cursor-pointer p-1 rounded-md shrink-0 transition-colors"
+              className="text-white/85 hover:text-white hover:bg-white/15 bg-transparent border-0 cursor-pointer p-1 rounded-md shrink-0 transition-colors"
             >
-              <X size={13} />
+              <X size={14} />
             </button>
-            <span className="absolute left-0 right-0 bottom-0 h-[2.5px] bg-bone/70">
+            <span className="absolute left-4 right-4 bottom-0 h-[3px] rounded-full overflow-hidden bg-white/20">
               <span
-                className={clsx('toast-progress block h-full', style.accent)}
+                className="toast-progress block h-full bg-white/70"
                 style={{ animationDuration: `${TOAST_DURATION_MS}ms`, animationPlayState: t.paused ? 'paused' : 'running' }}
               />
             </span>

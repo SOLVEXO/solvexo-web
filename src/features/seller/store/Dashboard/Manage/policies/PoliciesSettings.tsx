@@ -4,7 +4,7 @@ import { AlertCircle, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import { Badge, Button } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { getStorefrontUrl } from '@/utils/storefrontUrl';
+import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { apiCreatePolicyFromTemplate, apiListStorePages, type StorePageData, type StorePagePolicyType } from '@/api/services/storePages';
 
 const POLICIES: { type: StorePagePolicyType; title: string; description: string }[] = [
@@ -64,7 +64,7 @@ export function PoliciesSettings({ canManage }: { canManage: boolean }) {
           {POLICIES.map(policy => {
             const page = pages.find(pg => pg.policyType === policy.type);
             const live = page?.status === 'published';
-            const url = page && live && store?.slug ? getStorefrontUrl(store.slug, `/${page.slug}`) : null;
+            const url = page && live && store?.slug ? getStoreLiveUrl(store, `/${page.slug}`) : null;
             return (
               <section key={policy.type} className="bg-white border border-bone rounded-2xl p-4">
                 <div className="flex items-start gap-3">

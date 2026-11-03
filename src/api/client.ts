@@ -8,6 +8,37 @@ import { getActiveStoreLocale } from '../utils/activeStoreText';
 import { getAuthCookie, clearAuthCookie } from '@/utils/authCookie';
 import { getCurrentStorefrontStoreId, getStorefrontToken } from '@/utils/currentStorefront';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
+import { emitAutoToast, lastManualToast } from '@/utils/toastBridge';
+import { describeError, isQuietPath, isWorkspacePath, shouldToastError, successMessage } from '@/utils/apiToast';
+
+// Per-call switch: `client.post(url, body, { toast: false })` keeps the automatic success/error toast away.
+declare module 'axios' {
+  interface AxiosRequestConfig { toast?: boolean }
+  interface InternalAxiosRequestConfig { toastStartedAt?: number }
+}
+
+/** Automatic feedback only for a signed-in person in the seller / staff / admin workspace, never on storefronts or the marketing site. */
+function autoToastAllowed(config: { toast?: boolean; url?: string } | undefined): boolean {
+  if (config?.toast === false) return false;
+  if (typeof window === 'undefined' || !isWorkspacePath(window.location.pathname)) return false;
+  return !!getAuthCookie('accessToken');
+}
+
+const AUTO_TOAST_DELAY_MS = 250;
+const recentErrors = new Map<string, number>();
+
+/** Waits a moment and stays quiet when the page already showed its own toast for this action. */
+function queueAutoToast(startedAt: number | undefined, variant: 'success' | 'error', message: string, key: string, minGapMs: number): void {
+  setTimeout(() => {
+    if (lastManualToast() >= (startedAt ?? 0)) return;
+    const now = Date.now();
+    const last = recentErrors.get(key) ?? 0;
+    if (now - last < minGapMs) return;
+    recentErrors.set(key, now);
+    if (recentErrors.size > 50) recentErrors.clear();
+    emitAutoToast(variant, message);
+  }, AUTO_TOAST_DELAY_MS);
+}
 
 // Endpoints where a 401 means "this specific attempt was rejected" (wrong
 // password, invalid/expired OTP, invalid reset token, invalid social token)
@@ -64,6 +95,7 @@ client.interceptors.request.use(
     if (language && config.method === 'get' && config.url && /\/api\/(public\/(collections|store-pages|store-blog)\/|products\/getProductById\/)/.test(config.url) && !/[?&]locale=/.test(config.url)) {
       config.params = { ...(config.params ?? {}), locale: language };
     }
+    config.toastStartedAt = Date.now();
     const token = getAuthCookie('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -93,6 +125,10 @@ client.interceptors.response.use(
         isNetworkError: false,
         status: res.status,
       });
+    }
+    const method = res.config?.method?.toLowerCase();
+    if (method && method !== 'get' && autoToastAllowed(res.config) && !isQuietPath(res.config?.url)) {
+      queueAutoToast(res.config?.toastStartedAt, 'success', successMessage(method, res.data), `ok:${method}:${res.config?.url}`, 1500);
     }
     return res.data;   // unwrap → caller gets { success, message, data } (or module-specific equivalent)
   },
@@ -126,6 +162,16 @@ client.interceptors.response.use(
     // exempted server-side, so this only ever fires for buyer/seller calls.
     if (err.response?.status === 503 && err.response?.data?.maintenanceMode === true && !onStorefront) {
       if (window.location.pathname !== '/maintenance') window.location.href = '/maintenance';
+    }
+
+    // Automatic error toast (dashboards only). A page that shows its own toast wins; repeats of the same problem are throttled.
+    if (autoToastAllowed(err.config) && !(err.response?.status === 503 && err.response?.data?.maintenanceMode === true)) {
+      const method = err.config?.method?.toLowerCase();
+      const isNet = !err.response;
+      if (!isQuietPath(err.config?.url) && err.code !== 'ERR_CANCELED' && shouldToastError({ method, status: err.response?.status, isNetworkError: isNet, authAttempt: isAuthAttempt })) {
+        const d = describeError({ status: err.response?.status, code: err.code, message: err.response?.data?.message, isNetworkError: isNet, online: typeof navigator === 'undefined' ? true : navigator.onLine, method });
+        queueAutoToast(err.config?.toastStartedAt, 'error', d.message, `err:${d.key}`, method === 'get' ? 15_000 : 3000);
+      }
     }
 
     // `isNetworkError` distinguishes "the request never reached the server" (no

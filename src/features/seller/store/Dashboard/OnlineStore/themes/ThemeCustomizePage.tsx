@@ -5,6 +5,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
 import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
+import { describeEditorError } from '../builder/editorErrors';
 import { ScopePicker, ResourcePicker } from '../builder/ScopePicker';
 import {
   apiListStorePages, apiUpdateStorePageSections, apiPublishStorePage, apiRevertStorePageDraft,
@@ -123,7 +124,13 @@ const isDraftConflict = (err: unknown) => (err as { status?: number; apiCode?: s
 export function ThemeCustomizePage() {
   const { storeId, loading: storeLoading, store: workspaceStore, refetch: refetchStore } = useStoreWorkspace();
   const toast = useToast();
-  const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
+  const flash = (ok: boolean, text: string, onClick?: () => void) => { if (ok) toast.success(text); else toast.error(text, onClick); };
+  // Server paths like `sections.1.settings…` become "Image Banner: …" (see builder/editorErrors.ts).
+  /** Error toast that jumps to the section the server complained about. */
+  const flashEditorError = (err: unknown, fallback: string) => {
+    const info = describeEditorError(err instanceof Error ? err.message : fallback, editor.workingCopy ?? []);
+    flash(false, info.text, info.sectionId ? () => (info.blockId ? selectPreviewBlock(info.sectionId!, info.blockId) : selectPreviewSection(info.sectionId!)) : undefined);
+  };
   const [draftConflict, setDraftConflict] = useState(false);
 
   // Fix for a confirmed P0: resolves the URL's `:themeId` to THIS theme's own
@@ -564,11 +571,12 @@ export function ThemeCustomizePage() {
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
       if (isDraftConflict(err)) { setDraftConflict(true); return; }
-      flash(false, err instanceof Error ? err.message : 'Failed to save.');
+      flashEditorError(err, 'Failed to save.');
     }
   };
 
   const autosaveBusy = editor.phase === 'saving' || editor.phase === 'publishing' || hf.editor.phase === 'saving' || hf.editor.phase === 'publishing';
+  const errorInfo = describeEditorError(editor.errorMessage ?? 'Save failed', editor.workingCopy ?? []);
   const autosaveFailed = editor.phase === 'error' || hf.editor.phase === 'error';
   useAutosave({
     active: scope !== 'theme' && (editor.dirty || hf.editor.dirty) && !autosaveBusy && !autosaveFailed,
@@ -602,7 +610,7 @@ export function ThemeCustomizePage() {
     } catch (err) {
       if (isDraftConflict(err)) { setDraftConflict(true); return; }
       if (rollbackTo) editor.discardDraft(rollbackTo);
-      flash(false, err instanceof Error ? err.message : 'Failed to save.');
+      flashEditorError(err, 'Failed to save.');
     }
   };
 
@@ -641,7 +649,7 @@ export function ThemeCustomizePage() {
     } catch (err) {
       editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
       if (isDraftConflict(err)) { setDraftConflict(true); return; }
-      flash(false, err instanceof Error ? err.message : 'Failed to publish.');
+      flashEditorError(err, 'Failed to publish.');
     }
   };
 
@@ -1013,6 +1021,12 @@ export function ThemeCustomizePage() {
 
             {scope !== 'theme' && (
               <div className="flex items-center gap-2 shrink-0">
+                {editor.phase === 'error' && errorInfo.sectionId ? (
+                  <button type="button" aria-live="polite" onClick={() => (errorInfo.blockId ? selectPreviewBlock(errorInfo.sectionId!, errorInfo.blockId) : selectPreviewSection(errorInfo.sectionId!))}
+                    title="Go to the section with the problem" className="hidden sm:inline max-w-[320px] truncate text-[11.5px] text-error underline underline-offset-2 bg-transparent border-0 p-0 cursor-pointer">
+                    {errorInfo.text}
+                  </button>
+                ) : (
                 <span
                   role="status"
                   aria-live="polite"
@@ -1020,9 +1034,10 @@ export function ThemeCustomizePage() {
                 >
                   {editor.phase === 'dirty' || (anyDirty && editor.phase !== 'saving' && editor.phase !== 'error') ? 'Unsaved changes' :
                     editor.phase === 'saving' ? 'Saving draft…' :
-                      editor.phase === 'error' ? (editor.errorMessage ?? 'Save failed') :
+                      editor.phase === 'error' ? errorInfo.text :
                         editor.phase === 'published' ? 'Published' : 'Draft saved'}
                 </span>
+                )}
                 {anyUnpublished && (
                   <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
                     <RotateCcw size={13} /> Discard Draft

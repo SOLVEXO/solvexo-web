@@ -11,7 +11,7 @@ import {
 } from '@/api/services/storeTheme';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/storefront-themes/registry';
-import { getStorefrontUrl } from '@/utils/storefrontUrl';
+import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { ThemeThumbnail } from './ThemeDemoPreview';
 import { ThemeSourcePackageDialog } from '@/features/themes/liquid/ThemeSourcePackageDialog';
 
@@ -411,7 +411,7 @@ export function ThemeLibraryPage() {
                           <PanelTop size={13} />
                         </Link>
                         <a
-                          href={getStorefrontUrl(store.slug)}
+                          href={getStoreLiveUrl(store)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
