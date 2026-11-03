@@ -43,7 +43,7 @@ export type FieldKind =
   | 'image' | 'video' | 'url' | 'link' | 'datetime' | 'color' | 'focalPoint'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
   | 'metaobjectTypePicker' | 'metafieldKeyPicker'
-  | 'itemList';
+  | 'itemList' | 'shareNetworks';
 
 export interface FieldOption { value: string; label: string }
 
@@ -285,6 +285,73 @@ function ItemListField({ items, onChange, max = 20 }: { items: string[]; onChang
   );
 }
 
+const SHARE_NETWORKS_UI: Array<[key: string, label: string, onByDefault: boolean]> = [
+  ['facebook', 'Facebook', true], ['x', 'X (Twitter)', true], ['pinterest', 'Pinterest', true], ['whatsapp', 'WhatsApp', true],
+  ['email', 'Email', true], ['linkedin', 'LinkedIn', false], ['telegram', 'Telegram', false],
+];
+const SHARE_SUGGESTIONS: Array<[label: string, link: string]> = [
+  ['Reddit', 'https://www.reddit.com/submit?url={url}&title={title}'],
+  ['Tumblr', 'https://www.tumblr.com/widgets/share/tool?canonicalUrl={url}&title={title}'],
+  ['VK', 'https://vk.com/share.php?url={url}'],
+];
+const parseShareLines = (text: unknown): Array<{ label: string; link: string }> =>
+  (typeof text === 'string' ? text.split(/\r?\n/) : []).flatMap(line => {
+    const i = line.indexOf('|');
+    return i > 0 ? [{ label: line.slice(0, i).trim(), link: line.slice(i + 1).trim() }] : [];
+  });
+
+/** Product Share popup: switch networks on/off and add any other site with its own share link. */
+function ShareNetworksField({ settings, set }: { settings: Record<string, any>; set: (patch: Record<string, any>) => void }) {
+  const [name, setName] = useState('');
+  const [link, setLink] = useState('');
+  const [error, setError] = useState('');
+  const own = parseShareLines(settings.customLinks);
+  const save = (list: Array<{ label: string; link: string }>) => set({ customLinks: list.map(l => `${l.label} | ${l.link}`).join('\n') });
+  const add = (label: string, url: string) => {
+    const l = label.trim().slice(0, 30);
+    const u = url.trim();
+    if (!l) return setError('Type the name of the site, e.g. Reddit.');
+    if (!/^https:\/\//i.test(u) || !u.includes('{url}')) return setError('The link must start with https:// and contain {url} where the product link goes.');
+    if (own.length >= 10) return setError('You can add up to 10 links.');
+    save([...own, { label: l, link: u }]);
+    setName(''); setLink(''); setError('');
+  };
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        {SHARE_NETWORKS_UI.map(([key, label, onByDefault]) => (
+          <div key={key} className="flex items-center justify-between">
+            <span className="text-[12px] text-charcoal">{label}</span>
+            <Toggle checked={settings[key] ? settings[key] === 'show' : onByDefault} onChange={v => set({ [key]: v ? 'show' : 'hide' })} />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2 border-t border-bone pt-3">
+        <p className="m-0 text-[12px] font-semibold text-charcoal">Add another site</p>
+        {own.map((l, i) => (
+          <div key={i} className="flex items-center gap-2 rounded-lg border border-bone bg-cream px-2.5 py-1.5">
+            <span className="shrink-0 text-[12px] font-semibold text-charcoal">{l.label}</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate" title={l.link}>{l.link}</span>
+            <button type="button" onClick={() => save(own.filter((_, j) => j !== i))} aria-label={`Remove ${l.label}`} className="border-none bg-transparent px-1 text-error cursor-pointer">✕</button>
+          </div>
+        ))}
+        {SHARE_SUGGESTIONS.some(([label]) => !own.some(l => l.label === label)) && (
+          <div className="flex flex-wrap gap-1.5">
+            {SHARE_SUGGESTIONS.filter(([label]) => !own.some(l => l.label === label)).map(([label, url]) => (
+              <button key={label} type="button" onClick={() => add(label, url)} className="rounded-full border border-bone bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-orange cursor-pointer">+ {label}</button>
+            ))}
+          </div>
+        )}
+        <input className={inp} maxLength={30} placeholder="Site name (e.g. Snapchat)" value={name} onChange={e => setName(e.target.value)} aria-label="Site name" />
+        <input className={inp} placeholder="https://site.com/share?url={url}" value={link} onChange={e => setLink(e.target.value)} aria-label="Share link" />
+        <button type="button" onClick={() => add(name, link)} className="self-start rounded-lg bg-brand-orange px-3 py-1.5 text-[12px] font-semibold text-white border-none cursor-pointer">Add</button>
+        {error && <p className="m-0 text-[11px] text-error">{error}</p>}
+        <p className="m-0 text-[11px] text-slate">Put {'{url}'} in the link where the product page link goes (and {'{title}'} for the product name). Tip: search "&lt;site&gt; share url" to find the link.</p>
+      </div>
+    </div>
+  );
+}
+
 function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: (patch: Record<string, any>) => void, storeId: string, pageOptions: PageOption[], ownerResource?: MetafieldOwnerResource | null) {
   const value = settings[field.key];
   // Wraps `set` so every field's change also nulls out whatever `clears`
@@ -333,6 +400,9 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
           <Toggle checked={field.defaultOff ? value === true : value !== false} onChange={v => set({ [field.key]: v })} />
         </div>
       );
+
+    case 'shareNetworks':
+      return <ShareNetworksField settings={settings} set={set} />;
 
     case 'focalPoint': {
       // 3×3 grid: which part of the image must stay visible when it is cropped (becomes CSS object-position).
