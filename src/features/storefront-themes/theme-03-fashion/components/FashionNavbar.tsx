@@ -189,7 +189,10 @@ export function FashionNavbar() {
                                 <div key={c.id}>
                                   <MegaHeading label={c.label} link={c.link} imageUrl={c.imageUrl} />
                                   {c.children.map(g => (
-                                    <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
+                                    <NavAnchor key={g.id} link={g.link} className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>
+                                      {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: { square: 28, landscape: 36, portrait: 24 }[t.mega.photo], height: { square: 28, landscape: 26, portrait: 34 }[t.mega.photo], borderRadius: 8, background: t.colors.bgAlt }} />}
+                                      <span>{g.label}</span>
+                                    </NavAnchor>
                                   ))}
                                 </div>
                               ))}
