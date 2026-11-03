@@ -259,7 +259,7 @@ function ProductPageInner({ slug }: { slug: string }) {
     },
     product_buy_now: s => <ProductBuyNowButton settings={s} disabled={!canBuy} loading={busy} onBuy={() => add(true)} />,
     product_wishlist: () => <ProductWishlistButton productId={detail.product._id} variantId={variant._id} />,
-    product_share: () => <ProductShareButton title={product.name} image={product.images?.[0]} variantId={variants.length > 1 ? variant._id : undefined} />,
+    product_share: s => <ProductShareButton settings={s} title={product.name} image={product.images?.[0]} variantId={variants.length > 1 ? variant._id : undefined} />,
     product_sku: () => <ProductSku sku={variant.sku} />,
     product_specs: () => <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
     product_collapsible_tab: s => s.showAsTab === true ? null : <ProductCollapsibleTab settings={s} />,

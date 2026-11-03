@@ -66,6 +66,8 @@ export function shareTargets(url: string, title: string, image?: string): ShareT
     { key: 'facebook', label: ts('pg.share_on_facebook', 'Share on Facebook'), href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
     ...pinterest,
     { key: 'whatsapp', label: ts('pg.share_on_whatsapp', 'Share on WhatsApp'), href: `https://wa.me/?text=${t}%20${u}` },
+    { key: 'linkedin', label: ts('pg.share_on_linkedin', 'Share on LinkedIn'), href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+    { key: 'telegram', label: ts('pg.share_on_telegram', 'Share on Telegram'), href: `https://t.me/share/url?url=${u}&text=${t}` },
     { key: 'email', label: ts('pg.share_by_email', 'Share by email'), href: `mailto:?subject=${t}&body=${u}` },
   ];
 }

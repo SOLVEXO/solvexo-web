@@ -60,17 +60,26 @@ function shareUrl(variantId?: string) {
 }
 
 /** Opens the share popup: copy link + Facebook / X / Pinterest / WhatsApp / email. */
-export function ProductShareButton({ title, image, variantId }: { title: string; image?: string; variantId?: string }) {
+export function ProductShareButton({ title, image, variantId, settings }: { title: string; image?: string; variantId?: string; settings?: Record<string, unknown> }) {
   const { t: tr } = useTranslation('storefront');
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
+  // Phones and tablets with a native share sheet use it; desktop opens the popup.
+  const onClick = () => {
+    const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+    if (coarse && typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      navigator.share({ title, url: shareUrl(variantId) }).catch(() => { /* dismissed */ });
+      return;
+    }
+    setOpen(true);
+  };
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} style={chip()} aria-haspopup="dialog">
+      <button type="button" onClick={onClick} style={chip()} aria-haspopup="dialog">
         <Share2 size={15} aria-hidden />
         {tr('product.share', "Share")}
       </button>
-      {open && <ShareDialog url={shareUrl(variantId)} title={title} image={image} onClose={close} />}
+      {open && <ShareDialog url={shareUrl(variantId)} title={title} image={image} settings={settings} onClose={close} />}
     </>
   );
 }

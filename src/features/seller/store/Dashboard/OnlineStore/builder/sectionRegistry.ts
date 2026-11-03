@@ -627,6 +627,16 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'openByDefault', kind: 'checkbox', label: 'Open by default', defaultOff: true },
     { key: 'showAsTab', kind: 'checkbox', label: 'Show as a tab next to Description', defaultOff: true, hint: 'Shows this on every product as a tab beside Description (e.g. Delivery policy, Shipping and Return).' },
   ],
+  product_share: [
+    { key: 'facebook', kind: 'select', label: 'Facebook', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }], hint: 'Choose which networks the Share popup offers. Copy link is always there. Phones also get their own share menu.' },
+    { key: 'x', kind: 'select', label: 'X (Twitter)', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }] },
+    { key: 'pinterest', kind: 'select', label: 'Pinterest', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }], hint: 'Shown only when the product has a photo.' },
+    { key: 'whatsapp', kind: 'select', label: 'WhatsApp', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }] },
+    { key: 'email', kind: 'select', label: 'Email', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }] },
+    { key: 'linkedin', kind: 'select', label: 'LinkedIn', options: [{ value: 'hide', label: 'Hide' }, { value: 'show', label: 'Show' }] },
+    { key: 'telegram', kind: 'select', label: 'Telegram', options: [{ value: 'hide', label: 'Hide' }, { value: 'show', label: 'Show' }] },
+    { key: 'customLinks', kind: 'textarea', label: 'Your own share links', rows: 4, maxLength: 2000, placeholder: 'Reddit | https://www.reddit.com/submit?url={url}&title={title}', hint: 'Add any network: one per line as Name | https link. Use {url} for the product link and {title} for its name. Up to 10, https only.' },
+  ],
   product_pickup: [
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Pickup', hint: 'Shown when you have an active Local pickup option in Shipping and the item is in stock. The place, address and instructions come from that pickup option.' },
   ],

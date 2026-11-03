@@ -68,7 +68,7 @@ const STATIC_DEFAULTS = {
   /** Quick view pop-up width; seller setting `custom.quickViewSize`. */
   quickViewSize: 'standard' as 'compact' | 'standard' | 'large',
   /** Share popup networks; seller settings `custom.share*` (hide = off). */
-  share: { facebook: true, x: true, pinterest: true, whatsapp: true, email: true },
+  share: { facebook: true, x: true, pinterest: true, whatsapp: true, email: true, linkedin: false, telegram: false },
   colors: {
     bg: '#FFFFFF',
     bgAlt: '#F4F4F5',

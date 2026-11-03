@@ -22,7 +22,7 @@ export function ShareBar({ url, title }: { url: string; title: string }) {
       <span className="mr-1 text-sm font-medium">{ts('product.share', 'Share')}</span>
       {canNativeShare && <button type="button" onClick={nativeShare} aria-label={ts('pg.share_using_your_device', 'Share using your device')} title={ts('product.share', 'Share')} className="grid place-items-center" style={chip}><Share2 size={16} aria-hidden /></button>}
       <button type="button" onClick={() => void copy()} aria-label={ts('pg.copy_link', 'Copy link')} title={ts('pg.copy_link', 'Copy link')} className="grid place-items-center" style={chip}>{copied ? <Check size={16} aria-hidden /> : <Link2 size={16} aria-hidden />}</button>
-      {shareTargets(url, title).map(s => {
+      {shareTargets(url, title).filter(s => s.key !== 'linkedin' && s.key !== 'telegram').map(s => {
         const Icon = ICONS[s.key];
         return (
           <a key={s.key} href={s.href} {...(s.key === 'email' ? {} : { target: '_blank', rel: 'noopener noreferrer' })} aria-label={s.label} title={s.label} className="grid place-items-center text-[13px] font-semibold no-underline" style={chip}>
