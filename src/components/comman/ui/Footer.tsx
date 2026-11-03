@@ -270,7 +270,7 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
 
           <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
-            <SolvexoLogo size={26} variant="light" />
+            <SolvexoLogo size={34} variant="light" />
             <p className="text-[12.5px] mt-4 leading-relaxed max-w-[260px] text-[#9a9894]">
               The commerce OS for sellers, creators and educators — your own storefront, POS, and AI-powered tools in one platform.
             </p>

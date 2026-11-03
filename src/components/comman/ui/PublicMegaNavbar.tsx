@@ -367,7 +367,7 @@ export function PublicMegaNavbar() {
           scrolled ? 'h-[72px]' : 'h-[64px]',
         )}>
           <Link to="/" className="shrink-0" aria-label="Solvexo home">
-            <SolvexoLogo size={28} variant={overHero ? 'light' : 'dark'} />
+            <SolvexoLogo size={36} variant={overHero ? 'light' : 'dark'} />
           </Link>
 
           {/* Desktop nav — a shared sliding highlight (layoutId) follows
