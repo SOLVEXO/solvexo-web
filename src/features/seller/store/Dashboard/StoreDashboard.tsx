@@ -927,7 +927,10 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
               {storefrontUrl && (
                 <span className="flex items-center gap-1 text-[12px] text-slate">
                   <span className="text-slate/60">·</span>
-                  {storefrontUrl.replace(/^https?:\/\//, '')}
+                  <a href={storefrontUrl} target="_blank" rel="noopener noreferrer" title="Open your store in a new tab"
+                    className="text-slate no-underline hover:text-brand-orange hover:underline underline-offset-2">
+                    {storefrontUrl.replace(/^https?:\/\//, '')}
+                  </a>
                   <CopyIconButton value={storefrontUrl} title="Copy store URL" size={11} />
                 </span>
               )}
