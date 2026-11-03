@@ -30,7 +30,7 @@ export function AgentTab() {
     const next = { ...draft, ...patch };
     try {
       const r = await apiSaveAgentConfig({
-        aiEnabled: next.aiEnabled, aiFirstReply: next.aiFirstReply, aiChat: next.aiChat, aiAgentName: next.aiAgentName,
+        aiEnabled: next.aiEnabled, aiFirstReply: next.aiFirstReply, aiChat: next.aiChat, aiWhatsApp: next.aiWhatsApp, aiAgentName: next.aiAgentName,
         aiGreeting: next.aiGreeting?.trim() || null, aiKnowledge: next.aiKnowledge?.trim() || null, aiRules: next.aiRules?.trim() || null,
         aiSignOff: next.aiSignOff?.trim() || null, aiReplyTo: next.aiReplyTo?.trim() || null, aiChatDailyLimit: next.aiChatDailyLimit,
       });
@@ -72,6 +72,13 @@ export function AgentTab() {
               <p className="text-[12px] text-slate">A chat button on solvexo.store. The assistant answers questions and books demos into the pipeline. {cfg.chatsToday} chat{cfg.chatsToday === 1 ? '' : 's'} today.</p>
             </div>
             <Toggle ariaLabel="Website chat" checked={cfg.aiChat} disabled={saving} onChange={v => void save({ aiChat: v })} />
+          </div>
+          <div className="flex items-start justify-between gap-3 border-t border-bone pt-3">
+            <div>
+              <p className="text-[13px] font-medium text-charcoal">WhatsApp drafts</p>
+              <p className="text-[12px] text-slate">For every message to Solvexo’s WhatsApp number, the assistant drafts a reply in the WhatsApp tab. A person always sends it.</p>
+            </div>
+            <Toggle ariaLabel="WhatsApp drafts" checked={cfg.aiWhatsApp !== false} disabled={saving} onChange={v => void save({ aiWhatsApp: v })} />
           </div>
         </section>
 

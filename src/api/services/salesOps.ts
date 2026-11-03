@@ -243,7 +243,7 @@ export const apiPartnerLogins = () => client.get<never, ApiResponse<PartnerLogin
 export interface AgentConfig {
   connected: boolean; aiEnabled: boolean; aiFirstReply: boolean; aiChat: boolean; aiAgentName: string; aiGreeting: string | null;
   aiKnowledge: string | null; defaultKnowledge: string; aiRules: string | null; aiSignOff: string | null; aiReplyTo: string | null;
-  aiChatDailyLimit: number; chatsToday: number;
+  aiChatDailyLimit: number; chatsToday: number; aiWhatsApp: boolean;
 }
 export type AgentConfigInput = Partial<Omit<AgentConfig, 'connected' | 'defaultKnowledge' | 'chatsToday'>>;
 export interface ChatMessage { role: 'visitor' | 'agent'; text: string; at?: string }
@@ -266,3 +266,35 @@ export const apiChatStart = (body: { page?: string; utmSource?: string; utmMediu
   client.post<never, ApiResponse<{ token: string; agentName: string; greeting: string }>>('/api/sales/chat/start', body);
 export const apiChatSend = (token: string, message: string) =>
   client.post<never, ApiResponse<{ reply: string; leadCreated: boolean; handedOver: boolean }>>(`/api/sales/chat/${token}/message`, { message });
+
+// ── WhatsApp inbox (Solvexo's own number) ───────────────────────────────────
+
+export interface WaConnection {
+  connected: boolean; phoneNumberId: string | null; wabaId: string | null; displayNumber: string | null; verifiedName: string | null;
+  tokenHint: string | null; templateName: string | null; templateLang: string; templateUsesName: boolean;
+  connectedAt: string | null; lastEventAt: string | null; webhookUrl: string; aiDrafts: boolean;
+}
+export interface WaConversationRow {
+  _id: string; waId: string; name: string; businessName: string | null; leadId: string | null; stage: LeadStage | null;
+  unread: number; lastMessageAt: string | null; lastMessageText: string | null; windowOpen: boolean; hasDraft: boolean;
+}
+export interface WaMessage { _id: string; direction: 'in' | 'out'; type: string; text: string; status: string; error: string | null; at: string; fromAiDraft: boolean }
+export interface WaConversation {
+  _id: string; waId: string; profileName: string | null;
+  lead: { _id: string; name: string; businessName: string | null; stage: LeadStage; city: string | null } | null;
+  windowOpen: boolean; windowClosesAt: string | null; aiDraft: { text: string; createdAt: string } | null;
+  template: { name: string; lang: string } | null; messages: WaMessage[];
+}
+
+export const apiWaConnection = () => client.get<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
+export const apiWaConnect = (body: { phoneNumberId: string; accessToken?: string; templateName?: string | null; templateLang?: string; templateUsesName?: boolean }) =>
+  client.put<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`, body);
+export const apiWaDisconnect = () => client.delete<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
+export const apiWaConversations = (params: { leadId?: string; unread?: boolean } = {}) =>
+  client.get<never, ApiResponse<WaConversationRow[]>>(`${BASE}/whatsapp/conversations`, { params: { ...(params.leadId ? { leadId: params.leadId } : {}), ...(params.unread ? { unread: 'true' } : {}) } });
+export const apiWaConversation = (id: string) => client.get<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}`);
+export const apiWaSend = (id: string, text: string, fromAiDraft: boolean) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/send`, { text, fromAiDraft });
+export const apiWaSendTemplate = (id: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/template`);
+export const apiWaRedraft = (id: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/draft`);
+export const apiWaDiscardDraft = (id: string) => client.delete<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/draft`);
+export const apiWaOpenForLead = (leadId: string) => client.post<never, ApiResponse<{ conversationId: string }>>(`${BASE}/leads/${leadId}/whatsapp`);
