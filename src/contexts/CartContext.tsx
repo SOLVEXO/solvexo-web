@@ -5,6 +5,7 @@ import {
 } from '@/api/services/cart';
 import { apiGetProductById, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 import { TokenStorage } from '@/api/services/auth';
+import { trackStorefrontCartActive } from '@/utils/storefrontAnalytics';
 import {
   getGuestCartItems, addGuestCartItem, updateGuestCartQty, setGuestCartItemQuantity, removeGuestCartItem, clearGuestCart,
 } from '@/utils/guestCart';
@@ -99,6 +100,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
   const refreshGuestCartDisplay = useCallback(async () => {
     const guestItems = getGuestCartItems();
     if (guestItems.length === 0) { if (!TokenStorage.isLoggedIn()) setCart(null); return; }
+    if (storeId) trackStorefrontCartActive(storeId);
 
     setLoading(true);
     const uniqueProductIds = Array.from(new Set(guestItems.map(i => i.productId)));
@@ -144,7 +146,7 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
     const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
     setCart({ userId: 'guest', items, totalItems, totalPrice });
     setLoading(false);
-  }, []);
+  }, [storeId]);
 
   const fetchCart = useCallback(() => {
     if (!TokenStorage.isLoggedIn()) { refreshGuestCartDisplay(); return; }

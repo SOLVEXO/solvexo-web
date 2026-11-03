@@ -82,6 +82,22 @@ export function analyticsSessionFields(storeId: string | null | undefined): { an
   return id ? { analyticsSessionId: id } : {};
 }
 
+let lastCartSignalAt = 0;
+/** A logged-out visitor's cart (kept in the browser) holds items: lets Live View count it as an active cart. */
+export function trackStorefrontCartActive(storeId: string) {
+  if (!consented || !storeId || !API_BASE_URL) return;
+  const sessionId = currentSessionId(storeId);
+  if (!sessionId || Date.now() - lastCartSignalAt < 30_000) return;
+  lastCartSignalAt = Date.now();
+  void fetch(`${API_BASE_URL}/api/storefront-analytics/cart-signal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ storeId, sessionId }),
+    keepalive: true,
+    credentials: 'omit',
+  }).catch(() => { /* analytics never breaks the storefront */ });
+}
+
 /** Records one page view (fire-and-forget; survives page unload via keepalive). */
 export function trackStorefrontPageView(storeId: string, path: string) {
   if (!consented || !storeId || !API_BASE_URL) return;
