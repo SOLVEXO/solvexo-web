@@ -209,11 +209,13 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
         apiGetFxHistory({ limit: 15 }),
         apiGetAdminCurrencies(),
       ]);
-      setRates(ratesRes.data);
-      setStaleness(staleRes.data);
-      setFxConfig(configRes.data.fxConfig);
-      setHistory(historyRes.data.items);
-      setCurrencies(currenciesRes.data);
+      setRates(ratesRes.data ?? {});
+      setStaleness(staleRes.data ?? {});
+      setFxConfig(configRes.data?.fxConfig ?? null);
+      setHistory(historyRes.data?.items ?? []);
+      // Older API builds send the currency list as a bare array instead of { success, data }.
+      const list: unknown = Array.isArray(currenciesRes) ? currenciesRes : currenciesRes.data;
+      setCurrencies(Array.isArray(list) ? (list as EnabledCurrency[]) : []);
     } catch {
       // handled per-section below via empty states
     } finally {
@@ -234,9 +236,11 @@ export function AdminFxSettings({ embedded = false }: { embedded?: boolean } = {
     setEnableAllMessage('');
     try {
       const res = await apiEnableAllCurrencies();
+      // Older API builds put `added` at the top level rather than under `data`.
+      const added = res.data?.added ?? (res as unknown as { added?: string[] }).added ?? [];
       setEnableAllMessage(
-        res.data.added.length > 0
-          ? `Enabled ${res.data.added.length} new currencies. They'll get a real rate on the next FX refresh.`
+        added.length > 0
+          ? `Enabled ${added.length} new currencies. They'll get a real rate on the next FX refresh.`
           : 'Every real currency was already enabled.',
       );
       await load();
