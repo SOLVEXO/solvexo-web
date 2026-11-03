@@ -54,7 +54,7 @@ export function apiAddToCart(productId: string, productVariantId: string, storeI
 }
 
 export function apiGetCart(storeId: string) {
-  return client.get<never, CartResponse>(ENDPOINTS.CART.GET, { params: { storeId } });
+  return client.get<never, CartResponse>(ENDPOINTS.CART.GET, { params: { storeId, ...analyticsSessionFields(storeId) } });
 }
 
 export function apiUpdateCartQuantity(
