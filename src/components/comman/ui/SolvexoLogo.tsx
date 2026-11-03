@@ -7,35 +7,37 @@ interface LogoProps {
   variant?:       'dark' | 'light';
 }
 
+/**
+ * Solvexo's original logo artwork (public/brand, cut from the master logo with transparent backgrounds):
+ * - solvexo-icon.png        the square "S" mark on its own
+ * - solvexo-logo.png        mark + black "Solvex" wordmark with the orange "o", for light backgrounds
+ * - solvexo-logo-light.png  same with a white wordmark, for dark backgrounds
+ */
+const ICON_SRC = '/brand/solvexo-icon.png';
+const LOGO_SRC = { dark: '/brand/solvexo-logo.png', light: '/brand/solvexo-logo-light.png' } as const;
+/** Width / height of the full logo artwork (833 × 285). */
+const LOGO_RATIO = 833 / 285;
+
 export function SolvexoIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="shrink-0"
-    >
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
+  return <img src={ICON_SRC} alt="Solvexo" width={size} height={size} className="shrink-0 select-none" draggable={false} />;
 }
 
+/** `size` is the height of the mark; `variant` is the wordmark colour: 'dark' text for light backgrounds, 'light' for dark ones. */
 export function SolvexoLogo({ size = 32, showWordmark = true, className, variant = 'dark' }: LogoProps) {
-  const textSize = Math.round(size * 0.53);
+  if (!showWordmark) {
+    return <div className={clsx('flex items-center', className)}><SolvexoIcon size={size} /></div>;
+  }
   return (
-    <div className={clsx('flex items-center gap-2', className)}>
-      <SolvexoIcon size={size} />
-      {showWordmark && (
-        <div className="flex items-center" style={{ fontSize: textSize }}>
-          <span className={clsx('font-bold tracking-tight', variant === 'light' ? 'text-white' : 'text-carbon')}>Solvex</span>
-          <span className="font-bold text-brand-orange tracking-tight">o</span>
-        </div>
-      )}
+    <div className={clsx('flex items-center', className)}>
+      <img
+        src={LOGO_SRC[variant]}
+        alt="Solvexo"
+        height={size}
+        width={Math.round(size * LOGO_RATIO)}
+        style={{ height: size, width: 'auto' }}
+        className="shrink-0 select-none"
+        draggable={false}
+      />
     </div>
   );
 }

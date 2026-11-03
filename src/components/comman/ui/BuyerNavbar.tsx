@@ -1151,7 +1151,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
             mobileSearchOpen ? 'hidden md:flex' : 'flex',
           )}
         >
-          <SolvexoLogo size={scrolled ? 28 : 34} className="transition-[width,height] duration-200" />
+          <SolvexoLogo size={scrolled ? 34 : 40} className="transition-[width,height] duration-200" />
           {contextLabel && (
             <>
               <span className="text-bone mx-1 hidden md:inline">|</span>
