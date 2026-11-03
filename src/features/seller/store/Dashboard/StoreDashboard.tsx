@@ -32,7 +32,7 @@ import type { DashboardWidgetDef, LayoutWidget } from '@/components/comman/dashb
 import { STORE_WIDGET_DEFS, STORE_PRESETS, buildDefaultWidgets, type StoreWidgetDef } from './storeDashboardWidgets';
 import { TrafficSourcesCard } from './TrafficSourcesCard';
 import { can, isStaffSession } from '@/hooks/auth/useCan';
-import { getStorefrontUrl } from '@/utils/storefrontUrl';
+import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 import { SetupGuideCard } from './SetupGuideCard';
@@ -152,6 +152,8 @@ function useStoreDashboardMetrics(storeId: string) {
           primaryWallet: (financeRes as any)?.wallets?.[0] ?? null,
           sessions: (sessionsRes as any)?.data ?? null,
         });
+        // Zeros in the top cards must never pass for real numbers: say so when the Overview call itself failed.
+        if (can('analytics.view') && !overviewRes) setError('Could not load the revenue, orders and customers figures. The numbers above are not real - please retry.');
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -892,7 +894,7 @@ function DashboardHero({ store, storeId }: { store: ReturnType<typeof useStoreWo
     return () => { cancelled = true; };
   }, [storeId]);
   const { live: isLive, label: statusLabel } = storeLiveStatus({ storeStatus: store?.status, privacyMode: store?.privacyMode, planStatus });
-  const storefrontUrl = store?.slug ? getStorefrontUrl(store.slug) : '';
+  const storefrontUrl = store ? getStoreLiveUrl(store) : '';
 
   return (
     <div className="dash-section-enter surface-panel rounded-2xl relative overflow-hidden">
