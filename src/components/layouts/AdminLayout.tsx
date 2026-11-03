@@ -3,7 +3,7 @@ import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import {
-  LayoutDashboard, Gauge, Users, Shield, DollarSign, Settings, UserCog,
+  LayoutDashboard, Gauge, Users, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
   BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
@@ -404,21 +404,15 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
         {/* Header: logo + toggle (mirrors StoreLayout/SellerLayout header) */}
         {open ? (
           <div className="px-5 pt-5 pb-4 shrink-0 flex items-center gap-[9px]">
-            <div className="size-[30px] rounded-md bg-brand-orange flex items-center justify-center shrink-0">
-              <Shield size={15} className="text-white" />
-            </div>
             <div className="flex items-center flex-1 min-w-0">
-              <span className="text-[17px] font-bold text-white tracking-[-0.3px]">Solvexo</span>
-              <span className="text-[17px] font-bold text-brand-orange tracking-[-0.3px]">&nbsp;Admin</span>
+              <img src="/brand/solvexo-logo-light.png" alt="Solvexo" className="h-[32px] w-auto max-w-full object-contain object-left" />
             </div>
             {paletteHint}
             {toggleBtn}
           </div>
         ) : (
           <div className="pt-5 pb-4 flex flex-col items-center gap-[6px] shrink-0">
-            <div className="size-[30px] rounded-md bg-brand-orange flex items-center justify-center shrink-0">
-              <Shield size={15} className="text-white" />
-            </div>
+            <img src="/brand/solvexo-icon.png" alt="Solvexo" className="size-[30px] shrink-0" />
             {paletteHint}
             {toggleBtn}
           </div>
