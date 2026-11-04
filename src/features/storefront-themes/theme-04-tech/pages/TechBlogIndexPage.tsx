@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ts } from '@/utils/tStatic';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Newspaper } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { TechSectionRenderer } from '../sections';
@@ -53,6 +53,19 @@ export function TechBlogIndexPage() {
           <EmptyState icon={<Newspaper size={24} aria-hidden />} title={ts('pg.no_posts_yet', 'No posts yet')} text={ts('pg.check_back_soon_for_new_stories', 'Check back soon for new stories.')} />
         ) : (
           <>
+            {feed.blogs.length > 1 && (
+              <nav aria-label={ts('blog.label', 'Blog')} className="tx-hide-scroll -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+                {[{ title: ts('pg.word_all', 'All'), slug: undefined as string | undefined }, ...feed.blogs].map(b => {
+                  const on = b.slug === blogSlug;
+                  return (
+                    <Link key={b.slug ?? 'all'} to={b.slug ? `/blogs/${b.slug}` : '/blog'} aria-current={on ? 'page' : undefined} className="shrink-0 rounded-full px-4 py-2 text-sm font-medium no-underline"
+                      style={{ border: `1px solid ${on ? t.colors.selected : t.colors.border}`, background: on ? t.colors.selected : 'transparent', color: on ? t.colors.selectedInk : t.colors.ink }}>
+                      {b.title}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
             {topics.length > 0 && (
               <div role="group" aria-label={ts('pg.filter_posts_by_topic', 'Filter posts by topic')} className="tx-hide-scroll -mx-1 mb-8 flex gap-2 overflow-x-auto px-1">
                 {[null, ...topics].map(tag => {

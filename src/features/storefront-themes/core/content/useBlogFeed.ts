@@ -31,6 +31,7 @@ export function useBlogFeed(storeId: string, blogSlug: string | undefined, pageS
 
   return {
     title: firstData?.blog?.title ?? null,
+    blogs: firstData?.blogs ?? [],
     posts, loading: first.loading, error: first.error, retry: first.retry,
     hasMore: !!firstData && page < totalPages, loadingMore: extra?.busy ?? false, loadMoreFailed: extra?.failed ?? false, loadMore,
   };

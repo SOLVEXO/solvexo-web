@@ -50,6 +50,8 @@ export interface BlogPostSummary {
 
 export interface PaginatedBlogPosts {
   blog:       { title: string; slug: string };
+  /** Every blog of the store (for the blog tabs); missing on older API versions. */
+  blogs?:     { title: string; slug: string }[];
   posts:      BlogPostSummary[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
