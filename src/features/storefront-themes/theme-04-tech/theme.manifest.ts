@@ -53,6 +53,7 @@ const techFields: ThemeSettingsFieldDef[] = [
   { key: 'custom.techTopBar', label: 'Top bar', group: 'Layout & Spacing', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'The slim strip above the header. It shows the text, phone and email you set in the Header settings.' },
   { key: 'custom.techStickyHeader', label: 'Header stays on top', group: 'Layout & Spacing', control: { kind: 'select', options: [{ value: 'on', label: 'Yes (default)' }, { value: 'off', label: 'No' }] }, helpText: 'Keeps the header visible while shoppers scroll.' },
   { key: 'custom.techCardStyle', label: 'Tech card style', group: 'Product cards', control: { kind: 'select', options: [{ value: 'flat', label: 'Flat' }, { value: 'outlined', label: 'Border' }, { value: 'shadow', label: 'Shadow on hover' }] }, helpText: 'How product cards are framed in grids and rows.' },
+  { key: 'custom.techMegaStyle', label: 'Mega menu layout', group: 'Mega menu', control: { kind: 'select', options: [{ value: 'sidebar', label: 'List on the left, links on hover (default)' }, { value: 'columns', label: 'Every group as a column' }] }, helpText: 'Columns shows all sub-links at once, one column per first-level link, with no hovering needed.' },
   { key: 'custom.techMegaFeatured', label: 'Featured photo', group: 'Mega menu', control: { kind: 'select', options: SHOW_HIDE }, helpText: "Shows the menu item's own photo beside its mega menu." },
 ];
 

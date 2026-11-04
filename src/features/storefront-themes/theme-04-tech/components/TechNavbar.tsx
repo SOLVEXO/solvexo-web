@@ -40,7 +40,35 @@ function TopBar({ bar }: { bar: TopBarData }) {
 }
 
 /** Two-level mega panel: first-level links on the left, the hovered link's own children on the right. The menu allows 3 levels in total. */
+function MegaColumns({ item }: { item: ResolvedStorefrontNavItem }) {
+  const cols = item.children.slice(0, 6);
+  return (
+    <div className="tx-pop" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, color: t.colors.ink, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
+      <div className="grid gap-x-8 gap-y-6 p-6" style={{ gridTemplateColumns: `repeat(${Math.max(cols.length, 1)}, minmax(0, 1fr))${t.megaFeatured && item.imageUrl ? ' 260px' : ''}` }}>
+        {cols.map(c => (
+          <div key={c.id} className="min-w-0">
+            <NavAnchor link={c.link} className="block pb-2 text-sm font-semibold no-underline" style={{ color: t.colors.ink, borderBottom: `2px solid ${t.colors.accent}` }}>{c.label}</NavAnchor>
+            <ul className="m-0 mt-2 list-none p-0">
+              {c.children.map(g => <li key={g.id}><NavAnchor link={g.link} className="block py-1.5 text-sm no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor></li>)}
+            </ul>
+          </div>
+        ))}
+        {t.megaFeatured && item.imageUrl && (
+          <NavAnchor link={item.link} className="relative hidden overflow-hidden no-underline lg:block" style={{ background: t.colors.bgAlt, minHeight: 180 }}>
+            <img src={item.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+            <span className="absolute inset-x-0 bottom-0 p-4 text-sm font-semibold" style={{ background: 'linear-gradient(transparent, rgba(2,2,3,.65))', color: '#fff' }}>{item.label}</span>
+          </NavAnchor>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MegaPanel({ item }: { item: ResolvedStorefrontNavItem }) {
+  return t.megaStyle === 'columns' ? <MegaColumns item={item} /> : <MegaSidebar item={item} />;
+}
+
+function MegaSidebar({ item }: { item: ResolvedStorefrontNavItem }) {
   const [active, setActive] = useState(() => item.children.find(c => c.children.length > 0)?.id ?? item.children[0]?.id);
   const current = item.children.find(c => c.id === active) ?? item.children[0];
   return (
