@@ -1,6 +1,6 @@
-import type { MouseEvent } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, Heart, ShoppingCart } from 'lucide-react';
+import { BarChart3, Eye, Heart, ShoppingCart } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
@@ -16,6 +16,7 @@ import { PRODUCT_CARD_RATIO } from '../../imageFit';
 import { techTheme as t } from '../theme.config';
 import { TechButton, TechLinkButton, TechStars, TechStock } from '../ui/techUi';
 import { useCompare } from './compare';
+import { TechQuickView } from './product/TechQuickView';
 
 /** Card for every real product grid. `layout="list"` is the wide row used by the collection list view. */
 export function TechProductCard({ product, currency, layout = 'grid' }: { product: PublicStoreProduct; currency: string; layout?: 'grid' | 'list' }) {
@@ -37,6 +38,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   const ratio = PRODUCT_CARD_RATIO.square;
   const image = product.images?.[0];
   const wished = hasVariant ? isWishlisted(product._id, product.variantId as string) : false;
+  const [quick, setQuick] = useState(false);
   const compare = useCompare(store.storeId);
   const compared = compare.has(product._id);
   const compareBtn = t.compare && (
@@ -60,6 +62,11 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
     <Link to={to} aria-label={p.name} className="relative block overflow-hidden" style={{ aspectRatio: ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
       {image && <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3" />}
     </Link>
+  );
+  const quickBtn = t.quickView && product.type !== 'digital' && (
+    <button type="button" className="tx-icon-btn" aria-haspopup="dialog" aria-label={ts('pg.quick_view', 'Quick view')} onClick={e => { e.preventDefault(); setQuick(true); }}>
+      <Eye size={16} aria-hidden />
+    </button>
   );
   const heartBtn = hasVariant && (
     <button type="button" className="tx-icon-btn" aria-pressed={wished} aria-label={wished ? ts('pg.remove_from_wishlist', 'Remove from wishlist') : ts('pg.add_to_wishlist', 'Add to wishlist')} onClick={heart}>
@@ -87,9 +94,10 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
           {priceBlock}
         </div>
         <div className="flex flex-row items-center gap-3 max-sm:col-span-2 sm:flex-col sm:items-end sm:justify-between">
-          <span className="flex gap-2">{heartBtn}{compareBtn}</span>
+          <span className="flex gap-2">{quickBtn}{heartBtn}{compareBtn}</span>
           {addBtn}
         </div>
+        {quick && <TechQuickView slug={handleOf(product)} onClose={() => setQuick(false)} />}
       </article>
     );
   }
@@ -99,7 +107,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       <TechStock inStock={inStock} />
       <div className="relative">
         {imageBox}
-        {(heartBtn || compareBtn) && <div className="tx-card-actions">{heartBtn}{compareBtn}</div>}
+        {(quickBtn || heartBtn || compareBtn) && <div className="tx-card-actions">{quickBtn}{heartBtn}{compareBtn}</div>}
       </div>
       {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
       <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
@@ -107,6 +115,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         {priceBlock}
         {addBtn}
       </div>
+      {quick && <TechQuickView slug={handleOf(product)} onClose={() => setQuick(false)} />}
     </article>
   );
 }

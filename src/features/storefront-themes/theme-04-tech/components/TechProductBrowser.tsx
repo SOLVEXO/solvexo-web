@@ -7,7 +7,7 @@ import type { PublicStoreProduct } from '@/api/services/store';
 import {
   PRODUCT_TYPE_LABEL, SORT_OPTIONS, clearFilters, hasActiveFilters, toggleIn, toggleOption, type BrowseState,
 } from '@/features/storefront/browse/browseState';
-import { BROWSE_PAGE_SIZE, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
+import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
 import { useDialogFocus } from '../../core/hooks/useDialogFocus';
 import { moneyText } from '../../core/money';
 import { techTheme as t } from '../theme.config';
@@ -96,7 +96,9 @@ function Pagination({ page, totalPages, onPage }: { page: number; totalPages: nu
 /** Tech listing: filter sidebar on the left (a slide-in panel on phones), sort + grid/list switch on top, chips, pagination. */
 export function TechProductBrowser({ heading, categoryId, collectionId, search, syncUrl = false, defaultSort, showFilters = true, emptyText, onProducts, sidebarExtra }: Props) {
   const { currency } = useCurrencyPreference();
-  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort });
+  const pageSize = clampPageSize(t.pagination.productsPerPage);
+  const mode = t.pagination.mode;
+  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort, pageSize, accumulate: mode !== 'pages' });
   const [view, setView] = useState<View>('grid');
   const [drawer, setDrawer] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -106,6 +108,18 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
   useEffect(() => { if (products) onProducts?.(products); }, [products, onProducts]);
 
   const change = (fn: (s: BrowseState) => BrowseState) => update(s => ({ ...fn(s), page: 1 }));
+  const loadMore = () => update(s => ({ ...s, page: s.page + 1 }));
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const canMore = mode !== 'pages' && products !== null && state.page < totalPages;
+  // Infinite scroll: the next page loads when the marker under the list comes into view.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (mode !== 'infinite' || !el || !canMore || loading || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) loadMore(); }, { rootMargin: '400px' });
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadMore only reads the latest state through update()
+  }, [mode, canMore, loading, state.page]);
   const goPage = (page: number) => { update(s => ({ ...s, page })); topRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }); };
 
   const chips: { key: string; label: string; remove: () => void }[] = [];
@@ -142,8 +156,8 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
     </>
   ) : null;
 
-  const from = total === 0 ? 0 : (state.page - 1) * BROWSE_PAGE_SIZE + 1;
-  const to = Math.min(total, state.page * BROWSE_PAGE_SIZE);
+  const from = total === 0 ? 0 : mode === 'pages' ? (state.page - 1) * pageSize + 1 : 1;
+  const to = mode === 'pages' ? Math.min(total, state.page * pageSize) : Math.min(total, products?.length ?? 0);
   const toggleBtn = (v: View, icon: ReactNode, label: string) => (
     <button type="button" aria-pressed={view === v} aria-label={label} onClick={() => setView(v)} className="grid size-9 cursor-pointer place-items-center border-0 bg-transparent" style={{ color: view === v ? t.colors.ink : t.colors.border }}>{icon}</button>
   );
@@ -210,7 +224,12 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
               {view === 'grid'
                 ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} />)}</div>
                 : <div className="flex flex-col gap-3">{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} layout="list" />)}</div>}
-              {totalPages > 1 && <Pagination page={state.page} totalPages={totalPages} onPage={goPage} />}
+              {mode === 'pages' && totalPages > 1 && <Pagination page={state.page} totalPages={totalPages} onPage={goPage} />}
+              {canMore && (
+                <div ref={sentinelRef} className="mt-6 flex justify-center">
+                  <TechButton variant="outline" disabled={loading} onClick={loadMore}>{loading ? ts('browse.loadingMore', 'Loading…') : ts('browse.loadMore', 'Load more')}</TechButton>
+                </div>
+              )}
             </div>
           )}
         </div>

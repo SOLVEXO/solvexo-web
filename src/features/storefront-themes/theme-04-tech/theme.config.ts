@@ -75,8 +75,11 @@ const STATIC_DEFAULTS = {
   checkoutSummary: 'right' as 'right' | 'left',
   /** Client-side compare (up to 4 products, stored in the browser). */
   compare: true,
-  /** Blog list page size. */
-  pagination: { postsPerPage: 9 },
+  /** Listing sizes and the way shoppers move on (seller settings under Pagination). */
+  pagination: { productsPerPage: 12, mode: 'pages' as 'pages' | 'more' | 'infinite', postsPerPage: 9, reviewsPerPage: 5 },
+  /** Quick view pop-up on product cards (seller setting). */
+  quickView: true,
+  quickViewSize: 'standard' as 'compact' | 'standard' | 'large',
 };
 
 export const techTheme: typeof STATIC_DEFAULTS = structuredClone(STATIC_DEFAULTS);
@@ -185,6 +188,9 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   techTheme.gallery = oneOf(ts?.techGallery, ['bottom', 'left'] as const, 'bottom');
   techTheme.checkoutSummary = oneOf(ts?.techCheckoutSummary, ['right', 'left'] as const, 'right');
   techTheme.compare = ts?.techCompare !== 'hide';
+  techTheme.pagination = { ...baseTheme.pagination };
+  techTheme.quickView = baseTheme.quickView;
+  techTheme.quickViewSize = baseTheme.quickViewSize;
 }
 
 /** Same readable-label rule as Maison, for fills the seller can recolour. */
