@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
-import { SolvexoLogo, SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
+import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { BrandSplash } from '@/components/comman/motion/BrandSplash';
 import { useAuthVisual } from '@/hooks/auth/useAuthVisual';
@@ -97,7 +97,7 @@ export function AuthSplitLayout({
 
         <div className="relative z-10 flex flex-col items-center">
           <div className="mb-[clamp(6px,1.5vh,12px)]">
-            {brandingHeader ?? <SolvexoIcon size={44} />}
+            {brandingHeader ?? <SolvexoLogo size={40} variant="light" />}
           </div>
 
           <h2 className="font-serif text-[clamp(16px,3.2vh,22px)] font-bold text-white leading-[1.2] max-w-[300px] mb-[clamp(3px,1vh,8px)]">
@@ -120,7 +120,7 @@ export function AuthSplitLayout({
       <div className="hidden lg:flex lg:w-[60%] h-full min-w-0 flex-col p-6 gap-3">
         {!brandingHeader && (
           <div className="shrink-0">
-            <SolvexoLogo size={40} variant="dark" />
+            <SolvexoLogo size={44} variant="dark" />
           </div>
         )}
 

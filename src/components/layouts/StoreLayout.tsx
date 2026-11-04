@@ -551,7 +551,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // nav entries on navigation instead of one bg instantly disappearing while
   // another instantly appears — scoped per sidebar instance via useId().
   const navPillId = useId();
-  const { store, storeId, loading, entitlements } = useStoreWorkspace();
+  const { storeId, entitlements } = useStoreWorkspace();
   const badges = useNavBadgeCounts(storeId);
   const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
@@ -585,7 +585,6 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       ? pathname === seg || pathname.startsWith(seg + '/')
       : pathname === `/store/${storeId}/${seg}`;
 
-  const initials   = store?.name?.slice(0, 2).toUpperCase() ?? '..';
 
   // Shopify-style trial nudge card, sidebar-bottom — same subscription data
   // `PlatformBillingBanner` (top of every store page) already fetches, just
@@ -711,44 +710,20 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
-        {/* Store identity + collapse toggle — same row, toggle on the right,
-           rather than the toggle sitting alone on its own row above this.
-           (The store SWITCHER itself lives in the top navbar — StorePageHeader
-           below — not here.) */}
+        {/* Solvexo's logo + collapse toggle (same as the admin panel). The store's own identity (its logo, else the
+           store icon, and its name) is in the store switcher in the top navbar and in the dashboard greeting card. */}
         {open ? (
           <div className="px-4 pt-[14px] pb-3 shrink-0">
-            <div className="flex items-center gap-[10px]">
-              {/* Logo only now — no store name, no plan/slug text. Fills the
-                 whole identity row (flex-1, fixed row height) rather than
-                 staying a small fixed square with empty space around it.
-                 The tinted square is only a FALLBACK behind the two-letter
-                 initials when there's no logo at all — a real uploaded logo
-                 renders on its own with no colored box behind it. */}
-              <div className={clsx(
-                'flex-1 h-11 min-w-0 rounded-[9px] overflow-hidden flex items-center justify-center text-[15px] font-bold text-white',
-                !loading && !store?.logo && 'bg-brand-orange',
-              )}>
-                {loading
-                  ? <div className="animate-pulse w-full h-full bg-charcoal rounded-[9px]" />
-                  : store?.logo
-                    // object-contain (not object-cover) — the whole logo
-                    // shows, scaled to fit this larger area, never cropped
-                    // or stretched the way a non-square logo would be under
-                    // object-cover.
-                    ? <img loading="lazy" decoding="async" src={store.logo} className="max-w-full max-h-full object-contain" alt={store?.name ?? 'Store logo'} />
-                    : initials}
+            <div className="flex items-center gap-[10px] h-11">
+              <div className="flex-1 min-w-0 flex items-center">
+                <img src="/brand/solvexo-logo-light.png" alt="Solvexo" className="h-[32px] w-auto max-w-full object-contain object-left" />
               </div>
               {toggleBtn}
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 pt-3 pb-2 shrink-0">
-            <div className={clsx(
-              'size-8 rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center text-[11px] font-bold text-white',
-              !loading && !store?.logo && 'bg-brand-orange',
-            )}>
-              {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-contain" alt="" /> : initials}
-            </div>
+            <img src="/brand/solvexo-icon.png" alt="Solvexo" className="size-8 shrink-0" />
             {toggleBtn}
           </div>
         )}

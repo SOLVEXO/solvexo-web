@@ -9,6 +9,12 @@ import { gaLoaded, isTrackedPath, loadGa, readConsent, saveConsent, skipGa, trac
 // The superadmin host (paths without /admin) is never a public page either.
 const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate()) || hostMode() === 'superadmin';
 
+// Build-time fallback (Vercel env) when the API has no measurement id configured.
+function buildMeasurementId(): string | null {
+  const v = String(import.meta.env.VITE_GA_MEASUREMENT_ID || import.meta.env.VITE_GA_ID || import.meta.env.VITE_GOOGLE_ANALYTICS_ID || '').trim().toUpperCase();
+  return /^G-[A-Z0-9]{4,16}$/.test(v) ? v : null;
+}
+
 /**
  * Solvexo's Google Analytics on the public site and sign-up flow. Fetches the measurement id the first time a
  * tracked page is shown; visitors from the EU/EEA/UK/Switzerland see a consent banner first and are only tracked
@@ -21,7 +27,7 @@ export function SiteAnalyticsTracker() {
   const [consent, setConsent] = useState<ConsentChoice | null>(readConsent);
   const requested = useRef(false);
   // Track only once there is an id and, where required, the visitor has accepted.
-  const measurementId = config?.measurementId ?? null;
+  const measurementId = config?.measurementId ?? (config && config.enabled !== false ? buildMeasurementId() : null);
   const allowed = !!measurementId && (!config?.consentRequired || consent === 'granted');
 
   useEffect(() => {
@@ -42,7 +48,7 @@ export function SiteAnalyticsTracker() {
     if (allowed && gaLoaded()) trackPageView(pathname, search);
   }, [allowed, pathname, search]);
 
-  const askConsent = tracked && !!config?.measurementId && config.consentRequired && consent === null;
+  const askConsent = tracked && !!measurementId && !!config?.consentRequired && consent === null;
   if (!askConsent) return null;
 
   const choose = (choice: ConsentChoice) => { saveConsent(choice); setConsent(choice); };

@@ -1,3 +1,4 @@
+import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { safeRedirectPath } from '@/utils/safeRedirect';
@@ -20,14 +21,9 @@ const HIGHLIGHTS = [
 ];
 
 const BRANDING_HEADER = (
-  <div className="flex items-center gap-[10px]">
-    <div className="size-9 rounded-lg bg-brand-orange flex items-center justify-center shrink-0">
-      <Users size={18} className="text-white" />
-    </div>
-    <div>
-      <p className="text-[15px] font-bold text-white leading-tight">Solvexo</p>
-      <p className="text-[11px] text-pos-muted leading-tight">Staff Sign In</p>
-    </div>
+  <div className="flex flex-col items-center lg:items-start gap-1.5">
+    <SolvexoLogo size={40} variant="light" />
+    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">Staff sign in</p>
   </div>
 );
 
