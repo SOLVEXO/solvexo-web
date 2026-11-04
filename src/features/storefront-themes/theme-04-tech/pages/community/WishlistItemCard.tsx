@@ -14,7 +14,7 @@ import { techTheme as t } from '../../theme.config';
 import { PillButton, StatusPill, TextInput } from '../../ui/techForm';
 import { useCartDrawer } from '../../../cartDrawerContext';
 
-/** One saved product: image, price, chosen options, add to bag, remove and a back-in-stock form when sold out. */
+/** One saved product: image, price, chosen options, add to cart, remove and a back-in-stock form when sold out. */
 export function WishlistItemCard({ item }: { item: WishlistListItem }) {
   const { product, variants } = item;
   const variant = variants[0];
@@ -49,7 +49,7 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
     <li className="flex list-none flex-col gap-4 p-4 sm:p-5" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.cardRadiusPx, background: t.colors.bg }}>
       <div className="flex gap-4">
         <Link to={href} aria-label={product.name} className="grid shrink-0 place-items-center overflow-hidden" style={{ width: 104, height: 130, borderRadius: t.fieldRadiusPx, background: t.colors.bgAlt }}>
-          {image ? <img src={image} alt="" loading="lazy" decoding="async" className="size-full object-cover" /> : <ImageOff size={22} aria-hidden style={{ color: t.colors.inkMuted }} />}
+          {image ? <img src={image} alt="" loading="lazy" decoding="async" className="size-full object-contain p-2" /> : <ImageOff size={22} aria-hidden style={{ color: t.colors.inkMuted }} />}
         </Link>
         <div className="flex min-w-0 flex-1 flex-col">
           <Link to={href} className="text-base font-medium leading-snug no-underline" style={{ color: t.colors.ink }}>{product.name}</Link>
@@ -62,16 +62,16 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
           <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
             <PillButton onClick={add} disabled={soldOut} loading={isAdding} style={{ height: 40, padding: '0 20px' }}>
               {!isAdding && <ShoppingBag size={15} aria-hidden />}
-              {soldOut ? ts('pg.word_unavailable', 'Unavailable') : added ? ts('pg.added_to_bag', 'Added to bag') : ts('pg.add_to_bag', 'Add to bag')}
+              {soldOut ? ts('pg.word_unavailable', 'Unavailable') : added ? ts('pg.added_to_cart', 'Added to cart') : ts('product.addToCart', 'Add to cart')}
             </PillButton>
             <button type="button" onClick={() => void removeFromWishlist(product._id, variant._id)} disabled={busy} aria-label={ts('pg.remove_name_from_wishlist', 'Remove {{name}} from wishlist', { name: product.name })}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border-0 bg-transparent px-3 text-[13px] font-medium disabled:opacity-50" style={{ color: t.colors.inkMuted, cursor: busy ? 'default' : 'pointer' }}>
+              className="inline-flex h-10 items-center gap-1.5 border-0 bg-transparent px-3 text-[13px] font-medium disabled:opacity-50" style={{ color: t.colors.inkMuted, cursor: busy ? 'default' : 'pointer', borderRadius: t.buttonRadiusPx }}>
               {busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Trash2 size={14} aria-hidden />}{ts('checkout.remove', 'Remove')}
             </button>
           </div>
         </div>
       </div>
-      <span className="sr-only" role="status">{added ? ts('pg.name_added_to_your_bag', '{{name}} added to your bag', { name: product.name }) : ''}</span>
+      <span className="sr-only" role="status">{added ? ts('pg.name_added_to_your_cart', '{{name}} added to your cart', { name: product.name }) : ''}</span>
 
       {back.show && (
         <form onSubmit={back.submit} className="flex flex-col gap-2 p-3" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.bgAlt }}>

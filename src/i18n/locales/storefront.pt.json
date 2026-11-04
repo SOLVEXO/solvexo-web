@@ -104,6 +104,7 @@
       "comment": "Falha ao enviar o comentário."
     },
     "journal": "Diário",
+    "label": "Blog",
     "loadMore": "Carregar mais",
     "loadingComments": "Carregando comentários…",
     "noComments": "Ainda não há comentários — seja o primeiro a compartilhar sua opinião.",
@@ -1062,6 +1063,7 @@
     "my_account": "Minha conta",
     "my_reviews": "Minhas avaliações",
     "name_added_to_your_bag": "{{name}} adicionado à sua sacola",
+    "name_added_to_your_cart": "{{name}} foi adicionado ao seu carrinho",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" é grande demais. O limite é {{size}}.",
     "name_no_longer_available": "{{name}}: não está mais disponível",
     "never_shown_publicly": "Nunca exibido publicamente",
@@ -1147,6 +1149,7 @@
     "re_enter_code": "Digite o código novamente",
     "react_emoji": "Reagir com {{emoji}}",
     "reactions": "Reações",
+    "read_more": "Ler mais",
     "recent_searches": "Pesquisas recentes",
     "redeem_name": "Trocar por {{name}}",
     "redeemed_name": "{{name}} resgatado.",

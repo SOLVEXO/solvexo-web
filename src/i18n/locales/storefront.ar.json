@@ -104,6 +104,7 @@
       "comment": "تعذّر إرسال التعليق."
     },
     "journal": "المدوّنة",
+    "label": "المدونة",
     "loadMore": "تحميل المزيد",
     "loadingComments": "جارٍ تحميل التعليقات…",
     "noComments": "لا توجد تعليقات بعد — كن أول من يشارك رأيه.",
@@ -1388,7 +1389,9 @@
     "breadcrumb": "مسار التنقل",
     "rated_out_of_5": "التقييم {{value}} من 5",
     "reviews_count": "التقييمات ({{count}})",
-    "add": "أضف"
+    "add": "أضف",
+    "name_added_to_your_cart": "تمت إضافة {{name}} إلى سلتك",
+    "read_more": "اقرأ المزيد"
   },
   "product": {
     "addToCart": "أضف إلى السلة",

@@ -104,6 +104,7 @@
       "comment": "ส่งความคิดเห็นไม่สำเร็จ"
     },
     "journal": "บันทึกประจำวัน",
+    "label": "บล็อก",
     "loadMore": "โหลดเพิ่มเติม",
     "loadingComments": "กำลังโหลดความคิดเห็น…",
     "noComments": "ยังไม่มีความคิดเห็น — เป็นคนแรกที่แบ่งปันความคิดเห็นของคุณ",
@@ -1048,6 +1049,7 @@
     "my_account": "บัญชีของฉัน",
     "my_reviews": "รีวิวของฉัน",
     "name_added_to_your_bag": "เพิ่ม {{name}} ลงในตะกร้าแล้ว",
+    "name_added_to_your_cart": "เพิ่ม {{name}} ลงในตะกร้าของคุณแล้ว",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" ใหญ่เกินไป ขนาดสูงสุดคือ {{size}}",
     "name_no_longer_available": "{{name}}: ไม่มีจำหน่ายแล้ว",
     "never_shown_publicly": "ไม่แสดงต่อสาธารณะ",
@@ -1129,6 +1131,7 @@
     "re_enter_code": "กรอกรหัสอีกครั้ง",
     "react_emoji": "แสดงความรู้สึก {{emoji}}",
     "reactions": "ปฏิกิริยา",
+    "read_more": "อ่านเพิ่มเติม",
     "recent_searches": "การค้นหาล่าสุด",
     "redeem_name": "แลก {{name}}",
     "redeemed_name": "แลก {{name}} แล้ว",

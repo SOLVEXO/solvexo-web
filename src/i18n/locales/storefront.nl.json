@@ -104,6 +104,7 @@
       "comment": "De reactie kon niet worden verzonden."
     },
     "journal": "Journal",
+    "label": "Blog",
     "loadMore": "Meer laden",
     "loadingComments": "Reacties laden…",
     "noComments": "Nog geen reacties — wees de eerste die je mening deelt.",
@@ -1055,6 +1056,7 @@
     "my_account": "Mijn account",
     "my_reviews": "Mijn beoordelingen",
     "name_added_to_your_bag": "{{name}} is toegevoegd aan je winkelwagen",
+    "name_added_to_your_cart": "{{name}} is toegevoegd aan je winkelwagen",
     "name_is_too_large_the_limit_is_size": "„{{name}}” is te groot. De limiet is {{size}}.",
     "name_no_longer_available": "{{name}}: niet meer beschikbaar",
     "never_shown_publicly": "Nooit openbaar getoond",
@@ -1138,6 +1140,7 @@
     "re_enter_code": "Voer de code opnieuw in",
     "react_emoji": "Reageer met {{emoji}}",
     "reactions": "Reacties",
+    "read_more": "Lees meer",
     "recent_searches": "Recente zoekopdrachten",
     "redeem_name": "{{name}} inwisselen",
     "redeemed_name": "{{name}} ingewisseld.",

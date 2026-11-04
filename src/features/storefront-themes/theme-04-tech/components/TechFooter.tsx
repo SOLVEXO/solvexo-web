@@ -21,7 +21,7 @@ export function TechFooter() {
     return () => { off = true; };
   }, [store.storeId]);
 
-  const opts = readFooterOptions(theme?.footer, ts('blog.journal', 'Journal'));
+  const opts = readFooterOptions(theme?.footer, ts('blog.label', 'Blog'));
   const light = t.footerTone === 'light';
   const bg = opts.bgColor ?? (light ? t.colors.bgAlt : t.colors.dark);
   const fg = opts.textColor ?? (light ? t.colors.ink : t.colors.darkInk);

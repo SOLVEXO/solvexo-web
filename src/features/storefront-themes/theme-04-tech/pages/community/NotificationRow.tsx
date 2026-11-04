@@ -17,7 +17,7 @@ export function NotificationRow({ item, onRead, onDelete }: { item: Notification
 
   return (
     <li className="flex list-none items-start gap-3 p-4 sm:gap-4 sm:p-5" style={{ background: item.isRead ? 'transparent' : t.colors.bgAlt, borderBottom: `1px solid ${t.colors.border}` }}>
-      <span className="relative grid size-10 shrink-0 place-items-center rounded-full" style={{ background: item.isRead ? t.colors.bgAlt : t.colors.bg, color: t.colors.ink }}>
+      <span className="relative grid size-10 shrink-0 place-items-center" style={{ background: item.isRead ? t.colors.bgAlt : t.colors.bg, color: t.colors.ink, borderRadius: t.fieldRadiusPx }}>
         <Icon size={18} aria-hidden />
         {!item.isRead && <span aria-hidden className="absolute right-0 top-0 size-2.5 rounded-full" style={{ background: t.colors.danger, border: `2px solid ${t.colors.bgAlt}` }} />}
       </span>

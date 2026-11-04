@@ -104,6 +104,7 @@
       "comment": "Gửi bình luận không thành công."
     },
     "journal": "Nhật ký",
+    "label": "Blog",
     "loadMore": "Tải thêm",
     "loadingComments": "Đang tải bình luận…",
     "noComments": "Chưa có bình luận — hãy là người đầu tiên chia sẻ ý kiến.",
@@ -1048,6 +1049,7 @@
     "my_account": "Tài khoản của tôi",
     "my_reviews": "Đánh giá của tôi",
     "name_added_to_your_bag": "Đã thêm {{name}} vào giỏ hàng",
+    "name_added_to_your_cart": "Đã thêm {{name}} vào giỏ hàng của bạn",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" quá lớn. Giới hạn là {{size}}.",
     "name_no_longer_available": "{{name}}: không còn hàng",
     "never_shown_publicly": "Không bao giờ hiển thị công khai",
@@ -1129,6 +1131,7 @@
     "re_enter_code": "Nhập lại mã",
     "react_emoji": "Thả cảm xúc {{emoji}}",
     "reactions": "Cảm xúc",
+    "read_more": "Đọc thêm",
     "recent_searches": "Tìm kiếm gần đây",
     "redeem_name": "Đổi {{name}}",
     "redeemed_name": "Đã đổi {{name}}.",

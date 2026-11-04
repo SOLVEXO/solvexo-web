@@ -104,6 +104,7 @@
       "comment": "टिप्पणी भेजने में विफल।"
     },
     "journal": "जर्नल",
+    "label": "ब्लॉग",
     "loadMore": "और लोड करें",
     "loadingComments": "टिप्पणियाँ लोड हो रही हैं…",
     "noComments": "अभी तक कोई टिप्पणी नहीं — अपने विचार साझा करने वाले पहले व्यक्ति बनें।",
@@ -1055,6 +1056,7 @@
     "my_account": "मेरा खाता",
     "my_reviews": "मेरी समीक्षाएँ",
     "name_added_to_your_bag": "{{name}} आपके बैग में जोड़ा गया",
+    "name_added_to_your_cart": "{{name}} आपके कार्ट में जोड़ा गया",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" बहुत बड़ी है। सीमा {{size}} है।",
     "name_no_longer_available": "{{name}}: अब उपलब्ध नहीं",
     "never_shown_publicly": "कभी सार्वजनिक रूप से नहीं दिखाया जाता",
@@ -1138,6 +1140,7 @@
     "re_enter_code": "कोड दोबारा दर्ज करें",
     "react_emoji": "{{emoji}} प्रतिक्रिया दें",
     "reactions": "प्रतिक्रियाएँ",
+    "read_more": "और पढ़ें",
     "recent_searches": "हाल की खोजें",
     "redeem_name": "{{name}} पाएँ",
     "redeemed_name": "{{name}} पा लिया गया।",

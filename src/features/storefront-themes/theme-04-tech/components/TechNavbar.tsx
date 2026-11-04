@@ -142,7 +142,7 @@ export function TechNavbar() {
   const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
   const [pages, setPages] = useState<PublicPageSummary[]>([]);
   const header = theme?.header;
-  const o = readHeaderOptions(header, ts('blog.journal', 'Journal'));
+  const o = readHeaderOptions(header, ts('blog.label', 'Blog'));
   const scroll = useHeaderScroll(t.stickyHeader ? 'always' : 'off', false);
   const variant = t.header;
   const centered = variant === 'centered';

@@ -104,6 +104,7 @@
       "comment": "댓글을 제출하지 못했습니다."
     },
     "journal": "저널",
+    "label": "블로그",
     "loadMore": "더 불러오기",
     "loadingComments": "댓글을 불러오는 중…",
     "noComments": "아직 댓글이 없습니다 — 가장 먼저 의견을 남겨 보세요.",
@@ -1048,6 +1049,7 @@
     "my_account": "내 계정",
     "my_reviews": "내 리뷰",
     "name_added_to_your_bag": "{{name}}을(를) 백에 담았습니다",
+    "name_added_to_your_cart": "{{name}}이(가) 장바구니에 담겼습니다",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\"의 크기가 너무 큽니다. 제한은 {{size}}입니다.",
     "name_no_longer_available": "{{name}}: 판매 종료",
     "never_shown_publicly": "공개적으로 표시되지 않습니다",
@@ -1129,6 +1131,7 @@
     "re_enter_code": "코드 다시 입력",
     "react_emoji": "{{emoji}} 반응 남기기",
     "reactions": "반응",
+    "read_more": "더 읽기",
     "recent_searches": "최근 검색어",
     "redeem_name": "{{name}} 교환",
     "redeemed_name": "{{name}}을(를) 교환했습니다.",

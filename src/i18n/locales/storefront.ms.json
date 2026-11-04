@@ -104,6 +104,7 @@
       "comment": "Gagal menghantar komen."
     },
     "journal": "Jurnal",
+    "label": "Blog",
     "loadMore": "Muat lagi",
     "loadingComments": "Memuatkan komen…",
     "noComments": "Belum ada komen — jadilah yang pertama berkongsi pendapat.",
@@ -1048,6 +1049,7 @@
     "my_account": "Akaun saya",
     "my_reviews": "Ulasan saya",
     "name_added_to_your_bag": "{{name}} ditambah ke troli anda",
+    "name_added_to_your_cart": "{{name}} ditambah ke troli anda",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" terlalu besar. Had ialah {{size}}.",
     "name_no_longer_available": "{{name}}: tidak lagi tersedia",
     "never_shown_publicly": "Tidak pernah dipaparkan secara umum",
@@ -1129,6 +1131,7 @@
     "re_enter_code": "Masukkan kod semula",
     "react_emoji": "Beri reaksi {{emoji}}",
     "reactions": "Reaksi",
+    "read_more": "Baca lagi",
     "recent_searches": "Carian terkini",
     "redeem_name": "Tebus {{name}}",
     "redeemed_name": "{{name}} telah ditebus.",

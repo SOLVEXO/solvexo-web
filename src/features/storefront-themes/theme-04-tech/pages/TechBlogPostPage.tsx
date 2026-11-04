@@ -40,7 +40,7 @@ export function TechBlogPostPage() {
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-article'), 'article_content');
 
   const post = data?.post ?? null;
-  useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : ts('blog.journal', 'Journal'), description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
+  useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : ts('blog.label', 'Blog'), description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
 
   const origin = window.location.origin;
   const urlFor = pageUrlBuilder(origin, pathname);
@@ -50,7 +50,7 @@ export function TechBlogPostPage() {
     author: post.authorName, storeName: store.name, logo: store.logo, url, origin,
   }) : null);
   useJsonLd('breadcrumb', post ? breadcrumbJsonLd([
-    { name: store.name, url: urlFor('/') }, { name: ts('blog.journal', 'Journal'), url: urlFor(blogIndexPath(blogSlug)) }, { name: post.title, url },
+    { name: store.name, url: urlFor('/') }, { name: ts('blog.label', 'Blog'), url: urlFor(blogIndexPath(blogSlug)) }, { name: post.title, url },
   ]) : null);
 
   if (loading) return <PageSkeleton hero />;

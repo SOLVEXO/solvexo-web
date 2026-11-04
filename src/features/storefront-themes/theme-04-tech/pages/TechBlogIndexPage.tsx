@@ -21,7 +21,7 @@ export function TechBlogIndexPage() {
   const feed = useBlogFeed(store.storeId, blogSlug, t.pagination.postsPerPage);
   const [topic, setTopic] = useState<string | null>(null);
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-index'), 'blog_post_list');
-  const title = feed.title ?? ts('blog.journal', 'Journal');
+  const title = feed.title ?? ts('blog.label', 'Blog');
   useStorefrontSeo({ title, description: ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name }) });
 
   const { origin, pathname } = window.location;

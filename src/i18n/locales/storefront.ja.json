@@ -104,6 +104,7 @@
       "comment": "コメントを送信できませんでした。"
     },
     "journal": "ジャーナル",
+    "label": "ブログ",
     "loadMore": "さらに読み込む",
     "loadingComments": "コメントを読み込み中…",
     "noComments": "まだコメントはありません。最初の感想を投稿しましょう。",
@@ -1048,6 +1049,7 @@
     "my_account": "マイアカウント",
     "my_reviews": "マイレビュー",
     "name_added_to_your_bag": "{{name}}をバッグに追加しました",
+    "name_added_to_your_cart": "{{name}} をカートに追加しました",
     "name_is_too_large_the_limit_is_size": "「{{name}}」はサイズが大きすぎます。上限は{{size}}です。",
     "name_no_longer_available": "{{name}}:販売終了",
     "never_shown_publicly": "公開されることはありません",
@@ -1129,6 +1131,7 @@
     "re_enter_code": "コードをもう一度入力",
     "react_emoji": "{{emoji}}でリアクション",
     "reactions": "リアクション",
+    "read_more": "続きを読む",
     "recent_searches": "最近の検索",
     "redeem_name": "{{name}}と交換",
     "redeemed_name": "{{name}}と交換しました。",

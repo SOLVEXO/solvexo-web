@@ -104,6 +104,7 @@
       "comment": "Échec de l'envoi du commentaire."
     },
     "journal": "Journal",
+    "label": "Blog",
     "loadMore": "Charger plus",
     "loadingComments": "Chargement des commentaires…",
     "noComments": "Aucun commentaire pour l'instant — soyez le premier à donner votre avis.",
@@ -1062,6 +1063,7 @@
     "my_account": "Mon compte",
     "my_reviews": "Mes avis",
     "name_added_to_your_bag": "{{name}} ajouté à votre panier",
+    "name_added_to_your_cart": "{{name}} a été ajouté à votre panier",
     "name_is_too_large_the_limit_is_size": "« {{name}} » est trop volumineux. La limite est de {{size}}.",
     "name_no_longer_available": "{{name}} : n'est plus disponible",
     "never_shown_publicly": "Jamais affiché publiquement",
@@ -1147,6 +1149,7 @@
     "re_enter_code": "Saisir à nouveau le code",
     "react_emoji": "Réagir avec {{emoji}}",
     "reactions": "Réactions",
+    "read_more": "Lire la suite",
     "recent_searches": "Recherches récentes",
     "redeem_name": "Échanger {{name}}",
     "redeemed_name": "{{name}} échangé.",

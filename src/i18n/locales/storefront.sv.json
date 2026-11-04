@@ -104,6 +104,7 @@
       "comment": "Det gick inte att skicka kommentaren."
     },
     "journal": "Journal",
+    "label": "Blogg",
     "loadMore": "Ladda fler",
     "loadingComments": "Laddar kommentarer…",
     "noComments": "Inga kommentarer än — bli först med att dela dina tankar.",
@@ -1055,6 +1056,7 @@
     "my_account": "Mitt konto",
     "my_reviews": "Mina recensioner",
     "name_added_to_your_bag": "{{name}} har lagts i varukorgen",
+    "name_added_to_your_cart": "{{name}} har lagts i din varukorg",
     "name_is_too_large_the_limit_is_size": "”{{name}}” är för stor. Gränsen är {{size}}.",
     "name_no_longer_available": "{{name}}: finns inte längre",
     "never_shown_publicly": "Visas aldrig offentligt",
@@ -1138,6 +1140,7 @@
     "re_enter_code": "Ange koden igen",
     "react_emoji": "Reagera med {{emoji}}",
     "reactions": "Reaktioner",
+    "read_more": "Läs mer",
     "recent_searches": "Senaste sökningar",
     "redeem_name": "Lös in {{name}}",
     "redeemed_name": "{{name}} har lösts in.",

@@ -16,12 +16,12 @@ export function FaqAccordion({ faqs }: { faqs: PublicStoreFaq[] }) {
         const isOpen = open.has(f._id);
         const panel = `${uid}-${f._id}`;
         return (
-          <li key={f._id} style={{ borderRadius: t.cardRadiusPx, background: isOpen ? t.colors.bgAlt : t.colors.bg, border: `1px solid ${isOpen ? 'transparent' : t.colors.border}`, transition: 'background-color .2s' }}>
+          <li key={f._id} style={{ borderRadius: t.cardRadiusPx, background: isOpen ? t.colors.bgAlt : t.colors.bg, border: `1px solid ${isOpen ? 'transparent' : t.colors.border}`, borderInlineStart: `3px solid ${isOpen ? t.colors.accent : t.colors.border}`, transition: 'background-color .2s, border-color .2s' }}>
             <h2 className="m-0">
               <button type="button" onClick={() => toggle(f._id)} aria-expanded={isOpen} aria-controls={panel}
                 className="flex w-full items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: t.colors.ink, cursor: 'pointer', borderRadius: t.cardRadiusPx }}>
                 <span>{f.question}</span>
-                <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: isOpen ? t.colors.selected : t.colors.bgAlt, color: isOpen ? t.colors.selectedInk : t.colors.ink, transition: 'transform .25s, background-color .2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}><Plus size={16} /></span>
+                <span aria-hidden className="grid size-8 shrink-0 place-items-center" style={{ borderRadius: t.fieldRadiusPx, background: isOpen ? t.colors.selected : t.colors.bgAlt, color: isOpen ? t.colors.selectedInk : t.colors.ink, transition: 'transform .25s, background-color .2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}><Plus size={16} /></span>
               </button>
             </h2>
             <div id={panel} role="region" aria-label={f.question} hidden={!isOpen} className="whitespace-pre-line text-[15px] leading-[1.75]" style={{ padding: '0 22px 20px', color: t.colors.inkMuted }}>

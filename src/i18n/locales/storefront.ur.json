@@ -104,6 +104,7 @@
       "comment": "تبصرہ جمع نہیں ہو سکا۔"
     },
     "journal": "جرنل",
+    "label": "بلاگ",
     "loadMore": "مزید لوڈ کریں",
     "loadingComments": "تبصرے لوڈ ہو رہے ہیں…",
     "noComments": "ابھی کوئی تبصرہ نہیں — اپنی رائے دینے والے پہلے بنیں۔",
@@ -1055,6 +1056,7 @@
     "my_account": "میرا اکاؤنٹ",
     "my_reviews": "میرے جائزے",
     "name_added_to_your_bag": "{{name}} آپ کے بیگ میں شامل ہو گیا",
+    "name_added_to_your_cart": "{{name}} آپ کی ٹوکری میں شامل ہو گیا",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" بہت بڑی ہے۔ حد {{size}} ہے۔",
     "name_no_longer_available": "{{name}}: اب دستیاب نہیں",
     "never_shown_publicly": "کبھی عوامی طور پر نہیں دکھایا جاتا",
@@ -1138,6 +1140,7 @@
     "re_enter_code": "کوڈ دوبارہ درج کریں",
     "react_emoji": "{{emoji}} ردعمل دیں",
     "reactions": "ردعمل",
+    "read_more": "مزید پڑھیں",
     "recent_searches": "حالیہ تلاشیں",
     "redeem_name": "{{name}} حاصل کریں",
     "redeemed_name": "{{name}} حاصل کر لیا گیا۔",

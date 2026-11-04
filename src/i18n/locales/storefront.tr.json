@@ -104,6 +104,7 @@
       "comment": "Yorum gönderilemedi."
     },
     "journal": "Günlük",
+    "label": "Blog",
     "loadMore": "Daha fazla yükle",
     "loadingComments": "Yorumlar yükleniyor…",
     "noComments": "Henüz yorum yok — düşüncelerini paylaşan ilk kişi olun.",
@@ -1055,6 +1056,7 @@
     "my_account": "Hesabım",
     "my_reviews": "Yorumlarım",
     "name_added_to_your_bag": "{{name}} çantanıza eklendi",
+    "name_added_to_your_cart": "{{name}} sepetinize eklendi",
     "name_is_too_large_the_limit_is_size": "\"{{name}}\" çok büyük. Sınır {{size}}.",
     "name_no_longer_available": "{{name}}: artık mevcut değil",
     "never_shown_publicly": "Asla herkese açık gösterilmez",
@@ -1138,6 +1140,7 @@
     "re_enter_code": "Kodu yeniden girin",
     "react_emoji": "{{emoji}} ile tepki ver",
     "reactions": "Tepkiler",
+    "read_more": "Devamını oku",
     "recent_searches": "Son aramalar",
     "redeem_name": "{{name}} ödülünü kullan",
     "redeemed_name": "{{name}} ödülü kullanıldı.",

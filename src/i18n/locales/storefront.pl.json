@@ -104,6 +104,7 @@
       "comment": "Nie udało się wysłać komentarza."
     },
     "journal": "Dziennik",
+    "label": "Blog",
     "loadMore": "Wczytaj więcej",
     "loadingComments": "Wczytywanie komentarzy…",
     "noComments": "Brak komentarzy — bądź pierwszą osobą, która podzieli się opinią.",
@@ -1069,6 +1070,7 @@
     "my_account": "Moje konto",
     "my_reviews": "Moje opinie",
     "name_added_to_your_bag": "„{{name}}” dodano do koszyka",
+    "name_added_to_your_cart": "Dodano {{name}} do koszyka",
     "name_is_too_large_the_limit_is_size": "Plik „{{name}}” jest za duży. Limit wynosi {{size}}.",
     "name_no_longer_available": "{{name}}: już niedostępne",
     "never_shown_publicly": "Nigdy nie jest wyświetlane publicznie",
@@ -1156,6 +1158,7 @@
     "re_enter_code": "Wpisz kod ponownie",
     "react_emoji": "Zareaguj {{emoji}}",
     "reactions": "Reakcje",
+    "read_more": "Czytaj więcej",
     "recent_searches": "Ostatnie wyszukiwania",
     "redeem_name": "Odbierz „{{name}}”",
     "redeemed_name": "Odebrano „{{name}}”.",

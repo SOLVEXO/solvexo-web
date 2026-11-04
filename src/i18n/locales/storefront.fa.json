@@ -104,6 +104,7 @@
       "comment": "ارسال نظر ناموفق بود."
     },
     "journal": "ژورنال",
+    "label": "وبلاگ",
     "loadMore": "بارگیری بیشتر",
     "loadingComments": "در حال بارگیری نظرها…",
     "noComments": "هنوز نظری نیست — اولین نفری باشید که دیدگاهش را به اشتراک می‌گذارد.",
@@ -1055,6 +1056,7 @@
     "my_account": "حساب من",
     "my_reviews": "نظرهای من",
     "name_added_to_your_bag": "{{name}} به کیف شما اضافه شد",
+    "name_added_to_your_cart": "{{name}} به سبد خرید شما اضافه شد",
     "name_is_too_large_the_limit_is_size": "«{{name}}» بیش از حد بزرگ است. حداکثر اندازه {{size}} است.",
     "name_no_longer_available": "{{name}}: دیگر موجود نیست",
     "never_shown_publicly": "هرگز به‌صورت عمومی نمایش داده نمی‌شود",
@@ -1138,6 +1140,7 @@
     "re_enter_code": "کد را دوباره وارد کنید",
     "react_emoji": "واکنش {{emoji}}",
     "reactions": "واکنش‌ها",
+    "read_more": "ادامه مطلب",
     "recent_searches": "جستجوهای اخیر",
     "redeem_name": "دریافت {{name}}",
     "redeemed_name": "{{name}} دریافت شد.",

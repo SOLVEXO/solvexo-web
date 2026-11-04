@@ -104,6 +104,7 @@
       "comment": "评论提交失败。"
     },
     "journal": "日志",
+    "label": "博客",
     "loadMore": "加载更多",
     "loadingComments": "正在加载评论…",
     "noComments": "还没有评论——来抢个沙发，分享您的想法吧。",
@@ -1048,6 +1049,7 @@
     "my_account": "我的账户",
     "my_reviews": "我的评价",
     "name_added_to_your_bag": "{{name}}已加入您的购物袋",
+    "name_added_to_your_cart": "已将 {{name}} 加入你的购物车",
     "name_is_too_large_the_limit_is_size": "“{{name}}”太大了，上限为 {{size}}。",
     "name_no_longer_available": "{{name}}：已下架",
     "never_shown_publicly": "绝不公开显示",
@@ -1129,6 +1131,7 @@
     "re_enter_code": "重新输入验证码",
     "react_emoji": "回应 {{emoji}}",
     "reactions": "表情回应",
+    "read_more": "阅读更多",
     "recent_searches": "最近搜索",
     "redeem_name": "兑换{{name}}",
     "redeemed_name": "已兑换{{name}}。",

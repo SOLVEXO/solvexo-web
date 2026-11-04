@@ -104,6 +104,7 @@
       "comment": "Не удалось отправить комментарий."
     },
     "journal": "Журнал",
+    "label": "Блог",
     "loadMore": "Загрузить ещё",
     "loadingComments": "Загрузка комментариев…",
     "noComments": "Комментариев пока нет — будьте первым, кто поделится мнением.",
@@ -1069,6 +1070,7 @@
     "my_account": "Мой аккаунт",
     "my_reviews": "Мои отзывы",
     "name_added_to_your_bag": "«{{name}}» добавлен в корзину",
+    "name_added_to_your_cart": "{{name}} добавлен в вашу корзину",
     "name_is_too_large_the_limit_is_size": "Файл «{{name}}» слишком большой. Максимальный размер — {{size}}.",
     "name_no_longer_available": "{{name}}: больше не доступно",
     "never_shown_publicly": "Никогда не показывается публично",
@@ -1156,6 +1158,7 @@
     "re_enter_code": "Введите код ещё раз",
     "react_emoji": "Отреагировать {{emoji}}",
     "reactions": "Реакции",
+    "read_more": "Читать далее",
     "recent_searches": "Недавние запросы",
     "redeem_name": "Получить «{{name}}»",
     "redeemed_name": "Получено: «{{name}}».",
