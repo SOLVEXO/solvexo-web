@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';

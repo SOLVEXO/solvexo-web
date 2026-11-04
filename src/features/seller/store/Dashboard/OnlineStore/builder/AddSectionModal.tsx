@@ -1,4 +1,5 @@
-﻿import { useState, type ReactNode } from 'react';
+﻿import '@/features/storefront-themes/editorThemes';
+import { useState, type ReactNode } from 'react';
 import { Search } from 'lucide-react';
 import { Modal } from '@/components/comman/ui';
 import { SECTION_META, SECTION_META_BY_TYPE } from './sectionRegistry';

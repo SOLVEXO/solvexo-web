@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useParams } from 'react-router-dom';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
 import type { PublicStoreData } from '@/api/services/store';

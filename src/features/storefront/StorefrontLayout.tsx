@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useMemo, type ComponentType } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState, useMemo, type ComponentType } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -364,7 +364,8 @@ export function StorefrontLayout() {
         <WishlistProvider storeId={store.storeId}>
           {theme?.sourcePackageVersion != null && liquidRoute
             ? <PublishedLiquidStorefront key={`${store.storeId}:${theme.sourcePackageVersion}`} storeId={store.storeId} />
-            : <Layout><Outlet /></Layout>}
+            // A theme loaded on demand (Tech) has a lazy Layout: keep the screen blank-but-tall while its chunk arrives.
+            : <Suspense fallback={<div style={{ minHeight: '100vh' }} aria-busy="true" />}><Layout><Outlet /></Layout></Suspense>}
           {impl.AuthGateModal && <ThemedAuthGateHost Gate={impl.AuthGateModal} />}
           {store.cookieBannerEnabled && !cookieConsent && (
             <CookieBanner

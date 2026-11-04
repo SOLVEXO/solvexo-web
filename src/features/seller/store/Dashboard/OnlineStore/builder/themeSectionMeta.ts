@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { Boxes } from 'lucide-react';
 import { findCustomBlockDef, findCustomSectionDef, type ThemeCustomSectionDef, type ThemeCustomSectionPreset } from '@/features/storefront-themes/themeManifest';
 import type { Section } from '@/api/services/storefrontTypes';

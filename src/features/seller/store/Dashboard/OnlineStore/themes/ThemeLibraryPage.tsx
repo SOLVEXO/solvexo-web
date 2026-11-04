@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Trash2, Sparkles, ExternalLink, Settings2, PanelTop, Eye, Copy, Link2, Pencil, Check } from 'lucide-react';

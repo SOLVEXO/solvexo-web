@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { PAGE_PREVIEW_KEY } from '../builder/EditorTopBar';

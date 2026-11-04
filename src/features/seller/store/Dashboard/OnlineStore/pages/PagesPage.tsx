@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Eye, EyeOff, ExternalLink, UploadCloud, RotateCcw, Undo2, Redo2, History, Settings } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';

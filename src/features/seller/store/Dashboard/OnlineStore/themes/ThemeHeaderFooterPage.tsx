@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, RotateCcw, History, Undo2, Redo2, Monitor, Tablet, Smartphone, Megaphone } from 'lucide-react';

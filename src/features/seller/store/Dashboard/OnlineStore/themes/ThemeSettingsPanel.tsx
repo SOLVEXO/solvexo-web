@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { Loader2, RotateCcw, Undo2, Redo2, History, Search, ChevronDown } from 'lucide-react';
 import { useEffect } from 'react';
 import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';

@@ -1,3 +1,4 @@
+import '@/features/storefront-themes/editorThemes';
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye, EyeOff, Copy, Lock, Info } from 'lucide-react';
 import { ActionMenu } from '@/components/comman/ui';
