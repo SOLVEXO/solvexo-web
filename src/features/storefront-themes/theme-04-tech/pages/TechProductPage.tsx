@@ -196,7 +196,7 @@ function Inner({ slug }: { slug: string }) {
                   const ok = optionValueAvailable(variants, variant, name, v, isDigital);
                   return (
                     <button key={v} type="button" aria-pressed={on} onClick={() => setPicked(p => ({ ...p, [name]: v }))} className="min-w-12 cursor-pointer px-4 py-2 text-sm font-medium"
-                      style={{ borderRadius: 4, border: `1.5px solid ${on ? t.colors.accent : t.colors.border}`, background: t.colors.bg, color: on ? t.colors.accent : t.colors.ink, opacity: ok ? 1 : 0.45, textDecoration: ok ? undefined : 'line-through' }}>{v}</button>
+                      style={{ borderRadius: t.fieldRadiusPx, border: `1.5px solid ${on ? t.colors.accent : t.colors.border}`, background: t.colors.bg, color: on ? t.colors.accent : t.colors.ink, opacity: ok ? 1 : 0.45, textDecoration: ok ? undefined : 'line-through' }}>{v}</button>
                   );
                 })}
               </div>
@@ -210,7 +210,7 @@ function Inner({ slug }: { slug: string }) {
         <p className="m-0 mb-2 text-sm font-semibold">{ts('product.quantity', 'Quantity')}</p>
         <div className="flex flex-wrap items-center gap-4">
           {stepper}
-          <span className="text-sm font-medium" style={{ color: state === 'low' || state === 'sold_out' ? t.colors.danger : t.colors.success }}>
+          <span className="text-sm font-medium" style={{ color: state === 'sold_out' ? t.colors.danger : state === 'low' ? t.colors.warning : t.colors.success }}>
             {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? ts('product.backorder', 'Available on backorder') : ts('product.inStock', 'In stock')}
           </span>
         </div>

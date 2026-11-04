@@ -36,7 +36,7 @@ export function TechFooter() {
     fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted,
     heading: { fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: muted, marginBottom: 14 },
     linkSize: '13px', brandWeight: 600,
-    input: { fontFamily: t.fonts.body, fontSize: 14, color: fg, border: `1px solid ${fg}`, padding: '12px 16px', borderRadius: 4, background: 'transparent' },
+    input: { fontFamily: t.fonts.body, fontSize: 14, color: fg, border: `1px solid ${fg}`, padding: '12px 16px', borderRadius: t.fieldRadiusPx, background: 'transparent' },
     button: { fontFamily: t.fonts.body, fontSize: 14, fontWeight: 600, background: t.colors.accent, color: t.colors.accentInk, padding: '12px 24px', borderRadius: 9999 },
     doneColor: '#86EFAC', errorColor: '#FCA5A5', idPrefix: 'tx', newsletterHeading: ts('pg.sign_up_to_our_newsletter', 'Sign up to our newsletter.'), blogLabel: opts.blogLabel,
   };

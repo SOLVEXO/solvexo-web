@@ -15,8 +15,16 @@ Source: the exported design frames (31 screenshots). The Figma file itself could
 | Font | Poppins | Observed from letterforms; Poppins is already loaded by the platform (`index.html`) |
 | Buttons | pill (full radius), 44px high, filled blue / outlined blue / black | Observed |
 | Cards, inputs, panels | about 4px radius, flat | Observed |
-| Container | 1280px | Inferred from frame width 1920 with side margins; set through the existing "Container width" setting |
-| Radius, spacing scale, type scale (px) | not measured | Unknown: Tech reuses the platform scale (`theme.config.ts`) |
+| Container (content column) | 1400px (was 1280px) | Measured on the 1920px contact frame: content starts at x=258, so 1920 - 2x258 = 1404px; margin of error about 2px. narrow 1120 / wide 1680 are our own steps |
+| Top bar height | 44px, near-black #020202 | Measured (column scan) |
+| Header row | 91px high + 2px rule #E4E6EB | Measured |
+| Primary button | about 151x50px ("Submit"), pill | Measured: bbox of the #0156FF fill; margin about 1px. Default height is now 50px (Button size setting: 42/50/56) |
+| Field outline | #A2A6B0, 1px | Measured at an input edge. Added as colour role borderStrong |
+| Corner radius of cards / fields | about 4px | Observed (edge of the contact inputs); buttons are pill. Now one Shape setting: Tech / Pill / Rounded / Square |
+| Spacing scale, type scale (px) | not measured | Unknown: Tech reuses the platform scale (`theme.config.ts`) |
+
+## Measurement method and limits
+Figma MCP was not authorised in the build sessions (tools not available), so nothing here comes from Figma styles. Sizes were measured from the exported PNG frames with a pixel-scan script (PowerShell System.Drawing: run-lengths down a column / across a row, and the bounding box of a colour). Python/PIL is not installed on the build machine, so PIL was not used. Margin of error is about 1-2 px on a 1920px frame; only the frames and elements listed above were measured. Type sizes were NOT measured (no reliable way to read font size from a flat PNG): Tech uses the platform scale. Re-measure from Figma once the MCP works.
 
 ## Routes
 **Native Tech UI (9):** home, product, cart, collection, category, search, customPage (About / Contact / Terms are seller pages made of sections), checkout (every step), checkoutReturn. Plus the Layout: top bar, header, 2-level mega menu, mobile menu, mini cart, footer, listing filter sidebar and product cards.

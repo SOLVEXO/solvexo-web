@@ -41,9 +41,9 @@ export function OrderSummary({ currency, lines, itemCount, storeName, subtotal, 
   const bodyId = useId();
   const m = (n: number) => moneyText(n, currency);
   return (
-    <aside aria-label={ts('checkout.summary', 'Order summary')} className="lg:sticky lg:top-24" style={{ background: t.colors.bgAlt, borderRadius: 0 }}>
+    <aside aria-label={ts('checkout.summary', 'Order summary')} className="lg:sticky lg:top-24" style={{ background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={bodyId}
-        className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-5 py-4 text-left lg:hidden" style={{ color: t.colors.ink, borderRadius: 0 }}>
+        className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-5 py-4 text-left lg:hidden" style={{ color: t.colors.ink, borderRadius: t.cardRadiusPx }}>
         <span className="flex items-center gap-2 text-sm font-medium">{ts('checkout.summary', 'Order summary')} <ChevronDown size={16} aria-hidden style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .2s' }} /></span>
         <span className="text-base font-semibold">{m(total)}</span>
       </button>
@@ -53,7 +53,7 @@ export function OrderSummary({ currency, lines, itemCount, storeName, subtotal, 
           {lines.map(l => (
             <li key={l.key} className="flex items-center gap-3">
               <span className="relative block size-14 shrink-0">
-                <span className="block size-full overflow-hidden" style={{ background: t.colors.bg, borderRadius: 4, border: `1px solid ${t.colors.border}` }}>
+                <span className="block size-full overflow-hidden" style={{ background: t.colors.bg, borderRadius: t.fieldRadiusPx, border: `1px solid ${t.colors.border}` }}>
                   {l.image && <img src={l.image} alt="" className="size-full object-cover" />}
                 </span>
                 <span aria-hidden className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full px-1 text-[11px] font-semibold" style={{ background: t.colors.selected, color: t.colors.selectedInk, height: 20 }}>{l.quantity}</span>

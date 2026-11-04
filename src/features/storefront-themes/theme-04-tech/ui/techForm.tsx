@@ -8,7 +8,7 @@ import { techButtonStyle } from './techStyle';
    look (square-ish corners, blue accent, pill buttons). Colours, radii and fonts all come from `techTheme`. */
 
 function controlStyle(invalid?: boolean): CSSProperties {
-  return { width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: 4, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 14, outline: 'none', border: `1px solid ${invalid ? t.colors.danger : t.colors.border}` };
+  return { width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: t.fieldRadiusPx, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 14, outline: 'none', border: `1px solid ${invalid ? t.colors.danger : t.colors.borderStrong}` };
 }
 
 /** Marked words in a heading (`*word*`) are only an accent in other themes; Tech prints the plain text. */
@@ -35,7 +35,7 @@ export function PageTitle({ children, subtitle, actions }: { children: ReactNode
 
 /** Bordered surface; `tone="soft"` uses the soft blue panel colour instead of a border. */
 export function Card({ children, tone = 'line', pad = true, style, className = '' }: { children: ReactNode; tone?: 'line' | 'soft'; pad?: boolean; style?: CSSProperties; className?: string }) {
-  return <div className={className} style={{ borderRadius: 4, padding: pad ? 'clamp(16px, 2vw, 24px)' : 0, background: tone === 'soft' ? t.colors.bgAlt : t.colors.bg, border: tone === 'soft' ? 'none' : `1px solid ${t.colors.border}`, ...style }}>{children}</div>;
+  return <div className={className} style={{ borderRadius: t.cardRadiusPx, padding: pad ? 'clamp(16px, 2vw, 24px)' : 0, background: tone === 'soft' ? t.colors.bgAlt : t.colors.bg, border: tone === 'soft' ? 'none' : `1px solid ${t.colors.border}`, ...style }}>{children}</div>;
 }
 
 interface FieldProps { label: string; hint?: ReactNode; error?: string | null; required?: boolean; children: (props: { id: string; 'aria-invalid': boolean; 'aria-describedby'?: string }) => ReactNode }
@@ -66,7 +66,7 @@ export function Notice({ tone = 'info', children, action }: { tone?: 'info' | 's
   const Icon = tone === 'error' ? AlertCircle : tone === 'success' ? CheckCircle2 : Info;
   const color = tone === 'error' ? t.colors.danger : tone === 'success' ? t.colors.success : t.colors.accent;
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className="flex items-start gap-3 px-4 py-3 text-sm" style={{ borderRadius: 4, background: `color-mix(in srgb, ${color} 9%, transparent)`, color: t.colors.ink }}>
+    <div role={tone === 'error' ? 'alert' : 'status'} className="flex items-start gap-3 px-4 py-3 text-sm" style={{ borderRadius: t.fieldRadiusPx, background: `color-mix(in srgb, ${color} 9%, transparent)`, color: t.colors.ink }}>
       <Icon size={18} style={{ color, flexShrink: 0, marginTop: 1 }} aria-hidden />
       <div className="min-w-0 flex-1">{children}</div>
       {action}

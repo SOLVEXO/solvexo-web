@@ -86,7 +86,7 @@ export function TechCategoryPage() {
       <Title note={category.description}>{category.name}</Title>
       {category.children?.length > 0 && (
         <ul className="m-0 mb-5 flex list-none flex-wrap gap-2 p-0">
-          {category.children.map(c => <li key={c._id}><a href={`/category/${c.slug || c._id}`} className="inline-block border px-3 py-1.5 text-xs font-medium no-underline" style={{ borderColor: t.colors.border, color: t.colors.ink, borderRadius: 4 }}>{c.name}</a></li>)}
+          {category.children.map(c => <li key={c._id}><a href={`/category/${c.slug || c._id}`} className="inline-block border px-3 py-1.5 text-xs font-medium no-underline" style={{ borderColor: t.colors.border, color: t.colors.ink, borderRadius: t.fieldRadiusPx }}>{c.name}</a></li>)}
         </ul>
       )}
       <TechProductBrowser categoryId={category._id} syncUrl />

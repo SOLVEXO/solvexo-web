@@ -18,8 +18,8 @@ function validFor(key: string, value: unknown): boolean {
 }
 
 describe('Tech Store theme styles', () => {
-  it('has four one-click looks', () => {
-    expect((techThemeManifest.styles ?? []).map(s => s.id)).toEqual(['light', 'midnight', 'graphite', 'neon']);
+  it('has eight one-click looks', () => {
+    expect((techThemeManifest.styles ?? []).map(s => s.id)).toEqual(['light', 'midnight', 'graphite', 'neon', 'minimal', 'bold', 'ocean', 'sunset']);
   });
 
   it('every style only sets real settings with values the server accepts', () => {
@@ -97,6 +97,43 @@ describe('Tech Store theme settings are applied', () => {
     applyMerchantThemeOverrides({ themeSettings: { techCardStyle: 'bogus', techDarkColor: 'red' } });
     expect(techTheme.productCardStyle).toBe('flat');
     expect(techTheme.colors.dark).toBe(TECH_STATIC_DEFAULTS.colors.dark);
+  });
+
+  it('the shape setting moves every corner together', () => {
+    applyMerchantThemeOverrides({ themeSettings: { techShape: 'square' } });
+    expect([techTheme.buttonRadiusPx, techTheme.fieldRadiusPx, techTheme.cardRadiusPx, techTheme.imageRadiusPx, techTheme.badgeRadiusPx]).toEqual(['0px', '0px', '0px', '0px', '0px']);
+    applyMerchantThemeOverrides({ themeSettings: { techShape: 'rounded' } });
+    expect(techTheme.buttonRadiusPx).toBe('12px');
+    expect(techTheme.cardRadiusPx).toBe('16px');
+    applyMerchantThemeOverrides({ themeSettings: { techShape: 'nonsense' } });
+    expect(techTheme.shape).toBe('tech');
+    expect(techTheme.buttonRadiusPx).toBe('9999px');
+    expect(techTheme.fieldRadiusPx).toBe('4px');
+  });
+
+  it('container width, button size and the warning colour are read', () => {
+    applyMerchantThemeOverrides({ containerWidth: 'wide', buttonSize: 'lg', themeSettings: { techWarning: '#CA8A04' } });
+    expect(techTheme.layout.maxWidth).toBe('1680px');
+    expect(techTheme.buttonHeightPx).toBe('56px');
+    expect(techTheme.colors.warning).toBe('#CA8A04');
+    applyMerchantThemeOverrides(null);
+    expect(techTheme.layout.maxWidth).toBe('1400px');
+    expect(techTheme.buttonHeightPx).toBe('50px');
+  });
+
+  it('dark presets get a lighter field outline and keep a dark base', () => {
+    const midnight = techThemeManifest.styles!.find(s => s.id === 'midnight')!;
+    applyMerchantThemeOverrides(midnight.settings);
+    expect(techTheme.colors.bg).toBe('#0B1020');
+    expect(techTheme.colors.borderStrong).not.toBe(TECH_STATIC_DEFAULTS.colors.borderStrong);
+  });
+
+  it('every preset applies cleanly and picks a known shape', () => {
+    for (const s of techThemeManifest.styles ?? []) {
+      applyMerchantThemeOverrides(s.settings);
+      expect(['tech', 'pill', 'rounded', 'square'], s.id).toContain(techTheme.shape);
+      expect(techTheme.colors.accent, s.id).toMatch(/^#[0-9a-f]{6}$/i);
+    }
   });
 
   it('a dark base colour keeps derived panel colours instead of the light blue panel', () => {

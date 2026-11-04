@@ -8,26 +8,36 @@ const SHOW_HIDE = [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hi
 const DEFAULTS: Partial<StorefrontColors> = {
   ...fashionThemeManifest.defaultSettings,
   bgColor: '#FFFFFF', textColor: '#020203', primaryColor: '#0156FF', mutedColor: null, borderColor: null, saleColor: null, starColor: null, successColor: null,
-  font: 'Poppins', headingFont: null, headingWeight: 'semibold', buttonStyle: 'solid', buttonRadius: 'full', inputRadius: 'small',
-  sectionRadius: 'none', imageRadius: 'none', productCardRadius: 'none', cardTag: 'hide', cardStyle: 'flat', cardHover: 'shadow', productImageRatio: 'square',
+  font: 'Poppins', headingFont: null, headingWeight: 'semibold', buttonStyle: 'solid',
+  cardTag: 'hide', cardStyle: 'flat', cardHover: 'shadow', productImageRatio: 'square',
 };
 
 const STYLES: ThemeStylePreset[] = [
-  { id: 'light', name: 'Light', description: 'White pages, bright blue buttons and a soft blue panel colour.', settings: { ...DEFAULTS } },
+  { id: 'light', name: 'Light Tech', description: 'White pages, bright blue pill buttons, soft blue panels (the design).',
+    settings: { ...DEFAULTS, bgColor: '#FFFFFF', textColor: '#020203', primaryColor: '#0156FF', themeSettings: { techShape: 'tech', techCardStyle: 'flat', techDarkColor: '#020203' } } },
   { id: 'midnight', name: 'Midnight', description: 'Dark navy pages with light text and a sky-blue accent.',
-    settings: { ...DEFAULTS, bgColor: '#0B1020', textColor: '#F5F7FF', primaryColor: '#3B82F6', saleColor: '#F87171', borderColor: '#2A3350', cardStyle: 'outlined' } },
-  { id: 'graphite', name: 'Graphite', description: 'Neutral white and charcoal with an orange accent.',
-    settings: { ...DEFAULTS, bgColor: '#FFFFFF', textColor: '#18181B', primaryColor: '#F97316', buttonRadius: 'small', cardStyle: 'outlined' } },
+    settings: { ...DEFAULTS, bgColor: '#0B1020', textColor: '#F5F7FF', primaryColor: '#3B82F6', saleColor: '#F87171', borderColor: '#2A3350', cardStyle: 'outlined', themeSettings: { techShape: 'tech', techCardStyle: 'outlined', techDarkColor: '#060912' } } },
+  { id: 'graphite', name: 'Graphite', description: 'Neutral white and charcoal with an orange accent and rounded corners.',
+    settings: { ...DEFAULTS, bgColor: '#FFFFFF', textColor: '#18181B', primaryColor: '#F97316', cardStyle: 'outlined', themeSettings: { techShape: 'rounded', techCardStyle: 'outlined', techDarkColor: '#18181B' } } },
   { id: 'neon', name: 'Neon', description: 'Near-black pages with a bright cyan accent, for gaming and PC hardware.',
-    settings: { ...DEFAULTS, bgColor: '#05060A', textColor: '#E6FBFF', primaryColor: '#22D3EE', saleColor: '#FB7185', borderColor: '#1E293B', buttonRadius: 'small', cardStyle: 'outlined' } },
+    settings: { ...DEFAULTS, bgColor: '#05060A', textColor: '#E6FBFF', primaryColor: '#22D3EE', saleColor: '#FB7185', borderColor: '#1E293B', cardStyle: 'outlined', themeSettings: { techShape: 'square', techCardStyle: 'outlined', techDarkColor: '#000000' } } },
+  { id: 'minimal', name: 'Minimal', description: 'Black and white, square corners, no frames: quiet and fast.',
+    settings: { ...DEFAULTS, bgColor: '#FFFFFF', textColor: '#111111', primaryColor: '#111111', headingWeight: 'medium', cardStyle: 'flat', themeSettings: { techShape: 'square', techCardStyle: 'flat', techDarkColor: '#111111' } } },
+  { id: 'bold', name: 'Bold', description: 'High contrast, heavy uppercase headings and a punchy red accent.',
+    settings: { ...DEFAULTS, bgColor: '#FFFFFF', textColor: '#0A0A0A', primaryColor: '#E11D48', saleColor: '#E11D48', font: 'Montserrat', headingFont: 'Montserrat', headingWeight: 'bold', headingCase: 'uppercase', headingTracking: 'tight', buttonCase: 'uppercase', buttonSize: 'lg', cardStyle: 'outlined', themeSettings: { techShape: 'square', techCardStyle: 'outlined', techDarkColor: '#0A0A0A' } } },
+  { id: 'ocean', name: 'Ocean', description: 'Light pages with a teal accent and soft pill shapes.',
+    settings: { ...DEFAULTS, bgColor: '#FFFFFF', textColor: '#0F172A', primaryColor: '#0E7490', cardStyle: 'flat', themeSettings: { techShape: 'pill', techCardStyle: 'shadow', techDarkColor: '#0B2530' } } },
+  { id: 'sunset', name: 'Sunset', description: 'Warm cream pages, a deep orange accent and generous rounding.',
+    settings: { ...DEFAULTS, bgColor: '#FFF8F1', textColor: '#2B1B12', primaryColor: '#C2410C', saleColor: '#B91C1C', font: 'Nunito', headingFont: 'Fraunces', cardStyle: 'flat', themeSettings: { techShape: 'rounded', techCardStyle: 'shadow', techDarkColor: '#2B1B12' } } },
 ];
-
 const SECTION_HEADING = { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 } as const;
 
 // Settings the shared panel lists but Tech does not read (Maison's mega-menu columns, pill hover styles...) are dropped; Tech's own are added.
-const DROPPED = new Set(['custom.megaFeatured', 'custom.megaColumns', 'custom.megaHeading', 'custom.megaPhoto', 'cardViewLink', 'colorSwatches', 'quickView', 'productImageHover']);
+const DROPPED = new Set(['buttonRadius', 'inputRadius', 'productCardRadius', 'imageRadius', 'sectionRadius', 'custom.megaFeatured', 'custom.megaColumns', 'custom.megaHeading', 'custom.megaPhoto', 'cardViewLink', 'colorSwatches', 'quickView', 'productImageHover']);
 const inherited = fashionThemeManifest.themeSettingsFields.filter(f => !DROPPED.has(f.key));
 const techFields: ThemeSettingsFieldDef[] = [
+  { key: 'custom.techShape', label: 'Shape', group: 'Buttons', control: { kind: 'select', options: [{ value: 'tech', label: 'Tech (pill buttons, square-ish fields)' }, { value: 'pill', label: 'Pill (soft, rounded everywhere)' }, { value: 'rounded', label: 'Rounded' }, { value: 'square', label: 'Square' }] }, helpText: 'The corners of buttons, form fields, product cards, images and badges, all together.' },
+  { key: 'custom.techWarning', label: 'Low-stock & notice colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#B45309' } }, helpText: 'Only N left, pre-order and similar heads-up text. Errors use the Sale & alert colour.' },
   { key: 'custom.techDarkColor', label: 'Dark band colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#020203' } }, helpText: 'The top bar, the footer and the dark feature bands. Auto uses near-black.' },
   { key: 'custom.techTopBar', label: 'Top bar', group: 'Layout & Spacing', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'The slim strip above the header. It shows the text, phone and email you set in the Header settings.' },
   { key: 'custom.techStickyHeader', label: 'Header stays on top', group: 'Layout & Spacing', control: { kind: 'select', options: [{ value: 'on', label: 'Yes (default)' }, { value: 'off', label: 'No' }] }, helpText: 'Keeps the header visible while shoppers scroll.' },

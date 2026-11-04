@@ -60,7 +60,7 @@ function PriceFilter({ symbol, lowest, highest, minPrice, maxPrice, onApply }: {
     const b = hi.trim() === '' ? undefined : Number(hi);
     onApply(a != null && Number.isFinite(a) ? a : undefined, b != null && Number.isFinite(b) ? b : undefined);
   };
-  const field = { border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: 4 } as const;
+  const field = { border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.fieldRadiusPx } as const;
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             {showFilters && (
-              <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog" className="tx-btn tx-btn-sm lg:hidden" style={{ background: 'transparent', color: t.colors.ink, borderColor: t.colors.border, borderRadius: 4 }}>
+              <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog" className="tx-btn tx-btn-sm lg:hidden" style={{ background: 'transparent', color: t.colors.ink, borderColor: t.colors.border, borderRadius: t.fieldRadiusPx }}>
                 <SlidersHorizontal size={14} aria-hidden />{chips.length > 0 ? ts('browse.filterCount', 'Filter ({{count}})', { count: chips.length }) : ts('browse.filter', 'Filter')}
               </button>
             )}
@@ -173,7 +173,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
             <div className="ms-auto flex items-center gap-2">
               <label className="flex items-center gap-2 text-xs" style={{ color: t.colors.inkMuted }}>
                 {ts('browse.sortBy', 'Sort by:')}
-                <select value={state.sort} onChange={e => change(s => ({ ...s, sort: e.target.value as BrowseState['sort'] }))} className="px-2 py-2 text-[13px] font-medium" style={{ border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: 4 }}>
+                <select value={state.sort} onChange={e => change(s => ({ ...s, sort: e.target.value as BrowseState['sort'] }))} className="px-2 py-2 text-[13px] font-medium" style={{ border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.fieldRadiusPx }}>
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </label>
@@ -187,11 +187,11 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
           {chips.length > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {chips.map(c => (
-                <button key={c.key} type="button" onClick={c.remove} aria-label={ts('browse.removeFilter', 'Remove filter: {{label}}', { label: c.label })} className="inline-flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 text-xs font-medium" style={{ borderColor: t.colors.border, background: t.colors.bg, color: t.colors.ink, borderRadius: 4 }}>
+                <button key={c.key} type="button" onClick={c.remove} aria-label={ts('browse.removeFilter', 'Remove filter: {{label}}', { label: c.label })} className="inline-flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 text-xs font-medium" style={{ borderColor: t.colors.border, background: t.colors.bg, color: t.colors.ink, borderRadius: t.fieldRadiusPx }}>
                   {c.label}<X size={12} aria-hidden style={{ color: t.colors.danger }} />
                 </button>
               ))}
-              <button type="button" onClick={() => change(clearFilters)} className="cursor-pointer border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: t.colors.border, background: t.colors.bg, color: t.colors.ink, borderRadius: 4 }}>{ts('browse.clearAll', 'Clear all')}</button>
+              <button type="button" onClick={() => change(clearFilters)} className="cursor-pointer border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: t.colors.border, background: t.colors.bg, color: t.colors.ink, borderRadius: t.fieldRadiusPx }}>{ts('browse.clearAll', 'Clear all')}</button>
             </div>
           )}
 
