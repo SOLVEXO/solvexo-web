@@ -6,7 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import {
-  apiListInstalledThemes, apiInstallTheme, apiActivateTheme, apiUninstallTheme,
+  apiListInstalledThemes, apiInstallTheme, apiActivateTheme, apiCarryThemeContent, apiUninstallTheme,
   apiDuplicateTheme, apiRenameTheme, apiCreatePreviewLink, apiRevokePreviewLink, apiGetBrandKit,
   brandKitColors, type StoreThemeData, type BrandKit,
 } from '@/api/services/storeTheme';
@@ -127,6 +127,10 @@ export function ThemeLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<StoreThemeData | null>(null);
+  // Copy the seller's own content (logo, menus, links, texts, page layouts) into the theme being activated. Remembered per store.
+  const carryKey = `solvexo:carry-content:${storeId}`;
+  const [carryContent, setCarryContent] = useState(() => { try { return localStorage.getItem(carryKey) !== 'off'; } catch { return true; } });
+  const chooseCarry = (on: boolean) => { setCarryContent(on); try { localStorage.setItem(carryKey, on ? 'on' : 'off'); } catch { /* storage unavailable: keep the choice for this visit only */ } };
   // The Shopify-style theme ZIP workspace, opened for one installed theme.
   const [zipForThemeId, setZipForThemeId] = useState<string | null>(null);
   const [pendingUninstall, setPendingUninstall] = useState<StoreThemeData | null>(null);
@@ -200,8 +204,17 @@ export function ThemeLibraryPage() {
     if (!pendingActivate) return;
     setBusyRowId(pendingActivate._id);
     try {
+      const from = installed.find(r => r.status === 'active' && r._id !== pendingActivate._id);
+      if (from && carryContent) {
+        try {
+          await apiCarryThemeContent(storeId, pendingActivate._id, from._id);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Could not copy your content, so the theme was not switched.');
+          return;
+        }
+      }
       await apiActivateTheme(storeId, pendingActivate._id);
-      toast.success('Theme activated — your storefront now uses it.');
+      toast.success(from && carryContent ? 'Theme activated — your content was copied to it.' : 'Theme activated — your storefront now uses it.');
       setPendingActivate(null);
       load();
     } catch (err) {
@@ -571,7 +584,17 @@ export function ThemeLibraryPage() {
           loading={busyRowId === pendingActivate._id}
           onCancel={() => setPendingActivate(null)}
           onConfirm={handleActivate}
-        />
+        >
+          {installed.some(r => r.status === 'active' && r._id !== pendingActivate._id) && (
+            <div className="mt-4 flex items-start gap-2 text-[13px] text-charcoal">
+              <input id="carry-content" type="checkbox" className="mt-0.5 cursor-pointer" checked={carryContent} onChange={e => chooseCarry(e.target.checked)} />
+              <label htmlFor="carry-content" className="cursor-pointer">
+                <b>Copy my content to this theme</b>
+                <span className="block text-slate text-[12px] leading-relaxed">Your logo, menus, links, texts and page layouts come with you. The look (colours, shapes, fonts) stays this theme's own. Your current theme is not changed, and what this theme had before is kept as a version.</span>
+              </label>
+            </div>
+          )}
+        </ConfirmDialog>
       )}
       {pendingUninstall && (
         <ConfirmDialog

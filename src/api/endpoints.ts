@@ -295,6 +295,7 @@ export const ENDPOINTS = {
     LIST_INSTALLED: (storeId: string) => `/api/store-theme/${storeId}/installed`,
     INSTALL:        (storeId: string) => `/api/store-theme/${storeId}/install`,
     ACTIVATE:       (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/activate`,
+    CARRY_CONTENT:  (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/carry-content`,
     UNINSTALL:      (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}`,
     APPLY:          (storeId: string, themeDefinitionId: string) => `/api/store-theme/${storeId}/apply/${themeDefinitionId}`,
     DUPLICATE:      (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/duplicate`,

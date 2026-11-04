@@ -383,6 +383,13 @@ export function apiActivateTheme(storeId: string, installedThemeId: string) {
   return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.ACTIVATE(storeId, installedThemeId));
 }
 
+export interface CarryContentResult { header: boolean; footer: boolean; pages: number; templates: number; skippedSections: number }
+
+/** Copies the seller's own content (logo, menus, links, texts, page and product layouts) from another installed theme into this one. The look stays the target theme's own. */
+export function apiCarryThemeContent(storeId: string, installedThemeId: string, fromInstalledThemeId?: string) {
+  return client.post<never, ApiResponse<CarryContentResult>>(ENDPOINTS.STORE_THEME.CARRY_CONTENT(storeId, installedThemeId), { fromInstalledThemeId });
+}
+
 export function apiUninstallTheme(storeId: string, installedThemeId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.STORE_THEME.UNINSTALL(storeId, installedThemeId));
 }
