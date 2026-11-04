@@ -45,6 +45,7 @@
     },
     "line2Aria": "سطر العنوان 2",
     "none": "لم تحفظ أي عناوين بعد",
+    "saveBtn": "حفظ العنوان",
     "saving": "جارٍ الحفظ…",
     "setDefault": "تعيين كافتراضي",
     "setDefaultAddr": "تعيين كعنوان افتراضي",
@@ -79,7 +80,24 @@
     "showPassword": "إظهار كلمة المرور",
     "signInBtn": "تسجيل الدخول",
     "signInLink": "تسجيل الدخول",
-    "resendIn": "إعادة إرسال الرمز بعد {{seconds}} ثانية"
+    "resendIn": "إعادة إرسال الرمز بعد {{seconds}} ثانية",
+    "benefitCheckout": "أسرع في إتمام الشراء",
+    "benefitAddresses": "احتفظ بأكثر من عنوان",
+    "benefitTrack": "تتبّع الطلبات وأكثر",
+    "customerLogin": "تسجيل دخول العميل",
+    "registeredCustomers": "العملاء المسجلون",
+    "registeredIntro": "إذا كان لديك حساب، سجّل الدخول ببريدك الإلكتروني.",
+    "or": "أو",
+    "newCustomer": "عميل جديد؟",
+    "newCustomerIntro": "لإنشاء حساب مزايا عديدة:",
+    "createYourAccount": "أنشئ حسابك",
+    "orSignUpWith": "أو سجّل عبر",
+    "haveAccountHeading": "لديك حساب بالفعل؟",
+    "haveAccountIntro": "سجّل الدخول لاستخدام بياناتك المحفوظة.",
+    "detailsMissing": "البيانات مفقودة",
+    "noSignupDetails": "لم نعثر على بيانات التسجيل الخاصة بك. يرجى إنشاء حسابك مرة أخرى.",
+    "verifyYourIdentity": "تحقق من هويتك",
+    "checkYourEmail": "تحقق من بريدك الإلكتروني"
   },
   "blog": {
     "err": {
@@ -147,7 +165,21 @@
     "removeFilter": "إزالة عامل التصفية: {{label}}",
     "resultTypes": "أنواع نتائج البحث",
     "sortByAria": "ترتيب حسب",
-    "suggestions": "اقتراحات البحث"
+    "suggestions": "اقتراحات البحث",
+    "minPrice": "السعر الأدنى",
+    "maxPrice": "السعر الأقصى",
+    "apply": "تطبيق",
+    "filters": "عوامل التصفية",
+    "clearFilter": "مسح التصفية",
+    "filter": "تصفية",
+    "itemsRange": "العناصر {{from}}-{{to}} من {{total}}",
+    "gridView": "عرض شبكي",
+    "listView": "عرض قائمة",
+    "clearAll": "مسح الكل",
+    "loadingMore": "جارٍ التحميل…",
+    "loadMore": "تحميل المزيد",
+    "close": "إغلاق",
+    "showItems": "عرض {{count}} عناصر"
   },
   "cart": {
     "atCheckout": "عند الدفع",
@@ -195,7 +227,21 @@
     "minQty": "الحد الأدنى {{count}}",
     "quantityOf": "كمية {{name}}",
     "stepQty": "مضاعفات {{count}}",
-    "itemUnavailable": "هذا المنتج لم يعد متاحًا. يرجى إزالته لإتمام الشراء."
+    "itemUnavailable": "هذا المنتج لم يعد متاحًا. يرجى إزالته لإتمام الشراء.",
+    "close": "إغلاق السلة",
+    "myCart": "سلتي",
+    "itemInCart": "عنصر واحد في السلة",
+    "itemsInCart": "{{count}} عناصر في السلة",
+    "viewEdit": "عرض السلة أو تعديلها",
+    "itemUnavailableShort": "لم يعد متوفرًا",
+    "removeItem": "إزالة {{name}}",
+    "goToCheckout": "الانتقال إلى الدفع",
+    "shoppingCart": "سلة التسوق",
+    "item": "المنتج",
+    "price": "السعر",
+    "qty": "الكمية",
+    "summary": "الملخص",
+    "proceedToCheckout": "المتابعة إلى الدفع"
   },
   "category": {
     "notFound": "الفئة غير موجودة",
@@ -655,7 +701,9 @@
     "wishlistAria_two": "قائمة الأمنيات، {{count}} عنصران",
     "wishlistAria_zero": "قائمة الأمنيات، {{count}} عنصر",
     "wishlistAria_other": "قائمة الأمنيات، {{count}} عنصر",
-    "shop": "تسوّق"
+    "shop": "تسوّق",
+    "menu": "القائمة",
+    "closeSearch": "إغلاق البحث"
   },
   "notFound": {
     "backHome": "العودة إلى الصفحة الرئيسية",
@@ -732,7 +780,10 @@
     "downloadFailed": "فشل، أعد المحاولة",
     "orderNumber": "الطلب رقم {{number}}",
     "promoSavings": "يشمل توفيرًا ترويجيًا بقيمة {{amount}}",
-    "refundedAmount": "تم استرداد {{amount}}"
+    "refundedAmount": "تم استرداد {{amount}}",
+    "orderLabel": "الطلب",
+    "date": "التاريخ",
+    "delivery": "التوصيل"
   },
   "otp": {
     "didntReceive": "لم تستلمه؟",
@@ -748,7 +799,8 @@
     "verifyYourIdentity": "تحقّق من هويتك",
     "codeAria": "رمز تحقق من {{count}} أرقام",
     "digitAria": "الرقم {{n}} من {{total}}",
-    "sending": "جارٍ الإرسال..."
+    "sending": "جارٍ الإرسال...",
+    "resend": "إعادة إرسال الرمز"
   },
   "page": {
     "noContent": "لا يحتوي هذه الصفحة على محتوى بعد."
@@ -1308,7 +1360,33 @@
     "play": "تشغيل",
     "pause": "إيقاف مؤقت",
     "seek": "تقديم وتأخير",
-    "automatic_reply": "رد تلقائي"
+    "automatic_reply": "رد تلقائي",
+    "auth_gate_title": "سجّل الدخول للمتابعة",
+    "hide_password": "إخفاء كلمة المرور",
+    "show_password": "إظهار كلمة المرور",
+    "or_continue_with": "أو تابع عبر",
+    "in_stock": "متوفر",
+    "check_availability": "تحقق من التوفر",
+    "sign_up_to_our_newsletter": "اشترك في نشرتنا الإخبارية.",
+    "shop_now": "تسوّق الآن",
+    "search_entire_store": "ابحث في المتجر بالكامل هنا...",
+    "remove_from_wishlist": "إزالة من قائمة الأمنيات",
+    "add_to_wishlist": "أضف إلى قائمة الأمنيات",
+    "view_product": "عرض المنتج",
+    "close": "إغلاق",
+    "home": "الرئيسية",
+    "featured": "مميز",
+    "previous": "السابق",
+    "next": "التالي",
+    "slides": "الشرائح",
+    "go_to_slide": "انتقل إلى الشريحة {{n}}",
+    "products": "المنتجات",
+    "see_all": "عرض الكل",
+    "days": "أيام",
+    "hours": "ساعات",
+    "breadcrumb": "مسار التنقل",
+    "rated_out_of_5": "التقييم {{value}} من 5",
+    "reviews_count": "التقييمات ({{count}})"
   },
   "product": {
     "addToCart": "أضف إلى السلة",
@@ -1373,7 +1451,8 @@
     "zoomImage": "تكبير الصورة",
     "enlarged": "{{alt}} — مكبّرة",
     "description": "الوصف",
-    "details": "تفاصيل المنتج"
+    "details": "تفاصيل المنتج",
+    "onSaleFrom": "عرض يبدأ من"
   },
   "returns": {
     "approved": "تمت الموافقة على الإرجاع",
@@ -1434,7 +1513,8 @@
     "starsAria_many": "{{count}} نجمة",
     "starsAria_other": "{{count}} نجمة",
     "editYours": "تعديل تقييمك",
-    "write": "اكتب تقييمًا"
+    "write": "اكتب تقييمًا",
+    "beFirst": "كن أول من يقيّم هذا المنتج"
   },
   "search": {
     "typeSomething": "اكتب شيئًا للبحث في هذا المتجر."
@@ -1512,5 +1592,37 @@
     "searchCountries": "ابحث عن بلد…",
     "searchCurrencies": "ابحث عن عملة…",
     "searchLanguages": "ابحث عن لغة…"
+  },
+  "tx": {
+    "compare": {
+      "add": "أضف إلى المقارنة",
+      "availability": "التوفر",
+      "brand": "العلامة التجارية",
+      "clear": "مسح",
+      "full": "قائمة المقارنة ممتلئة (4 منتجات)",
+      "needTwo": "اختر منتجين على الأقل للمقارنة.",
+      "open": "مقارنة",
+      "price": "السعر",
+      "rating": "التقييم",
+      "remove": "إزالة {{name}} من المقارنة",
+      "removeShort": "إزالة من المقارنة",
+      "tags": "الوسوم",
+      "title": "مقارنة المنتجات",
+      "type": "النوع"
+    },
+    "account": {
+      "changePassword": "تغيير كلمة المرور",
+      "contact": "معلومات الاتصال",
+      "dashboard": "لوحة الحساب",
+      "defaultAddress": "عنوان التوصيل الافتراضي",
+      "information": "معلومات الحساب",
+      "manageAddresses": "إدارة العناوين",
+      "myDashboard": "لوحتي",
+      "noDefaultAddress": "لم تحفظ عنوان توصيل بعد."
+    },
+    "showroom": {
+      "directions": "احصل على الاتجاهات",
+      "title": "زوروا معرضنا"
+    }
   }
 }
