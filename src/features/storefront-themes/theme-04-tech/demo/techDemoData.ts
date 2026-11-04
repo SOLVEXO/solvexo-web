@@ -7,8 +7,28 @@ export const TECH_DEMO_STORE = {
   description: 'A clean, product-first storefront for electronics and computer shops.',
 };
 
+const themeBlock = (_id: string, blockKey: string, settings: Record<string, unknown>) => ({ _id, type: 'theme_block', settings: { blockKey, ...settings } });
+
 export const TECH_DEMO_SECTIONS: Section[] = [
+  {
+    _id: 'd-hero', type: 'theme_section', settings: { sectionKey: 'tech.hero', heading: 'Featured offers', height: 'standard', autoplay: false }, blocks: [
+      themeBlock('h1', 'tech.hero.slide', { eyebrow: 'New arrival', heading: 'Power for work and play', text: 'Add your own headline, text and product photo here.', buttonLabel: 'Shop now' }),
+      themeBlock('h2', 'tech.hero.slide', { eyebrow: 'Best seller', heading: 'Upgrade your setup', text: 'Slides can change on their own or with the arrows.', buttonLabel: 'See more' }),
+      themeBlock('h3', 'tech.hero.slide', { eyebrow: 'On sale', heading: 'Deals you will not miss', buttonLabel: 'View deals' }),
+    ],
+  },
+  {
+    _id: 'd-cats', type: 'theme_section', settings: { sectionKey: 'tech.category_tiles', heading: 'Shop by category' }, blocks: ['Laptops', 'Desktops', 'Monitors', 'Accessories', 'Networking', 'PC parts'].map((title, i) => themeBlock(`c${i}`, 'tech.category_tiles.tile', { title })),
+  },
   { _id: 'demo-products', type: 'featured_products', settings: { heading: 'New products' }, blocks: [] },
+  {
+    _id: 'd-bento', type: 'theme_section', settings: { sectionKey: 'tech.bento_grid', heading: 'Explore the range' }, blocks: [
+      themeBlock('b1', 'tech.bento_grid.tile', { title: 'Gaming', text: 'Built for speed', size: 'large' }),
+      themeBlock('b2', 'tech.bento_grid.tile', { title: 'Work', text: 'Reliable all day' }),
+      themeBlock('b3', 'tech.bento_grid.tile', { title: 'Creators', text: 'Colour-true screens' }),
+      themeBlock('b4', 'tech.bento_grid.tile', { title: 'Home office', text: 'Everything for your desk', size: 'wide' }),
+    ],
+  },
   {
     _id: 'd-deal', type: 'theme_section', settings: { sectionKey: 'tech.deal_banner', heading: 'This week only', text: 'A short line about your best offer goes here.', buttonLabel: 'Shop now' }, blocks: [],
   },
