@@ -134,6 +134,7 @@ function withTechDefaults(c: TechMerchantColors | null | undefined): TechMerchan
     cardTag: c?.cardTag || 'hide',
     headingWeight: c?.headingWeight || 'semibold',
     cardStyle: c?.cardStyle || 'flat',
+    cardHover: c?.cardHover ?? (c?.themeSettings?.techCardStyle === 'shadow' ? 'shadow' : 'none'),
   };
 }
 

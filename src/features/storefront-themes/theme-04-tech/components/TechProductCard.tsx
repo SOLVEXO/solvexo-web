@@ -14,6 +14,7 @@ import { useCartDrawer } from '../../cartDrawerContext';
 import { CARD_IMAGE_SIZES, CARD_IMAGE_WIDTHS, imgProps } from './imgProps';
 import { PRODUCT_CARD_RATIO } from '../../imageFit';
 import { techTheme as t } from '../theme.config';
+import { baseTheme as b } from '../theme.base';
 import { TechButton, TechLinkButton, TechStars, TechStock } from '../ui/techUi';
 import { useCompare } from './compare';
 import { TechQuickView } from './product/TechQuickView';
@@ -35,7 +36,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   const inStock = product.inStock !== false;
   const hasVariant = !!product.variantId;
   const to = `/product/${handleOf(product)}`;
-  const ratio = PRODUCT_CARD_RATIO.square;
+  const ratio = PRODUCT_CARD_RATIO[b.productImageRatio] ?? PRODUCT_CARD_RATIO.square;
   const image = product.images?.[0];
   const wished = hasVariant ? isWishlisted(product._id, product.variantId as string) : false;
   const [quick, setQuick] = useState(false);
@@ -58,9 +59,17 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
     if (product.variantId) await toggleWishlist(product._id, product.variantId);
   };
 
+  const pct = product.compareAtPrice && price && product.compareAtPrice > price ? Math.round((1 - price / product.compareAtPrice) * 100) : 0;
+  const badgeBase = { position: 'absolute', top: 8, left: 8, padding: '3px 8px', fontSize: 11, fontWeight: 700, lineHeight: 1.3, borderRadius: b.badgeStyle === 'square' ? t.badgeRadiusPx : '9999px' } as const;
+  const badges = (
+    <>
+      {!inStock && b.soldOutBadge && <span style={{ ...badgeBase, background: t.colors.ink, color: t.colors.bg }}>{ts('product.soldOut', 'Sold out')}</span>}
+      {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...badgeBase, background: t.colors.danger, color: '#fff' }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
+    </>
+  );
   const imageBox = (
     <Link to={to} aria-label={p.name} className="relative block overflow-hidden" style={{ aspectRatio: ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
-      {image && <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3" />}
+      {image && <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3" />}{badges}
     </Link>
   );
   const quickBtn = t.quickView && product.type !== 'digital' && (
@@ -68,7 +77,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       <Eye size={16} aria-hidden />
     </button>
   );
-  const heartBtn = hasVariant && (
+  const heartBtn = hasVariant && b.cardWishlist && (
     <button type="button" className="tx-icon-btn" aria-pressed={wished} aria-label={wished ? ts('pg.remove_from_wishlist', 'Remove from wishlist') : ts('pg.add_to_wishlist', 'Add to wishlist')} onClick={heart}>
       <Heart size={16} aria-hidden fill={wished ? 'currentColor' : 'none'} />
     </button>
@@ -79,9 +88,11 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       <span className="text-[17px] font-semibold" style={{ color: t.colors.price }}>{show(price)}</span>
     </p>
   );
-  const addBtn = hasVariant && inStock
+  const addBtnBase = hasVariant && inStock
     ? <TechButton variant="outline" small onClick={add} loading={adding === product.variantId}><ShoppingCart size={15} aria-hidden />{ts('product.addToCart', 'Add to cart')}</TechButton>
     : <TechLinkButton to={to} variant="outline" small>{ts('pg.view_product', 'View product')}</TechLinkButton>;
+
+  const addBtn = b.cardButton ? addBtnBase : null;
 
   if (layout === 'list') {
     return (
@@ -89,6 +100,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         {imageBox}
         <div className="flex min-w-0 flex-col gap-2">
           <TechStock inStock={inStock} />
+          {b.cardTag && product.vendor && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{product.vendor}</p>}
           <Link to={to} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
           {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
           {priceBlock}
@@ -103,13 +115,14 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   }
 
   return (
-    <article className="tx-card gap-2 p-3" data-style={t.productCardStyle} style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.cardRadiusPx }}>
+    <article className="tx-card gap-2 p-3" data-style={t.productCardStyle} data-fx-align={b.cardTextAlign} data-fx-hover={b.cardHover} style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.cardRadiusPx }}>
       <TechStock inStock={inStock} />
       <div className="relative">
         {imageBox}
         {(quickBtn || heartBtn || compareBtn) && <div className="tx-card-actions">{quickBtn}{heartBtn}{compareBtn}</div>}
       </div>
       {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
+      {b.cardTag && product.vendor && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{product.vendor}</p>}
       <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
       <div className="mt-auto flex flex-col gap-3 pt-1">
         {priceBlock}

@@ -9,7 +9,7 @@ const DEFAULTS: Partial<StorefrontColors> = {
   ...baseManifest.defaultSettings,
   bgColor: '#FFFFFF', textColor: '#020203', primaryColor: '#0156FF', mutedColor: null, borderColor: null, saleColor: null, starColor: null, successColor: null,
   font: 'Poppins', headingFont: null, headingWeight: 'semibold', buttonStyle: 'solid',
-  cardTag: 'hide', cardStyle: 'flat', cardHover: 'shadow', productImageRatio: 'square',
+  cardTag: 'hide', cardStyle: 'flat', cardHover: 'none', productImageRatio: 'square',
 };
 
 const STYLES: ThemeStylePreset[] = [

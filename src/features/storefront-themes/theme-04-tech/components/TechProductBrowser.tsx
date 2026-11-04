@@ -14,6 +14,9 @@ import { techTheme as t } from '../theme.config';
 import { TechButton, TechError } from '../ui/techUi';
 import { TechProductCard } from './TechProductCard';
 
+/** Space between cards follows the seller's Grid spacing setting (CSS variables come from the typography rules). */
+const GAP = { columnGap: 'var(--fx-gap-x, 12px)', rowGap: 'var(--fx-gap-y, 12px)' } as const;
+
 interface Props {
   heading?: ReactNode;
   categoryId?: string;
@@ -210,7 +213,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
             </div>
           )}
 
-          {products === null && !error && <div aria-busy="true" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-[320px] animate-pulse" style={{ background: t.colors.bgAlt }} />)}</div>}
+          {products === null && !error && <div aria-busy="true" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" style={GAP}>{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-[320px] animate-pulse" style={{ background: t.colors.bgAlt }} />)}</div>}
           {error && <TechError message={error} onRetry={retry} />}
           {products !== null && products.length === 0 && !error && (
             <div className="grid place-items-center gap-3 px-6 py-14 text-center" style={{ background: t.colors.bgAlt }}>
@@ -222,7 +225,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
           {products !== null && products.length > 0 && !error && (
             <div aria-busy={loading} style={{ opacity: loading ? 0.5 : 1, transition: 'opacity .15s' }}>
               {view === 'grid'
-                ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} />)}</div>
+                ? <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" style={GAP}>{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} />)}</div>
                 : <div className="flex flex-col gap-3">{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} layout="list" />)}</div>}
               {mode === 'pages' && totalPages > 1 && <Pagination page={state.page} totalPages={totalPages} onPage={goPage} />}
               {canMore && (

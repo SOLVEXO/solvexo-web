@@ -130,3 +130,9 @@ article[data-fx-align='center'] .tx-card-body :is(p.flex, ul.flex, div.flex.item
 .tx-footer-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 560px) { .tx-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .tx-footer-grid { grid-template-columns: repeat(var(--tx-fcols, 4), minmax(0, 1fr)); } }
+
+/* Card hover and text alignment (seller settings) */
+.tx-card[data-fx-hover='shadow']:hover { box-shadow: 0 8px 28px -8px rgba(2, 2, 3, .22); }
+.tx-card[data-fx-hover='lift']:hover { transform: translateY(-3px); box-shadow: 0 10px 24px -12px rgba(2, 2, 3, .3); }
+.tx-card[data-fx-hover='none']:hover { transform: none; box-shadow: none; }
+.tx-card[data-fx-align='center'] > :is(p, a, div:not(.relative)) { text-align: center; align-items: center; justify-content: center; }

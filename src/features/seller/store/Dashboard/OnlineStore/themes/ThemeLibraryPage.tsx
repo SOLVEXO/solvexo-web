@@ -611,7 +611,7 @@ export function ThemeLibraryPage() {
                       <Item>Footer columns, links, newsletter and social links</Item>
                       <Item>Home page and every other page layout</Item>
                       <Item>Product, collection, cart and account page layouts</Item>
-                      <Item>Your unpublished page edits</Item>
+                      <Item>Your unpublished edits (header, footer and pages)</Item>
                     </ul>
                   </div>
                   <div>

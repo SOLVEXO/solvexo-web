@@ -37,6 +37,7 @@ import { TechImageLightbox } from '../components/product/TechImageLightbox';
 import { TechSectionRenderer } from '../sections';
 import { TechBox, TechBreadcrumbs, TechButton, TechError, TechSkeleton, TechStars } from '../ui/techUi';
 import { techTheme as t } from '../theme.config';
+import { baseTheme as b } from '../theme.base';
 
 /** `/product/:slug`: buy panel on the left, gallery on the right, a sticky price/add-to-cart bar, then the seller's template sections and reviews. */
 export function TechProductPage() {
@@ -163,11 +164,11 @@ function Inner({ slug }: { slug: string }) {
   const info: Record<string, (settings: Record<string, unknown>) => ReactNode> = {
     product_title: () => (
       <div>
-        {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{detail.product.vendor}</p>}
+        {b.showVendor && detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{detail.product.vendor}</p>}
         <h1 className="m-0 text-[clamp(24px,3vw,34px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{product.name}</h1>
       </div>
     ),
-    product_rating: () => (
+    product_rating: () => !b.showReviews ? null : (
       <a href="#tx-reviews" className="inline-flex items-center gap-2 text-xs no-underline" style={{ color: t.colors.accent }}>
         {reviewCount > 0 ? <><TechStars value={rating} /><span>{ts('reviews.count', '{{count}} reviews', { count: reviewCount })}</span></> : <span>{ts('reviews.beFirst', 'Be the first to review this product')}</span>}
       </a>
@@ -210,7 +211,7 @@ function Inner({ slug }: { slug: string }) {
         <p className="m-0 mb-2 text-sm font-semibold">{ts('product.quantity', 'Quantity')}</p>
         <div className="flex flex-wrap items-center gap-4">
           {stepper}
-          <span className="text-sm font-medium" style={{ color: state === 'sold_out' ? t.colors.danger : state === 'low' ? t.colors.warning : t.colors.success }}>
+          <span className="text-sm font-medium" hidden={!b.showStockStatus && state !== 'sold_out'} style={{ color: state === 'sold_out' ? t.colors.danger : state === 'low' ? t.colors.warning : t.colors.success }}>
             {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? ts('product.backorder', 'Available on backorder') : ts('product.inStock', 'In stock')}
           </span>
         </div>
@@ -253,14 +254,14 @@ function Inner({ slug }: { slug: string }) {
 
       <div style={{ background: t.colors.bgAlt }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `clamp(20px,3vw,40px) ${t.layout.containerPadX} clamp(32px,5vw,64px)`, fontFamily: t.fonts.body, color: t.colors.ink }}>
-          <TechBreadcrumbs items={[{ label: ts('product.crumbHome', 'Home'), to: '/' }, { label: ts('product.crumbShop', 'Shop'), to: '/search' }, { label: product.name }]} />
+          {b.showBreadcrumbs && <TechBreadcrumbs items={[{ label: ts('product.crumbHome', 'Home'), to: '/' }, { label: ts('product.crumbShop', 'Shop'), to: '/search' }, { label: product.name }]} />}
           <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-14">
             <div className="flex flex-col gap-5">
               {layout.infoItems.map(item => {
                 const node = info[item.type]?.(item.settings);
                 return node ? <div key={item.key}>{node}</div> : null;
               })}
-              {!isDigital && <ProductDelivery storeId={store.storeId} />}
+              {!isDigital && b.showDelivery && <ProductDelivery storeId={store.storeId} />}
             </div>
             {layout.mediaOn && (
               <div className="lg:sticky lg:top-24">
@@ -289,7 +290,7 @@ function Inner({ slug }: { slug: string }) {
 
       {after.length > 0 && <TechSectionRenderer sections={after} />}
 
-      <section id="tx-reviews" style={{ fontFamily: t.fonts.body, color: t.colors.ink }}>
+      {b.showReviews && <section id="tx-reviews" style={{ fontFamily: t.fonts.body, color: t.colors.ink }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="m-0 text-xl font-semibold" style={{ fontFamily: t.fonts.display }}>{ts('reviews.title', 'Customer reviews')}</h2>
@@ -324,9 +325,9 @@ function Inner({ slug }: { slug: string }) {
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
-      <StickyBuyBar targetId="tx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={addLabel} />
+      {b.stickyBuyBar && <StickyBuyBar targetId="tx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={addLabel} />}
       {writingReview && (
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
           onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />
