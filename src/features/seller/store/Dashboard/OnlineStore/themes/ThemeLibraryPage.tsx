@@ -581,19 +581,55 @@ export function ThemeLibraryPage() {
           message="Your storefront will immediately switch to this theme's published configuration. Your current active theme stays installed and can be reactivated any time."
           confirmLabel="Activate"
           confirmVariant="primary"
+          width={640}
           loading={busyRowId === pendingActivate._id}
           onCancel={() => setPendingActivate(null)}
           onConfirm={handleActivate}
         >
-          {installed.some(r => r.status === 'active' && r._id !== pendingActivate._id) && (
-            <div className="mt-4 flex items-start gap-2 text-[13px] text-charcoal">
-              <input id="carry-content" type="checkbox" className="mt-0.5 cursor-pointer" checked={carryContent} onChange={e => chooseCarry(e.target.checked)} />
-              <label htmlFor="carry-content" className="cursor-pointer">
-                <b>Copy my content to this theme</b>
-                <span className="block text-slate text-[12px] leading-relaxed">Your logo, menus, links, texts and page layouts come with you. The look (colours, shapes, fonts) stays this theme's own. Your current theme is not changed, and what this theme had before is kept as a version.</span>
-              </label>
-            </div>
-          )}
+          {(() => {
+            const from = installed.find(r => r.status === 'active' && r._id !== pendingActivate._id);
+            if (!from) return null;
+            const fromName = newThemeEntries.find(t => t.id === from.themeDefinitionId)?.name ?? 'your current theme';
+            const toName = newThemeEntries.find(t => t.id === pendingActivate.themeDefinitionId)?.name ?? 'this theme';
+            const Item = ({ children }: { children: React.ReactNode }) => (
+              <li className="flex items-start gap-2"><Check size={14} className="mt-[3px] shrink-0 text-emerald-600" aria-hidden /><span>{children}</span></li>
+            );
+            return (
+              <div className="mt-4 rounded-xl border border-bone bg-cream/40 p-4 text-[13px] text-charcoal">
+                <div className="flex items-start gap-2.5">
+                  <input id="carry-content" type="checkbox" className="mt-[3px] cursor-pointer" checked={carryContent} onChange={e => chooseCarry(e.target.checked)} />
+                  <label htmlFor="carry-content" className="cursor-pointer">
+                    <b className="block text-[14px]">Bring my store content from {fromName}</b>
+                    <span className="block text-[12px] leading-relaxed text-slate">Nothing is deleted from {fromName}. Switch back any time.</span>
+                  </label>
+                </div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="m-0 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate">Copied to {toName}</p>
+                    <ul className="m-0 flex list-none flex-col gap-1 p-0 leading-snug">
+                      <Item>Logo, header menu, buttons and announcement bar</Item>
+                      <Item>Footer columns, links, newsletter and social links</Item>
+                      <Item>Home page and every other page layout</Item>
+                      <Item>Product, collection, cart and account page layouts</Item>
+                      <Item>Your unpublished page edits</Item>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="m-0 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate">Already yours, in every theme</p>
+                    <ul className="m-0 flex list-none flex-col gap-1 p-0 leading-snug">
+                      <Item>Products, collections and inventory</Item>
+                      <Item>Orders, customers and settings</Item>
+                      <Item>Navigation menus, blog posts and files</Item>
+                      <Item>Brand colours (when locked in Brand Kit)</Item>
+                    </ul>
+                  </div>
+                </div>
+                <p className="m-0 mt-4 border-t border-bone pt-3 text-[12px] leading-relaxed text-slate">
+                  <b className="text-charcoal">{toName} keeps its own design:</b> colours, fonts, shapes and header and footer layout. Sections that only exist in {fromName} stay there and are skipped. What {toName} had before is saved as a version you can restore.
+                </p>
+              </div>
+            );
+          })()}
         </ConfirmDialog>
       )}
       {pendingUninstall && (

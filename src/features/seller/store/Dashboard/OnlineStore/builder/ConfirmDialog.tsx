@@ -5,7 +5,7 @@ import { Modal, Button } from '@/components/comman/ui';
  *  here is ever removed straight from a button click. Replaces the native
  *  browser `confirm()` popup too, so every destructive action gets the same
  *  on-brand dialog instead of an inconsistent OS-styled prompt. */
-export function ConfirmDialog({ title, message, confirmLabel = 'Delete', onConfirm, onCancel, loading, children, confirmVariant = 'danger' }: {
+export function ConfirmDialog({ title, message, confirmLabel = 'Delete', onConfirm, onCancel, loading, children, confirmVariant = 'danger', width = 400 }: {
   title: string;
   message: string;
   confirmLabel?: string;
@@ -16,12 +16,14 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Delete', onConfi
   children?: React.ReactNode;
   /** Most confirm dialogs here guard a destructive action ('danger', the default) — a few (e.g. "Activate this theme") aren't destructive at all. */
   confirmVariant?: 'danger' | 'primary';
+  /** Dialog width in px; wider for dialogs that carry a structured list. */
+  width?: number;
 }) {
   return (
     <Modal
       title={title}
       onClose={onCancel}
-      width={400}
+      width={width}
       footer={
         <>
           <Button variant="ghost" onClick={onCancel} disabled={loading}>Cancel</Button>
