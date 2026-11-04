@@ -6,9 +6,9 @@ import { BLOG_PAGE_SIZE } from './blogUtils';
 interface More { scope: string; posts: BlogPostSummary[]; page: number; totalPages: number; busy: boolean; failed: boolean }
 
 /** First page of a blog (with loading / error / retry) plus "load more" paging that never mixes two blogs. */
-export function useBlogFeed(storeId: string, blogSlug: string | undefined) {
-  const first = useLoad(() => apiListPublicBlogPosts(storeId, blogSlug, 1, BLOG_PAGE_SIZE).then(r => ({ ...r.data, posts: r.data?.posts ?? [] })), [storeId, blogSlug]);
-  const scope = `${storeId}|${blogSlug ?? ''}`;
+export function useBlogFeed(storeId: string, blogSlug: string | undefined, pageSize = BLOG_PAGE_SIZE) {
+  const first = useLoad(() => apiListPublicBlogPosts(storeId, blogSlug, 1, pageSize).then(r => ({ ...r.data, posts: r.data?.posts ?? [] })), [storeId, blogSlug, pageSize]);
+  const scope = `${storeId}|${blogSlug ?? ''}|${pageSize}`;
   const [more, setMore] = useState<More | null>(null);
   const extra = more && more.scope === scope ? more : null;
 
@@ -22,7 +22,7 @@ export function useBlogFeed(storeId: string, blogSlug: string | undefined) {
     const base: More = extra ?? { scope, posts: [], page: 1, totalPages, busy: false, failed: false };
     setMore({ ...base, busy: true, failed: false });
     try {
-      const res = await apiListPublicBlogPosts(storeId, blogSlug, page + 1, BLOG_PAGE_SIZE);
+      const res = await apiListPublicBlogPosts(storeId, blogSlug, page + 1, pageSize);
       setMore({ scope, posts: [...base.posts, ...(res.data?.posts ?? [])], page: page + 1, totalPages: res.data?.pagination?.totalPages ?? totalPages, busy: false, failed: false });
     } catch {
       setMore({ ...base, busy: false, failed: true });

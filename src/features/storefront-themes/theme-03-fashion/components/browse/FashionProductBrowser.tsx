@@ -36,7 +36,7 @@ interface Props {
 export function FashionProductBrowser({ renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText, onProducts }: Props) {
   const { t: tr } = useTranslation('storefront');
   const { currency } = useCurrencyPreference();
-  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort });
+  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort, pageSize: t.pagination.productsPerPage, accumulate: t.pagination.mode !== 'pages' });
   const [open, setOpen] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -58,6 +58,19 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
     update(s => ({ ...s, page }));
     topRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
+  // "Load more" and infinite scroll add the next page below the current one (no scroll jump, no extra history entry).
+  const hasNext = state.page < totalPages;
+  const loadNext = () => update(s => ({ ...s, page: s.page + 1 }), { replace: true });
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const autoLoad = t.pagination.mode === 'infinite' && hasNext && !loading && !error;
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!autoLoad || !el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) loadNext(); }, { rootMargin: '400px' });
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad, state.page, products?.length]);
   const change = (fn: (s: BrowseState) => BrowseState) => update(s => ({ ...fn(s), page: 1 }));
 
   const priceMin = priceRange.min;
@@ -208,7 +221,11 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
           <div className={`grid ${responsiveGridColumnsClass(columns)} fx-grid-gap`}>
             {products.map(p => <div key={p._id}>{renderCard(p, currency)}</div>)}
           </div>
-          {totalPages > 1 && <BrowsePagination page={state.page} totalPages={totalPages} onPage={goPage} />}
+          {totalPages > 1 && t.pagination.mode === 'pages' && <BrowsePagination page={state.page} totalPages={totalPages} onPage={goPage} />}
+          {t.pagination.mode === 'more' && hasNext && (
+            <div className="mt-14 flex justify-center"><BrowseButton onClick={loadNext}>{loading ? tr('common.loading', 'Loading…') : tr('blog.loadMore', 'Load more')}</BrowseButton></div>
+          )}
+          {t.pagination.mode === 'infinite' && hasNext && <div ref={sentinelRef} aria-hidden className="h-10" />}
         </div>
       )}
 

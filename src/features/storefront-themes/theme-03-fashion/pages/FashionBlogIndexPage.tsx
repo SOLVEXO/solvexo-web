@@ -18,7 +18,7 @@ import { splitAround, useTemplateSections } from '../../core/pageHooks';
 export function FashionBlogIndexPage() {
   const { blogSlug } = useParams<{ blogSlug?: string }>();
   const { store } = useStorefront();
-  const feed = useBlogFeed(store.storeId, blogSlug);
+  const feed = useBlogFeed(store.storeId, blogSlug, t.pagination.postsPerPage);
   const [topic, setTopic] = useState<string | null>(null);
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-index'), 'blog_post_list');
   const title = feed.title ?? ts('blog.journal', 'Journal');

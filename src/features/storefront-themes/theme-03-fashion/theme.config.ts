@@ -69,6 +69,8 @@ const STATIC_DEFAULTS = {
   quickViewSize: 'standard' as 'compact' | 'standard' | 'large',
   /** Mega menu look; seller settings `custom.mega*`. */
   mega: { featured: true, columns: 4, heading: 'upper' as 'upper' | 'normal', photo: 'square' as 'square' | 'landscape' | 'portrait' },
+  /** Listing sizes and the way shoppers move on; seller settings `custom.productsPerPage` etc. */
+  pagination: { productsPerPage: 12, mode: 'pages' as 'pages' | 'more' | 'infinite', postsPerPage: 12, reviewsPerPage: 5 },
   /** Share popup networks; seller settings `custom.share*` (hide = off). */
   share: { facebook: true, x: true, pinterest: true, whatsapp: true, email: true, linkedin: false, telegram: false },
   colors: {
@@ -224,6 +226,10 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.mega.columns = Number(oneOf(ts?.megaColumns, ['3', '4', '5'] as const, '4'));
   fashionTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');
   fashionTheme.mega.photo = oneOf(ts?.megaPhoto, ['square', 'landscape', 'portrait'] as const, 'square');
+  fashionTheme.pagination.productsPerPage = Number(oneOf(ts?.productsPerPage == null ? undefined : String(ts.productsPerPage), ['8', '12', '16', '24', '36', '48'] as const, '12'));
+  fashionTheme.pagination.mode = oneOf(ts?.productPagination, ['pages', 'more', 'infinite'] as const, 'pages');
+  fashionTheme.pagination.postsPerPage = Number(oneOf(ts?.postsPerPage == null ? undefined : String(ts.postsPerPage), ['6', '9', '12', '18', '24'] as const, '12'));
+  fashionTheme.pagination.reviewsPerPage = Number(oneOf(ts?.reviewsPerPage == null ? undefined : String(ts.reviewsPerPage), ['5', '10', '20'] as const, '5'));
   fashionTheme.share.facebook = ts?.shareFacebook !== 'hide';
   fashionTheme.share.x = ts?.shareX !== 'hide';
   fashionTheme.share.pinterest = ts?.sharePinterest !== 'hide';

@@ -100,7 +100,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   useEffect(() => {
     if (!detail?.product._id) return;
     let off = false;
-    apiGetProductReviews(detail.product._id, { limit: 5, sort: 'most_helpful' }).then(r => { if (!off) setReviews({ stats: r.data.stats, reviews: r.data.reviews }); }).catch(() => {});
+    apiGetProductReviews(detail.product._id, { limit: t.pagination.reviewsPerPage, sort: 'most_helpful' }).then(r => { if (!off) setReviews({ stats: r.data.stats, reviews: r.data.reviews }); }).catch(() => {});
     return () => { off = true; };
   }, [detail?.product._id, reviewsTick]);
 

@@ -8,6 +8,8 @@ import { apiGetPublicStoreProducts, type PublicStoreFacets, type PublicStoreProd
 import { DEFAULT_SORT, parseBrowseState, writeBrowseState, type BrowseSort, type BrowseState } from './browseState';
 
 export const BROWSE_PAGE_SIZE = 12;
+/** How many products one request asks for (seller-chosen, kept to a safe range). */
+export const clampPageSize = (n: number) => Math.min(48, Math.max(4, Math.round(n) || BROWSE_PAGE_SIZE));
 
 interface Scope { categoryId?: string; collectionId?: string; search?: string }
 
@@ -15,7 +17,11 @@ interface Scope { categoryId?: string; collectionId?: string; search?: string }
  *  `syncUrl` keeps the state in the query string (history entries per change, so
  *  back/forward and shared links restore it); otherwise it lives in memory (used
  *  by listings embedded in the home page where the URL must stay untouched). */
-export function useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort = DEFAULT_SORT }: Scope & { syncUrl: boolean; defaultSort?: BrowseSort }) {
+export function useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort = DEFAULT_SORT, pageSize = BROWSE_PAGE_SIZE, accumulate = false }: Scope & {
+  syncUrl: boolean; defaultSort?: BrowseSort; pageSize?: number;
+  /** "Load more" / infinite scroll: later pages are added to the list instead of replacing it. */
+  accumulate?: boolean;
+}) {
   const { store } = useStorefront();
   const { currency, convert } = useCurrencyPreference();
   // The buyer's market: the server prices, filters and sorts by the price this buyer SEES (market rule, fixed prices),
@@ -72,12 +78,13 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl, de
     setLoading(true);
     setError('');
     apiGetPublicStoreProducts(store.storeId, {
-      page: state.page, limit: BROWSE_PAGE_SIZE, sort: state.sort, categoryId, collectionId, search,
+      page: state.page, limit: clampPageSize(pageSize), sort: state.sort, categoryId, collectionId, search,
       availability: state.availability, minPrice: state.minPrice, maxPrice: state.maxPrice, currency, marketId,
       productTypes: state.productTypes, tags: state.tags, options: state.options, facets: true,
     }, ctrl.signal)
       .then(res => {
-        setProducts(res.data?.products ?? []);
+        const list = res.data?.products ?? [];
+        setProducts(prev => (accumulate && state.page > 1 && prev ? [...prev, ...list.filter(p => !prev.some(q => q._id === p._id))] : list));
         setTotal(res.data?.pagination?.total ?? 0);
         setTotalPages(Math.max(1, res.data?.pagination?.totalPages ?? 1));
         if (res.data?.facets) setFacets(res.data.facets);
@@ -90,7 +97,7 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl, de
       });
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.storeId, paramsKey, categoryId, collectionId, search, nonce, currency, marketId, marketsReady]);
+  }, [store.storeId, paramsKey, categoryId, collectionId, search, nonce, currency, marketId, marketsReady, pageSize]);
 
   // A shared link may point past the last page once filters narrow the list.
   useEffect(() => {
