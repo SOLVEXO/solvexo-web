@@ -1,6 +1,7 @@
 import type { SellerOrderDetail } from '@/api/services/product';
 import { formatAmount } from '@/utils/currency';
 import { taxIdLabelForCountry } from '@/utils/taxIdLabel';
+import { repairMojibake } from '@/utils/repairMojibake';
 
 /**
  * Print documents for an order: the packing slip (for the packer) and the invoice (for the customer).
@@ -105,7 +106,7 @@ export const SAMPLE_DOCUMENT_ORDER: DocumentOrder = {
 };
 
 function esc(v: unknown): string {
-  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return repairMojibake(String(v ?? '')).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 const lines = (v: string | null | undefined): string => esc(v ?? '').replace(/\n/g, '<br>');
 const safeUrl = (u: string | null | undefined): string => (u && /^https?:\/\//i.test(u) ? u : '');

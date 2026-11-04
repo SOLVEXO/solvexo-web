@@ -1,4 +1,5 @@
 import type { StockCount, StockCountItem } from '@/api/services/stockCounts';
+import { repairMojibake } from '@/utils/repairMojibake';
 
 // Print-ready documents for a stock count, opened in a new window like the order documents:
 //  - Count sheet: taken to the shelves BEFORE counting (blind by default: no system quantity,
@@ -10,7 +11,7 @@ export type PaperSize = 'A4' | 'A5' | '80mm';
 export const PAPER_LABEL: Record<PaperSize, string> = { A4: 'A4', A5: 'A5', '80mm': 'Receipt roll (80 mm)' };
 export interface SheetOptions { showSystemQty: boolean; showPhotos: boolean; paper: PaperSize }
 
-const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const esc = (v: unknown) => repairMojibake(String(v ?? '')).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—');
 
 /** Same product's variants stay together, so one shelf is counted in one go. */

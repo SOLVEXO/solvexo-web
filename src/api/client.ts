@@ -6,6 +6,7 @@ import { getActiveStoreLocale } from '../utils/activeStoreText';
 // `TokenStorage`) to avoid a circular import, since `auth.ts` itself imports
 // this `client` module.
 import { getAuthCookie, clearAuthCookie } from '@/utils/authCookie';
+import { repairMojibakeDeep } from '@/utils/repairMojibake';
 import { getCurrentStorefrontStoreId, getStorefrontToken } from '@/utils/currentStorefront';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 import { emitAutoToast, lastManualToast } from '@/utils/toastBridge';
@@ -130,6 +131,7 @@ client.interceptors.response.use(
     if (method && method !== 'get' && autoToastAllowed(res.config) && !isQuietPath(res.config?.url)) {
       queueAutoToast(res.config?.toastStartedAt, 'success', successMessage(method, res.data), `ok:${method}:${res.config?.url}`, 1500);
     }
+    repairMojibakeDeep(res.data);   // names saved as garbled text ("Ø¹Ø«Ù…Ø§Ù†") show correctly everywhere
     return res.data;   // unwrap → caller gets { success, message, data } (or module-specific equivalent)
   },
   err => {
