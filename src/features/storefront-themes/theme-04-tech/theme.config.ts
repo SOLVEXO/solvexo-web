@@ -67,6 +67,14 @@ const STATIC_DEFAULTS = {
   topBarHours: '',
   topBarShowroom: '',
   footerTone: 'dark' as 'dark' | 'light',
+  /** Listing filters: a sidebar on large screens, or only the slide-in panel. */
+  filterLayout: 'sidebar' as 'sidebar' | 'drawer',
+  /** Product page thumbnails: below the photo or in a column beside it. */
+  gallery: 'bottom' as 'bottom' | 'left',
+  /** Checkout order summary: right of the steps (default) or left. */
+  checkoutSummary: 'right' as 'right' | 'left',
+  /** Client-side compare (up to 4 products, stored in the browser). */
+  compare: true,
   /** Blog list page size. */
   pagination: { postsPerPage: 9 },
 };
@@ -173,6 +181,10 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   techTheme.topBarHours = text(ts?.techTopHours);
   techTheme.topBarShowroom = text(ts?.techTopShowroom);
   techTheme.footerTone = oneOf(ts?.techFooterTone, ['dark', 'light'] as const, 'dark');
+  techTheme.filterLayout = oneOf(ts?.techFilterLayout, ['sidebar', 'drawer'] as const, 'sidebar');
+  techTheme.gallery = oneOf(ts?.techGallery, ['bottom', 'left'] as const, 'bottom');
+  techTheme.checkoutSummary = oneOf(ts?.techCheckoutSummary, ['right', 'left'] as const, 'right');
+  techTheme.compare = ts?.techCompare !== 'hide';
 }
 
 /** Same readable-label rule as Maison, for fills the seller can recolour. */

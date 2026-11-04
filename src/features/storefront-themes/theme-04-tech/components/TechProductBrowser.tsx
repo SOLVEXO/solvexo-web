@@ -102,6 +102,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
   const topRef = useRef<HTMLDivElement>(null);
   const symbol = currencySymbol(currency);
   const active = hasActiveFilters(state);
+  const drawerOnly = t.filterLayout === 'drawer';
   useEffect(() => { if (products) onProducts?.(products); }, [products, onProducts]);
 
   const change = (fn: (s: BrowseState) => BrowseState) => update(s => ({ ...fn(s), page: 1 }));
@@ -150,8 +151,8 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
   return (
     <div ref={topRef} style={{ scrollMarginTop: 80, fontFamily: t.fonts.body, color: t.colors.ink }}>
       {heading}
-      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        {showFilters && (
+      <div className={`grid gap-6 ${drawerOnly ? '' : 'lg:grid-cols-[220px_1fr]'}`}>
+        {showFilters && !drawerOnly && (
           <aside className="hidden lg:block" aria-label={ts('browse.filters', 'Filters')}>
             <div className="p-4" style={{ background: t.colors.bgAlt }}>
               <p className="m-0 mb-2 text-center text-sm font-semibold">{ts('browse.filters', 'Filters')}</p>
@@ -165,7 +166,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             {showFilters && (
-              <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog" className="tx-btn tx-btn-sm lg:hidden" style={{ background: 'transparent', color: t.colors.ink, borderColor: t.colors.border, borderRadius: t.fieldRadiusPx }}>
+              <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog" className={`tx-btn tx-btn-sm ${drawerOnly ? '' : 'lg:hidden'}`} style={{ background: 'transparent', color: t.colors.ink, borderColor: t.colors.border, borderRadius: t.fieldRadiusPx }}>
                 <SlidersHorizontal size={14} aria-hidden />{chips.length > 0 ? ts('browse.filterCount', 'Filter ({{count}})', { count: chips.length }) : ts('browse.filter', 'Filter')}
               </button>
             )}

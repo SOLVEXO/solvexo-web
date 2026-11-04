@@ -6,4 +6,5 @@ import './MoreSections';
 import './CoreSections';
 import './ExtraSections';
 import './techSections';
+import './techMoreSections';
 import './techBrowseSections';

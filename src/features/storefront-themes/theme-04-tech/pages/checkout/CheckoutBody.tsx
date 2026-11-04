@@ -162,8 +162,8 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
   return (
     <Page>
       <PageTitle actions={<Link to="/cart" className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('h.secure_checkout', 'Secure *checkout*')}</PageTitle>
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
-        <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1">
+      <div className={`grid items-start gap-6 lg:gap-10 ${t.checkoutSummary === 'left' ? 'lg:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_400px]'}`}>
+        <div className={`order-2 flex min-w-0 flex-col gap-5 ${t.checkoutSummary === 'left' ? 'lg:order-2' : 'lg:order-1'}`}>
           {checkout && checkout.currency !== displayCurrency && (
             <Notice>{ts('pg.this_store_charges_in_currency_so_the', 'This store charges in {{currency}}, so the amounts at checkout are shown in {{currency}}.', { currency: checkout.currency })}</Notice>
           )}
@@ -193,7 +193,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
             </p>
           )}
         </div>
-        <div className="order-1 min-w-0 lg:order-2">
+        <div className={`order-1 min-w-0 ${t.checkoutSummary === 'left' ? 'lg:order-1' : 'lg:order-2'}`}>
           <OrderSummary
             currency={currency} lines={lines} itemCount={itemCount} storeName={storeName} subtotal={subtotal} shippingText={shippingText}
             tax={rows.tax} includedTax={summary?.includedTaxAmount ?? 0} coupon={coupon} giftCard={giftCard} storeCredit={storeCredit}

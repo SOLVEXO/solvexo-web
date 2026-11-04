@@ -265,13 +265,13 @@ function Inner({ slug }: { slug: string }) {
             {layout.mediaOn && (
               <div className="lg:sticky lg:top-24">
                 {images.length === 0 ? <div style={{ aspectRatio: '1 / 1', background: t.colors.bg }} /> : (
-                  <>
+                  <div className={t.gallery === 'left' ? 'lg:flex lg:flex-row-reverse lg:items-start lg:gap-3' : ''}>
                     <button type="button" onClick={() => setZoom(true)} aria-label={ts('product.zoomImage', 'Zoom image')} className="group relative block w-full cursor-zoom-in overflow-hidden border-0 p-4" style={{ aspectRatio: '1 / 1', background: t.colors.bg }}>
                       <img key={images[imageIndex]} {...imgProps(images[imageIndex], [480, 768, 1024], '(min-width: 1024px) 50vw, 100vw')} alt={product.name} className="size-full object-contain" fetchPriority="high" />
                       <span className="absolute bottom-3 end-3 grid size-9 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bgAlt }}><ZoomIn size={16} /></span>
                     </button>
                     {images.length > 1 && (
-                      <div className="tx-hide-scroll mt-3 flex gap-2 overflow-x-auto">
+                      <div className={`tx-hide-scroll mt-3 flex gap-2 overflow-x-auto ${t.gallery === 'left' ? 'lg:mt-0 lg:max-h-[560px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden' : ''}`}>
                         {images.map((src, i) => (
                           <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={ts('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex} className={thumb} style={{ background: t.colors.bg, border: `2px solid ${i === imageIndex ? t.colors.accent : 'transparent'}` }}>
                             <img {...imgProps(src, [96, 160], '64px')} alt="" loading="lazy" className="size-full object-contain" />
@@ -279,7 +279,7 @@ function Inner({ slug }: { slug: string }) {
                         ))}
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             )}

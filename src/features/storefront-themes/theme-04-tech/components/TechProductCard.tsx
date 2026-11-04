@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { BarChart3, Heart, ShoppingCart } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
@@ -15,6 +15,7 @@ import { CARD_IMAGE_SIZES, CARD_IMAGE_WIDTHS, imgProps } from './imgProps';
 import { PRODUCT_CARD_RATIO } from '../../imageFit';
 import { techTheme as t } from '../theme.config';
 import { TechButton, TechLinkButton, TechStars, TechStock } from '../ui/techUi';
+import { useCompare } from './compare';
 
 /** Card for every real product grid. `layout="list"` is the wide row used by the collection list view. */
 export function TechProductCard({ product, currency, layout = 'grid' }: { product: PublicStoreProduct; currency: string; layout?: 'grid' | 'list' }) {
@@ -36,6 +37,13 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   const ratio = PRODUCT_CARD_RATIO.square;
   const image = product.images?.[0];
   const wished = hasVariant ? isWishlisted(product._id, product.variantId as string) : false;
+  const compare = useCompare(store.storeId);
+  const compared = compare.has(product._id);
+  const compareBtn = t.compare && (
+    <button type="button" className="tx-icon-btn" aria-pressed={compared} disabled={!compared && compare.full} aria-label={compared ? ts('tx.compare.removeShort', 'Remove from compare') : compare.full ? ts('tx.compare.full', 'Compare list is full (4 products)') : ts('tx.compare.add', 'Add to compare')} onClick={e => { e.preventDefault(); compare.toggle(product); }}>
+      <BarChart3 size={16} aria-hidden />
+    </button>
+  );
 
   const add = async (e: MouseEvent) => {
     e.preventDefault();
@@ -79,7 +87,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
           {priceBlock}
         </div>
         <div className="flex flex-row items-center gap-3 sm:flex-col sm:items-end sm:justify-between">
-          {heartBtn}
+          <span className="flex gap-2">{heartBtn}{compareBtn}</span>
           {addBtn}
         </div>
       </article>
@@ -91,7 +99,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       <TechStock inStock={inStock} />
       <div className="relative">
         {imageBox}
-        {heartBtn && <div className="tx-card-actions">{heartBtn}</div>}
+        {(heartBtn || compareBtn) && <div className="tx-card-actions">{heartBtn}{compareBtn}</div>}
       </div>
       {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
       <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>

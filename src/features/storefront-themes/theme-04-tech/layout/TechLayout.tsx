@@ -6,6 +6,7 @@ import { TechAnnouncementBar } from '../components/TechAnnouncementBar';
 import { TechCartProvider } from '../components/TechCart';
 import { TechNavbar } from '../components/TechNavbar';
 import { TechFooter } from '../components/TechFooter';
+import { TechCompareBar } from '../components/TechCompare';
 import { techTheme as t, applyMerchantThemeOverrides } from '../theme.config';
 import { techCssVars } from '../ui/techStyle';
 import '../tech.css';
@@ -27,6 +28,7 @@ export function TechLayout({ children }: { children: ReactNode }) {
         {!above && announcement}
         <main className="flex-1">{children}</main>
         <TechFooter />
+        {t.compare && <TechCompareBar />}
       </div>
       <TechToaster />
     </TechCartProvider>

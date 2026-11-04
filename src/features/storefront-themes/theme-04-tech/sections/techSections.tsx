@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -83,9 +83,11 @@ registerTechSection('featured_products', (section, _b, colors) => <ProductRow se
 // ── Theme-defined sections (`theme_section` + `settings.sectionKey`) ────────────────────────────────────
 type Custom = (section: Section, blocks: Block[], colors: BaseColors) => ReactNode;
 const custom = new Map<string, Custom>();
+/** The registry of theme-declared sections (also filled by techMoreSections.tsx). */
+export const techCustom = custom;
 registerTechSection('theme_section', (section, blocks, colors) => custom.get(String(section.settings.sectionKey))?.(section, blocks, colors) ?? null);
 
-function BlockLink({ block, children, className, style }: { block: Block; children: ReactNode; className?: string; style?: React.CSSProperties }) {
+export function BlockLink({ block, children, className, style }: { block: Block; children: ReactNode; className?: string; style?: React.CSSProperties }) {
   const { resolveLink } = useStorefront();
   const link = block.settings.link ? resolveLink(block.settings.link) : null;
   if (link?.to) return <Link to={link.to} className={className} style={style}>{children}</Link>;
@@ -123,7 +125,7 @@ function Countdown({ endsAt, colors }: { endsAt: string; colors: BaseColors }) {
   return <div className="mt-4 flex gap-2">{part(days, ts('pg.days', 'days'))}{part(hours, ts('pg.hours', 'hours'))}</div>;
 }
 /** The deal banner's button: resolves the seller's own link setting (page, collection, product or external). */
-function DealButton({ label, link }: { label: string; link: any }) {
+export function DealButton({ label, link }: { label: string; link: any }) {
   const { resolveLink } = useStorefront();
   const target = resolveLink(link);
   if (target.to) return <TechLinkButton to={target.to}>{label}</TechLinkButton>;
