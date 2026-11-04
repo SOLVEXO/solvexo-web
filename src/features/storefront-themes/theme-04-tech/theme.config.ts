@@ -61,6 +61,12 @@ const STATIC_DEFAULTS = {
   productCardStyle: 'flat' as 'flat' | 'outlined' | 'shadow',
   showCardRating: true,
   megaFeatured: true,
+  /** Header layout: standard (logo + menu + icons), compact, centered (logo in the middle, menu below), search-first (wide search bar). */
+  header: 'standard' as 'standard' | 'compact' | 'centered' | 'search-first',
+  /** Seller-typed top bar texts (opening hours, showroom line). Empty = not shown. */
+  topBarHours: '',
+  topBarShowroom: '',
+  footerTone: 'dark' as 'dark' | 'light',
 };
 
 export const techTheme: typeof STATIC_DEFAULTS = structuredClone(STATIC_DEFAULTS);
@@ -160,6 +166,11 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   techTheme.productCardStyle = oneOf(ts?.techCardStyle, ['flat', 'outlined', 'shadow'] as const, 'flat');
   techTheme.showCardRating = fashionTheme.cardRating;
   techTheme.megaFeatured = ts?.techMegaFeatured !== 'hide';
+  techTheme.header = oneOf(ts?.techHeader, ['standard', 'compact', 'centered', 'search-first'] as const, 'standard');
+  const text = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
+  techTheme.topBarHours = text(ts?.techTopHours);
+  techTheme.topBarShowroom = text(ts?.techTopShowroom);
+  techTheme.footerTone = oneOf(ts?.techFooterTone, ['dark', 'light'] as const, 'dark');
 }
 
 /** Same readable-label rule as Maison, for fills the seller can recolour. */

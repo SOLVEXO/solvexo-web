@@ -50,7 +50,7 @@ describe('Tech Store theme styles', () => {
 
   it('custom settings the theme reads are all offered, with the names the config reads', () => {
     const custom = fields.filter(f => String(f.key).startsWith('custom.')).map(f => String(f.key));
-    for (const key of ['custom.techDarkColor', 'custom.techTopBar', 'custom.techStickyHeader', 'custom.techCardStyle', 'custom.techMegaFeatured']) expect(custom).toContain(key);
+    for (const key of ['custom.techDarkColor', 'custom.techTopBar', 'custom.techStickyHeader', 'custom.techCardStyle', 'custom.techMegaFeatured', 'custom.techShape', 'custom.techWarning', 'custom.techHeader', 'custom.techTopHours', 'custom.techTopShowroom', 'custom.techFooterTone']) expect(custom).toContain(key);
   });
 
   it('custom sections are namespaced and declare a label, description and a heading or block', () => {
@@ -126,6 +126,20 @@ describe('Tech Store theme settings are applied', () => {
     applyMerchantThemeOverrides(midnight.settings);
     expect(techTheme.colors.bg).toBe('#0B1020');
     expect(techTheme.colors.borderStrong).not.toBe(TECH_STATIC_DEFAULTS.colors.borderStrong);
+  });
+
+  it('header layout, top bar texts and footer tone are read and bad values fall back', () => {
+    applyMerchantThemeOverrides({ themeSettings: { techHeader: 'search-first', techTopHours: '  Mon-Fri 9-5  ', techTopShowroom: 'Visit our showroom', techFooterTone: 'light' } });
+    expect(techTheme.header).toBe('search-first');
+    expect(techTheme.topBarHours).toBe('Mon-Fri 9-5');
+    expect(techTheme.topBarShowroom).toBe('Visit our showroom');
+    expect(techTheme.footerTone).toBe('light');
+    applyMerchantThemeOverrides({ themeSettings: { techHeader: 'huge', techTopHours: 42, techFooterTone: 'blue' } });
+    expect(techTheme.header).toBe('standard');
+    expect(techTheme.topBarHours).toBe('');
+    expect(techTheme.footerTone).toBe('dark');
+    applyMerchantThemeOverrides({ themeSettings: { techTopHours: 'x'.repeat(200) } });
+    expect(techTheme.topBarHours.length).toBe(80);
   });
 
   it('every preset applies cleanly and picks a known shape', () => {

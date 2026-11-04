@@ -22,8 +22,9 @@ export function TechFooter() {
   }, [store.storeId]);
 
   const opts = readFooterOptions(theme?.footer, ts('blog.journal', 'Journal'));
-  const bg = opts.bgColor ?? t.colors.dark;
-  const fg = opts.textColor ?? t.colors.darkInk;
+  const light = t.footerTone === 'light';
+  const bg = opts.bgColor ?? (light ? t.colors.bgAlt : t.colors.dark);
+  const fg = opts.textColor ?? (light ? t.colors.ink : t.colors.darkInk);
   const muted = `color-mix(in srgb, ${fg} 66%, transparent)`;
   const line = `color-mix(in srgb, ${fg} 18%, transparent)`;
   const blocks = visibleFooterBlocks(theme?.footer);
@@ -36,9 +37,9 @@ export function TechFooter() {
     fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted,
     heading: { fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 600, color: muted, marginBottom: 14 },
     linkSize: '13px', brandWeight: 600,
-    input: { fontFamily: t.fonts.body, fontSize: 14, color: fg, border: `1px solid ${fg}`, padding: '12px 16px', borderRadius: t.fieldRadiusPx, background: 'transparent' },
+    input: { fontFamily: t.fonts.body, fontSize: 14, color: fg, border: `1px solid ${light ? t.colors.borderStrong : fg}`, padding: '12px 16px', borderRadius: t.fieldRadiusPx, background: 'transparent' },
     button: { fontFamily: t.fonts.body, fontSize: 14, fontWeight: 600, background: t.colors.accent, color: t.colors.accentInk, padding: '12px 24px', borderRadius: 9999 },
-    doneColor: '#86EFAC', errorColor: '#FCA5A5', idPrefix: 'tx', newsletterHeading: ts('pg.sign_up_to_our_newsletter', 'Sign up to our newsletter.'), blogLabel: opts.blogLabel,
+    doneColor: light ? t.colors.success : '#86EFAC', errorColor: light ? t.colors.danger : '#FCA5A5', idPrefix: 'tx', newsletterHeading: ts('pg.sign_up_to_our_newsletter', 'Sign up to our newsletter.'), blogLabel: opts.blogLabel,
   };
 
   return (
