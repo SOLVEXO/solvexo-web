@@ -1,7 +1,7 @@
 import '@/features/storefront-themes/editorThemes';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Plus, ExternalLink, Trash2, Pencil } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -122,7 +122,18 @@ function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: b
 /** 409 DRAFT_CONFLICT from a sections save (stale baseUpdatedAt). */
 const isDraftConflict = (err: unknown) => (err as { status?: number; apiCode?: string })?.status === 409 && (err as { apiCode?: string }).apiCode === 'DRAFT_CONFLICT';
 
+const DEVICE_IDS = ['desktop', 'tablet', 'mobile'] as const;
+const CHROME_IDS = ['announcement', 'header', 'footer'] as const;
+/** Everything the editor is looking at lives in the URL query (reload, Back and shared links land in the same place). */
+type UrlKey = 'page' | 'template' | 'item' | 'product' | 'collection' | 'blog' | 'article' | 'panel' | 'section' | 'block' | 'device';
+
 export function ThemeCustomizePage() {
+  const [sp, setSp] = useSearchParams();
+  const urlParam = (k: UrlKey) => sp.get(k) || null;
+  // Selection that must be applied once the template it belongs to has loaded.
+  const restoreSel = useRef<{ section: string | null; block: string | null } | null>(
+    urlParam('section') ? { section: urlParam('section'), block: urlParam('block') } : null);
+  const wantTemplate = useRef<string | null>(urlParam('template'));
   const { storeId, loading: storeLoading, store: workspaceStore, refetch: refetchStore } = useStoreWorkspace();
   const toast = useToast();
   const flash = (ok: boolean, text: string, onClick?: () => void) => { if (ok) toast.success(text); else toast.error(text, onClick); };
@@ -145,13 +156,13 @@ export function ThemeCustomizePage() {
   // Header group (announcement bar + header) and Footer group — edited right
   // here, Shopify-style, on every template. Their draft is the theme's own.
   const hf = useHeaderFooterDraft({ storeId, installedThemeId, ready: themeInstance.status === 'ready', store: workspaceStore, refetchStore });
-  const [selectedChrome, setSelectedChrome] = useState<PreviewChromePart | null>(null);
+  const [selectedChrome, setSelectedChrome] = useState<PreviewChromePart | null>(() => CHROME_IDS.find(c => c === urlParam('panel')) ?? null);
   const [hoverSectionId, setHoverSectionId] = useState<string | null>(null);
   // Phones/tablets: one pane at a time (settings or preview), like Shopify's mobile editor.
   const [mobilePane, setMobilePane] = useState<'edit' | 'preview'>('edit');
 
-  const [scope, setScope] = useState<string>('home');
-  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [scope, setScope] = useState<string>(() => urlParam('page') ?? 'home');
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>(() => DEVICE_IDS.find(d => d === urlParam('device')) ?? 'desktop');
   const [discarding, setDiscarding] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [versionsLoading, setVersionsLoading] = useState(false);
@@ -168,7 +179,7 @@ export function ThemeCustomizePage() {
   // irrelevant (and untouched) for every other scope. Persists across a
   // scope switch, same convention as `templateKey` below, so coming back to
   // Pages remembers what the seller was last working on.
-  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(() => urlParam('item'));
   const [templateList, setTemplateList] = useState<CollectionTemplateData[]>([]);
   const [templateKey, setTemplateKey] = useState('default');
   const [activeTemplate, setActiveTemplate] = useState<CollectionTemplateData | null>(null);
@@ -186,9 +197,9 @@ export function ThemeCustomizePage() {
   // used both as the Article picker's own list and, filtered by
   // `selectedBlogId`, as the Blog Index preview's "recent posts" sample.
   const [blogs, setBlogs] = useState<BlogData[]>([]);
-  const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
+  const [selectedBlogId, setSelectedBlogId] = useState<string | null>(() => urlParam('blog'));
   const [posts, setPosts] = useState<BlogPostData[]>([]);
-  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(() => urlParam('article'));
   const [selectedArticleDetail, setSelectedArticleDetail] = useState<BlogPostData | null>(null);
 
   // Phase 9 — Dynamic Sources: Product/Collection Template each need a real
@@ -200,9 +211,9 @@ export function ThemeCustomizePage() {
   // `PRODUCTS_FETCH_LIMIT` precedent `EntityPickerModal` already uses), not
   // a new backend endpoint.
   const [products, setProducts] = useState<{ id: string; label: string }[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(() => urlParam('product'));
   const [collectionsList, setCollectionsList] = useState<{ id: string; label: string }[]>([]);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(() => urlParam('collection'));
   const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   const editor = useEditorState<Section[]>();
@@ -230,6 +241,8 @@ export function ThemeCustomizePage() {
   const config: ResourceConfig | null = activeScopeDef && activeScopeDef.resource.kind === 'collection-template'
     ? { resourceType: activeScopeDef.resource.resourceType, templateKey: activeScopeDef.resource.templateKey, allowAltTemplates: activeScopeDef.resource.allowAltTemplates, previewPicker: activeScopeDef.resource.previewPicker }
     : null;
+  /** The template a page scope opens on (changing scope resets to it in the same update, so the URL never sees a stale template). */
+  const defaultTemplateOf = (id: string) => { const r = scopeDefsById[id]?.resource; return r && r.kind === 'collection-template' ? r.templateKey : null; };
   const scopeLabel = (s: string) => (s === 'theme' ? 'Theme Settings' : scopeDefsById[s]?.label ?? s);
   // Phase 5 — real derived lists/booleans for the Pages/Blogs/Articles
   // resource pickers and their empty states.
@@ -374,7 +387,7 @@ export function ThemeCustomizePage() {
         setPages(res.data);
         // Default to the first real custom page the first time this scope
         // is visited — never overrides a seller's own later pick.
-        setSelectedPageId(prev => prev ?? res.data.find(p => p.type === 'custom')?._id ?? null);
+        setSelectedPageId(prev => (prev && res.data.some(p => p._id === prev) ? prev : res.data.find(p => p.type === 'custom')?._id ?? null));
       })
       .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load pages.'))
       .finally(() => setLoading(false));
@@ -391,8 +404,8 @@ export function ThemeCustomizePage() {
       .then(([blogsRes, postsRes]) => {
         setBlogs(blogsRes.data);
         setPosts(postsRes.data);
-        setSelectedBlogId(prev => prev ?? blogsRes.data[0]?._id ?? null);
-        setSelectedArticleId(prev => prev ?? postsRes.data[0]?._id ?? null);
+        setSelectedBlogId(prev => (prev && blogsRes.data.some(b => b._id === prev) ? prev : blogsRes.data[0]?._id ?? null));
+        setSelectedArticleId(prev => (prev && postsRes.data.some(p => p._id === prev) ? prev : postsRes.data[0]?._id ?? null));
       })
       .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load blog content.'))
       .finally(() => setLoading(false));
@@ -404,7 +417,7 @@ export function ThemeCustomizePage() {
       .then(res => {
         const items = res.data.products.map(p => ({ id: p.productId, label: p.name }));
         setProducts(items);
-        setSelectedProductId(prev => prev ?? items[0]?.id ?? null);
+        setSelectedProductId(prev => (prev && items.some(i => i.id === prev) ? prev : items[0]?.id ?? null));
       })
       .catch(() => setProducts([]));
   }, [storeId]);
@@ -414,20 +427,20 @@ export function ThemeCustomizePage() {
       .then(res => {
         const items = res.data.map(c => ({ id: c._id, label: c.name }));
         setCollectionsList(items);
-        setSelectedCollectionId(prev => prev ?? items[0]?.id ?? null);
+        setSelectedCollectionId(prev => (prev && items.some(i => i.id === prev) ? prev : items[0]?.id ?? null));
       })
       .catch(() => setCollectionsList([]));
   }, [storeId]);
 
   const templateLoadToken = useRef(0);
-  const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean) => {
+  const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean, wantKey?: string | null) => {
     setLoading(true);
     setResourceLoadError('');
     // Only the latest scope's response may land (a slow earlier scope must not overwrite it).
     const token = ++templateLoadToken.current;
     const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType, installedThemeId) : Promise.resolve({ data: [] as CollectionTemplateData[] });
     Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key, installedThemeId)])
-      .then(([listRes, docRes]) => { if (token !== templateLoadToken.current) return; setTemplateList(listRes.data); setActiveTemplate(docRes.data); })
+      .then(([listRes, docRes]) => { if (token !== templateLoadToken.current) return; setTemplateList(listRes.data); setActiveTemplate(docRes.data); if (wantKey && wantKey !== key && listRes.data.some(t => t.templateKey === wantKey)) setTemplateKey(wantKey); })
       .catch(err => {
         if (token === templateLoadToken.current) {
           setResourceLoadError(err instanceof Error ? err.message : 'Could not load this template.');
@@ -445,7 +458,9 @@ export function ThemeCustomizePage() {
     if (config.resourceType === 'product') loadProducts();
     if (config.resourceType === 'collection') loadCollectionsList();
     setTemplateKey(config.templateKey);
-    loadResourceTemplates(config.resourceType, config.templateKey, config.allowAltTemplates);
+    const want = wantTemplate.current;
+    wantTemplate.current = null;
+    loadResourceTemplates(config.resourceType, config.templateKey, config.allowAltTemplates, want);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, installedThemeId]);
 
@@ -522,6 +537,69 @@ export function ThemeCustomizePage() {
   // template's sections until the new one is fetched — saving in that window
   // would write them into the newly selected template. Block it.
   const templateSwitchPending = !isStorePage && !!config && !!activeTemplate && activeTemplate.templateKey !== templateKey;
+
+  // An unknown `?page=` in the URL falls back to Home.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- URL input is validated against the manifest
+  useEffect(() => { if (scope !== 'theme' && !activeScopeDef) setScope('home'); }, [scope, activeScopeDef]);
+
+  // Re-select the section/block from the URL once the template it belongs to has loaded; a missing one is dropped silently.
+  useEffect(() => {
+    const want = restoreSel.current;
+    if (!want || loading || templateSwitchPending || !editor.workingCopy) return;
+    restoreSel.current = null;
+    const exists = editor.workingCopy.some((sec, i) => String(sec._id ?? i) === want.section);
+    if (exists && want.section) { setSelectedSectionId(want.section); setSelectedBlockId(want.block); }
+  }, [loading, templateSwitchPending, editor.workingCopy]);
+
+  // State -> URL. Page / template changes add a history entry (so Back goes one step back); everything else replaces it.
+  useEffect(() => {
+    const pending = restoreSel.current;
+    const rt = config?.resourceType;
+    const next = new URLSearchParams();
+    const put = (k: UrlKey, v: string | null | undefined) => { if (v) next.set(k, v); };
+    if (scope !== 'home') put('page', scope);
+    if (config?.allowAltTemplates && templateKey !== config.templateKey) put('template', templateKey);
+    if (isCustomPageScope) put('item', selectedPageId);
+    if (rt === 'product') put('product', selectedProductId);
+    if (rt === 'collection') put('collection', selectedCollectionId);
+    if (config?.previewPicker) { put('blog', selectedBlogId); put('article', selectedArticleId); }
+    put('panel', selectedChrome);
+    put('section', pending ? pending.section : selectedSectionId);
+    put('block', pending ? pending.block : selectedBlockId);
+    if (device !== 'desktop') put('device', device);
+    if (next.toString() === sp.toString()) return;
+    setSp(next, { replace: next.get('page') === sp.get('page') });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, templateKey, selectedPageId, selectedProductId, selectedCollectionId, selectedBlogId, selectedArticleId, selectedChrome, selectedSectionId, selectedBlockId, device, isCustomPageScope, config?.resourceType]);
+
+  // URL -> state, for Back / Forward and edited links (mirrors the URL into state on purpose).
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const page = sp.get('page') ?? 'home';
+    const tpl = sp.get('template') ?? config?.templateKey ?? templateKey;
+    const scopeChanged = page !== scope;
+    if (scopeChanged) { wantTemplate.current = sp.get('template'); setTemplateKey(defaultTemplateOf(page) ?? 'default'); setScope(page); }
+    else if (config?.allowAltTemplates && tpl !== templateKey) setTemplateKey(tpl);
+    const dev = DEVICE_IDS.find(d => d === sp.get('device')) ?? 'desktop';
+    if (dev !== device) setDevice(dev);
+    const panel = CHROME_IDS.find(c => c === sp.get('panel')) ?? null;
+    if (panel !== selectedChrome) setSelectedChrome(panel);
+    const sec = sp.get('section');
+    const blk = sp.get('block');
+    if (scopeChanged || (config?.allowAltTemplates && tpl !== templateKey)) {
+      if (sec) restoreSel.current = { section: sec, block: blk };
+    } else if (sec !== selectedSectionId || blk !== selectedBlockId) {
+      setSelectedSectionId(sec); setSelectedBlockId(blk);
+    }
+    const adopt = (k: UrlKey, cur: string | null, set: (v: string) => void) => { const v = sp.get(k); if (v && v !== cur) set(v); };
+    adopt('item', selectedPageId, setSelectedPageId);
+    adopt('product', selectedProductId, setSelectedProductId);
+    adopt('collection', selectedCollectionId, setSelectedCollectionId);
+    adopt('blog', selectedBlogId, setSelectedBlogId);
+    adopt('article', selectedArticleId, setSelectedArticleId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /** Conflict recovery: re-fetch the page/template and replace the editor's working copy with the server draft. */
   const reloadDraftFromServer = async () => {
@@ -697,7 +775,7 @@ export function ThemeCustomizePage() {
     setPendingLeave(() => proceed);
   };
 
-  const changeScope = (nextScope: string) => guardUnsaved(() => setScope(nextScope));
+  const changeScope = (nextScope: string) => guardUnsaved(() => { setTemplateKey(defaultTemplateOf(nextScope) ?? 'default'); setScope(nextScope); });
   const changeTemplateKey = (key: string) => guardUnsaved(() => setTemplateKey(key));
 
   const openVersions = () => {
