@@ -109,6 +109,12 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
   const active = hasActiveFilters(state);
   const drawerOnly = t.filterLayout === 'drawer';
   useEffect(() => { if (products) onProducts?.(products); }, [products, onProducts]);
+  // Load more / infinite scroll append pages, so a shared link to page N must start from page 1 or the earlier products would be missing.
+  const startedAt = useRef(state.page);
+  useEffect(() => {
+    if (mode !== 'pages' && startedAt.current > 1) { startedAt.current = 1; update(s => ({ ...s, page: 1 }), { replace: true }); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on arrival
+  }, []);
 
   const change = (fn: (s: BrowseState) => BrowseState) => update(s => ({ ...fn(s), page: 1 }));
   const loadMore = () => update(s => ({ ...s, page: s.page + 1 }));
