@@ -133,6 +133,8 @@ export function ThemeCustomizePage() {
     flash(false, info.text, info.sectionId ? () => (info.blockId ? selectPreviewBlock(info.sectionId!, info.blockId) : selectPreviewSection(info.sectionId!)) : undefined);
   };
   const [draftConflict, setDraftConflict] = useState(false);
+  /** Someone else changed the draft: tell the user in a toast; clicking it opens the reload choice. */
+  const flashConflict = () => flash(false, 'This draft was changed in another tab or by a teammate. Saving is paused.', () => setDraftConflict(true));
 
   // Fix for a confirmed P0: resolves the URL's `:themeId` to THIS theme's own
   // installed row so every load/save/publish/discard/version call below acts
@@ -547,7 +549,7 @@ export function ThemeCustomizePage() {
     // Header/footer are their own (theme) draft — saved on their own so a
     // template save problem never loses them.
     if (hf.editor.dirty) {
-      try { await hf.save(); } catch (err) { flash(false, err instanceof Error ? err.message : 'Failed to save the header/footer.'); return; }
+      try { await hf.save(); } catch (err) { flash(false, err instanceof Error ? err.message : 'Failed to save the header/footer.', () => selectChrome('header')); return; }
     }
     if (!editor.dirty) {
       if (silent) return;
@@ -571,13 +573,12 @@ export function ThemeCustomizePage() {
         : 'Draft saved — Publish to make it live.');
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
-      if (isDraftConflict(err)) { setDraftConflict(true); return; }
+      if (isDraftConflict(err)) { flashConflict(); return; }
       flashEditorError(err, 'Failed to save.');
     }
   };
 
   const autosaveBusy = editor.phase === 'saving' || editor.phase === 'publishing' || hf.editor.phase === 'saving' || hf.editor.phase === 'publishing';
-  const errorInfo = describeEditorError(editor.errorMessage ?? 'Save failed', editor.workingCopy ?? []);
   const autosaveFailed = editor.phase === 'error' || hf.editor.phase === 'error';
   useAutosave({
     active: scope !== 'theme' && (editor.dirty || hf.editor.dirty) && !autosaveBusy && !autosaveFailed,
@@ -609,7 +610,7 @@ export function ThemeCustomizePage() {
         editor.markSaved(res.data.draft.sections);
       }
     } catch (err) {
-      if (isDraftConflict(err)) { setDraftConflict(true); return; }
+      if (isDraftConflict(err)) { flashConflict(); return; }
       if (rollbackTo) editor.discardDraft(rollbackTo);
       flashEditorError(err, 'Failed to save.');
     }
@@ -649,7 +650,7 @@ export function ThemeCustomizePage() {
       flash(true, 'Published — your storefront is now live with these changes.');
     } catch (err) {
       editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
-      if (isDraftConflict(err)) { setDraftConflict(true); return; }
+      if (isDraftConflict(err)) { flashConflict(); return; }
       flashEditorError(err, 'Failed to publish.');
     }
   };
@@ -1022,23 +1023,17 @@ export function ThemeCustomizePage() {
 
             {scope !== 'theme' && (
               <div className="flex items-center gap-2 shrink-0">
-                {editor.phase === 'error' && errorInfo.sectionId ? (
-                  <button type="button" aria-live="polite" onClick={() => (errorInfo.blockId ? selectPreviewBlock(errorInfo.sectionId!, errorInfo.blockId) : selectPreviewSection(errorInfo.sectionId!))}
-                    title="Go to the section with the problem" className="hidden sm:inline max-w-[320px] truncate text-[11.5px] text-error underline underline-offset-2 bg-transparent border-0 p-0 cursor-pointer">
-                    {errorInfo.text}
-                  </button>
-                ) : (
+                {/* Short, fixed-width status only: the details of any error go to a toast (click it to jump to the problem), so the bar never changes size. */}
                 <span
                   role="status"
                   aria-live="polite"
-                  className={`hidden sm:inline text-[11.5px] ${editor.phase === 'error' ? 'text-error' : anyDirty ? 'text-amber-700' : 'text-slate'}`}
+                  className={`hidden sm:inline-block w-[112px] truncate text-right text-[11.5px] ${editor.phase === 'error' ? 'text-error' : anyDirty ? 'text-amber-700' : 'text-slate'}`}
                 >
-                  {editor.phase === 'dirty' || (anyDirty && editor.phase !== 'saving' && editor.phase !== 'error') ? 'Unsaved changes' :
-                    editor.phase === 'saving' ? 'Saving draft…' :
-                      editor.phase === 'error' ? errorInfo.text :
+                  {editor.phase === 'error' ? 'Not saved' :
+                    editor.phase === 'dirty' || (anyDirty && editor.phase !== 'saving') ? 'Unsaved changes' :
+                      editor.phase === 'saving' ? 'Saving draft…' :
                         editor.phase === 'published' ? 'Published' : 'Draft saved'}
                 </span>
-                )}
                 {anyUnpublished && (
                   <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
                     <RotateCcw size={13} /> Discard Draft

@@ -112,7 +112,7 @@ export function ToastContainer() {
             <span className="absolute left-4 right-4 bottom-0 h-[3px] rounded-full overflow-hidden bg-white/20">
               <span
                 className="toast-progress block h-full bg-white/70"
-                style={{ animationDuration: `${TOAST_DURATION_MS}ms`, animationPlayState: t.paused ? 'paused' : 'running' }}
+                style={{ animationDuration: `${t.duration ?? TOAST_DURATION_MS}ms`, animationPlayState: t.paused ? 'paused' : 'running' }}
               />
             </span>
           </div>

@@ -61,7 +61,7 @@ export function FashionToaster() {
             </div>
             {t.toast.progress && (
               <div className="absolute inset-x-0 bottom-0 h-[3px]" aria-hidden>
-                <div className="fx-toast-bar h-full w-full" style={{ background: fill, opacity: 0.9, animationDuration: `${TOAST_DURATION_MS}ms`, animationPlayState: toast.paused || toast.leaving ? 'paused' : 'running' }} />
+                <div className="fx-toast-bar h-full w-full" style={{ background: fill, opacity: 0.9, animationDuration: `${toast.duration ?? TOAST_DURATION_MS}ms`, animationPlayState: toast.paused || toast.leaving ? 'paused' : 'running' }} />
               </div>
             )}
           </div>

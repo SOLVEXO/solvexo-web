@@ -9,6 +9,8 @@ interface ToastEntry {
   message: string;
   /** Optional click action (e.g. jump to the thing the message is about). */
   onClick?: () => void;
+  /** How long it stays (ms). Errors and click-to-go toasts stay longer so they can be read. */
+  duration: number;
   leaving: boolean;
   paused:  boolean;
 }
@@ -28,6 +30,7 @@ interface ToastContextValue {
 const ToastCtx = createContext<ToastContextValue | null>(null);
 
 export const TOAST_DURATION_MS = 3200;
+const TOAST_LONG_MS = 7000;
 const EXIT_MS = 220;
 const MAX_VISIBLE = 3;
 
@@ -78,11 +81,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const push = useCallback((variant: ToastVariant, message: string, onClick?: () => void) => {
     const id = nextId.current++;
+    const duration = onClick || variant === 'error' ? TOAST_LONG_MS : TOAST_DURATION_MS;
     // A double click / double-fired handler must not stack two identical toasts.
     setToasts(prev => prev.some(t => !t.leaving && t.variant === variant && t.message === message)
       ? prev
-      : [...prev, { id, variant, message, onClick, leaving: false, paused: false }].slice(-MAX_VISIBLE));
-    schedule(id, TOAST_DURATION_MS);
+      : [...prev, { id, variant, message, onClick, duration, leaving: false, paused: false }].slice(-MAX_VISIBLE));
+    schedule(id, duration);
   }, [schedule]);
 
   // A page's own toast: remembered, so the API client stays quiet for that action.
