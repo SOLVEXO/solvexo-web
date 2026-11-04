@@ -15,7 +15,7 @@ export function StoreLocationsSection({ section, blocks, colors }: SharedSection
           const s = b.settings;
           return (
             <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
-              <article className="flex h-full flex-col gap-3 p-6" style={{ background: colors.bgAlt, borderRadius: 24, fontFamily: t.fonts.body }}>
+              <article className="flex h-full flex-col gap-3 p-6" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx, fontFamily: t.fonts.body }}>
                 <h3 className="m-0 mb-1 text-xl font-semibold tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{s.name}</h3>
                 {s.address && <p className={`${row} m-0 whitespace-pre-line`} style={{ color: colors.inkMuted }}><MapPin size={17} className="mt-0.5 shrink-0" aria-hidden />{s.address}</p>}
                 {s.phone && <a href={`tel:${String(s.phone).replace(/[^\d+]/g, '')}`} className={row} style={{ color: colors.ink }}><Phone size={17} className="mt-0.5 shrink-0" aria-hidden />{s.phone}</a>}

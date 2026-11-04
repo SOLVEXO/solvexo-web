@@ -51,7 +51,7 @@ export function TechImageLightbox({ images, index, alt, onIndexChange, onClose }
       onTouchStart={e => { touchX.current = e.touches[0].clientX; }} onTouchEnd={onTouchEnd}>
       <button ref={closeRef} type="button" onClick={onClose} aria-label={tr('common.close', "Close")} style={{ ...roundBtn(), position: 'absolute', top: 16, insetInlineEnd: 16 }}><X size={20} aria-hidden /></button>
       {count > 1 && <button type="button" onClick={e => { e.stopPropagation(); step(-1); }} aria-label={tr('product.prevPhoto', "Previous photo")} style={{ ...roundBtn(), position: 'absolute', insetInlineStart: 16 }}><ChevronLeft size={22} className="tx-flip-rtl" aria-hidden /></button>}
-      <img src={cloudinaryUrl(images[index], 1800)} alt={alt} draggable={false} onClick={e => e.stopPropagation()} style={{ maxWidth: '92vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: 20 }} />
+      <img src={cloudinaryUrl(images[index], 1800)} alt={alt} draggable={false} onClick={e => e.stopPropagation()} style={{ maxWidth: '92vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: t.productCardRadiusPx }} />
       {count > 1 && <button type="button" onClick={e => { e.stopPropagation(); step(1); }} aria-label={tr('product.nextPhoto', "Next photo")} style={{ ...roundBtn(), position: 'absolute', insetInlineEnd: 16 }}><ChevronRight size={22} className="tx-flip-rtl" aria-hidden /></button>}
       {count > 1 && <span aria-live="polite" className="absolute bottom-5 rounded-full px-3.5 py-1.5 text-[13px] font-medium" style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>{index + 1} / {count}</span>}
     </div>,

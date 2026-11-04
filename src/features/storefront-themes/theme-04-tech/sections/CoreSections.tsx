@@ -10,7 +10,7 @@ import { SectionShell } from './SectionShell';
 function Placeholder({ title, note, colors }: { title: string; note: string; colors: typeof t.colors }) {
   return (
     <SectionShell colors={colors}>
-      <div className="grid place-items-center gap-1 px-6 py-14 text-center" style={{ background: colors.bgAlt, borderRadius: 24 }}>
+      <div className="grid place-items-center gap-1 px-6 py-14 text-center" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
         <p className="m-0 text-lg font-semibold">{title}</p>
         <p className="m-0 text-sm" style={{ color: colors.inkMuted }}>{note}</p>
       </div>
@@ -23,7 +23,7 @@ registerTechSection('product_main', (_s, _b, colors, _d, ctx) => {
   return (
     <SectionShell colors={colors}>
       <div className="grid gap-8 lg:grid-cols-12">
-        <div className="overflow-hidden lg:col-span-7" style={{ aspectRatio: '4 / 5', background: colors.bgAlt, borderRadius: 24 }}>
+        <div className="overflow-hidden lg:col-span-7" style={{ aspectRatio: '4 / 5', background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
           {p?.image && <img src={p.image} alt={p.name} className="size-full object-cover" />}
         </div>
         <div className="flex flex-col gap-4 lg:col-span-5">

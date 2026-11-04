@@ -33,7 +33,7 @@ export function TechCookieBanner({ message, position = 'bottom_bar', colorMode =
       style={{
         position: 'fixed', zIndex: 9999, background: palette.bg, color: palette.ink, fontFamily: t.fonts.body,
         ...(corner
-          ? { bottom: 16, insetInline: 16, maxWidth: 380, marginInlineStart: 'auto', borderRadius: 24, boxShadow: '0 12px 36px rgba(0,0,0,.22)', border: colorMode === 'light' ? `1px solid ${palette.line}` : 'none' }
+          ? { bottom: 16, insetInline: 16, maxWidth: 380, marginInlineStart: 'auto', borderRadius: t.productCardRadiusPx, boxShadow: '0 12px 36px rgba(0,0,0,.22)', border: colorMode === 'light' ? `1px solid ${palette.line}` : 'none' }
           : { bottom: 0, insetInline: 0, boxShadow: '0 -6px 24px rgba(0,0,0,.14)', borderTop: colorMode === 'light' ? `1px solid ${palette.line}` : 'none' }),
       }}>
       <div className="tx-bidi" style={{ padding: corner ? 20 : '16px clamp(16px, 4vw, 40px)', display: 'flex', flexDirection: corner ? 'column' : 'row', flexWrap: 'wrap', alignItems: corner ? 'stretch' : 'center', justifyContent: 'center', gap: 14 }}>

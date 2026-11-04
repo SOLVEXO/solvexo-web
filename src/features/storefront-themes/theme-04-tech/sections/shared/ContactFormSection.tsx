@@ -41,12 +41,12 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
       <div className="mx-auto max-w-[680px]" style={{ fontFamily: t.fonts.body }}>
         {s.intro && <p className="m-0 mb-8 text-center text-base leading-relaxed" style={{ color: colors.inkMuted }}>{s.intro}</p>}
         {status === 'done' ? (
-          <div role="status" className="flex flex-col items-center gap-3 px-6 py-12 text-center" style={{ background: colors.bgAlt, borderRadius: 28 }}>
+          <div role="status" className="flex flex-col items-center gap-3 px-6 py-12 text-center" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx }}>
             <CheckCircle2 size={32} style={{ color: t.colors.success }} aria-hidden />
             <p className="m-0 text-lg font-medium" style={{ color: colors.ink }}>{s.successMessage || tt('sections.contactThanks', 'Thanks, we got your message and will reply soon.')}</p>
           </div>
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-4 p-6 md:p-8" style={{ background: colors.bgAlt, borderRadius: 28, color: colors.ink }}>
+          <form onSubmit={submit} className="flex flex-col gap-4 p-6 md:p-8" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx, color: colors.ink }}>
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}>
               <div><label htmlFor={`${uid}-name`} className={label}>{copyText(s, 'nameLabel', 'Name')}</label><input id={`${uid}-name`} required maxLength={80} value={values.name} onChange={set('name')} autoComplete="name" style={controlStyle()} /></div>
               <div><label htmlFor={`${uid}-email`} className={label}>{copyText(s, 'emailLabel', 'Email')}</label><input id={`${uid}-email`} type="email" required maxLength={120} value={values.email} onChange={set('email')} autoComplete="email" style={controlStyle()} /></div>

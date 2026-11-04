@@ -40,7 +40,7 @@ export function ProductDelivery({ storeId }: { storeId: string }) {
   const freeOver = best.freeShippingThreshold ? ts('product.freeShippingOver', 'Free shipping on orders over {{amount}}', { amount: moneyText(best.freeShippingThreshold, currency) }) : null;
 
   return (
-    <div className="flex flex-col gap-2 p-4" style={{ background: t.colors.bgAlt, borderRadius: 18, fontFamily: t.fonts.body }} role="group" aria-label={ts('product.delivery', 'Delivery')}>
+    <div className="flex flex-col gap-2 p-4" style={{ background: t.colors.bgAlt, borderRadius: t.productCardRadiusPx, fontFamily: t.fonts.body }} role="group" aria-label={ts('product.delivery', 'Delivery')}>
       <div className="flex items-start gap-3">
         <Truck size={18} aria-hidden className="mt-0.5 shrink-0" />
         <div className="min-w-0 text-sm">

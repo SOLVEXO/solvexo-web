@@ -166,7 +166,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             {showFilters && (
-              <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog" className={`tx-btn tx-btn-sm ${drawerOnly ? '' : 'lg:hidden'}`} style={{ background: 'transparent', color: t.colors.ink, borderColor: t.colors.border, borderRadius: t.fieldRadiusPx }}>
+              <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog" className={`tx-btn tx-btn-sm ${drawerOnly ? '' : 'lg:hidden!'}`} style={{ background: 'transparent', color: t.colors.ink, borderColor: t.colors.border, borderRadius: t.fieldRadiusPx }}>
                 <SlidersHorizontal size={14} aria-hidden />{chips.length > 0 ? ts('browse.filterCount', 'Filter ({{count}})', { count: chips.length }) : ts('browse.filter', 'Filter')}
               </button>
             )}

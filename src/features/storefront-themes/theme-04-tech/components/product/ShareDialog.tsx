@@ -61,7 +61,7 @@ export function ShareDialog({ url, title, image, settings, onClose }: { url: str
 
   return (
     <div className="fixed inset-0 z-[1000] grid place-items-center p-4" style={{ background: 'rgba(0,0,0,.5)' }} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-label={tr('pg.copy_link', 'Copy link')} className="w-full max-w-[480px] p-5 sm:p-6" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: 20, fontFamily: t.fonts.body }}>
+      <div role="dialog" aria-modal="true" aria-label={tr('pg.copy_link', 'Copy link')} className="w-full max-w-[480px] p-5 sm:p-6" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.productCardRadiusPx, fontFamily: t.fonts.body }}>
         <div className="mb-4 flex items-center justify-between gap-4">
           <strong className="text-lg sm:text-xl" style={{ fontFamily: t.fonts.display, letterSpacing: '-.01em' }}>{tr('pg.copy_link', 'Copy link')}</strong>
           <button ref={closeRef} type="button" onClick={onClose} aria-label={tr('pg.close', 'Close')} className="grid size-10 place-items-center" style={{ background: t.colors.bgAlt, border: 0, borderRadius: 9999, cursor: 'pointer', color: t.colors.ink }}><X size={18} aria-hidden /></button>

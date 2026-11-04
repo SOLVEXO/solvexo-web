@@ -18,7 +18,7 @@ export function ProductCollapsibleTab({ settings }: { settings: Settings }) {
   const content = str(settings.content);
   if (!content) return null;
   return (
-    <div style={{ background: t.colors.bgAlt, borderRadius: 18, fontFamily: t.fonts.body }}>
+    <div style={{ background: t.colors.bgAlt, borderRadius: t.productCardRadiusPx, fontFamily: t.fonts.body }}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId}
         className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-5 py-4 text-left text-sm font-semibold" style={{ color: t.colors.ink }}>
         <span>{title}</span>
@@ -46,7 +46,7 @@ export function ProductSizeChart({ settings }: { settings: Settings }) {
       </button>
       {open && (
         <Dialog title={title} onClose={() => setOpen(false)} size="lg">
-          {imageUrl && <img src={imageUrl} alt={title} className="h-auto w-full" style={{ borderRadius: 16, marginBottom: content ? 16 : 0 }} />}
+          {imageUrl && <img src={imageUrl} alt={title} className="h-auto w-full" style={{ borderRadius: t.productCardRadiusPx, marginBottom: content ? 16 : 0 }} />}
           {content && <p className="m-0 whitespace-pre-line text-sm leading-[1.75]" style={{ color: t.colors.inkMuted }}>{content}</p>}
         </Dialog>
       )}
@@ -70,7 +70,7 @@ export function ProductPickup({ storeId, storeName, settings, available }: { sto
   }, [storeId, currency, available]);
   if (!available || places.length === 0) return null;
   return (
-    <div className="flex flex-col gap-3 p-4" style={{ background: t.colors.bgAlt, borderRadius: 18, fontFamily: t.fonts.body }} role="group" aria-label={str(settings.heading) || tr('product.pickup', 'Pickup')}>
+    <div className="flex flex-col gap-3 p-4" style={{ background: t.colors.bgAlt, borderRadius: t.productCardRadiusPx, fontFamily: t.fonts.body }} role="group" aria-label={str(settings.heading) || tr('product.pickup', 'Pickup')}>
       <p className="m-0 flex items-center gap-2 text-sm font-semibold"><Store size={16} aria-hidden />{str(settings.heading) || tr('product.pickup', 'Pickup')}</p>
       {places.map(z => {
         const place = z.name?.trim() || z.pickupAddress?.trim() || storeName;

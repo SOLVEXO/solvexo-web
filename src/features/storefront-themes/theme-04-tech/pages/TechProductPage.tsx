@@ -289,8 +289,8 @@ function Inner({ slug }: { slug: string }) {
 
       {after.length > 0 && <TechSectionRenderer sections={after} />}
 
-      <section id="tx-reviews" style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}`, fontFamily: t.fonts.body, color: t.colors.ink }}>
-        <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
+      <section id="tx-reviews" style={{ fontFamily: t.fonts.body, color: t.colors.ink }}>
+        <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="m-0 text-xl font-semibold" style={{ fontFamily: t.fonts.display }}>{ts('reviews.title', 'Customer reviews')}</h2>
             <TechButton variant="outline" small onClick={() => { if (!TokenStorage.isLoggedIn() || isGuestUser()) { navigate('/login'); return; } setWritingReview(true); }}>

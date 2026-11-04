@@ -61,7 +61,7 @@ registerTechSection('video', (section, _b, colors) => {
   if (!embed && !src) return null;
   return (
     <SectionShell colors={colors} heading={s.heading}>
-      <div className="mx-auto max-w-[960px] overflow-hidden" style={{ aspectRatio: ratio, borderRadius: 24, background: colors.bgAlt }}>
+      <div className="mx-auto max-w-[960px] overflow-hidden" style={{ aspectRatio: ratio, borderRadius: t.productCardRadiusPx, background: colors.bgAlt }}>
         {embed ? <iframe src={embed} title={s.heading || ts('pg.word_video', 'Video')} className="size-full border-0" allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen loading="lazy" />
           : <video src={src} controls playsInline preload="metadata" className="size-full object-cover"><track kind="captions" /></video>}
       </div>
@@ -88,9 +88,9 @@ function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; b
           return (
             <li key={id}><PreviewBlock blockId={id}>
               {/* Same look as the /faqs page accordion: grey card when open, round +/x button. */}
-              <div style={{ borderRadius: 20, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
+              <div style={{ borderRadius: t.productCardRadiusPx, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
                 <button type="button" aria-expanded={isOpen} aria-controls={`tx-faq-${id}`} onClick={() => setOpen(isOpen ? null : id)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: colors.ink, borderRadius: 20 }}>
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: colors.ink, borderRadius: t.productCardRadiusPx }}>
                   <span>{b.settings.question}</span>
                   <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: isOpen ? colors.selected : colors.bgAlt, color: isOpen ? colors.selectedInk : colors.ink, transition: 'transform .25s, background-color .2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}><Plus size={16} /></span>
                 </button>

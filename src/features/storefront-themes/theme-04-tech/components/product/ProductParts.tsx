@@ -101,7 +101,7 @@ export function ProductSpecs({ entries }: { entries: MetafieldValueEntry[] }) {
   const rows = entries.filter(e => e.value?.trim() && e.type !== 'json');
   if (rows.length === 0) return null;
   return (
-    <div className="p-5" style={{ background: t.colors.bgAlt, borderRadius: 20, fontFamily: t.fonts.body }}>
+    <div className="p-5" style={{ background: t.colors.bgAlt, borderRadius: t.productCardRadiusPx, fontFamily: t.fonts.body }}>
       <p className="m-0 mb-3 text-sm font-semibold">{tr('product.specifications', "Specifications")}</p>
       <dl className="m-0">
         {rows.map((r, i) => (

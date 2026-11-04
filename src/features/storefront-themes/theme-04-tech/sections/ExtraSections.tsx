@@ -92,9 +92,9 @@ function MetaobjectListSection({ section, colors }: { section: Section; colors: 
     <SectionShell colors={colors} heading={section.settings.heading} align="center">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {entries === null
-          ? Array.from({ length: 3 }).map((_, i) => <div key={i} aria-hidden className="h-32 animate-pulse" style={{ background: colors.bgAlt, borderRadius: 20 }} />)
+          ? Array.from({ length: 3 }).map((_, i) => <div key={i} aria-hidden className="h-32 animate-pulse" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }} />)
           : entries.map(entry => (
-            <div key={entry._id} className="flex flex-col gap-3 p-6" style={{ background: colors.bgAlt, borderRadius: 20 }}>
+            <div key={entry._id} className="flex flex-col gap-3 p-6" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
               <p className="m-0 text-lg font-semibold" style={{ fontFamily: t.fonts.display }}>{entry.displayName}</p>
               {entry.fields.length > 0 && (
                 <dl className="m-0 flex flex-col gap-1.5">

@@ -78,7 +78,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
 
   if (layout === 'list') {
     return (
-      <article className="tx-card grid gap-4 p-4 sm:grid-cols-[180px_1fr_auto]" data-style={t.productCardStyle} style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.cardRadiusPx }}>
+      <article className="tx-card gap-4 p-4 grid-cols-[96px_1fr] sm:grid-cols-[180px_1fr_auto]" data-style={t.productCardStyle} style={{ display: 'grid', background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.cardRadiusPx }}>
         {imageBox}
         <div className="flex min-w-0 flex-col gap-2">
           <TechStock inStock={inStock} />
@@ -86,7 +86,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
           {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
           {priceBlock}
         </div>
-        <div className="flex flex-row items-center gap-3 sm:flex-col sm:items-end sm:justify-between">
+        <div className="flex flex-row items-center gap-3 max-sm:col-span-2 sm:flex-col sm:items-end sm:justify-between">
           <span className="flex gap-2">{heartBtn}{compareBtn}</span>
           {addBtn}
         </div>

@@ -89,7 +89,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
             const name = localize.collection(c).name ?? c.name;
             return (
               <li key={c._id} className="w-[270px] max-w-[80vw] shrink-0">
-                <Link to={`/category/${c.slug || c._id}`} className="group flex items-center overflow-hidden no-underline transition-colors hover:border-current" style={{ border: `1px solid ${colors.border}`, borderRadius: 16, background: colors.bg, color: colors.ink }}>
+                <Link to={`/category/${c.slug || c._id}`} className="group flex items-center overflow-hidden no-underline transition-colors hover:border-current" style={{ border: `1px solid ${colors.border}`, borderRadius: t.productCardRadiusPx, background: colors.bg, color: colors.ink }}>
                   <div className="relative size-24 shrink-0 overflow-hidden" style={{ background: colors.bgAlt, borderRight: `1px solid ${colors.border}` }}>
                     {c.image && <img src={c.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />}
                   </div>

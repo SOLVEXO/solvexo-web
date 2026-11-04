@@ -21,7 +21,7 @@ export function ImageBannerSection({ section, colors }: SharedSectionProps) {
   const minHeight = adapt ? undefined : HEIGHT[s.heightPreset as keyof typeof HEIGHT] ?? HEIGHT.medium;
   return (
     <section style={{ padding: `0 ${t.layout.containerPadX}` }}>
-      <div className="relative mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, borderRadius: 32, background: colors.bgAlt, minHeight }}>
+      <div className="relative mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, borderRadius: t.sectionRadiusPx, background: colors.bgAlt, minHeight }}>
         {hasImage && (
           <img src={s.imageUrl} alt="" onError={() => setErrored(true)}
             style={adapt ? { display: 'block', width: '100%', height: 'auto' } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focalOf(s.focalPoint) }} />

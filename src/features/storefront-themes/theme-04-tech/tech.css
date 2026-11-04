@@ -120,3 +120,8 @@ article[data-fx-align='center'] .tx-card-body :is(p.flex, ul.flex, div.flex.item
 :lang(ur) .tx-cta, :lang(ur) .tx-pill { line-height: 1.4; }
 /* Seller-written section text: each heading/paragraph picks its own direction so English copy in an RTL page keeps its punctuation */
 .tx-bidi :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption, div:not(:has(div, p, section, ul, ol, h1, h2, h3, h4, h5, h6, table, form, img, svg, button, input, select, textarea))) { unicode-bidi: plaintext; }
+
+/* Tech call-to-action override */
+.tx-cta, .tx-cta.tx-cta-sm, .tx-cta:hover, .tx-cta.tx-cta-sm:hover, [dir="rtl"] .tx-cta, [dir="rtl"] .tx-cta:hover { padding: 0 28px; height: var(--tx-btn-h, 50px); font-weight: 600; }
+.tx-cta.tx-cta-sm, .tx-cta.tx-cta-sm:hover { height: 38px; padding: 0 20px; font-size: 13px; }
+.tx-cta .tx-cta-icon { display: none; }

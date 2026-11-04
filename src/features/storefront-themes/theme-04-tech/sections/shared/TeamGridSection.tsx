@@ -12,7 +12,7 @@ function initials(name: string): string {
 function Member({ name, role, bio, imageUrl, colors, center }: { name: string; role: string; bio?: string; imageUrl?: string; colors: BaseColors; center: boolean }) {
   const [errored, setErrored] = useState(false);
   return (
-    <div className={`flex h-full flex-col gap-4 p-5 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: 24 }}>
+    <div className={`flex h-full flex-col gap-4 p-5 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
       {imageUrl && !errored ? (
         <img src={imageUrl} alt={name} loading="lazy" onError={() => setErrored(true)} className="w-full object-cover" style={{ aspectRatio: '1 / 1', borderRadius: Math.max(parseInt(t.imageRadiusPx) - 4, 0) }} />
       ) : (

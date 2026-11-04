@@ -12,7 +12,7 @@ function Column({ block, colors, ratio, center }: { block: Block; colors: BaseCo
   const [errored, setErrored] = useState(false);
   const fit = imageFit(ratio, '4 / 3');
   return (
-    <div className={`flex h-full flex-col gap-4 p-4 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: 24 }}>
+    <div className={`flex h-full flex-col gap-4 p-4 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
       {s.imageUrl && !errored && (
         <div className="w-full overflow-hidden" style={{ ...fit.box, background: colors.bg, borderRadius: Math.max(parseInt(t.imageRadiusPx) - 4, 0) }}>
           <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" onError={() => setErrored(true)} style={fit.img} />

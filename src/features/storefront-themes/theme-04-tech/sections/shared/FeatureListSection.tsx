@@ -17,7 +17,7 @@ export function FeatureListSection({ section, blocks, colors }: SharedSectionPro
           const Icon = featureIcon(b.settings.icon);
           return (
             <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
-              <div className={`flex h-full flex-col gap-4 p-6 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: 24 }}>
+              <div className={`flex h-full flex-col gap-4 p-6 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
                 <span className="grid size-12 place-items-center rounded-full" style={{ background: colors.accent, color: colors.accentInk }}><Icon size={22} aria-hidden /></span>
                 <div className="flex flex-col gap-2">
                   {b.settings.title && <h3 className="m-0 text-xl font-semibold tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{b.settings.title}</h3>}
