@@ -170,3 +170,5 @@ export function TechSocialSignIn({ providers, onStart, loading, disabled, divide
     </div>
   );
 }
+
+export const PhoneField = TechPhoneField;

@@ -41,7 +41,7 @@ function buildGroups(digital: boolean): NavItem[][] {
 }
 
 /** Shell for every signed-in account page: a soft panel menu with a blue bar on the active item (a scrolling tab strip on phones). */
-export function TechAccountLayout({ title, crumb, actions, children }: { title: string; crumb?: string; actions?: ReactNode; children: ReactNode }) {
+export function TechAccountLayout({ title, crumb, subtitle, actions, children }: { title: string; crumb?: string; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   const { store } = useStorefront();
   const logout = useLogout();
   const groups = buildGroups(!!store.sellsDigital);
@@ -51,7 +51,10 @@ export function TechAccountLayout({ title, crumb, actions, children }: { title: 
     <TechBox>
       <TechBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: crumb ?? title }]} />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{title}</h1>
+        <div className="min-w-0">
+          <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{title}</h1>
+          {subtitle && <p className="m-0 mt-2 max-w-[620px] text-sm" style={{ color: t.colors.inkMuted }}>{subtitle}</p>}
+        </div>
         {actions}
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[280px_1fr] lg:gap-10">
@@ -124,4 +127,10 @@ export function TechPager({ page, totalPages, onChange, busy }: { page: number; 
       <PillButton variant="outline" disabled={page >= totalPages || busy} onClick={() => onChange(page + 1)}>{ts('orders.next', 'Next')}</PillButton>
     </nav>
   );
+}
+
+/** Same call shape the customer pages use: `*accent*` markers in the title are only an accent in other themes, Tech prints plain text. */
+export function AccountLayout({ title, subtitle, actions, children }: { title: string; accent?: string; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
+  const plain = title.replace(/\*/g, '');
+  return <TechAccountLayout title={plain} crumb={plain} subtitle={subtitle} actions={actions}>{children}</TechAccountLayout>;
 }

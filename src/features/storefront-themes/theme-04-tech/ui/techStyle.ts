@@ -12,7 +12,7 @@ export function techButtonStyle(variant: TechButtonVariant): CSSProperties {
 
 /** CSS variables the tx- classes read; set on the root wrapper so merchant colours flow into the stylesheet. */
 export function techCssVars(): CSSProperties {
-  return { '--tx-bg': t.colors.bg, '--tx-border': t.colors.border, '--tx-muted': t.colors.inkMuted, '--tx-accent': t.colors.accent, '--tx-btn-h': t.buttonHeightPx, '--tx-field-r': t.fieldRadiusPx } as CSSProperties;
+  return { '--tx-bg': t.colors.bg, '--tx-border': t.colors.border, '--tx-muted': t.colors.inkMuted, '--tx-accent': t.colors.accent, '--tx-btn-h': t.buttonHeightPx, '--tx-field-r': t.fieldRadiusPx, '--tx-card-r': t.cardRadiusPx } as CSSProperties;
 }
 
 /** Shared look of text inputs, selects and textareas (also used by the phone field). */

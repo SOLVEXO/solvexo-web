@@ -66,3 +66,6 @@ export function TechConfirmDialog({ title, message, confirmLabel = ts('pg.word_c
     </TechDialog>
   );
 }
+
+export const Dialog = TechDialog;
+export const ConfirmDialog = TechConfirmDialog;

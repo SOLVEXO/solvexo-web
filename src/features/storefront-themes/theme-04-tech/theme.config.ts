@@ -67,6 +67,8 @@ const STATIC_DEFAULTS = {
   topBarHours: '',
   topBarShowroom: '',
   footerTone: 'dark' as 'dark' | 'light',
+  /** Blog list page size. */
+  pagination: { postsPerPage: 9 },
 };
 
 export const techTheme: typeof STATIC_DEFAULTS = structuredClone(STATIC_DEFAULTS);

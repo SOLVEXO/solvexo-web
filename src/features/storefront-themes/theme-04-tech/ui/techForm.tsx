@@ -105,3 +105,17 @@ export function PillButton({ children, variant = 'primary', loading, full, ...re
     </button>
   );
 }
+
+export function SectionHeading({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return <div className="mb-4 flex items-center justify-between gap-3 pb-3" style={{ borderBottom: `1px solid ${t.colors.border}` }}><h2 className="m-0 text-lg font-semibold" style={{ fontFamily: t.fonts.display }}>{children}</h2>{action}</div>;
+}
+
+export function Spinner({ label = ts('pg.loading', 'Loading') }: { label?: string }) {
+  return <div role="status" aria-label={label} className="grid place-items-center py-16"><Loader2 size={26} className="animate-spin" style={{ color: t.colors.inkMuted }} /></div>;
+}
+
+/** Square status chip. */
+export function StatusPill({ tone = 'neutral', children }: { tone?: 'neutral' | 'good' | 'warn' | 'bad'; children: ReactNode }) {
+  const c = tone === 'good' ? t.colors.success : tone === 'bad' ? t.colors.danger : tone === 'warn' ? t.colors.warning : t.colors.inkMuted;
+  return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold" style={{ background: `color-mix(in srgb, ${c} 14%, transparent)`, color: c, borderRadius: t.badgeRadiusPx }}>{children}</span>;
+}

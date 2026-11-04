@@ -1,4 +1,4 @@
-import { lazy, type ComponentType, type ReactNode } from 'react';
+import { Suspense, createElement, lazy, type ComponentType, type ReactNode } from 'react';
 import type { PublicStoreData } from '@/api/services/store';
 import type { CookieBannerProps } from '@/features/storefront/CookieConsentBanner';
 
@@ -50,7 +50,7 @@ import './theme-03-fashion/theme.preview';
 import './theme-03-fashion/theme.demoPreview';
 
 // Tech Store (theme-04-tech) is loaded on demand: a Maison store never downloads its code. Its Layout and every page are lazy chunks; its editor registrations (manifest, preview, demo) live in `editorThemes.ts`, imported only by seller pages.
-// Native routes: home, product, cart, collection, category, search, customPage, checkout, checkoutReturn, login, register, verifyOtp, forgotPassword, newPassword, account, orders, addresses. Every other route falls back to Maison's page, which follows the Tech palette through the token bridge in theme-04-tech/theme.config.ts.
+// Native routes: home, product, cart, collection, category, search, customPage, checkout, checkoutReturn, login, register, verifyOtp, forgotPassword, newPassword, account, orders, addresses. Every route has a native Tech page.
 const TechLayout = lazy(() => import('./theme-04-tech/layout/TechLayout').then(m => ({ default: m.TechLayout })));
 const TechHomePage = lazy(() => import('./theme-04-tech/pages/TechContentPages').then(m => ({ default: m.TechHomePage })));
 const TechCustomPage = lazy(() => import('./theme-04-tech/pages/TechContentPages').then(m => ({ default: m.TechCustomPage })));
@@ -69,6 +69,29 @@ const TechNewPasswordPage = lazy(() => import('./theme-04-tech/pages/TechAuthPag
 const TechAccountPage = lazy(() => import('./theme-04-tech/pages/TechAccountPages').then(m => ({ default: m.TechAccountPage })));
 const TechOrdersPage = lazy(() => import('./theme-04-tech/pages/TechAccountPages').then(m => ({ default: m.TechOrdersPage })));
 const TechAddressesPage = lazy(() => import('./theme-04-tech/pages/TechAccountPages').then(m => ({ default: m.TechAddressesPage })));
+const TechOrderDetailPage = lazy(() => import('./theme-04-tech/pages/TechOrderDetailPage').then(m => ({ default: m.TechOrderDetailPage })));
+const TechOrderStatusPage = lazy(() => import('./theme-04-tech/pages/TechOrderStatusPage').then(m => ({ default: m.TechOrderStatusPage })));
+const TechReturnsPage = lazy(() => import('./theme-04-tech/pages/TechReturnsPage').then(m => ({ default: m.TechReturnsPage })));
+const TechWishlistPage = lazy(() => import('./theme-04-tech/pages/TechWishlistPage').then(m => ({ default: m.TechWishlistPage })));
+const TechMyReviewsPage = lazy(() => import('./theme-04-tech/pages/TechMyReviewsPage').then(m => ({ default: m.TechMyReviewsPage })));
+const TechGiftCardsPage = lazy(() => import('./theme-04-tech/pages/TechGiftCardsPage').then(m => ({ default: m.TechGiftCardsPage })));
+const TechGiftCardViewPage = lazy(() => import('./theme-04-tech/pages/TechGiftCardViewPage').then(m => ({ default: m.TechGiftCardViewPage })));
+const TechStoreCreditPage = lazy(() => import('./theme-04-tech/pages/TechStoreCreditPage').then(m => ({ default: m.TechStoreCreditPage })));
+const TechLoyaltyPage = lazy(() => import('./theme-04-tech/pages/TechLoyaltyPage').then(m => ({ default: m.TechLoyaltyPage })));
+const TechMessagesPage = lazy(() => import('./theme-04-tech/pages/TechMessagesPage').then(m => ({ default: m.TechMessagesPage })));
+const TechNotificationsPage = lazy(() => import('./theme-04-tech/pages/TechNotificationsPage').then(m => ({ default: m.TechNotificationsPage })));
+const TechBlogIndexPage = lazy(() => import('./theme-04-tech/pages/TechBlogIndexPage').then(m => ({ default: m.TechBlogIndexPage })));
+const TechBlogPostPage = lazy(() => import('./theme-04-tech/pages/TechBlogPostPage').then(m => ({ default: m.TechBlogPostPage })));
+const TechFaqsPage = lazy(() => import('./theme-04-tech/pages/TechFaqsPage').then(m => ({ default: m.TechFaqsPage })));
+const TechCollectionsPage = lazy(() => import('./theme-04-tech/pages/TechCollectionsPage').then(m => ({ default: m.TechCollectionsPage })));
+const TechNotFoundPage = lazy(() => import('./theme-04-tech/pages/TechNotFoundPage').then(m => ({ default: m.TechNotFoundPage })));
+const TechLibraryPage = lazy(() => import('./theme-04-tech/pages/TechDigitalPages').then(m => ({ default: m.TechLibraryPage })));
+const TechMembershipsPage = lazy(() => import('./theme-04-tech/pages/TechDigitalPages').then(m => ({ default: m.TechMembershipsPage })));
+const TechLicensesPage = lazy(() => import('./theme-04-tech/pages/TechDigitalPages').then(m => ({ default: m.TechLicensesPage })));
+const TechLearnPage = lazy(() => import('./theme-04-tech/pages/TechDigitalPages').then(m => ({ default: m.TechLearnPage })));
+const LazyTechGate = lazy(() => import('./theme-04-tech/pages/TechStorefrontGate').then(m => ({ default: m.TechStorefrontGate })));
+/** The password / coming-soon page is outside the pages' Suspense boundary, so it brings its own. */
+const TechGate: NewThemeImpl['GatePage'] = props => createElement(Suspense, { fallback: null }, createElement(LazyTechGate, props));
 
 /** Every storefront route a theme can implement. A route a theme does not cover falls back to the default theme's page, so a theme that is still being built never renders a blank screen. */
 export type StorefrontRouteKey =
@@ -168,8 +191,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   },
   'theme-04-tech': {
     Layout: TechLayout,
-    // Password / coming-soon gate: Maison's page reads the bridged palette.
-    GatePage: FashionStorefrontGate,
+    GatePage: TechGate,
     CookieBanner: FashionCookieBanner,
     AuthGateModal: FashionAuthGateModal,
     pages: {
@@ -190,12 +212,32 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       account: TechAccountPage,
       orders: TechOrdersPage,
       addresses: TechAddressesPage,
+      orderDetail: TechOrderDetailPage,
+      orderStatus: TechOrderStatusPage,
+      returns: TechReturnsPage,
+      wishlist: TechWishlistPage,
+      myReviews: TechMyReviewsPage,
+      giftCards: TechGiftCardsPage,
+      giftCardView: TechGiftCardViewPage,
+      storeCredit: TechStoreCreditPage,
+      loyalty: TechLoyaltyPage,
+      messages: TechMessagesPage,
+      notifications: TechNotificationsPage,
+      blogIndex: TechBlogIndexPage,
+      blogPost: TechBlogPostPage,
+      faqs: TechFaqsPage,
+      collections: TechCollectionsPage,
+      notFound: TechNotFoundPage,
+      library: TechLibraryPage,
+      memberships: TechMembershipsPage,
+      licenses: TechLicensesPage,
+      learn: TechLearnPage,
     },
     display: {
       name: 'Tech Store',
       description: 'Electronics and computers: bright blue accents, dark feature bands, a filter sidebar and compact product cards.',
-      builtRouteCount: 17,
-      totalRouteCount: 33,
+      builtRouteCount: 37,
+      totalRouteCount: 37,
     },
     installDefaults: { primaryColor: '#0156FF', bgColor: '#FFFFFF', textColor: '#020203', font: 'Poppins', buttonStyle: 'solid', buttonRadius: 'full' },
   },
