@@ -55,9 +55,9 @@ function GiftCardBody({ card }: { card: GiftCardView }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="mx-auto w-full max-w-[560px] overflow-hidden text-center" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.cardRadiusPx, padding: 'clamp(24px, 5vw, 44px)', opacity: inactive ? 0.6 : 1 }}>
-        <p className="fx-bidi m-0 inline-flex items-center gap-2 text-sm font-medium opacity-90"><Gift size={16} aria-hidden />{ts('pg.gift_card_from_store', 'A gift card from {{store}}', { store: card.storeName })}</p>
+        <p className="tx-bidi m-0 inline-flex items-center gap-2 text-sm font-medium opacity-90"><Gift size={16} aria-hidden />{ts('pg.gift_card_from_store', 'A gift card from {{store}}', { store: card.storeName })}</p>
         <p className="m-0 mt-5 text-[clamp(40px,9vw,64px)] font-semibold leading-none tracking-tight" style={{ fontFamily: t.fonts.display }}>{moneyText(card.balance, card.currency)}</p>
-        {card.message && <p className="fx-bidi m-0 mt-5 text-base italic opacity-90">“<bdi>{card.message}</bdi>”</p>}
+        {card.message && <p className="tx-bidi m-0 mt-5 text-base italic opacity-90">“<bdi>{card.message}</bdi>”</p>}
         <p dir="ltr" className="m-0 mt-7 select-all text-[clamp(20px,5vw,28px)] font-semibold tracking-[0.12em]" aria-label={ts('checkout.giftCardCode', 'Gift card code')}>{card.code}</p>
         {!inactive && <div className="mt-5"><CopyCode code={card.code} /></div>}
       </div>

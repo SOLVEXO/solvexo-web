@@ -23,17 +23,17 @@ import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { breadcrumbJsonLd, pageUrlBuilder, productJsonLd } from '../../core/seo/jsonLd';
 import { useTemplateSections } from '../../core/pageHooks';
 import { useReviewedProducts } from '../../useReviewedProducts';
-import { imgProps } from '../../theme-03-fashion/components/imgProps';
-import { FashionNotFoundPage } from '../../theme-03-fashion/pages/FashionNotFoundPage';
-import { ReviewEditDialog } from '../../theme-03-fashion/pages/account/ReviewEditDialog';
+import { imgProps } from '../components/imgProps';
+import { TechNotFoundPage } from './TechNotFoundPage';
+import { ReviewEditDialog } from './account/ReviewEditDialog';
 // Small, token-driven product widgets reused as they are (they read the bridged Tech palette): share, wishlist, SKU, specs,
 // delivery estimate, description tabs, text/pickup/size-chart blocks and the image zoom.
-import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../../theme-03-fashion/components/product/ProductParts';
-import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../../theme-03-fashion/components/product/ProductExtraBlocks';
-import { ProductDescriptionTabs, type DescriptionTab } from '../../theme-03-fashion/components/product/ProductDescriptionTabs';
-import { ProductDelivery } from '../../theme-03-fashion/components/product/ProductDelivery';
-import { StickyBuyBar } from '../../theme-03-fashion/components/product/StickyBuyBar';
-import { FashionImageLightbox } from '../../theme-03-fashion/components/product/FashionImageLightbox';
+import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../components/product/ProductParts';
+import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../components/product/ProductExtraBlocks';
+import { ProductDescriptionTabs, type DescriptionTab } from '../components/product/ProductDescriptionTabs';
+import { ProductDelivery } from '../components/product/ProductDelivery';
+import { StickyBuyBar } from '../components/product/StickyBuyBar';
+import { TechImageLightbox } from '../components/product/TechImageLightbox';
 import { TechSectionRenderer } from '../sections';
 import { TechBox, TechBreadcrumbs, TechButton, TechError, TechSkeleton, TechStars } from '../ui/techUi';
 import { techTheme as t } from '../theme.config';
@@ -128,8 +128,8 @@ function Inner({ slug }: { slug: string }) {
   }, [product, detail?.product.tabs, layout.infoItems]);
 
   if (loading) return <TechBox><TechSkeleton h={420} /></TechBox>;
-  if (error && !detail) return /not found|404/i.test(error) ? <FashionNotFoundPage /> : <TechError message={ts('product.loadError', "We couldn't load this product.")} onRetry={refetch} />;
-  if (!detail || !product || !variant) return <FashionNotFoundPage />;
+  if (error && !detail) return /not found|404/i.test(error) ? <TechNotFoundPage /> : <TechError message={ts('product.loadError', "We couldn't load this product.")} onRetry={refetch} />;
+  if (!detail || !product || !variant) return <TechNotFoundPage />;
 
   const base = String(variant.currency ?? store.baseCurrency ?? currency);
   const ref = { productId: detail.product._id, variantId: variant._id };
@@ -331,7 +331,7 @@ function Inner({ slug }: { slug: string }) {
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
           onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />
       )}
-      {zoom && <FashionImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
+      {zoom && <TechImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>
   );
 }

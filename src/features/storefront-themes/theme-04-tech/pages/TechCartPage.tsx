@@ -8,7 +8,7 @@ import { displayMoney, displayMoneyLine, displayMoneySum, type MoneyLine } from 
 import { cartLineRules, cartQtyHint, clampQty, stepQty } from '../../sellingRules';
 import { splitAround, useTemplateSections } from '../../core/pageHooks';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
-import { imgProps } from '../../theme-03-fashion/components/imgProps';
+import { imgProps } from '../components/imgProps';
 import { TechSectionRenderer } from '../sections';
 import { TechBox, TechBreadcrumbs, TechButton, TechEmpty, TechLinkButton, TechPageTitle, TechSkeleton } from '../ui/techUi';
 import { techTheme as t } from '../theme.config';

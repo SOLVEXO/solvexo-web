@@ -5,9 +5,9 @@ import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
-import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from '../../theme-03-fashion/components/nav/FooterColumns';
-import { PaymentBadges } from '../../theme-03-fashion/components/nav/FooterParts';
-import { FashionLocaleControls } from '../../theme-03-fashion/components/FashionLocaleControls';
+import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from './nav/FooterColumns';
+import { PaymentBadges } from './nav/FooterParts';
+import { TechLocaleControls } from './TechLocaleControls';
 import { techTheme as t } from '../theme.config';
 import { TechSectionRenderer } from '../sections';
 
@@ -56,7 +56,7 @@ export function TechFooter() {
             {paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />}
             <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
               {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
-              {opts.showCurrency && <FashionLocaleControls />}
+              {opts.showCurrency && <TechLocaleControls />}
             </nav>
             <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>
           </div>

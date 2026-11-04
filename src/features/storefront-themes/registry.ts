@@ -90,6 +90,10 @@ const TechMembershipsPage = lazy(() => import('./theme-04-tech/pages/TechDigital
 const TechLicensesPage = lazy(() => import('./theme-04-tech/pages/TechDigitalPages').then(m => ({ default: m.TechLicensesPage })));
 const TechLearnPage = lazy(() => import('./theme-04-tech/pages/TechDigitalPages').then(m => ({ default: m.TechLearnPage })));
 const LazyTechGate = lazy(() => import('./theme-04-tech/pages/TechStorefrontGate').then(m => ({ default: m.TechStorefrontGate })));
+const LazyTechCookie = lazy(() => import('./theme-04-tech/components/TechCookieBanner').then(m => ({ default: m.TechCookieBanner })));
+const LazyTechAuthGate = lazy(() => import('./theme-04-tech/components/TechAuthGateModal').then(m => ({ default: m.TechAuthGateModal })));
+const TechCookie: ComponentType<CookieBannerProps> = props => createElement(Suspense, { fallback: null }, createElement(LazyTechCookie, props));
+const TechAuthGate: ComponentType = () => createElement(Suspense, { fallback: null }, createElement(LazyTechAuthGate));
 /** The password / coming-soon page is outside the pages' Suspense boundary, so it brings its own. */
 const TechGate: NewThemeImpl['GatePage'] = props => createElement(Suspense, { fallback: null }, createElement(LazyTechGate, props));
 
@@ -192,8 +196,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   'theme-04-tech': {
     Layout: TechLayout,
     GatePage: TechGate,
-    CookieBanner: FashionCookieBanner,
-    AuthGateModal: FashionAuthGateModal,
+    CookieBanner: TechCookie,
+    AuthGateModal: TechAuthGate,
     pages: {
       home: TechHomePage,
       product: TechProductPage,

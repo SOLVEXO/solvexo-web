@@ -1,8 +1,8 @@
 // THEME 04 - "Tech Store" (electronics / computers)
 // Colours and sizes below were read from the exported design frames (see docs/tech-theme-tokens.md for the method and margin of
 // error). Merchant overrides go through `applyMerchantThemeOverrides`, the only writer of the singleton. Until every route is
-// native it also feeds Maison's singleton (`fashionTheme`), so the Maison pages Tech still reuses follow the Tech palette.
-import { applyMerchantThemeOverrides as applyBase, fashionTheme, mixHex, relativeLuminance, type FashionMerchantColors } from '../theme-03-fashion/theme.config';
+// native it also feeds the base settings engine (`baseTheme`, theme.base.ts), which the shared section renderers read.
+import { applyMerchantThemeOverrides as applyBase, baseTheme, mixHex, relativeLuminance, type BaseMerchantColors } from './theme.base';
 
 /** Shape system: one choice sets the corners of buttons, form fields, cards, images and badges together. */
 export const TECH_SHAPES = {
@@ -86,7 +86,7 @@ export const TECH_INSTALL_DEFAULTS = {
   buttonRadius: 'full' as const,
 };
 
-export type TechMerchantColors = FashionMerchantColors;
+export type TechMerchantColors = BaseMerchantColors;
 
 const HEX6 = /^#[0-9a-f]{6}$/i;
 const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : fallback);
@@ -123,12 +123,12 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   const merged = withTechDefaults(c);
   applyBase(merged);
   const d = STATIC_DEFAULTS;
-  const m = fashionTheme.colors;
+  const m = baseTheme.colors;
   // Panels and rules follow the Tech palette unless the seller changed the base colours; derived values stay otherwise.
   const customBg = !!c?.bgColor && c.bgColor.toLowerCase() !== d.colors.bg.toLowerCase();
   if (!customBg) m.bgAlt = d.colors.bgAlt;
   const widthKey = oneOf(c?.containerWidth, ['narrow', 'standard', 'wide'] as const, 'standard');
-  fashionTheme.layout.maxWidth = TECH_WIDTH[widthKey];
+  baseTheme.layout.maxWidth = TECH_WIDTH[widthKey];
   const colors = techTheme.colors;
   colors.bg = m.bg;
   colors.ink = m.ink;
@@ -150,8 +150,8 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   colors.dark = pick(ts?.techDarkColor, d.colors.dark);
   colors.darkInk = '#FFFFFF';
   colors.warning = pick(ts?.techWarning, d.colors.warning);
-  techTheme.fonts.body = fashionTheme.fonts.body;
-  techTheme.fonts.display = c?.headingFont ? fashionTheme.fonts.display : fashionTheme.fonts.body;
+  techTheme.fonts.body = baseTheme.fonts.body;
+  techTheme.fonts.display = c?.headingFont ? baseTheme.fonts.display : baseTheme.fonts.body;
   techTheme.shape = shapeOf(c);
   const shape = TECH_SHAPES[techTheme.shape];
   techTheme.buttonRadiusPx = shape.button;
@@ -161,12 +161,12 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   techTheme.badgeRadiusPx = shape.badge;
   techTheme.buttonHeightPx = BUTTON_HEIGHT[c?.buttonSize ?? 'md'] ?? BUTTON_HEIGHT.md;
   techTheme.layout.maxWidth = TECH_WIDTH[widthKey];
-  techTheme.layout.containerPadX = fashionTheme.layout.containerPadX;
-  techTheme.layout.sectionPadY = fashionTheme.layout.sectionPadY;
+  techTheme.layout.containerPadX = baseTheme.layout.containerPadX;
+  techTheme.layout.sectionPadY = baseTheme.layout.sectionPadY;
   techTheme.topBar = ts?.techTopBar !== 'hide';
   techTheme.stickyHeader = ts?.techStickyHeader !== 'off';
   techTheme.productCardStyle = oneOf(ts?.techCardStyle, ['flat', 'outlined', 'shadow'] as const, 'flat');
-  techTheme.showCardRating = fashionTheme.cardRating;
+  techTheme.showCardRating = baseTheme.cardRating;
   techTheme.megaFeatured = ts?.techMegaFeatured !== 'hide';
   techTheme.header = oneOf(ts?.techHeader, ['standard', 'compact', 'centered', 'search-first'] as const, 'standard');
   const text = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
@@ -176,4 +176,4 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
 }
 
 /** Same readable-label rule as Maison, for fills the seller can recolour. */
-export { mixHex, relativeLuminance } from '../theme-03-fashion/theme.config';
+export { mixHex, relativeLuminance } from './theme.base';

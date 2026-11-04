@@ -1,12 +1,12 @@
 import { registerThemeManifest, type ThemeManifest, type ThemeSettingsFieldDef, type ThemeStylePreset } from '../themeManifest';
-import { fashionThemeManifest } from '../theme-03-fashion/theme.manifest';
+import { baseManifest } from './manifestBase';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const SHOW_HIDE = [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }];
 
 /** Every Tech setting at its out-of-the-box value (matches `theme.config.ts`). Colour values come from the design frames. */
 const DEFAULTS: Partial<StorefrontColors> = {
-  ...fashionThemeManifest.defaultSettings,
+  ...baseManifest.defaultSettings,
   bgColor: '#FFFFFF', textColor: '#020203', primaryColor: '#0156FF', mutedColor: null, borderColor: null, saleColor: null, starColor: null, successColor: null,
   font: 'Poppins', headingFont: null, headingWeight: 'semibold', buttonStyle: 'solid',
   cardTag: 'hide', cardStyle: 'flat', cardHover: 'shadow', productImageRatio: 'square',
@@ -34,7 +34,7 @@ const SECTION_HEADING = { key: 'heading', kind: 'text', label: 'Heading', maxLen
 
 // Settings the shared panel lists but Tech does not read (Maison's mega-menu columns, pill hover styles...) are dropped; Tech's own are added.
 const DROPPED = new Set(['buttonRadius', 'inputRadius', 'productCardRadius', 'imageRadius', 'sectionRadius', 'custom.megaFeatured', 'custom.megaColumns', 'custom.megaHeading', 'custom.megaPhoto', 'cardViewLink', 'colorSwatches', 'quickView', 'productImageHover']);
-const inherited = fashionThemeManifest.themeSettingsFields.filter(f => !DROPPED.has(f.key));
+const inherited = baseManifest.themeSettingsFields.filter(f => !DROPPED.has(f.key));
 const techFields: ThemeSettingsFieldDef[] = [
   { key: 'custom.techHeader', label: 'Header layout', group: 'Layout & Spacing', control: { kind: 'select', options: [{ value: 'standard', label: 'Standard (logo, menu, icons)' }, { value: 'compact', label: 'Compact (slimmer)' }, { value: 'centered', label: 'Centered logo, menu below' }, { value: 'search-first', label: 'Search first (wide search bar)' }] }, helpText: 'How the header is arranged on large screens. Phones always get the menu button and search icon.' },
   { key: 'custom.techTopHours', label: 'Top bar: opening hours', group: 'Layout & Spacing', control: { kind: 'text', maxLength: 80, placeholder: 'Mon-Fri 9:00 AM - 5:30 PM' }, helpText: 'Shown at the left of the top bar on larger screens. Leave empty to hide it. Nothing is made up.' },
@@ -134,7 +134,7 @@ export const techThemeManifest: ThemeManifest = {
     },
   ],
 
-  templates: fashionThemeManifest.templates,
+  templates: baseManifest.templates,
   themeSettingsFields: [...inherited, ...techFields],
 };
 

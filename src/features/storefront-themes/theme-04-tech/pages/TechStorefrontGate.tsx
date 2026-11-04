@@ -40,8 +40,8 @@ export function TechStorefrontGate({ store, onUnlocked }: { store: PublicStoreDa
         </p>
         {!comingSoon && (
           <form onSubmit={submit} className="mt-7 flex flex-col gap-3 text-left">
-            <label htmlFor="fx-gate-pw" className="sr-only">{ts('auth.password', 'Password')}</label>
-            <input id="fx-gate-pw" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder={ts('auth.password', 'Password')} aria-invalid={!!error}
+            <label htmlFor="tx-gate-pw" className="sr-only">{ts('auth.password', 'Password')}</label>
+            <input id="tx-gate-pw" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder={ts('auth.password', 'Password')} aria-invalid={!!error}
               className="h-12 w-full bg-transparent px-5 text-sm outline-none" style={{ border: `1px solid ${error ? t.colors.danger : t.colors.border}`, borderRadius: 9999, color: t.colors.ink }} />
             {error && <p role="alert" className="m-0 px-2 text-sm" style={{ color: t.colors.danger }}>{error}</p>}
             <button type="submit" disabled={busy || !password} className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none' }}>{busy ? ts('pg.word_checking', 'Checking…') : ts('pg.enter_store', 'Enter store')}</button>

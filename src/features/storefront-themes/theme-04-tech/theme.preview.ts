@@ -4,7 +4,6 @@ import { TechNavbar } from './components/TechNavbar';
 import { TechFooter } from './components/TechFooter';
 import { techTheme, applyMerchantThemeOverrides } from './theme.config';
 import type { SectionType } from '@/api/services/storefrontTypes';
-import '../theme-03-fashion/fashion.css';
 import './tech.css';
 
 /** What the Customize / Header & Footer live preview renders for stores on this theme. */

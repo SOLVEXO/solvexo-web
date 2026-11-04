@@ -13,7 +13,7 @@ export function TechNotFoundPage() {
   return (
     <>
       <section className="grid place-items-center text-center" style={{ padding: `clamp(72px, 12vw, 160px) ${t.layout.containerPadX}` }}>
-        <p className="fx-serif m-0 text-[clamp(72px,14vw,160px)] leading-none" style={{ color: t.colors.inkMuted }}>404</p>
+        <p className="tx-serif m-0 text-[clamp(72px,14vw,160px)] leading-none" style={{ color: t.colors.inkMuted }}>404</p>
         <h1 className="m-0 mt-4 text-[clamp(26px,3.4vw,40px)] font-semibold tracking-tight">{ts('pg.this_page_has_gone_missing', 'This page has gone missing')}</h1>
         <p className="m-0 mb-8 mt-3 max-w-[460px] text-base" style={{ color: t.colors.inkMuted }}>{ts('pg.the_link_may_be_broken_or_the_page_may', "The link may be broken, or the page may have been moved. Let's get you back to shopping.")}</p>
         <div className="flex flex-wrap items-center justify-center gap-3">

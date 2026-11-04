@@ -2,7 +2,7 @@ import type { Section, CoreSectionPreviewContext } from '@/api/services/storefro
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
 import { localizeSections } from '@/utils/storeText';
-import { resolveSectionColors, fashionTypographyCss } from '../../theme-03-fashion/theme.config';
+import { resolveSectionColors, baseTypographyCss } from '../theme.base';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
@@ -44,7 +44,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
 
   return (
     <>
-      <style>{SECTION_SPACING_CSS}{fashionTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
+      <style>{SECTION_SPACING_CSS}{baseTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
       {sections.map((section, i) => {
         if (section.enabled === false) return null;
         const render = resolveTechSection(section.type);
@@ -58,7 +58,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
 
         if (!selectable) {
           return (
-            <div key={key} {...common} className={`fx-bidi ${spacing.className}`.trim()}>
+            <div key={key} {...common} className={`tx-bidi ${spacing.className}`.trim()}>
               {scoped && <style>{scoped}</style>}
               {render(section, blocks, colors, dynamic, previewContext)}
             </div>
@@ -66,7 +66,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
         }
         const on = selectedSectionId === key;
         return (
-          <div key={key} {...common} data-fx-section-id={key} className={`fx-bidi ${on ? 'tx-sel-on' : 'tx-sel'} ${spacing.className}`}
+          <div key={key} {...common} data-fx-section-id={key} className={`tx-bidi ${on ? 'tx-sel-on' : 'tx-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();

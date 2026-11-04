@@ -109,7 +109,7 @@ export function TechPredictiveSearch({ inputId, placeholder, onDone, focusOnMoun
         <input ref={inputRef} id={inputId} type="search" value={q} autoComplete="off" autoCapitalize="off" spellCheck={false}
           role="combobox" aria-expanded={showPanel} aria-controls={listId} aria-autocomplete="list" aria-activedescendant={activeId}
           onChange={e => { setQ(e.target.value); setOpen(true); setActive(-1); }} onFocus={() => setOpen(true)} onKeyDown={onKey}
-          placeholder={placeholder ?? ts('pg.search_entire_store', 'Search entire store here...')} className="fx-search-input h-11 w-full min-w-0 border-0 bg-transparent text-sm outline-none" style={{ color: t.colors.ink }} />
+          placeholder={placeholder ?? ts('pg.search_entire_store', 'Search entire store here...')} className="tx-search-input h-11 w-full min-w-0 border-0 bg-transparent text-sm outline-none" style={{ color: t.colors.ink }} />
         {q && <button type="button" aria-label={ts('pg.clear_search', 'Clear search')} onClick={() => { setQ(''); inputRef.current?.focus(); }} className="grid size-8 shrink-0 cursor-pointer place-items-center border-0 bg-transparent p-0" style={muted}><X size={16} aria-hidden /></button>}
         <button type="submit" aria-label={ts('nav.search', 'Search')} className="grid size-9 shrink-0 cursor-pointer place-items-center border-0 bg-transparent p-0" style={{ color: t.colors.ink }}><Search size={18} aria-hidden /></button>
       </form>

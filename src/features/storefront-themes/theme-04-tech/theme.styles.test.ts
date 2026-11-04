@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID, listNewThemeEntries } from '../registry';
-import { fashionTheme } from '../theme-03-fashion/theme.config';
+import { baseTheme } from './theme.base';
 import { THEME_MANIFESTS } from '../themeManifest';
 import { applyMerchantThemeOverrides, techTheme, TECH_STATIC_DEFAULTS } from './theme.config';
 import { techThemeManifest } from './theme.manifest';
@@ -80,12 +80,12 @@ describe('Tech Store theme settings are applied', () => {
     expect(techTheme.colors).toEqual(d);
   });
 
-  it('a seller colour reaches Tech and the reused (Maison) pages through the bridge', () => {
+  it('a seller colour reaches Tech and its shared settings engine', () => {
     applyMerchantThemeOverrides({ primaryColor: '#E11D48', bgColor: '#FFFFFF', textColor: '#111111' });
     expect(techTheme.colors.accent).toBe('#E11D48');
-    expect(fashionTheme.colors.accent).toBe('#E11D48');
+    expect(baseTheme.colors.accent).toBe('#E11D48');
     expect(techTheme.colors.selected).toBe('#E11D48');
-    expect(fashionTheme.fonts.body).toContain('Poppins');
+    expect(baseTheme.fonts.body).toContain('Poppins');
   });
 
   it('theme-declared settings are read and invalid ones are ignored', () => {
@@ -163,11 +163,19 @@ describe('Tech Store registration', () => {
     expect(THEME_MANIFESTS['theme-04-tech']).toBe(techThemeManifest);
   });
 
+  it('every storefront route key has a native Tech page', () => {
+    const KEYS = ['home', 'product', 'category', 'collection', 'collections', 'faqs', 'search', 'cart', 'checkout', 'checkoutReturn', 'login', 'register', 'verifyOtp', 'account', 'wishlist', 'loyalty', 'messages', 'notifications', 'returns', 'giftCards', 'giftCardView', 'storeCredit', 'orders', 'orderDetail', 'library', 'memberships', 'licenses', 'learn', 'orderStatus', 'addresses', 'myReviews', 'blogIndex', 'blogPost', 'customPage', 'forgotPassword', 'newPassword', 'notFound'];
+    const pages = NEW_THEME_REGISTRY['theme-04-tech'].pages as Record<string, unknown>;
+    for (const k of KEYS) expect(pages[k], k).toBeTruthy();
+    expect(Object.keys(pages).sort()).toEqual([...KEYS].sort());
+  });
+
   it('shows honest build progress: only the pages it really draws count as built', () => {
     const entry = listNewThemeEntries().find(e => e.id === 'theme-04-tech');
     const impl = NEW_THEME_REGISTRY['theme-04-tech'];
     expect(entry?.builtRouteCount).toBe(Object.keys(impl.pages).length);
-    expect(entry!.builtRouteCount).toBeLessThan(entry!.totalRouteCount);
+    expect(entry!.builtRouteCount).toBeLessThanOrEqual(entry!.totalRouteCount);
+    expect(entry!.builtRouteCount).toBe(37);
   });
 
   it('installs with the Tech look, not the backend defaults', () => {

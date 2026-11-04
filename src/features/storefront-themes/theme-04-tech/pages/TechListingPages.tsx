@@ -11,8 +11,8 @@ import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { breadcrumbJsonLd, collectionJsonLd, pageUrlBuilder, type ListProduct } from '../../core/seo/jsonLd';
 import { splitAround, useLoad, useTemplateSections } from '../../core/pageHooks';
-import { CollectionScopeContext } from '../../theme-03-fashion/sections/collectionScope';
-import { FashionNotFoundPage } from '../../theme-03-fashion/pages/FashionNotFoundPage';
+import { CollectionScopeContext } from '../sections/collectionScope';
+import { TechNotFoundPage } from './TechNotFoundPage';
 import { TechProductBrowser } from '../components/TechProductBrowser';
 import { TechSectionRenderer } from '../sections';
 import { TechBox, TechBreadcrumbs, TechError, TechSkeleton } from '../ui/techUi';
@@ -50,7 +50,7 @@ export function TechCollectionPage() {
 
   if (loading) return <TechBox><TechSkeleton h={320} /></TechBox>;
   if (error) return <TechError message={ts('pg.we_couldn_t_load_this_collection', "We couldn't load this collection.")} onRetry={retry} />;
-  if (!data || !collection) return <FashionNotFoundPage />;
+  if (!data || !collection) return <TechNotFoundPage />;
   const hasGrid = sections.some(s => s.type === 'collection_product_grid');
   return (
     <CollectionScopeContext.Provider value={scope}>
@@ -79,7 +79,7 @@ export function TechCategoryPage() {
   useStorefrontSeo({ title: category?.name, description: category?.description });
   if (loading) return <TechBox><TechSkeleton h={320} /></TechBox>;
   if (error) return <TechError message={ts('pg.we_couldn_t_load_this_category', "We couldn't load this category.")} onRetry={refetch} />;
-  if (!category) return <FashionNotFoundPage />;
+  if (!category) return <TechNotFoundPage />;
   return (
     <TechBox>
       <TechBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: category.name }]} />

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { useContext } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { CollectionScopeContext } from '../../theme-03-fashion/sections/collectionScope';
+import { CollectionScopeContext } from './collectionScope';
 import { TechProductBrowser } from '../components/TechProductBrowser';
 import { TechSectionShell } from './techSections';
 import { registerTechSection } from './techSectionRegistry';

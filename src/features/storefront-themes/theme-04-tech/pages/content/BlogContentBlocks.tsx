@@ -46,7 +46,7 @@ export function BlogContentBlocks({ blocks, dynamicSourceValues = {} }: { blocks
             return (
               <PreviewBlock key={id} blockId={id}>
                 <blockquote className="m-0 my-3 px-6 py-7 sm:px-10" style={{ borderRadius: t.cardRadiusPx, background: t.colors.bgAlt }}>
-                  <p className="fx-serif m-0 text-[clamp(24px,3vw,34px)] leading-[1.25]">{'“'}{s.text}{'”'}</p>
+                  <p className="tx-serif m-0 text-[clamp(24px,3vw,34px)] leading-[1.25]">{'“'}{s.text}{'”'}</p>
                   {s.author && <footer className="mt-4 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{s.author}</footer>}
                 </blockquote>
               </PreviewBlock>

@@ -7,7 +7,7 @@ import { useLocalize } from '@/hooks/useLocalize';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { useLoad } from '../../core/pageHooks';
-import { FashionNotFoundPage } from '../../theme-03-fashion/pages/FashionNotFoundPage';
+import { TechNotFoundPage } from './TechNotFoundPage';
 import { TechSectionRenderer } from '../sections';
 import { TechBox, TechError, TechSkeleton } from '../ui/techUi';
 
@@ -42,6 +42,6 @@ export function TechCustomPage({ slug }: { slug?: string } = {}) {
   useStorefrontSeo({ title: page?.seo?.metaTitle || page?.title, description: page?.seo?.metaDescription || page?.seo?.metaDesc, image: page?.seo?.ogImage, noindex: page?.seo?.noindex });
   if (loading) return <TechBox><TechSkeleton h={240} rows={2} /></TechBox>;
   if (error) return <TechError message={ts('pg.we_couldn_t_load_this_page', "We couldn't load this page.")} onRetry={retry} />;
-  if (!page) return <FashionNotFoundPage />;
+  if (!page) return <TechNotFoundPage />;
   return <TechSectionRenderer sections={page.sections ?? []} />;
 }

@@ -11,7 +11,7 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLocalize } from '@/hooks/useLocalize';
 import { displayMoney, saleInfo } from '../../core/money';
 import { useCartDrawer } from '../../cartDrawerContext';
-import { CARD_IMAGE_SIZES, CARD_IMAGE_WIDTHS, imgProps } from '../../theme-03-fashion/components/imgProps';
+import { CARD_IMAGE_SIZES, CARD_IMAGE_WIDTHS, imgProps } from './imgProps';
 import { PRODUCT_CARD_RATIO } from '../../imageFit';
 import { techTheme as t } from '../theme.config';
 import { TechButton, TechLinkButton, TechStars, TechStock } from '../ui/techUi';

@@ -8,7 +8,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { displayMoney, displayMoneySum, type MoneyLine } from '../../core/money';
 import { CartDrawerContext } from '../../cartDrawerContext';
 import { useDialogFocus } from '../../core/hooks/useDialogFocus';
-import { imgProps } from '../../theme-03-fashion/components/imgProps';
+import { imgProps } from './imgProps';
 import { techTheme as t } from '../theme.config';
 import { TechButton } from '../ui/techUi';
 

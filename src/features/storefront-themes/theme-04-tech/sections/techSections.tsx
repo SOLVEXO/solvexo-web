@@ -10,7 +10,7 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLoad } from '../../core/pageHooks';
 import { copyText } from '../../sectionCopy';
 import { EditableText } from '../../inlineEdit';
-import type { FashionColors } from '../../theme-03-fashion/theme.config';
+import type { BaseColors } from '../theme.base';
 import { techTheme as t } from '../theme.config';
 import { TechProductCard } from '../components/TechProductCard';
 import { TechLinkButton } from '../ui/techUi';
@@ -20,7 +20,7 @@ import { registerTechSection } from './techSectionRegistry';
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
 
 /** Standard Tech section frame: centred box, heading on the left, an optional "See all" link on the right. */
-export function TechSectionShell({ colors, heading, link, children, padY = true }: { colors: FashionColors; heading?: string; link?: { to: string; label: string }; children: ReactNode; padY?: boolean }) {
+export function TechSectionShell({ colors, heading, link, children, padY = true }: { colors: BaseColors; heading?: string; link?: { to: string; label: string }; children: ReactNode; padY?: boolean }) {
   return (
     <section style={{ padding: padY ? `${t.layout.sectionPadY} ${t.layout.containerPadX}` : `0 ${t.layout.containerPadX}`, color: colors.ink, fontFamily: t.fonts.body }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
@@ -50,7 +50,7 @@ function queryFor(s: Record<string, any>): PublicStoreProductsParams {
   }
 }
 
-function ProductRow({ settings: s, colors }: { settings: Record<string, any>; colors: FashionColors }) {
+function ProductRow({ settings: s, colors }: { settings: Record<string, any>; colors: BaseColors }) {
   const { store } = useStorefront();
   const { currency } = useCurrencyPreference();
   const scroller = useRef<HTMLDivElement>(null);
@@ -81,7 +81,7 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
 registerTechSection('featured_products', (section, _b, colors) => <ProductRow settings={section.settings} colors={colors} />);
 
 // ── Theme-defined sections (`theme_section` + `settings.sectionKey`) ────────────────────────────────────
-type Custom = (section: Section, blocks: Block[], colors: FashionColors) => ReactNode;
+type Custom = (section: Section, blocks: Block[], colors: BaseColors) => ReactNode;
 const custom = new Map<string, Custom>();
 registerTechSection('theme_section', (section, blocks, colors) => custom.get(String(section.settings.sectionKey))?.(section, blocks, colors) ?? null);
 
@@ -112,7 +112,7 @@ custom.set('tech.category_tiles', (section, blocks, colors) => {
 });
 
 /** Deal banner: a dark promo band with headline, text, button and an optional countdown date typed by the seller. */
-function Countdown({ endsAt, colors }: { endsAt: string; colors: FashionColors }) {
+function Countdown({ endsAt, colors }: { endsAt: string; colors: BaseColors }) {
   const end = new Date(endsAt).getTime();
   const [now] = useState(() => Date.now());
   const left = end - now;
