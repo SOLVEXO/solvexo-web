@@ -49,8 +49,9 @@ export function AdminVisitors() {
   const [range, setRange] = useState<SiteRange>('28d');
   const [showSettings, setShowSettings] = useState(false);
 
+  // `check` makes one small live request to Google so a wrong key, property or permission shows here straight away.
   const loadSettings = useCallback(() => {
-    apiSiteSettings().then(res => { setSettings(res.data); setSettingsError(null); }).catch(e => setSettingsError(errorText(e)));
+    apiSiteSettings(true).then(res => { setSettings(res.data); setSettingsError(null); }).catch(e => setSettingsError(errorText(e)));
   }, []);
   useEffect(() => { loadSettings(); }, [loadSettings]);
 
@@ -76,7 +77,8 @@ export function AdminVisitors() {
         {settings && (showSettings || !tracking) && can('config.manage') && (
           <SettingsCard settings={settings} onSaved={s => { setSettings(s); setShowSettings(false); }} />
         )}
-        {settings && !connected && <ConnectCard />}
+        {settings && <ProblemsCard settings={settings} onRetry={loadSettings} />}
+        {settings && !settings.ga4.source && <ConnectCard />}
         {settings && connected && (
           <>
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -110,15 +112,21 @@ export function AdminVisitors() {
 
 function StatusBar({ settings, onOpenSettings, canEdit }: { settings: SiteAnalyticsSettings; onOpenSettings: () => void; canEdit: boolean }) {
   const tracking = !!settings.measurementId && settings.enabled;
+  const fromEnv = settings.measurementIdSource?.startsWith('env:') ? settings.measurementIdSource.slice(4) : null;
+  const g = settings.ga4;
   const chip = (ok: boolean, text: string) => (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium ${ok ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'}`}>
       {ok ? <CheckCircle2 size={12} /> : <Activity size={12} />}{text}
     </span>
   );
+  const reportsText = g.connected
+    ? `Reports from ${g.propertyId ?? 'Google Analytics'}${g.source === 'service_account' && g.serviceAccountEmail ? ` via ${g.serviceAccountEmail}` : ''}`
+    : g.ok === false ? 'Reports failing (see below)'
+      : g.status === 'needs_reauth' ? 'Google Analytics needs reconnecting' : 'Reports not connected';
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {chip(tracking, tracking ? `Tracking on (${settings.measurementId})` : settings.measurementId ? 'Tracking paused' : 'Tracking not set up')}
-      {chip(settings.ga4.connected, settings.ga4.connected ? `Reports from ${settings.ga4.propertyId}` : settings.ga4.status === 'needs_reauth' ? 'Google Analytics needs reconnecting' : 'Reports not connected')}
+      {chip(tracking, tracking ? `Tracking on (${settings.measurementId}${fromEnv ? `, from ${fromEnv}` : ''})` : settings.measurementId ? 'Tracking paused' : 'Tracking not set up')}
+      {chip(g.connected, reportsText)}
       {canEdit && (
         <Button variant="ghost" size="sm" onClick={onOpenSettings} className="ml-auto">
           <Settings2 size={14} /> Settings
@@ -128,9 +136,30 @@ function StatusBar({ settings, onOpenSettings, canEdit }: { settings: SiteAnalyt
   );
 }
 
+/** What Google or the server environment said is wrong, in plain words, with a re-check button. */
+function ProblemsCard({ settings, onRetry }: { settings: SiteAnalyticsSettings; onRetry: () => void }) {
+  const items = [...settings.env.problems, ...(settings.ga4.ok === false && settings.ga4.lastError ? [settings.ga4.lastError] : [])];
+  if (!items.length) return null;
+  return (
+    <section role="alert" className="bg-error-bg border border-error/30 rounded-[10px] px-5 py-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h2 className="text-[14px] font-bold text-error">Google Analytics isn't working yet</h2>
+          <ul className="mt-1.5 list-disc pl-5 text-[12.5px] text-charcoal space-y-1">
+            {items.map((t, i) => <li key={i} className="break-words">{t}</li>)}
+          </ul>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onRetry}>Check again</Button>
+      </div>
+    </section>
+  );
+}
+
 function SettingsCard({ settings, onSaved }: { settings: SiteAnalyticsSettings; onSaved: (s: SiteAnalyticsSettings) => void }) {
   const toast = useStableToast();
-  const [measurementId, setMeasurementId] = useState(settings.measurementId ?? '');
+  const savedHere = settings.measurementIdSource === 'settings';
+  const envVariable = settings.measurementIdSource?.startsWith('env:') ? settings.measurementIdSource.slice(4) : null;
+  const [measurementId, setMeasurementId] = useState(savedHere ? settings.measurementId ?? '' : '');
   const [enabled, setEnabled] = useState(settings.enabled);
   const [saving, setSaving] = useState(false);
   const save = async () => {
@@ -157,11 +186,13 @@ function SettingsCard({ settings, onSaved }: { settings: SiteAnalyticsSettings; 
             id="ga-measurement-id"
             value={measurementId}
             onChange={e => setMeasurementId(e.target.value.toUpperCase())}
-            placeholder="G-XXXXXXXXXX"
+            placeholder={envVariable ? settings.measurementId ?? 'G-XXXXXXXXXX' : 'G-XXXXXXXXXX'}
             className="w-full px-3 py-2 rounded-[10px] border border-bone bg-white text-[13px] outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15"
           />
           <p className="mt-1.5 text-[11.5px] text-slate">
-            Google Analytics → Admin → Data streams → your website stream.
+            {envVariable
+              ? <>Using <strong>{settings.measurementId}</strong> from <code>{envVariable}</code> on the API server. An ID saved here takes priority.</>
+              : 'Google Analytics → Admin → Data streams → your website stream.'}
             {settings.detectedMeasurementId && !measurementId && (
               <>
                 {' '}Found on your connected property:{' '}
@@ -185,12 +216,17 @@ function SettingsCard({ settings, onSaved }: { settings: SiteAnalyticsSettings; 
 
 function ConnectCard() {
   return (
-    <Card title="Connect Google Analytics to see reports" subtitle="Reports are read from Google Analytics with a read-only connection.">
-      <ol className="list-decimal pl-5 text-[12.5px] text-graphite space-y-1.5">
-        <li>In Google Analytics, create a GA4 property for Solvexo with a web data stream for your site, and copy its Measurement ID (G-…) into Tracking above.</li>
-        <li>Open <Link to="/admin/seo" className="text-brand-orange font-semibold underline">SEO</Link> → <strong>Integrations</strong> → Google Analytics, sign in with the Google account that owns the property, and enter the property ID (a number like 123456789).</li>
-        <li>Come back here. Visitors appear within a few minutes of tracking starting; daily reports fill in over the next day.</li>
+    <Card title="Connect Google Analytics to see reports" subtitle="Reports are read from Google Analytics with read-only access. Use either option.">
+      <p className="text-[12.5px] font-semibold text-charcoal">Option A: a service account (server variables)</p>
+      <ol className="list-decimal pl-5 mt-1 text-[12.5px] text-graphite space-y-1.5">
+        <li>In Google Cloud Console, enable the <strong>Google Analytics Data API</strong> and <strong>Google Analytics Admin API</strong>, create a service account and download its JSON key.</li>
+        <li>In Google Analytics → Admin → <strong>Property access management</strong>, add the service account's email (…@….iam.gserviceaccount.com) as <strong>Viewer</strong>.</li>
+        <li>On the API server, set <code>GA4_SERVICE_ACCOUNT_JSON</code> to the whole key (or base64 of it) and <code>GA4_PROPERTY_ID</code> to the property number (Admin → Property settings), then restart the API.</li>
       </ol>
+      <p className="mt-3 text-[12.5px] font-semibold text-charcoal">Option B: sign in with Google</p>
+      <p className="mt-1 text-[12.5px] text-graphite">
+        Open <Link to="/admin/seo" className="text-brand-orange font-semibold underline">SEO</Link> → <strong>Integrations</strong> → Google Analytics, sign in with the Google account that owns the property and enter the property ID.
+      </p>
     </Card>
   );
 }

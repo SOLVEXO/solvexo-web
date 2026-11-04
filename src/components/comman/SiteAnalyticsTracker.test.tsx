@@ -30,7 +30,7 @@ beforeEach(() => {
   gaScripts().forEach(s => s.remove());
   localStorage.clear();
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllEnvs(); });
 
 describe('Solvexo site analytics', () => {
   it('tracks only the public site and sign-up, never dashboards, admin or checkout', () => {
@@ -85,5 +85,19 @@ describe('Solvexo site analytics', () => {
     await waitFor(() => expect(events().some(e => e[1] === 'sign_up')).toBe(true));
     trackSiteEvent('store_created');
     expect(events().some(e => e[1] === 'store_created')).toBe(true);
+  });
+
+  it('falls back to a VITE_GA_MEASUREMENT_ID build variable when the API has none, unless an admin switched tracking off', async () => {
+    vi.stubEnv('VITE_GA_MEASUREMENT_ID', 'G-VERCEL99');
+    api.apiSitePublicConfig.mockResolvedValue({ data: { measurementId: null, consentRequired: false, enabled: false } });
+    renderAt('/');
+    await waitFor(() => expect(api.apiSitePublicConfig).toHaveBeenCalled());
+    expect(gaScripts()).toHaveLength(0);
+    cleanup();
+    __resetSiteAnalytics();
+    api.apiSitePublicConfig.mockResolvedValue({ data: { measurementId: null, consentRequired: false, enabled: true } });
+    renderAt('/');
+    await waitFor(() => expect(gaScripts()).toHaveLength(1));
+    expect(gaScripts()[0].getAttribute('src')).toContain('id=G-VERCEL99');
   });
 });
