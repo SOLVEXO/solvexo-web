@@ -237,7 +237,8 @@
     "price": "Prijs",
     "qty": "Aantal",
     "summary": "Overzicht",
-    "proceedToCheckout": "Doorgaan naar afrekenen"
+    "proceedToCheckout": "Doorgaan naar afrekenen",
+    "youMayLike": "Misschien vind je dit ook leuk"
   },
   "category": {
     "notFound": "Categorie niet gevonden",
@@ -834,6 +835,7 @@
     "noContent": "Deze pagina heeft nog geen inhoud."
   },
   "pg": {
+    "add": "Toevoegen",
     "add_photos": "Foto's toevoegen",
     "add_to_bag": "In winkelwagen",
     "add_to_cart": "In winkelwagen",

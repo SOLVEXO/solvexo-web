@@ -67,6 +67,12 @@ const STATIC_DEFAULTS = {
   topBarHours: '',
   topBarShowroom: '',
   footerTone: 'dark' as 'dark' | 'light',
+  /** Footer columns on large screens: 0 = as many as fit, or a fixed 2 to 4. */
+  footerColumns: 0 as 0 | 2 | 3 | 4,
+  /** Product description sections: a tab bar, or stacked open/close sections. */
+  productTabs: 'tabs' as 'tabs' | 'accordion',
+  /** "You may also like" in the mini cart (the store's best sellers that are not in the cart yet). */
+  cartUpsell: true,
   /** Listing filters: a sidebar on large screens, or only the slide-in panel. */
   filterLayout: 'sidebar' as 'sidebar' | 'drawer',
   /** Product page thumbnails: below the photo or in a column beside it. */
@@ -184,6 +190,9 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   techTheme.topBarHours = text(ts?.techTopHours);
   techTheme.topBarShowroom = text(ts?.techTopShowroom);
   techTheme.footerTone = oneOf(ts?.techFooterTone, ['dark', 'light'] as const, 'dark');
+  techTheme.cartUpsell = ts?.techCartUpsell !== 'hide';
+  techTheme.productTabs = oneOf(ts?.techProductTabs, ['tabs', 'accordion'] as const, 'tabs');
+  techTheme.footerColumns = ({ '2': 2, '3': 3, '4': 4 } as Record<string, 2 | 3 | 4>)[String(ts?.techFooterColumns)] ?? 0;
   techTheme.filterLayout = oneOf(ts?.techFilterLayout, ['sidebar', 'drawer'] as const, 'sidebar');
   techTheme.gallery = oneOf(ts?.techGallery, ['bottom', 'left'] as const, 'bottom');
   techTheme.checkoutSummary = oneOf(ts?.techCheckoutSummary, ['right', 'left'] as const, 'right');

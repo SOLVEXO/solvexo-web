@@ -236,7 +236,8 @@
     "price": "Giá",
     "qty": "SL",
     "summary": "Tóm tắt",
-    "proceedToCheckout": "Tiến hành thanh toán"
+    "proceedToCheckout": "Tiến hành thanh toán",
+    "youMayLike": "Có thể bạn cũng thích"
   },
   "category": {
     "notFound": "Không tìm thấy danh mục",
@@ -829,6 +830,7 @@
     "noContent": "Trang này chưa có nội dung."
   },
   "pg": {
+    "add": "Thêm",
     "add_photos": "Thêm ảnh",
     "add_to_bag": "Thêm vào giỏ hàng",
     "add_to_cart": "Thêm vào giỏ hàng",

@@ -238,7 +238,8 @@
     "price": "Precio",
     "qty": "Cant.",
     "summary": "Resumen",
-    "proceedToCheckout": "Continuar al pago"
+    "proceedToCheckout": "Continuar al pago",
+    "youMayLike": "También te puede gustar"
   },
   "category": {
     "notFound": "Categoría no encontrada",
@@ -839,6 +840,7 @@
     "noContent": "Esta página aún no tiene contenido."
   },
   "pg": {
+    "add": "Añadir",
     "add_photos": "Añadir fotos",
     "add_to_bag": "Añadir a la bolsa",
     "add_to_cart": "Añadir al carrito",

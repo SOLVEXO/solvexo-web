@@ -1,8 +1,10 @@
 import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronDown } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { baseTheme as t } from '../../theme.base';
+import { techTheme } from '../../theme.config';
 
 export interface DescriptionTab { key: string; title: string; content: string; html: boolean }
 
@@ -29,6 +31,7 @@ function Body({ content, html }: { content: string; html: boolean }): ReactNode 
 export function ProductDescriptionTabs({ tabs, heading }: { tabs: DescriptionTab[]; heading?: string }) {
   const { t: tr } = useTranslation('storefront');
   const [active, setActive] = useState(tabs[0]?.key ?? '');
+  const [open, setOpen] = useState<string[]>(() => (tabs[0] ? [tabs[0].key] : []));
   const base = useId();
   if (tabs.length === 0) return null;
   const current = tabs.find(x => x.key === active) ?? tabs[0];
@@ -40,6 +43,31 @@ export function ProductDescriptionTabs({ tabs, heading }: { tabs: DescriptionTab
         <style>{RICH_CSS}</style>
         {heading?.trim() && <h2 className="m-0 mb-3 text-lg font-semibold" style={{ color: t.colors.ink }}>{heading}</h2>}
         <Body content={current.content} html={current.html} />
+      </div>
+    );
+  }
+
+  if (techTheme.productTabs === 'accordion') {
+    return (
+      <div style={{ fontFamily: t.fonts.body, borderTop: `1px solid ${t.colors.border}` }}>
+        <style>{RICH_CSS}</style>
+        {tabs.map(tab => {
+          const on = open.includes(tab.key);
+          return (
+            <div key={tab.key} style={{ borderBottom: `1px solid ${t.colors.border}` }}>
+              <h3 className="m-0">
+                <button type="button" id={`${base}-${tab.key}`} aria-expanded={on} aria-controls={`${base}-${tab.key}-panel`}
+                  onClick={() => setOpen(o => (o.includes(tab.key) ? o.filter(k => k !== tab.key) : [...o, tab.key]))}
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-0 py-4 text-start text-base font-semibold"
+                  style={{ fontFamily: t.fonts.display, color: t.colors.ink }}>
+                  {tab.title}
+                  <ChevronDown size={18} aria-hidden style={{ transition: 'transform .2s', transform: on ? 'rotate(180deg)' : 'none' }} />
+                </button>
+              </h3>
+              {on && <div id={`${base}-${tab.key}-panel`} role="region" aria-labelledby={`${base}-${tab.key}`} className="pb-4" style={color}><Body content={tab.content} html={tab.html} /></div>}
+            </div>
+          );
+        })}
       </div>
     );
   }

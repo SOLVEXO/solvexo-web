@@ -241,7 +241,8 @@
     "price": "السعر",
     "qty": "الكمية",
     "summary": "الملخص",
-    "proceedToCheckout": "المتابعة إلى الدفع"
+    "proceedToCheckout": "المتابعة إلى الدفع",
+    "youMayLike": "قد يعجبك أيضًا"
   },
   "category": {
     "notFound": "الفئة غير موجودة",
@@ -1386,7 +1387,8 @@
     "hours": "ساعات",
     "breadcrumb": "مسار التنقل",
     "rated_out_of_5": "التقييم {{value}} من 5",
-    "reviews_count": "التقييمات ({{count}})"
+    "reviews_count": "التقييمات ({{count}})",
+    "add": "أضف"
   },
   "product": {
     "addToCart": "أضف إلى السلة",

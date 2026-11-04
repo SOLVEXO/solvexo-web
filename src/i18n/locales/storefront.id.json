@@ -236,7 +236,8 @@
     "price": "Harga",
     "qty": "Jml",
     "summary": "Ringkasan",
-    "proceedToCheckout": "Lanjut ke pembayaran"
+    "proceedToCheckout": "Lanjut ke pembayaran",
+    "youMayLike": "Anda mungkin juga suka"
   },
   "category": {
     "notFound": "Kategori tidak ditemukan",
@@ -829,6 +830,7 @@
     "noContent": "Halaman ini belum memiliki konten."
   },
   "pg": {
+    "add": "Tambah",
     "add_photos": "Tambah foto",
     "add_to_bag": "Tambah ke tas",
     "add_to_cart": "Tambah ke keranjang",

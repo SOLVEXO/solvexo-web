@@ -237,7 +237,8 @@
     "price": "قیمت",
     "qty": "تعداد",
     "summary": "خلاصه",
-    "proceedToCheckout": "ادامه به پرداخت"
+    "proceedToCheckout": "ادامه به پرداخت",
+    "youMayLike": "شاید این‌ها را هم بپسندید"
   },
   "category": {
     "notFound": "دسته‌بندی یافت نشد",
@@ -834,6 +835,7 @@
     "noContent": "این صفحه هنوز محتوایی ندارد."
   },
   "pg": {
+    "add": "افزودن",
     "add_photos": "افزودن عکس",
     "add_to_bag": "افزودن به کیف",
     "add_to_cart": "افزودن به سبد خرید",

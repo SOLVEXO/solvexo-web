@@ -237,7 +237,8 @@
     "price": "Fiyat",
     "qty": "Adet",
     "summary": "Özet",
-    "proceedToCheckout": "Ödemeye geç"
+    "proceedToCheckout": "Ödemeye geç",
+    "youMayLike": "Bunları da beğenebilirsiniz"
   },
   "category": {
     "notFound": "Kategori bulunamadı",
@@ -834,6 +835,7 @@
     "noContent": "Bu sayfada henüz içerik yok."
   },
   "pg": {
+    "add": "Ekle",
     "add_photos": "Fotoğraf ekle",
     "add_to_bag": "Çantaya ekle",
     "add_to_cart": "Sepete ekle",

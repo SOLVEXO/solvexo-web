@@ -236,7 +236,8 @@
     "price": "价格",
     "qty": "数量",
     "summary": "订单摘要",
-    "proceedToCheckout": "前往结算"
+    "proceedToCheckout": "前往结算",
+    "youMayLike": "你可能还喜欢"
   },
   "category": {
     "notFound": "未找到分类",
@@ -829,6 +830,7 @@
     "noContent": "此页面暂无内容。"
   },
   "pg": {
+    "add": "添加",
     "add_photos": "添加照片",
     "add_to_bag": "加入购物袋",
     "add_to_cart": "加入购物车",

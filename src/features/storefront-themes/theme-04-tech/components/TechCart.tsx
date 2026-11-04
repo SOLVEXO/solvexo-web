@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ImageOff, X } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { displayMoney, displayMoneySum, type MoneyLine } from '../../core/money';
 import { CartDrawerContext } from '../../cartDrawerContext';
 import { useDialogFocus } from '../../core/hooks/useDialogFocus';
@@ -29,6 +30,43 @@ export function TechCartProvider({ children }: { children: ReactNode }) {
       {children}
       {open && <MiniCart onClose={closeDrawer} />}
     </CartDrawerContext.Provider>
+  );
+}
+
+/** Up to two best sellers that are not in the cart yet (real store data; nothing is shown when there are none). */
+function MiniCartUpsell({ inCart, onAdded }: { inCart: string[]; onAdded: () => void }) {
+  const { store } = useStorefront();
+  const { addToCart, adding } = useCartContext();
+  const { currency, convert, canConvert } = useCurrencyPreference();
+  const [list, setList] = useState<PublicStoreProduct[]>([]);
+  useEffect(() => {
+    const ctl = new AbortController();
+    apiGetPublicStoreProducts(store.storeId, { limit: 8, sort: 'best_selling' }, ctl.signal)
+      .then(r => setList(((r as { data?: { products?: PublicStoreProduct[] } }).data?.products ?? []) as PublicStoreProduct[]))
+      .catch(() => { /* suggestions are optional */ });
+    return () => ctl.abort();
+  }, [store.storeId]);
+  const picks = list.filter(p => !!p.variantId && p.inStock !== false && p.type !== 'digital' && !inCart.includes(p._id)).slice(0, 2);
+  if (picks.length === 0) return null;
+  const base = String(store.baseCurrency ?? currency);
+  return (
+    <div className="p-4" style={{ borderTop: `1px solid ${t.colors.border}` }}>
+      <p className="m-0 mb-3 text-xs font-semibold uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.04em' }}>{ts('cart.youMayLike', 'You may also like')}</p>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+        {picks.map(p => (
+          <li key={p._id} className="flex items-center gap-3">
+            <Link to={`/product/${p._id}`} className="grid size-12 shrink-0 place-items-center overflow-hidden" style={{ background: t.colors.bgAlt }}>
+              {p.images?.[0] ? <img {...imgProps(p.images[0], [96, 160], '48px')} alt="" className="size-full object-contain" /> : <ImageOff size={16} aria-hidden style={{ color: t.colors.inkMuted }} />}
+            </Link>
+            <div className="min-w-0 flex-1">
+              <p className="m-0 line-clamp-1 text-xs font-medium">{p.name}</p>
+              {p.defaultVariantPrice != null && <p className="m-0 text-xs font-semibold">{displayMoney({ currency, convert, canConvert }, p.defaultVariantPrice, base, { productId: p._id, variantId: p.variantId })}</p>}
+            </div>
+            <TechButton variant="outline" small loading={adding === p.variantId} onClick={async () => { if (p.variantId && await addToCart(p._id, p.variantId, 'physical', 1)) onAdded(); }}>{ts('pg.add', 'Add')}</TechButton>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -87,6 +125,7 @@ function MiniCart({ onClose }: { onClose: () => void }) {
             );
           })}
         </ul>
+        {t.cartUpsell && items.length > 0 && <MiniCartUpsell inCart={items.map(i => i.productId)} onAdded={() => undefined} />}
         <div className="flex flex-col gap-3 p-4" style={{ borderTop: `1px solid ${t.colors.border}` }}>
           <p className="m-0 text-center text-sm"><span style={{ color: t.colors.inkMuted }}>{ts('cart.subtotal', 'Subtotal')}: </span><b className="text-lg">{displayMoneySum(conv, lines)}</b></p>
           <TechButton block disabled={items.length === 0 || items.some(i => i.unavailable)} onClick={() => go('/checkout')}>{ts('cart.goToCheckout', 'Go to checkout')}</TechButton>

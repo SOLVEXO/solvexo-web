@@ -237,7 +237,8 @@
     "price": "Pris",
     "qty": "Antal",
     "summary": "Sammanfattning",
-    "proceedToCheckout": "Gå till kassan"
+    "proceedToCheckout": "Gå till kassan",
+    "youMayLike": "Du kanske också gillar"
   },
   "category": {
     "notFound": "Kategorin hittades inte",
@@ -834,6 +835,7 @@
     "noContent": "Den här sidan har inget innehåll än."
   },
   "pg": {
+    "add": "Lägg till",
     "add_photos": "Lägg till foton",
     "add_to_bag": "Lägg i varukorgen",
     "add_to_cart": "Lägg i varukorgen",

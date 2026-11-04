@@ -236,7 +236,8 @@
     "price": "価格",
     "qty": "数量",
     "summary": "ご注文内容",
-    "proceedToCheckout": "レジに進む"
+    "proceedToCheckout": "レジに進む",
+    "youMayLike": "こちらもおすすめ"
   },
   "category": {
     "notFound": "カテゴリが見つかりません",
@@ -829,6 +830,7 @@
     "noContent": "このページにはまだコンテンツがありません。"
   },
   "pg": {
+    "add": "追加",
     "add_photos": "写真を追加",
     "add_to_bag": "バッグに追加",
     "add_to_cart": "カートに追加",

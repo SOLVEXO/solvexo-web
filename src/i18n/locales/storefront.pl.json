@@ -239,7 +239,8 @@
     "price": "Cena",
     "qty": "Ilość",
     "summary": "Podsumowanie",
-    "proceedToCheckout": "Przejdź do kasy"
+    "proceedToCheckout": "Przejdź do kasy",
+    "youMayLike": "Może Ci się spodobać"
   },
   "category": {
     "notFound": "Nie znaleziono kategorii",
@@ -844,6 +845,7 @@
     "noContent": "Ta strona nie ma jeszcze treści."
   },
   "pg": {
+    "add": "Dodaj",
     "add_photos": "Dodaj zdjęcia",
     "add_to_bag": "Dodaj do koszyka",
     "add_to_cart": "Dodaj do koszyka",

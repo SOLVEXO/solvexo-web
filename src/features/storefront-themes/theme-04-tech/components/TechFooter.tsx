@@ -47,7 +47,7 @@ export function TechFooter() {
       {(theme?.footer?.sections?.length ?? 0) > 0 && <TechSectionRenderer sections={theme?.footer?.sections ?? []} />}
       <footer style={{ background: bg, color: fg, fontFamily: t.fonts.body }}>
         <FooterNewsletterStrip tokens={tokens} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} line={line} />
-        <div className="mx-auto flex flex-wrap gap-x-12 gap-y-10" style={{ maxWidth: t.layout.maxWidth, padding: `${opts.padding.columns}px ${t.layout.containerPadX}` }}>
+        <div className={`mx-auto gap-x-12 gap-y-10 ${t.footerColumns ? 'tx-footer-grid' : 'flex flex-wrap'}`} style={{ maxWidth: t.layout.maxWidth, padding: `${opts.padding.columns}px ${t.layout.containerPadX}`, ...(t.footerColumns ? { ['--tx-fcols' as string]: t.footerColumns } : null) }}>
           <FooterColumns tokens={tokens} />
         </div>
         <div style={{ borderTop: `1px solid ${line}` }}>

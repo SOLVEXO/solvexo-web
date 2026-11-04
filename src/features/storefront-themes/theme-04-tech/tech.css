@@ -125,3 +125,8 @@ article[data-fx-align='center'] .tx-card-body :is(p.flex, ul.flex, div.flex.item
 .tx-cta, .tx-cta.tx-cta-sm, .tx-cta:hover, .tx-cta.tx-cta-sm:hover, [dir="rtl"] .tx-cta, [dir="rtl"] .tx-cta:hover { padding: 0 28px; height: var(--tx-btn-h, 50px); font-weight: 600; }
 .tx-cta.tx-cta-sm, .tx-cta.tx-cta-sm:hover { height: 38px; padding: 0 20px; font-size: 13px; }
 .tx-cta .tx-cta-icon { display: none; }
+
+/* Footer with a fixed column count (seller setting) */
+.tx-footer-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 560px) { .tx-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .tx-footer-grid { grid-template-columns: repeat(var(--tx-fcols, 4), minmax(0, 1fr)); } }

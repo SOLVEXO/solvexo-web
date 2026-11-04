@@ -236,7 +236,8 @@
     "price": "Harga",
     "qty": "Kuantiti",
     "summary": "Ringkasan",
-    "proceedToCheckout": "Teruskan ke pembayaran"
+    "proceedToCheckout": "Teruskan ke pembayaran",
+    "youMayLike": "Anda mungkin juga suka"
   },
   "category": {
     "notFound": "Kategori tidak ditemui",
@@ -829,6 +830,7 @@
     "noContent": "Halaman ini belum mempunyai kandungan."
   },
   "pg": {
+    "add": "Tambah",
     "add_photos": "Tambah foto",
     "add_to_bag": "Tambah ke troli",
     "add_to_cart": "Tambah ke troli",
