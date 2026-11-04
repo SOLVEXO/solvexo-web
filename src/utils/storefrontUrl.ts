@@ -11,7 +11,7 @@
 // Infra subdomains that are never a store slug — kept separate from the
 // backend's `RESERVED_STORE_SLUGS` (which reserves top-level *path* segments
 // on the apex domain, a different namespace entirely).
-const RESERVED_HOST_PREFIXES = ['www', 'staging', 'api'];
+const RESERVED_HOST_PREFIXES = ['www', 'staging', 'api', 'admin', 'seller', 'superadmin', 'stores'];
 
 // The platform's own apex domain(s). Configurable via `VITE_PLATFORM_APEX_DOMAINS`
 // (comma-separated, e.g. `solvexo.store,staging.solvexo.store`); default
@@ -66,6 +66,28 @@ export function getStoreSlugFromHost(): string | null {
   }
   if (!prefix || prefix.includes('.') || RESERVED_HOST_PREFIXES.includes(prefix)) return null;
   return prefix;
+}
+
+/** The first label of a platform host (`seller` of `seller.solvexo.store` / `seller.localhost`), else null. */
+export function getPlatformHostPrefix(): string | null {
+  const hostname = window.location.hostname.toLowerCase();
+  if (isIpHost(hostname) || hostname === 'localhost') return null;
+  if (hostname.endsWith('.localhost')) return hostname.slice(0, -'.localhost'.length) || null;
+  const apex = matchingApex(hostname);
+  return apex && hostname !== apex ? hostname.slice(0, -(apex.length + 1)) : null;
+}
+
+/** True on the real platform apex (`solvexo.store`, `www.solvexo.store`). */
+export function isPlatformApexHost(): boolean {
+  const hostname = window.location.hostname.toLowerCase();
+  const apex = matchingApex(hostname);
+  return !!apex && (hostname === apex || hostname === `www.${apex}`);
+}
+
+/** Origin of another platform host: `platformOrigin('seller')` -> `https://seller.solvexo.store`; `'www'` -> the marketing site. */
+export function platformOrigin(prefix: 'seller' | 'superadmin' | 'www'): string {
+  const { protocol, port } = window.location;
+  return `${protocol}//${prefix}.${baseDomain()}${port ? `:${port}` : ''}`;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { useState, useId, type CSSProperties } from 'react';
-import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
+import { useAdminPathname } from '@/utils/platformHost';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import {
@@ -225,7 +226,7 @@ function isNavItemActive(item: AdminNavItem, pathname: string) {
 // covers itself (AdminSettings drops 'settings', the page it already is).
 export function AdminNavMenu({ excludeItemIds = [] }: { excludeItemIds?: string[] }) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const pathname = useAdminPathname();
   const hiddenItems = new Set(excludeItemIds);
 
   return (
@@ -276,7 +277,7 @@ const ADMIN_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[
 
 function AdminBottomNav() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const pathname = useAdminPathname();
   const isActive = (path: string) => (path === '/admin' ? pathname === '/admin' : pathname.startsWith(path));
 
   // Same bar as the store workspace: a rounded-top bar with a round notch cut out of its top
@@ -335,7 +336,7 @@ interface AdminSidebarProps { open: boolean; onToggle: () => void; }
 // AdminNavMenu, instead of a hamburger-triggered copy of this same dark rail.
 function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
   const navigate     = useNavigate();
-  const { pathname } = useLocation();
+  const pathname = useAdminPathname();
   const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const logout = useLogout();
@@ -586,7 +587,7 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
 }
 
 export function AdminLayout() {
-  const { pathname: currentPath } = useLocation();
+  const currentPath = useAdminPathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);
 

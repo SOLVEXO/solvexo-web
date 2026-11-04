@@ -10,7 +10,7 @@ import {
 import { Button, Modal, StatusBadge, ActionMenu, Badge, SkeletonBox } from '@/components/comman/ui';
 import type { ActionMenuItem } from '@/components/comman/ui';
 import { Store as StoreIcon, Eye, Ban, CheckCircle2, Percent, ScanEye } from 'lucide-react';
-import { startViewAsStore } from '@/utils/viewAsStore';
+import { openViewAsStore } from '@/utils/viewAsStore';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -155,7 +155,7 @@ export function StoresTab({ stores, onChanged }: StoresTabProps) {
   const toast = useToast();
 
   async function viewAs(store: SellerStore) {
-    try { const id = await startViewAsStore(store.id); window.location.assign('/store/' + id); }
+    try { await openViewAsStore(store.id); }
     catch (err) { toast.error(err instanceof Error ? err.message : 'Could not open the store.'); }
   }
 

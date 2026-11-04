@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { apiSitePublicConfig, type SitePublicConfig } from '@/api/services/siteAnalytics';
+import { hostMode } from '@/utils/platformHost';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 import { gaLoaded, isTrackedPath, loadGa, readConsent, saveConsent, skipGa, trackPageView, type ConsentChoice } from '@/utils/siteAnalytics';
 
 // Merchant storefronts share RootLayout but are never tracked by Solvexo's own analytics.
-const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate());
+// The superadmin host (paths without /admin) is never a public page either.
+const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate()) || hostMode() === 'superadmin';
 
 /**
  * Solvexo's Google Analytics on the public site and sign-up flow. Fetches the measurement id the first time a

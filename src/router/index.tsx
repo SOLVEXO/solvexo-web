@@ -1,6 +1,11 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
+import { hostMode, StripAdminPrefix } from '@/utils/platformHost';
+import { consumeViewAsHandoff } from '@/utils/viewAsStore';
+
+// Seller host only: pick up the read-only "view as store" token an admin handed over (before any auth read).
+if (hostMode() === 'seller') consumeViewAsHandoff();
 import { basenameFromPathname } from '@/i18n/localeConfig';
 import { countryBasename, countryFromPathname, rememberCountry } from '@/utils/countryPrefix';
 
@@ -274,13 +279,15 @@ const storefrontRouter = createBrowserRouter([
 ], { basename: storefrontBasename });
 
 // ── Main app router (marketplace/buyer/seller/admin — the apex domain) ────────
+const onSuperadminHost = hostMode() === 'superadmin';
 const mainRouter = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
 
       // ── All buyer-facing pages — BuyerLayout adds the mobile bottom nav ─
-      {
+      // (not on the superadmin host: its `/` is the admin dashboard)
+      ...(onSuperadminHost ? [] : [{
         element: <BuyerLayout />,
         children: [
           // Pages that also need the public marketing top navbar
@@ -330,7 +337,7 @@ const mainRouter = createBrowserRouter([
           // have since been deleted outright — they're gone from disk, not
           // just unlinked.
         ],
-      },
+      }]),
 
       // ── Maintenance mode (backend 503 redirects here — see client.ts) ──
       { path: '/maintenance',     element: <MaintenancePage /> },
@@ -339,9 +346,11 @@ const mainRouter = createBrowserRouter([
       { path: '/pay-invoice/:token', element: <PayInvoicePage /> },
 
       // ── Auth ──────────────────────────────────────────────────────────
-      { path: '/login',           element: <LoginPage /> },
-      { path: '/admin/login',     element: <AdminLoginPage /> },
-      { path: '/admin/forgot-password', element: <AdminForgotPasswordPage /> },
+      { path: '/login',           element: onSuperadminHost ? <AdminLoginPage /> : <LoginPage /> },
+      ...(onSuperadminHost ? [] : [
+        { path: '/admin/login',     element: <AdminLoginPage /> },
+        { path: '/admin/forgot-password', element: <AdminForgotPasswordPage /> },
+      ]),
       { path: '/admin-invite/:token', element: <AdminAcceptInvitePage /> },
       { path: '/admin-reset-password/:token', element: <AdminResetPasswordPage /> },
       { path: '/staff-login/:storeId', element: <StaffLoginPage /> },
@@ -355,7 +364,7 @@ const mainRouter = createBrowserRouter([
       { path: '/signup',          element: <RegisterPage /> },
       { path: '/onboard',      element: <OnboardingPage /> },
       { path: '/onboard/:sessionId', element: <OnboardingEntry /> }, // legacy links with a random id in the path
-      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/forgot-password', element: onSuperadminHost ? <AdminForgotPasswordPage /> : <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
       { path: '/access-denied',    element: <StoreAccessDenied /> },
@@ -523,8 +532,11 @@ const mainRouter = createBrowserRouter([
       // lazy imports and AdminOverview quick-links are gone from here; the
       // five `AdminXxx.tsx` page files themselves are left on disk, fully
       // unreferenced, only because this session can't delete files directly.
+      // On the superadmin host the screens live at the root (`/clients`, not `/admin/clients`); an old
+      // `/admin/...` link is stripped by the route right below.
+      ...(onSuperadminHost ? [{ path: '/admin/*', element: <StripAdminPrefix /> }] : []),
       {
-        path: '/admin',
+        path: onSuperadminHost ? '/' : '/admin',
         element: <AdminLayout />,
         children: [
           { index: true,          element: <AdminOverview /> },
@@ -579,7 +591,7 @@ const mainRouter = createBrowserRouter([
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
-], { basename: countryBasename(window.location.pathname) });
+], { basename: hostMode() === 'seller' || onSuperadminHost ? undefined : countryBasename(window.location.pathname) });
 
 // Decided once at module load — the hostname doesn't change without a full
 // page reload, so this never needs to be reactive. A `*.solvexo.store`
@@ -590,5 +602,5 @@ const mainRouter = createBrowserRouter([
 // `StorefrontLayout.tsx`.
 const isStorefront = !!(getStoreSlugFromHost() || isCustomDomainCandidate());
 // Platform site only: remember the country in the URL (the edge middleware keeps sending the visitor there).
-if (!isStorefront) rememberCountry(countryFromPathname(window.location.pathname));
+if (!isStorefront && !['seller', 'superadmin'].includes(hostMode())) rememberCountry(countryFromPathname(window.location.pathname));
 export const router = isStorefront ? storefrontRouter : mainRouter;

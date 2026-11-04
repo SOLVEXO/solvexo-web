@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
+import { PlatformHostGuard } from '@/utils/platformHost';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 import { scrollRootRef, scrollRootToTop, lenisRef } from '@/utils/scrollRoot';
 import { SmoothScroll } from '@/components/comman/motion/SmoothScroll';
@@ -97,7 +98,7 @@ export function RootLayout() {
             change, not just after an actual error. */}
         <ErrorBoundary resetKey={pathname}>
           <Suspense fallback={<PageSpinner />}>
-            <Outlet />
+            <PlatformHostGuard><Outlet /></PlatformHostGuard>
           </Suspense>
         </ErrorBoundary>
       </div>

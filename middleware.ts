@@ -5,7 +5,7 @@ const COUNTRY_PAGES = new Set(['/', '/login', '/register', '/signup', '/forgot-p
 const BOT_UA = /bot|crawl|spider|slurp|facebookexternalhit|preview|lighthouse|pingdom|headless|monitor/i;
 
 const PLATFORM_HOSTS = new Set(['solvexo.store', 'www.solvexo.store', 'solvexo.com', 'www.solvexo.com']);
-const RESERVED_SUBDOMAINS = new Set(['www', 'staging', 'api', 'admin', 'app', 'seller', 'dashboard', 'cdn', 'assets', 'mail']);
+const RESERVED_SUBDOMAINS = new Set(['www', 'staging', 'api', 'admin', 'superadmin', 'app', 'seller', 'dashboard', 'cdn', 'assets', 'mail']);
 const SEO_API_ORIGIN = 'https://api.solvexo.store';
 
 export default function middleware(request: Request) {

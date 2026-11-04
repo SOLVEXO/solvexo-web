@@ -1,5 +1,7 @@
 import { TokenStorage } from '@/api/services/auth';
 import { apiViewAsStore } from '@/api/services/adminTeam';
+import { hostMode } from '@/utils/platformHost';
+import { platformOrigin } from '@/utils/storefrontUrl';
 
 const BACKUP_KEY = 'solvexo:view-as-backup';
 
@@ -31,6 +33,31 @@ export async function startViewAsStore(storeId: string): Promise<string> {
   TokenStorage.save(accessToken, accessToken);
   TokenStorage.saveUser({ ...staff, viewOnly: true });
   return res.data.storeId;
+}
+
+/** Opens the read-only store view. From the superadmin host it opens a NEW tab on the seller host (cookies are per
+ *  host) and hands the 30-minute token over in the URL hash; the admin session in this tab is never touched. */
+export async function openViewAsStore(storeId: string): Promise<void> {
+  if (hostMode() !== 'superadmin') {
+    const id = await startViewAsStore(storeId);
+    window.location.assign(`/store/${id}`);
+    return;
+  }
+  const res = await apiViewAsStore(storeId);
+  const payload = encodeURIComponent(JSON.stringify({ accessToken: res.data.accessToken, staff: res.data.staff, storeName: res.data.storeName }));
+  window.open(`${platformOrigin('seller')}/store/${res.data.storeId}/dashboard#vas=${payload}`, '_blank');
+}
+
+/** Seller host, first load: takes the read-only token handed over by `openViewAsStore` out of the URL hash. */
+export function consumeViewAsHandoff(): void {
+  if (!window.location.hash.startsWith('#vas=')) return;
+  try {
+    const { accessToken, staff, storeName } = JSON.parse(decodeURIComponent(window.location.hash.slice(5)));
+    window.sessionStorage.setItem(BACKUP_KEY, JSON.stringify({ accessToken: null, refreshToken: null, user: null, storeName, handoff: true }));
+    TokenStorage.save(accessToken, accessToken);
+    TokenStorage.saveUser({ ...staff, viewOnly: true });
+  } catch { /* bad hash: ignore */ }
+  window.history.replaceState(null, '', window.location.pathname + window.location.search);
 }
 
 /** Puts the admin session back and forgets the read-only one. */
