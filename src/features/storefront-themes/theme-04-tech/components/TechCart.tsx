@@ -60,7 +60,7 @@ function MiniCart({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-3 p-4 text-center">
           <div className="flex-1">
             <p className="m-0 text-base font-semibold">{ts('cart.myCart', 'My cart')}</p>
-            <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{ts('cart.itemsInCart', '{{count}} items in cart', { count })}</p>
+            <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{count === 1 ? ts('cart.itemInCart', '1 item in cart') : ts('cart.itemsInCart', '{{count}} items in cart', { count })}</p>
           </div>
           <button type="button" onClick={onClose} aria-label={ts('cart.close', 'Close cart')} className="grid size-8 cursor-pointer place-items-center border-0 bg-transparent" style={{ color: t.colors.ink }}><X size={18} /></button>
         </div>
