@@ -50,7 +50,7 @@ import './theme-03-fashion/theme.preview';
 import './theme-03-fashion/theme.demoPreview';
 
 // Tech Store (theme-04-tech) is loaded on demand: a Maison store never downloads its code. Its Layout and every page are lazy chunks; its editor registrations (manifest, preview, demo) live in `editorThemes.ts`, imported only by seller pages.
-// Native routes: home, product, cart, collection, category, search, customPage, checkout, checkoutReturn. Every other route falls back to Maison's page, which follows the Tech palette through the token bridge in theme-04-tech/theme.config.ts.
+// Native routes: home, product, cart, collection, category, search, customPage, checkout, checkoutReturn, login, register, verifyOtp, forgotPassword, newPassword, account, orders, addresses. Every other route falls back to Maison's page, which follows the Tech palette through the token bridge in theme-04-tech/theme.config.ts.
 const TechLayout = lazy(() => import('./theme-04-tech/layout/TechLayout').then(m => ({ default: m.TechLayout })));
 const TechHomePage = lazy(() => import('./theme-04-tech/pages/TechContentPages').then(m => ({ default: m.TechHomePage })));
 const TechCustomPage = lazy(() => import('./theme-04-tech/pages/TechContentPages').then(m => ({ default: m.TechCustomPage })));
@@ -61,6 +61,14 @@ const TechProductPage = lazy(() => import('./theme-04-tech/pages/TechProductPage
 const TechCartPage = lazy(() => import('./theme-04-tech/pages/TechCartPage').then(m => ({ default: m.TechCartPage })));
 const TechCheckoutPage = lazy(() => import('./theme-04-tech/pages/TechCheckoutPage').then(m => ({ default: m.TechCheckoutPage })));
 const TechCheckoutReturnPage = lazy(() => import('./theme-04-tech/pages/TechCheckoutReturnPage').then(m => ({ default: m.TechCheckoutReturnPage })));
+const TechLoginPage = lazy(() => import('./theme-04-tech/pages/TechAuthPages').then(m => ({ default: m.TechLoginPage })));
+const TechRegisterPage = lazy(() => import('./theme-04-tech/pages/TechAuthPages').then(m => ({ default: m.TechRegisterPage })));
+const TechVerifyOtpPage = lazy(() => import('./theme-04-tech/pages/TechAuthPages').then(m => ({ default: m.TechVerifyOtpPage })));
+const TechForgotPasswordPage = lazy(() => import('./theme-04-tech/pages/TechAuthPages').then(m => ({ default: m.TechForgotPasswordPage })));
+const TechNewPasswordPage = lazy(() => import('./theme-04-tech/pages/TechAuthPages').then(m => ({ default: m.TechNewPasswordPage })));
+const TechAccountPage = lazy(() => import('./theme-04-tech/pages/TechAccountPages').then(m => ({ default: m.TechAccountPage })));
+const TechOrdersPage = lazy(() => import('./theme-04-tech/pages/TechAccountPages').then(m => ({ default: m.TechOrdersPage })));
+const TechAddressesPage = lazy(() => import('./theme-04-tech/pages/TechAccountPages').then(m => ({ default: m.TechAddressesPage })));
 
 /** Every storefront route a theme can implement. A route a theme does not cover falls back to the default theme's page, so a theme that is still being built never renders a blank screen. */
 export type StorefrontRouteKey =
@@ -174,11 +182,19 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       customPage: TechCustomPage,
       checkout: TechCheckoutPage,
       checkoutReturn: TechCheckoutReturnPage,
+      login: TechLoginPage,
+      register: TechRegisterPage,
+      verifyOtp: TechVerifyOtpPage,
+      forgotPassword: TechForgotPasswordPage,
+      newPassword: TechNewPasswordPage,
+      account: TechAccountPage,
+      orders: TechOrdersPage,
+      addresses: TechAddressesPage,
     },
     display: {
       name: 'Tech Store',
       description: 'Electronics and computers: bright blue accents, dark feature bands, a filter sidebar and compact product cards.',
-      builtRouteCount: 9,
+      builtRouteCount: 17,
       totalRouteCount: 33,
     },
     installDefaults: { primaryColor: '#0156FF', bgColor: '#FFFFFF', textColor: '#020203', font: 'Poppins', buttonStyle: 'solid', buttonRadius: 'full' },

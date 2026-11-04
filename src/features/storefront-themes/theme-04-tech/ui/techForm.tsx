@@ -2,14 +2,12 @@ import { useId, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAtt
 import { AlertCircle, CheckCircle2, Info, Loader2 } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { techTheme as t } from '../theme.config';
-import { techButtonStyle } from './techStyle';
+import { techButtonStyle, techControlStyle } from './techStyle';
 
 /* Form kit for the Tech checkout and customer pages. Same names and props as the shared storefront kit, drawn in Tech's own
    look (square-ish corners, blue accent, pill buttons). Colours, radii and fonts all come from `techTheme`. */
 
-function controlStyle(invalid?: boolean): CSSProperties {
-  return { width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: t.fieldRadiusPx, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 14, outline: 'none', border: `1px solid ${invalid ? t.colors.danger : t.colors.borderStrong}` };
-}
+const controlStyle = techControlStyle;
 
 /** Marked words in a heading (`*word*`) are only an accent in other themes; Tech prints the plain text. */
 export function AccentText({ text }: { text: string; size?: string; accent?: string }) {

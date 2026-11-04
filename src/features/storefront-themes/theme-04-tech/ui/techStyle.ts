@@ -14,3 +14,8 @@ export function techButtonStyle(variant: TechButtonVariant): CSSProperties {
 export function techCssVars(): CSSProperties {
   return { '--tx-bg': t.colors.bg, '--tx-border': t.colors.border, '--tx-muted': t.colors.inkMuted, '--tx-accent': t.colors.accent, '--tx-btn-h': t.buttonHeightPx, '--tx-field-r': t.fieldRadiusPx } as CSSProperties;
 }
+
+/** Shared look of text inputs, selects and textareas (also used by the phone field). */
+export function techControlStyle(invalid?: boolean): CSSProperties {
+  return { width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: t.fieldRadiusPx, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 14, outline: 'none', border: `1px solid ${invalid ? t.colors.danger : t.colors.borderStrong}` };
+}
