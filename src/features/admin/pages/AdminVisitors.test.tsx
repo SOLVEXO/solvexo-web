@@ -17,7 +17,9 @@ import { AdminVisitors } from './AdminVisitors';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
-const ga4 = (connected: boolean) => ({ connected, status: connected ? 'connected' : null, propertyId: connected ? 'properties/42' : null, lastError: null });
+const ga4 = (connected: boolean, over: Record<string, unknown> = {}) => ({ connected, source: connected ? 'google_sign_in' : null, status: connected ? 'connected' : null, propertyId: connected ? 'properties/42' : null, lastError: null, ok: connected ? true : null, serviceAccountEmail: null, ...over });
+const noEnv = { measurementIdVariable: null, propertyIdVariable: null, serviceAccountVariable: null, problems: [] as string[] };
+const settings = (over: Record<string, unknown>) => ({ data: { measurementId: null, measurementIdSource: null, enabled: true, ga4: ga4(false), env: noEnv, detectedMeasurementId: null, ...over } });
 const metric = (value: number, previous: number, change: number | null) => ({ value, previous, change });
 const reports = () => {
   api.apiSiteOverview.mockResolvedValue({ data: {
@@ -40,8 +42,8 @@ const renderPage = () => render(<MemoryRouter><AdminVisitors /></MemoryRouter>);
 
 describe('AdminVisitors', () => {
   it('walks a new admin through setup: saves the measurement id (or uses the detected one) and explains connecting reports', async () => {
-    api.apiSiteSettings.mockResolvedValue({ data: { measurementId: null, enabled: true, ga4: ga4(false), detectedMeasurementId: null } });
-    api.apiSaveSiteSettings.mockResolvedValue({ data: { measurementId: 'G-ABC12345', enabled: true, ga4: ga4(false), detectedMeasurementId: null } });
+    api.apiSiteSettings.mockResolvedValue(settings({}));
+    api.apiSaveSiteSettings.mockResolvedValue(settings({ measurementId: 'G-ABC12345', measurementIdSource: 'settings' }));
     renderPage();
     expect(await screen.findByText('Connect Google Analytics to see reports')).toBeInTheDocument();
     expect(screen.getByText('Tracking not set up')).toBeInTheDocument();
@@ -53,7 +55,7 @@ describe('AdminVisitors', () => {
   });
 
   it('shows visitors, live count, funnel, sources and locations, and reloads for another range', async () => {
-    api.apiSiteSettings.mockResolvedValue({ data: { measurementId: 'G-ABC12345', enabled: true, ga4: ga4(true), detectedMeasurementId: null } });
+    api.apiSiteSettings.mockResolvedValue(settings({ measurementId: 'G-ABC12345', measurementIdSource: 'settings', ga4: ga4(true) }));
     reports();
     renderPage();
     await waitFor(() => expect(screen.getByLabelText('Visitors right now')).toHaveTextContent('7'));
@@ -70,11 +72,31 @@ describe('AdminVisitors', () => {
   });
 
   it('shows a report error with a retry, without breaking the other sections', async () => {
-    api.apiSiteSettings.mockResolvedValue({ data: { measurementId: 'G-ABC12345', enabled: true, ga4: ga4(true), detectedMeasurementId: null } });
+    api.apiSiteSettings.mockResolvedValue(settings({ measurementId: 'G-ABC12345', measurementIdSource: 'settings', ga4: ga4(true) }));
     reports();
     api.apiSiteAcquisition.mockRejectedValueOnce(new Error('Google Analytics refused access. Reconnect it in Super Admin → SEO → Integrations.'));
     renderPage();
     expect(await screen.findByText(/Google Analytics refused access/)).toBeInTheDocument();
     expect(await screen.findByText('Lahore, Pakistan')).toBeInTheDocument();
+  });
+
+  it('uses server variables: shows where the id and the reports come from, and what Google said is wrong', async () => {
+    api.apiSiteSettings.mockResolvedValue(settings({
+      measurementId: 'G-ENV12345', measurementIdSource: 'env:GA_MEASUREMENT_ID',
+      ga4: ga4(false, { source: 'service_account', status: 'error', ok: false, propertyId: 'properties/412', serviceAccountEmail: 'ga@solvexo.iam.gserviceaccount.com',
+        lastError: 'Google Analytics refused access to properties/412 for ga@solvexo.iam.gserviceaccount.com. In Google Analytics → Admin → Property access management, add that email with the Viewer role.' }),
+      env: { ...noEnv, measurementIdVariable: 'GA_MEASUREMENT_ID', serviceAccountVariable: 'GA4_SERVICE_ACCOUNT_JSON', problems: ['GA4_PROPERTY_ID should be a GA4 property ID, a number like 123456789'] },
+    }));
+    renderPage();
+    expect(await screen.findByText("Google Analytics isn't working yet")).toBeInTheDocument();
+    expect(api.apiSiteSettings).toHaveBeenCalledWith(true);
+    expect(screen.getByText(/add that email with the Viewer role/)).toBeInTheDocument();
+    expect(screen.getByText(/GA4_PROPERTY_ID should be a GA4 property ID/)).toBeInTheDocument();
+    expect(screen.getByText('Tracking on (G-ENV12345, from GA_MEASUREMENT_ID)')).toBeInTheDocument();
+    expect(screen.getByText('Reports failing (see below)')).toBeInTheDocument();
+    expect(screen.queryByText('Connect Google Analytics to see reports')).not.toBeInTheDocument();
+    expect(api.apiSiteOverview).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    await waitFor(() => expect(api.apiSiteSettings).toHaveBeenCalledTimes(2));
   });
 });
