@@ -49,6 +49,20 @@ import './theme-03-fashion/theme.manifest';
 import './theme-03-fashion/theme.preview';
 import './theme-03-fashion/theme.demoPreview';
 
+// Tech Store (theme-04-tech): native Layout, Home, listing, product, cart, checkout (all steps), checkout return and custom pages; every other route falls back to Maison's page, which follows the Tech palette through the token bridge in `theme.config.ts`.
+import { TechLayout } from './theme-04-tech/layout/TechLayout';
+import { TechHomePage, TechCustomPage } from './theme-04-tech/pages/TechContentPages';
+import { TechCollectionPage, TechCategoryPage, TechSearchPage } from './theme-04-tech/pages/TechListingPages';
+import { TechProductPage } from './theme-04-tech/pages/TechProductPage';
+import { TechCartPage } from './theme-04-tech/pages/TechCartPage';
+import { TECH_INSTALL_DEFAULTS } from './theme-04-tech/theme.config';
+// Checkout is opened on demand, like Maison's.
+const TechCheckoutPage = lazy(() => import('./theme-04-tech/pages/TechCheckoutPage').then(m => ({ default: m.TechCheckoutPage })));
+const TechCheckoutReturnPage = lazy(() => import('./theme-04-tech/pages/TechCheckoutReturnPage').then(m => ({ default: m.TechCheckoutReturnPage })));
+import './theme-04-tech/theme.manifest';
+import './theme-04-tech/theme.preview';
+import './theme-04-tech/theme.demoPreview';
+
 /** Every storefront route a theme can implement. A route a theme does not cover falls back to the default theme's page, so a theme that is still being built never renders a blank screen. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
@@ -144,6 +158,31 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       buttonStyle: 'solid',
       buttonRadius: 'full',
     },
+  },
+  'theme-04-tech': {
+    Layout: TechLayout,
+    // Password / coming-soon gate: Maison's page reads the bridged palette.
+    GatePage: FashionStorefrontGate,
+    CookieBanner: FashionCookieBanner,
+    AuthGateModal: FashionAuthGateModal,
+    pages: {
+      home: TechHomePage,
+      product: TechProductPage,
+      cart: TechCartPage,
+      collection: TechCollectionPage,
+      category: TechCategoryPage,
+      search: TechSearchPage,
+      customPage: TechCustomPage,
+      checkout: TechCheckoutPage,
+      checkoutReturn: TechCheckoutReturnPage,
+    },
+    display: {
+      name: 'Tech Store',
+      description: 'Electronics and computers: bright blue accents, dark feature bands, a filter sidebar and compact product cards.',
+      builtRouteCount: 9,
+      totalRouteCount: 33,
+    },
+    installDefaults: TECH_INSTALL_DEFAULTS,
   },
 };
 

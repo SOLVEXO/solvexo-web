@@ -45,6 +45,13 @@ export const PAGE_LAYOUTS: { id: string; name: string; description: string; pres
     presets: ['related-complete-look', 'trust-4', 'faq-basics'] },
   { id: 'maison-product-minimal', themeId: 'theme-03-fashion', scope: 'product', name: 'Maison · Minimal product page', description: 'Just a related-products row',
     presets: ['related-also-like'] },
+  // ── Tech Store (theme-04-tech): uses only designs that exist for every theme; the Tech-only sections are added from "Add section". ──
+  { id: 'tech-home', themeId: 'theme-04-tech', name: 'Tech Store · Home', description: 'Slideshow, new products, categories, best sellers, benefits, reviews, sign-up',
+    presets: ['hero-slides', 'products-new', 'categories-grid', 'products-best', 'benefits-3', 'reviews-3', 'newsletter-offer'] },
+  { id: 'tech-home-deals', themeId: 'theme-04-tech', name: 'Tech Store · Deals', description: 'Offer strip, big banner, sale products, sale timer, trending',
+    presets: ['marquee-offers', 'banner-hero', 'products-sale', 'countdown-sale', 'products-trending', 'faq-basics'] },
+  { id: 'tech-product-classic', themeId: 'theme-04-tech', scope: 'product', name: 'Tech Store · Product page', description: 'Related products, benefits, reviews',
+    presets: ['related-also-like', 'benefits-3', 'reviews-3'] },
   { id: 'fashion', name: 'Fashion & lifestyle', description: 'Big banner, new arrivals, collections, story, reviews, sign-up',
     presets: ['banner-hero', 'trust-4', 'products-new', 'collections-grid', 'story-rows', 'reviews-3', 'social-gallery', 'newsletter-offer'] },
   { id: 'electronics', name: 'Electronics & gadgets', description: 'Slideshow, categories, best sellers, sale timer, FAQ',

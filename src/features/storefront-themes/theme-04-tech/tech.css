@@ -1,0 +1,34 @@
+/* Tech Store theme. Every class here is prefixed tx- and only matters inside .tx-root. */
+.tx-root { overflow-x: clip; }
+.tx-root .grid > *, .tx-root main > * { min-width: 0; }
+.tx-root h1, .tx-root h2, .tx-root h3, .tx-root p, .tx-root a { overflow-wrap: anywhere; }
+
+/* Buttons: filled pill, outlined pill, black pill (cart/checkout actions) */
+.tx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 28px; border-radius: 9999px; font-size: 14px; font-weight: 600; line-height: 1;
+  cursor: pointer; text-decoration: none; white-space: nowrap; border: 1px solid transparent; transition: opacity .2s, background-color .2s, color .2s, border-color .2s; }
+.tx-btn:hover:not([disabled]) { opacity: .88; }
+.tx-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.tx-btn-sm { height: 36px; padding: 0 20px; font-size: 13px; }
+.tx-btn-block { display: flex; width: 100%; }
+
+/* Header links: underline slides in, no pill background (the design keeps the menu flat) */
+.tx-navlink { position: relative; }
+.tx-navlink::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .2s; }
+.tx-navlink:hover::after, .tx-navlink:focus-visible::after, [data-open='true'] > .tx-navlink::after { transform: scaleX(1); }
+
+/* Product card */
+.tx-card { position: relative; display: flex; flex-direction: column; height: 100%; transition: box-shadow .2s, transform .2s; }
+.tx-card[data-style='shadow']:hover { box-shadow: 0 8px 28px -8px rgba(2, 2, 3, .22); }
+.tx-card[data-style='outlined'] { border: 1px solid var(--tx-border); }
+.tx-card-actions { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 8px; }
+.tx-icon-btn { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9999px; border: 1.5px solid var(--tx-border); background: var(--tx-bg); color: var(--tx-muted); cursor: pointer; transition: color .2s, border-color .2s; }
+.tx-icon-btn:hover, .tx-icon-btn[aria-pressed='true'] { color: var(--tx-accent); border-color: var(--tx-accent); }
+
+/* Drop-down panels (mega menu, mini cart, account) */
+@keyframes tx-pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.tx-pop { animation: tx-pop .16s ease both; }
+@media (prefers-reduced-motion: reduce) { .tx-pop { animation: none; } .tx-navlink::after { transition: none; } }
+
+.tx-hide-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.tx-hide-scroll::-webkit-scrollbar { display: none; }
+[dir="rtl"] .tx-flip-rtl { transform: scaleX(-1); }
