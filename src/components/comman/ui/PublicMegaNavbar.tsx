@@ -425,7 +425,7 @@ export function PublicMegaNavbar() {
                   <button
                     onClick={sellEntry.go}
                     disabled={sellEntry.loading}
-                    className="inline-flex items-center gap-5 text-[13px] font-bold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] pl-[18px] pr-4 py-[11px] border-none cursor-pointer disabled:opacity-60"
+                    className="inline-flex items-center gap-5 text-[13px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] pl-[18px] pr-4 py-[11px] border-none cursor-pointer disabled:opacity-60"
                   >
                     Start Selling
                     <ArrowUpRight size={16} strokeWidth={2.4} aria-hidden />
@@ -455,7 +455,7 @@ export function PublicMegaNavbar() {
                 <button
                   onClick={sellEntry.go}
                   disabled={sellEntry.loading}
-                  className="hidden sm:inline-flex items-center gap-2 text-[12.5px] font-bold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] px-3.5 py-[8px] border-none cursor-pointer disabled:opacity-60"
+                  className="hidden sm:inline-flex items-center gap-2 text-[12.5px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] px-3.5 py-[8px] border-none cursor-pointer disabled:opacity-60"
                 >
                   Start Selling
                 </button>
