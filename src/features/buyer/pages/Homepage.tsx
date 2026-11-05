@@ -442,16 +442,17 @@ export function Homepage() {
           {splashReady && (
           <motion.div style={reduceMotion ? undefined : { opacity: heroTextFade }}>
             <Reveal delay={0}>
-              <p className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.22em] text-brand-orange mb-6">
+              {/* The page's main heading carries the app name in its exact case: Google's OAuth brand review compares
+                 the consent screen's name with the home page. The big slogan below is an h2 styled the same as before. */}
+              <h1 className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.22em] text-brand-orange mb-6">
                 <span className="w-[7px] h-[7px] rounded-full bg-brand-orange" />
-                {/* The app name in its exact case: Google's OAuth review compares the consent screen's name with it. */}
                 <span className="normal-case tracking-[0.02em] text-[13px] sm:text-[14px] font-bold">Solvexo</span>
                 <span aria-hidden>—</span> One connected commerce system
-              </p>
+              </h1>
             </Reveal>
 
             <motion.div style={reduceMotion ? undefined : { rotateX: heroTiltRotateX, rotateY: heroTiltRotateY, transformPerspective: 1000 }}>
-              <h1 className="font-sans font-extrabold text-white leading-[0.94] tracking-[-0.03em] pb-[0.05em]">
+              <h2 className="font-sans font-extrabold text-white leading-[0.94] tracking-[-0.03em] pb-[0.05em]">
                 {/* Pure per-word mask-slide reveal (SplitText's own
                    y:110%→0% + opacity, no outer blur/scale/x-drift layered
                    on top) — the three lines are spaced ~0.32s apart so line 1
@@ -491,7 +492,7 @@ export function Homepage() {
                   animateOnMount
                   className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
                 />
-              </h1>
+              </h2>
             </motion.div>
 
             <div className="mt-[9vw] sm:mt-[5vw] lg:mt-[3.5vw] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 max-w-[1100px]">
