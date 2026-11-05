@@ -344,7 +344,8 @@ export function Homepage() {
   const { ref: heroTiltRef, px: heroTiltPx, py: heroTiltPy } = useMouseParallax<HTMLDivElement>();
   const heroTiltRotateX = useTransform(heroTiltPy, [-0.5, 0.5], [5, -5]);
   const heroTiltRotateY = useTransform(heroTiltPx, [-0.5, 0.5], [-6, 6]);
-  usePageTitle('Home');
+  // The home page title is the app's exact name (Google OAuth verification compares the consent screen's app name with it).
+  usePageTitle(''); // empty = keep the plain "Solvexo" title from index.html
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
