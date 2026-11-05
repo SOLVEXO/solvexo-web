@@ -85,7 +85,8 @@ type MenuKey = 'products' | 'company' | null;
 // the slug varies — exported as a match function (not a plain array) so
 // PublicLayout's top-padding compensation and this file's own `overHero`
 // flag can never drift apart on how a route is classified.
-const EXACT_DARK_HERO_ROUTES = ['/', '/sellers', '/pricing'];
+// '/' is no longer here: the home page's hero is light now and sits below the header like other light pages.
+const EXACT_DARK_HERO_ROUTES = ['/sellers', '/pricing'];
 export function isDarkHeroRoute(pathname: string) {
   return EXACT_DARK_HERO_ROUTES.includes(pathname) || pathname.startsWith('/solutions/');
 }
