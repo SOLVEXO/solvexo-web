@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BulkCourierModal } from '@/features/seller/store/Dashboard/courier/BulkCourierModal';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
@@ -88,6 +90,9 @@ export function StoreOrderList() {
   const staffUser = TokenStorage.getUser<{ role?: string; permissions?: string[] }>() as Parameters<typeof hasNavPermission>[0];
   const canPrint = hasNavPermission(staffUser, 'orders.view');
   const canFulfill = hasNavPermission(staffUser, 'orders.fulfill');
+  const canBookCourier = hasNavPermission(staffUser, 'orders.buy_shipping_label');
+  const { t: tc } = useTranslation();
+  const [showBulkCourier, setShowBulkCourier] = useState(false);
 
   const LIMIT = 10;
   useEffect(() => {
@@ -497,13 +502,22 @@ export function StoreOrderList() {
           </div>
         )}
 
+        {showBulkCourier && (
+          <BulkCourierModal
+            storeId={storeId}
+            orders={selectedOrders.map(o => ({ orderId: o.orderId, orderNumber: o.orderNumber }))}
+            onClose={() => setShowBulkCourier(false)}
+            onDone={() => setRefreshKey(k => k + 1)}
+          />
+        )}
+
         {/* Table */}
         {!error && (
           <Card padding="none">
             <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col gap-2.5">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                 <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
-                {(canPrint || canFulfill) && orders.length > 0 && (
+                {(canPrint || canFulfill || canBookCourier) && orders.length > 0 && (
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     {bulkProgress && <span className="text-[12px] text-slate" role="status">{bulkProgress}</span>}
                     {selectedOrders.length > 0 && (
@@ -517,6 +531,11 @@ export function StoreOrderList() {
                             <Printer size={13} /> Print invoices
                           </Button>
                           </>
+                        )}
+                        {canBookCourier && (
+                          <Button variant="outline" size="sm" onClick={() => setShowBulkCourier(true)} disabled={bulkBusy !== null}>
+                            {tc('courier.bulkBook')}
+                          </Button>
                         )}
                         {canFulfill && (
                           <Button

@@ -1,10 +1,11 @@
 import client from '../client';
 import { localizePaymentMethod } from '../../utils/activeStoreText';
 import { ENDPOINTS } from '../endpoints';
+import type { CourierIntegrationView, CourierKey } from './courier';
 
 // ── Types — mirror solvexo-api's `src/integrations` module exactly ─────────
 
-export type IntegrationType = 'payment' | 'whatsapp' | 'tax' | 'shipping';
+export type IntegrationType = 'payment' | 'whatsapp' | 'tax' | 'shipping' | 'courier';
 export type PaymentProviderKey =
   | 'safepay' | 'jazzcash' | 'easypaisa' | 'payfast' | 'stripe' | 'bank_transfer'
   | 'stripe_own' | 'stripe_standard' | 'paypal' | 'razorpay' | 'paystack' | 'flutterwave' | 'mollie';
@@ -30,7 +31,7 @@ export type IntegrationStatus = 'not_connected' | 'connected' | 'disabled' | 'er
 export interface StoreIntegrationView {
   id: string | null;
   type: IntegrationType;
-  provider: PaymentProviderKey | 'whatsapp_cloud' | 'taxjar' | 'shippo';
+  provider: PaymentProviderKey | 'whatsapp_cloud' | 'taxjar' | 'shippo' | CourierKey;
   mode: IntegrationMode;
   status: IntegrationStatus;
   isEnabledForCheckout: boolean;
@@ -70,6 +71,8 @@ export interface StoreIntegrationsList {
    *  working exactly as before. `config.originAddress` is set once at
    *  connect time (see `ShippingOriginAddress`). */
   shipping: StoreIntegrationView;
+  /** Pakistani couriers the platform owner enabled (COURIER_ENABLED_PROVIDERS); empty when none are. */
+  couriers?: CourierIntegrationView[];
 }
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }

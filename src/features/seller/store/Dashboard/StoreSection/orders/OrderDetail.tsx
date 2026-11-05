@@ -29,6 +29,7 @@ import { EditOrderModal } from './EditOrderModal';
 import { ExchangeModal } from './ExchangeModal';
 import { EditShippingAddressModal } from './EditShippingAddressModal';
 import { BuyShippingLabelModal } from './BuyShippingLabelModal';
+import { CourierBookingsCard } from '@/features/seller/store/Dashboard/courier/CourierBookingsCard';
 import { EditTrackingModal } from './EditTrackingModal';
 import { ReturnLabelModal } from './ReturnLabelModal';
 import { ReturnLinesPanel } from './ReturnLinesPanel';
@@ -688,6 +689,18 @@ export function StoreOrderDetail() {
                   </div>
                 ))}
               </Card>
+            )}
+
+            {!isPickup && so.fulfillmentType !== 'digital' && detail.shippingAddress && (
+              <CourierBookingsCard
+                storeId={storeId}
+                orderId={orderId}
+                orderNumber={detail.orderNumber}
+                destinationCity={detail.shippingAddress.city}
+                canBook={canBuyLabelPerm}
+                canBookNew={['pending', 'processing', 'shipped'].includes(so.status)}
+                onChanged={load}
+              />
             )}
 
             <OrderTimelineCard

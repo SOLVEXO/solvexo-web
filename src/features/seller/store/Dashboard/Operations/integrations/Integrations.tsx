@@ -13,6 +13,7 @@ import {
 } from '@/api/services/integrations';
 import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
 import { ShippingSettingsSection } from './ShippingSettingsSection';
+import { CourierIntegrationsSection } from '@/features/seller/store/Dashboard/courier/CourierIntegrationsSection';
 import { GenericGatewayConnectModal, GenericWebhookPanel, StripeStandardActions } from './GlobalGateways';
 import { CashOnDeliveryCard, ManualPaymentMethodsSection, PkGatewayConnectModal, ModeSwitch, StripePayoutsPanel, WhatsAppNotificationsPanel } from './PaymentExtras';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
@@ -1176,6 +1177,8 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
                 <ShippingIntegrationCard integration={data.shipping} storeId={storeId} onChanged={load} />
               </div>
             </div>
+
+            <CourierIntegrationsSection storeId={storeId} couriers={data.couriers} onChanged={load} />
           </>
         )}
       </div>
