@@ -444,7 +444,9 @@ export function Homepage() {
             <Reveal delay={0}>
               <p className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.22em] text-brand-orange mb-6">
                 <span className="w-[7px] h-[7px] rounded-full bg-brand-orange" />
-                Solvexo — One connected commerce system
+                {/* The app name in its exact case: Google's OAuth review compares the consent screen's name with it. */}
+                <span className="normal-case tracking-[0.02em] text-[13px] sm:text-[14px] font-bold">Solvexo</span>
+                <span aria-hidden>—</span> One connected commerce system
               </p>
             </Reveal>
 
