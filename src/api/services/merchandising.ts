@@ -12,7 +12,7 @@ export interface BundleView {
   compareAtPrice: number | null;
 }
 export interface PreorderSettings { enabled: boolean; expectedDate: string | null; limit: number | null; message: string | null; sold?: number }
-export interface RecommendationCard { id: string; slug: string | null; name: string; image: string | null; price: number; compareAtPrice: number | null; source: 'manual' | 'auto' }
+export interface RecommendationCard { id: string; variantId: string; type: 'physical' | 'digital'; slug: string | null; name: string; image: string | null; price: number; compareAtPrice: number | null; source: 'manual' | 'auto' }
 export interface RecommendationsView {
   related: { id: string; name: string; image: string | null }[];
   complementary: { id: string; name: string; image: string | null }[];

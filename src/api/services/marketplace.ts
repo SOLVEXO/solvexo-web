@@ -22,6 +22,8 @@ export interface ProductVariant {
   inTransitStock?: number;
   /** Shopify "Continue selling when out of stock". */
   allowBackorder?: boolean;
+  /** Public variant pre-order view (shown only while out of stock). */
+  preorder?: { label: string; expectedDate: string | null; message: string | null; remaining: number | null; soldOut: boolean } | null;
   shippingWeight: string | null;
   images:         string[];
   videoUrl?:      string;
@@ -131,6 +133,8 @@ interface ProductByIdResponse {
     product:        MarketplaceProduct & { sellerName: string };
     variants:       ProductVariant[];
     defaultVariant: ProductVariant;
+    /** Bundle contents + derived availability (null = unlimited); absent for normal products. */
+    bundle?: { components: { name: string; image: string | null; quantity: number }[]; available: number | null } | null;
   };
 }
 

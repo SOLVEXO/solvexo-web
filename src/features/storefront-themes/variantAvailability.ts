@@ -15,7 +15,7 @@ export function variantAvailable(v: ProductVariant | null | undefined, isDigital
 /** Shopify "Continue selling when out of stock" -> `allowBackorder`. */
 export function variantCanBuy(v: ProductVariant | null | undefined, isDigital: boolean): boolean {
   if (!v) return false;
-  return !!v.allowBackorder || variantAvailable(v, isDigital) > 0;
+  return !!v.allowBackorder || variantAvailable(v, isDigital) > 0 || (!!v.preorder && !v.preorder.soldOut);
 }
 
 /** Highest quantity a buyer may pick: the available units when inventory is
@@ -23,6 +23,7 @@ export function variantCanBuy(v: ProductVariant | null | undefined, isDigital: b
 export function variantMaxQty(v: ProductVariant | null | undefined, isDigital: boolean): number {
   if (!v) return 0;
   if (v.allowBackorder) return Infinity;
+  if (v.preorder && !v.preorder.soldOut && variantAvailable(v, isDigital) <= 0) return v.preorder.remaining ?? Infinity;
   return Math.max(0, variantAvailable(v, isDigital));
 }
 

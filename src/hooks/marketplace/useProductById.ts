@@ -5,6 +5,7 @@ interface ProductDetail {
   product:        MarketplaceProduct & { sellerName: string };
   variants:       ProductVariant[];
   defaultVariant: ProductVariant;
+  bundle?: { components: { name: string; image: string | null; quantity: number }[]; available: number | null } | null;
 }
 
 export function useProductById(id: string) {

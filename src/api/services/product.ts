@@ -58,6 +58,8 @@ export interface VariantOption {
 }
 
 export interface ProductVariant {
+  /** Public pre-order view (variant `preorder`): shown only while out of stock. */
+  preorder?: { label: string; expectedDate: string | null; message: string | null; remaining: number | null; soldOut: boolean } | null;
   _id:            string;
   productId:      string;
   sku:            string;
@@ -292,6 +294,8 @@ export interface EditProductData {
 }
 
 export interface GetProductData {
+  /** Bundle contents + derived availability (null = unlimited); absent for normal products. */
+  bundle?: { components: { name: string; image: string | null; quantity: number }[]; available: number | null } | null;
   product:        StoreProduct;
   variants:       ProductVariant[];
   defaultVariant: ProductVariant | null;
@@ -800,14 +804,15 @@ export interface GetSellerOrdersData {
 
 export function apiGetSellerOrders(
   storeId: string, page = 1, limit = 10, userId?: string,
-  filters?: { status?: string; type?: string; q?: string },
+  filters?: { status?: string; type?: string; q?: string; preorder?: boolean },
 ) {
   const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
   // status / type / search run on the SERVER over the whole order history, not on the loaded page.
   const filterParams =
     (filters?.status ? `&status=${encodeURIComponent(filters.status)}` : '') +
     (filters?.type ? `&type=${encodeURIComponent(filters.type)}` : '') +
-    (filters?.q ? `&q=${encodeURIComponent(filters.q)}` : '');
+    (filters?.q ? `&q=${encodeURIComponent(filters.q)}` : '') +
+    (filters?.preorder ? '&preorder=true' : '');
   return client.get<never, ApiResponse<GetSellerOrdersData>>(
     `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}${userIdParam}${filterParams}`,
   );

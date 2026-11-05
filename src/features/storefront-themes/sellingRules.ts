@@ -55,3 +55,15 @@ export function preorderLabel(p: { preorder?: { enabled?: boolean; availableOn?:
   const d = p.preorder.availableOn ? new Date(p.preorder.availableOn) : null;
   return d && !Number.isNaN(d.getTime()) ? ts('product.preorderShips', 'Pre-order — ships from {{date}}', { date: d.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }) : ts('product.preorder', 'Pre-order');
 }
+
+/** Variant-level pre-order (merchandising/): "Pre-order — ships from DATE", falling back to the seller's own message. */
+export function variantPreorderText(v: { preorder?: { expectedDate?: string | null; message?: string | null; remaining?: number | null } | null } | null | undefined): string | null {
+  const p = v?.preorder;
+  if (!p) return null;
+  const d = p.expectedDate ? new Date(p.expectedDate) : null;
+  const base = d && !Number.isNaN(d.getTime())
+    ? ts('product.preorderShips', 'Pre-order — ships from {{date}}', { date: d.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) })
+    : ts('product.preorder', 'Pre-order');
+  const left = typeof p.remaining === 'number' ? ` · ${ts('product.preorderLeft', '{{count}} left', { count: p.remaining })}` : '';
+  return `${base}${left}${p.message ? ` — ${p.message}` : ''}`;
+}

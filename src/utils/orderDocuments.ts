@@ -45,6 +45,8 @@ export interface DocumentTotals {
 export interface DocumentItem {
   name: string; options: { name: string; value: string }[]; sku: string | null; quantity: number;
   price: number; totalPrice: number; image: string | null; digital: boolean;
+  /** Bundle components to pick/pack (qty already multiplied by the ordered bundle quantity); pre-order note. */
+  includes?: { name: string; quantity: number }[]; preorderNote?: string | null;
 }
 
 export interface DocumentOrder {
@@ -71,6 +73,8 @@ export function toDocumentOrder(detail: SellerOrderDetail | null | undefined, fa
     .map(i => ({
       name: i.name ?? '', options: Array.isArray(i.options) ? i.options : [], sku: i.sku ?? null, quantity: i.quantity ?? 0,
       price: i.price ?? 0, totalPrice: i.totalPrice ?? 0, image: i.image ?? null, digital: i.type === 'digital',
+      includes: (i.bundleComponents ?? []).map(c => ({ name: c.name ?? 'Item', quantity: c.quantity * (i.quantity ?? 0) })),
+      preorderNote: i.isPreorder ? `Pre-order${i.preorderExpectedDate ? ` — expected ${String(i.preorderExpectedDate).slice(0, 10)}` : ''}` : null,
     }));
   const note = typeof detail?.customerNote === 'string' ? detail.customerNote.trim() : '';
   return {
@@ -230,7 +234,7 @@ function itemsHtml(kind: DocKind, o: DocumentOrder, s: OrderDocumentSettings): s
     ? items.map(i => {
         const opts = i.options.map(op => `${esc(op.name)}: ${esc(op.value)}`).join(' / ');
         const img = safeUrl(i.image);
-        return `<tr>${showCheck ? '<td class="chk"><span class="box"></span></td>' : ''}${showImg ? `<td class="img">${img ? `<img src="${esc(img)}" alt="">` : ''}</td>` : ''}<td><div class="nm">${esc(i.name)}</div>${opts ? `<div class="sub">${opts}</div>` : ''}</td>${showSku ? `<td>${i.sku ? esc(i.sku) : ''}</td>` : ''}<td class="n">${esc(i.quantity)}</td>${showPrices ? `<td class="n">${esc(money(i.price, cur))}</td><td class="n">${esc(money(i.totalPrice, cur))}</td>` : ''}</tr>`;
+        return `<tr>${showCheck ? '<td class="chk"><span class="box"></span></td>' : ''}${showImg ? `<td class="img">${img ? `<img src="${esc(img)}" alt="">` : ''}</td>` : ''}<td><div class="nm">${esc(i.name)}</div>${opts ? `<div class="sub">${opts}</div>` : ''}${i.includes && i.includes.length ? `<div class="sub">Includes: ${i.includes.map(c => `${esc(c.name)} × ${esc(c.quantity)}`).join(', ')}</div>` : ''}${i.preorderNote ? `<div class="sub">${esc(i.preorderNote)}</div>` : ''}</td>${showSku ? `<td>${i.sku ? esc(i.sku) : ''}</td>` : ''}<td class="n">${esc(i.quantity)}</td>${showPrices ? `<td class="n">${esc(money(i.price, cur))}</td><td class="n">${esc(money(i.totalPrice, cur))}</td>` : ''}</tr>`;
       }).join('')
     : `<tr><td colspan="${cols}"><em>No physical items</em></td></tr>`;
   return `<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;

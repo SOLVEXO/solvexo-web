@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { apiPublicCartUpsell, type RecommendationCard } from '@/api/services/merchandising';
 import { useTranslation } from 'react-i18next';
 import { AccentText } from '../ui/AccentText';
 import { imgProps } from '../components/imgProps';
@@ -17,6 +19,36 @@ import { splitAround, useTemplateSections } from '../../core/pageHooks';
 import { ts } from '@/utils/tStatic';
 
 /** `/cart` — line items with quantity steppers on the left, order summary on the right. */
+/** Store-enabled cart upsell (merchandising/): suggestions based on the cart; renders nothing when off/empty. */
+function CartUpsell({ storeId, productIds }: { storeId: string; productIds: string[] }) {
+  const { t: tr } = useTranslation('storefront');
+  const { addToCart, adding } = useCartContext();
+  const [data, setData] = useState<{ title: string; items: RecommendationCard[] } | null>(null);
+  const key = productIds.join(',');
+  useEffect(() => {
+    if (!storeId || productIds.length === 0) return;
+    let cancelled = false;
+    apiPublicCartUpsell(storeId, productIds).then((r) => { if (!cancelled && r.data.enabled) setData({ title: r.data.title, items: r.data.items }); }).catch(() => undefined);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, key]);
+  if (!data || data.items.length === 0 || productIds.length === 0) return null;
+  return (
+    <section aria-label={data.title} className="mt-10">
+      <h2 className="m-0 mb-4 text-lg font-medium">{data.title}</h2>
+      <ul className="m-0 grid list-none grid-cols-2 gap-4 p-0 md:grid-cols-4">
+        {data.items.map((c) => (
+          <li key={c.id} className="flex flex-col gap-2">
+            <Link to={`/product/${c.slug ?? c.id}`} className="block aspect-square overflow-hidden rounded-lg bg-black/5">{c.image && <img src={c.image} alt={c.name} className="size-full object-cover" loading="lazy" />}</Link>
+            <span className="truncate text-sm">{c.name}</span>
+            <button type="button" className="rounded-full border px-3 py-1.5 text-sm" disabled={adding === c.variantId} onClick={() => void addToCart(c.id, c.variantId, c.type, 1)}>{tr('product.addToCart', 'Add to cart')}</button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function FashionCartPage() {
   const { t: tr } = useTranslation('storefront');
   const { store } = useStorefront();
@@ -59,7 +91,8 @@ export function FashionCartPage() {
           </div>
         ) : (
           <div className="grid items-start gap-8 lg:grid-cols-12">
-            <ul className="m-0 flex list-none flex-col gap-4 p-0 lg:col-span-8">
+            <div className="lg:col-span-8">
+            <ul className="m-0 flex list-none flex-col gap-4 p-0">
               {items.map(i => {
                 const key = `${i.productId}:${i.productVariantId}`;
                 const img = i.image?.[0] ?? i.images?.[0];
@@ -100,6 +133,8 @@ export function FashionCartPage() {
                 );
               })}
             </ul>
+            <CartUpsell storeId={store.storeId} productIds={items.map(i => String(i.productId))} />
+            </div>
 
             <aside className="p-6 lg:sticky lg:top-24 lg:col-span-4" style={{ background: t.colors.bgAlt, borderRadius: 24 }} aria-label={tr('cart.summaryTitle', 'Order summary')}>
               <h2 className="m-0 mb-5 text-lg font-semibold">{tr('cart.summaryTitle', 'Order summary')}</h2>

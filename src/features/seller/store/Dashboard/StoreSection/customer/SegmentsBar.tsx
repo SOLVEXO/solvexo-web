@@ -1,3 +1,4 @@
+import { EntityPickerField } from '@/features/seller/store/Dashboard/OnlineStore/builder/SchemaForm';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, Download, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -26,6 +27,7 @@ const FIELDS: Record<string, { kind: Kind; ops: string[]; enums?: string[] }> = 
   country: { kind: 'text', ops: TEXT_OPS },
   city: { kind: 'text', ops: TEXT_OPS },
   loyalty_tier: { kind: 'text', ops: TEXT_OPS },
+  product_purchased: { kind: 'set', ops: SET_OPS },
   marketing_status: { kind: 'enum', ops: TEXT_OPS, enums: ['subscribed', 'pending', 'unsubscribed', 'not_subscribed'] },
   account_status: { kind: 'enum', ops: TEXT_OPS, enums: ['account', 'guest', 'blocked'] },
 };
@@ -59,9 +61,12 @@ function filterToRows(f: SegmentFilter): Row[] {
   });
 }
 
-function ValueInputs({ row, onChange, disabled }: { row: Row; onChange: (r: Row) => void; disabled: boolean }) {
+function ValueInputs({ row, onChange, disabled, storeId }: { row: Row; onChange: (r: Row) => void; disabled: boolean; storeId: string }) {
   const { t } = useTranslation();
   const def = FIELDS[row.field];
+  if (row.field === 'product_purchased') {
+    return <EntityPickerField mode="products" multiple value={row.v1.split(',').map((x) => x.trim()).filter(Boolean)} storeId={storeId} label={t('segments.fields.product_purchased')} onPick={(ids: string[]) => onChange({ ...row, v1: ids.slice(0, 25).join(', ') })} />;
+  }
   if (def.kind === 'date' && row.op === 'never') return null;
   const type = def.kind === 'number' || row.op === 'within_last_days' || row.op === 'not_within_last_days' ? 'number' : def.kind === 'date' ? 'date' : 'text';
   if (def.kind === 'enum' && row.op !== 'in') {
@@ -144,7 +149,7 @@ function SegmentBuilderModal({ storeId, segment, onClose, onSaved }: { storeId: 
             <Select value={r.op} onChange={(e) => setRow(i, { ...r, op: e.target.value, v1: '', v2: '' })} disabled={saving} aria-label={t('segments.operator')}>
               {FIELDS[r.field].ops.map((o) => <option key={o} value={o}>{t(`segments.ops.${o}`)}</option>)}
             </Select>
-            <ValueInputs row={r} onChange={(nr) => setRow(i, nr)} disabled={saving} />
+            <ValueInputs row={r} onChange={(nr) => setRow(i, nr)} disabled={saving} storeId={storeId} />
             <button type="button" className="text-slate hover:text-error p-2 cursor-pointer" aria-label={t('segments.remove')} disabled={rows.length === 1 || saving} onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
           </div>
         ))}
