@@ -97,7 +97,7 @@ const SECTIONS: LegalSection[] = [
     id: 'contact',
     title: 'Contact Us',
     body: [
-      'Questions about these Terms can be directed to our support team through the Help Center or Contact Us page.',
+      'Questions about these Terms can be sent to sales@solvexo.store, or through the Help Center or Contact Us page.',
     ],
   },
 ];

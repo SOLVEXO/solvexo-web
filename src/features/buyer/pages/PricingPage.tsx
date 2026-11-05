@@ -10,6 +10,7 @@ import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonial
 import { Reveal } from '@/components/comman/motion/Reveal';
 import { Footer } from '@/components/comman/ui/Footer';
 import { formatUsd, yearlyMonthlyEquivalent, yearlyTotal, maxYearlySavingsPercent } from '@/utils/planPricing';
+import { salesMailto } from '@/utils/contact';
 
 // Shopify-style pricing page (structure/UX), Solvexo colours: dark hero with a
 // billing dropdown + plan cards, "Always included", white "Compare all
@@ -147,7 +148,7 @@ export function PricingPage() {
     : `Try free for ${trialDurationDays} days — no credit card required.`;
 
   const onCta = (plan: PlatformPlan) => plan.isCustomPricing
-    ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
+    ? (window.location.href = salesMailto(`${plan.name} Plan Inquiry`))
     : sellEntry.goWithPlan(plan._id, billing);
   const ctaLabel = (p: PlatformPlan) => (p.isCustomPricing ? 'Contact sales' : 'Start for free');
   const cols = { gridTemplateColumns: `minmax(0,1.5fr) repeat(${Math.max(plans.length, 1)}, minmax(0,1fr))` };
@@ -184,7 +185,7 @@ export function PricingPage() {
           {plansLoading
             ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="rounded-2xl h-[380px] animate-pulse" style={{ background: PANEL }} />)
             : plans.length === 0
-              ? <p className="col-span-full text-center text-[#b6bfc3] py-10">Pricing is being updated — check back shortly, or <a className="underline" style={{ color: ACCENT }} href="mailto:support@solvexo.com">contact sales</a>.</p>
+              ? <p className="col-span-full text-center text-[#b6bfc3] py-10">Pricing is being updated — check back shortly, or <a className="underline" style={{ color: ACCENT }} href={salesMailto()}>contact sales</a>.</p>
               : plans.map(plan => {
                 const price = billing === 'annual' ? yearlyMonthlyEquivalent(plan) : (plan.monthlyPriceUSD ?? 0);
                 return (

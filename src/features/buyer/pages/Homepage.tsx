@@ -9,18 +9,16 @@ import { Avatar } from '@/components/comman/ui/Avatar';
 import { Footer, SkeletonBox } from '@/components/comman/ui';
 import {
   ArrowRight, Store, Sparkles, Check,
-  Star, BadgeCheck, Quote, Loader2,
-  BarChart3, UserPlus, Link2, Rows3, TrendingUp, Smartphone,
+  Star, BadgeCheck, Quote,
+  BarChart3, UserPlus, Link2, Rows3, TrendingUp,
 } from 'lucide-react';
 import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
-import { apiGetPublicTrialSettings } from '@/api/services/platformPlans';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
+import { HomeHeroLight } from '@/features/buyer/components/HomeHeroLight';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SplitText } from '@/components/comman/motion/SplitText';
-import { useBrandSplashReady } from '@/components/comman/motion/BrandSplashContext';
 import { Marquee } from '@/components/comman/motion/Marquee';
-import { useMouseParallax } from '@/components/comman/motion/useMouseParallax';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
@@ -30,53 +28,10 @@ import {
 import { PLATFORM_PRODUCTS, getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
 import { unsplashUrl } from '@/assets/stockPhotos';
-import { motion, useReducedMotion, useTransform, useInView, useScroll, AnimatePresence } from 'motion/react';
+import { motion, useReducedMotion, useInView, AnimatePresence } from 'motion/react';
 
 const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
-
-// Real, actually-built platform capabilities — distinct from the stats-strip
-// (numbers) and the testimonials section (quotes) further down this same
-// page, so the hero corner isn't just repeating one of those in miniature.
-const HERO_FEATURES = [
-  { Icon: Store,      label: 'Store Builder',        detail: 'Launch a themed storefront in minutes' },
-  { Icon: Smartphone, label: 'POS — Android & iOS',  detail: 'Sell online and in person, one shared inventory' },
-  { Icon: Sparkles,   label: 'AI Studio',             detail: 'AI-generated product copy and pricing insights' },
-  { Icon: BarChart3,  label: 'Multi-Store Analytics', detail: 'Real-time sales across every store you run' },
-] as const;
-
-/** Hero-corner ticker — cycles the real capabilities above, same fade+slide
- *  the old fake `HERO_SIGNALS` ticker used. Static/always-on (no API call,
- *  no loading state) since this is fixed product copy, not fetched data. */
-function HeroFeatureTicker() {
-  const [index, setIndex] = useState(0);
-  const reduceMotion = useReducedMotion();
-  useEffect(() => {
-    if (reduceMotion) return;
-    const id = setInterval(() => setIndex(i => (i + 1) % HERO_FEATURES.length), 2800);
-    return () => clearInterval(id);
-  }, [reduceMotion]);
-  const feature = HERO_FEATURES[index];
-  return (
-    <div className="hidden lg:block absolute top-24 right-8 lg:right-14 text-right z-[2] max-w-[210px]">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={feature.label}
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 6 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="flex items-center gap-2 justify-end">
-            <feature.Icon size={13} className="text-brand-orange shrink-0" />
-            <span className="text-[11.5px] font-semibold text-white/50">{feature.label}</span>
-          </div>
-          <p className="text-[10.5px] text-white/30 mt-1 leading-[1.5]">{feature.detail}</p>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}
 
 function TestimonialCardBody({ t }: { t: Testimonial }) {
   return (
@@ -318,33 +273,9 @@ function AIFlowVisual() {
 export function Homepage() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
-  // Real, admin-configured trial length (`PlatformTrialSettings.durationDays`)
-  // — the hero previously never mentioned a trial at all ("Start Selling
-  // Free" alone doesn't say there's a free trial, let alone how long).
-  const [trialDurationDays, setTrialDurationDays] = useState(3);
-  useEffect(() => {
-    apiGetPublicTrialSettings()
-      .then(res => setTrialDurationDays(res.data.durationDays))
-      .catch(() => {}); // keep the fallback — never block the page over this
-  }, []);
   const reduceMotion = useReducedMotion();
-  // Held true immediately when there's no splash to wait for (repeat visit
-  // this session, reduced motion); flips true once the one-time brand
-  // splash actually finishes — see PublicLayout/BrandSplash.
-  const splashReady = useBrandSplashReady();
-  const heroSectionRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: heroScroll } = useScroll({ target: heroSectionRef, offset: ['start start', 'end start'] });
-  const heroTextFade = useTransform(heroScroll, [0, 0.85], [1, 0]);
-  // Scroll indicator fades out almost immediately once the visitor
-  // actually starts scrolling.
-  const heroScrollHintOpacity = useTransform(heroScroll, [0, 0.12], [1, 0]);
-  // Subtle cursor-driven 3D tilt on the headline itself — desktop-only, a
-  // few degrees at most — so the huge type feels alive/responsive instead
-  // of a flat static block, without resorting to a hero product image.
-  const { ref: heroTiltRef, px: heroTiltPx, py: heroTiltPy } = useMouseParallax<HTMLDivElement>();
-  const heroTiltRotateX = useTransform(heroTiltPy, [-0.5, 0.5], [5, -5]);
-  const heroTiltRotateY = useTransform(heroTiltPx, [-0.5, 0.5], [-6, 6]);
-  usePageTitle('Home');
+  // The home page title is the app's exact name (Google OAuth verification compares the consent screen's app name with it).
+  usePageTitle(''); // empty = keep the plain "Solvexo" title from index.html
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
@@ -417,147 +348,8 @@ export function Homepage() {
   return (
     <div className="bg-white min-h-full">
 
-      {/* ── Hero — typography-driven, not a screenshot-plus-text layout. The
-         headline itself is the visual; there is deliberately no product
-         mockup here (every real product gets its own dedicated visual
-         further down the page instead). ─────────────────────────────────── */}
-      <section ref={heroSectionRef} className="relative overflow-hidden bg-carbon min-h-[92vh] md:min-h-[100vh] flex flex-col">
-
-        {/* Living background — a faintly drifting line grid (the "system"
-           motif) instead of an empty black rectangle, plus a slow-breathing
-           glow seated behind the accent headline line. Both are pure CSS,
-           both respect prefers-reduced-motion via the app-wide rule. */}
-        <div className="hero-grid-drift absolute inset-0 pointer-events-none opacity-60" />
-        <div className="hero-breath absolute top-[38%] left-[8%] w-[420px] h-[420px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] blur-3xl pointer-events-none" />
-
-        <HeroFeatureTicker />
-
-        <div ref={heroTiltRef} className="relative z-[1] flex-1 flex flex-col justify-center px-5 sm:px-8 lg:px-14 pt-24 pb-16">
-          {/* Held back until the one-time brand splash has actually
-             finished (see PublicLayout/useBrandSplashReady) — otherwise
-             this whole entrance sequence plays out invisibly underneath the
-             splash overlay and the curtain lifts onto an already-static
-             headline instead of a still-animating one. */}
-          {splashReady && (
-          <motion.div style={reduceMotion ? undefined : { opacity: heroTextFade }}>
-            <Reveal delay={0}>
-              <p className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.22em] text-brand-orange mb-6">
-                <span className="w-[7px] h-[7px] rounded-full bg-brand-orange" />
-                Solvexo — One connected commerce system
-              </p>
-            </Reveal>
-
-            <motion.div style={reduceMotion ? undefined : { rotateX: heroTiltRotateX, rotateY: heroTiltRotateY, transformPerspective: 1000 }}>
-              <h1 className="font-sans font-extrabold text-white leading-[0.94] tracking-[-0.03em] pb-[0.05em]">
-                {/* Pure per-word mask-slide reveal (SplitText's own
-                   y:110%→0% + opacity, no outer blur/scale/x-drift layered
-                   on top) — the three lines are spaced ~0.32s apart so line 1
-                   visibly finishes its cascade before line 2 commits, then
-                   line 3, rather than overlapping. */}
-                <SplitText
-                  as="div"
-                  text="Create. Sell."
-                  delay={0.1}
-                  stagger={0.06}
-                  animateOnMount
-                  className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block"
-                />
-                <SplitText
-                  as="div"
-                  text="Manage. Grow."
-                  delay={0.42}
-                  stagger={0.06}
-                  animateOnMount
-                  className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent"
-                />
-                {/* Third giant line — same masked-reveal treatment as the
-                   two lines above it, not a separate small paragraph. Names
-                   a real, specific Solvexo differentiator (self-serve
-                   activation — see "Seller activation is self-serve" in
-                   CLAUDE.md) instead of a generic "One Platform." filler,
-                   so the headline actually says something true and unique
-                   to this product, not stock SaaS copy. Hollow/outline fill
-                   (vs. the solid white and gradient fills above it) gives
-                   the headline a layered, editorial hierarchy at this size
-                   instead of three identically-styled lines. */}
-                <SplitText
-                  as="div"
-                  text="Launch Instantly."
-                  delay={0.74}
-                  stagger={0.06}
-                  animateOnMount
-                  className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
-                />
-              </h1>
-            </motion.div>
-
-            <div className="mt-[9vw] sm:mt-[5vw] lg:mt-[3.5vw] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 max-w-[1100px]">
-              <Reveal delay={1.05}>
-                <p className="text-[13.5px] sm:text-[14.5px] text-[#b0aea8] leading-[1.75] max-w-[420px] border-l-2 border-brand-orange/50 pl-4">
-                  One connected commerce platform — build your store, sell in person with POS, manage every order, and grow with real analytics and AI.
-                </p>
-              </Reveal>
-
-              <Reveal delay={1.2}>
-                <div className="flex flex-col sm:flex-row items-start gap-3 shrink-0">
-                  <MagneticButton className="w-full sm:w-auto">
-                    <button
-                      onClick={sellEntry.go}
-                      disabled={sellEntry.loading}
-                      data-cursor="hover"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-[11px] rounded-lg text-[13.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange cursor-pointer disabled:opacity-60 transition-[filter,box-shadow,transform] duration-normal ease-out hover:brightness-110 hover:shadow-glow hover:-translate-y-[1.5px] active:translate-y-0 active:duration-micro active:ease-spring active:scale-[0.97]"
-                    >
-                      {sellEntry.loading ? <Loader2 size={14} className="animate-spin" /> : null}
-                      Start Selling Free <ArrowRight size={13} className="inline align-middle" />
-                    </button>
-                  </MagneticButton>
-                  <MagneticButton className="w-full sm:w-auto">
-                    <button
-                      onClick={() => navigate('/products')}
-                      className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] hover:border-white/40 transition-all duration-normal ease-out cursor-pointer"
-                    >
-                      Explore the Platform
-                      <ArrowRight size={13} className="transition-transform duration-normal ease-spring group-hover:translate-x-1" />
-                    </button>
-                  </MagneticButton>
-                </div>
-                <p className="mt-3 text-[12.5px] text-[#d7d4cc] hover:text-white">Prefer a walkthrough? <button type="button" onClick={() => navigate('/book-demo')} className="font-semibold underline underline-offset-2 bg-transparent border-0 p-0 cursor-pointer text-inherit">Book a free demo</button></p>
-              </Reveal>
-            </div>
-
-            {/* Trust bullets — individually staggered with a check-dot icon
-               and a hover brighten, instead of three flat, identically-
-               faded text strings that all appeared as one static block. */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 mt-8">
-              {[`Free ${trialDurationDays}-day trial, no card required`, 'Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map((label, i) => (
-                <Reveal key={label} delay={1.4 + i * 0.1} y={8}>
-                  <span className="group flex items-center gap-[7px] text-[11.5px] text-white/40 transition-colors duration-normal hover:text-white/75 cursor-default">
-                    <span className="relative flex size-[5px] shrink-0">
-                      <span className="absolute inset-0 rounded-full bg-brand-orange/60 transition-transform duration-normal ease-spring group-hover:scale-[1.8]" />
-                    </span>
-                    {label}
-                  </span>
-                </Reveal>
-              ))}
-            </div>
-          </motion.div>
-          )}
-        </div>
-
-        {/* Scroll indicator — fades out almost as soon as scrolling starts */}
-        <motion.div
-          style={reduceMotion ? undefined : { opacity: heroScrollHintOpacity }}
-          className="relative z-[1] hidden sm:flex flex-col items-center gap-2 pb-8 text-white/40"
-        >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Scroll to explore</span>
-          <motion.span
-            animate={reduceMotion ? undefined : { y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-          >
-            <ArrowRight size={14} className="rotate-90" />
-          </motion.span>
-        </motion.div>
-      </section>
+      {/* ── Hero — the owner's new light design (copy + illustrative workspace/storefront mock-up). ── */}
+      <HomeHeroLight />
 
       {/* ── Industries strip — a continuous marquee instead of a static pill
          row, editorial text links (no pill chrome) with a dot separator,

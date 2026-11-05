@@ -51,6 +51,16 @@ const SECTIONS: LegalSection[] = [
     ],
   },
   {
+    id: 'google-user-data',
+    title: 'Google User Data',
+    body: [
+      'Sign in with Google: when you create or sign in to a Solvexo account with Google, we receive only your name, email address and profile picture from Google. We use them solely to create your account, sign you in and show your name and picture in your account.',
+      'Google Search Console and Google Analytics: if a store owner chooses to connect them, Solvexo gets read-only access to that owner\'s own search and website-traffic reports and uses it only to show those reports inside their Solvexo dashboard. We never change anything in those Google accounts.',
+      'We do not sell Google user data, use it for advertising, or share it with anyone except the service providers that host Solvexo. Solvexo\'s use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.',
+      'You can disconnect Google at any time: remove Solvexo at myaccount.google.com/permissions, or disconnect Search Console and Analytics in your store\'s SEO settings. To have your data deleted, contact us using the details below.',
+    ],
+  },
+  {
     id: 'data-security',
     title: 'Data Security',
     body: [
@@ -64,7 +74,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Your Rights & Choices',
     body: [
       'You can access, update, or delete most of your account information directly from your account settings at any time.',
-      'You may request a copy of the personal data we hold about you, or ask us to delete your account, by contacting our support team.',
+      'You may request a copy of the personal data we hold about you, or ask us to delete your account, by emailing sales@solvexo.store.',
     ],
   },
   {
@@ -86,7 +96,7 @@ const SECTIONS: LegalSection[] = [
     id: 'contact',
     title: 'Contact Us',
     body: [
-      'If you have questions about this Privacy Policy or how your data is handled, reach out to our support team through the Help Center or Contact Us page.',
+      'If you have questions about this Privacy Policy or how your data is handled, email us at sales@solvexo.store or reach out through the Help Center or Contact Us page.',
     ],
   },
 ];

@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import type { Variants } from 'motion/react';
 import {
   Store, ChevronDown, ArrowRight, Plus, Building2, ShieldCheck,
-  MonitorSmartphone, PackageCheck, Users,
+  MonitorSmartphone, PackageCheck, Users, ArrowUpRight,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -85,7 +85,8 @@ type MenuKey = 'products' | 'company' | null;
 // the slug varies — exported as a match function (not a plain array) so
 // PublicLayout's top-padding compensation and this file's own `overHero`
 // flag can never drift apart on how a route is classified.
-const EXACT_DARK_HERO_ROUTES = ['/', '/sellers', '/pricing'];
+// '/' is no longer here: the home page's hero is light now and sits below the header like other light pages.
+const EXACT_DARK_HERO_ROUTES = ['/sellers', '/pricing'];
 export function isDarkHeroRoute(pathname: string) {
   return EXACT_DARK_HERO_ROUTES.includes(pathname) || pathname.startsWith('/solutions/');
 }
@@ -265,10 +266,11 @@ function ConnectedPlatformGlyph() {
 
 export function PublicMegaNavbar() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const sellEntry = useSellEntry();
   const { scrolled } = useCompactOnScroll();
-  const overHero = isDarkHeroRoute(pathname) && !scrolled;
+  // The header is always the light bar (cream, thin rule, dark text), also over the home page's dark hero.
+  // `overHero` stays as the switch for the old transparent-over-hero look, now never on.
+  const overHero = false;
   const [openMenu, setOpenMenu] = useState<MenuKey>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded, setExpanded] = useState<'products' | 'company' | null>(null);
@@ -351,8 +353,8 @@ export function PublicMegaNavbar() {
           overHero
             ? 'bg-transparent border-transparent'
             : scrolled
-              ? 'bg-white border-bone/60 shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
-              : 'bg-white border-transparent',
+              ? 'bg-[#faf9f5] border-[#e5e5dd] shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
+              : 'bg-[#faf9f5] border-[#e5e5dd]',
         )}
         onMouseLeave={closeSoon}
       >
@@ -364,10 +366,10 @@ export function PublicMegaNavbar() {
           // Trimmed down from the original 76px/64px, but kept tall enough
           // to leave real breathing room above the logo/nav row rather than
           // feeling pinned to the very top edge.
-          scrolled ? 'h-[72px]' : 'h-[64px]',
+          'h-[72px]',
         )}>
           <Link to="/" className="shrink-0" aria-label="Solvexo home">
-            <SolvexoLogo size={36} variant={overHero ? 'light' : 'dark'} />
+            <SolvexoLogo size={36} variant={overHero ? 'light' : 'dark'} textWordmark />
           </Link>
 
           {/* Desktop nav — a shared sliding highlight (layoutId) follows
@@ -424,9 +426,10 @@ export function PublicMegaNavbar() {
                   <button
                     onClick={sellEntry.go}
                     disabled={sellEntry.loading}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-brand-orange hover:bg-brand-deep-orange transition-colors rounded-lg px-4 py-[9px] border-none cursor-pointer disabled:opacity-60"
+                    className="inline-flex items-center gap-5 text-[13px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] pl-[18px] pr-4 py-[11px] border-none cursor-pointer disabled:opacity-60"
                   >
                     Start Selling
+                    <ArrowUpRight size={16} strokeWidth={2.4} aria-hidden />
                   </button>
                 </MagneticButton>
               </>
@@ -453,7 +456,7 @@ export function PublicMegaNavbar() {
                 <button
                   onClick={sellEntry.go}
                   disabled={sellEntry.loading}
-                  className="hidden sm:inline-flex items-center text-[12.5px] font-semibold text-white bg-brand-orange hover:bg-brand-deep-orange transition-colors rounded-lg px-3.5 py-[7px] border-none cursor-pointer disabled:opacity-60"
+                  className="hidden sm:inline-flex items-center gap-2 text-[12.5px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] px-3.5 py-[8px] border-none cursor-pointer disabled:opacity-60"
                 >
                   Start Selling
                 </button>

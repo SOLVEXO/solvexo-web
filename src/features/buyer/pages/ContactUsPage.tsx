@@ -9,11 +9,12 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { motion } from 'motion/react';
+import { SALES_EMAIL } from '@/utils/contact';
 
 const TOPICS = ['General question', 'Order or delivery', 'Billing & payments', 'Selling on Solvexo', 'Report a problem'];
 
 const CONTACT_CARDS = [
-  { Icon: Mail,     label: 'Email us',        value: 'support@solvexo.com' },
+  { Icon: Mail,     label: 'Email us',        value: SALES_EMAIL },
   { Icon: LifeBuoy,  label: 'Help Center',     value: 'Browse FAQs & guides' },
   { Icon: Clock,     label: 'Response time',   value: 'Usually within 24 hours' },
 ];
@@ -64,7 +65,9 @@ export function ContactUsPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[12px] font-semibold text-carbon">{label}</p>
-              <p className="text-[12px] text-slate mt-0.5 truncate">{value}</p>
+              {value === SALES_EMAIL
+                ? <a href={`mailto:${SALES_EMAIL}`} className="block text-[12px] text-brand-orange hover:underline mt-0.5 truncate">{value}</a>
+                : <p className="text-[12px] text-slate mt-0.5 truncate">{value}</p>}
             </div>
           </PremiumCard>
         ))}

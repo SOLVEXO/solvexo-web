@@ -5,6 +5,9 @@ interface LogoProps {
   showWordmark?:  boolean;
   className?:     string;
   variant?:       'dark' | 'light';
+  /** Write the name as real text next to the mark instead of using the wordmark image, so people and crawlers
+   *  (Google's OAuth brand review) read "Solvexo" exactly. Used on the public site's header and footer. */
+  textWordmark?:  boolean;
 }
 
 /**
@@ -23,9 +26,22 @@ export function SolvexoIcon({ size = 32 }: { size?: number }) {
 }
 
 /** `size` is the height of the mark; `variant` is the wordmark colour: 'dark' text for light backgrounds, 'light' for dark ones. */
-export function SolvexoLogo({ size = 32, showWordmark = true, className, variant = 'dark' }: LogoProps) {
+export function SolvexoLogo({ size = 32, showWordmark = true, className, variant = 'dark', textWordmark = false }: LogoProps) {
   if (!showWordmark) {
     return <div className={clsx('flex items-center', className)}><SolvexoIcon size={size} /></div>;
+  }
+  if (textWordmark) {
+    return (
+      <div className={clsx('flex items-center', className)} style={{ gap: Math.round(size * 0.22) }}>
+        <SolvexoIcon size={size} />
+        <span
+          className={clsx('font-sans font-extrabold tracking-[-0.02em] leading-none select-none', variant === 'light' ? 'text-white' : 'text-[#111110]')}
+          style={{ fontSize: Math.round(size * 0.62) }}
+        >
+          Solvex<span className="text-brand-orange">o</span>
+        </span>
+      </div>
+    );
   }
   return (
     <div className={clsx('flex items-center', className)}>
