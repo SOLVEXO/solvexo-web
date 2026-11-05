@@ -14,6 +14,10 @@
     <meta property="og:description" content="Build an online store, sell in person and manage your business with Solvexo." />
     <meta property="og:image" content="https://www.solvexo.store/brand/solvexo-logo.png" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Solvexo","url":"https://www.solvexo.store/","logo":"https://www.solvexo.store/brand/solvexo-logo-120.png","email":"sales@solvexo.store","sameAs":["https://www.facebook.com/solvexo","https://www.linkedin.com/products/i9-experts-private-limited-solvexo/"]}</script>
+    <!-- The #solvexo-static block below is for crawlers and visitors without JavaScript. With JavaScript it is hidden
+         at once, so it never flashes before the app paints (React replaces it on mount). -->
+    <script>document.documentElement.classList.add('js')</script>
+    <style>.js #solvexo-static{display:none}</style>
     <!--/solvexo-platform-head-->
     <!-- A store's own host: show its name in the tab at once (from the last visit) instead of "Solvexo" while the app loads. -->
     <script>(function(){try{var raw=localStorage.getItem('solvexo:sf-boot:v1:'+location.hostname.toLowerCase());if(!raw)return;var s=JSON.parse(raw);var n=s&&s.store&&s.store.name;if(n)document.title=n;var f=s&&s.store&&s.store.faviconUrl;var l=document.querySelector('link[rel="icon"]');if(l&&s&&s.store){l.removeAttribute('type');l.href=(f&&/^https:\/\//.test(f))?f:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}}catch(e){}})();</script>

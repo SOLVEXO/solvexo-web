@@ -1,11 +1,11 @@
-import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { getActiveStoreLocale } from '../utils/activeStoreText';
 // Cookie-backed (not localStorage) so the token is visible from any seller
 // storefront subdomain, not just the exact origin it was issued on — see
 // `utils/authCookie.ts`. Imported directly (not via `services/auth.ts`'s
 // `TokenStorage`) to avoid a circular import, since `auth.ts` itself imports
 // this `client` module.
-import { getAuthCookie, clearAuthCookie } from '@/utils/authCookie';
+import { getAuthCookie, clearAuthCookie, setAuthCookie } from '@/utils/authCookie';
 import { repairMojibakeDeep } from '@/utils/repairMojibake';
 import { getCurrentStorefrontStoreId, getStorefrontToken } from '@/utils/currentStorefront';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
@@ -112,6 +112,47 @@ client.interceptors.request.use(
   err => Promise.reject(err),
 );
 
+// ── Expired sessions ─────────────────────────────────────────────────────────
+// The API keeps an access token alive for 24 hours (its Redis session), the refresh token for 7 days. When a request
+// comes back 401 because the access token's session ended, get a new one with the refresh token and retry the request
+// once, so a seller returning to an idle tab just carries on. Only when that fails is the session really over.
+const REFRESH_PATH = '/api/auth/refresh';
+let refreshInFlight: Promise<string | null> | null = null;
+
+/** One refresh at a time: every request that 401s while it runs waits for the same new token. Null = could not refresh. */
+function refreshAccessToken(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+  const refreshToken = getAuthCookie('refreshToken');
+  if (!refreshToken || !API_BASE_URL) return Promise.resolve(null);
+  refreshInFlight = axios
+    .post(`${API_BASE_URL}${REFRESH_PATH}`, { refreshToken }, { headers: { 'Content-Type': 'application/json' }, timeout: 15_000 })
+    .then(res => {
+      const token = res.data?.data?.token as { accessToken?: string; refreshToken?: string } | undefined;
+      if (!token?.accessToken) return null;
+      setAuthCookie('accessToken', token.accessToken);
+      if (token.refreshToken) setAuthCookie('refreshToken', token.refreshToken);
+      return token.accessToken;
+    })
+    .catch(() => null)
+    .finally(() => { refreshInFlight = null; });
+  return refreshInFlight;
+}
+
+let sessionRedirectStarted = false;
+/** The session is over while a dashboard is open: go to the right sign-in page (and back here afterwards) instead of
+ *  leaving a dashboard on screen with no signed-in user, which is what crashed pages like Analytics. */
+function redirectToSignIn() {
+  if (sessionRedirectStarted || typeof window === 'undefined') return;
+  const { pathname, search } = window.location;
+  if (!isWorkspacePath(pathname)) return;
+  sessionRedirectStarted = true;
+  let staffStore: string | null = null;
+  try { staffStore = window.localStorage.getItem('solvexo:staff-store'); } catch { /* storage unavailable */ }
+  const onStaffStore = !!staffStore && new RegExp(`^/(?:[a-z]{2}/)?store/${staffStore}(?:/|$)`).test(pathname);
+  const loginPath = onStaffStore ? `/staff-login/${staffStore}` : '/login';
+  window.location.assign(`${loginPath}?redirect=${encodeURIComponent(pathname + search)}&expired=1`);
+}
+
 // ── Response interceptor — normalize errors, handle 401 ──────────────────────
 client.interceptors.response.use(
   (res: AxiosResponse) => {
@@ -134,7 +175,26 @@ client.interceptors.response.use(
     repairMojibakeDeep(res.data);   // names saved as garbled text ("Ø¹Ø«Ù…Ø§Ù†") show correctly everywhere
     return res.data;   // unwrap → caller gets { success, message, data } (or module-specific equivalent)
   },
-  err => {
+  (err: AxiosError<ApiErrorBody>) => {
+    const cfg = err.config as (InternalAxiosRequestConfig & { _authRetried?: boolean }) | undefined;
+    const sentToken = !!cfg?.headers?.Authorization;
+    const attempt = AUTH_ATTEMPT_PATHS.some(p => cfg?.url?.includes(p)) || !!cfg?.url?.includes(REFRESH_PATH);
+    if (err.response?.status === 401 && cfg && sentToken && !attempt && !cfg._authRetried) {
+      cfg._authRetried = true;
+      return refreshAccessToken().then(token => {
+        if (!token) return handleApiError(err, true);
+        cfg.headers.Authorization = `Bearer ${token}`;
+        return client(cfg);
+      });
+    }
+    return handleApiError(err, sentToken);
+  },
+);
+
+interface ApiErrorBody { message?: string; maintenanceMode?: boolean; code?: string; [key: string]: unknown }
+
+function handleApiError(err: AxiosError<ApiErrorBody>, sentToken: boolean): Promise<never> {
+  {
     const msg: string =
       err.response?.data?.message ||
       err.message ||
@@ -156,6 +216,7 @@ client.interceptors.response.use(
       clearAuthCookie('refreshToken');
       clearAuthCookie('user');
       sessionStorage.removeItem('authCtx');
+      if (sentToken) redirectToSignIn();
     }
 
     const onStorefront = !!getStoreSlugFromHost() || isCustomDomainCandidate();
@@ -188,8 +249,8 @@ client.interceptors.response.use(
       // message (e.g. Sales Ops' duplicate-lead check returns existingLeadId).
       details: err.response?.data as Record<string, unknown> | undefined,
     }));
-  },
-);
+  }
+}
 
 export function isNetworkError(err: unknown): boolean {
   return err instanceof Error && (err as Error & { isNetworkError?: boolean }).isNetworkError === true;
