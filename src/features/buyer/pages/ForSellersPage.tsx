@@ -16,6 +16,7 @@ import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import { TiltPreview } from '@/components/comman/motion/TiltPreview';
 import { Marquee } from '@/components/comman/motion/Marquee';
 import { SellerDashboardPreview } from '@/components/comman/mockups/ProductMockups';
+import { salesMailto } from '@/utils/contact';
 
 const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
@@ -151,7 +152,7 @@ export function ForSellersPage() {
                   <Button
                     variant={featured ? 'primary' : 'secondary'} size="sm"
                     onClick={() => s.cta === 'Contact Us'
-                      ? (window.location.href = 'mailto:support@solvexo.com?subject=Institutional%20Account%20Inquiry')
+                      ? (window.location.href = salesMailto('Institutional Account Inquiry'))
                       : sellEntry.go()}
                   >
                     {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />

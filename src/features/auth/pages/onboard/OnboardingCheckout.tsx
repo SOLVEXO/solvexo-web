@@ -12,6 +12,7 @@ import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
 import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
 import { maxYearlySavingsPercent } from '@/utils/planPricing';
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
+import { salesMailto } from '@/utils/contact';
 
 /** Same-day-next-month arithmetic, clamped so Jan 31 + 1 month is Feb 28/29, not Mar 3. */
 function addMonths(d: Date, n: number): Date {
@@ -386,7 +387,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
   const pickLabel = (p: PlatformPlan) => p.isCustomPricing ? 'Contact sales' : current === p._id ? `Continue with ${p.name}` : p.isFree ? 'Choose Free' : `Select ${p.name}`;
   // Enterprise has no self-serve checkout — it's a sales conversation, then an admin assigns it.
   const choose = (p: PlatformPlan) => {
-    if (p.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${p.name} Plan Inquiry`)}`; return; }
+    if (p.isCustomPricing) { window.location.href = salesMailto(`${p.name} Plan Inquiry`); return; }
     onSelect(p._id);
   };
   const btn = 'rounded-full bg-brand-orange text-white font-semibold cursor-pointer border-0 transition-colors duration-200 hover:bg-brand-deep-orange';

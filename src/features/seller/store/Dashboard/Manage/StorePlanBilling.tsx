@@ -24,6 +24,7 @@ import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd }
 
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
+import { salesMailto } from '@/utils/contact';
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
 const INVOICES_PER_PAGE = 10;
@@ -588,7 +589,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                   <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={!canManage || isCurrent || isScheduled} loading={changingId === plan._id} onClick={() => {
                     setActionError('');
                     // Enterprise has no self-serve checkout — it's agreed with sales and assigned by an admin.
-                    if (plan.isCustomPricing) { window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`; return; }
+                    if (plan.isCustomPricing) { window.location.href = salesMailto(`${plan.name} Plan Inquiry`); return; }
                     // First paid purchase (no Stripe customer yet, still on trial/locked, or coming
                     // from the free plan) needs a card → full checkout. An already-paying store
                     // keeps the proration confirm modal.
