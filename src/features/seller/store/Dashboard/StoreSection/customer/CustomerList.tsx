@@ -1,3 +1,4 @@
+import { SegmentsBar } from './SegmentsBar';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Users, ShoppingBag, DollarSign, Package, ChevronLeft, Download, Tag as TagIcon, Archive, ArchiveRestore, Plus, ShieldAlert, MailCheck, MailX, Trash2 } from 'lucide-react';
@@ -79,6 +80,7 @@ export default function StoreCustomerList() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [segment, setSegment] = useState('');
+  const [segmentId, setSegmentId] = useState<string | null>(null);
   // `?marketing=subscribed` deep-links the old Subscribers screen (now a filter, like Shopify).
   const [searchParams] = useSearchParams();
   const [marketing, setMarketing] = useState<string>(() => {
@@ -151,7 +153,7 @@ export default function StoreCustomerList() {
   useEffect(() => {
     setPage(1);
     setSelectedKeys(new Set());
-  }, [debouncedSearch, segment, marketing, sortBy, sortDir, dateFrom, dateTo, view]);
+  }, [debouncedSearch, segment, segmentId, marketing, sortBy, sortDir, dateFrom, dateTo, view]);
 
   function handleSortChange(key: string) {
     if (key === sortBy) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -166,6 +168,7 @@ export default function StoreCustomerList() {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     view,
+    segmentId: segmentId ?? undefined,
   };
 
   useEffect(() => {
@@ -181,7 +184,7 @@ export default function StoreCustomerList() {
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load customers.'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, page, debouncedSearch, segment, marketing, sortBy, sortDir, dateFrom, dateTo, view]);
+  }, [storeId, page, debouncedSearch, segment, segmentId, marketing, sortBy, sortDir, dateFrom, dateTo, view]);
 
   function refetch() {
     if (!storeId) return;
@@ -535,6 +538,7 @@ export default function StoreCustomerList() {
           )}
 
           <div className={`bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden ${sel ? 'hidden lg:block' : ''}`}>
+            <SegmentsBar storeId={storeId} activeId={segmentId} canEdit={hasNavPermission(TokenStorage.getUser(), 'customers.edit')} canExport={hasNavPermission(TokenStorage.getUser(), 'customers.export')} onSelect={id => { setSegmentId(id); setPage(1); }} />
             <TabBar
               tabs={[{ id: 'active', label: 'Active' }, { id: 'archived', label: 'Archived' }]}
               active={view}

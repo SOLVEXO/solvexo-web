@@ -1,3 +1,4 @@
+import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import {
   X, ChevronLeft, Plus, Trash2, Copy, Monitor, Smartphone, Send, Save, LayoutTemplate,
@@ -407,6 +408,7 @@ export function EmailCampaignEditor({ storeId, store, campaign, onClose, onSaved
   const [subject, setSubject] = useState(automation?.subject ?? campaign?.subject ?? '');
   const [audience, setAudience] = useState<EmailCampaignAudience>(campaign?.audience ?? 'all');
   const [segmentForm, setSegmentForm] = useState<SegmentForm>(fromSegment(campaign?.segment));
+  const [savedSegmentId, setSavedSegmentId] = useState<string | null>(campaign?.segmentId ?? null);
   const [design, setDesign] = useState<EmailDesign>(() => automation?.design ?? existingDesign ?? withLogo(defaultDesign(), store?.logo ?? null));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>('content');
@@ -428,12 +430,12 @@ export function EmailCampaignEditor({ storeId, store, campaign, onClose, onSaved
     if (automation) return;
     let cancelled = false;
     const t = setTimeout(() => {
-      apiPreviewEmailCampaignSegment(storeId, audience, JSON.parse(segmentKey) as EmailCampaignSegment | null)
+      apiPreviewEmailCampaignSegment(storeId, audience, JSON.parse(segmentKey) as EmailCampaignSegment | null, savedSegmentId)
         .then(res => { if (!cancelled) setRecipients(res.data.recipientCount); })
         .catch(() => { if (!cancelled) setRecipients(null); });
     }, 400);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [storeId, audience, segmentKey, automation]);
+  }, [storeId, audience, segmentKey, savedSegmentId, automation]);
 
   const touch = () => { setDirty(true); setNotice(null); };
   const updateDesign = (next: EmailDesign) => { setDesign(next); touch(); };
@@ -514,7 +516,7 @@ export function EmailCampaignEditor({ storeId, store, campaign, onClose, onSaved
     }
     setSaving(true);
     setNotice(null);
-    const payload = { name: name.trim(), subject: subject.trim(), message: renderEmailDesign(design, ctx), audience, segment, design };
+    const payload = { name: name.trim(), subject: subject.trim(), message: renderEmailDesign(design, ctx), audience, segment, segmentId: savedSegmentId, design };
     try {
       const res = savedId ? await apiUpdateEmailCampaign(storeId, savedId, payload) : await apiCreateEmailCampaign(storeId, payload);
       setSavedId(res.data._id);
@@ -727,6 +729,7 @@ export function EmailCampaignEditor({ storeId, store, campaign, onClose, onSaved
                 </Field>
                 <div className="p-3 rounded-lg border border-bone bg-[#faf9f6] flex flex-col gap-3">
                   <p className="text-[12px] font-semibold text-carbon">Refine audience (optional)</p>
+                  <SegmentSelect storeId={storeId} value={savedSegmentId} onChange={id => { setSavedSegmentId(id); touch(); }} />
                   {([
                     ['minOrders', 'Minimum orders', 'e.g. 2'],
                     ['minTotalSpent', 'Minimum total spent', 'e.g. 100'],

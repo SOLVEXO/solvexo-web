@@ -23,6 +23,8 @@ export interface AutomaticDiscount {
   categoryIds: string[];
   productIds: string[];
   minOrderAmount: number | null;
+  /** Saved customer segment: only its members get this discount (null = everyone). */
+  customerSegmentId?: string | null;
   startsAt: string | null;
   endsAt: string | null;
   isActive: boolean;
@@ -40,6 +42,7 @@ export interface CreateDiscountPayload {
   categoryIds?: string[];
   productIds?: string[];
   minOrderAmount?: number;
+  customerSegmentId?: string | null;
   startsAt?: string;
   endsAt?: string;
 }

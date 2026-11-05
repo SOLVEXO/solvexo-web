@@ -20,6 +20,7 @@ export interface EmailCampaign {
   subject:         string;
   message:         string;
   audience:        EmailCampaignAudience;
+  segmentId?:      string | null;
   segment?:        EmailCampaignSegment | null;
   /** Drag-and-drop editor design (see marketing/emailDesign.ts) — `message` is its rendered HTML. */
   design?:         object | null;
@@ -40,6 +41,8 @@ export interface CreateEmailCampaignPayload {
   message:  string;
   audience: EmailCampaignAudience;
   segment?: EmailCampaignSegment | null;
+  /** Saved customer segment (customer-segments) used as the audience filter. */
+  segmentId?: string | null;
   design?:  object | null;
 }
 
@@ -84,8 +87,8 @@ export function apiSendEmailCampaignNow(storeId: string, campaignId: string) {
 }
 
 /** POST /api/email-campaigns/:storeId/audience-preview — with segment filters */
-export function apiPreviewEmailCampaignSegment(storeId: string, audience: EmailCampaignAudience, segment?: EmailCampaignSegment | null) {
-  return client.post<never, ApiResponse<{ recipientCount: number }>>(ENDPOINTS.EMAIL_CAMPAIGNS.AUDIENCE_PREVIEW(storeId), { audience, segment: segment ?? null });
+export function apiPreviewEmailCampaignSegment(storeId: string, audience: EmailCampaignAudience, segment?: EmailCampaignSegment | null, segmentId?: string | null) {
+  return client.post<never, ApiResponse<{ recipientCount: number }>>(ENDPOINTS.EMAIL_CAMPAIGNS.AUDIENCE_PREVIEW(storeId), { audience, segment: segment ?? null, segmentId: segmentId ?? null });
 }
 
 /** POST /api/email-campaigns/:storeId/:campaignId/test — sends "[Test] ..." to `email`, or to the seller's own account email */

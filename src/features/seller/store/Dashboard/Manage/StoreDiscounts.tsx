@@ -1,3 +1,4 @@
+import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, ArrowRight, Download, CalendarClock } from 'lucide-react';
@@ -101,6 +102,7 @@ function DiscountFormModal({
   const [pickedProducts, setPickedProducts] = useState<Map<string, string>>(
     () => new Map((initial?.productIds ?? []).map(id => [id, `Product …${id.slice(-6)}`])),
   );
+  const [customerSegmentId, setCustomerSegmentId] = useState<string | null>(initial?.customerSegmentId ?? null);
   const [minOrderAmount, setMinOrderAmount] = useState<string>(initial?.minOrderAmount != null ? String(initial.minOrderAmount) : '');
   const [startsAt, setStartsAt] = useState(initial?.startsAt ? initial.startsAt.slice(0, 10) : '');
   const [endsAt, setEndsAt] = useState(initial?.endsAt ? initial.endsAt.slice(0, 10) : '');
@@ -176,6 +178,7 @@ function DiscountFormModal({
       ...(target === 'category' ? { categoryIds } : {}),
       ...(target === 'products' ? { productIds } : {}),
       ...(minOrderAmount ? { minOrderAmount: Number(minOrderAmount) } : {}),
+      customerSegmentId,
       ...(startsAt ? { startsAt } : {}),
       ...(endsAt ? { endsAt } : {}),
     };
@@ -308,6 +311,8 @@ function DiscountFormModal({
           </div>
         </Field>
       )}
+
+      <SegmentSelect storeId={storeId} value={customerSegmentId} onChange={setCustomerSegmentId} label="Customer eligibility" />
 
       <Field label="Minimum order amount" hint="Optional — leave blank for no minimum">
         <Input type="number" min={0} value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} leftAddon={currencySymbol(storeCurrency)} />

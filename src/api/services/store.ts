@@ -812,6 +812,8 @@ export interface GetStoreCustomersParams {
   view?:            StoreCustomerView;
   /** Scopes the list/export to exactly these customer ids — used by "export selected". */
   ids?:             string[];
+  /** Narrow the list/export to a saved customer segment of this store. */
+  segmentId?:       string;
 }
 
 export interface UpdateStoreCustomerPayload {
@@ -856,6 +858,7 @@ function customerQueryString(params: GetStoreCustomersParams) {
   if (params.dateTo)   qs.set('dateTo', params.dateTo);
   if (params.view)     qs.set('view', params.view);
   if (params.ids?.length) qs.set('ids', params.ids.join(','));
+  if (params.segmentId) qs.set('segmentId', params.segmentId);
   return qs.toString();
 }
 
