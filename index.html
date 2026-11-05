@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="generator" content="Solvexo" />
     <title>Solvexo</title>
+    <!--solvexo-platform-head-->
+    <meta name="description" content="Solvexo is an all-in-one commerce platform for sellers, creators and educators: build an online store, sell in person with POS, and manage inventory, orders, customers and analytics in one place." />
+    <meta name="application-name" content="Solvexo" />
+    <meta property="og:site_name" content="Solvexo" />
+    <meta property="og:title" content="Solvexo" />
+    <meta property="og:description" content="Build an online store, sell in person and manage your business with Solvexo." />
+    <meta property="og:image" content="https://www.solvexo.store/brand/solvexo-logo.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Solvexo","url":"https://www.solvexo.store/","logo":"https://www.solvexo.store/brand/solvexo-icon.png"}</script>
+    <!--/solvexo-platform-head-->
     <!-- A store's own host: show its name in the tab at once (from the last visit) instead of "Solvexo" while the app loads. -->
     <script>(function(){try{var raw=localStorage.getItem('solvexo:sf-boot:v1:'+location.hostname.toLowerCase());if(!raw)return;var s=JSON.parse(raw);var n=s&&s.store&&s.store.name;if(n)document.title=n;var f=s&&s.store&&s.store.faviconUrl;var l=document.querySelector('link[rel="icon"]');if(l&&s&&s.store){l.removeAttribute('type');l.href=(f&&/^https:\/\//.test(f))?f:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}}catch(e){}})();</script>
     <!-- Repeat visit to a store: paint its own background + header (logo/name, its colours) before any JS, so the visitor never sees a platform loader. React replaces #root when it mounts. -->
@@ -20,7 +29,17 @@
     <script src="/_solvexo/storefront.js"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--solvexo-platform-body-->
+      <!-- What Solvexo is, readable without JavaScript (search engines, Google's OAuth app review). React replaces it on mount; store sites never get it (api/storefront-document.js strips it). -->
+      <main id="solvexo-static" style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1d1d1b;line-height:1.6">
+        <img src="/brand/solvexo-logo.png" alt="Solvexo" width="175" height="60" style="height:60px;width:auto" />
+        <h1 style="font-size:28px;margin:24px 0 8px">Solvexo</h1>
+        <p><strong>Solvexo</strong> is an all-in-one commerce platform for sellers, creators and educators. With Solvexo you can build your own online store, sell in person with Solvexo POS, and manage products, inventory, orders, customers, payments, marketing and analytics in one place.</p>
+        <h2 style="font-size:18px;margin:24px 0 4px">How Solvexo uses Google sign-in</h2>
+        <p>Sellers can create and sign in to their Solvexo account with Google. Solvexo only receives your name, email address and profile picture, and uses them solely to create your account and sign you in. Store owners can also connect Google Search Console and Google Analytics with read-only access to see their own search and visitor reports inside Solvexo. Google user data is never sold or used for advertising.</p>
+        <p><a href="/privacy-policy">Privacy Policy</a> &middot; <a href="/terms-of-service">Terms of Service</a> &middot; <a href="/contact-us">Contact</a></p>
+      </main>
+    <!--/solvexo-platform-body--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

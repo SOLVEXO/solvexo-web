@@ -10,6 +10,13 @@ function escapeHtml(value = '') {
   return String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
 
+/** Remove Solvexo's own platform description (index.html markers): a store's site must never present itself as Solvexo. */
+function stripPlatformContent(html) {
+  return html
+    .replace(/<!--solvexo-platform-head-->[\s\S]*?<!--\/solvexo-platform-head-->/g, '')
+    .replace(/<!--solvexo-platform-body-->[\s\S]*?<!--\/solvexo-platform-body-->/g, '');
+}
+
 function injectMetadata(html, meta) {
   const tags = [
     `<title>${escapeHtml(meta.title || 'Online Store')}</title>`,
@@ -42,7 +49,7 @@ function injectMetadata(html, meta) {
 
 async function sendStorefrontShell(response, status = 200) {
   const file = path.join(process.cwd(), 'dist', 'index.html');
-  const shell = await fs.readFile(file, 'utf8');
+  const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
   const fallbackShell = shell
     .replace(/<title>[\s\S]*?<\/title>/i, '<title>Online Store</title>')
     .replace('</head>', '    <meta name="robots" content="noindex, nofollow">\n  </head>');
@@ -82,7 +89,7 @@ export default async function handler(request, response) {
     if (!apiResponse.ok) {
       if (apiResponse.status === 404) {
         const file = path.join(process.cwd(), 'dist', 'index.html');
-        const shell = await fs.readFile(file, 'utf8');
+        const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
         response.setHeader('Cache-Control', 'private, no-store');
         response.setHeader('Vary', 'Host');
         const notFoundShell = shell
@@ -108,7 +115,7 @@ export default async function handler(request, response) {
       return;
     }
     const file = path.join(process.cwd(), 'dist', 'index.html');
-    const shell = await fs.readFile(file, 'utf8');
+    const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
     // Only SEO tags are injected (the store itself loads client-side), so a short edge cache is safe and removes the
     // function + API round trip for repeat visitors. Per-host: `host` is part of the rewritten URL and Vary is Host.
     response.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
