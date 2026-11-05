@@ -19,10 +19,11 @@ function Photo({ block, colors, ratio }: { block: Block; colors: FashionColors; 
       <img src={s.imageUrl} alt={s.alt ?? ''} loading="lazy" onError={() => setErrored(true)} className="transition-transform duration-700 group-hover:scale-105" style={fit.img} />
     </div>
   );
-  if (!s.link) return img;
-  const target = resolveLink(s.link);
-  return target.to ? <Link to={target.to} className="block">{img}</Link>
+  const target = s.link ? resolveLink(s.link) : null;
+  const linked = !target ? img : target.to ? <Link to={target.to} className="block">{img}</Link>
     : <a href={target.href} className="block" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
+  const caption = typeof s.caption === 'string' ? s.caption.trim() : '';
+  return caption ? <figure className="m-0">{linked}<figcaption className="mt-3 text-center text-sm leading-snug" style={{ color: colors.inkMuted, unicodeBidi: 'plaintext' }}>{caption}</figcaption></figure> : linked;
 }
 
 export function GalleryGridSection({ section, blocks, colors }: SharedSectionProps) {

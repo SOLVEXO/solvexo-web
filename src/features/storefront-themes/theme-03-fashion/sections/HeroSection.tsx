@@ -71,6 +71,9 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const seconds = Math.min(10, Math.max(3, Number(settings.autoplaySeconds) || 5));
   const fade = settings.transition === 'fade';
   const cur = n ? i % n : 0;
+  // Fade: the slide that is leaving stays fully visible UNDER the incoming one until it has finished fading in — two half-transparent slides at once showed as a ghosted double image.
+  const [shown, setShown] = useState({ cur, prev: cur });
+  if (shown.cur !== cur) setShown({ cur, prev: shown.cur });
   const touch = useRef<number | null>(null);
   const rtl = isDocumentRtl();
 
@@ -109,7 +112,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
         {fade ? (
           <div className="relative">
             {slides.map((b, k) => (
-              <div key={b._id ?? k} style={{ position: k === 0 ? 'relative' : 'absolute', inset: 0, opacity: k === cur ? 1 : 0, transition: 'opacity .8s ease', pointerEvents: k === cur ? 'auto' : 'none' }}>
+              <div key={b._id ?? k} style={{ position: k === 0 ? 'relative' : 'absolute', inset: 0, opacity: k === cur || k === shown.prev ? 1 : 0, zIndex: k === cur ? 2 : k === shown.prev ? 1 : 0, transition: k === cur ? 'opacity .8s ease' : 'none', pointerEvents: k === cur ? 'auto' : 'none' }}>
                 {slideBody(b, k)}
               </div>
             ))}

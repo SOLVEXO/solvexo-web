@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef } from 'react';
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -72,6 +74,8 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
   const { store } = useStorefront();
   const { tree, loading, error, refetch } = useStoreCategoryTree(store.storeId);
   const localize = useLocalize();
+  const rowRef = useRef<HTMLUListElement>(null);
+  const scrollRow = (dir: 1 | -1) => rowRef.current?.scrollBy({ left: dir * Math.max(240, (rowRef.current?.clientWidth ?? 600) * 0.8), behavior: 'smooth' });
   const all = flatten(tree);
   const chosen: string[] = Array.isArray(s.categoryIds) ? (s.categoryIds as string[]) : [];
   const n = Number(s.columns) || 4;
@@ -85,9 +89,23 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
       {error ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_categories', 'We couldn\'t load categories.')} <button type="button" onClick={refetch} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : loading ? <Skeleton n={n} columns={n} /> : (
-        <ul className="fx-hide-scroll m-0 flex list-none gap-5 overflow-x-auto p-0 pb-1">
+        <div className="relative"><ul ref={rowRef} className="fx-hide-scroll m-0 flex list-none gap-5 overflow-x-auto scroll-smooth p-0 pb-1">
           {shown.map(c => {
             const name = localize.collection(c).name ?? c.name;
+            if (s.tileStyle === 'simple') {
+              const ratio = ({ portrait: '3 / 4', square: '1 / 1', landscape: '4 / 3' } as Record<string, string>)[String(s.imageRatio)] ?? '4 / 5';
+              return (
+                <li key={c._id} className="w-[260px] max-w-[70vw] shrink-0">
+                  <Link to={`/category/${c.slug || c._id}`} className="group block no-underline" style={{ color: colors.ink, textAlign: s.textAlign === 'left' ? 'left' : 'center' }}>
+                    <div className="relative overflow-hidden" style={{ aspectRatio: ratio, background: colors.bgAlt, borderRadius: 16 }}>
+                      {c.image && <img src={c.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+                    </div>
+                    <p className="m-0 mt-3 text-base font-medium">{name}</p>
+                    {c.productCount != null && <p className="m-0 mt-0.5 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.products_items', '{{count}} items', { count: c.productCount })}</p>}
+                  </Link>
+                </li>
+              );
+            }
             return (
               <li key={c._id} className="w-[270px] max-w-[80vw] shrink-0">
                 <Link to={`/category/${c.slug || c._id}`} className="group flex items-center overflow-hidden no-underline transition-colors hover:border-current" style={{ border: `1px solid ${colors.border}`, borderRadius: 16, background: colors.bg, color: colors.ink }}>
@@ -103,6 +121,13 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
             );
           })}
         </ul>
+        {s.showArrows !== false && shown.length > 2 && (
+          <>
+            <button type="button" aria-label="Previous" onClick={() => scrollRow(-1)} className="absolute left-0 top-1/3 grid size-10 -translate-x-1/2 cursor-pointer place-items-center rounded-full border-0 shadow" style={{ background: colors.bg, color: colors.ink }}><ChevronLeft size={18} aria-hidden /></button>
+            <button type="button" aria-label="Next" onClick={() => scrollRow(1)} className="absolute right-0 top-1/3 grid size-10 translate-x-1/2 cursor-pointer place-items-center rounded-full border-0 shadow" style={{ background: colors.bg, color: colors.ink }}><ChevronRight size={18} aria-hidden /></button>
+          </>
+        )}
+        </div>
       )}
     </SectionShell>
   );

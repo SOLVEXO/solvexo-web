@@ -200,6 +200,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
         { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
       ] },
+      { key: 'tileStyle', kind: 'select', label: 'Tile style', options: [{ value: 'card', label: 'Small card (image beside name)' }, { value: 'simple', label: 'Large image with name below' }] },
+      { key: 'imageRatio', kind: 'select', label: 'Image shape (large tiles)', options: [{ value: 'default', label: 'Default' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }], showIf: s => s.tileStyle === 'simple' },
+      { key: 'textAlign', kind: 'select', label: 'Name alignment (large tiles)', options: [{ value: 'center', label: 'Center' }, { value: 'left', label: 'Left' }], showIf: s => s.tileStyle === 'simple' },
+      { key: 'showArrows', kind: 'checkbox', label: 'Show scroll arrows' },
     ]),
   },
   {
@@ -306,6 +310,7 @@ export const SECTION_META: SectionMeta[] = [
     settingsSchema: [
       { key: 'speed', kind: 'select', label: 'Speed', options: [{ value: 'slow', label: 'Slow' }, { value: 'medium', label: 'Medium' }, { value: 'fast', label: 'Fast' }] },
       { key: 'direction', kind: 'select', label: 'Direction', options: [{ value: 'left', label: 'Right to left' }, { value: 'right', label: 'Left to right' }] },
+      { key: 'fontSize', kind: 'select', label: 'Text size', options: [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }] },
       { key: 'pauseOnHover', kind: 'checkbox', label: 'Pause on hover' },
     ],
   },
@@ -330,6 +335,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'limit', kind: 'number', label: 'How many collections', min: 1, max: 24, step: 1 },
       { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }] },
       { key: 'showDescription', kind: 'checkbox', label: 'Show each collection\'s description', defaultOff: true },
+      { key: 'tileStyle', kind: 'select', label: 'Tile style', options: [{ value: 'card', label: 'Image with arrow button' }, { value: 'simple', label: 'Image with name below' }] },
+      { key: 'textAlign', kind: 'select', label: 'Name alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
+      { key: 'layout', kind: 'select', label: 'Layout', options: [{ value: 'grid', label: 'Grid' }, { value: 'carousel', label: 'Scrolling row with arrows' }] },
+      { key: 'eyebrow', kind: 'text', label: 'Small text above the heading (optional)', maxLength: 60 },
     ]),
   },
   {
@@ -720,7 +729,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     ] },
   ],
   paragraph: [
-    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a custom field below.' },
+    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 10000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a custom field below.' },
     { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a custom field (optional)', pairsWith: 'text' },
   ],
   image: [
@@ -764,6 +773,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   gallery_image: [
     { key: 'imageUrl', kind: 'image', label: 'Photo', required: true },
     { key: 'alt', kind: 'text', label: 'Alt text', maxLength: 150, hint: 'Describe the photo for screen readers.' },
+    { key: 'caption', kind: 'text', label: 'Text below the photo (optional)', maxLength: 200 },
     { key: 'link', kind: 'link', label: 'Link (optional)' },
   ],
   location_item: [
