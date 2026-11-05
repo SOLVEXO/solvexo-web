@@ -16,7 +16,8 @@ export function MarqueeSection({ section, blocks, colors }: SharedSectionProps) 
   const speed = SECONDS[s.speed as keyof typeof SECONDS] ?? SECONDS.medium;
   const reverse = s.direction === 'right';
   const pause = s.pauseOnHover !== false;
-  const fontSize = FONT_SIZE[s.fontSize as keyof typeof FONT_SIZE] ?? FONT_SIZE.medium;
+  const px = Number(s.fontSizePx);
+  const fontSize = Number.isFinite(px) && px >= 8 && px <= 300 ? `${px}px` : (FONT_SIZE[s.fontSize as keyof typeof FONT_SIZE] ?? FONT_SIZE.medium);
   const items = blocks.map((b, i) => {
     const text = <span className="whitespace-nowrap font-medium tracking-tight" style={{ fontSize, fontFamily: t.fonts.display, color: colors.ink, unicodeBidi: 'plaintext' }}>{b.settings.text}</span>;
     const target = b.settings.link ? resolveLink(b.settings.link) : null;

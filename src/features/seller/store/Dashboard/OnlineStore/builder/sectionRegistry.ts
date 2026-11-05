@@ -310,7 +310,7 @@ export const SECTION_META: SectionMeta[] = [
     settingsSchema: [
       { key: 'speed', kind: 'select', label: 'Speed', options: [{ value: 'slow', label: 'Slow' }, { value: 'medium', label: 'Medium' }, { value: 'fast', label: 'Fast' }] },
       { key: 'direction', kind: 'select', label: 'Direction', options: [{ value: 'left', label: 'Right to left' }, { value: 'right', label: 'Left to right' }] },
-      { key: 'fontSize', kind: 'select', label: 'Text size', options: [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }] },
+      { key: 'fontSizePx', kind: 'number', label: 'Text size (px)', min: 8, max: 300, step: 1, hint: 'Your own size in pixels. Leave empty for the theme default.' },
       { key: 'pauseOnHover', kind: 'checkbox', label: 'Pause on hover' },
     ],
   },
@@ -729,7 +729,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     ] },
   ],
   paragraph: [
-    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 10000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a custom field below.' },
+    { key: 'text', kind: 'textarea', label: 'Paragraph text', hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a custom field below.' },
     { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a custom field (optional)', pairsWith: 'text' },
   ],
   image: [
