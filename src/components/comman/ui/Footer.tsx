@@ -7,6 +7,7 @@ import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Mail } from 'lucide-re
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 import { scrollRootToTop } from '@/utils/scrollRoot';
+import { SALES_EMAIL } from '@/utils/contact';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Reveal } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -79,22 +80,6 @@ function FacebookGlyph() {
     </svg>
   );
 }
-function InstagramGlyph() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-function XGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4l16 16M20 4L4 20" />
-    </svg>
-  );
-}
 function LinkedinGlyph() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,11 +90,11 @@ function LinkedinGlyph() {
   );
 }
 
+// Solvexo's own public pages. LinkedIn: the public Solvexo product page (the link the owner shared was its admin view,
+// which only page admins can open).
 const SOCIALS = [
-  { label: 'Facebook',  Glyph: FacebookGlyph },
-  { label: 'Instagram', Glyph: InstagramGlyph },
-  { label: 'X',         Glyph: XGlyph },
-  { label: 'LinkedIn',  Glyph: LinkedinGlyph },
+  { label: 'Facebook', href: 'https://www.facebook.com/solvexo', Glyph: FacebookGlyph },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/products/i9-experts-private-limited-solvexo/', Glyph: LinkedinGlyph },
 ];
 
 function Newsletter() {
@@ -275,20 +260,19 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
               The commerce OS for sellers, creators and educators — your own storefront, POS, and AI-powered tools in one platform.
             </p>
 
-            {/* Decorative only — no real social accounts to link to yet, same
-               honest treatment as the App Store/Google Play badges below
-               (role="img", not a button, so it never invites a click that
-               does nothing). */}
-            <div className="flex items-center gap-2.5 mt-5">
-              {SOCIALS.map(({ label, Glyph }) => (
-                <div
+            <a href={`mailto:${SALES_EMAIL}`} className="inline-block mt-4 text-[13px] text-[#b0aea8] hover:text-white transition-colors">{SALES_EMAIL}</a>
+            <div className="flex items-center gap-2.5 mt-4">
+              {SOCIALS.map(({ label, href, Glyph }) => (
+                <a
                   key={label}
-                  role="img"
-                  aria-label={label}
-                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] select-none opacity-40"
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Solvexo on ${label}`}
+                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] hover:text-white hover:border-white/30 transition-colors"
                 >
                   <Glyph />
-                </div>
+                </a>
               ))}
             </div>
           </div>

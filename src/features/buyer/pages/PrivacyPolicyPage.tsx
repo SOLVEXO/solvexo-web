@@ -74,7 +74,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Your Rights & Choices',
     body: [
       'You can access, update, or delete most of your account information directly from your account settings at any time.',
-      'You may request a copy of the personal data we hold about you, or ask us to delete your account, by contacting our support team.',
+      'You may request a copy of the personal data we hold about you, or ask us to delete your account, by emailing sales@solvexo.store.',
     ],
   },
   {
@@ -96,7 +96,7 @@ const SECTIONS: LegalSection[] = [
     id: 'contact',
     title: 'Contact Us',
     body: [
-      'If you have questions about this Privacy Policy or how your data is handled, reach out to our support team through the Help Center or Contact Us page.',
+      'If you have questions about this Privacy Policy or how your data is handled, email us at sales@solvexo.store or reach out through the Help Center or Contact Us page.',
     ],
   },
 ];
