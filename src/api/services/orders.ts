@@ -257,6 +257,8 @@ export interface FulfilOrderPayload {
   trackingNumber?: string;
   trackingUrl?:    string;
   notifyCustomer?: boolean;
+  /** Ship pre-order items whose stock has not arrived yet (audited server-side). */
+  overridePreorder?: boolean;
 }
 
 /** POST /api/orders/fulfil/:storeId/:orderId — Shopify "Fulfil items": one shipment for a subset/quantity of the unfulfilled lines. */

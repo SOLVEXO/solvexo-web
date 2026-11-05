@@ -40,6 +40,7 @@ export function FulfilItemsModal({ storeId, orderId, orderNumber, items, shipmen
   const [labelItems, setLabelItems] = useState<{ itemId: string; quantity: number }[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [overridePreorder, setOverridePreorder] = useState(false);
 
   const selectedCount = lines.reduce((n, l) => n + (qty[l.item._id] ?? 0), 0);
   const activeCarriers = carriers.filter(c => c.isActive);
@@ -62,6 +63,7 @@ export function FulfilItemsModal({ storeId, orderId, orderNumber, items, shipmen
       trackingNumber: trackingNumber.trim() || undefined,
       trackingUrl: trackingUrl.trim() || undefined,
       notifyCustomer: notify,
+      overridePreorder: overridePreorder || undefined,
     })
       .then(() => onFulfilled())
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to fulfil items.'))
@@ -83,6 +85,12 @@ export function FulfilItemsModal({ storeId, orderId, orderNumber, items, shipmen
       }
     >
       {error && <p role="alert" className="text-[12px] text-error mb-3">{error}</p>}
+      {/pre-order/i.test(error) && (
+        <label className="flex items-center gap-2 text-[12px] text-charcoal mb-3 cursor-pointer">
+          <input type="checkbox" checked={overridePreorder} onChange={e => setOverridePreorder(e.target.checked)} />
+          Ship anyway (pre-order override — recorded in the activity log)
+        </label>
+      )}
 
       {lines.length === 0 ? (
         <p className="text-[12.5px] text-slate">Every item on this order is already fulfilled.</p>

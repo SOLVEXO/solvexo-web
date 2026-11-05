@@ -823,6 +823,11 @@ export function apiGetMySellerOrders(page = 1, limit = 10) {
 // ── Seller Order Detail ─────────────────────────────────────────────────────
 
 export interface SellerOrderDetailItem {
+  /** Bundle snapshot (per ONE bundle) and pre-order flags captured at purchase time. */
+  bundleComponents?: { productId: string; variantId: string; quantity: number; name?: string | null }[];
+  isPreorder?: boolean;
+  preorderExpectedDate?: string | null;
+  preorderMessage?: string | null;
   _id:          string;
   productId:    string;
   variantId:    string | null;

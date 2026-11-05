@@ -1,3 +1,4 @@
+import { CartUpsellCard } from '@/features/seller/store/Dashboard/StoreSection/products/MerchandisingCard';
 import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -473,6 +474,7 @@ export default function StoreDiscounts() {
       />
 
       <div className="p-4 md:p-7">
+        <div className="mb-5"><CartUpsellCard storeId={storeId} /></div>
         {weekday.data && (
           <div className="flex items-start gap-3 mb-5 bg-brand-pale-orange/60 border border-brand-orange/20 rounded-xl px-4 py-3">
             <div className="w-8 h-8 rounded-[8px] bg-white flex items-center justify-center shrink-0">

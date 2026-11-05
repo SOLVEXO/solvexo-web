@@ -1,3 +1,4 @@
+import { MerchandisingCard } from './MerchandisingCard';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useArchiveGuard } from './useArchiveGuard';
 import { SupplierField } from './SupplierField';
@@ -914,6 +915,8 @@ export default function StoreEditProduct() {
               <TemplateKeyPicker storeId={storeId} resourceType="product" value={templateKey} onChange={setTemplateKey} label="Product Page Template" />
             </div>
           </Card>
+
+          <MerchandisingCard storeId={storeId} productId={productId} isPhysical />
 
           <Card title="Complementary products">
             <div className="flex flex-col gap-2">

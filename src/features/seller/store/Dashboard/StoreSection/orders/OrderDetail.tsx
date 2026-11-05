@@ -489,6 +489,16 @@ export function StoreOrderDetail() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-semibold text-charcoal truncate">{item.name}</p>
+                      {item.isPreorder && (
+                        <p className="text-[11px] font-semibold text-brand-deep-orange mt-0.5" role="status">
+                          Pre-order{item.preorderExpectedDate ? ` — expected ${new Date(item.preorderExpectedDate).toLocaleDateString()}` : ''}
+                        </p>
+                      )}
+                      {item.bundleComponents && item.bundleComponents.length > 0 && (
+                        <ul className="text-[11px] text-slate mt-0.5 list-disc pl-4" aria-label="Bundle includes">
+                          {item.bundleComponents.map(c => <li key={c.variantId}>{c.name ?? 'Item'} × {c.quantity * item.quantity}</li>)}
+                        </ul>
+                      )}
                       <p className="text-[11px] text-slate mt-0.5">
                         {item.options.length > 0 ? item.options.map(o => `${o.name}: ${o.value}`).join(' · ') + ' · ' : ''}
                         {item.sku ? `SKU: ${item.sku} · ` : ''}Qty: {item.quantity}

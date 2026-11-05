@@ -181,5 +181,37 @@
       "not_equals": "is not",
       "in": "is one of"
     }
+  },
+  "merch": {
+    "title": "Bundle, pre-order & recommendations",
+    "bundle": "Bundle",
+    "bundleHelp": "Make this product a bundle: selling it sells (and takes stock from) its components. Its own stock is derived from them.",
+    "pickComponents": "Choose bundle components",
+    "quantity": "Quantity per bundle",
+    "availability": "{{count}} bundles available",
+    "unlimited": "unlimited",
+    "compareAt": "components total {{amount}}",
+    "saveBundle": "Save bundle",
+    "removeBundle": "Remove bundle",
+    "saved": "Saved",
+    "save": "Save",
+    "preorder": "Pre-order",
+    "preorderHelp": "Let buyers order a variant that is out of stock. Payment is taken normally at checkout.",
+    "expectedDate": "Expected date",
+    "limit": "Pre-order limit",
+    "sold": "{{count}} sold so far",
+    "message": "Message to buyers",
+    "related": "Related products",
+    "relatedHelp": "Shown first in recommendations on this product's page; automatic suggestions fill the rest.",
+    "pickRelated": "Choose related products",
+    "autoPreview": "Automatic suggestions would show",
+    "cartUpsell": "Cart upsell",
+    "cartUpsellHelp": "Show product suggestions in the cart",
+    "upsellTitle": "Block title",
+    "maxItems": "Max items",
+    "mode": "Suggest",
+    "modeComplementary": "Complementary products",
+    "modeRelated": "Related products",
+    "modeBest": "Best sellers"
   }
 }
