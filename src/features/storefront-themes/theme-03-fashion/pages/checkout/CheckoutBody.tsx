@@ -1,3 +1,4 @@
+import { variantPreorderText } from '../../../sellingRules';
 import { useCallback, useRef, useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -127,9 +128,11 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
       ? convert(unit, i.currency, { productId: i.productId, variantId: i.productVariantId }) * i.quantity
       : convertTo(i.itemTotal as number, i.currency, currency);
   };
+  // Pre-order notices come from the cart lines (same variants as the checkout).
+  const preorderNotes = new Map(items.map(i => [i.productVariantId, i.preorder ? variantPreorderText({ preorder: i.preorder }) : null]));
   const lines: SummaryLine[] = checkout
-    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency), image: i.image }))
-    : items.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: estimateOf(i), image: lineImage(i) }));
+    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency), image: i.image, note: preorderNotes.get(i.variantId) ?? null }))
+    : items.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: estimateOf(i), image: lineImage(i), note: preorderNotes.get(i.productVariantId) ?? null }));
   const itemCount = items.reduce((n, i) => n + i.quantity, 0);
   const subtotal = checkout ? checkout.subtotal : items.reduce((s, i) => s + estimateOf(i), 0);
   const coupon = checkout?.couponDiscountUSD ?? 0;

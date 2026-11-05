@@ -26,6 +26,9 @@ export interface CartItem {
   orderQuantityStep?: number | null;
   /** The product was archived, set to draft or deleted after it was added. */
   unavailable?: boolean;
+  isBundle?: boolean;
+  /** Pre-order notice (only while the variant is out of stock and pre-order is on). */
+  preorder?: { label: string; expectedDate: string | null; message: string | null; remaining: number | null; soldOut: boolean } | null;
 }
 
 export interface Cart {

@@ -1,3 +1,4 @@
+import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { useEffect, useRef, useState } from 'react';
 import { useRouteTabs } from '@/hooks/useRouteTabs';
 import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
@@ -53,7 +54,7 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'pixels',    label: 'Tracking Pixels', Icon: Target       },
 ];
 
-const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', startDate: '', expiryDate: '' };
+const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', startDate: '', expiryDate: '', segmentId: '' };
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
@@ -516,6 +517,7 @@ export function StoreMarketing() {
       value: String(c.discountValue),
       minOrder: c.minOrderAmount != null ? String(c.minOrderAmount) : '',
       usageLimit: c.usageLimit != null ? String(c.usageLimit) : '',
+      segmentId: c.customerSegmentId ?? '',
       startDate: c.startsAt ? c.startsAt.slice(0, 10) : '',
       expiryDate: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
     });
@@ -543,6 +545,7 @@ export function StoreMarketing() {
       discountValue: Number(form.value),
       minOrderAmount: form.minOrder ? Number(form.minOrder) : undefined,
       usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
+      customerSegmentId: form.segmentId || null,
       startsAt: form.startDate || undefined,
       expiresAt: form.expiryDate || undefined,
     };
@@ -727,6 +730,7 @@ export function StoreMarketing() {
                   <input placeholder="0.00" value={form.minOrder} onChange={e => setForm(f => ({ ...f, minOrder: e.target.value }))}
                     className={INPUT_CLS} />
                 </div>
+                <div className="col-span-2"><SegmentSelect storeId={storeId} value={form.segmentId || null} onChange={id => setForm(f => ({ ...f, segmentId: id ?? '' }))} label="Customer eligibility" /></div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
                   <input placeholder="Leave blank for unlimited" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: e.target.value }))}

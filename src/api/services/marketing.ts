@@ -11,6 +11,8 @@ export interface Coupon {
   discountValue:  number;
   minOrderAmount: number | null;
   usageLimit:     number | null;
+  /** Saved customer segment: only its members can redeem (null = everyone). */
+  customerSegmentId?: string | null;
   usageCount:     number;
   /** Coupon is inactive until this date — null means active immediately. */
   startsAt:       string | null;
@@ -24,6 +26,7 @@ export interface CreateCouponPayload {
   discountType:    DiscountType;
   discountValue:   number;
   minOrderAmount?: number;
+  customerSegmentId?: string | null;
   usageLimit?:     number;
   startsAt?:       string;
   expiresAt?:      string;

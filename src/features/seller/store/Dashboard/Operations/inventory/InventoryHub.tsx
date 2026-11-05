@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import {
+import { Clock,
   Boxes, Truck, AlertTriangle, ClipboardCheck, TrendingUp, CalendarClock, Undo2, ScanLine, Building2,
 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -16,6 +16,7 @@ import { Navigate } from 'react-router-dom';
 import { StoreInventory } from './Inventory';
 import InventoryReports from './InventoryReports';
 import StockCountsTab from './tabs/StockCountsTab';
+import PreordersTab from './tabs/PreordersTab';
 import PurchaseOrdersList from '../../StoreSection/purchaseOrders/PurchaseOrdersList';
 import ReorderSuggestions from '../../StoreSection/purchaseOrders/ReorderSuggestions';
 
@@ -27,6 +28,7 @@ const TABS: Tab[] = [
   { id: 'suppliers',       label: 'Suppliers',        icon: <Building2 size={13} /> },
   { id: 'returns',         label: 'Supplier Returns', icon: <Undo2 size={13} /> },
   { id: 'expiry',          label: 'Expiry',           icon: <CalendarClock size={13} /> },
+  { id: 'preorders',       label: 'Pre-orders',       icon: <Clock size={13} /> },
   { id: 'reports',         label: 'Reports',          icon: <TrendingUp size={13} /> },
 ];
 
@@ -56,6 +58,7 @@ const TAB_PERMS: Record<string, string[]> = {
   suppliers: ['purchase_orders.manage'],
   returns: ['purchase_orders.manage'],
   expiry: ['inventory.view'],
+  preorders: ['inventory.view'],
   reports: ['inventory.view'],
 };
 
@@ -90,6 +93,7 @@ export function InventoryHub({ forcedTab }: { forcedTab?: string } = {}) {
       {isVisited('suppliers')       && <div className={paneClassName('suppliers')}><SuppliersTab /></div>}
       {isVisited('returns')         && <div className={paneClassName('returns')}><SupplierReturnsTab /></div>}
       {isVisited('expiry')          && <div className={paneClassName('expiry')}><ExpiryTab /></div>}
+      {isVisited('preorders')       && <div className={paneClassName('preorders')}><PreordersTab /></div>}
       {isVisited('reports')         && <div className={paneClassName('reports')}><InventoryReports embedded /></div>}
     </>
   );

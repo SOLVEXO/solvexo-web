@@ -1,3 +1,4 @@
+import { variantPreorderText } from '../../sellingRules';
 import { useEffect, useState } from 'react';
 import { apiPublicCartUpsell, type RecommendationCard } from '@/api/services/merchandising';
 import { useTranslation } from 'react-i18next';
@@ -110,6 +111,8 @@ export function FashionCartPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <Link to={`/product/${i.productId}`} className="no-underline" style={{ color: t.colors.ink }}><h2 className="m-0 truncate text-base font-medium">{i.name}</h2></Link>
+                          {i.preorder && <p role="status" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.inkMuted }}>{variantPreorderText({ preorder: i.preorder })}</p>}
+                          {i.isBundle && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{tr('product.bundleBadge', 'Bundle')}</p>}
                           {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
                           {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
                           {i.unavailable && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
