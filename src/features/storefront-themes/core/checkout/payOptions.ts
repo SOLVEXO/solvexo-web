@@ -2,7 +2,7 @@ import type { PublicPaymentMethod } from '@/api/services/integrations';
 import type { CardOrCod } from './useCheckoutCreation';
 import { ts } from '@/utils/tStatic';
 
-export type PayKind = 'stripe' | 'cod' | 'gateway' | 'manual';
+export type PayKind = 'stripe' | 'cod' | 'gateway' | 'manual' | 'terms';
 
 export interface PayOption {
   key: string;
@@ -21,16 +21,21 @@ interface Args {
   stripeConfigured: boolean;
   /** Order total is zero (not covered by store credit): nothing to charge, so card / hosted gateways make no sense. */
   zeroTotal: boolean;
+  /** Wholesale payment terms text ("Net 30"); shown as the hint of the pay-on-terms option. */
+  termsText?: string;
 }
 
 /** One flat list of everything the buyer can pay with, in the order: card, COD, hosted gateways, manual methods. */
-export function buildPayOptions({ allowed, extras, stripeConfigured, zeroTotal }: Args): PayOption[] {
+export function buildPayOptions({ allowed, extras, stripeConfigured, zeroTotal, termsText }: Args): PayOption[] {
   const out: PayOption[] = [];
   if (allowed.includes('stripe') && stripeConfigured && !zeroTotal) {
     out.push({ key: 'stripe', kind: 'stripe', label: ts('pg.credit_debit_card', 'Credit / debit card'), hint: ts('pg.pay_securely_with_your_card', 'Pay securely with your card.') });
   }
   if (allowed.includes('cash_on_delivery')) {
     out.push({ key: 'cash_on_delivery', kind: 'cod', label: ts('order.method.cod', 'Cash on delivery'), hint: ts('pg.pay_in_cash_when_your_order_arrives', 'Pay in cash when your order arrives.') });
+  }
+  if (allowed.includes('b2b_terms') && !zeroTotal) {
+    out.push({ key: 'b2b_terms', kind: 'terms', label: ts('b2b.pay_on_terms', 'Pay on terms (invoice)'), hint: termsText ? ts('b2b.pay_on_terms_hint', 'Place your order now and pay your invoice later ({{terms}}).', { terms: termsText }) : ts('b2b.pay_on_terms_hint_plain', 'Place your order now and pay your invoice later.') });
   }
   for (const m of extras) {
     // A gateway that cannot charge this checkout's currency is not offered (Shopify hides it the same way).

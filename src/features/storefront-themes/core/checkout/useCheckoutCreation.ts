@@ -4,7 +4,7 @@ import {
   apiAddShippingToCheckout, apiCreateCheckout, type Checkout, type CheckoutSummary, type ShippingSelectionPayload,
 } from '@/api/services/checkout';
 
-export type CardOrCod = 'stripe' | 'cash_on_delivery';
+export type CardOrCod = 'stripe' | 'cash_on_delivery' | 'b2b_terms';
 
 export interface LiveCheckout {
   /** `${wantKey}#${attempt}` this checkout was created for. */
@@ -72,7 +72,7 @@ export function useCheckoutCreation(input: CreationInput) {
         });
         let checkout = res.data.checkout;
         let summary = res.data.summary;
-        const methods = (res.data.allowedPaymentMethods ?? []).filter((m): m is CardOrCod => m === 'stripe' || m === 'cash_on_delivery');
+        const methods = (res.data.allowedPaymentMethods ?? []).filter((m): m is CardOrCod => m === 'stripe' || m === 'cash_on_delivery' || m === 'b2b_terms');
         if (!p.isDigital) {
           // Without the shipping fee the total is wrong, so a failure here fails the whole creation.
           const ship = await apiAddShippingToCheckout({

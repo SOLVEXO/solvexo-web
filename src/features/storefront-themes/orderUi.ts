@@ -107,6 +107,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   cash_on_delivery: tt('order.method.cod', "Cash on delivery"),
   stripe: tt('order.method.card', "Card"),
   manual_bank_transfer: tt('order.method.bank', "Bank transfer"),
+  b2b_terms: tt('b2b.pay_on_terms', "Pay on terms (invoice)"),
   store_credit: tt('checkout.storeCredit', "Store credit"),
   // Gateway brand names are never translated.
   safepay: 'Safepay', jazzcash: 'JazzCash', easypaisa: 'Easypaisa', payfast: 'PayFast',

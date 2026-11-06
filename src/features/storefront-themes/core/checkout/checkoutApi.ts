@@ -22,6 +22,10 @@ export function placeCodOrderOnce(checkoutId: string, key: string) {
   return client.post<never, { success?: boolean; data: { orders: PlacedOrder[] } }>(ENDPOINTS.PAYMENT.COD, { checkoutId }, withKey(key));
 }
 
+export function placeTermsOrderOnce(checkoutId: string, key: string) {
+  return client.post<never, { success?: boolean; data: { orders: PlacedLike[] } }>('/api/payment/b2b-terms-payment', { checkoutId }, withKey(key));
+}
+
 export function placeManualOrderOnce(checkoutId: string, methodId: string, key: string) {
   return client.post<never, { success?: boolean; data: { orders: PlacedLike[] } }>(ENDPOINTS.CHECKOUT.PLACE_MANUAL_METHOD(checkoutId, methodId), undefined, withKey(key));
 }

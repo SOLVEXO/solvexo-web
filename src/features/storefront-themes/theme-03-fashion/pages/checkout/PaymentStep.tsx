@@ -37,7 +37,7 @@ export interface PaymentStepProps {
 function methodIcon(o: PayOption) {
   if (o.kind === 'stripe') return <CreditCard size={16} aria-hidden />;
   if (o.kind === 'cod') return <Banknote size={16} aria-hidden />;
-  if (o.kind === 'manual') return <Landmark size={16} aria-hidden />;
+  if (o.kind === 'manual' || o.kind === 'terms') return <Landmark size={16} aria-hidden />;
   return <CreditCard size={16} aria-hidden />;
 }
 
@@ -97,6 +97,20 @@ function MethodPanel({ p, pay, currency, total, checkoutId }: { p: PayOption; pa
       <PillButton full loading={pay.busy} onClick={pay.placeCod}>
         {!pay.busy && <PackageCheck size={16} aria-hidden />}{pay.busy ? ts('checkout.placingOrder', 'Placing order…') : ts('checkout.placeOrderLower', 'Place order')}
       </PillButton>
+    );
+  }
+
+  if (p.kind === 'terms') {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="m-0 text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>
+          {ts('b2b.terms_notice', 'Your order is placed now and your invoice is due on your payment terms{{terms}}. The store will record your payments.', { terms: pay.b2b?.termsLabel ? ` (${pay.b2b.termsLabel})` : '' })}
+        </p>
+        {total > 0 && <p className="m-0 text-sm font-medium">{ts('checkout.total', 'Total')}: <bdi>{moneyText(total, currency)}</bdi></p>}
+        <PillButton full loading={pay.busy} onClick={pay.placeTerms}>
+          {pay.busy ? ts('checkout.placingOrder', 'Placing order…') : ts('b2b.place_order_on_terms', 'Place order on terms')}
+        </PillButton>
+      </div>
     );
   }
 
@@ -162,6 +176,11 @@ export function PaymentStep(props: PaymentStepProps) {
   } else {
     body = (
       <div className="flex flex-col gap-4">
+        {pay.b2b && (
+          <Field label={ts('b2b.po_number', 'Purchase order number (optional)')} hint={ts('b2b.po_hint', 'Ordering for {{company}}. This number is printed on your order and invoice.', { company: pay.b2b.companyName })}>
+            {f => <TextInput {...f} maxLength={60} autoComplete="off" value={pay.b2b?.poNumber ?? ''} onChange={e => pay.b2b?.setPoNumber(e.target.value)} />}
+          </Field>
+        )}
         {pay.extrasError && <Notice tone="error" action={<TextLinkButton onClick={pay.retryExtras}>{ts('cart.retry', 'Retry')}</TextLinkButton>}>{ts('checkout.extrasError', 'Some payment methods could not be loaded.')}</Notice>}
         <div role="radiogroup" aria-label={ts('checkout.paymentMethodAria', 'Payment method')} className="flex flex-col gap-3">
           {pay.options.map(o => (

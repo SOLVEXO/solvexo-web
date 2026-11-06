@@ -38,3 +38,19 @@ describe('resolveSelected', () => {
     expect(resolveSelected(two, 'x:gone')).toBeNull();
   });
 });
+
+describe('buildPayOptions: wholesale payment terms', () => {
+  it('offers "pay on terms" with the terms in its hint, after card and COD', () => {
+    const o = buildPayOptions({ allowed: ['stripe', 'cash_on_delivery', 'b2b_terms'], extras: [], stripeConfigured: true, zeroTotal: false, termsText: 'Net 30' });
+    expect(o.map(x => x.kind)).toEqual(['stripe', 'cod', 'terms']);
+    expect(o[2].hint).toContain('Net 30');
+  });
+  it('does not offer terms for retail lists or a zero total', () => {
+    expect(buildPayOptions({ allowed: ['cash_on_delivery'], extras: [], stripeConfigured: true, zeroTotal: false }).some(x => x.kind === 'terms')).toBe(false);
+    expect(buildPayOptions({ allowed: ['b2b_terms'], extras: [], stripeConfigured: true, zeroTotal: true }).some(x => x.kind === 'terms')).toBe(false);
+  });
+  it('a company limited to terms only sees just that option, chosen automatically', () => {
+    const o = buildPayOptions({ allowed: ['b2b_terms'], extras: [], stripeConfigured: true, zeroTotal: false });
+    expect(resolveSelected(o, null)?.kind).toBe('terms');
+  });
+});

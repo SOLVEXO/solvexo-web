@@ -63,6 +63,8 @@ export interface Checkout {
   isDelete:          boolean;
   createdAt:         string;
   updatedAt:         string;
+  /** Set for approved wholesale (B2B) buyers: company, PO number and payment terms. Null/absent = retail. */
+  b2b?:              { companyName: string; poNumber: string | null; paymentTerms: { type: 'due_on_order' | 'net' | 'due_on_fulfilment'; netDays?: number | null } | null } | null;
 }
 
 export interface CheckoutSummary {

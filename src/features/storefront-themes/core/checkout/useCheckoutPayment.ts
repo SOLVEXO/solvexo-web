@@ -6,7 +6,9 @@ import { apiInitiatePayment } from '@/api/services/payment';
 import { apiGetCheckoutPaymentMethods, type PublicPaymentMethod } from '@/api/services/integrations';
 import { goToGateway } from '@/utils/gatewayRedirect';
 import { useLoad } from '../pageHooks';
-import { initiateGatewayOnce, placeCodOrderOnce, placeManualOrderOnce, type PlacedLike } from './checkoutApi';
+import { initiateGatewayOnce, placeCodOrderOnce, placeManualOrderOnce, placeTermsOrderOnce, type PlacedLike } from './checkoutApi';
+import { apiSetB2BPoNumber } from '@/api/services/b2bStorefront';
+import { termsText } from './b2bTerms';
 import { isStaleCheckoutError, newAttemptKey } from './checkoutMath';
 import { buildPayOptions, resolveSelected, type PayOption } from './payOptions';
 import { isStripeReady } from './stripeLoader';
@@ -38,9 +40,29 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
     [checkoutId],
   );
   const options = useMemo(
-    () => buildPayOptions({ allowed, extras: extrasQ.data ?? [], stripeConfigured: isStripeReady(), zeroTotal: !!checkout && total <= 0 && !creditCoversAll }),
+    () => buildPayOptions({ allowed, extras: extrasQ.data ?? [], stripeConfigured: isStripeReady(), zeroTotal: !!checkout && total <= 0 && !creditCoversAll, termsText: termsText(checkout?.b2b?.paymentTerms) }),
     [allowed, extrasQ.data, checkout, total, creditCoversAll],
   );
+  // --- wholesale: the purchase-order number is saved on the checkout shortly after typing, and always before an order is placed ---
+  const b2b = checkout?.b2b ?? null;
+  const [poEdit, setPoEdit] = useState<{ id: string | undefined; value: string } | null>(null);
+  const poNumber = poEdit && poEdit.id === checkoutId ? poEdit.value : (b2b?.poNumber ?? '');
+  const poSaved = useRef<{ id: string | undefined; value: string }>({ id: checkoutId, value: b2b?.poNumber ?? '' });
+  const poSaving = useRef<Promise<void>>(Promise.resolve());
+  const savePo = useCallback((): Promise<void> => {
+    if (!checkoutId || !poEdit || poEdit.id !== checkoutId) return poSaving.current;
+    const value = poEdit.value.trim();
+    if (poSaved.current.id === checkoutId && poSaved.current.value === value) return poSaving.current;
+    poSaved.current = { id: checkoutId, value };
+    poSaving.current = apiSetB2BPoNumber(checkoutId, value).then(() => undefined).catch(() => { poSaved.current = { id: undefined, value: '' }; });
+    return poSaving.current;
+  }, [checkoutId, poEdit]);
+  useEffect(() => {
+    if (!b2b || !poEdit) return;
+    const t = setTimeout(() => { void savePo(); }, 600);
+    return () => clearTimeout(t);
+  }, [b2b, poEdit, savePo]);
+
   const [chosenKey, setChosenKey] = useState<string | null>(null);
   const selected: PayOption | null = resolveSelected(options, chosenKey);
   const [walletAccount, setWalletAccount] = useState('');
@@ -92,7 +114,7 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
   const guarded = async (name: string, fn: () => Promise<void>) => {
     if (lock.current) return;
     lock.current = true; staysLocked.current = false; setBusy(true); setError(null);
-    try { await fn(); }
+    try { await savePo(); await fn(); }
     catch (err) { delete keys.current[name]; fail(err, ts('pg.something_went_wrong_please_try_again', 'Something went wrong. Please try again.')); }
     finally { if (!staysLocked.current) { lock.current = false; setBusy(false); } }
   };
@@ -101,6 +123,13 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
     if (!checkoutId) return;
     const res = await placeCodOrderOnce(checkoutId, attemptKey('cod'));
     onOrdersPlaced(res.data.orders);
+  });
+
+  const placeTerms = () => guarded('terms', async () => {
+    if (!checkoutId) return;
+    const res = await placeTermsOrderOnce(checkoutId, attemptKey('terms'));
+    // Placed on payment terms: unpaid until the seller records the company's payments.
+    onOrdersPlaced(res.data.orders.map(o => ({ ...o, isPaid: false, paymentMethod: 'b2b_terms' })));
   });
 
   const placeManual = (methodId: string) => guarded(`manual-${methodId}`, async () => {
@@ -145,6 +174,7 @@ export function useCheckoutPayment({ checkout, allowed, creditCoversAll, onOrder
     card: { loading: cardLoading, secret: cardView?.secret ?? null, amount: cardView?.amount ?? null, error: cardView?.error ?? null },
     onCardConfirmed, retryCard, poll,
     busy: busy || redirecting, redirecting, error, clearError: () => setError(null), reportError: fail,
-    placeCod, placeManual, payWithGateway,
+    placeCod, placeManual, placeTerms, payWithGateway,
+    b2b: b2b ? { companyName: b2b.companyName, termsLabel: termsText(b2b.paymentTerms), poNumber, setPoNumber: (v: string) => setPoEdit({ id: checkoutId, value: v }) } : null,
   };
 }
