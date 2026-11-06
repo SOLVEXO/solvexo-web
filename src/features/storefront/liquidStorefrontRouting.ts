@@ -1,7 +1,7 @@
 const nativeRoutes = new Set([
   '/checkout', '/login', '/register', '/verify-otp', '/forgot-password', '/new-password',
   '/account', '/wishlist', '/loyalty', '/messages', '/notifications', '/faqs',
-  '/returns', '/library', '/memberships', '/licenses', '/learn', '/gift-cards', '/store-credit', '/orders', '/addresses', '/reviews',
+  '/returns', '/library', '/memberships', '/licenses', '/learn', '/wholesale', '/gift-cards', '/store-credit', '/orders', '/addresses', '/reviews',
 ]);
 
 export function isLiquidStorefrontRoute(pathname: string): boolean {
@@ -12,6 +12,7 @@ export function isLiquidStorefrontRoute(pathname: string): boolean {
     && !pathname.startsWith('/orders/')
     && !pathname.startsWith('/order-status/')
     && !pathname.startsWith('/gift-cards/view/')
+    && !pathname.startsWith('/cod-confirm/')
     && !pathname.startsWith('/checkout/');
 }
 

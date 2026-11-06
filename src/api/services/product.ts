@@ -937,6 +937,13 @@ export interface SellerOrderDetailBuyer {
 }
 
 export interface SellerOrderDetail {
+  /** COD protection verdict (merchant-only). */
+  codProtection?: {
+    score: number; level: 'low' | 'medium' | 'high'; decision: 'allow' | 'confirm';
+    reasons: { code: string; label: string; points: number }[];
+    confirmation: null | { status: 'awaiting' | 'confirmed' | 'cancelled' | 'expired'; expiresAt: string; sentAt: string | null; channels: string[]; resolvedAt: string | null; resolvedBy: 'customer' | 'seller' | 'system' | null };
+    override: null | { by: string; at: string; note: string | null };
+  } | null;
   orderId:         string;
   orderNumber:     string;
   createdAt:       string;

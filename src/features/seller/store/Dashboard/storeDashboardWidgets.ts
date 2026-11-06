@@ -48,6 +48,10 @@ export const STORE_WIDGET_DEFS: StoreWidgetDef[] = [
     settings: [{ key: 'limit', label: 'Products shown', options: LIMIT_OPTIONS }], defaultSettings: { limit: 5 },
   },
   {
+    id: 'cod_protection', title: 'COD protection', category: 'Operations', perm: 'orders.view', description: 'How many cash-on-delivery orders customers confirm, how many parcels come back, and the value of orders that were never shipped.', sizes: ['third', 'medium'], defaultSize: 'third',
+    settings: [{ key: 'range', label: 'Period', options: RANGE_OPTIONS }], defaultSettings: { range: '30d' },
+  },
+  {
     id: 'traffic_sources', title: 'Traffic sources', category: 'Marketing', perm: 'analytics.view', description: 'Where your orders come from: search, social, email, paid and more.', sizes: ['third', 'medium', 'large'], defaultSize: 'medium',
     settings: [{ key: 'range', label: 'Period', options: RANGE_OPTIONS }], defaultSettings: { range: '30d' },
   },

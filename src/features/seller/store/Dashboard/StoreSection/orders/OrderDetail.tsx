@@ -24,6 +24,7 @@ import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { OrderTimelineCard } from './OrderTimelineCard';
 import { OrderNotesCard } from './OrderNotesCard';
+import { CodRiskCard } from './CodRiskCard';
 import { DigitalAccessCard } from './DigitalAccessCard';
 import { EditOrderModal } from './EditOrderModal';
 import { ExchangeModal } from './ExchangeModal';
@@ -773,6 +774,8 @@ export function StoreOrderDetail() {
                 <p className="text-[13px] text-ink whitespace-pre-line m-0">{detail.customerNote}</p>
               </Card>
             )}
+
+            {detail.codProtection && <CodRiskCard storeId={storeId} orderId={orderId} cod={detail.codProtection} onChanged={load} />}
 
             <OrderNotesCard
               storeId={storeId}

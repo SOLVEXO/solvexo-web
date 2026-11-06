@@ -31,6 +31,7 @@ import { useDashboardLayout } from '@/components/comman/dashboard/useDashboardLa
 import type { DashboardWidgetDef, LayoutWidget } from '@/components/comman/dashboard/dashboardTypes';
 import { STORE_WIDGET_DEFS, STORE_PRESETS, buildDefaultWidgets, type StoreWidgetDef } from './storeDashboardWidgets';
 import { TrafficSourcesCard } from './TrafficSourcesCard';
+import { CodProtectionCard } from './CodProtectionCard';
 import { can, isStaffSession } from '@/hooks/auth/useCan';
 import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
@@ -1054,6 +1055,7 @@ export default function StoreDashboard() {
       case 'recent_orders':   return <RecentOrdersCard storeId={storeId} currency={currency} limit={limit} />;
       case 'top_products':    return <TopProductsCard storeId={storeId} currency={currency} limit={limit} />;
       case 'traffic_sources': return <TrafficSourcesCard storeId={storeId} range={range} />;
+      case 'cod_protection': return <CodProtectionCard storeId={storeId} range={range} />;
       default: return null; // a widget id this build no longer knows: never crash the dashboard over it
     }
   };
