@@ -141,7 +141,10 @@ function injectGoogleGtag(analyticsId: string | null, adsId: string | null): voi
   document.head.appendChild(script);
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function gtag(...args: unknown[]) { window.dataLayer!.push(args); };
+  // gtag.js only reads queued commands pushed as the function's own `arguments` object (Google's snippet:
+  // `function gtag(){dataLayer.push(arguments);}`). A rest-parameter array is silently ignored, so no hit is ever sent.
+  // eslint-disable-next-line prefer-rest-params
+  window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments); };
   window.gtag('js', new Date());
   if (analyticsId) window.gtag('config', analyticsId, { send_page_view: false });
   if (adsId) window.gtag('config', adsId);
