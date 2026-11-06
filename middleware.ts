@@ -18,6 +18,11 @@ export default function middleware(request: Request) {
     target.searchParams.set('host', hostname);
     return rewrite(target);
   }
+  // The seller panel, super admin and staging hosts are private apps: keep every search engine out.
+  // (The public site's own robots.txt and sitemap.xml are static files from the build.)
+  if (pathname === '/robots.txt' && hostname && isPlatformHost(hostname) && !PLATFORM_HOSTS.has(hostname)) {
+    return new Response('User-agent: *\nDisallow: /\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+  }
   const toCountry = countryRedirect(request, hostname, pathname);
   if (toCountry) return toCountry;
   if (pathname.startsWith('/_solvexo/')) return next(); // platform marker script — must never be rewritten to the HTML shell

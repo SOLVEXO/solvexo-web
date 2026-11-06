@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
@@ -13,7 +12,6 @@ import { SOLUTIONS } from '@/features/buyer/data/solutions';
 
 export function SolutionsOverviewPage() {
   usePageTitle('Solutions');
-  const navigate = useNavigate();
   const sellEntry = useSellEntry();
 
   return (
@@ -37,7 +35,7 @@ export function SolutionsOverviewPage() {
           return (
             <PremiumCard
               key={s.slug}
-              onClick={() => navigate(`/solutions/${s.slug}`)}
+              to={`/solutions/${s.slug}`}
               className={spotlight ? 'group overflow-hidden p-0 sm:col-span-2 lg:col-span-2' : 'group overflow-hidden p-0'}
             >
               <div className={spotlight ? 'grid sm:grid-cols-2 items-stretch' : ''}>

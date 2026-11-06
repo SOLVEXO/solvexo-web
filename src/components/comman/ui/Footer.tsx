@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { countryFromPathname, switchCountryPath } from '@/utils/countryPrefix';
 import { clsx } from 'clsx';
@@ -192,8 +192,11 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
         {links.map(link => (
           <li key={link.label}>
             {link.path ? (
-              <button
-                onClick={() => navigate(link.path!)}
+              // A real link (search engines follow <a href>, not click handlers); `navigate` still runs for special
+              // destinations such as /onboard, which goes through the sign-up entry.
+              <Link
+                to={link.path}
+                onClick={e => { if (link.path === '/onboard') { e.preventDefault(); navigate(link.path); } }}
                 className="group inline-flex items-center gap-1 min-h-11 sm:min-h-0 text-[12.5px] text-[#b0aea8] hover:text-white transition-colors duration-200 bg-transparent border-none p-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
               >
                 <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">{link.label}</span>
@@ -201,7 +204,7 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
                   size={12}
                   className="text-brand-orange opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0"
                 />
-              </button>
+              </Link>
             ) : (
               <span className="inline-flex items-center min-h-11 sm:min-h-0 text-[12.5px] text-[#5e5c58] cursor-default">{link.label}</span>
             )}
