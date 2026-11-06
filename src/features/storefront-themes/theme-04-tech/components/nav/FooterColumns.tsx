@@ -9,6 +9,7 @@ import { localizeMenuItemLabel } from '@/utils/localize';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import type { Block } from '@/api/services/storefrontTypes';
 import { NavAnchor } from '../../../navigation/NavAnchor';
+import { socialHref, hasSocialTarget } from '../../../navigation/socialLinks';
 import { readFooterOptions, visibleFooterBlocks, footerColumnFlex, FOOTER_COLUMN_TYPES } from '../../../navigation/headerOptions';
 import { SocialIcon, FooterContact, socialBrandColor } from './FooterParts';
 
@@ -135,7 +136,7 @@ export function SocialRow({ socials, k, look, center, color, customColor, filled
             }
             : { color: tone ?? k.fg, width: boxSize, height: boxSize, borderRadius: radius, background: `color-mix(in srgb, ${tone ?? k.fg} ${tone ? 16 : 10}%, transparent)` };
         return (
-          <a key={b._id ?? i} href={b.settings.url as string} target="_blank" rel="noopener noreferrer" aria-label={platform}
+          <a key={b._id ?? i} href={socialHref(b.settings) ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={platform}
             className="grid place-items-center transition-opacity hover:opacity-70" style={box}>
             <SocialIcon platform={platform} size={glyph} />
           </a>
@@ -154,7 +155,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
   const footer = theme?.footer;
   const opts = readFooterOptions(footer, k.blogLabel);
   const blocks = visibleFooterBlocks(footer);
-  const socials = blocks.filter(b => b.type === 'social_link');
+  const socials = blocks.filter(b => b.type === 'social_link' && hasSocialTarget(b));
   const hasColumnBlocks = blocks.some(b => b.type === 'footer_column');
   const footerLogo = opts.logoSource === 'store' ? store.logo : opts.logoSource === 'custom' ? opts.logoUrl : null;
   const center = opts.align === 'center';

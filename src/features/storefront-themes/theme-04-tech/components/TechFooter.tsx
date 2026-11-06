@@ -8,6 +8,8 @@ import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../n
 import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from './nav/FooterColumns';
 import { PaymentBadges } from './nav/FooterParts';
 import { TechLocaleControls } from './TechLocaleControls';
+import { BackToTop } from '../../navigation/HeaderExtras';
+import { hasSocialTarget } from '../../navigation/socialLinks';
 import { techTheme as t } from '../theme.config';
 import { TechSectionRenderer } from '../sections';
 
@@ -29,7 +31,7 @@ export function TechFooter() {
   const line = `color-mix(in srgb, ${fg} 18%, transparent)`;
   const blocks = visibleFooterBlocks(theme?.footer);
   const copyright = blocks.find(b => b.type === 'copyright_text')?.settings.text as string | undefined;
-  const bottomSocials = blocks.some(b => b.type === 'footer_brand') ? [] : blocks.filter(b => b.type === 'social_link');
+  const bottomSocials = blocks.some(b => b.type === 'footer_brand') ? [] : blocks.filter(b => b.type === 'social_link' && hasSocialTarget(b));
   const paymentIcons = blocks.filter(b => b.type === 'footer_payment_icons').flatMap(b => (Array.isArray(b.settings?.icons) ? b.settings.icons as string[] : []));
   const legal = [...pages.filter(p => p.showInFooter && !p.policyType), ...(opts.showPolicyLinks ? pages.filter(p => p.policyType) : [])];
 
@@ -57,6 +59,7 @@ export function TechFooter() {
             <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
               {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
               {opts.showCurrency && <TechLocaleControls />}
+              {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
             </nav>
             <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>
           </div>

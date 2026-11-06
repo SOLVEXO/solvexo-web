@@ -1,4 +1,5 @@
-﻿import { Link } from 'react-router-dom';
+﻿import { socialHref, hasSocialTarget } from './socialLinks';
+import { Link } from 'react-router-dom';
 import { useContentLocale } from '@/features/storefront/storefrontMarket';
 import { localizeMenuItemLabel } from '@/utils/localize';
 import { useTranslation } from 'react-i18next';
@@ -94,7 +95,7 @@ export function SocialRow({ socials, k, look, center }: { socials: Block[]; k: P
   return (
     <div className={`flex items-center gap-3 flex-wrap ${center ? 'justify-center' : ''}`} style={{ marginTop: '16px' }}>
       {socials.map((b, i) => (
-        <a key={b._id ?? i} href={b.settings.url as string} target="_blank" rel="noopener noreferrer" aria-label={b.settings.platform as string}
+        <a key={b._id ?? i} href={socialHref(b.settings) ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={b.settings.platform as string}
           className="flex items-center justify-center transition-opacity hover:opacity-75" style={box}>
           <SocialIcon platform={b.settings.platform as string} size={style === 'plain' ? 17 : 15} />
         </a>
@@ -112,7 +113,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
   const footer = theme?.footer;
   const opts = readFooterOptions(footer, k.blogLabel);
   const blocks = visibleFooterBlocks(footer);
-  const socials = blocks.filter(b => b.type === 'social_link');
+  const socials = blocks.filter(b => b.type === 'social_link' && hasSocialTarget(b));
   const hasColumnBlocks = blocks.some(b => b.type === 'footer_column');
   const footerLogo = opts.logoSource === 'store' ? store.logo : opts.logoSource === 'custom' ? opts.logoUrl : null;
   const center = opts.align === 'center';

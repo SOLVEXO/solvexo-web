@@ -9,6 +9,7 @@ import { fashionTheme as t } from '../theme.config';
 import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from './nav/FooterColumns';
 import { FashionLocaleControls } from './FashionLocaleControls';
 import { BackToTop } from './nav/HeaderExtras';
+import { hasSocialTarget } from '../../navigation/socialLinks';
 import { PaymentBadges } from './nav/FooterParts';
 import { FashionSectionRenderer } from '../sections';
 import { EditableText, useInlineEditActive } from '../../inlineEdit';
@@ -32,7 +33,7 @@ export function FashionFooter() {
   const copyright = copyrightBlock?.settings.text as string | undefined;
   // Social icons live in the Brand block; with no Brand block they go in the bottom bar so they never vanish.
   const footerBlocks = visibleFooterBlocks(theme?.footer);
-  const bottomSocials = footerBlocks.some(b => b.type === 'footer_brand') ? [] : footerBlocks.filter(b => b.type === 'social_link');
+  const bottomSocials = footerBlocks.some(b => b.type === 'footer_brand') ? [] : footerBlocks.filter(b => b.type === 'social_link' && hasSocialTarget(b));
   const paymentIcons = footerBlocks.filter(b => b.type === 'footer_payment_icons').flatMap(b => (Array.isArray(b.settings?.icons) ? b.settings.icons as string[] : []));
   const editing = useInlineEditActive();
   const legal = [...pages.filter(p => p.showInFooter && !p.policyType), ...(opts.showPolicyLinks ? pages.filter(p => p.policyType) : [])];

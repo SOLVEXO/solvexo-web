@@ -389,7 +389,7 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
         {can('policyLinks') && (
           <SwitchRow label="Policy links" hint="Links to your Privacy, Refund, Shipping and Terms pages." checked={footer.showPolicyLinks !== false} onChange={v => set({ showPolicyLinks: v })} />
         )}
-        {can('currency') && <SwitchRow label="Currency selector" checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />}
+        {can('currency') && <SwitchRow label="Country / currency selector" hint="Shows only when you have 2 or more countries in Markets. The currency follows the country." checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />}
         {can('backToTop') && <SwitchRow label="“Back to top” link" checked={footer.showBackToTop === true} onChange={v => set({ showBackToTop: v })} />}
         <p className="text-[10.5px] text-slate">Copyright and payment icons are blocks — add or edit them in Footer blocks.</p>
       </Group>
