@@ -10,6 +10,7 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { displayMoney, displayMoneyLine, displayMoneySum, type MoneyLine } from '../../../core/money';
 import { cartLineRules, cartQtyHint, stepQty } from '../../../sellingRules';
+import { cartLineNotes } from '../../../core/merchandising/purchaseNotes';
 import { CartDrawerContext } from '../../../cartDrawerContext';
 import { fashionTheme as t } from '../../theme.config';
 import { useDialogFocus } from '../../../core/hooks/useDialogFocus';
@@ -139,6 +140,8 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                       {(item.options?.length ?? 0) > 0 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{item.options?.map(o => o.value).join(' / ')}</p>}
                       {item.quantity > 1 && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{unit} {ts('cart.each', 'each')}</p>}
                       {hint && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
+                      {item.isBundle && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{tr('product.bundleBadge', 'Bundle')}</p>}
+                      {cartLineNotes(item).preorder && <p role="status" className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{cartLineNotes(item).preorder}</p>}
                       {item.unavailable && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
                       {item.type === 'digital' && (
                         <span className="inline-flex items-center gap-1 self-start rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: t.colors.bgAlt, color: t.colors.inkMuted }}>

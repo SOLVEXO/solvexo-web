@@ -119,7 +119,8 @@ function MiniCart({ onClose }: { onClose: () => void }) {
                 <div className="min-w-0 flex-1">
                   <p className="m-0 line-clamp-2 text-xs font-medium leading-snug">{i.name}</p>
                   <p className="m-0 mt-1 text-xs font-semibold">{displayMoney(conv, unit(i) * i.quantity, i.currency ?? base, { productId: i.productId, variantId: i.productVariantId })}</p>
-                  {cartLineNotes(i).preorder && <p role="status" className="m-0 text-[11px]" style={{ color: t.colors.inkMuted }}>{cartLineNotes(i).preorder}</p>}
+                  {i.isBundle && <p className="m-0 text-[11px]" style={{ color: t.colors.inkMuted }}>{ts('product.bundleBadge', 'Bundle')}</p>}
+                  {cartLineNotes(i).preorder &&<p role="status" className="m-0 text-[11px]" style={{ color: t.colors.inkMuted }}>{cartLineNotes(i).preorder}</p>}
                   {i.unavailable && <p role="alert" className="m-0 text-[11px]" style={{ color: t.colors.danger }}>{ts('cart.itemUnavailableShort', 'No longer available')}</p>}
                 </div>
                 <button type="button" onClick={() => remove(i.productId, i.productVariantId)} disabled={busy === i.productVariantId} aria-label={ts('cart.removeItem', 'Remove {{name}}', { name: i.name })} className="tx-icon-btn disabled:opacity-40"><X size={14} aria-hidden /></button>
