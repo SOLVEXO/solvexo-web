@@ -1120,6 +1120,8 @@ export const ENDPOINTS = {
     BROWSE: (storeId: string) => `/api/media-library/${storeId}`,
     UPLOAD: (storeId: string) => `/api/media-library/${storeId}/upload`,
     UPLOAD_FROM_URL: (storeId: string) => `/api/media-library/${storeId}/upload-from-url`,
+    UPLOAD_SIGNATURE: (storeId: string) => `/api/media-library/${storeId}/upload-signature`,
+    REGISTER_UPLOAD: (storeId: string) => `/api/media-library/${storeId}/register-upload`,
     UPDATE: (storeId: string, assetId: string) => `/api/media-library/${storeId}/${assetId}`,
     USAGE: (storeId: string, assetId: string) => `/api/media-library/${storeId}/${assetId}/usage`,
     DELETE: (storeId: string, assetId: string, force?: boolean) => `/api/media-library/${storeId}/${assetId}${force ? '?force=true' : ''}`,

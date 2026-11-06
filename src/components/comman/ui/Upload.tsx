@@ -7,6 +7,7 @@ import {
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useUpload } from '@/hooks/upload/useUpload';
+import { isNetworkError } from '@/api/client';
 import type { PrivateUploadData } from '@/api/upload';
 import { apiUploadMediaAsset, apiUploadMediaAssetFromUrl } from '@/api/services/mediaLibrary';
 
@@ -17,6 +18,34 @@ export type { PrivateUploadData };
 // that happens to render a plain logo/product-image uploader.
 /** Matches the backend image ceiling (upload-file-validation.ts). */
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
+/** Shrinks big photos in the browser before upload (phone photos are 3–8 MB;
+ *  the storefront never shows more than ~2560px). Falls back to the original
+ *  file on any problem, and never touches gif/svg/small files. */
+async function compressImage(file: File): Promise<File> {
+  try {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 500 * 1024) return file;
+    const bitmap = await createImageBitmap(file);
+    const MAX = 2000;
+    const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    // Keep PNG/WebP transparency; photos (jpeg) stay jpeg.
+    const type = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
+    const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, type, 0.8));
+    if (!blob || blob.size >= file.size) return file;
+    const ext = type === 'image/jpeg' ? 'jpg' : 'webp';
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.' + ext, { type });
+  } catch {
+    return file;
+  }
+}
 
 const MediaLibraryPickerModal = lazy(() =>
   import('@/features/seller/store/Dashboard/OnlineStore/builder/MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })),
@@ -101,10 +130,20 @@ export function ImageUpload({
     else onChange([...value, url].slice(0, maxFiles));
   };
 
-  const uploadOne = (file: File): Promise<string> =>
-    storeId
+  const uploadOne = async (original: File): Promise<string> => {
+    const file = await compressImage(original);
+    const send = () => storeId
       ? apiUploadMediaAsset(storeId, file).then(res => res.data.url)
       : upload(file).then(data => data.url);
+    // A dropped connection ("Network Error") is transient — retry twice before giving up.
+    for (let attempt = 0; ; attempt++) {
+      try { return await send(); }
+      catch (e) {
+        if (attempt >= 2 || !isNetworkError(e)) throw e;
+        await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+  };
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files ?? []);
@@ -134,9 +173,20 @@ export function ImageUpload({
     if (files.length === 0) return;
 
     setBatchUploading(true);
-    // Uploaded in parallel; results are applied in the order the files were
-    // picked, and one failed file doesn't drop the others.
-    Promise.allSettled(files.map(uploadOne))
+    // Uploaded 2 at a time (firing all 5 at once split the bandwidth so thin
+    // that every request hit the timeout); results keep the picked order and
+    // one failed file doesn't drop the others.
+    const CONCURRENCY = 2;
+    const settled: PromiseSettledResult<string>[] = new Array(files.length);
+    let next = 0;
+    const worker = async () => {
+      while (next < files.length) {
+        const i = next++;
+        try { settled[i] = { status: 'fulfilled', value: await uploadOne(files[i]) }; }
+        catch (reason) { settled[i] = { status: 'rejected', reason }; }
+      }
+    };
+    Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker)).then(() => settled)
       .then(results => {
         const urls = results.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []));
         const failed = results.length - urls.length;

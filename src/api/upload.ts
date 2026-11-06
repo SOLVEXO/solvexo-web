@@ -27,7 +27,7 @@ export function apiUploadPublicFile(file: File) {
 /** The "paste an image URL" alternative to `apiUploadPublicFile` — re-hosts
  *  the pasted URL through Cloudinary server-side, same response shape. */
 export function apiUploadFromUrl(url: string) {
-  return client.post<never, UploadApiResponse<PublicUploadData>>(ENDPOINTS.UPLOAD.FROM_URL, { url });
+  return client.post<never, UploadApiResponse<PublicUploadData>>(ENDPOINTS.UPLOAD.FROM_URL, { url }, { timeout: 120_000 });
 }
 
 /** `purpose` scopes the private storage folder server-side (e.g. 'kyc_document'

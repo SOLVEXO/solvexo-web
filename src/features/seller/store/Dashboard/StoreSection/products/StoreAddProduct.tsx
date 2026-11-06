@@ -361,7 +361,7 @@ export default function StoreAddProduct() {
 
           {/* Product Images */}
           <Card title="Product Images">
-            <p className="text-[12px] text-slate mb-3">Upload up to 5 images — select several at once. First image is the cover shown to buyers; drag images to reorder.</p>
+            <p className="text-[12px] text-slate mb-3">Upload up to 5 images (JPG, PNG or WebP, max 20 MB each) — select several at once. First image is the cover shown to buyers; drag images to reorder.</p>
             <ImageUpload
               value={cur.images}
               onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
