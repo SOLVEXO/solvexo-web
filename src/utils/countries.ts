@@ -1,4 +1,4 @@
-import { getCountries } from 'react-phone-number-input';
+import { COUNTRY_CODES } from './countryCodes';
 
 // A single, real, canonical country list shared by every "pick a country"
 // field in the app (buyer checkout address, seller shipping-zone country) —
@@ -16,7 +16,7 @@ export interface CountryOption {
   name: string; // English display name, e.g. 'Pakistan'
 }
 
-export const COUNTRY_OPTIONS: CountryOption[] = getCountries()
+export const COUNTRY_OPTIONS: CountryOption[] = [...COUNTRY_CODES]
   .map(code => {
     let name: string = code;
     try { name = regionNames.of(code) ?? code; } catch { /* unrecognized code, fall back to the raw code */ }

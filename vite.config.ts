@@ -46,11 +46,11 @@ export default defineConfig({
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return undefined;
           const pkg = id.split('node_modules/').pop()?.split('/')[0] ?? '';
-          const scoped = id.split('node_modules/').pop()?.split('/').slice(0, 2).join('/') ?? '';
           if (['react', 'react-dom', 'react-router', 'react-router-dom', 'scheduler'].includes(pkg)) return 'vendor-react';
-          if (pkg === 'recharts' || pkg.startsWith('d3-') || pkg === 'victory-vendor') return 'vendor-charts';
+          // Charts and Stripe are NOT grouped here any more: a named group also captured small shared pieces the
+          // public pages need (part of React, prop-types), so the whole charts and Stripe bundles downloaded with the
+          // home page. Left alone, the bundler keeps them in the lazy chunks of the dashboard and checkout pages.
           if (['socket.io-client', 'engine.io-client', 'socket.io-parser'].includes(pkg)) return 'vendor-socket';
-          if (scoped.startsWith('@stripe/')) return 'vendor-stripe';
           return undefined;
         },
       },

@@ -29,8 +29,9 @@ describe('storefront locale bundles', () => {
 
 describe('runtime lookup', () => {
   it('serves Urdu, plurals and copy defaults, and falls back to the English default', async () => {
-    const { default: i18n } = await import('./index');
+    const { default: i18n, ensureBundle } = await import('./index');
     const { tCopyDefault, ts } = await import('@/utils/tStatic');
+    await ensureBundle('ur'); // Urdu storefront text loads on demand, as in the app
     await i18n.changeLanguage('ur');
     expect(ts('cart.checkout', 'Checkout')).toBe(ur.cart.checkout);
     expect(tCopyDefault('Add to Cart')).toBe('کارٹ میں شامل کریں');

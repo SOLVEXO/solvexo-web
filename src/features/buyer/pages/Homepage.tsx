@@ -6,7 +6,10 @@ import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { Footer, SkeletonBox } from '@/components/comman/ui';
+// Direct imports, not the '@/components/comman/ui' index: that index also re-exports the map picker, phone input and
+// chart cards, and importing it made the home page download those libraries.
+import { Footer } from '@/components/comman/ui/Footer';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import {
   ArrowRight, Store, Sparkles, Check,
   Star, BadgeCheck, Quote,
