@@ -460,8 +460,12 @@
     "sec": "秒"
   },
   "credit": {
+    "activity": "明细",
     "added": "余额已增加",
+    "amount": "金额",
     "available": "可用余额",
+    "balance": "余额",
+    "date": "日期",
     "err": {
       "load": "无法加载您的商店余额。"
     },
@@ -778,6 +782,7 @@
     },
     "goToCart": "前往购物车",
     "items": "商品",
+    "lineTotal": "合计",
     "next": "下一页",
     "noShippingAddress": "没有收货地址。",
     "none": "暂无订单",
@@ -789,7 +794,11 @@
     "pickupDetailsLater": "自提详情将由商店提供。",
     "pickupLocation": "自提点",
     "previous": "上一页",
+    "price": "价格",
+    "product": "商品",
+    "progress": "订单进度",
     "promoSavings": "含{{amount}}促销优惠",
+    "qty": "数量",
     "readyPickup": "您的订单已可自提。",
     "refundedAmount": "已退款{{amount}}",
     "requestReturn": "申请退货",
@@ -1156,6 +1165,7 @@
     "review_a_product_from_one_of_your_orders": "为您订单中的一件商品写评价。",
     "reviews_count": "评价（{{count}}）",
     "reviews_pages": "评价页面",
+    "sale": "特价",
     "save": "保存",
     "save_an_address_to_check_out_faster": "保存一个地址，更快完成结账。",
     "save_changes": "保存更改",
@@ -1445,7 +1455,8 @@
     "zoomImage": "放大图片",
     "description": "描述",
     "details": "商品详情",
-    "onSaleFrom": "特价起"
+    "onSaleFrom": "特价起",
+    "bundleBadge": "套装"
   },
   "returns": {
     "approved": "退货已批准",
@@ -1554,5 +1565,17 @@
       "directions": "获取路线",
       "title": "欢迎光临我们的展厅"
     }
+  },
+  "b2b": {
+    "apply_link": "申请批发账户",
+    "locked_apply": "价格和下单仅对已获批准的批发账户开放。请申请账户后开始采购。",
+    "locked_signin": "请使用批发账户登录以查看价格并下单。",
+    "locked_title": "仅限批发客户",
+    "place_order_on_terms": "按账期下单",
+    "po_hint": "正在为 {{company}} 下单。此编号将打印在您的订单和发票上。",
+    "po_number": "采购订单号（可选）",
+    "signin_link": "登录",
+    "terms_notice": "您的订单已提交，发票将按您的付款条款到期{{terms}}。商店会记录您的付款。",
+    "your_price": "您的批发价：每件 {{price}}"
   }
 }

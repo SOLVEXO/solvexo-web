@@ -466,8 +466,12 @@
     "sec": "Sec"
   },
   "credit": {
+    "activity": "Activité",
     "added": "Crédit ajouté",
+    "amount": "Montant",
     "available": "Solde disponible",
+    "balance": "Solde",
+    "date": "Date",
     "err": {
       "load": "Impossible de charger votre crédit boutique."
     },
@@ -788,6 +792,7 @@
     },
     "goToCart": "Aller au panier",
     "items": "Articles",
+    "lineTotal": "Total",
     "next": "Suivant",
     "noShippingAddress": "Aucune adresse de livraison.",
     "none": "Aucune commande pour l'instant",
@@ -799,7 +804,11 @@
     "pickupDetailsLater": "Les détails du retrait seront communiqués par la boutique.",
     "pickupLocation": "Point de retrait",
     "previous": "Précédent",
+    "price": "Prix",
+    "product": "Produit",
+    "progress": "Suivi de la commande",
     "promoSavings": "Dont {{amount}} d'économies promotionnelles",
+    "qty": "Qté",
     "readyPickup": "Votre commande est prête à être retirée.",
     "refundedAmount": "{{amount}} remboursé(s)",
     "requestReturn": "Demander un retour",
@@ -1176,6 +1185,7 @@
     "review_a_product_from_one_of_your_orders": "Donnez votre avis sur un produit de l'une de vos commandes.",
     "reviews_count": "Avis ({{count}})",
     "reviews_pages": "Pages d'avis",
+    "sale": "Soldes",
     "save": "Enregistrer",
     "save_an_address_to_check_out_faster": "Enregistrez une adresse pour payer plus rapidement.",
     "save_changes": "Enregistrer les modifications",
@@ -1469,7 +1479,8 @@
     "zoomImage": "Agrandir l'image",
     "description": "Description",
     "details": "Détails du produit",
-    "onSaleFrom": "En promotion à partir de"
+    "onSaleFrom": "En promotion à partir de",
+    "bundleBadge": "Lot"
   },
   "returns": {
     "approved": "Retour approuvé",
@@ -1584,5 +1595,17 @@
       "directions": "Itinéraire",
       "title": "Visitez notre showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Demander un compte grossiste",
+    "locked_apply": "Les prix et les commandes sont réservés aux comptes grossistes approuvés. Faites une demande pour commencer à acheter.",
+    "locked_signin": "Connectez-vous avec votre compte grossiste pour voir les prix et commander.",
+    "locked_title": "Réservé aux clients grossistes",
+    "place_order_on_terms": "Commander avec conditions de paiement",
+    "po_hint": "Commande pour {{company}}. Ce numéro figure sur votre commande et votre facture.",
+    "po_number": "Numéro de bon de commande (facultatif)",
+    "signin_link": "Se connecter",
+    "terms_notice": "Votre commande est passée maintenant et votre facture est due selon vos conditions de paiement{{terms}}. La boutique enregistrera vos paiements.",
+    "your_price": "Votre prix grossiste : {{price}} l'unité"
   }
 }

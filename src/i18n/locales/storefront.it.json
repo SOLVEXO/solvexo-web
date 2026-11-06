@@ -466,8 +466,12 @@
     "sec": "Sec"
   },
   "credit": {
+    "activity": "Attività",
     "added": "Credito aggiunto",
+    "amount": "Importo",
     "available": "Saldo disponibile",
+    "balance": "Saldo",
+    "date": "Data",
     "err": {
       "load": "Impossibile caricare il tuo credito del negozio."
     },
@@ -788,6 +792,7 @@
     },
     "goToCart": "Vai al carrello",
     "items": "Articoli",
+    "lineTotal": "Totale",
     "next": "Avanti",
     "noShippingAddress": "Nessun indirizzo di spedizione.",
     "none": "Ancora nessun ordine",
@@ -799,7 +804,11 @@
     "pickupDetailsLater": "I dettagli del ritiro saranno comunicati dal negozio.",
     "pickupLocation": "Punto di ritiro",
     "previous": "Indietro",
+    "price": "Prezzo",
+    "product": "Prodotto",
+    "progress": "Stato dell'ordine",
     "promoSavings": "Include {{amount}} di risparmio promozionale",
+    "qty": "Qtà",
     "readyPickup": "Il tuo ordine è pronto per il ritiro.",
     "refundedAmount": "Rimborsato {{amount}}",
     "requestReturn": "Richiedi un reso",
@@ -1176,6 +1185,7 @@
     "review_a_product_from_one_of_your_orders": "Recensisci un prodotto di uno dei tuoi ordini.",
     "reviews_count": "Recensioni ({{count}})",
     "reviews_pages": "Pagine delle recensioni",
+    "sale": "Saldi",
     "save": "Salva",
     "save_an_address_to_check_out_faster": "Salva un indirizzo per pagare più velocemente.",
     "save_changes": "Salva le modifiche",
@@ -1469,7 +1479,8 @@
     "zoomImage": "Ingrandisci l'immagine",
     "description": "Descrizione",
     "details": "Dettagli del prodotto",
-    "onSaleFrom": "In offerta da"
+    "onSaleFrom": "In offerta da",
+    "bundleBadge": "Bundle"
   },
   "returns": {
     "approved": "Reso approvato",
@@ -1584,5 +1595,17 @@
       "directions": "Indicazioni stradali",
       "title": "Visita il nostro showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Richiedi l'accesso all'ingrosso",
+    "locked_apply": "Prezzi e ordini sono riservati agli account all'ingrosso approvati. Richiedine uno per iniziare ad acquistare.",
+    "locked_signin": "Accedi con il tuo account all'ingrosso per vedere i prezzi e ordinare.",
+    "locked_title": "Solo per clienti all'ingrosso",
+    "place_order_on_terms": "Ordina con pagamento differito",
+    "po_hint": "Ordine per {{company}}. Questo numero viene stampato sull'ordine e sulla fattura.",
+    "po_number": "Numero ordine d'acquisto (facoltativo)",
+    "signin_link": "Accedi",
+    "terms_notice": "Il tuo ordine viene effettuato ora e la fattura scade secondo le tue condizioni di pagamento{{terms}}. Il negozio registrerà i tuoi pagamenti.",
+    "your_price": "Il tuo prezzo all'ingrosso: {{price}} cad."
   }
 }

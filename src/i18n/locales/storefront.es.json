@@ -466,8 +466,12 @@
     "sec": "Seg"
   },
   "credit": {
+    "activity": "Actividad",
     "added": "Crédito añadido",
+    "amount": "Importe",
     "available": "Saldo disponible",
+    "balance": "Saldo",
+    "date": "Fecha",
     "err": {
       "load": "No se pudo cargar tu crédito de la tienda."
     },
@@ -788,6 +792,7 @@
     },
     "goToCart": "Ir al carrito",
     "items": "Artículos",
+    "lineTotal": "Total",
     "next": "Siguiente",
     "noShippingAddress": "Sin dirección de envío.",
     "none": "Aún no hay pedidos",
@@ -799,7 +804,11 @@
     "pickupDetailsLater": "La tienda compartirá los detalles de recogida.",
     "pickupLocation": "Punto de recogida",
     "previous": "Anterior",
+    "price": "Precio",
+    "product": "Producto",
+    "progress": "Progreso del pedido",
     "promoSavings": "Incluye {{amount}} de ahorro promocional",
+    "qty": "Cant.",
     "readyPickup": "Tu pedido está listo para recoger.",
     "refundedAmount": "Reembolsado: {{amount}}",
     "requestReturn": "Solicitar una devolución",
@@ -1176,6 +1185,7 @@
     "review_a_product_from_one_of_your_orders": "Valora un producto de uno de tus pedidos.",
     "reviews_count": "Reseñas ({{count}})",
     "reviews_pages": "Páginas de reseñas",
+    "sale": "Oferta",
     "save": "Guardar",
     "save_an_address_to_check_out_faster": "Guarda una dirección para pagar más rápido.",
     "save_changes": "Guardar cambios",
@@ -1469,7 +1479,8 @@
     "zoomImage": "Ampliar imagen",
     "description": "Descripción",
     "details": "Detalles del producto",
-    "onSaleFrom": "En oferta desde"
+    "onSaleFrom": "En oferta desde",
+    "bundleBadge": "Pack"
   },
   "returns": {
     "approved": "Devolución aprobada",
@@ -1584,5 +1595,17 @@
       "directions": "Cómo llegar",
       "title": "Visita nuestra sala de exposición"
     }
+  },
+  "b2b": {
+    "apply_link": "Solicitar cuenta mayorista",
+    "locked_apply": "Los precios y los pedidos son para cuentas mayoristas aprobadas. Solicita una para empezar a comprar.",
+    "locked_signin": "Inicia sesión con tu cuenta mayorista para ver los precios y hacer pedidos.",
+    "locked_title": "Solo para clientes mayoristas",
+    "place_order_on_terms": "Hacer pedido con condiciones de pago",
+    "po_hint": "Pedido para {{company}}. Este número se imprime en tu pedido y en tu factura.",
+    "po_number": "Número de orden de compra (opcional)",
+    "signin_link": "Iniciar sesión",
+    "terms_notice": "Tu pedido se realiza ahora y tu factura vence según tus condiciones de pago{{terms}}. La tienda registrará tus pagos.",
+    "your_price": "Tu precio mayorista: {{price}} cada uno"
   }
 }

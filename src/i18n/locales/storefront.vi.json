@@ -460,8 +460,12 @@
     "sec": "Giây"
   },
   "credit": {
+    "activity": "Hoạt động",
     "added": "Đã cộng số dư",
+    "amount": "Số tiền",
     "available": "Số dư khả dụng",
+    "balance": "Số dư",
+    "date": "Ngày",
     "err": {
       "load": "Không thể tải số dư cửa hàng của bạn."
     },
@@ -778,6 +782,7 @@
     },
     "goToCart": "Đến giỏ hàng",
     "items": "Sản phẩm",
+    "lineTotal": "Tổng",
     "next": "Tiếp",
     "noShippingAddress": "Không có địa chỉ giao hàng.",
     "none": "Chưa có đơn hàng",
@@ -789,7 +794,11 @@
     "pickupDetailsLater": "Cửa hàng sẽ chia sẻ chi tiết nhận hàng.",
     "pickupLocation": "Điểm nhận hàng",
     "previous": "Trước",
+    "price": "Giá",
+    "product": "Sản phẩm",
+    "progress": "Tiến trình đơn hàng",
     "promoSavings": "Đã bao gồm {{amount}} tiết kiệm từ khuyến mãi",
+    "qty": "SL",
     "readyPickup": "Đơn hàng của bạn đã sẵn sàng để nhận.",
     "refundedAmount": "Đã hoàn {{amount}}",
     "requestReturn": "Yêu cầu trả hàng",
@@ -1156,6 +1165,7 @@
     "review_a_product_from_one_of_your_orders": "Đánh giá một sản phẩm từ một trong các đơn hàng của bạn.",
     "reviews_count": "Đánh giá ({{count}})",
     "reviews_pages": "Trang đánh giá",
+    "sale": "Giảm giá",
     "save": "Lưu",
     "save_an_address_to_check_out_faster": "Lưu một địa chỉ để thanh toán nhanh hơn.",
     "save_changes": "Lưu thay đổi",
@@ -1445,7 +1455,8 @@
     "zoomImage": "Phóng to hình ảnh",
     "description": "Mô tả",
     "details": "Chi tiết sản phẩm",
-    "onSaleFrom": "Giảm giá từ"
+    "onSaleFrom": "Giảm giá từ",
+    "bundleBadge": "Combo"
   },
   "returns": {
     "approved": "Đã duyệt trả hàng",
@@ -1554,5 +1565,17 @@
       "directions": "Chỉ đường",
       "title": "Ghé thăm showroom của chúng tôi"
     }
+  },
+  "b2b": {
+    "apply_link": "Đăng ký bán sỉ",
+    "locked_apply": "Giá và đặt hàng chỉ dành cho tài khoản bán sỉ đã được duyệt. Hãy đăng ký để bắt đầu mua hàng.",
+    "locked_signin": "Đăng nhập bằng tài khoản bán sỉ để xem giá và đặt hàng.",
+    "locked_title": "Chỉ dành cho khách hàng bán sỉ",
+    "place_order_on_terms": "Đặt hàng theo điều khoản thanh toán",
+    "po_hint": "Đặt hàng cho {{company}}. Số này sẽ được in trên đơn hàng và hóa đơn của bạn.",
+    "po_number": "Số đơn đặt hàng (không bắt buộc)",
+    "signin_link": "Đăng nhập",
+    "terms_notice": "Đơn hàng của bạn đã được đặt và hóa đơn đến hạn theo điều khoản thanh toán của bạn{{terms}}. Cửa hàng sẽ ghi nhận các khoản thanh toán của bạn.",
+    "your_price": "Giá sỉ của bạn: {{price}} mỗi sản phẩm"
   }
 }

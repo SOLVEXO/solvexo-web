@@ -463,8 +463,12 @@
     "sec": "Sec"
   },
   "credit": {
+    "activity": "Activiteit",
     "added": "Tegoed toegevoegd",
+    "amount": "Bedrag",
     "available": "Beschikbaar saldo",
+    "balance": "Saldo",
+    "date": "Datum",
     "err": {
       "load": "Je winkeltegoed kon niet worden geladen."
     },
@@ -783,6 +787,7 @@
     },
     "goToCart": "Naar winkelwagen",
     "items": "Artikelen",
+    "lineTotal": "Totaal",
     "next": "Volgende",
     "noShippingAddress": "Geen verzendadres.",
     "none": "Nog geen bestellingen",
@@ -794,7 +799,11 @@
     "pickupDetailsLater": "De winkel deelt de afhaaldetails.",
     "pickupLocation": "Afhaalpunt",
     "previous": "Vorige",
+    "price": "Prijs",
+    "product": "Product",
+    "progress": "Voortgang van de bestelling",
     "promoSavings": "Inclusief {{amount}} aan promotiekorting",
+    "qty": "Aantal",
     "readyPickup": "Je bestelling is klaar om op te halen.",
     "refundedAmount": "{{amount}} terugbetaald",
     "requestReturn": "Een retour aanvragen",
@@ -1166,6 +1175,7 @@
     "review_a_product_from_one_of_your_orders": "Beoordeel een product uit een van je bestellingen.",
     "reviews_count": "Beoordelingen ({{count}})",
     "reviews_pages": "Beoordelingspagina's",
+    "sale": "Sale",
     "save": "Opslaan",
     "save_an_address_to_check_out_faster": "Sla een adres op om sneller af te rekenen.",
     "save_changes": "Wijzigingen opslaan",
@@ -1457,7 +1467,8 @@
     "zoomImage": "Afbeelding vergroten",
     "description": "Beschrijving",
     "details": "Productdetails",
-    "onSaleFrom": "In de aanbieding vanaf"
+    "onSaleFrom": "In de aanbieding vanaf",
+    "bundleBadge": "Bundel"
   },
   "returns": {
     "approved": "Retour goedgekeurd",
@@ -1569,5 +1580,17 @@
       "directions": "Routebeschrijving",
       "title": "Bezoek onze showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Groothandelsaccount aanvragen",
+    "locked_apply": "Prijzen en bestellen zijn voor goedgekeurde groothandelsaccounts. Vraag er een aan om te beginnen met kopen.",
+    "locked_signin": "Log in met je groothandelsaccount om prijzen te zien en te bestellen.",
+    "locked_title": "Alleen voor groothandelsklanten",
+    "place_order_on_terms": "Bestel op rekening",
+    "po_hint": "Bestelling voor {{company}}. Dit nummer staat op je bestelling en factuur.",
+    "po_number": "Inkoopordernummer (optioneel)",
+    "signin_link": "Inloggen",
+    "terms_notice": "Je bestelling wordt nu geplaatst en je factuur vervalt volgens je betalingsvoorwaarden{{terms}}. De winkel registreert je betalingen.",
+    "your_price": "Jouw groothandelsprijs: {{price}} per stuk"
   }
 }

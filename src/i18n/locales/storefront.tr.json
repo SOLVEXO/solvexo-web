@@ -463,8 +463,12 @@
     "sec": "Sn"
   },
   "credit": {
+    "activity": "İşlem",
     "added": "Kredi eklendi",
+    "amount": "Tutar",
     "available": "Kullanılabilir bakiye",
+    "balance": "Bakiye",
+    "date": "Tarih",
     "err": {
       "load": "Mağaza krediniz yüklenemedi."
     },
@@ -783,6 +787,7 @@
     },
     "goToCart": "Sepete git",
     "items": "Ürünler",
+    "lineTotal": "Toplam",
     "next": "İleri",
     "noShippingAddress": "Teslimat adresi yok.",
     "none": "Henüz sipariş yok",
@@ -794,7 +799,11 @@
     "pickupDetailsLater": "Teslim alma ayrıntılarını mağaza paylaşacak.",
     "pickupLocation": "Teslim alma noktası",
     "previous": "Geri",
+    "price": "Fiyat",
+    "product": "Ürün",
+    "progress": "Sipariş durumu",
     "promoSavings": "{{amount}} tutarında promosyon tasarrufu dahildir",
+    "qty": "Adet",
     "readyPickup": "Siparişiniz teslim almaya hazır.",
     "refundedAmount": "{{amount}} iade edildi",
     "requestReturn": "İade talep et",
@@ -1166,6 +1175,7 @@
     "review_a_product_from_one_of_your_orders": "Siparişlerinizden birindeki bir ürünü değerlendirin.",
     "reviews_count": "Yorumlar ({{count}})",
     "reviews_pages": "Yorum sayfaları",
+    "sale": "İndirim",
     "save": "Kaydet",
     "save_an_address_to_check_out_faster": "Daha hızlı ödeme için bir adres kaydedin.",
     "save_changes": "Değişiklikleri kaydet",
@@ -1457,7 +1467,8 @@
     "zoomImage": "Görseli büyüt",
     "description": "Açıklama",
     "details": "Ürün ayrıntıları",
-    "onSaleFrom": "İndirimli fiyat"
+    "onSaleFrom": "İndirimli fiyat",
+    "bundleBadge": "Paket"
   },
   "returns": {
     "approved": "İade onaylandı",
@@ -1569,5 +1580,17 @@
       "directions": "Yol tarifi al",
       "title": "Showroom'umuzu ziyaret edin"
     }
+  },
+  "b2b": {
+    "apply_link": "Toptan satış için başvur",
+    "locked_apply": "Fiyatlar ve sipariş verme yalnızca onaylı toptan hesaplar içindir. Alışverişe başlamak için başvurun.",
+    "locked_signin": "Fiyatları görmek ve sipariş vermek için toptan hesabınızla giriş yapın.",
+    "locked_title": "Yalnızca toptan müşteriler için",
+    "place_order_on_terms": "Vadeli sipariş ver",
+    "po_hint": "{{company}} için sipariş veriliyor. Bu numara siparişinize ve faturanıza yazdırılır.",
+    "po_number": "Satın alma sipariş numarası (isteğe bağlı)",
+    "signin_link": "Giriş yap",
+    "terms_notice": "Siparişiniz şimdi oluşturuldu ve faturanız ödeme koşullarınıza göre vadesi gelince ödenecek{{terms}}. Mağaza ödemelerinizi kaydedecek.",
+    "your_price": "Toptan fiyatınız: adet başına {{price}}"
   }
 }

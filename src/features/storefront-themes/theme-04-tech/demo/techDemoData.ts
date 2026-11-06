@@ -12,9 +12,9 @@ const themeBlock = (_id: string, blockKey: string, settings: Record<string, unkn
 export const TECH_DEMO_SECTIONS: Section[] = [
   {
     _id: 'd-hero', type: 'theme_section', settings: { sectionKey: 'tech.hero', heading: 'Featured offers', height: 'standard', autoplay: false }, blocks: [
-      themeBlock('h1', 'tech.hero.slide', { eyebrow: 'New arrival', heading: 'Power for work and play', text: 'Add your own headline, text and product photo here.', buttonLabel: 'Shop now' }),
-      themeBlock('h2', 'tech.hero.slide', { eyebrow: 'Best seller', heading: 'Upgrade your setup', text: 'Slides can change on their own or with the arrows.', buttonLabel: 'See more' }),
-      themeBlock('h3', 'tech.hero.slide', { eyebrow: 'On sale', heading: 'Deals you will not miss', buttonLabel: 'View deals' }),
+      themeBlock('h1', 'tech.hero.slide', { eyebrow: 'New arrival', heading: 'Power for work and play', text: 'Add your own headline, text and product photo here.', buttonLabel: 'Shop now', link: { linkType: 'search' } }),
+      themeBlock('h2', 'tech.hero.slide', { eyebrow: 'Best seller', heading: 'Upgrade your setup', text: 'Slides can change on their own or with the arrows.', buttonLabel: 'See more', link: { linkType: 'search' } }),
+      themeBlock('h3', 'tech.hero.slide', { eyebrow: 'On sale', heading: 'Deals you will not miss', buttonLabel: 'View deals', link: { linkType: 'search' } }),
     ],
   },
   {
@@ -30,7 +30,7 @@ export const TECH_DEMO_SECTIONS: Section[] = [
     ],
   },
   {
-    _id: 'd-deal', type: 'theme_section', settings: { sectionKey: 'tech.deal_banner', heading: 'This week only', text: 'A short line about your best offer goes here.', buttonLabel: 'Shop now' }, blocks: [],
+    _id: 'd-deal', type: 'theme_section', settings: { sectionKey: 'tech.deal_banner', heading: 'This week only', text: 'A short line about your best offer goes here.', buttonLabel: 'Shop now', buttonLink: { linkType: 'search' } }, blocks: [],
   },
   {
     _id: 'd-specs', type: 'theme_section', settings: { sectionKey: 'tech.spec_highlights', heading: 'Built for performance', intro: 'Highlight the numbers that matter to your buyers.' }, blocks: [

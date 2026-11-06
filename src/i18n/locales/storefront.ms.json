@@ -460,8 +460,12 @@
     "sec": "Saat"
   },
   "credit": {
+    "activity": "Aktiviti",
     "added": "Kredit ditambah",
+    "amount": "Jumlah",
     "available": "Baki tersedia",
+    "balance": "Baki",
+    "date": "Tarikh",
     "err": {
       "load": "Kredit kedai anda tidak dapat dimuatkan."
     },
@@ -778,6 +782,7 @@
     },
     "goToCart": "Pergi ke troli",
     "items": "Item",
+    "lineTotal": "Jumlah",
     "next": "Seterusnya",
     "noShippingAddress": "Tiada alamat penghantaran.",
     "none": "Belum ada pesanan",
@@ -789,7 +794,11 @@
     "pickupDetailsLater": "Butiran pengambilan akan dikongsi oleh kedai.",
     "pickupLocation": "Lokasi pengambilan",
     "previous": "Sebelumnya",
+    "price": "Harga",
+    "product": "Produk",
+    "progress": "Kemajuan pesanan",
     "promoSavings": "Termasuk penjimatan promosi sebanyak {{amount}}",
+    "qty": "Kuantiti",
     "readyPickup": "Pesanan anda sedia untuk diambil.",
     "refundedAmount": "Dikembalikan {{amount}}",
     "requestReturn": "Mohon pemulangan",
@@ -1156,6 +1165,7 @@
     "review_a_product_from_one_of_your_orders": "Ulas produk daripada salah satu pesanan anda.",
     "reviews_count": "Ulasan ({{count}})",
     "reviews_pages": "Halaman ulasan",
+    "sale": "Jualan",
     "save": "Simpan",
     "save_an_address_to_check_out_faster": "Simpan alamat untuk pembayaran yang lebih pantas.",
     "save_changes": "Simpan perubahan",
@@ -1445,7 +1455,8 @@
     "zoomImage": "Besarkan imej",
     "description": "Penerangan",
     "details": "Butiran produk",
-    "onSaleFrom": "Jualan bermula dari"
+    "onSaleFrom": "Jualan bermula dari",
+    "bundleBadge": "Bundle"
   },
   "returns": {
     "approved": "Pemulangan diluluskan",
@@ -1554,5 +1565,17 @@
       "directions": "Dapatkan arah",
       "title": "Kunjungi bilik pameran kami"
     }
+  },
+  "b2b": {
+    "apply_link": "Mohon akaun borong",
+    "locked_apply": "Harga dan pesanan adalah untuk akaun borong yang diluluskan. Mohon satu untuk mula membeli.",
+    "locked_signin": "Log masuk dengan akaun borong anda untuk melihat harga dan membuat pesanan.",
+    "locked_title": "Pelanggan borong sahaja",
+    "place_order_on_terms": "Buat pesanan mengikut terma",
+    "po_hint": "Membuat pesanan untuk {{company}}. Nombor ini dicetak pada pesanan dan invois anda.",
+    "po_number": "Nombor pesanan pembelian (pilihan)",
+    "signin_link": "Log masuk",
+    "terms_notice": "Pesanan anda dibuat sekarang dan invois anda perlu dibayar mengikut terma pembayaran anda{{terms}}. Kedai akan merekodkan pembayaran anda.",
+    "your_price": "Harga borong anda: {{price}} setiap satu"
   }
 }

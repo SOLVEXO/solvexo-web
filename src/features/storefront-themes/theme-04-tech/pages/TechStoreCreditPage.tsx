@@ -8,7 +8,9 @@ import { techTheme as t } from '../theme.config';
 import { useMoney } from '../../core/hooks/useMoney';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { AccountLayout } from '../ui/techAccount';
-import { Card, EmptyState, ErrorState, SectionHeading, SkeletonBlock } from '../ui/techForm';
+import { EmptyState, ErrorState, SkeletonBlock } from '../ui/techForm';
+import { TechPanel } from '../ui/techPanels';
+import { techTd, techTh } from '../ui/techPanelStyles';
 import { STORE_CREDIT_TYPE_LABEL, formatStoreCreditDate, isStoreCreditIncrease } from '../../storeCreditUi';
 import { useLoad } from '../../core/pageHooks';
 import { Pager, RequireAccount } from './orders/OrderParts';
@@ -33,44 +35,56 @@ function StoreCredit() {
       ) : error ? (
         <ErrorState message={ts('pg.we_could_not_load_your_store_credit', 'We could not load your store credit.')} onRetry={retry} />
       ) : (
-        <div className="flex flex-col gap-8">
-          <Card tone="soft" style={{ background: t.colors.accent, color: t.colors.accentInk }}>
-            <p className="m-0 text-sm" style={{ opacity: 0.7 }}>{ts('credit.available', 'Available balance')}</p>
-            <p className="m-0 mt-1 text-[clamp(36px,6vw,56px)] font-medium leading-none tracking-tight" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
-            {data?.nextExpiry && <p className="m-0 mt-4 text-sm" style={{ opacity: 0.75 }}>{ts('pg.amount_expires_on_date', '{{amount}} expires on {{date}}', { amount: money(data.nextExpiry.amount, from), date: formatStoreCreditDate(data.nextExpiry.expiresAt) })}</p>}
-            <Link to="/cart" className="tx-btn mt-6" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.goToCart', 'Go to cart')}</Link>
-          </Card>
+        <div className="flex flex-col gap-6">
+          <div className="grid items-stretch gap-0 overflow-hidden md:grid-cols-[1fr_auto]" style={{ background: t.colors.dark, color: t.colors.darkInk, borderRadius: t.cardRadiusPx }}>
+            <div className="p-6 md:p-8">
+              <p className="m-0 text-xs font-bold uppercase" style={{ letterSpacing: '.08em', opacity: 0.7 }}>{ts('credit.available', 'Available balance')}</p>
+              <p className="m-0 mt-2 text-[clamp(34px,6vw,52px)] font-bold leading-none" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
+              {data?.nextExpiry && <p className="m-0 mt-3 text-sm" style={{ opacity: 0.75 }}>{ts('pg.amount_expires_on_date', '{{amount}} expires on {{date}}', { amount: money(data.nextExpiry.amount, from), date: formatStoreCreditDate(data.nextExpiry.expiresAt) })}</p>}
+            </div>
+            <div className="flex items-center p-6 md:p-8" style={{ background: t.colors.accent, color: t.colors.accentInk }}>
+              <Link to="/cart" className="tx-btn" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.goToCart', 'Go to cart')}</Link>
+            </div>
+          </div>
 
-          <section aria-labelledby="credit-history">
-            <SectionHeading><span id="credit-history">{ts('credit.history', 'History')}</span></SectionHeading>
+          <TechPanel title={ts('credit.history', 'History')} flush>
             {!txs || txs.items.length === 0 ? (
-              <EmptyState icon={<Wallet size={24} />} title={ts('credit.none', 'No store credit activity yet')} text={ts('pg.credit_from_refunds_or_store_will_show', 'Credit from refunds or {{store}} will show up here.', { store: store.name })} />
+              <div className="p-5"><EmptyState icon={<Wallet size={24} />} title={ts('credit.none', 'No store credit activity yet')} text={ts('pg.credit_from_refunds_or_store_will_show', 'Credit from refunds or {{store}} will show up here.', { store: store.name })} /></div>
             ) : (
               <>
-                <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                  {txs.items.map(tx => {
-                    const up = isStoreCreditIncrease(tx);
-                    const Icon = up ? ArrowDownLeft : ArrowUpRight;
-                    return (
-                      <li key={tx._id} className="flex items-center gap-4 p-4" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.cardRadiusPx }}>
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><Icon size={17} aria-hidden /></span>
-                        <div className="min-w-0 flex-1">
-                          <p className="m-0 text-[15px] font-medium">{STORE_CREDIT_TYPE_LABEL[tx.type] ?? tx.type}</p>
-                          {tx.note && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{tx.note}</p>}
-                          <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{formatStoreCreditDate(tx.createdAt)}</p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="m-0 text-[15px] font-semibold" style={{ color: up ? t.colors.success : t.colors.danger }}><span className="sr-only">{up ? ts('pg.word_added', 'Added') : ts('pg.word_used', 'Used')}{' '}</span>{up ? '+' : '-'}{money(Math.abs(tx.amount), from)}</p>
-                          <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{ts('pg.balance_amount', 'Balance {{amount}}', { amount: money(tx.balanceAfter, from) })}</p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <Pager page={page} totalPages={totalPages} onChange={setPage} />
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr>
+                        <th scope="col" style={techTh()}>{ts('credit.date', 'Date')}</th>
+                        <th scope="col" style={techTh()}>{ts('credit.activity', 'Activity')}</th>
+                        <th scope="col" style={{ ...techTh(), textAlign: 'end' }}>{ts('credit.amount', 'Amount')}</th>
+                        <th scope="col" className="max-sm:hidden" style={{ ...techTh(), textAlign: 'end' }}>{ts('credit.balance', 'Balance')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {txs.items.map(tx => {
+                        const up = isStoreCreditIncrease(tx);
+                        const Icon = up ? ArrowDownLeft : ArrowUpRight;
+                        return (
+                          <tr key={tx._id}>
+                            <td style={{ ...techTd(), whiteSpace: 'nowrap', color: t.colors.inkMuted }}>{formatStoreCreditDate(tx.createdAt)}</td>
+                            <td style={techTd()}>
+                              <span className="inline-flex items-center gap-2 font-medium"><Icon size={15} aria-hidden style={{ color: up ? t.colors.success : t.colors.danger }} />{STORE_CREDIT_TYPE_LABEL[tx.type] ?? tx.type}</span>
+                              {tx.note && <span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{tx.note}</span>}
+                            </td>
+                            <td style={{ ...techTd(), textAlign: 'end', fontWeight: 700, color: up ? t.colors.success : t.colors.danger, whiteSpace: 'nowrap' }}><span className="sr-only">{up ? ts('pg.word_added', 'Added') : ts('pg.word_used', 'Used')}{' '}</span>{up ? '+' : '-'}{money(Math.abs(tx.amount), from)}</td>
+                            <td className="max-sm:hidden" style={{ ...techTd(), textAlign: 'end', whiteSpace: 'nowrap' }}>{money(tx.balanceAfter, from)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-5 pb-4"><Pager page={page} totalPages={totalPages} onChange={setPage} /></div>
               </>
             )}
-          </section>
+          </TechPanel>
         </div>
       )}
     </AccountLayout>

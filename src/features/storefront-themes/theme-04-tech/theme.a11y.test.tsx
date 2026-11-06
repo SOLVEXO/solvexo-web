@@ -7,6 +7,8 @@ import { TechProductCard } from './components/TechProductCard';
 import { ProductDescriptionTabs } from './components/product/ProductDescriptionTabs';
 import { TechButton } from './ui/techUi';
 import { TechDialog } from './ui/techDialog';
+import { TechCard, TechFactStrip, TechPanel } from './ui/techPanels';
+import { techTd, techTh } from './ui/techPanelStyles';
 
 vi.mock('@/features/storefront/StorefrontContext', () => ({ useStorefront: () => ({ store: { storeId: 's1', baseCurrency: 'USD', lowStockThreshold: 3 } }) }));
 vi.mock('@/contexts/CartContext', () => ({ useCartContext: () => ({ addToCart: vi.fn(), adding: null }) }));
@@ -62,5 +64,21 @@ describe('Tech accessibility', () => {
     applyMerchantThemeOverrides({ themeSettings: { techProductTabs: 'accordion' } } as never);
     const accordion = render(<ProductDescriptionTabs tabs={tabs} />);
     expect(await axe(accordion.container)).toHaveNoViolations();
+  });
+
+  it('panels, fact strip and data tables have no violations', async () => {
+    const { container } = render(
+      <div>
+        <TechFactStrip items={[{ label: 'Order', value: '#1001' }, { label: 'Placed', value: 'Nov 4' }]} />
+        <TechPanel title="Items" flush>
+          <table>
+            <thead><tr><th scope="col" style={techTh()}>Product</th><th scope="col" style={techTh()}>Total</th></tr></thead>
+            <tbody><tr><td style={techTd()}>Laptop</td><td style={techTd()}>$900</td></tr></tbody>
+          </table>
+        </TechPanel>
+        <TechCard><p>A list row</p></TechCard>
+      </div>,
+    );
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

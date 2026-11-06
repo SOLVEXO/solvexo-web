@@ -16,7 +16,8 @@ import { useLoad } from '../../core/pageHooks';
 import { useRenewalInvoices } from '../../core/useRenewalInvoices';
 import { activeLocale } from '../../core/locale';
 import { AccountLayout } from '../ui/techAccount';
-import { Card, EmptyState, ErrorState, Field, Notice, PillButton, SkeletonBlock, StatusPill, TextInput } from '../ui/techForm';
+import { EmptyState, ErrorState, Field, Notice, PillButton, SkeletonBlock, StatusPill, TextInput } from '../ui/techForm';
+import { TechCard as Card } from '../ui/techPanels';
 import { RequireAccount } from './orders/OrderParts';
 
 const msg = errorMessage;

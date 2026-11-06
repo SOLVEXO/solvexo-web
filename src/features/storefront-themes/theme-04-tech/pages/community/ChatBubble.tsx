@@ -62,8 +62,8 @@ function ProductShareCard({ share }: { share: NonNullable<Message['productShare'
 export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit, onDelete, onRetry, onReact }: Props) {
   const [open, setOpen] = useState(false);
   const menuBtn = useRef<HTMLButtonElement>(null);
-  const bg = mine ? `color-mix(in srgb, ${t.colors.accent} 16%, ${t.colors.bg})` : t.colors.bg;
-  const fg = t.colors.ink;
+  const bg = mine ? t.colors.accent : t.colors.bgAlt;
+  const fg = mine ? t.colors.accentInk : t.colors.ink;
   const seen = mine && m.seenBy?.some(s => s.userId !== myId);
   const link = safeUrl(m.linkPreview?.url);
   const canAct = !m.isDeleted && !m._pending && !m._failed;
@@ -73,8 +73,8 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
   return (
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
       <div className={`group flex max-w-[85%] items-start gap-1 sm:max-w-[65%] ${mine ? 'flex-row-reverse' : ''}`}>
-        <div className="min-w-0" style={{ background: bg, color: fg, padding: '6px 9px 5px', borderRadius: t.fieldRadiusPx, borderTopRightRadius: mine ? 0 : 10, borderTopLeftRadius: mine ? 10 : 0, boxShadow: '0 1px 0.5px rgba(11,20,26,.13)', opacity: m._pending ? 0.6 : 1 }}>
-          {!mine && <p className="m-0 mb-0.5 text-[12.5px] font-semibold" style={{ color: t.colors.accent }}>{storeName}</p>}
+        <div className="min-w-0" style={{ background: bg, color: fg, padding: '8px 12px 6px', borderRadius: t.fieldRadiusPx, opacity: m._pending ? 0.6 : 1 }}>
+          {!mine && <p className="m-0 mb-0.5 text-[11px] font-bold uppercase" style={{ color: t.colors.accent, letterSpacing: '.06em' }}>{storeName}</p>}
           {m.replyTo && (
             <div className="mb-2 text-[13px]" style={{ padding: '6px 10px', borderRadius: t.fieldRadiusPx, borderLeft: `4px solid ${t.colors.accent}`, background: 'rgba(11,20,26,.06)' }}>
               <span className="block truncate opacity-80">{m.replyTo.text || messagePreview({ type: m.replyTo.type ?? 'text', text: m.replyTo.text ?? null, isDeleted: false })}</span>

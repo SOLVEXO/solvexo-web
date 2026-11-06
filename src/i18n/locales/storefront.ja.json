@@ -460,8 +460,12 @@
     "sec": "秒"
   },
   "credit": {
+    "activity": "アクティビティ",
     "added": "クレジットを追加しました",
+    "amount": "金額",
     "available": "利用可能な残高",
+    "balance": "残高",
+    "date": "日付",
     "err": {
       "load": "ショップクレジットを読み込めませんでした。"
     },
@@ -778,6 +782,7 @@
     },
     "goToCart": "カートへ",
     "items": "商品",
+    "lineTotal": "合計",
     "next": "次へ",
     "noShippingAddress": "配送先住所がありません。",
     "none": "まだ注文がありません",
@@ -789,7 +794,11 @@
     "pickupDetailsLater": "受け取りの詳細はショップからお知らせします。",
     "pickupLocation": "受け取り場所",
     "previous": "前へ",
+    "price": "価格",
+    "product": "商品",
+    "progress": "注文の進行状況",
     "promoSavings": "プロモーション割引{{amount}}を含みます",
+    "qty": "数量",
     "readyPickup": "ご注文は受け取り可能です。",
     "refundedAmount": "{{amount}}を返金済み",
     "requestReturn": "返品を申請",
@@ -1156,6 +1165,7 @@
     "review_a_product_from_one_of_your_orders": "ご注文の商品のレビューを書きましょう。",
     "reviews_count": "レビュー({{count}})",
     "reviews_pages": "レビューのページ",
+    "sale": "セール",
     "save": "保存",
     "save_an_address_to_check_out_faster": "住所を保存すると、お会計がもっとスムーズになります。",
     "save_changes": "変更を保存",
@@ -1445,7 +1455,8 @@
     "zoomImage": "画像を拡大",
     "description": "説明",
     "details": "商品詳細",
-    "onSaleFrom": "セール価格:"
+    "onSaleFrom": "セール価格:",
+    "bundleBadge": "セット"
   },
   "returns": {
     "approved": "返品が承認されました",
@@ -1554,5 +1565,17 @@
       "directions": "経路を表示",
       "title": "ショールームへお越しください"
     }
+  },
+  "b2b": {
+    "apply_link": "卸売を申し込む",
+    "locked_apply": "価格と注文は承認済みの卸売アカウント限定です。お申し込みの上、ご購入ください。",
+    "locked_signin": "卸売アカウントでログインすると、価格の確認と注文ができます。",
+    "locked_title": "卸売のお客様専用",
+    "place_order_on_terms": "支払い条件で注文する",
+    "po_hint": "{{company}}の注文です。この番号は注文書と請求書に印刷されます。",
+    "po_number": "発注書番号（任意）",
+    "signin_link": "ログイン",
+    "terms_notice": "ご注文は今すぐ確定され、請求書はお支払い条件{{terms}}に従って期日となります。お支払いはストアが記録します。",
+    "your_price": "卸売価格：1点あたり{{price}}"
   }
 }

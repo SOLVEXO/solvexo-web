@@ -460,8 +460,12 @@
     "sec": "Dtk"
   },
   "credit": {
+    "activity": "Aktivitas",
     "added": "Kredit ditambahkan",
+    "amount": "Jumlah",
     "available": "Saldo tersedia",
+    "balance": "Saldo",
+    "date": "Tanggal",
     "err": {
       "load": "Kredit toko Anda tidak dapat dimuat."
     },
@@ -778,6 +782,7 @@
     },
     "goToCart": "Ke keranjang",
     "items": "Item",
+    "lineTotal": "Total",
     "next": "Berikutnya",
     "noShippingAddress": "Tidak ada alamat pengiriman.",
     "none": "Belum ada pesanan",
@@ -789,7 +794,11 @@
     "pickupDetailsLater": "Detail pengambilan akan dibagikan oleh toko.",
     "pickupLocation": "Lokasi pengambilan",
     "previous": "Sebelumnya",
+    "price": "Harga",
+    "product": "Produk",
+    "progress": "Progres pesanan",
     "promoSavings": "Termasuk penghematan promo sebesar {{amount}}",
+    "qty": "Jml",
     "readyPickup": "Pesanan Anda siap diambil.",
     "refundedAmount": "Dikembalikan {{amount}}",
     "requestReturn": "Ajukan pengembalian",
@@ -1156,6 +1165,7 @@
     "review_a_product_from_one_of_your_orders": "Beri ulasan untuk produk dari salah satu pesanan Anda.",
     "reviews_count": "Ulasan ({{count}})",
     "reviews_pages": "Halaman ulasan",
+    "sale": "Diskon",
     "save": "Simpan",
     "save_an_address_to_check_out_faster": "Simpan alamat untuk checkout lebih cepat.",
     "save_changes": "Simpan perubahan",
@@ -1445,7 +1455,8 @@
     "zoomImage": "Perbesar gambar",
     "description": "Deskripsi",
     "details": "Detail produk",
-    "onSaleFrom": "Diskon mulai dari"
+    "onSaleFrom": "Diskon mulai dari",
+    "bundleBadge": "Paket"
   },
   "returns": {
     "approved": "Pengembalian disetujui",
@@ -1554,5 +1565,17 @@
       "directions": "Petunjuk arah",
       "title": "Kunjungi showroom kami"
     }
+  },
+  "b2b": {
+    "apply_link": "Ajukan akun grosir",
+    "locked_apply": "Harga dan pemesanan hanya untuk akun grosir yang disetujui. Ajukan akun untuk mulai membeli.",
+    "locked_signin": "Masuk dengan akun grosir Anda untuk melihat harga dan memesan.",
+    "locked_title": "Hanya untuk pelanggan grosir",
+    "place_order_on_terms": "Pesan dengan ketentuan pembayaran",
+    "po_hint": "Pemesanan untuk {{company}}. Nomor ini dicetak di pesanan dan faktur Anda.",
+    "po_number": "Nomor pesanan pembelian (opsional)",
+    "signin_link": "Masuk",
+    "terms_notice": "Pesanan Anda dibuat sekarang dan faktur jatuh tempo sesuai ketentuan pembayaran Anda{{terms}}. Toko akan mencatat pembayaran Anda.",
+    "your_price": "Harga grosir Anda: {{price}} per buah"
   }
 }

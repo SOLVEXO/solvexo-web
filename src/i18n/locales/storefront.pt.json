@@ -466,8 +466,12 @@
     "sec": "Seg"
   },
   "credit": {
+    "activity": "Atividade",
     "added": "Crédito adicionado",
+    "amount": "Valor",
     "available": "Saldo disponível",
+    "balance": "Saldo",
+    "date": "Data",
     "err": {
       "load": "Não foi possível carregar o crédito da loja."
     },
@@ -788,6 +792,7 @@
     },
     "goToCart": "Ir para o carrinho",
     "items": "Itens",
+    "lineTotal": "Total",
     "next": "Próximo",
     "noShippingAddress": "Sem endereço de entrega.",
     "none": "Ainda não há pedidos",
@@ -799,7 +804,11 @@
     "pickupDetailsLater": "Os detalhes da retirada serão informados pela loja.",
     "pickupLocation": "Ponto de retirada",
     "previous": "Anterior",
+    "price": "Preço",
+    "product": "Produto",
+    "progress": "Progresso do pedido",
     "promoSavings": "Inclui {{amount}} de economia promocional",
+    "qty": "Qtd.",
     "readyPickup": "Seu pedido está pronto para retirada.",
     "refundedAmount": "Reembolsado: {{amount}}",
     "requestReturn": "Solicitar uma devolução",
@@ -1176,6 +1185,7 @@
     "review_a_product_from_one_of_your_orders": "Avalie um produto de um dos seus pedidos.",
     "reviews_count": "Avaliações ({{count}})",
     "reviews_pages": "Páginas de avaliações",
+    "sale": "Promoção",
     "save": "Salvar",
     "save_an_address_to_check_out_faster": "Salve um endereço para finalizar a compra mais rápido.",
     "save_changes": "Salvar alterações",
@@ -1469,7 +1479,8 @@
     "zoomImage": "Ampliar imagem",
     "description": "Descrição",
     "details": "Detalhes do produto",
-    "onSaleFrom": "Em promoção a partir de"
+    "onSaleFrom": "Em promoção a partir de",
+    "bundleBadge": "Kit"
   },
   "returns": {
     "approved": "Devolução aprovada",
@@ -1584,5 +1595,17 @@
       "directions": "Como chegar",
       "title": "Visite nosso showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Candidatar-se a grossista",
+    "locked_apply": "Preços e encomendas são exclusivos de contas grossistas aprovadas. Candidate-se para começar a comprar.",
+    "locked_signin": "Inicie sessão com a sua conta grossista para ver os preços e encomendar.",
+    "locked_title": "Apenas para clientes grossistas",
+    "place_order_on_terms": "Fazer pedido com condições de pagamento",
+    "po_hint": "Pedido em nome de {{company}}. Este número é impresso no pedido e na fatura.",
+    "po_number": "Número da ordem de compra (opcional)",
+    "signin_link": "Iniciar sessão",
+    "terms_notice": "O seu pedido é feito agora e a fatura vence de acordo com as suas condições de pagamento{{terms}}. A loja registará os seus pagamentos.",
+    "your_price": "O seu preço grossista: {{price}} cada"
   }
 }

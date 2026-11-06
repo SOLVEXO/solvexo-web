@@ -6,7 +6,8 @@ import { apiGetMyOrders } from '@/api/services/orders';
 import { techTheme as t } from '../theme.config';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { AccountLayout } from '../ui/techAccount';
-import { Card, EmptyState, ErrorState, SkeletonBlock } from '../ui/techForm';
+import { EmptyState, ErrorState, SkeletonBlock } from '../ui/techForm';
+import { TechPanel } from '../ui/techPanels';
 import { formatOrderDate } from '../../orderUi';
 import { useLoad } from '../../core/pageHooks';
 import { Pager, RequireAccount } from './orders/OrderParts';
@@ -40,15 +41,13 @@ function Returns() {
               const items = order.stores.flatMap(s => s.items ?? []).filter(i => i.status !== 'cancelled');
               if (items.length === 0) return null;
               return (
-                <Card key={order.orderId} pad={false}>
-                  <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 md:px-7" style={{ background: t.colors.bgAlt, borderRadius: '20px 20px 0 0' }}>
-                    <Link to={`/orders/${order.orderId}`} className="text-[15px] font-semibold no-underline" style={{ color: t.colors.ink }}>{ts('orders.orderNumber', 'Order #{{number}}', { number: order.orderNumber })}</Link>
-                    <span className="text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(order.createdAt)}</span>
-                  </div>
-                  <ul className="m-0 list-none px-5 pb-1 md:px-7">
+                <TechPanel key={order.orderId} flush
+                  title={<Link to={`/orders/${order.orderId}`} className="no-underline" style={{ color: t.colors.ink }}>{ts('orders.orderNumber', 'Order #{{number}}', { number: order.orderNumber })}</Link>}
+                  action={<span className="text-[13px]" style={{ color: t.colors.inkMuted }}>{formatOrderDate(order.createdAt)}</span>}>
+                  <ul className="m-0 list-none px-5 pb-1">
                     {items.map(item => <ReturnItemRow key={item.itemId} orderId={order.orderId} item={item} />)}
                   </ul>
-                </Card>
+                </TechPanel>
               );
             })}
           </div>

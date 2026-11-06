@@ -460,8 +460,12 @@
     "sec": "초"
   },
   "credit": {
+    "activity": "내역",
     "added": "크레딧 추가됨",
+    "amount": "금액",
     "available": "사용 가능 잔액",
+    "balance": "잔액",
+    "date": "날짜",
     "err": {
       "load": "스토어 크레딧을 불러오지 못했습니다."
     },
@@ -778,6 +782,7 @@
     },
     "goToCart": "장바구니로 이동",
     "items": "상품",
+    "lineTotal": "합계",
     "next": "다음",
     "noShippingAddress": "배송지 주소가 없습니다.",
     "none": "아직 주문이 없습니다",
@@ -789,7 +794,11 @@
     "pickupDetailsLater": "수령 관련 세부 정보는 스토어에서 알려 드립니다.",
     "pickupLocation": "수령 장소",
     "previous": "이전",
+    "price": "가격",
+    "product": "상품",
+    "progress": "주문 진행 상황",
     "promoSavings": "프로모션 할인 {{amount}} 포함",
+    "qty": "수량",
     "readyPickup": "주문하신 상품을 수령하실 수 있습니다.",
     "refundedAmount": "{{amount}} 환불됨",
     "requestReturn": "반품 요청",
@@ -1156,6 +1165,7 @@
     "review_a_product_from_one_of_your_orders": "주문하신 상품 중 하나에 리뷰를 남겨 보세요.",
     "reviews_count": "리뷰 ({{count}})",
     "reviews_pages": "리뷰 페이지",
+    "sale": "세일",
     "save": "저장",
     "save_an_address_to_check_out_faster": "주소를 저장하면 더 빠르게 결제할 수 있습니다.",
     "save_changes": "변경 사항 저장",
@@ -1445,7 +1455,8 @@
     "zoomImage": "이미지 확대",
     "description": "설명",
     "details": "상품 상세",
-    "onSaleFrom": "할인가 시작"
+    "onSaleFrom": "할인가 시작",
+    "bundleBadge": "번들"
   },
   "returns": {
     "approved": "반품 승인됨",
@@ -1554,5 +1565,17 @@
       "directions": "길찾기",
       "title": "쇼룸을 방문하세요"
     }
+  },
+  "b2b": {
+    "apply_link": "도매 신청하기",
+    "locked_apply": "가격과 주문은 승인된 도매 계정만 이용할 수 있습니다. 신청하고 구매를 시작하세요.",
+    "locked_signin": "도매 계정으로 로그인하여 가격을 확인하고 주문하세요.",
+    "locked_title": "도매 고객 전용",
+    "place_order_on_terms": "결제 조건으로 주문하기",
+    "po_hint": "{{company}}을(를) 위한 주문입니다. 이 번호는 주문서와 청구서에 인쇄됩니다.",
+    "po_number": "구매 주문서 번호 (선택)",
+    "signin_link": "로그인",
+    "terms_notice": "주문은 지금 접수되며, 청구서는 결제 조건{{terms}}에 따라 만기가 됩니다. 결제 내역은 스토어에서 기록합니다.",
+    "your_price": "도매 가격: 개당 {{price}}"
   }
 }

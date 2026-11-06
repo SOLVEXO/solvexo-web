@@ -6,7 +6,8 @@ import { apiCreateGiftCardPurchaseIntent, type GiftCardPublicSettings } from '@/
 import { TechCardForm } from '../checkout/TechCardForm';
 import { isStripeReady } from '../../../core/checkout/stripeLoader';
 import { techTheme as t } from '../../theme.config';
-import { Card, EmptyState, Field, Notice, PillButton, TextArea, TextInput } from '../../ui/techForm';
+import { EmptyState, Field, Notice, PillButton, TextArea, TextInput } from '../../ui/techForm';
+import { TechCard as Card } from '../../ui/techPanels';
 import { nativeMoneyShort } from '../../../core/money/nativeMoney';
 import { validateGiftCard, type GiftCardErrors } from '../../../core/money/giftCardForm';
 

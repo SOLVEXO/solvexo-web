@@ -463,8 +463,12 @@
     "sec": "Sek"
   },
   "credit": {
+    "activity": "Aktivitet",
     "added": "Kredit tillagd",
+    "amount": "Belopp",
     "available": "Tillgängligt saldo",
+    "balance": "Saldo",
+    "date": "Datum",
     "err": {
       "load": "Det gick inte att ladda din butikskredit."
     },
@@ -783,6 +787,7 @@
     },
     "goToCart": "Gå till varukorgen",
     "items": "Artiklar",
+    "lineTotal": "Summa",
     "next": "Nästa",
     "noShippingAddress": "Ingen leveransadress.",
     "none": "Inga beställningar än",
@@ -794,7 +799,11 @@
     "pickupDetailsLater": "Butiken delar uppgifter om avhämtning.",
     "pickupLocation": "Utlämningsställe",
     "previous": "Föregående",
+    "price": "Pris",
+    "product": "Produkt",
+    "progress": "Orderstatus",
     "promoSavings": "Inkluderar {{amount}} i kampanjrabatt",
+    "qty": "Antal",
     "readyPickup": "Din beställning är redo för avhämtning.",
     "refundedAmount": "Återbetalat {{amount}}",
     "requestReturn": "Begär en retur",
@@ -1166,6 +1175,7 @@
     "review_a_product_from_one_of_your_orders": "Recensera en produkt från en av dina beställningar.",
     "reviews_count": "Recensioner ({{count}})",
     "reviews_pages": "Recensionssidor",
+    "sale": "Rea",
     "save": "Spara",
     "save_an_address_to_check_out_faster": "Spara en adress för att betala snabbare.",
     "save_changes": "Spara ändringar",
@@ -1457,7 +1467,8 @@
     "zoomImage": "Förstora bilden",
     "description": "Beskrivning",
     "details": "Produktinformation",
-    "onSaleFrom": "Rea från"
+    "onSaleFrom": "Rea från",
+    "bundleBadge": "Paket"
   },
   "returns": {
     "approved": "Retur godkänd",
@@ -1569,5 +1580,17 @@
       "directions": "Vägbeskrivning",
       "title": "Besök vår showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Ansök om grossistkonto",
+    "locked_apply": "Priser och beställning är endast för godkända grossistkonton. Ansök om ett för att börja handla.",
+    "locked_signin": "Logga in med ditt grossistkonto för att se priser och beställa.",
+    "locked_title": "Endast för grossistkunder",
+    "place_order_on_terms": "Lägg beställning mot faktura",
+    "po_hint": "Beställning för {{company}}. Numret skrivs ut på din order och faktura.",
+    "po_number": "Inköpsordernummer (valfritt)",
+    "signin_link": "Logga in",
+    "terms_notice": "Din beställning läggs nu och fakturan förfaller enligt dina betalningsvillkor{{terms}}. Butiken registrerar dina betalningar.",
+    "your_price": "Ditt grossistpris: {{price}} per st"
   }
 }

@@ -63,6 +63,8 @@ const STATIC_DEFAULTS = {
   megaFeatured: true,
   /** Mega menu: first-level links on the left (sub-links appear on hover), or every group as its own column. */
   megaStyle: 'sidebar' as 'sidebar' | 'columns',
+  /** Columns per row in the mega menu's column layout: 0 = one per group (up to 6). */
+  megaColumns: 0 as 0 | 3 | 4 | 5,
   /** Header layout: standard (logo + menu + icons), compact, centered (logo in the middle, menu below), search-first (wide search bar). */
   header: 'standard' as 'standard' | 'compact' | 'centered' | 'search-first',
   /** Seller-typed top bar texts (opening hours, showroom line). Empty = not shown. */
@@ -187,6 +189,7 @@ export function applyMerchantThemeOverrides(c: TechMerchantColors | null | undef
   techTheme.stickyHeader = ts?.techStickyHeader !== 'off';
   techTheme.productCardStyle = oneOf(ts?.techCardStyle, ['flat', 'outlined', 'shadow'] as const, 'flat');
   techTheme.showCardRating = baseTheme.cardRating;
+  techTheme.megaColumns = ({ '3': 3, '4': 4, '5': 5 } as Record<string, 3 | 4 | 5>)[String(ts?.techMegaColumns)] ?? 0;
   techTheme.megaStyle = oneOf(ts?.techMegaStyle, ['sidebar', 'columns'] as const, 'sidebar');
   techTheme.megaFeatured = ts?.techMegaFeatured !== 'hide';
   techTheme.header = oneOf(ts?.techHeader, ['standard', 'compact', 'centered', 'search-first'] as const, 'standard');

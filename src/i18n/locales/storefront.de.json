@@ -463,8 +463,12 @@
     "sec": "Sek."
   },
   "credit": {
+    "activity": "Aktivität",
     "added": "Guthaben hinzugefügt",
+    "amount": "Betrag",
     "available": "Verfügbares Guthaben",
+    "balance": "Guthaben",
+    "date": "Datum",
     "err": {
       "load": "Ihr Shop-Guthaben konnte nicht geladen werden."
     },
@@ -783,6 +787,7 @@
     },
     "goToCart": "Zum Warenkorb",
     "items": "Artikel",
+    "lineTotal": "Summe",
     "next": "Weiter",
     "noShippingAddress": "Keine Lieferadresse.",
     "none": "Noch keine Bestellungen",
@@ -794,7 +799,11 @@
     "pickupDetailsLater": "Die Abholdetails teilt Ihnen der Shop mit.",
     "pickupLocation": "Abholort",
     "previous": "Zurück",
+    "price": "Preis",
+    "product": "Produkt",
+    "progress": "Bestellstatus",
     "promoSavings": "Inklusive {{amount}} Werbeersparnis",
+    "qty": "Menge",
     "readyPickup": "Ihre Bestellung ist abholbereit.",
     "refundedAmount": "{{amount}} erstattet",
     "requestReturn": "Rücksendung anfordern",
@@ -1166,6 +1175,7 @@
     "review_a_product_from_one_of_your_orders": "Bewerten Sie ein Produkt aus einer Ihrer Bestellungen.",
     "reviews_count": "Bewertungen ({{count}})",
     "reviews_pages": "Bewertungsseiten",
+    "sale": "Sale",
     "save": "Speichern",
     "save_an_address_to_check_out_faster": "Speichern Sie eine Adresse, um schneller zu bezahlen.",
     "save_changes": "Änderungen speichern",
@@ -1457,7 +1467,8 @@
     "zoomImage": "Bild vergrößern",
     "description": "Beschreibung",
     "details": "Produktdetails",
-    "onSaleFrom": "Im Angebot ab"
+    "onSaleFrom": "Im Angebot ab",
+    "bundleBadge": "Bundle"
   },
   "returns": {
     "approved": "Rücksendung genehmigt",
@@ -1569,5 +1580,17 @@
       "directions": "Route anzeigen",
       "title": "Besuche unseren Showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Großhandelskonto beantragen",
+    "locked_apply": "Preise und Bestellungen sind für freigegebene Großhandelskonten. Beantrage eines, um einzukaufen.",
+    "locked_signin": "Melde dich mit deinem Großhandelskonto an, um Preise zu sehen und zu bestellen.",
+    "locked_title": "Nur für Großhandelskunden",
+    "place_order_on_terms": "Auf Rechnung bestellen",
+    "po_hint": "Bestellung für {{company}}. Diese Nummer wird auf Bestellung und Rechnung gedruckt.",
+    "po_number": "Bestellnummer (optional)",
+    "signin_link": "Anmelden",
+    "terms_notice": "Deine Bestellung wird jetzt aufgegeben, die Rechnung ist gemäß deinen Zahlungsbedingungen fällig{{terms}}. Der Shop erfasst deine Zahlungen.",
+    "your_price": "Dein Großhandelspreis: {{price}} pro Stück"
   }
 }

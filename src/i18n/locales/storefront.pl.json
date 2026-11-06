@@ -469,8 +469,12 @@
     "sec": "Sek."
   },
   "credit": {
+    "activity": "Operacja",
     "added": "Dodano kredyt",
+    "amount": "Kwota",
     "available": "Dostępne saldo",
+    "balance": "Saldo",
+    "date": "Data",
     "err": {
       "load": "Nie udało się wczytać kredytu sklepowego."
     },
@@ -793,6 +797,7 @@
     },
     "goToCart": "Przejdź do koszyka",
     "items": "Produkty",
+    "lineTotal": "Razem",
     "next": "Dalej",
     "noShippingAddress": "Brak adresu wysyłki.",
     "none": "Brak zamówień",
@@ -804,7 +809,11 @@
     "pickupDetailsLater": "Szczegóły odbioru przekaże sklep.",
     "pickupLocation": "Punkt odbioru",
     "previous": "Wstecz",
+    "price": "Cena",
+    "product": "Produkt",
+    "progress": "Postęp zamówienia",
     "promoSavings": "Zawiera {{amount}} oszczędności z promocji",
+    "qty": "Ilość",
     "readyPickup": "Twoje zamówienie jest gotowe do odbioru.",
     "refundedAmount": "Zwrócono {{amount}}",
     "requestReturn": "Poproś o zwrot",
@@ -1186,6 +1195,7 @@
     "review_a_product_from_one_of_your_orders": "Oceń produkt z jednego ze swoich zamówień.",
     "reviews_count": "Opinie ({{count}})",
     "reviews_pages": "Strony opinii",
+    "sale": "Wyprzedaż",
     "save": "Zapisz",
     "save_an_address_to_check_out_faster": "Zapisz adres, aby szybciej składać zamówienia.",
     "save_changes": "Zapisz zmiany",
@@ -1481,7 +1491,8 @@
     "zoomImage": "Powiększ obraz",
     "description": "Opis",
     "details": "Szczegóły produktu",
-    "onSaleFrom": "Promocja od"
+    "onSaleFrom": "Promocja od",
+    "bundleBadge": "Zestaw"
   },
   "returns": {
     "approved": "Zwrot zatwierdzony",
@@ -1599,5 +1610,17 @@
       "directions": "Wyznacz trasę",
       "title": "Odwiedź nasz showroom"
     }
+  },
+  "b2b": {
+    "apply_link": "Złóż wniosek o konto hurtowe",
+    "locked_apply": "Ceny i zamawianie są dostępne dla zatwierdzonych kont hurtowych. Złóż wniosek, aby zacząć kupować.",
+    "locked_signin": "Zaloguj się na konto hurtowe, aby zobaczyć ceny i zamawiać.",
+    "locked_title": "Tylko dla klientów hurtowych",
+    "place_order_on_terms": "Zamów z odroczonym terminem płatności",
+    "po_hint": "Zamówienie dla firmy {{company}}. Ten numer zostanie wydrukowany na zamówieniu i fakturze.",
+    "po_number": "Numer zamówienia zakupu (opcjonalnie)",
+    "signin_link": "Zaloguj się",
+    "terms_notice": "Twoje zamówienie zostaje złożone teraz, a termin płatności faktury wynika z Twoich warunków płatności{{terms}}. Sklep zarejestruje Twoje wpłaty.",
+    "your_price": "Twoja cena hurtowa: {{price}} za sztukę"
   }
 }

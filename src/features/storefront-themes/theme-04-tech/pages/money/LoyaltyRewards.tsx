@@ -3,7 +3,7 @@ import { ts, tsNodes } from '@/utils/tStatic';
 import { Award, Check, Copy, Gift } from 'lucide-react';
 import { apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
 import { techTheme as t } from '../../theme.config';
-import { Card, Notice, PillButton, SectionHeading } from '../../ui/techForm';
+import { Notice, PillButton, SectionHeading } from '../../ui/techForm';
 
 /** Compact loyalty view: points + tier, optional redeemed voucher, and the reward list. */
 export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string; balance: LoyaltyBalance | null; rewards: Reward[] }) {
@@ -34,16 +34,16 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
 
   return (
     <div className="flex flex-col gap-6">
-      <Card tone="soft">
+      <div className="p-6 md:p-8" style={{ background: t.colors.dark, color: t.colors.darkInk, borderRadius: t.cardRadiusPx }}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.your_balance', 'Your balance')}</p>
-            <p className="m-0 mt-1 text-4xl font-medium tracking-tight" aria-live="polite">{current.toLocaleString()} <span className="text-base font-normal" style={{ color: t.colors.inkMuted }}>{ts('pg.word_points', 'points')}</span></p>
+            <p className="m-0 text-sm" style={{ opacity: 0.72 }}>{ts('pg.your_balance', 'Your balance')}</p>
+            <p className="m-0 mt-1 text-4xl font-medium tracking-tight" aria-live="polite">{current.toLocaleString()} <span className="text-base font-normal" style={{ opacity: 0.72 }}>{ts('pg.word_points', 'points')}</span></p>
           </div>
-          {balance?.currentTier && <span className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}` }}><Award size={15} aria-hidden />{balance.currentTier}</span>}
+          {balance?.currentTier && <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.bg, border: `1px solid ${t.colors.border}` }}><Award size={15} aria-hidden />{balance.currentTier}</span>}
         </div>
-        {balance?.nextTier && <p className="m-0 mt-4 text-sm" style={{ color: t.colors.inkMuted }}>{tsNodes('pg.points_to_reach', '{{points}} more points to reach {{tier}}', { tier: <strong style={{ color: t.colors.ink }}>{balance.nextTier.name}</strong> }, { points: balance.nextTier.pointsNeeded.toLocaleString() })}</p>}
-      </Card>
+        {balance?.nextTier && <p className="m-0 mt-4 text-sm" style={{ opacity: 0.72 }}>{tsNodes('pg.points_to_reach', '{{points}} more points to reach {{tier}}', { tier: <strong style={{ color: t.colors.ink }}>{balance.nextTier.name}</strong> }, { points: balance.nextTier.pointsNeeded.toLocaleString() })}</p>}
+      </div>
 
       {error && <Notice tone="error">{error}</Notice>}
       {voucher && (
@@ -56,13 +56,13 @@ export function LoyaltyRewards({ storeId, balance, rewards }: { storeId: string;
       <section aria-labelledby="loyalty-rewards">
         <SectionHeading><span id="loyalty-rewards">{ts('pg.available_rewards', 'Available rewards')}</span></SectionHeading>
         {rewards.length === 0 ? <p className="m-0 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.no_rewards_available_right_now', 'No rewards available right now.')}</p> : (
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
             {rewards.map(r => {
               const can = current >= r.pointsCost;
               return (
-                <li key={r._id} className="flex flex-wrap items-center justify-between gap-3 p-4 md:p-5" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.cardRadiusPx }}>
+                <li key={r._id} className="flex flex-wrap items-center justify-between gap-3 p-4 md:p-5" style={{ border: `1px solid ${t.colors.border}`, borderTop: `3px solid ${t.colors.accent}`, borderRadius: t.cardRadiusPx }}>
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full" style={{ background: t.colors.bgAlt }}><Gift size={17} aria-hidden /></span>
+                    <span className="grid size-10 shrink-0 place-items-center" style={{ background: t.colors.bgAlt, borderRadius: t.fieldRadiusPx }}><Gift size={17} aria-hidden /></span>
                     <div className="min-w-0">
                       <p className="m-0 text-[15px] font-medium">{r.name}</p>
                       {r.description && <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }}>{r.description}</p>}

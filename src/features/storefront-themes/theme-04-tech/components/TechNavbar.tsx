@@ -41,10 +41,11 @@ function TopBar({ bar }: { bar: TopBarData }) {
 
 /** Two-level mega panel: first-level links on the left, the hovered link's own children on the right. The menu allows 3 levels in total. */
 function MegaColumns({ item }: { item: ResolvedStorefrontNavItem }) {
-  const cols = item.children.slice(0, 6);
+  const cols = item.children;
+  const perRow = t.megaColumns || Math.min(Math.max(cols.length, 1), 6);
   return (
     <div className="tx-pop" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, color: t.colors.ink, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
-      <div className="grid gap-x-8 gap-y-6 p-6" style={{ gridTemplateColumns: `repeat(${Math.max(cols.length, 1)}, minmax(0, 1fr))${t.megaFeatured && item.imageUrl ? ' 260px' : ''}` }}>
+      <div className="grid gap-x-8 gap-y-6 p-6" style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))${t.megaFeatured && item.imageUrl ? ' 260px' : ''}` }}>
         {cols.map(c => (
           <div key={c.id} className="min-w-0">
             <NavAnchor link={c.link} className="block pb-2 text-sm font-semibold no-underline" style={{ color: t.colors.ink, borderBottom: `2px solid ${t.colors.accent}` }}>{c.label}</NavAnchor>

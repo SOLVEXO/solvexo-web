@@ -82,17 +82,17 @@ export function ChatPanel({ conversation, storeId, storeName, storeLogo }: Props
   const subtitle = chat.otherTyping ? ts('pg.word_typing', 'typing...') : chat.otherOnline ? ts('pg.word_online', 'Online') : look?.statusLine || ts('pg.we_reply_as_soon_as_we_can', 'We reply as soon as we can');
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'min(720px, calc(100dvh - 200px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: t.cardRadiusPx, background: t.colors.bgAlt }}>
-      <header className="flex shrink-0 items-center gap-3 px-4 py-2.5" style={{ background: t.colors.bg, borderBottom: `1px solid ${t.colors.border}` }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: 'min(720px, calc(100dvh - 200px))', minHeight: 440, border: `1px solid ${t.colors.border}`, borderRadius: t.cardRadiusPx, background: t.colors.bg }}>
+      <header className="flex shrink-0 items-center gap-3 px-4 py-3" style={{ background: t.colors.dark, color: t.colors.darkInk }}>
         <span className="relative size-11 shrink-0">
-          <span className="grid size-full place-items-center overflow-hidden rounded-full" style={{ background: t.colors.bgAlt }}>
+          <span className="grid size-full place-items-center overflow-hidden" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.fieldRadiusPx }}>
             {shownLogo ? <img src={shownLogo} alt="" className="size-full object-contain p-1" /> : <StoreIcon size={20} aria-hidden />}
           </span>
           {chat.otherOnline && <span aria-hidden className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full" style={{ background: '#22C55E', border: `2.5px solid ${t.colors.bg}` }} />}
         </span>
         <div className="min-w-0">
-          <h2 className="m-0 truncate text-base font-semibold" style={{ color: t.colors.ink }}>{shownName}</h2>
-          <p className="m-0 text-[13px]" style={{ color: t.colors.inkMuted }} aria-live="polite">{subtitle}</p>
+          <h2 className="m-0 truncate text-base font-semibold" style={{ color: 'inherit' }}>{shownName}</h2>
+          <p className="m-0 text-[13px]" style={{ opacity: 0.72 }} aria-live="polite">{subtitle}</p>
         </div>
       </header>
 

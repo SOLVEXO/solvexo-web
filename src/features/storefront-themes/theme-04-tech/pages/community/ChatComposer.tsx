@@ -69,11 +69,11 @@ export function ChatComposer({ initialText = '', editing, replyTo, sending, uplo
       {voice.recording ? (
         <div className="flex items-center gap-2" role="status" aria-label={ts('pg.voice_message', 'Voice message')}>
           <button type="button" onClick={voice.cancel} aria-label={ts('addresses.delete', 'Delete')} className="grid size-10 shrink-0 place-items-center rounded-full border-0 bg-transparent" style={{ color: t.colors.danger, cursor: 'pointer' }}><Trash2 size={19} aria-hidden /></button>
-          <div className="flex min-h-11 flex-1 items-center gap-2.5 px-4" style={{ borderRadius: 22, background: t.colors.bg }}>
+          <div className="flex min-h-11 flex-1 items-center gap-2.5 px-4" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.bg }}>
             <span aria-hidden className="size-2.5 animate-pulse rounded-full" style={{ background: t.colors.danger }} />
             <span className="text-[15px] tabular-nums" style={{ color: t.colors.ink }}>{voice.formattedTime}</span>
           </div>
-          <button type="button" onClick={voice.stop} aria-label={ts('sections.sendMessage', 'Send message')} className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.accent, color: t.colors.accentInk, cursor: 'pointer' }}><SendHorizontal size={18} aria-hidden /></button>
+          <button type="button" onClick={voice.stop} aria-label={ts('sections.sendMessage', 'Send message')} className="grid size-11 shrink-0 place-items-center border-0" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.accent, color: t.colors.accentInk, cursor: 'pointer' }}><SendHorizontal size={18} aria-hidden /></button>
         </div>
       ) : (
       <div className="flex items-end gap-2">
@@ -93,13 +93,13 @@ export function ChatComposer({ initialText = '', editing, replyTo, sending, uplo
         <label htmlFor="maison-chat-input" className="sr-only">{ts('gift.message', 'Message')}</label>
         <textarea id="maison-chat-input" rows={1} value={text} onChange={e => { setText(e.target.value); onTyping(e.target.value.trim().length > 0); }} onKeyDown={onKey} onBlur={() => onTyping(false)}
           placeholder={editing ? ts('pg.edit_your_message', 'Edit your message') : ts('pg.write_a_message', 'Write a message')} disabled={disabled} className="max-h-32 min-h-11 flex-1 resize-none"
-          style={{ padding: '10px 16px', borderRadius: 22, background: t.colors.bg, color: t.colors.ink, border: 'none', fontFamily: t.fonts.body, fontSize: 15, outline: 'none', fieldSizing: 'content' } as React.CSSProperties} />
+          style={{ padding: '10px 16px', borderRadius: t.fieldRadiusPx, background: t.colors.bg, color: t.colors.ink, border: `1px solid ${t.colors.borderStrong}`, fontFamily: t.fonts.body, fontSize: 15, outline: 'none', fieldSizing: 'content' } as React.CSSProperties} />
         {showMic ? (
-          <button type="button" onClick={() => void voice.start()} disabled={uploading || disabled} aria-label={ts('pg.voice_message', 'Voice message')} title={ts('pg.voice_message', 'Voice message')} className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.accent, color: t.colors.accentInk, cursor: 'pointer', opacity: uploading || disabled ? 0.5 : 1 }}>
+          <button type="button" onClick={() => void voice.start()} disabled={uploading || disabled} aria-label={ts('pg.voice_message', 'Voice message')} title={ts('pg.voice_message', 'Voice message')} className="grid size-11 shrink-0 place-items-center border-0" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.accent, color: t.colors.accentInk, cursor: 'pointer', opacity: uploading || disabled ? 0.5 : 1 }}>
             <Mic size={18} aria-hidden />
           </button>
         ) : (
-          <button type="submit" disabled={!canSend} aria-label={editing ? ts('pg.save_message', 'Save message') : ts('sections.sendMessage', 'Send message')} className="grid size-11 shrink-0 place-items-center rounded-full border-0" style={{ background: t.colors.accent, color: t.colors.accentInk, cursor: canSend ? 'pointer' : 'not-allowed', opacity: canSend ? 1 : 0.5 }}>
+          <button type="submit" disabled={!canSend} aria-label={editing ? ts('pg.save_message', 'Save message') : ts('sections.sendMessage', 'Send message')} className="grid size-11 shrink-0 place-items-center border-0" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.accent, color: t.colors.accentInk, cursor: canSend ? 'pointer' : 'not-allowed', opacity: canSend ? 1 : 0.5 }}>
             <SendHorizontal size={18} aria-hidden />
           </button>
         )}

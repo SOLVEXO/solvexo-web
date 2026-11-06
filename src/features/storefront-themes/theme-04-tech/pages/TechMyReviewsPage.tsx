@@ -8,7 +8,8 @@ import { reviewStatusLabel, formatAccountDate, reviewText } from '../../accountU
 import { useMyReviews } from '../../useAccountLists';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { techTheme as t } from '../theme.config';
-import { Card, EmptyState, ErrorState, Notice, PillButton, SkeletonBlock, StatusPill } from '../ui/techForm';
+import { EmptyState, ErrorState, Notice, PillButton, SkeletonBlock, StatusPill } from '../ui/techForm';
+import { TechPanel } from '../ui/techPanels';
 import { AccountLayout } from '../ui/techAccount';
 import { ConfirmDialog } from '../ui/techDialog';
 import { ReviewEditDialog } from './account/ReviewEditDialog';
@@ -18,7 +19,7 @@ import { useConfirmAction } from '../../core/account/useConfirmAction';
 function Stars({ value }: { value: number }) {
   return (
     <span className="inline-flex gap-0.5" role="img" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value })}>
-      {[1, 2, 3, 4, 5].map(i => <Star key={i} size={15} aria-hidden style={{ color: t.colors.ink, fill: i <= value ? t.colors.ink : 'transparent' }} />)}
+      {[1, 2, 3, 4, 5].map(i => <Star key={i} size={15} aria-hidden style={{ color: t.colors.star, fill: i <= value ? t.colors.star : 'transparent' }} />)}
     </span>
   );
 }
@@ -45,22 +46,20 @@ export function TechMyReviewsPage() {
             {error && <div className="mb-4"><Notice tone="error" action={<button type="button" onClick={reload} className={link}>{ts('cart.retry', 'Retry')}</button>}>{error}</Notice></div>}
             <div className="flex flex-col gap-4" style={{ opacity: loading ? 0.6 : 1 }}>
               {reviews.map(r => (
-                <Card key={r.reviewId}>
+                <TechPanel key={r.reviewId} title={r.product?.name ?? ts('pg.product_no_longer_available', 'Product no longer available')} action={<StatusPill tone={r.status === 'rejected' ? 'bad' : r.status === 'published' ? 'good' : 'warn'}>{reviewStatusLabel(r.status) ?? r.status}</StatusPill>}>
                   <div className="flex gap-4">
                     {r.product?.image && <img src={r.product.image} alt="" className="size-16 shrink-0 object-cover" style={{ borderRadius: t.fieldRadiusPx }} />}
                     <div className="min-w-0 flex-1">
-                      <p className="m-0 text-base font-semibold">{r.product?.name ?? ts('pg.product_no_longer_available', 'Product no longer available')}</p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <Stars value={r.rating ?? 0} />
                         <span className="text-[13px]" style={{ color: t.colors.inkMuted }}>{formatAccountDate(r.createdAt)}</span>
-                        <StatusPill tone={r.status === 'rejected' ? 'bad' : r.status === 'published' ? 'good' : 'warn'}>{reviewStatusLabel(r.status) ?? r.status}</StatusPill>
                       </div>
                     </div>
                   </div>
                   {reviewText(r) && <p className="m-0 mt-3 whitespace-pre-wrap text-[15px] leading-relaxed">{reviewText(r)}</p>}
                   {r.media?.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{r.media.map(u => <img key={u} src={u} alt={ts('pg.attached_to_your_review', 'Attached to your review')} className="size-16 object-cover" style={{ borderRadius: t.fieldRadiusPx }} />)}</div>}
                   {r.sellerReply && (
-                    <div className="mt-3 rounded-[var(--tx-card-r)] px-4 py-3" style={{ background: t.colors.bgAlt }}>
+                    <div className="mt-3 px-4 py-3" style={{ background: t.colors.bgAlt, borderRadius: t.fieldRadiusPx, borderInlineStart: `3px solid ${t.colors.accent}` }}>
                       <p className="m-0 text-xs font-semibold" style={{ color: t.colors.inkMuted }}>{ts('reviews.reply', 'Reply from the store')}</p>
                       <p className="m-0 mt-1 whitespace-pre-wrap text-sm">{r.sellerReply.text}</p>
                     </div>
@@ -69,7 +68,7 @@ export function TechMyReviewsPage() {
                     <button type="button" onClick={() => setEditing(r)} className={link} style={{ color: t.colors.ink }}>{ts('addresses.edit', 'Edit')}</button>
                     <button type="button" onClick={() => del.open(r)} className={link} style={{ color: t.colors.ink }}>{ts('addresses.delete', 'Delete')}</button>
                   </div>
-                </Card>
+                </TechPanel>
               ))}
             </div>
             {totalPages > 1 && (
