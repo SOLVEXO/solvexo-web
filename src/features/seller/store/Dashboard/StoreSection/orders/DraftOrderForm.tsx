@@ -7,6 +7,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { useToast } from '@/contexts/ToastContext';
+import client from '@/api/client';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetMyProductById, type ProductVariant, type StoreProduct } from '@/api/services/product';
 import { VariantPickModal } from './VariantPickModal';
@@ -110,6 +111,11 @@ export default function DraftOrderForm() {
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  // Wholesale: an approved company (new drafts only). Items are then priced by the server from the company's catalog unless the price is typed.
+  const [companies, setCompanies] = useState<{ _id: string; name: string }[]>([]);
+  const [companyId, setCompanyId] = useState('');
+  const [poNumber, setPoNumber] = useState('');
+  const [editedPrices, setEditedPrices] = useState<string[]>([]);
   const [items, setItems] = useState<DraftOrderItem[]>([]);
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed' | ''>('');
   const [discountValue, setDiscountValue] = useState(0);
@@ -172,6 +178,14 @@ export default function DraftOrderForm() {
   }, [storeId, draftId, isNew]);
 
   useEffect(() => { if (!loadedOnce.current) { loadedOnce.current = true; loadDraft(); } }, [loadDraft]);
+  useEffect(() => {
+    if (!isNew || !can('b2b.view')) return;
+    let off = false;
+    (client.get(`/api/b2b/${storeId}/companies`, { params: { status: 'approved', limit: 100 } }) as Promise<{ items: { _id: string; name: string }[] }>)
+      .then(r => { if (!off) setCompanies(r.items ?? []); })
+      .catch(() => undefined); // wholesale is optional: a failed list just hides the picker
+    return () => { off = true; };
+  }, [isNew, storeId]);
 
   const [pickQueue, setPickQueue] = useState<{ product: StoreProduct; variants: ProductVariant[] }[]>([]);
 
@@ -218,12 +232,16 @@ export default function DraftOrderForm() {
   const discountAmount = discountType === 'percentage' ? subtotal * (discountValue / 100) : discountType === 'fixed' ? Math.min(discountValue, subtotal) : 0;
   const total = Math.max(0, subtotal - discountAmount + shippingAmount + taxAmount);
 
+  const companyName = () => (companyId ? companies.find(c => c._id === companyId)?.name ?? customerName : customerName);
+
   const buildPayload = () => ({
-    customerId: customerId ?? undefined,
-    customerName,
+    ...(companyId ? { companyId, poNumber: poNumber.trim() || undefined } : {}),
+    customerId: companyId ? undefined : customerId ?? undefined,
+    customerName: companyName(),
     customerEmail: customerEmail || undefined,
     customerPhone: customerPhone || undefined,
-    items: items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity, unitPrice: i.unitPrice })),
+    // For a company the server prices each line from its catalog; only a price the seller typed is sent.
+    items: items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity, ...(!companyId || editedPrices.includes(i.variantId) ? { unitPrice: i.unitPrice } : {}) })),
     discountType: discountType || undefined,
     discountValue,
     shippingAmount,
@@ -370,6 +388,19 @@ export default function DraftOrderForm() {
 
       <div className="px-4 lg:px-7 pt-5 pb-10 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px] gap-5">
         <div className="flex flex-col gap-5">
+          {isNew && companies.length > 0 && (
+            <div className="bg-white rounded-xl border border-bone p-4">
+              <p className="text-[13px] font-bold text-charcoal mb-1">Wholesale company (optional)</p>
+              <p className="text-[12px] text-slate mb-3">Prices follow the company's catalog, tax follows its exemption, and the order is placed on its payment terms. The customer is the company's location admin.</p>
+              <select className={inp} value={companyId} onChange={e => setCompanyId(e.target.value)} aria-label="Wholesale company">
+                <option value="">No company (retail draft)</option>
+                {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </select>
+              {companyId && <input className={`${inp} mt-2`} placeholder="Purchase order number (optional)" maxLength={60} value={poNumber} onChange={e => setPoNumber(e.target.value)} />}
+            </div>
+          )}
+
+          {!companyId && (
           <div className="bg-white rounded-xl border border-bone p-4">
             <p className="text-[13px] font-bold text-charcoal mb-3">Customer</p>
             <CustomerPicker
@@ -378,6 +409,7 @@ export default function DraftOrderForm() {
               onChange={v => { setCustomerId(v.customerId); setCustomerName(v.customerName); setCustomerEmail(v.customerEmail); setCustomerPhone(v.customerPhone); }}
             />
           </div>
+          )}
 
           <div className="bg-white rounded-xl border border-bone p-4">
             <div className="flex items-center justify-between mb-3">
@@ -404,7 +436,7 @@ export default function DraftOrderForm() {
                         <div className="relative">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-slate">{symbol}</span>
                           <input type="number" min={0} value={item.unitPrice} className="w-20 pl-5 pr-2 py-1.5 text-[12px] border border-bone rounded-md"
-                            onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unitPrice: Math.max(0, Number(e.target.value)) } : it))} />
+                            onChange={e => { setEditedPrices(p => (p.includes(item.variantId) ? p : [...p, item.variantId])); setItems(prev => prev.map((it, j) => j === i ? { ...it, unitPrice: Math.max(0, Number(e.target.value)) } : it)); }} />
                         </div>
                         <button type="button" onClick={() => setItems(prev => prev.filter((_, j) => j !== i))} className="text-error bg-transparent border-none cursor-pointer p-1">
                           <Trash2 size={14} />

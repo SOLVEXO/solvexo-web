@@ -64,6 +64,9 @@ export interface DraftOrder {
 export interface DraftOrderCustomer { id: string; name: string; email: string; phone: string }
 
 export interface CreateDraftOrderPayload {
+  /** Wholesale: a draft for an approved company (catalog prices, tax exemption, the company's payment terms on completion). */
+  companyId?: string;
+  poNumber?: string;
   customerId?: string;
   customerName: string;
   customerEmail?: string;
