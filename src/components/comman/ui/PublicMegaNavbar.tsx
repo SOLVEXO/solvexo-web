@@ -404,24 +404,24 @@ export function PublicMegaNavbar() {
               <ProfileAvatar />
             ) : (
               <>
-                <button
-                  onClick={() => navigate('/login')}
+                <Link
+                  to="/login"
                   className={clsx(
                     'text-[13px] font-medium transition-colors duration-300 bg-transparent border-none cursor-pointer',
                     overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
                   )}
                 >
                   Log in
-                </button>
-                <button
-                  onClick={() => navigate('/book-demo')}
+                </Link>
+                <Link
+                  to="/book-demo"
                   className={clsx(
                     'text-[13px] font-medium transition-colors duration-300 bg-transparent border-none cursor-pointer',
                     overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
                   )}
                 >
                   Book a demo
-                </button>
+                </Link>
                 <MagneticButton>
                   <button
                     onClick={sellEntry.go}
@@ -444,15 +444,15 @@ export function PublicMegaNavbar() {
           <div className="lg:hidden flex items-center gap-1.5 shrink-0">
             {!loggedIn && (
               <>
-                <button
-                  onClick={() => navigate('/login')}
+                <Link
+                  to="/login"
                   className={clsx(
                     'text-[12.5px] font-medium transition-colors duration-300 bg-transparent border-none cursor-pointer px-1.5',
                     overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
                   )}
                 >
                   Log in
-                </button>
+                </Link>
                 <button
                   onClick={sellEntry.go}
                   disabled={sellEntry.loading}

@@ -2,9 +2,24 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import type { Plugin } from 'vite'
+import { buildRobotsTxt, buildSitemapXml } from './src/seo/publicPages'
+
+/** Writes robots.txt and sitemap.xml for Solvexo's public site into the build (Vercel serves them before the SPA fallback). */
+function seoFiles(): Plugin {
+  return {
+    name: 'solvexo-seo-files',
+    apply: 'build',
+    generateBundle() {
+      const today = new Date().toISOString().slice(0, 10)
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: buildSitemapXml(today) })
+      this.emitFile({ type: 'asset', fileName: 'robots.txt', source: buildRobotsTxt() })
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), seoFiles()],
   server: {
     port: 3000,
     // Store subdomains (`hello.localhost:3000`) are a real, separate host

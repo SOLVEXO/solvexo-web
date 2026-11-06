@@ -1,4 +1,4 @@
-import type { StockPhotoKey } from '@/assets/stockPhotos';
+import type { StockPhotoKey } from '../../../assets/stockPhotos';
 
 export interface Solution {
   slug: string;
