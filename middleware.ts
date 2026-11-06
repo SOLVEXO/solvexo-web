@@ -1,4 +1,5 @@
 import { next, rewrite } from '@vercel/functions';
+import { prerenderedFile, stripCountryPrefix } from './src/seo/prerender';
 
 // Platform pages that live under a country prefix (`/pk/pricing`). Dashboards (/store, /admin, ...) never get one.
 const COUNTRY_PAGES = new Set(['/', '/login', '/register', '/signup', '/forgot-password', '/new-password', '/verify-otp', '/onboard', '/pricing', '/about', '/contact', '/contact-us', '/faq', '/help', '/terms-of-service', '/privacy-policy', '/cookie-policy', '/mobile-app']);
@@ -25,6 +26,12 @@ export default function middleware(request: Request) {
   }
   const toCountry = countryRedirect(request, hostname, pathname);
   if (toCountry) return toCountry;
+  // Public marketing pages: serve the copy pre-built for that page (its own title, description, canonical and
+  // plain-HTML content) instead of the generic app shell. Country addresses (/pk/pricing) get the same page.
+  if (hostname && PLATFORM_HOSTS.has(hostname) && (request.method === 'GET' || request.method === 'HEAD')) {
+    const file = prerenderedFile(stripCountryPrefix(pathname));
+    if (file) return rewrite(new URL(file, request.url));
+  }
   if (pathname.startsWith('/_solvexo/')) return next(); // platform marker script — must never be rewritten to the HTML shell
   if (!hostname || isPlatformHost(hostname) || hostname.endsWith('.vercel.app') || hostname === 'localhost' || pathname.startsWith('/api/') || pathname.startsWith('/assets/') || pathname === '/favicon.ico' || pathname === '/favicon.png') {
     return next();

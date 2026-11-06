@@ -59,7 +59,7 @@ export function BookDemoPage() {
   return (
     <div className="bg-cream min-h-full">
       <div className="px-4 md:px-8 lg:px-12 pt-14 md:pt-20 pb-10 max-w-[760px] mx-auto">
-        <SectionHeading title="Book a free demo" subtitle="See how Solvexo can run your online store, payments and delivery. A real person will call you, no pressure to buy." align="center" size="lg" />
+        <SectionHeading as="h1" title="Book a free demo" subtitle="See how Solvexo can run your online store, payments and delivery. A real person will call you, no pressure to buy." align="center" size="lg" />
       </div>
 
       <RevealStagger className="max-w-[880px] mx-auto px-4 md:px-8 lg:px-12 pb-10 grid grid-cols-1 sm:grid-cols-3 gap-3" step={0.06} y={14}>

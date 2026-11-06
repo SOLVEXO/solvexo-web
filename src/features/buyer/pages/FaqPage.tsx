@@ -86,6 +86,7 @@ export function FaqPage() {
           </div>
         </Reveal>
         <SectionHeading
+          as="h1"
           title="Frequently asked questions"
           subtitle="Find answers about your account, orders, payments and more."
           align="center"

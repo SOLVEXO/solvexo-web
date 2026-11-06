@@ -53,7 +53,7 @@ export function ContactUsPage() {
     <div className="bg-cream min-h-full">
       {/* ── Hero ── */}
       <div className="px-4 md:px-8 lg:px-12 pt-14 md:pt-20 pb-10 max-w-[720px] mx-auto">
-        <SectionHeading title="Get in touch" subtitle="Questions, feedback, or need a hand with an order? We're here to help." align="center" size="lg" />
+        <SectionHeading as="h1" title="Get in touch" subtitle="Questions, feedback, or need a hand with an order? We're here to help." align="center" size="lg" />
       </div>
 
       {/* ── Contact info cards ── */}

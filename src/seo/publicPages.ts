@@ -150,6 +150,7 @@ export function buildRobotsTxt(): string {
     'Disallow: /account',
     'Disallow: /theme-preview',
     'Disallow: /pay-invoice',
+    'Disallow: /_pages/',
     '',
     `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
     '',

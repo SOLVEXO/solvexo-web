@@ -26,6 +26,30 @@ const PHOTO_IDS = {
 
 export type StockPhotoKey = keyof typeof PHOTO_IDS;
 
+/** Short descriptions for alt text, from what each photo shows (search engines and screen readers read these). */
+const PHOTO_ALT: Record<StockPhotoKey, string> = {
+  fashionRack:      'Clothes hanging on a rack in a fashion store',
+  sneakers:         'A pair of sneakers',
+  headphones:       'Headphones',
+  watch:            'A wristwatch',
+  skincare:         'Skincare products',
+  cosmetics:        'Cosmetics and makeup products',
+  plateOfFood:      'A plate of food in a restaurant',
+  homeInterior:     'A home interior',
+  coffeeShop:       'A coffee shop counter',
+  cameraGear:       'Camera gear for content creation',
+  freshProduce:     'Fresh produce',
+  smallCafeCounter: 'A small café counter',
+  businessHandshake:'Business owners shaking hands',
+  deskPlant:        'A desk with a plant',
+  makeupBrushes:    'Makeup brushes',
+  workspaceLaptop:  'A small-business workspace with a laptop',
+};
+
+export function stockPhotoAlt(key: StockPhotoKey): string {
+  return PHOTO_ALT[key];
+}
+
 export function unsplashUrl(key: StockPhotoKey, width = 480, quality = 75): string {
   return `https://images.unsplash.com/photo-${PHOTO_IDS[key]}?w=${width}&q=${quality}&auto=format&fit=crop`;
 }

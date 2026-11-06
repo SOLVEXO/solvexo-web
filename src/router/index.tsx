@@ -12,14 +12,14 @@ import { countryBasename, countryFromPathname, rememberCountry } from '@/utils/c
 // Root wrapper (reference nav + outlet)
 import { RootLayout }   from '@/components/layouts/RootLayout';
 
-// Layouts — kept EAGER (not lazy): each one is the persistent chrome for its
-// whole section (sidebar/nav), small relative to the feature pages it wraps,
-// and needed the instant a seller/admin/buyer enters that section anyway.
+// Public layouts stay EAGER: they are what a visitor sees first. The dashboard layouts (store workspace, theme
+// editor, super admin) load on demand: they pull in the charts and payment libraries and much more, which used to
+// download with the public home page and made it slow on phones. Their first open shows RootLayout's spinner briefly.
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
-import { AdminLayout }  from '@/components/layouts/AdminLayout';
-import { StoreLayout }  from '@/components/layouts/StoreLayout';
-import { ThemeEditorLayout } from '@/components/layouts/ThemeEditorLayout';
+const AdminLayout       = lazy(() => import('@/components/layouts/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const StoreLayout       = lazy(() => import('@/components/layouts/StoreLayout').then(m => ({ default: m.StoreLayout })));
+const ThemeEditorLayout = lazy(() => import('@/components/layouts/ThemeEditorLayout').then(m => ({ default: m.ThemeEditorLayout })));
 import { FEATURES } from '@/constants/features';
 import { RequireRole }  from './RequireRole';
 

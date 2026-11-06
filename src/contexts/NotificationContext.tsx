@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
-import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { TokenStorage } from '@/api/services/auth';
 import {
   apiListNotifications,
@@ -205,38 +205,45 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchUnreadCount, fetchPreferences, activeStoreId]);
 
-  // Real-time Sockets
+  // Real-time Sockets. The socket library is loaded only for a signed-in user, so public pages never download it.
   useEffect(() => {
     if (!TokenStorage.isLoggedIn()) return;
 
     const token = TokenStorage.getToken();
     const base = (import.meta.env.VITE_API_URL as string) ?? '';
-    const socket = io(`${base}/notifications`, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    });
+    let socket: Socket | null = null;
+    let cancelled = false;
 
-    socket.on('connect', () => {
-      console.log('Connected to notifications socket');
-    });
+    void import('socket.io-client').then(({ io }) => {
+      if (cancelled) return;
+      socket = io(`${base}/notifications`, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+      });
 
-    socket.on('notification:unread-count', (data: { unreadCount: number }) => {
-      // This push is always the recipient's account-wide total across every
-      // store — only trust it while unscoped. While a store scope is active,
-      // `notification:new` below increments the scoped count locally instead.
-      if (!activeStoreIdRef.current) setUnreadCount(data.unreadCount);
-    });
+      socket.on('connect', () => {
+        console.log('Connected to notifications socket');
+      });
 
-    socket.on('notification:new', (notification: NotificationItem) => {
-      const scope = activeStoreIdRef.current;
-      if (scope && notification.storeId !== scope) return;
-      setNotifications(prev => [notification, ...prev]);
-      setUnreadCount(prev => prev + 1);
-      setToast(notification);
-    });
+      socket.on('notification:unread-count', (data: { unreadCount: number }) => {
+        // This push is always the recipient's account-wide total across every
+        // store — only trust it while unscoped. While a store scope is active,
+        // `notification:new` below increments the scoped count locally instead.
+        if (!activeStoreIdRef.current) setUnreadCount(data.unreadCount);
+      });
+
+      socket.on('notification:new', (notification: NotificationItem) => {
+        const scope = activeStoreIdRef.current;
+        if (scope && notification.storeId !== scope) return;
+        setNotifications(prev => [notification, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        setToast(notification);
+      });
+    }).catch(() => { /* realtime is a bonus; the counts still load over HTTP */ });
 
     return () => {
-      socket.disconnect();
+      cancelled = true;
+      socket?.disconnect();
     };
   }, []);
 
