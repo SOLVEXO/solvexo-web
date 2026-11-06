@@ -1,5 +1,7 @@
 {
-  "regions": ["sin1"],
+  "regions": [
+    "sin1"
+  ],
   "functions": {
     "api/storefront-document.js": {
       "includeFiles": "dist/index.html"
@@ -9,12 +11,34 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Powered-By", "value": "Solvexo" },
-        { "key": "X-Solvexo-Platform", "value": "1" }
+        {
+          "key": "X-Powered-By",
+          "value": "Solvexo"
+        },
+        {
+          "key": "X-Solvexo-Platform",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
