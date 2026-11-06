@@ -7,7 +7,7 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { Check } from 'lucide-react';
-import { unsplashUrl } from '@/assets/stockPhotos';
+import { stockPhotoAlt, unsplashUrl } from '@/assets/stockPhotos';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
 
 export function SolutionsOverviewPage() {
@@ -19,6 +19,7 @@ export function SolutionsOverviewPage() {
       <div className="px-4 md:px-8 lg:px-12 pt-14 md:pt-18 pb-10 max-w-[760px] mx-auto">
         <SectionHeading
           kicker="Built for the way you sell"
+          as="h1"
           title="Solvexo, tailored to your industry."
           subtitle="The same real platform underneath — store, POS, inventory, AI tools — applied to how your specific business actually sells."
           align="center"
@@ -40,7 +41,7 @@ export function SolutionsOverviewPage() {
             >
               <div className={spotlight ? 'grid sm:grid-cols-2 items-stretch' : ''}>
                 <div className={spotlight ? 'aspect-[4/3] sm:aspect-auto overflow-hidden' : 'aspect-[4/3] overflow-hidden'}>
-                  <img src={unsplashUrl(s.image, spotlight ? 700 : 400)} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                  <img src={unsplashUrl(s.image, spotlight ? 700 : 400)} alt={`${s.name}: ${stockPhotoAlt(s.image)}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                 </div>
                 <div className={spotlight ? 'p-6 sm:p-7 flex flex-col justify-center' : 'p-5'}>
                   <p className={spotlight ? 'text-[19px] font-bold text-carbon mb-1.5' : 'text-[14.5px] font-bold text-carbon mb-1'}>{s.name}</p>
