@@ -110,6 +110,11 @@ function ReviewModal({ storeId, proof, onClose, onDone }: { storeId: string; pro
             rows={2}
           />
         )}
+        {rejecting_ && (
+          <p className="text-[12px] text-charcoal bg-cream border border-bone rounded-md px-2.5 py-2">
+            Rejecting does not cancel the order. It stays unpaid and its stock stays reserved until the buyer sends a new proof or you cancel the order from its page.
+          </p>
+        )}
 
         {confirmingApprove && (
           <p className="text-[12px] text-charcoal bg-cream border border-bone rounded-md px-2.5 py-2">

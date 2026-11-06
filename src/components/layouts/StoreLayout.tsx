@@ -135,8 +135,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
-      // Only shows up once this store connects its own "Bank Transfer" in
-      // Integrations — buyers who pay that way upload a proof here for the
+      // Hidden until this store has payment proofs or connects its own "Bank Transfer" in
+      // Integrations (see `hiddenNavIds`) — buyers who pay that way upload a proof here for the
       // seller to review/approve (money lands in the seller's own bank
       // account, never Solvexo's — see ManualPaymentsService).
       { id: 'payment-proofs', Icon: Landmark, label: 'Payment Proofs', path: 'payment-proofs', requiredPermission: 'orders.record_payment' },
@@ -292,11 +292,16 @@ function hasNavEntitlement(entitlements: EntitlementsSummary | null, requiredEnt
   return feature?.allowed !== false;
 }
 
-export function visibleNavForUser(user: { role?: AppRole; permissions?: string[] } | null, entitlements: EntitlementsSummary | null = null): typeof NAV {
+/** Nav items to hide because the store does not use them (server flag `payment-proofs-shown`; missing flag while loading = hidden until known). */
+export function hiddenNavIds(badges: Record<string, number>): Set<string> {
+  return new Set(badges['payment-proofs-shown'] ? [] : ['payment-proofs']);
+}
+
+export function visibleNavForUser(user: { role?: AppRole; permissions?: string[] } | null, entitlements: EntitlementsSummary | null = null, hide: Set<string> = new Set()): typeof NAV {
   return NAV
     .map(section => ({
       ...section,
-      items: section.items.filter(item => hasNavPermission(user, item.requiredPermission) && hasNavEntitlement(entitlements, item.requiredEntitlement)),
+      items: section.items.filter(item => !hide.has(item.id) && hasNavPermission(user, item.requiredPermission) && hasNavEntitlement(entitlements, item.requiredEntitlement)),
     }))
     .filter(section => section.items.length > 0);
 }
@@ -357,7 +362,8 @@ export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeI
   const { entitlements } = useStoreWorkspace();
   const hiddenGroups = new Set(['Overview', ...excludeGroups]);
   const hiddenItems = new Set(excludeItemIds);
-  const nav = visibleNavForUser(TokenStorage.getUser(), entitlements);
+  const navBadges = useNavBadgeCounts(storeId);
+  const nav = visibleNavForUser(TokenStorage.getUser(), entitlements, hiddenNavIds(navBadges));
   return (
     <div className="flex flex-col gap-4">
       {nav.filter(section => !hiddenGroups.has(section.group))
@@ -563,7 +569,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // see `DEFAULT_COLLAPSED_GROUPS`. Lazy-init reads localStorage once; every
   // toggle re-persists so the seller's open/closed choice survives a reload.
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(loadCollapsedGroups);
-  const nav = visibleNavForUser(TokenStorage.getUser(), entitlements);
+  const nav = visibleNavForUser(TokenStorage.getUser(), entitlements, hiddenNavIds(badges));
   const toggleGroup = (group: string) => {
     setCollapsedGroups(prev => {
       const next = new Set(prev);
