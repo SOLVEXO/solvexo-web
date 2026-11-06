@@ -126,6 +126,7 @@ const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Ma
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
+const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
@@ -386,6 +387,7 @@ const mainRouter = createBrowserRouter([
           { path: 'dashboard',                        element: <StoreDashboard /> },
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'digital',                          element: <DigitalHub /> },
+          { path: 'wholesale',                        element: <WholesaleHub /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },

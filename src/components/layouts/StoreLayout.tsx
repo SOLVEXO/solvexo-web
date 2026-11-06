@@ -134,6 +134,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
+      { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'] },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
       // Hidden until this store has payment proofs or connects its own "Bank Transfer" in
       // Integrations (see `hiddenNavIds`) — buyers who pay that way upload a proof here for the
