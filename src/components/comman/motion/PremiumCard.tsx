@@ -1,6 +1,7 @@
 import type { ReactNode, MouseEvent } from 'react';
 import { useState } from 'react';
 import { clsx } from 'clsx';
+import { Link } from 'react-router-dom';
 
 interface PremiumCardProps {
   children: ReactNode;
@@ -9,6 +10,8 @@ interface PremiumCardProps {
   interactive?: boolean;
   tone?: 'light' | 'dark';
   onClick?: () => void;
+  /** Internal path: renders the card as a real link (crawlable, opens in a new tab with a middle click). */
+  to?: string;
 }
 
 // Replaces the plain `bg-white border border-bone p-X` box repeated across
@@ -16,7 +19,7 @@ interface PremiumCardProps {
 // redesigned public pages, with a cursor-tracked radial glow on hover
 // (desktop only) instead of a flat border-color swap. Not used by
 // admin/seller/POS — those keep the existing shared `Card` component as-is.
-export function PremiumCard({ children, className, interactive = true, tone = 'light', onClick }: PremiumCardProps) {
+export function PremiumCard({ children, className, interactive = true, tone = 'light', onClick, to }: PremiumCardProps) {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [hovering, setHovering] = useState(false);
 
@@ -58,6 +61,13 @@ export function PremiumCard({ children, className, interactive = true, tone = 'l
   // Enter/Space activates it, no separate role/tabIndex/onKeyDown to hand-
   // roll) rather than a div with a click handler — a clickable card is
   // still a button semantically, same as `Card`'s own `onClick` path.
+  if (to) {
+    return (
+      <Link to={to} onClick={onClick} {...sharedHandlers} style={sharedStyle} className={clsx(sharedClassName, 'block cursor-pointer text-left w-full no-underline text-inherit')}>
+        {children}
+      </Link>
+    );
+  }
   if (onClick) {
     return (
       <button type="button" onClick={onClick} {...sharedHandlers} style={sharedStyle} className={clsx(sharedClassName, 'cursor-pointer text-left w-full appearance-none')}>

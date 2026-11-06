@@ -111,7 +111,7 @@ export function SolutionPage() {
               if (!product) return null;
               const Icon = PRODUCT_ICONS[slug] ?? Store;
               return (
-                <PremiumCard key={slug} onClick={() => navigate(`/products/${slug}`)} className="p-6">
+                <PremiumCard key={slug} to={`/products/${slug}`} className="p-6">
                   <span className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center mb-3.5">
                     <Icon size={18} className="text-brand-orange" />
                   </span>

@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Store } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
@@ -12,7 +11,6 @@ import { ALL_PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
 
 export function ProductsOverviewPage() {
   usePageTitle('Products');
-  const navigate = useNavigate();
   const sellEntry = useSellEntry();
 
   return (
@@ -38,7 +36,7 @@ export function ProductsOverviewPage() {
           return (
             <PremiumCard
               key={p.slug}
-              onClick={() => navigate(`/products/${p.slug}`)}
+              to={`/products/${p.slug}`}
               className={spotlight ? 'overflow-hidden p-0 sm:col-span-2 lg:col-span-2' : 'overflow-hidden p-0'}
             >
               {/* Real product UI, not a decorative icon panel — cropped to a
