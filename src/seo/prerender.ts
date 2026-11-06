@@ -98,6 +98,7 @@ export function buildPrerenderedHtml(template: string, page: PublicPageSeo): str
     `<meta name="robots" content="${page.index ? 'index, follow, max-image-preview:large' : 'noindex, follow'}" />`,
     '<!--/solvexo-platform-head-->',
   ].join('\n    '));
+  html = deferThemeFonts(html);
 
   const body = [
     '<main id="solvexo-static" style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1d1d1b;line-height:1.6">',
@@ -110,6 +111,30 @@ export function buildPrerenderedHtml(template: string, page: PublicPageSeo): str
     '</main>',
   ].join('\n      ');
   return html.replace(/<!--solvexo-platform-body-->[\s\S]*?<!--\/solvexo-platform-body-->/, `<!--solvexo-platform-body-->\n      ${body}\n    <!--/solvexo-platform-body-->`);
+}
+
+const GOOGLE_FONTS_LINK = /<link rel="stylesheet" href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)"[^>]*>/;
+
+/**
+ * Public pages only need Poppins and Lora, which index.html serves from this domain. The Google Fonts stylesheet for
+ * the store themes' families (and its preconnect) is loaded a few seconds after the page has loaded instead of at
+ * startup, so it never competes with the first paint; dashboards opened from a public page still get those fonts.
+ */
+export function deferThemeFonts(html: string): string {
+  const m = GOOGLE_FONTS_LINK.exec(html);
+  if (!m) return html;
+  // Poppins and Lora are already served from this domain: drop them from the deferred request, or the browser would
+  // download them a second time from Google once that stylesheet redefines them.
+  const url = new URL(m[1].replace(/&amp;/g, '&'));
+  const families = url.searchParams.getAll('family').filter(f => !/^(Poppins|Lora)(:|$)/.test(f));
+  const href = `${url.origin}${url.pathname}?${families.map(f => `family=${encodeURIComponent(f).replace(/%3A/g, ':').replace(/%2C/g, ',').replace(/%3B/g, ';').replace(/%40/g, '@')}`).join('&')}&display=swap`;
+  const preload = ['poppins-400-latin', 'poppins-600-latin'].map(f => `<link rel="preload" href="/fonts/${f}.woff2" as="font" type="font/woff2" crossorigin />`).join('\n    ');
+  const loader = `<script>addEventListener('load',function(){setTimeout(function(){var l=document.createElement('link');l.rel='stylesheet';l.href=${JSON.stringify(href)};document.head.appendChild(l)},3000)})</script>`;
+  return html
+    .replace('<!--/solvexo-platform-head-->', `${preload}\n    <!--/solvexo-platform-head-->`)
+    .replace(GOOGLE_FONTS_LINK, families.length ? loader : '')
+    .replace(/<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^>]*><\/noscript>\s*/, '')
+    .replace(/<link rel="preconnect" href="https:\/\/fonts\.(?:googleapis|gstatic)\.com"[^>]*>\s*/g, '');
 }
 
 /** Every pre-built file: [published path inside the build, html]. */

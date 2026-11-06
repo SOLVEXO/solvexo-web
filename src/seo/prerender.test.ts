@@ -41,3 +41,17 @@ describe('pre-built public pages', () => {
     expect(html).toContain('<a href="/products/store-builder">Store Builder</a>');
   });
 });
+
+describe('fonts on pre-built pages', () => {
+  it('serves Poppins/Lora from this domain and loads the Google Fonts stylesheet only after the page has loaded', () => {
+    const html = buildPrerenderedHtml(template, seoForPath('/pricing')!);
+    expect(html).toContain('<link rel="preload" href="/fonts/poppins-400-latin.woff2"');
+    expect(html).toMatch(/@font-face\{font-family:'Poppins'/);
+    expect(html).not.toMatch(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com/);
+    expect(html).not.toContain('<link rel="preconnect" href="https://fonts.gstatic.com"');
+    expect(html).toContain("addEventListener('load'");
+    expect(html).toContain('family=Inter:wght@400;500;600;700');
+    expect(html).not.toMatch(/l\.href="[^"]*family=(Poppins|Lora)/);
+    expect(html.match(/rel="preload"/g)).toHaveLength(2);
+  });
+});
