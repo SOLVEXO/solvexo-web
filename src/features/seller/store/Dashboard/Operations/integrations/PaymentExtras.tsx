@@ -108,7 +108,7 @@ function ManualMethodModal({ storeId, initial, onClose, onSaved }: {
 
   return (
     <Modal
-      title={initial ? 'Edit payment method' : 'Accept payment by transfer'}
+      title={initial ? 'Edit payment method' : 'Add manual payment method'}
       width={480}
       onClose={onClose}
       mobileSheet
@@ -184,7 +184,7 @@ export function ManualPaymentMethodsSection({ storeId, methods, onChanged }: {
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-[42px] h-[42px] rounded-[10px] bg-cream flex items-center justify-center shrink-0"><Banknote size={20} className="text-slate" /></div>
           <div className="min-w-0">
-            <p className="text-[14.5px] font-bold text-carbon">Payment by transfer (Easypaisa, JazzCash, bank, pay at pickup)</p>
+            <p className="text-[14.5px] font-bold text-carbon">Manual payment methods (Easypaisa, JazzCash, bank transfer, pay at pickup)</p>
             <p className="text-[12px] text-slate">No merchant account needed. Buyers send the money to you directly and you mark the order paid. No transaction fee.</p>
           </div>
         </div>

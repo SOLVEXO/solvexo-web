@@ -371,7 +371,7 @@ function BankTransferIntegrationCard({ integration, storeId, onChanged }: {
         <div className="flex items-center gap-3 min-w-0">
           <ProviderMonogram provider="bank_transfer" />
           <div className="min-w-0">
-            <p className="text-[14.5px] font-bold text-carbon truncate">Bank Transfer</p>
+            <p className="text-[14.5px] font-bold text-carbon truncate">Bank Transfer (with payment proof)</p>
             <div className="flex items-center gap-1.5 mt-[3px]">
               <span className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full bg-cream text-slate">PKR</span>
             </div>
@@ -1154,7 +1154,7 @@ export function StoreIntegrations({ embedded = false }: { embedded?: boolean } =
               <p className="text-[12px] text-slate mb-3">Payments you collect yourself. The order stays unpaid until you mark it paid; no transaction fee.</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                 <CashOnDeliveryCard />
-                {data.payment.filter(i => i.provider === 'bank_transfer').map(integration => (
+                {data.payment.filter(i => i.provider === 'bank_transfer' && i.status === 'connected').map(integration => (
                   <BankTransferIntegrationCard key={integration.provider} integration={integration} storeId={storeId} onChanged={load} />
                 ))}
               </div>
