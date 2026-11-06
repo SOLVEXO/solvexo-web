@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Eye, Heart, ShoppingCart } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
@@ -19,6 +19,11 @@ import { TechButton, TechLinkButton, TechStars, TechStock } from '../ui/techUi';
 import { useCompare } from './compare';
 import { TechQuickView } from './product/TechQuickView';
 
+/** True for values the browser can paint as a colour ("Red", "#c2410c"); other option values render as a text chip. */
+function isCssColor(value: string): boolean {
+  return typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('color', value);
+}
+
 /** Card for every real product grid. `layout="list"` is the wide row used by the collection list view. */
 export function TechProductCard({ product, currency, layout = 'grid' }: { product: PublicStoreProduct; currency: string; layout?: 'grid' | 'list' }) {
   const { store } = useStorefront();
@@ -37,7 +42,19 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   const hasVariant = !!product.variantId;
   const to = `/product/${handleOf(product)}`;
   const ratio = PRODUCT_CARD_RATIO[b.productImageRatio] ?? PRODUCT_CARD_RATIO.square;
-  const image = product.images?.[0];
+  const [hoverImage, setHoverImage] = useState<string | undefined>();
+  const showSwatches = b.colorSwatches; // module singleton: read per render so the editor preview reacts to the setting
+  const swatches = useMemo(() => {
+    if (!showSwatches) return [];
+    const seen = new Map<string, { value: string; image?: string }>();
+    for (const v of product.variants ?? []) {
+      const color = v.options?.find(o => /^colou?r$/i.test(o.name))?.value;
+      if (color && !seen.has(color.toLowerCase())) seen.set(color.toLowerCase(), { value: color, image: v.images?.find(Boolean) });
+    }
+    return Array.from(seen.values());
+  }, [product.variants, showSwatches]);
+  const image = hoverImage ?? product.images?.[0];
+  const secondImage = b.productImageHover === 'second-image' ? product.images?.[1] : undefined;
   const wished = hasVariant ? isWishlisted(product._id, product.variantId as string) : false;
   const [quick, setQuick] = useState(false);
   const compare = useCompare(store.storeId);
@@ -68,8 +85,10 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
     </>
   );
   const imageBox = (
-    <Link to={to} aria-label={p.name} className="relative block overflow-hidden" style={{ aspectRatio: ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
-      {image && <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3" />}{badges}
+    <Link to={to} aria-label={p.name} className="group relative block overflow-hidden" style={{ aspectRatio: ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
+      {image && <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3" />}
+      {secondImage && !hoverImage && <img {...imgProps(secondImage, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: t.colors.bgAlt }} />}
+      {badges}
     </Link>
   );
   const quickBtn = t.quickView && product.type !== 'digital' && (
@@ -81,6 +100,18 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
     <button type="button" className="tx-icon-btn" aria-pressed={wished} aria-label={wished ? ts('pg.remove_from_wishlist', 'Remove from wishlist') : ts('pg.add_to_wishlist', 'Add to wishlist')} onClick={heart}>
       <Heart size={16} aria-hidden fill={wished ? 'currentColor' : 'none'} />
     </button>
+  );
+  const swatchRow = swatches.length > 0 && (
+    <ul className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0" aria-label={ts('pg.available_colours', 'Available colours')}>
+      {swatches.slice(0, 5).map(sw => (
+        <li key={sw.value} title={sw.value} onMouseEnter={() => setHoverImage(sw.image)} onMouseLeave={() => setHoverImage(undefined)}>
+          {isCssColor(sw.value)
+            ? <span role="img" aria-label={sw.value} className="block size-4 rounded-full" style={{ background: sw.value, border: `1px solid ${t.colors.border}` }} />
+            : <span className="rounded-full px-2 py-0.5 text-[11px]" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.inkMuted }}>{sw.value}</span>}
+        </li>
+      ))}
+      {swatches.length > 5 && <li className="text-xs" style={{ color: t.colors.inkMuted }}>+{swatches.length - 5}</li>}
+    </ul>
   );
   const priceBlock = price != null && (
     <p className="m-0 flex flex-col leading-tight">
@@ -103,6 +134,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
           {b.cardTag && product.vendor && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{product.vendor}</p>}
           <Link to={to} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
           {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
+          {swatchRow}
           {priceBlock}
         </div>
         <div className="flex flex-row items-center gap-3 max-sm:col-span-2 sm:flex-col sm:items-end sm:justify-between">
@@ -125,6 +157,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       {b.cardTag && product.vendor && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{product.vendor}</p>}
       <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
       <div className="mt-auto flex flex-col gap-3 pt-1">
+        {swatchRow}
         {priceBlock}
         {addBtn}
       </div>
