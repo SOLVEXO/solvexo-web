@@ -19,6 +19,7 @@ import { ContactStep } from './ContactStep';
 import { DiscountPanel } from './DiscountPanel';
 import { OrderNoteField } from './OrderNoteField';
 import { OrderSummary, type SummaryLine } from './OrderSummary';
+import { checkoutPreorderNotes } from '../../../core/merchandising/purchaseNotes';
 import { PaymentStep } from './PaymentStep';
 import { ShippingStep } from './ShippingStep';
 import type { ShipOption } from '../../../core/checkout/shippingOptions';
@@ -127,9 +128,10 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
       ? convert(unit, i.currency, { productId: i.productId, variantId: i.productVariantId }) * i.quantity
       : convertTo(i.itemTotal as number, i.currency, currency);
   };
+  const preorderNotes = checkoutPreorderNotes(items);
   const lines: SummaryLine[] = checkout
-    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency), image: i.image }))
-    : items.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: estimateOf(i), image: lineImage(i) }));
+    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency), image: i.image, note: preorderNotes.get(i.variantId) ?? null }))
+    : items.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: estimateOf(i), image: lineImage(i), note: preorderNotes.get(i.productVariantId) ?? null }));
   const itemCount = items.reduce((n, i) => n + i.quantity, 0);
   const subtotal = checkout ? checkout.subtotal : items.reduce((s, i) => s + estimateOf(i), 0);
   const coupon = checkout?.couponDiscountUSD ?? 0;

@@ -1,4 +1,4 @@
-import { variantPreorderText } from '../../../sellingRules';
+import { checkoutPreorderNotes } from '../../../core/merchandising/purchaseNotes';
 import { useCallback, useRef, useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -129,7 +129,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
       : convertTo(i.itemTotal as number, i.currency, currency);
   };
   // Pre-order notices come from the cart lines (same variants as the checkout).
-  const preorderNotes = new Map(items.map(i => [i.productVariantId, i.preorder ? variantPreorderText({ preorder: i.preorder }) : null]));
+  const preorderNotes = checkoutPreorderNotes(items);
   const lines: SummaryLine[] = checkout
     ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: convertTo(i.totalPrice, i.currency, currency), image: i.image, note: preorderNotes.get(i.variantId) ?? null }))
     : items.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: estimateOf(i), image: lineImage(i), note: preorderNotes.get(i.productVariantId) ?? null }));

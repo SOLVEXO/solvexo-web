@@ -28,3 +28,11 @@ The theme owns UI and styling only. Logic, data and money live in `core/` and th
 - No fake products, payment, auth, backend or database code inside a theme.
 - Prices always go through the currency context. Every state: loading, empty, error with retry.
 - Customer-facing text should use the `tt()`/`useTranslation('storefront')` helpers where one exists.
+
+## Selling features every theme MUST show (shared pieces in `core/merchandising/`)
+Do not rebuild these per theme; import them and pass your own tokens. Empty states render nothing.
+- **Pre-order** (product page): `productPreorderNote(product, variant)` as a `role="status"` line next to the buy button; `canBuy = variantCanBuy(...)` (buyable while out of stock when pre-order is active and not sold out); button text "Pre-order" (`product.preorder`) when the note exists.
+- **Bundle** (product page): `<BundleIncludes bundle={detail.bundle} ink inkMuted />` near the buy button.
+- **Cart lines** (cart page AND mini cart): `cartLineNotes(line).preorder` as a status line; `line.isBundle` shows the "Bundle" badge (`product.bundleBadge`).
+- **Cart upsell** (cart page): `<CartUpsell storeId productIds ... />` (seller-configured via `apiPublicCartUpsell`; use `useCartUpsell` to render your own markup).
+- **Checkout summary**: `checkoutPreorderNotes(items)` -> `SummaryLine.note`, printed under the line name.

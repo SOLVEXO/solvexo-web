@@ -6,6 +6,8 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { displayMoney, displayMoneyLine, displayMoneySum, type MoneyLine } from '../../core/money';
 import { cartLineRules, cartQtyHint, clampQty, stepQty } from '../../sellingRules';
+import { cartLineNotes } from '../../core/merchandising/purchaseNotes';
+import { CartUpsell } from '../../core/merchandising/CartUpsell';
 import { splitAround, useTemplateSections } from '../../core/pageHooks';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { imgProps } from '../components/imgProps';
@@ -71,6 +73,8 @@ export function TechCartPage() {
                             </Link>
                             <div className="min-w-0">
                               <Link to={`/product/${i.productId}`} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{i.name}</Link>
+                              {cartLineNotes(i).preorder && <p role="status" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.inkMuted }}>{cartLineNotes(i).preorder}</p>}
+                              {i.isBundle && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{ts('product.bundleBadge', 'Bundle')}</p>}
                               {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
                               {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
                               {i.unavailable && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{ts('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
@@ -101,6 +105,7 @@ export function TechCartPage() {
                   <TechButton variant="dark" small onClick={() => { void clearCart(); }}>{ts('cart.clearCart', 'Clear shopping cart')}</TechButton>
                 </div>
               </div>
+              <CartUpsell storeId={store.storeId} productIds={items.map(i => String(i.productId))} buttonClassName="cursor-pointer border px-3 py-1.5 text-sm" buttonStyle={{ borderColor: t.colors.border, background: 'transparent', color: t.colors.ink }} headingClassName="m-0 mb-4 text-lg font-semibold" />
             </div>
 
             <aside className="p-5 lg:sticky lg:top-24" style={{ background: t.colors.bgAlt }} aria-label={ts('cart.summaryTitle', 'Order summary')}>

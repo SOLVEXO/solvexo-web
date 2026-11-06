@@ -19,7 +19,9 @@ import { displayMoney, saleInfo } from '../../core/money';
 import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
-import { clampQty, preorderLabel, qtyRuleHint, resolveQtyRules, variantPreorderText } from '../../sellingRules';
+import { clampQty, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
+import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
+import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton, ProductWishlistHeart } from '../components/product/ProductParts';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../components/product/ProductExtraBlocks';
@@ -163,7 +165,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   const sale = saleInfo({ currency, convert, canConvert, fixedPriceFor }, variant.price, variant.compareAtPrice, base, { productId: detail.product._id, variantId: variant._id });
   const onSale = sale.onSale;
   const percentOff = sale.percentOff;
-  const pre = preorderLabel(detail.product) ?? variantPreorderText(variant);
+  const pre = productPreorderNote(detail.product, variant);
   const busy = adding === variant._id;
   const rating = reviews?.stats.averageRating ?? detail.product.averageRating ?? 0;
   const reviewCount = reviews?.stats.totalReviews ?? detail.product.totalRatings ?? 0;
@@ -253,19 +255,7 @@ function ProductPageInner({ slug }: { slug: string }) {
       return (
         <div id="fx-buy" className="flex flex-col gap-3">
           {pre && <p className="m-0 text-sm font-medium" role="status" style={{ color: t.colors.inkMuted }}>{pre}</p>}
-          {detail.bundle && detail.bundle.components.length > 0 && (
-            <div className="text-sm" style={{ color: t.colors.inkMuted }}>
-              <p className="m-0 mb-1 font-medium" style={{ color: t.colors.ink }}>{tr('product.bundleIncludes', 'This bundle includes')}</p>
-              <ul className="m-0 flex list-none flex-col gap-1 p-0">
-                {detail.bundle.components.map((c, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    {c.image && <img src={c.image} alt="" className="size-8 rounded object-cover" loading="lazy" />}
-                    <span>{c.name} × {c.quantity}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} />
           <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? (own('soldOutLabel') ?? tr('product.soldOut', 'Sold out')) : pre ? (own('preorderLabel') ?? tr('product.preorder', 'Pre-order')) : busy ? tr('product.adding', 'Adding…') : (own('addToCartLabel') ?? tr('product.addToCart', 'Add to cart'))}</FashionButton>
         </div>
       );

@@ -15,7 +15,9 @@ import { displayMoney, saleInfo } from '../../core/money';
 import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
-import { clampQty, preorderLabel, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
+import { clampQty, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
+import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
+import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
@@ -141,7 +143,7 @@ function Inner({ slug }: { slug: string }) {
   const rules = resolveQtyRules(detail.product, Number.isFinite(maxQty) ? maxQty : 999);
   const safeQty = clampQty(qty, rules);
   const sale = saleInfo({ currency, convert, canConvert, fixedPriceFor }, variant.price, variant.compareAtPrice, base, ref);
-  const pre = preorderLabel(detail.product);
+  const pre = productPreorderNote(detail.product, variant);
   const busy = adding === variant._id;
   const rating = reviews?.stats.averageRating ?? detail.product.averageRating ?? 0;
   const reviewCount = reviews?.stats.totalReviews ?? detail.product.totalRatings ?? 0;
@@ -222,7 +224,8 @@ function Inner({ slug }: { slug: string }) {
       const own = (k: string) => (typeof s[k] === 'string' && (s[k] as string).trim() ? (s[k] as string).trim() : null);
       return (
         <div id="tx-buy" className="flex flex-col gap-3">
-          {pre && <p className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
+          {pre && <p role="status" className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
+          <BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} />
           <TechButton block disabled={!canBuy} loading={busy} onClick={() => add(false)}><ShoppingCart size={16} aria-hidden />{!canBuy ? (own('soldOutLabel') ?? addLabel) : pre ? (own('preorderLabel') ?? addLabel) : (own('addToCartLabel') ?? addLabel)}</TechButton>
         </div>
       );
