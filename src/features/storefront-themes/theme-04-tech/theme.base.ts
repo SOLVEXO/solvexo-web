@@ -5,6 +5,8 @@
 // accent word, soft gradients and gentle motion. Merchant overrides (colors, fonts, buttons, spacing) are applied
 // into the singleton below before any child renders, same contract every registered theme follows.
 
+import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
+
 const STATIC_DEFAULTS = {
   id: 'theme-04-tech',
   name: 'Tech Store',
@@ -278,8 +280,10 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
   baseTheme.saleBadgeText = c?.saleBadgeText === 'label' ? 'label' : 'percent';
   baseTheme.showDelivery = c?.showDelivery !== 'hide';
   baseTheme.sectionRadiusPx = SECTION_RADIUS_PX[c?.sectionRadius ?? 'large'] ?? '28px';
-  baseTheme.fonts.body = c?.font ? `'${c.font}', sans-serif` : d.fonts.body;
-  baseTheme.fonts.display = c?.headingFont ? `'${c.headingFont}', serif` : d.fonts.display;
+  ensureGoogleFont(c?.font);
+  ensureGoogleFont(c?.headingFont);
+  baseTheme.fonts.body = c?.font ? `'${c.font}', ${fontFallback(c.font)}` : d.fonts.body;
+  baseTheme.fonts.display = c?.headingFont ? `'${c.headingFont}', ${fontFallback(c.headingFont, true)}` : d.fonts.display;
   baseTheme.imageRadiusPx = RADIUS_PX[c?.imageRadius ?? 'large'];
   baseTheme.productCardRadiusPx = RADIUS_PX[c?.productCardRadius ?? 'large'];
   baseTheme.productImageRatio = c?.productImageRatio ?? d.productImageRatio;

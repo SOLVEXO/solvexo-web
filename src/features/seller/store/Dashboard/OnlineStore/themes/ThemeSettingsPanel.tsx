@@ -19,6 +19,8 @@ import { useState } from 'react';
 import { getThemeManifest, readThemeSetting, themeSettingPatch, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { BrandKitCard } from './BrandKitCard';
+import { FontPicker } from './FontPicker';
+import { findCatalogFont } from '@/utils/googleFonts';
 import { COLOR_KEY_ROLE, COLOR_ROLE_LABEL, ROLE_PRIMARY_KEY, setHoveredColorRole, subscribePickedColorRole } from './colorRoleBridge';
 
 // Fixed platform brand color — same literal `ThemeLibraryPage.tsx`'s Install
@@ -130,6 +132,17 @@ function ThemeSettingsField({ field, colors, onChange }: {
       <div className="flex flex-col gap-1.5">
         <Field heading={field.label}>
           <input className={inp} type="text" maxLength={c.maxLength} placeholder={c.placeholder} value={value} onChange={e => onChange(themeSettingPatch(colors, field, e.target.value.trim() === '' ? null : e.target.value))} />
+        </Field>
+        {field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}
+      </div>
+    );
+  }
+  if (field.control.kind === 'font') {
+    const c = field.control;
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Field heading={field.label}>
+          <FontPicker value={value} inputClass={inp} defaultLabel={c.defaultLabel} onChange={v => onChange(themeSettingPatch(colors, field, c.defaultLabel && v === '' ? null : v))} />
         </Field>
         {field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}
       </div>
@@ -368,7 +381,9 @@ function SettingsTransfer({ manifest, current, onImport, onError }: {
         const v = parsed.settings[f.key];
         const ok = f.control.kind === 'select'
           ? typeof v === 'string' && f.control.options.some(o => o.value === v)
-          : f.control.kind === 'text'
+          : f.control.kind === 'font'
+            ? (v === null && !!f.control.defaultLabel) || (typeof v === 'string' && findCatalogFont(v) !== undefined)
+            : f.control.kind === 'text'
             ? v === null || (typeof v === 'string' && v.length <= (f.control.maxLength ?? 500))
             : v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v));
         if (!ok) continue;

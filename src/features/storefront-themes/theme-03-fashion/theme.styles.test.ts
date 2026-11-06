@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { findCatalogFont } from '@/utils/googleFonts';
 import { fashionThemeManifest } from './theme.manifest';
 import { applyMerchantThemeOverrides, fashionTheme, fashionTypographyCss, resolveSectionColors } from './theme.config';
 import { ctaLook } from './components/buttonLook';
@@ -11,6 +12,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 function validFor(key: string, value: unknown): boolean {
   const f = byKey.get(key);
   if (!f) return false;
+  if (f.control.kind === 'font') return (value === null && !!f.control.defaultLabel) || (typeof value === 'string' && findCatalogFont(value) !== undefined);
   if (f.control.kind === 'select') return (key === 'headingFont' && value === null) || typeof value === 'string' && f.control.options.some(o => o.value === value);
   return value === null || (typeof value === 'string' && HEX.test(value));
 }

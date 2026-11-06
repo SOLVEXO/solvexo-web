@@ -5,7 +5,6 @@ import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const RADIUS = [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }];
 const SHOW_HIDE = [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }];
-const fonts = (list: string[]) => list.map(f => ({ value: f, label: f }));
 
 /** Every Maison setting at its out-of-the-box value (matches `theme.config.ts`'s defaults). */
 const DEFAULTS: Partial<StorefrontColors> = {
@@ -86,8 +85,8 @@ export const baseManifest: ThemeManifest = {
     { key: 'borderColor', label: 'Borders & dividers', group: 'Colors', control: { kind: 'color', optional: { fallback: '#E4E4E7' } }, helpText: 'Lines around cards and between sections. Auto picks a soft tone.' },
     { key: 'saleColor', label: 'Sale & alert', group: 'Colors', control: { kind: 'color', optional: { fallback: '#DC2626' } }, helpText: 'Sale prices, low-stock and error text.' },
 
-    { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'select', options: fonts(['Inter', 'Poppins', 'Roboto', 'Montserrat', 'DM Sans', 'Nunito', 'Space Grotesk', 'Playfair Display', 'Fraunces']) }, helpText: 'Sets body and interface text. Use Heading font for headlines.' },
-    { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'select', options: [{ value: '', label: 'Theme default' }, ...fonts(['Inter', 'Poppins', 'Roboto', 'Montserrat', 'DM Sans', 'Space Grotesk', 'Playfair Display', 'Fraunces', 'Lora']) ] } ,helpText: 'Used for headlines. Theme default uses your body font.' },
+    { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'font' }, helpText: 'Sets body and interface text. Use Heading font for headlines.' },
+    { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'font', defaultLabel: 'Theme default (uses body font)' }, helpText: 'Used for headlines. Theme default uses your body font.' },
 
     { key: 'headingWeight', label: 'Heading weight', group: 'Typography', control: { kind: 'select', options: [{ value: 'regular', label: 'Regular' }, { value: 'medium', label: 'Medium (default)' }, { value: 'semibold', label: 'Semibold' }, { value: 'bold', label: 'Bold' }] }, helpText: 'How bold headlines look.' },
     { key: 'headingCase', label: 'Heading case', group: 'Typography', control: { kind: 'select', options: [{ value: 'none', label: 'As typed' }, { value: 'uppercase', label: 'UPPERCASE' }] }, helpText: 'Show headlines in capitals.' },

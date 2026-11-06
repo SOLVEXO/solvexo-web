@@ -56,7 +56,9 @@ export interface ThemeSettingsFieldDef {
   control:
     | { kind: 'color'; /** Optional override: shows an "Auto (theme)" state with a Reset, and saves null when reset. */ optional?: { fallback: string } }
     | { kind: 'select'; options: { value: string; label: string }[] }
-    | { kind: 'text'; maxLength?: number; placeholder?: string };
+    | { kind: 'text'; maxLength?: number; placeholder?: string }
+    /** Google Fonts picker (searchable, each font shown in its own face). `defaultLabel` adds a "theme default" row that stores nothing. */
+    | { kind: 'font'; defaultLabel?: string };
   /** Shown under the field — e.g. Maison's fixed headline typeface note. */
   helpText?: string;
 }

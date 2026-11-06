@@ -3,6 +3,8 @@
 // accent word, soft gradients and gentle motion. Merchant overrides (colors, fonts, buttons, spacing) are applied
 // into the singleton below before any child renders, same contract every registered theme follows.
 
+import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
+
 const STATIC_DEFAULTS = {
   id: 'theme-03-fashion',
   name: 'Maison',
@@ -276,8 +278,10 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.saleBadgeText = c?.saleBadgeText === 'label' ? 'label' : 'percent';
   fashionTheme.showDelivery = c?.showDelivery !== 'hide';
   fashionTheme.sectionRadiusPx = SECTION_RADIUS_PX[c?.sectionRadius ?? 'large'] ?? '28px';
-  fashionTheme.fonts.body = c?.font ? `'${c.font}', sans-serif` : d.fonts.body;
-  fashionTheme.fonts.display = c?.headingFont ? `'${c.headingFont}', serif` : d.fonts.display;
+  ensureGoogleFont(c?.font);
+  ensureGoogleFont(c?.headingFont);
+  fashionTheme.fonts.body = c?.font ? `'${c.font}', ${fontFallback(c.font)}` : d.fonts.body;
+  fashionTheme.fonts.display = c?.headingFont ? `'${c.headingFont}', ${fontFallback(c.headingFont, true)}` : d.fonts.display;
   fashionTheme.imageRadiusPx = RADIUS_PX[c?.imageRadius ?? 'large'];
   fashionTheme.productCardRadiusPx = RADIUS_PX[c?.productCardRadius ?? 'large'];
   fashionTheme.productImageRatio = c?.productImageRatio ?? d.productImageRatio;
