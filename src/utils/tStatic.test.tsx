@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import i18n from '@/i18n';
+import i18n, { ensureBundle } from '@/i18n';
 import { tsNodes } from './tStatic';
 
 describe('tsNodes', () => {
   it('puts each styled piece where the translated sentence has its placeholder', async () => {
+    await ensureBundle('ur'); // Urdu storefront text loads on demand, as in the app
     await i18n.changeLanguage('ur');
     const urdu = renderToStaticMarkup(<p>{tsNodes('pg.by_author', 'By {{author}}', { author: <b>Sara</b> })}</p>);
     expect(urdu).toBe('<p><b>Sara</b> کی طرف سے</p>');

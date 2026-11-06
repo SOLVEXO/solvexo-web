@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { getCountries } from 'react-phone-number-input';
 import { COUNTRY_OPTIONS, isSameCountry } from './countries';
+import { COUNTRY_CODES } from './countryCodes';
 
 // Regression coverage for the real shipping-zone country-matching bug: a
 // shipping zone's country and a buyer's address country must be reliably
@@ -9,6 +11,10 @@ describe('countries util', () => {
     expect(COUNTRY_OPTIONS.length).toBeGreaterThan(190);
     const pakistan = COUNTRY_OPTIONS.find(c => c.code === 'PK');
     expect(pakistan?.name).toBe('Pakistan');
+  });
+
+  it('uses the same codes as the phone-number library (the static copy must stay in sync)', () => {
+    expect([...COUNTRY_CODES].sort()).toEqual([...getCountries()].sort());
   });
 
   it('is sorted alphabetically by name', () => {

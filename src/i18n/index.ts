@@ -4,7 +4,6 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import ur from './locales/ur.json';
 import storefrontEn from './locales/storefront.en.json';
-import storefrontUr from './locales/storefront.ur.json';
 import { applyScriptFonts } from '@/utils/fonts';
 import { applyDocumentDirection } from '@/utils/rtl';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
@@ -39,7 +38,8 @@ i18n
   .init({
     resources: {
       en: { translation: en, storefront: storefrontEn },
-      ur: { translation: ur, storefront: storefrontUr },
+      // Urdu storefront text loads on demand like every other language (i18nReady/ensureBundle below).
+      ur: { translation: ur },
     },
     ns: ['translation', 'storefront', 'theme'],
     defaultNS: 'translation',

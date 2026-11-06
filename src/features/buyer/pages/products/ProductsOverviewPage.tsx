@@ -18,6 +18,7 @@ export function ProductsOverviewPage() {
       <div className="px-4 md:px-8 lg:px-12 pt-14 md:pt-18 pb-10 max-w-[760px] mx-auto">
         <SectionHeading
           kicker="One platform"
+          as="h1"
           title="Every product you need to run a business."
           subtitle="Store, POS, AI tools and analytics — under one login, sharing the same real data."
           align="center"

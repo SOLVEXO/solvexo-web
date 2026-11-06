@@ -8,7 +8,7 @@ import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
-import { unsplashUrl } from '@/assets/stockPhotos';
+import { stockPhotoAlt, unsplashUrl } from '@/assets/stockPhotos';
 import { getSolution } from '@/features/buyer/data/solutions';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import {
@@ -53,7 +53,7 @@ export function SolutionPage() {
     <div className="bg-white min-h-full">
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={unsplashUrl(solution.image, 1200)} alt="" className="w-full h-full object-cover" />
+          <img src={unsplashUrl(solution.image, 1200)} alt={`${solution.name}: ${stockPhotoAlt(solution.image)}`} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-carbon/90 via-carbon/70 to-carbon/40" />
         </div>
         <div className="relative z-[1] px-4 md:px-8 lg:px-12 pt-20 md:pt-28 pb-16 md:pb-20 max-w-[640px]">

@@ -6,7 +6,10 @@ import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { Footer, SkeletonBox } from '@/components/comman/ui';
+// Direct imports, not the '@/components/comman/ui' index: that index also re-exports the map picker, phone input and
+// chart cards, and importing it made the home page download those libraries.
+import { Footer } from '@/components/comman/ui/Footer';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import {
   ArrowRight, Store, Sparkles, Check,
   Star, BadgeCheck, Quote,
@@ -27,7 +30,7 @@ import {
 } from '@/components/comman/mockups/ProductMockups';
 import { PLATFORM_PRODUCTS, getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
-import { unsplashUrl } from '@/assets/stockPhotos';
+import { stockPhotoAlt, unsplashUrl } from '@/assets/stockPhotos';
 import { motion, useReducedMotion, useInView, AnimatePresence } from 'motion/react';
 
 const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
@@ -666,7 +669,7 @@ export function Homepage() {
           <RevealStagger className="grid grid-cols-2 sm:grid-cols-3 gap-4" step={0.06} y={18}>
             {SOLUTIONS.map(s => (
               <PremiumCard key={s.slug} onClick={() => navigate(`/solutions/${s.slug}`)} className="group relative overflow-hidden p-0 aspect-[4/5]">
-                <img src={unsplashUrl(s.image, 320)} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                <img src={unsplashUrl(s.image, 320)} alt={`${s.name}: ${stockPhotoAlt(s.image)}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-3.5 flex items-end justify-between gap-2">
                   <p className="text-[13px] font-bold text-white leading-tight">{s.name}</p>
