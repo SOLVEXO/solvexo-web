@@ -105,6 +105,8 @@ export interface UpdateStorePayload {
   paymentCaptureMethod?: 'automatic' | 'manual';
   /** Shopify "Customer accounts" — 'optional' allows guest checkout. */
   customerAccounts?: 'optional' | 'required';
+  /** Only approved wholesale (B2B) buyers may buy (wholesale-only store). */
+  wholesaleOnly?: boolean;
   dashboardMetrics?: string[] | null;
   reviewModerationEnabled?: boolean;
   lowStockThreshold?: number;
@@ -198,6 +200,7 @@ export interface StoreData {
   paymentCaptureMethod: 'automatic' | 'manual';
   /** Shopify "Customer accounts" setting; absent on older stores = 'optional'. */
   customerAccounts?: 'optional' | 'required';
+  wholesaleOnly?: boolean;
   /** Real Shopify-equivalent "customize your dashboard metrics" — which
    *  metric cards the seller's own Store Dashboard shows, and in what
    *  order. `null` (every pre-existing store) means "show the default 4"
@@ -582,6 +585,8 @@ export interface PublicStoreData {
   showDoNotSellLink: boolean;
   /** Shopify "Customer accounts" setting: true unless the store requires accounts. */
   guestCheckoutEnabled: boolean;
+  /** Only approved wholesale (B2B) buyers may buy; everyone else sees no prices or buy buttons. */
+  wholesaleOnly?: boolean;
   /** The store's primary custom domain (null when the free address is primary). */
   primaryDomain: string | null;
   /** Host every other domain redirects to (null = no redirect configured). */

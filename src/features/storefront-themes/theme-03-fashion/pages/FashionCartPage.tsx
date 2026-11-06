@@ -85,7 +85,7 @@ export function FashionCartPage() {
                           {i.isBundle && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{tr('product.bundleBadge', 'Bundle')}</p>}
                           {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
                           {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
-                          {i.unavailable && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
+                          {(i.unavailable || i.b2bError) && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{i.b2bError ?? tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
                           {i.quantity > 1 && <p className="m-0 mt-1 text-sm" style={{ color: t.colors.inkMuted }}>{displayMoney(conv, unit(i), i.currency ?? base, lineOf(i).ref)} {tr('cart.each', 'each')}</p>}
                         </div>
                         <p className="m-0 shrink-0 text-base font-semibold">{displayMoneyLine(conv, lineOf(i))}</p>

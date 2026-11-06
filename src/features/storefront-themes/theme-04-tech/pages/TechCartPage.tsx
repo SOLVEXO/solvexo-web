@@ -77,7 +77,7 @@ export function TechCartPage() {
                               {i.isBundle && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{ts('product.bundleBadge', 'Bundle')}</p>}
                               {(i.options?.length ?? 0) > 0 && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{i.options?.map(o => o.value).join(' / ')}</p>}
                               {hint && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
-                              {i.unavailable && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{ts('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
+                              {(i.unavailable || i.b2bError) && <p role="alert" className="m-0 mt-1 text-xs font-medium" style={{ color: t.colors.danger }}>{i.b2bError ?? ts('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
                             </div>
                           </div>
                         </td>

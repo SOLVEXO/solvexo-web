@@ -142,7 +142,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
                       {hint && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{hint}</p>}
                       {item.isBundle && <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{tr('product.bundleBadge', 'Bundle')}</p>}
                       {cartLineNotes(item).preorder && <p role="status" className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{cartLineNotes(item).preorder}</p>}
-                      {item.unavailable && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
+                      {(item.unavailable || item.b2bError) && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{item.b2bError ?? tr('cart.itemUnavailable', 'This item is no longer available. Please remove it to check out.')}</p>}
                       {item.type === 'digital' && (
                         <span className="inline-flex items-center gap-1 self-start rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: t.colors.bgAlt, color: t.colors.inkMuted }}>
                           <Download size={11} /> {tr('cart.digital', 'Digital')}

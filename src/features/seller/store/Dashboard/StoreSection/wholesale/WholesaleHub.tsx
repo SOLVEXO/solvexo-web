@@ -9,6 +9,7 @@ import { ApplicationsTab } from './ApplicationsTab';
 import { CatalogsTab } from './CatalogsTab';
 import { CompaniesTab, type CatalogRow } from './CompaniesTab';
 import { ErrorLine } from './ErrorLine';
+import { WholesaleStoreSetting } from './WholesaleStoreSetting';
 import { OrdersTab } from './OrdersTab';
 import { useApi } from './wholesaleUtils';
 
@@ -35,6 +36,7 @@ export default function WholesaleHub() {
       <div className="flex w-full flex-col gap-4 px-4 pb-8 pt-5 lg:px-7">
         {!allowed ? <EmptyState icon={<Lock size={22} />} title="No access" description="Your role does not include wholesale." /> : (
           <>
+            {can('b2b.manage' as StaffPermission) && <WholesaleStoreSetting storeId={storeId} />}
             <TabBar tabs={TABS} active={tab} onChange={change} />
             {catalogs.error && tab !== 'catalogs' && <ErrorLine message={errorMessage(catalogs.error)} onRetry={catalogs.reload} />}
             {tab === 'companies' && <CompaniesTab storeId={storeId} catalogs={catalogs.data ?? []} />}

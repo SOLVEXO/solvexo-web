@@ -17,6 +17,8 @@ import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
 import { clampQty, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
 import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
+import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
+import { Link as WholesaleLink } from 'react-router-dom';
 import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { useCartDrawer } from '../../cartDrawerContext';
@@ -82,6 +84,10 @@ function Inner({ slug }: { slug: string }) {
     const exact = variants.find(v => optionNames.every(n => !picked[n] || v.options?.find(o => o.name === n)?.value === picked[n]));
     return exact ?? detail?.defaultVariant ?? variants[0];
   }, [variants, optionNames, picked, detail?.defaultVariant]);
+
+  // Wholesale: who is looking (approved company buyer / locked out of a wholesale-only store) and their server-computed price.
+  const wholesale = useWholesaleGate();
+  const wholesalePrice = useWholesalePrice(variant?._id, qty, wholesale.approved);
 
   // A shared link carries ?variant=<id>: start on that option (once per product).
   const linkedFor = useRef('');
@@ -175,7 +181,7 @@ function Inner({ slug }: { slug: string }) {
         {reviewCount > 0 ? <><TechStars value={rating} /><span>{ts('reviews.count', '{{count}} reviews', { count: reviewCount })}</span></> : <span>{ts('reviews.beFirst', 'Be the first to review this product')}</span>}
       </a>
     ),
-    product_price: () => (
+    product_price: () => wholesale.locked ? null : (
       <>
         <div className="flex flex-wrap items-baseline gap-3">
           <span className="text-[28px] font-semibold" style={{ color: sale.onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>
@@ -208,7 +214,7 @@ function Inner({ slug }: { slug: string }) {
         })}
       </div>
     ),
-    product_quantity: () => (
+    product_quantity: () => wholesale.locked ? null : (
       <div>
         <p className="m-0 mb-2 text-sm font-semibold">{ts('product.quantity', 'Quantity')}</p>
         <div className="flex flex-wrap items-center gap-4">
@@ -221,16 +227,30 @@ function Inner({ slug }: { slug: string }) {
       </div>
     ),
     product_buy_buttons: s => {
+      if (wholesale.locked) return (
+            <div id="tx-buy" className="flex flex-col gap-2 p-4" style={{ border: `1px solid ${t.colors.border}`, borderRadius: 8 }}>
+              <p className="m-0 text-sm font-semibold">{ts('b2b.locked_title', 'Wholesale customers only')}</p>
+              <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{wholesale.signedIn ? ts('b2b.locked_apply', 'Prices and ordering are for approved wholesale accounts. Apply for one to start buying.') : ts('b2b.locked_signin', 'Sign in with your wholesale account to see prices and order.')}</p>
+              <WholesaleLink to={wholesale.signedIn ? '/wholesale' : '/login'} className="text-sm font-semibold underline">{wholesale.signedIn ? ts('b2b.apply_link', 'Apply for wholesale') : ts('b2b.signin_link', 'Sign in')}</WholesaleLink>
+            </div>
+      );
       const own = (k: string) => (typeof s[k] === 'string' && (s[k] as string).trim() ? (s[k] as string).trim() : null);
       return (
         <div id="tx-buy" className="flex flex-col gap-3">
           {pre && <p role="status" className="m-0 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{pre}</p>}
+          {wholesalePrice?.available && wholesalePrice.unitPrice != null && (
+            <div role="status" className="text-sm" style={{ color: t.colors.ink }}>
+              <p className="m-0 font-medium">{ts('b2b.your_price', 'Your wholesale price: {{price}} each', { price: show(wholesalePrice.unitPrice) })}</p>
+              {(wholesalePrice.priceBreaks ?? []).length > 0 && <p className="m-0 mt-1 text-xs" style={{ color: t.colors.inkMuted }}>{(wholesalePrice.priceBreaks ?? []).map(b => `${b.minQty}+ → ${show(b.price)}`).join(' · ')}</p>}
+            </div>
+          )}
+          {wholesalePrice && !wholesalePrice.available && wholesalePrice.error && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{wholesalePrice.error}</p>}
           <BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} />
           <TechButton block disabled={!canBuy} loading={busy} onClick={() => add(false)}><ShoppingCart size={16} aria-hidden />{!canBuy ? (own('soldOutLabel') ?? addLabel) : pre ? (own('preorderLabel') ?? addLabel) : (own('addToCartLabel') ?? addLabel)}</TechButton>
         </div>
       );
     },
-    product_buy_now: s => <ProductBuyNowButton settings={s} disabled={!canBuy} loading={busy} onBuy={() => add(true)} />,
+    product_buy_now: s => wholesale.locked ? null : <ProductBuyNowButton settings={s} disabled={!canBuy} loading={busy} onBuy={() => add(true)} />,
     product_wishlist: () => <ProductWishlistButton productId={detail.product._id} variantId={variant._id} />,
     product_share: s => <ProductShareButton settings={s} title={product.name} image={product.images?.[0]} variantId={variants.length > 1 ? variant._id : undefined} />,
     product_sku: () => <ProductSku sku={variant.sku} />,

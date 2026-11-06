@@ -26,6 +26,9 @@ export interface CartItem {
   orderQuantityStep?: number | null;
   /** The product was archived, set to draft or deleted after it was added. */
   unavailable?: boolean;
+  /** Wholesale buyers: the price is their company price. `b2bError` = why this line breaks a wholesale rule (not available to the company, quantity rule). */
+  b2bPriced?: boolean;
+  b2bError?: string | null;
   isBundle?: boolean;
   /** Pre-order notice (only while the variant is out of stock and pre-order is on). */
   preorder?: { label: string; expectedDate: string | null; message: string | null; remaining: number | null; soldOut: boolean } | null;

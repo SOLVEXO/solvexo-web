@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from 'react';
+import { useWholesaleGate } from '../../core/b2b/useWholesale';
 import { Link } from 'react-router-dom';
 import { BarChart3, Eye, Heart, ShoppingCart } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
@@ -28,6 +29,8 @@ function isCssColor(value: string): boolean {
 export function TechProductCard({ product, currency, layout = 'grid' }: { product: PublicStoreProduct; currency: string; layout?: 'grid' | 'list' }) {
   const { store } = useStorefront();
   const { convert, canConvert, fixedPriceFor } = useCurrencyPreference();
+  // Wholesale-only store: prices are for approved company buyers only.
+  const priceLocked = useWholesaleGate().locked;
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
@@ -113,7 +116,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       {swatches.length > 5 && <li className="text-xs" style={{ color: t.colors.inkMuted }}>+{swatches.length - 5}</li>}
     </ul>
   );
-  const priceBlock = price != null && (
+  const priceBlock = price != null && !priceLocked && (
     <p className="m-0 flex flex-col leading-tight">
       {sale.onSale && <s className="text-[13px]" style={{ color: t.colors.inkMuted }}>{show(sale.compareAmount, true)}</s>}
       <span className="text-[17px] font-semibold" style={{ color: t.colors.price }}>{show(price)}</span>

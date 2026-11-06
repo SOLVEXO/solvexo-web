@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from 'react';
+import { useWholesaleGate } from '../../core/b2b/useWholesale';
 import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -23,6 +24,8 @@ function previewVideoSrc(url?: string): string | undefined {
 export function FashionProductCard({ product, currency }: { product: PublicStoreProduct; currency: string }) {
   const { store } = useStorefront();
   const { convert, canConvert, fixedPriceFor } = useCurrencyPreference();
+  // Wholesale-only store: prices are for approved company buyers only.
+  const priceLocked = useWholesaleGate().locked;
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
@@ -75,8 +78,8 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
       hoverVideo={previewVideoSrc(product.videoUrl)}
       tag={product.vendor}
       rating={product.averageRating ?? 0}
-      price={price != null ? show(price) : undefined}
-      comparePrice={sale.onSale ? show(sale.compareAmount, true) : undefined}
+      price={!priceLocked && price != null ? show(price) : undefined}
+      comparePrice={!priceLocked && sale.onSale ? show(sale.compareAmount, true) : undefined}
       percentOff={percentOff}
       soldOut={soldOut}
       wished={hasVariant ? isWishlisted(product._id, product.variantId as string) : null}
