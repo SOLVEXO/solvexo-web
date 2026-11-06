@@ -15,6 +15,9 @@ export type { PrivateUploadData };
 // Lazy — most `ImageUpload` call sites never pass `storeId`, so the Files
 // Library picker (and its own API calls) shouldn't be in every bundle chunk
 // that happens to render a plain logo/product-image uploader.
+/** Matches the backend image ceiling (upload-file-validation.ts). */
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
 const MediaLibraryPickerModal = lazy(() =>
   import('@/features/seller/store/Dashboard/OnlineStore/builder/MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })),
 );
@@ -117,10 +120,17 @@ export function ImageUpload({
     }
 
     const room = maxFiles - value.length;
-    const files = picked.slice(0, Math.max(0, room));
-    if (picked.length > files.length) {
-      setNotice(`Only ${maxFiles} images are allowed — ${picked.length - files.length} extra ${picked.length - files.length === 1 ? 'file was' : 'files were'} skipped.`);
+    const candidates = picked.slice(0, Math.max(0, room));
+    const tooBig = candidates.filter(f => f.size > MAX_IMAGE_BYTES);
+    const files = candidates.filter(f => f.size <= MAX_IMAGE_BYTES);
+    const notes: string[] = [];
+    if (picked.length > candidates.length) {
+      notes.push(`Only ${maxFiles} images are allowed — ${picked.length - candidates.length} extra ${picked.length - candidates.length === 1 ? 'file was' : 'files were'} skipped.`);
     }
+    if (tooBig.length > 0) {
+      notes.push(`${tooBig.map(f => `"${f.name}" (${(f.size / 1048576).toFixed(1)} MB)`).join(', ')} ${tooBig.length === 1 ? 'is' : 'are'} too large. Each image can be up to 20 MB — please compress ${tooBig.length === 1 ? 'it' : 'them'} and try again.`);
+    }
+    if (notes.length > 0) setNotice(notes.join(' '));
     if (files.length === 0) return;
 
     setBatchUploading(true);
@@ -131,7 +141,11 @@ export function ImageUpload({
         const urls = results.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []));
         const failed = results.length - urls.length;
         if (urls.length > 0) onChange([...value, ...urls].slice(0, maxFiles));
-        if (failed > 0) setNotice(`${failed} ${failed === 1 ? 'image' : 'images'} could not be uploaded. Please try again.`);
+        if (failed > 0) {
+          const firstErr = results.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined;
+          const reason = firstErr?.reason instanceof Error ? firstErr.reason.message : '';
+          setNotice(prev => [prev, `${failed} ${failed === 1 ? 'image' : 'images'} could not be uploaded${reason ? `: ${reason}` : '. Please try again.'}`].filter(Boolean).join(' '));
+        }
       })
       .finally(() => setBatchUploading(false));
   };
