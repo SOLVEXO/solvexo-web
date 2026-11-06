@@ -6,6 +6,7 @@ import { DefaultLearnPage } from './DefaultLearnPage';
 import { DefaultLibraryPage } from './DefaultLibraryPage';
 import { DefaultWholesalePage } from './DefaultWholesalePage';
 import { DefaultCodConfirmPage } from './DefaultCodConfirmPage';
+import { DefaultMessagingPrefsPage } from './DefaultMessagingPrefsPage';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID, type StorefrontRouteKey } from './registry';
 
 /** Dispatches a storefront route to whichever independent theme is active
@@ -22,7 +23,7 @@ export function ThemedRoute({ routeKey }: { routeKey: StorefrontRouteKey }) {
   // Every registered theme is expected to implement all 14 keys (see
   // `registry.ts`) — this only guards against a future theme that's
   // mid-build and hasn't reached this route yet, rather than a runtime crash.
-  const Page = impl.pages[routeKey] ?? NEW_THEME_REGISTRY[DEFAULT_THEME_ID].pages[routeKey] ?? (routeKey === 'library' ? DefaultLibraryPage : routeKey === 'memberships' ? DefaultMembershipsPage : routeKey === 'licenses' ? DefaultLicensesPage : routeKey === 'learn' ? DefaultLearnPage : routeKey === 'wholesale' ? DefaultWholesalePage : routeKey === 'codConfirm' ? DefaultCodConfirmPage : undefined);
+  const Page = impl.pages[routeKey] ?? NEW_THEME_REGISTRY[DEFAULT_THEME_ID].pages[routeKey] ?? (routeKey === 'library' ? DefaultLibraryPage : routeKey === 'memberships' ? DefaultMembershipsPage : routeKey === 'licenses' ? DefaultLicensesPage : routeKey === 'learn' ? DefaultLearnPage : routeKey === 'wholesale' ? DefaultWholesalePage : routeKey === 'codConfirm' ? DefaultCodConfirmPage : routeKey === 'messagingPrefs' ? DefaultMessagingPrefsPage : undefined);
   if (!Page) return null;
   // Pages opened less often are loaded on demand; the theme's own header/footer stay on screen while they arrive.
   return <Suspense fallback={<div style={{ minHeight: '60vh' }} aria-busy="true" />}><Page /></Suspense>;

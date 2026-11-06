@@ -127,6 +127,7 @@ const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Ma
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
+const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
 const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/CodProtectionPage'));
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
@@ -260,6 +261,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'learn', element: <ThemedRoute routeKey="learn" /> },
           { path: 'wholesale', element: <ThemedRoute routeKey="wholesale" /> },
           { path: 'cod-confirm/:token', element: <ThemedRoute routeKey="codConfirm" /> },
+          { path: 'messaging-preferences', element: <ThemedRoute routeKey="messagingPrefs" /> },
           { path: 'order-status/:token', element: <ThemedRoute routeKey="orderStatus" /> },
           { path: 'addresses', element: <ThemedRoute routeKey="addresses" /> },
           { path: 'reviews', element: <ThemedRoute routeKey="myReviews" /> },
@@ -396,6 +398,7 @@ const mainRouter = createBrowserRouter([
           { path: 'digital',                          element: <DigitalHub /> },
           { path: 'wholesale',                        element: <WholesaleHub /> },
           { path: 'cod-protection',                   element: <CodProtectionPage /> },
+          { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },

@@ -101,7 +101,7 @@ const TechGate: NewThemeImpl['GatePage'] = props => createElement(Suspense, { fa
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
-  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'library' | 'memberships' | 'licenses' | 'learn' | 'wholesale' | 'codConfirm' | 'orderStatus' | 'addresses' | 'myReviews'
+  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'library' | 'memberships' | 'licenses' | 'learn' | 'wholesale' | 'codConfirm' | 'messagingPrefs' | 'orderStatus' | 'addresses' | 'myReviews'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 
