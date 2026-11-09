@@ -4,6 +4,7 @@
 // config imports it directly.
 import { ALL_PLATFORM_PRODUCTS } from '../features/buyer/data/platformProducts';
 import { SOLUTIONS } from '../features/buyer/data/solutions';
+import { SORTED_BLOG_POSTS } from '../features/buyer/data/blogPosts';
 
 /** The one address search engines should index (solvexo.store redirects here; country paths canonicalise to it). */
 export const SITE_ORIGIN = 'https://www.solvexo.store';
@@ -17,6 +18,8 @@ export interface PublicPageSeo {
   /** sitemap hints */
   priority?: number;
   changefreq?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  /** Sitemap lastmod (YYYY-MM-DD) when the page has its own date; otherwise the build date. */
+  lastmod?: string;
 }
 
 const BRAND = 'Solvexo';
@@ -94,7 +97,22 @@ const SOLUTION_PAGES: PublicPageSeo[] = SOLUTIONS.map(s => ({
 }));
 
 /** Every indexable page, in sitemap order. */
-export const SITEMAP_PAGES: PublicPageSeo[] = [...STATIC_PAGES, ...PRODUCT_PAGES, ...SOLUTION_PAGES];
+const BLOG_PAGES: PublicPageSeo[] = [
+  { path: '/blog', index: true, priority: 0.7, changefreq: 'weekly', lastmod: SORTED_BLOG_POSTS[0]?.published,
+    title: t('Blog: Guides for Selling Online in Pakistan'),
+    description: 'Practical guides for Pakistani sellers: starting an online store, cash on delivery, delivery, POS for shops and growing your sales with Solvexo.' },
+  ...SORTED_BLOG_POSTS.map(p => ({
+    path: `/blog/${p.slug}`,
+    index: true,
+    priority: 0.6,
+    changefreq: 'monthly' as const,
+    lastmod: p.updated ?? p.published,
+    title: t(p.title),
+    description: p.description,
+  })),
+];
+
+export const SITEMAP_PAGES: PublicPageSeo[] = [...STATIC_PAGES, ...PRODUCT_PAGES, ...SOLUTION_PAGES, ...BLOG_PAGES];
 
 const BY_PATH = new Map(SITEMAP_PAGES.map(p => [p.path, p]));
 
@@ -131,7 +149,7 @@ export function buildSitemapXml(lastmod: string): string {
   const urls = SITEMAP_PAGES.filter(p => p.index).map(p => [
     '  <url>',
     `    <loc>${canonicalUrl(p.path)}</loc>`,
-    `    <lastmod>${lastmod}</lastmod>`,
+    `    <lastmod>${p.lastmod ?? lastmod}</lastmod>`,
     p.changefreq ? `    <changefreq>${p.changefreq}</changefreq>` : '',
     p.priority != null ? `    <priority>${p.priority.toFixed(1)}</priority>` : '',
     '  </url>',
