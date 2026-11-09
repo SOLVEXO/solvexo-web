@@ -47,7 +47,7 @@ export function StoreAIStudio() {
 
         {/* ── Tool selector ── */}
         {canUse && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {TOOLS.map(tool => {
+          {TOOLS.filter(t => t.id !== 'image_enhancer' || credits?.imageEnhancerAvailable === true).map(tool => {
             const active = activeTool === tool.id;
             return (
               <button
@@ -79,7 +79,7 @@ export function StoreAIStudio() {
         {canUse && activeTool === 'email_campaigns'   && <EmailCampaignsTool storeId={storeId} onCreditsChanged={refetchCredits} />}
         {canUse && activeTool === 'worksheet_builder' && <WorksheetBuilderTool storeId={storeId} onCreditsChanged={refetchCredits} />}
         {canUse && activeTool === 'price_optimizer'   && <PriceOptimizerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {canUse && activeTool === 'image_enhancer'    && <ImageEnhancerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && activeTool === 'image_enhancer' && credits?.imageEnhancerAvailable === true && <ImageEnhancerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
       </div>
     </>
   );

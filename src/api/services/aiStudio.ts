@@ -42,6 +42,8 @@ export interface AiCreditsOverview {
   usageByTool: { tool: AiToolType; credits: number; generations: number }[];
   transactions: AiCreditTransactionRow[];
   buyCredits: { endpoint: string; addonType: string; creditsPerUnit: number };
+  /** False while no real image-enhancement provider is configured (the tool is hidden, nothing is billed). */
+  imageEnhancerAvailable?: boolean;
 }
 
 export function apiGetAiStudioCredits(storeId: string) {
