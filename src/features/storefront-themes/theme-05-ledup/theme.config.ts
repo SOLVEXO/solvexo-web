@@ -29,7 +29,9 @@ const STATIC_DEFAULTS = {
     inkMuted: '#78716C',
     border: '#EAE8E5',
     borderStrong: '#D6D3D1',
-    accent: '#8C7355',
+    accent: '#4b423b',
+    banner: '#c49466',
+    footer: '#3b352f',
     accentInk: '#FFFFFF',
     accentGradient: 'linear-gradient(135deg, #C29367 0%, #D4A373 50%, #B07D50 100%)',
     footerBg: 'linear-gradient(180deg, #423932 0%, #2A241F 100%)',
@@ -66,6 +68,7 @@ const STATIC_DEFAULTS = {
   curvedFooterRadiusPx: '50px',
   showDatasheetButton: true,
   showCharacteristicsTable: true,
+  preloader: true,
   checkoutSummary: 'right' as 'right' | 'left',
   cartUpsell: true,
   /** Products per page on collection/category/search; seller settings `custom.productsPerPage` / `custom.productShowAll`. */
@@ -81,6 +84,11 @@ export type LedupColors = typeof ledupTheme.colors;
 export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | undefined): void {
   applyBase(colors);
   Object.assign(ledupTheme.colors, DEFAULT_COLORS);
+  const ts = (colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings;
+  const hex = (v: unknown) => (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : null);
+  ledupTheme.colors.banner = hex(ts?.bannerColor) ?? DEFAULT_COLORS.banner;
+  ledupTheme.colors.footer = hex(ts?.footerColor) ?? DEFAULT_COLORS.footer;
+  ledupTheme.preloader = ts?.preloader !== 'hide';
   ledupTheme.pagination.productsPerPage = readProductsPerPage((colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings).pageSize;
   ledupTheme.fonts.body = baseTheme.fonts.body;
   ledupTheme.fonts.display = baseTheme.fonts.display;

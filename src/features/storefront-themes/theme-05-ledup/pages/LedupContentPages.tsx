@@ -76,11 +76,11 @@ export function LedupNotFoundPage() {
   return (
     <div className="py-24 text-center">
       <LedupBox narrow>
-        <span className="text-6xl font-light text-[#8C7355]">404</span>
+        <span className="text-6xl font-light text-[var(--ld-accent)]">404</span>
         <h1 className="mt-4 text-3xl font-bold text-stone-900">{ts('pg.page_not_found', 'Page not found')}</h1>
         <p className="mt-3 text-sm text-stone-500">{ts('pg.the_page_you_are_looking_for_does_not_exist', 'The page you are looking for does not exist or has moved.')}</p>
         <div className="mt-8">
-          <Link to="/" className="inline-flex items-center gap-2 rounded-full bg-[#8C7355] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[#796247]">
+          <Link to="/" className="inline-flex items-center gap-2 rounded-full bg-[var(--ld-accent)] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[var(--ld-accent-hover)]">
             {ts('pg.back_to_home', 'Back to home')} <ArrowUpRight size={14} aria-hidden />
           </Link>
         </div>

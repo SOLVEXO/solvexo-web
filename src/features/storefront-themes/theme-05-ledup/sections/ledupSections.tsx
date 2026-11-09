@@ -31,7 +31,7 @@ function Cta({ label, link, className }: { label?: string; link?: any; className
   return <a href={target.href ?? '#'} className={className} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{label} <ArrowUpRight size={14} aria-hidden /></a>;
 }
 
-const solidCta = 'inline-flex items-center gap-2 rounded-full bg-[#8C7355] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[#796247]';
+const solidCta = 'inline-flex items-center gap-2 rounded-full bg-[var(--ld-accent)] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[var(--ld-accent-hover)]';
 
 // ── Featured products ───────────────────────────────────────────────────────
 function FeaturedProducts({ settings, colors }: { settings: Record<string, any>; colors: BaseColors }) {
@@ -139,7 +139,7 @@ function FeatureList({ settings, blocks }: { settings: Record<string, any>; bloc
       <LedupBox padY={false}>
         {(heading || eyebrow) && (
           <div className="mx-auto mb-10 max-w-2xl text-center">
-            {eyebrow && <span className="text-xs font-semibold uppercase tracking-wider text-[#8C7355]">{eyebrow}</span>}
+            {eyebrow && <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ld-accent)]">{eyebrow}</span>}
             {heading && <h2 className="mt-2 text-2xl font-bold tracking-tight text-stone-900 md:text-4xl" style={{ fontFamily: t.fonts.display }}>{heading}</h2>}
             {text(settings.text) && <p className="mt-3 text-sm leading-relaxed text-stone-600">{text(settings.text)}</p>}
           </div>
@@ -152,10 +152,10 @@ function FeatureList({ settings, blocks }: { settings: Record<string, any>; bloc
             return (
               <PreviewBlock key={id} blockId={id}>
                 <div className="h-full rounded-3xl border border-stone-200/60 bg-white p-8 shadow-sm transition hover:shadow-md">
-                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#8C7355]/10 text-[#8C7355]"><Icon size={24} aria-hidden /></div>
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--ld-accent)]/10 text-[var(--ld-accent)]"><Icon size={24} aria-hidden /></div>
                   {text(s.title) && <h3 className="mb-2 text-lg font-bold text-stone-900">{s.title}</h3>}
                   {text(s.description) && <p className="mb-4 text-sm leading-relaxed text-stone-500">{renderRichText(s.description)}</p>}
-                  <Cta label={text(s.linkText)} link={s.link} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8C7355] no-underline hover:underline" />
+                  <Cta label={text(s.linkText)} link={s.link} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ld-accent)] no-underline hover:underline" />
                 </div>
               </PreviewBlock>
             );

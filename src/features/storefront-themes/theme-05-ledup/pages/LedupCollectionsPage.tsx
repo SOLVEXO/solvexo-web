@@ -33,7 +33,7 @@ export function LedupCollectionsPage() {
                   <h2 className="m-0 mb-2 text-xl font-bold text-stone-900">{c.name}</h2>
                   {c.description && <p className="m-0 line-clamp-2 text-sm text-stone-500">{c.description}</p>}
                 </div>
-                <span className="mt-6 inline-flex items-center gap-2 border-t border-stone-100 pt-4 text-xs font-semibold text-[#8C7355]">{ts('ld.viewAllProducts', 'View all products')} <ArrowUpRight size={14} aria-hidden /></span>
+                <span className="mt-6 inline-flex items-center gap-2 border-t border-stone-100 pt-4 text-xs font-semibold text-[var(--ld-accent)]">{ts('ld.viewAllProducts', 'View all products')} <ArrowUpRight size={14} aria-hidden /></span>
               </Link>
             ))}
           </div>

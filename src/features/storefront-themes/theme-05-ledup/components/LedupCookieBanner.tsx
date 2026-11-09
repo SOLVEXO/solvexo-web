@@ -13,7 +13,7 @@ export function LedupCookieBanner({ message, position = 'bottom_bar', onDecide }
   const corner = position === 'bottom_corner';
 
   const ghost = 'cursor-pointer rounded-full border border-stone-600 bg-transparent px-4 py-2 text-xs font-medium text-stone-300 transition hover:bg-stone-800 hover:text-white';
-  const solid = 'cursor-pointer rounded-full border-0 bg-[#8C7355] px-5 py-2 text-xs font-medium text-white transition hover:bg-[#796247]';
+  const solid = 'cursor-pointer rounded-full border-0 bg-[var(--ld-accent)] px-5 py-2 text-xs font-medium text-white transition hover:bg-[var(--ld-accent-hover)]';
 
   const rows = [
     { key: 'necessary', label: tr('cookies.necessary', 'Necessary'), desc: tr('cookies.necessaryDesc', ' — required for the store to function, always on'), checked: true, locked: true, set: () => {} },
@@ -42,7 +42,7 @@ export function LedupCookieBanner({ message, position = 'bottom_bar', onDecide }
         <div id={prefsId} className="mt-4 flex flex-col gap-3 border-t border-stone-800 pt-4">
           {rows.map(r => (
             <label key={r.key} className="flex items-start gap-3 text-xs text-stone-300">
-              <input type="checkbox" checked={r.checked} disabled={r.locked} onChange={e => r.set(e.target.checked)} className="mt-0.5 accent-[#8C7355]" />
+              <input type="checkbox" checked={r.checked} disabled={r.locked} onChange={e => r.set(e.target.checked)} className="mt-0.5 accent-[var(--ld-accent)]" />
               <span><strong className="text-white">{r.label}</strong>{r.desc}</span>
             </label>
           ))}

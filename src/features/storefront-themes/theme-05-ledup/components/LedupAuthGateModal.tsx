@@ -19,13 +19,13 @@ export function LedupAuthGateModal() {
   }, [pending, close]);
 
   if (!pending) return null;
-  const input = 'w-full rounded-full border border-stone-300 bg-stone-50/50 px-5 py-3 text-sm text-stone-900 focus:border-[#8C7355] focus:outline-none';
+  const input = 'w-full rounded-full border border-stone-300 bg-stone-50/50 px-5 py-3 text-sm text-stone-900 focus:border-[var(--ld-accent)] focus:outline-none';
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm" onMouseDown={e => { if (e.target === e.currentTarget) close(); }}>
       <div role="dialog" aria-modal="true" aria-label={ts('pg.auth_gate_title', 'Sign in to continue')} className="ld-pop relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
         <button type="button" onClick={close} aria-label={ts('common.close', 'Close')} className="absolute end-4 top-4 cursor-pointer border-0 bg-transparent p-1 text-stone-400 hover:text-stone-700"><X size={18} aria-hidden /></button>
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#8C7355]/10 text-[#8C7355]"><Lock size={24} aria-hidden /></div>
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ld-accent)]/10 text-[var(--ld-accent)]"><Lock size={24} aria-hidden /></div>
         <h2 className="mb-2 text-center text-xl font-bold text-stone-900" style={{ fontFamily: t.fonts.display }}>{ts('pg.auth_gate_title', 'Sign in to continue')}</h2>
         {pending.reason && <p className="mb-6 text-center text-sm text-stone-500">{pending.reason}</p>}
 
@@ -40,7 +40,7 @@ export function LedupAuthGateModal() {
           </div>
           {errors.password && <p className="m-0 -mt-1 text-xs text-red-600">{errors.password}</p>}
           {submitError && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-xs text-red-600">{submitError}</p>}
-          <button type="submit" disabled={submitting} className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center rounded-full border-0 bg-[#8C7355] text-sm font-medium text-white transition hover:bg-[#796247] disabled:opacity-50">
+          <button type="submit" disabled={submitting} className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center rounded-full border-0 bg-[var(--ld-accent)] text-sm font-medium text-white transition hover:bg-[var(--ld-accent-hover)] disabled:opacity-50">
             {submitting ? ts('auth.signingIn', 'Signing in…') : ts('auth.signInBtn', 'Sign In')}
           </button>
         </form>
@@ -51,7 +51,7 @@ export function LedupAuthGateModal() {
 
         <div className="mt-4 flex items-center justify-between">
           <button type="button" onClick={close} className="cursor-pointer border-0 bg-transparent p-0 text-sm text-stone-500">{ts('common.cancel', 'Cancel')}</button>
-          <button type="button" onClick={goRegister} className="cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold text-[#8C7355]">{ts('auth.createAccountBtn', 'Create Account')}</button>
+          <button type="button" onClick={goRegister} className="cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold text-[var(--ld-accent)]">{ts('auth.createAccountBtn', 'Create Account')}</button>
         </div>
       </div>
     </div>

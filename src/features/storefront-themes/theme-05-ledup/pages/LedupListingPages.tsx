@@ -99,7 +99,7 @@ export function LedupSearchPage() {
         <div className="mb-8 border-b border-stone-200 pb-6">
           <p className="m-0 text-xs uppercase tracking-wider text-stone-400">{ts('nav.search', 'Search')}</p>
           <h1 className="mt-1 text-2xl font-bold text-stone-900 md:text-3xl">
-            {q ? tsNodes('h.results_for', 'Results for {{query}}', { query: <span className="text-[#8C7355]">“{q}”</span> }) : ts('nav.allProducts', 'All products')}
+            {q ? tsNodes('h.results_for', 'Results for {{query}}', { query: <span className="text-[var(--ld-accent)]">“{q}”</span> }) : ts('nav.allProducts', 'All products')}
           </h1>
         </div>
         <LedupProductBrowser search={q || undefined} syncUrl emptyText={q ? ts('pg.nothing_matched_q_try_a_different_word', 'Nothing matched “{{q}}”. Try a different word.', { q }) : undefined} />

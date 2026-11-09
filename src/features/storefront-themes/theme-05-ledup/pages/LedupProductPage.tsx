@@ -148,7 +148,7 @@ function Inner({ slug }: { slug: string }) {
                 {images.map((img, i) => (
                   <button key={img + i} type="button" aria-label={ts('product.showImage', 'Show image {{n}}', { n: i + 1 })} aria-current={imageIndex === i}
                     onClick={() => setGallery({ vid: variant._id, i })}
-                    className={`relative aspect-square h-20 w-20 shrink-0 rounded-2xl border bg-white p-2 transition ${imageIndex === i ? 'border-[#8C7355] ring-2 ring-[#8C7355]/20' : 'border-stone-200 hover:border-stone-400'}`}>
+                    className={`relative aspect-square h-20 w-20 shrink-0 rounded-2xl border bg-white p-2 transition ${imageIndex === i ? 'border-[var(--ld-accent)] ring-2 ring-[var(--ld-accent)]/20' : 'border-stone-200 hover:border-stone-400'}`}>
                     <img src={img} alt="" className="h-full w-full object-contain" />
                   </button>
                 ))}
@@ -224,7 +224,7 @@ function Inner({ slug }: { slug: string }) {
         {related.length > 0 && (
           <div className="mt-24 border-t border-stone-200 pt-12">
             <div className="mb-8 inline-block">
-              <span className="inline-flex rounded-full bg-[#8C7355] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white">{ts('ld.relatedProducts', 'Related products')}</span>
+              <span className="inline-flex rounded-full bg-[var(--ld-accent)] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white">{ts('ld.relatedProducts', 'Related products')}</span>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
               {related.map(p => <LedupProductCard key={p._id} product={p} currency={currency} />)}

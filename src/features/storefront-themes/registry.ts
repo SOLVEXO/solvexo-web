@@ -342,7 +342,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       totalRouteCount: 37,
     },
     installDefaults: {
-      primaryColor: '#8C7355',
+      primaryColor: '#4b423b',
       bgColor: '#FFFFFF',
       textColor: '#1C1917',
       font: 'Poppins',

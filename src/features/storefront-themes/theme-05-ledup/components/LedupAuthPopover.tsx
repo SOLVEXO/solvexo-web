@@ -99,12 +99,12 @@ export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose
               </button>
             </div>
           </div>
-          <button type="submit" disabled={loading} className="mt-1 flex h-11 w-full items-center justify-center rounded-full bg-[#8C7355] text-sm font-medium text-white shadow-sm transition hover:bg-[#796247] disabled:opacity-50">
+          <button type="submit" disabled={loading} className="mt-1 flex h-11 w-full items-center justify-center rounded-full bg-[var(--ld-accent)] text-sm font-medium text-white shadow-sm transition hover:bg-[var(--ld-accent-hover)] disabled:opacity-50">
             {loading ? ts('auth.signingIn', 'Signing in…') : ts('auth.signIn', 'Sign in')}
           </button>
           <div className="flex items-center justify-between pt-1 text-xs text-stone-500">
             <Link to="/forgot-password" onClick={onClose} className="hover:text-stone-800 hover:underline">{ts('auth.forgotPassword', 'Forgot your password?')}</Link>
-            <Link to="/register" onClick={onClose} className="font-medium text-[#8C7355] hover:underline">{ts('auth.createAccount', 'Create account')}</Link>
+            <Link to="/register" onClick={onClose} className="font-medium text-[var(--ld-accent)] hover:underline">{ts('auth.createAccount', 'Create account')}</Link>
           </div>
         </form>
       )}

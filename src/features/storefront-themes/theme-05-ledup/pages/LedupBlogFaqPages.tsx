@@ -33,12 +33,12 @@ function PostCard({ post, blogSlug }: { post: BlogPostSummary; blogSlug?: string
       )}
       <div className="flex flex-1 flex-col justify-between p-6">
         <div>
-          {date && <time dateTime={post.publishedAt ?? undefined} className="text-xs font-medium text-[#8C7355]">{date}</time>}
+          {date && <time dateTime={post.publishedAt ?? undefined} className="text-xs font-medium text-[var(--ld-accent)]">{date}</time>}
           <h2 className="m-0 mt-2 text-lg font-bold leading-snug text-stone-900"><Link to={href} className="text-inherit no-underline">{post.title}</Link></h2>
           {post.excerpt && <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-stone-600">{post.excerpt}</p>}
         </div>
         <div className="mt-6 border-t border-stone-100 pt-4">
-          <Link to={href} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8C7355] no-underline hover:underline">{ts('pg.read_more', 'Read more')} <ArrowUpRight size={13} aria-hidden /></Link>
+          <Link to={href} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ld-accent)] no-underline hover:underline">{ts('pg.read_more', 'Read more')} <ArrowUpRight size={13} aria-hidden /></Link>
         </div>
       </div>
     </article>
@@ -206,7 +206,7 @@ export function LedupFaqsPage() {
             <div className="divide-y divide-stone-200">
               {data.map(f => (
                 <details key={f._id} className="group py-5">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-stone-900">{f.question}<span aria-hidden className="text-[#8C7355] transition group-open:rotate-45">+</span></summary>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-stone-900">{f.question}<span aria-hidden className="text-[var(--ld-accent)] transition group-open:rotate-45">+</span></summary>
                   <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-stone-600">{f.answer}</p>
                 </details>
               ))}

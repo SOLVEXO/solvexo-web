@@ -24,13 +24,13 @@ interface Props {
 const EDITOR_CSS = `
 .ld-sel{outline:2px solid transparent;outline-offset:-2px;cursor:pointer;transition:outline-color .12s}
 .ld-sel:hover{outline-color:rgba(140,115,85,.4)}
-.ld-sel-on{outline:2px solid #8C7355;outline-offset:-2px;cursor:pointer}
+.ld-sel-on{outline:2px solid var(--ld-accent);outline-offset:-2px;cursor:pointer}
 .theme-editor-block-target{outline:1px dashed transparent;outline-offset:2px;cursor:pointer}
 .theme-editor-block-target:hover{outline-color:rgba(140,115,85,.7)}
-.theme-editor-block-selected{outline:2px solid #8C7355;outline-offset:2px;cursor:pointer}
+.theme-editor-block-selected{outline:2px solid var(--ld-accent);outline-offset:2px;cursor:pointer}
 [data-inline-edit]{cursor:text;outline:1px dashed transparent;outline-offset:3px;border-radius:2px}
 [data-inline-edit]:hover{outline-color:rgba(140,115,85,.7)}
-[data-inline-edit]:focus{outline:2px solid #8C7355;background:rgba(140,115,85,.08)}`;
+[data-inline-edit]:focus{outline:2px solid var(--ld-accent);background:rgba(140,115,85,.08)}`;
 
 export function LedupSectionRenderer({
   sections: authored,

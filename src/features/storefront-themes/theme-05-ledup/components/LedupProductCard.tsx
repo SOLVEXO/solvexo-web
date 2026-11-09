@@ -103,7 +103,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
             onClick={quickAdd}
             disabled={!inStock || !product.variantId}
             aria-label={ts('ld.addToCart', 'Add to cart')}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-700 shadow-sm transition hover:border-[#8C7355] hover:bg-[#8C7355] hover:text-white disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-700 shadow-sm transition hover:border-[var(--ld-accent)] hover:bg-[var(--ld-accent)] hover:text-white disabled:opacity-40"
           >
             <ShoppingBag size={14} />
           </button>

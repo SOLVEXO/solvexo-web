@@ -85,7 +85,7 @@ export const baseColors: BaseColors = {
   inkMuted: '#78716C',
   border: '#EAE8E5',
   borderStrong: '#D6D3D1',
-  accent: '#8C7355',
+  accent: 'var(--ld-accent)',
   accentInk: '#FFFFFF',
   accentGradient: 'linear-gradient(135deg, #C29367 0%, #D4A373 50%, #B07D50 100%)',
   footerBg: 'linear-gradient(180deg, #423932 0%, #2A241F 100%)',

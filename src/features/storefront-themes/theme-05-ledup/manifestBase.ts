@@ -4,7 +4,7 @@ import type { StorefrontColors } from '@/api/services/storeTheme';
 const DEFAULTS: Partial<StorefrontColors> = {
   bgColor: '#FFFFFF',
   textColor: '#1C1917',
-  primaryColor: '#8C7355',
+  primaryColor: '#4b423b',
   mutedColor: '#78716C',
   borderColor: '#EAE8E5',
   saleColor: '#DC2626',
@@ -89,12 +89,12 @@ export const baseManifest: ThemeManifest = {
   styles: STYLES,
   customSections: [
     {
-      key: 'ledup.category_tabs', label: 'Category tabs banner', color: '#8C7355',
+      key: 'ledup.category_tabs', label: 'Category tabs banner', color: '#4b423b',
       description: 'The bronze banner with curved tabs. The tabs are your store categories (or collections).',
       fields: [],
     },
     {
-      key: 'ledup.highlights', label: 'Highlights', color: '#8C7355',
+      key: 'ledup.highlights', label: 'Highlights', color: '#4b423b',
       description: 'Three or more cards with an icon, a title, a short text and an optional link.',
       fields: [
         { key: 'eyebrow', kind: 'text', label: 'Small label above', maxLength: 60 },
@@ -112,7 +112,7 @@ export const baseManifest: ThemeManifest = {
       initialBlocks: 3,
     },
     {
-      key: 'ledup.statement', label: 'Statement', color: '#8C7355',
+      key: 'ledup.statement', label: 'Statement', color: '#4b423b',
       description: 'A large centred statement with a short text.',
       fields: [
         { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
@@ -125,9 +125,12 @@ export const baseManifest: ThemeManifest = {
     { key: 'custom.productsPerPage', label: 'Products per page', group: 'Pagination', control: { kind: 'number', min: 4, max: 100, placeholder: '12' }, helpText: 'How many products show at once on collection, category and search pages: any number from 4 to 100. Default 12.' },
     { key: 'custom.productShowAll', label: 'Show all products', group: 'Pagination', control: { kind: 'select', options: [{ value: 'no', label: 'No, use the number above' }, { value: 'yes', label: 'Yes, keep loading as shoppers scroll' }] }, helpText: 'Loads every product in batches of 100 while shoppers scroll, so big stores stay fast.' },
     { key: 'primaryColor', label: 'Buttons & accent', group: 'Colors', control: { kind: 'color' }, helpText: 'Buttons, links, tags and the bronze banner tone.' },
+    { key: 'custom.bannerColor', label: 'Category banner colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#c49466' } }, helpText: 'The metallic banner with the curved tabs and the title banners on account pages. Auto uses the copper tone.' },
+    { key: 'custom.footerColor', label: 'Footer colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#3b352f' } }, helpText: 'Base colour of the curved footer. Auto uses dark espresso.' },
     { key: 'bgColor', label: 'Background', group: 'Colors', control: { kind: 'color' }, helpText: 'Page background colour.' },
     { key: 'textColor', label: 'Text', group: 'Colors', control: { kind: 'color' }, helpText: 'Main text and headings.' },
     { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'font' }, helpText: 'Sets body and interface text.' },
     { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'font', defaultLabel: 'Theme default (uses body font)' }, helpText: 'Used for headlines. Theme default uses your body font.' },
+    { key: 'custom.preloader', label: 'Intro screen', group: 'Effects', control: { kind: 'select', options: [{ value: 'show', label: 'Show once per visit' }, { value: 'hide', label: 'Off' }] }, helpText: 'A short black screen with your logo the first time a visitor opens the store.' },
   ],
 };

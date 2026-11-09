@@ -43,7 +43,7 @@ export function LedupCartPage() {
             <ShoppingBag size={48} className="mx-auto mb-4 text-stone-300" aria-hidden />
             <h2 className="mb-2 text-xl font-bold text-stone-900">{ts('cart.cartEmpty', 'Your cart is empty')}</h2>
             <p className="mb-6 text-sm text-stone-500">{ts('cart.emptyHint', "Looks like you haven't added anything yet.")}</p>
-            <Link to="/search" className="inline-flex items-center gap-2 rounded-full bg-[#8C7355] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[#796247]">
+            <Link to="/search" className="inline-flex items-center gap-2 rounded-full bg-[var(--ld-accent)] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[var(--ld-accent-hover)]">
               {ts('cart.startShopping', 'Start shopping')} <ArrowUpRight size={14} aria-hidden />
             </Link>
           </div>
