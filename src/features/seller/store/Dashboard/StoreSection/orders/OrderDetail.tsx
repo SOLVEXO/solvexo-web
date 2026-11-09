@@ -331,7 +331,7 @@ export function StoreOrderDetail() {
   // pinned above the store tab bar (`--store-tabbar-h` is only set while that nav
   // is mounted, so it falls back to 0 anywhere else), `sm` and up get the plain
   // vertical stack back.
-  type DetailAction = { key: string; label: string; icon: React.ReactNode; onClick: () => void; disabled?: boolean; loading?: boolean; solid?: boolean; danger?: boolean };
+  type DetailAction = { key: string; label: string; icon: React.ReactNode; onClick: () => void; disabled?: boolean; loading?: boolean; solid?: boolean; danger?: boolean; rare?: boolean };
   const actions: DetailAction[] = ([
     { key: 'print-slip', label: 'Print packing slip', icon: <Printer size={13} />, onClick: () => void handlePrint('slip'), disabled: busy },
     { key: 'print-invoice', label: 'Print invoice', icon: <Printer size={13} />, onClick: () => void handlePrint('invoice'), disabled: busy },
@@ -345,7 +345,7 @@ export function StoreOrderDetail() {
     (canMarkPickedUp || canMarkDelivered) && { key: 'delivered', label: isPickup ? 'Mark as picked up' : 'Mark delivered', icon: <CheckCheck size={13} />, onClick: () => changeStatus('delivered', 'delivered'), loading: busyAction === 'delivered', disabled: busy && busyAction !== 'delivered' },
     canComplete && { key: 'completed', label: 'Mark Completed', icon: <CheckCheck size={13} />, onClick: handleMarkCompleted, loading: busyAction === 'completed', disabled: busy && busyAction !== 'completed', solid: true },
     canRefund && { key: 'refund', label: 'Issue Refund', icon: <Undo2 size={13} />, onClick: () => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setRefundTo('original'); setShowRefundModal(true); }, disabled: busy },
-    canCancel && { key: 'cancel', label: 'Cancel Order', icon: <XCircle size={13} />, onClick: () => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }, disabled: busy, danger: true },
+    canCancel && { key: 'cancel', label: 'Cancel Order', icon: <XCircle size={13} />, onClick: () => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }, disabled: busy, danger: true, rare: true },
   ] as (DetailAction | false)[]).filter((a): a is DetailAction => !!a);
 
   // Desktop (sm and up): the full vertical stack, exactly as before.
@@ -355,31 +355,41 @@ export function StoreOrderDetail() {
       {a.icon} {a.label}
     </Button>
   ));
-  // Phone: the next step(s) stay visible, everything else lives in an accessible "More" menu (no hidden sideways scrolling).
+  // Phone: every daily action stays a visible button (nothing hidden, nothing scrolls sideways). The next step is full width, the other
+  // daily actions wrap into two columns; only rare / destructive ones (Cancel order) sit in the accessible "More" menu.
   const PHONE_PRIMARY_ORDER = ['capture', 'fulfil', 'ready-pickup', 'delivered', 'completed', 'processing', 'mark-paid'];
-  const phonePrimary = PHONE_PRIMARY_ORDER.map((k) => actions.find((a) => a.key === k)).filter((a): a is DetailAction => !!a).slice(0, 2);
-  const phoneMore = actions.filter((a) => !phonePrimary.includes(a));
+  const phoneVisible = actions.filter((a) => !a.rare);
+  const phoneRare = actions.filter((a) => a.rare);
+  const phoneFirst = PHONE_PRIMARY_ORDER.map((k) => phoneVisible.find((a) => a.key === k)).find(Boolean) ?? phoneVisible[0];
+  const phoneRest = phoneVisible.filter((a) => a !== phoneFirst);
+  const phoneBtnClass = 'w-full !h-auto min-h-10 !whitespace-normal py-2 leading-tight';
   const phoneBar = (
-    <div className="flex w-full items-center gap-2 sm:hidden">
-      {phonePrimary.map((a) => (
-        <Button key={a.key} size="sm" variant={a.solid ? 'primary' : 'outline'} onClick={a.onClick} loading={a.loading} disabled={a.disabled} className="flex-1 min-w-0">
-          {a.icon} <span className="truncate">{a.label}</span>
+    <div className="flex flex-col gap-2 sm:hidden">
+      {phoneFirst && (
+        <Button size="sm" variant={phoneFirst.solid ? 'primary' : 'outline'} onClick={phoneFirst.onClick} loading={phoneFirst.loading} disabled={phoneFirst.disabled} className={phoneBtnClass}>
+          {phoneFirst.icon} {phoneFirst.label}
         </Button>
-      ))}
-      {phoneMore.length > 0 && (
+      )}
+      {phoneRest.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+          {phoneRest.map((a) => (
+            <Button key={a.key} size="sm" variant={a.solid ? 'primary' : 'outline'} onClick={a.onClick} loading={a.loading} disabled={a.disabled} className={phoneBtnClass}>
+              {a.icon} {a.label}
+            </Button>
+          ))}
+        </div>
+      )}
+      {phoneRare.length > 0 && (
         <ActionMenu
-          align="right"
+          align="left"
           ariaLabel="More order actions"
-          triggerClassName="shrink-0 rounded-lg border border-bone bg-white px-3 h-9 text-[13px] font-semibold text-carbon inline-flex items-center gap-1"
+          triggerClassName="w-full rounded-lg border border-bone bg-white px-3 min-h-10 text-[13px] font-semibold text-carbon inline-flex items-center justify-center gap-1"
           trigger={<span className="inline-flex items-center gap-1"><MoreHorizontal size={15} aria-hidden /> More</span>}
-          items={phoneMore.map((a) => ({ label: a.label, icon: a.icon, onClick: a.onClick, disabled: a.disabled, danger: a.danger }))}
+          items={phoneRare.map((a) => ({ label: a.label, icon: a.icon, onClick: a.onClick, disabled: a.disabled, danger: a.danger }))}
         />
       )}
     </div>
   );
-
-  // The pinned phone bar sits above the store tab bar (`--store-tabbar-h` is only set while that nav is mounted).
-  const phoneBarClass = 'fixed left-0 right-0 bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[999] bg-white border-t border-bone px-4 py-3 sm:hidden';
   const desktopStackClass = 'hidden sm:flex sm:flex-col sm:gap-2';
 
   const paymentHint = !detail.isPaid && detail.paymentStatus !== 'authorized' && ['manual', 'manual_bank_transfer', 'cash_on_delivery'].includes(detail.paymentType)
@@ -786,13 +796,13 @@ export function StoreOrderDetail() {
             {/* On a phone the bar takes the buttons off the page, so a card that
                 would be left holding nothing goes flat instead of ending the
                 scroll with an empty box. */}
-            <Card title="Actions" flatOnPhone={!slipError && !paymentHint && !noFurtherActions}>
+            <Card title="Actions">
               <div className="flex flex-col gap-2">
                 {slipError && <p role="alert" className="text-[11.5px] text-error">{slipError}</p>}
                 {paymentHint}
                 {primaryActions.length > 0 && (
                   <>
-                    <div className={phoneBarClass}>{phoneBar}</div>
+                    {phoneBar}
                     <div className={desktopStackClass}>{primaryActions}</div>
                   </>
                 )}
