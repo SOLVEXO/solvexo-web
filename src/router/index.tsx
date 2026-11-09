@@ -127,6 +127,7 @@ const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Ma
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
+const DevelopersPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/developers/DevelopersPage'));
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
 const KhataHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/khata/KhataHub'));
 const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
@@ -403,6 +404,7 @@ const mainRouter = createBrowserRouter([
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'khata',                            element: <KhataHub /> },
           { path: 'sales-channels',                   element: <SalesChannelsPage /> },
+          { path: 'developers',                       element: <DevelopersPage /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },
