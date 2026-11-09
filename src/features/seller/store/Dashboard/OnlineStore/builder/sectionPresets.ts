@@ -52,6 +52,11 @@ export const PAGE_LAYOUTS: { id: string; name: string; description: string; pres
     presets: ['marquee-offers', 'banner-hero', 'products-sale', 'countdown-sale', 'products-trending', 'faq-basics'] },
   { id: 'tech-product-classic', themeId: 'theme-04-tech', scope: 'product', name: 'Tech Store · Product page', description: 'Related products, benefits, reviews',
     presets: ['related-also-like', 'benefits-3', 'reviews-3'] },
+  // ── Ledup (theme-05-ledup): only designs its renderers draw (banner, product row, collections, benefit cards, statement). ──
+  { id: 'ledup-home', themeId: 'theme-05-ledup', name: 'Ledup · Home', description: 'Big banner, new products, collections, benefit cards, statement',
+    presets: ['banner-hero', 'products-new', 'collections-grid', 'benefits-3', 'story-statement'] },
+  { id: 'ledup-home-catalogue', themeId: 'theme-05-ledup', name: 'Ledup · Catalogue', description: 'Collections first, then best sellers and benefit cards',
+    presets: ['collections-grid', 'products-best', 'benefits-3'] },
   { id: 'fashion', name: 'Fashion & lifestyle', description: 'Big banner, new arrivals, collections, story, reviews, sign-up',
     presets: ['banner-hero', 'trust-4', 'products-new', 'collections-grid', 'story-rows', 'reviews-3', 'social-gallery', 'newsletter-offer'] },
   { id: 'electronics', name: 'Electronics & gadgets', description: 'Slideshow, categories, best sellers, sale timer, FAQ',
