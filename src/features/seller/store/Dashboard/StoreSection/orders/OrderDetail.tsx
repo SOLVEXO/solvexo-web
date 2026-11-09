@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   ArrowLeft, Package, MapPin, User, CreditCard, Truck, AlertCircle,
-  CheckCheck, RefreshCw, XCircle, Undo2, Store as StoreIcon, Printer, Pencil, RotateCcw, StickyNote,
+  CheckCheck, RefreshCw, XCircle, Undo2, Store as StoreIcon, Printer, Pencil, RotateCcw, StickyNote, MoreHorizontal,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -16,7 +16,7 @@ import {
 } from '@/api/services/orders';
 import { apiCaptureOrderPayment } from '@/api/services/payment';
 import {
-  SkeletonBox, StatusBadge, Button, Modal, Field, Input, Select,
+  SkeletonBox, StatusBadge, Button, Modal, Field, Input, Select, ActionMenu,
 } from '@/components/comman/ui';
 import { currencySymbol, formatAmount, getCurrencyDecimals } from '@/utils/currency';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
@@ -331,90 +331,56 @@ export function StoreOrderDetail() {
   // pinned above the store tab bar (`--store-tabbar-h` is only set while that nav
   // is mounted, so it falls back to 0 anywhere else), `sm` and up get the plain
   // vertical stack back.
-  const primaryActions = [
-    <Button key="print-slip" size="sm" variant="outline" onClick={() => void handlePrint('slip')} disabled={busy}>
-      <Printer size={13} /> Print packing slip
-    </Button>,
-    <Button key="print-invoice" size="sm" variant="outline" onClick={() => void handlePrint('invoice')} disabled={busy}>
-      <Printer size={13} /> Print invoice
-    </Button>,
-    detail.paymentStatus === 'authorized' && (
-      <Button key="capture" size="sm" onClick={openCaptureModal} disabled={busy}>
-        <CreditCard size={13} /> Capture Payment
-      </Button>
-    ),
-    !detail.isPaid && detail.paymentStatus !== 'authorized' && (
-      <Button key="mark-paid" size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
-        <CheckCheck size={13} /> Mark as Paid (full amount)
-      </Button>
-    ),
-    !detail.isPaid && detail.paymentStatus !== 'authorized' && (
-      <Button
-        key="record-payment"
-        size="sm" variant="outline"
-        onClick={() => { setPaymentAmount(''); setPaymentMethod('cash'); setPaymentReference(''); setPaymentNote(''); setPaymentError(''); setShowRecordPaymentModal(true); }}
-        disabled={busy}
-      >
-        <CreditCard size={13} /> Record a Payment
-      </Button>
-    ),
-    canProcess && (
-      <Button key="processing" size="sm" variant="outline" onClick={() => changeStatus('processing', 'processing')} loading={busyAction === 'processing'} disabled={busy && busyAction !== 'processing'}>
-        <RefreshCw size={13} /> Mark Processing
-      </Button>
-    ),
-    canShip && (
-      <Button key="fulfil" size="sm" variant="outline" disabled={busy} onClick={() => setShowFulfil(true)}>
-        <Truck size={13} /> Fulfil items
-      </Button>
-    ),
-    canBuyLabel && (
-      <Button key="buy-label" size="sm" variant="outline" disabled={busy} onClick={() => setShowLabelModal(true)}>
-        <Package size={13} /> Buy shipping label
-      </Button>
-    ),
-    canReadyForPickup && (
-      <Button key="ready-pickup" size="sm" variant="outline" onClick={() => changeStatus('shipped', 'ready')} loading={busyAction === 'ready'} disabled={busy && busyAction !== 'ready'}>
-        <StoreIcon size={13} /> Mark ready for pickup
-      </Button>
-    ),
-    (canMarkPickedUp || canMarkDelivered) && (
-      <Button key="delivered" size="sm" variant="outline" onClick={() => changeStatus('delivered', 'delivered')} loading={busyAction === 'delivered'} disabled={busy && busyAction !== 'delivered'}>
-        <CheckCheck size={13} /> {isPickup ? 'Mark as picked up' : 'Mark delivered'}
-      </Button>
-    ),
-    canComplete && (
-      <Button key="completed" size="sm" onClick={handleMarkCompleted} loading={busyAction === 'completed'} disabled={busy && busyAction !== 'completed'}>
-        <CheckCheck size={13} /> Mark Completed
-      </Button>
-    ),
-    canRefund && (
-      <Button
-        key="refund"
-        size="sm" variant="outline"
-        onClick={() => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setRefundTo('original'); setShowRefundModal(true); }}
-        disabled={busy}
-      >
-        <Undo2 size={13} /> Issue Refund
-      </Button>
-    ),
-    canCancel && (
-      <Button
-        key="cancel"
-        size="sm" variant="outline"
-        onClick={() => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }}
-        disabled={busy}
-        className="!text-error !border-error/30 hover:!bg-error-bg"
-      >
-        <XCircle size={13} /> Cancel Order
-      </Button>
-    ),
-  ].filter(Boolean);
+  type DetailAction = { key: string; label: string; icon: React.ReactNode; onClick: () => void; disabled?: boolean; loading?: boolean; solid?: boolean; danger?: boolean };
+  const actions: DetailAction[] = ([
+    { key: 'print-slip', label: 'Print packing slip', icon: <Printer size={13} />, onClick: () => void handlePrint('slip'), disabled: busy },
+    { key: 'print-invoice', label: 'Print invoice', icon: <Printer size={13} />, onClick: () => void handlePrint('invoice'), disabled: busy },
+    detail.paymentStatus === 'authorized' && { key: 'capture', label: 'Capture Payment', icon: <CreditCard size={13} />, onClick: openCaptureModal, disabled: busy, solid: true },
+    !detail.isPaid && detail.paymentStatus !== 'authorized' && { key: 'mark-paid', label: 'Mark as Paid (full amount)', icon: <CheckCheck size={13} />, onClick: handleMarkPaid, loading: busyAction === 'paid', disabled: busy && busyAction !== 'paid' },
+    !detail.isPaid && detail.paymentStatus !== 'authorized' && { key: 'record-payment', label: 'Record a Payment', icon: <CreditCard size={13} />, onClick: () => { setPaymentAmount(''); setPaymentMethod('cash'); setPaymentReference(''); setPaymentNote(''); setPaymentError(''); setShowRecordPaymentModal(true); }, disabled: busy },
+    canProcess && { key: 'processing', label: 'Mark Processing', icon: <RefreshCw size={13} />, onClick: () => changeStatus('processing', 'processing'), loading: busyAction === 'processing', disabled: busy && busyAction !== 'processing' },
+    canShip && { key: 'fulfil', label: 'Fulfil items', icon: <Truck size={13} />, onClick: () => setShowFulfil(true), disabled: busy },
+    canBuyLabel && { key: 'buy-label', label: 'Buy shipping label', icon: <Package size={13} />, onClick: () => setShowLabelModal(true), disabled: busy },
+    canReadyForPickup && { key: 'ready-pickup', label: 'Mark ready for pickup', icon: <StoreIcon size={13} />, onClick: () => changeStatus('shipped', 'ready'), loading: busyAction === 'ready', disabled: busy && busyAction !== 'ready' },
+    (canMarkPickedUp || canMarkDelivered) && { key: 'delivered', label: isPickup ? 'Mark as picked up' : 'Mark delivered', icon: <CheckCheck size={13} />, onClick: () => changeStatus('delivered', 'delivered'), loading: busyAction === 'delivered', disabled: busy && busyAction !== 'delivered' },
+    canComplete && { key: 'completed', label: 'Mark Completed', icon: <CheckCheck size={13} />, onClick: handleMarkCompleted, loading: busyAction === 'completed', disabled: busy && busyAction !== 'completed', solid: true },
+    canRefund && { key: 'refund', label: 'Issue Refund', icon: <Undo2 size={13} />, onClick: () => { setRefundAmount(''); setRefundReason(''); setRefundError(''); setRefundTo('original'); setShowRefundModal(true); }, disabled: busy },
+    canCancel && { key: 'cancel', label: 'Cancel Order', icon: <XCircle size={13} />, onClick: () => { setCancelReason(''); setCancelError(''); setShowCancelModal(true); }, disabled: busy, danger: true },
+  ] as (DetailAction | false)[]).filter((a): a is DetailAction => !!a);
 
-  const primaryActionsBarClass =
-    'fixed left-0 right-0 bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[999] bg-white border-t border-bone px-4 py-3 flex items-center gap-2 scrollbar-hide '
-    + (primaryActions.length <= 2 ? 'max-sm:[&>*]:flex-1' : 'max-sm:overflow-x-auto max-sm:gap-[9px]')
-    + ' sm:static sm:z-auto sm:flex-col sm:items-stretch sm:bg-transparent sm:border-0 sm:px-0 sm:py-0';
+  // Desktop (sm and up): the full vertical stack, exactly as before.
+  const primaryActions = actions.map((a) => (
+    <Button key={a.key} size="sm" variant={a.solid ? 'primary' : 'outline'} onClick={a.onClick} loading={a.loading} disabled={a.disabled}
+      className={a.danger ? '!text-error !border-error/30 hover:!bg-error-bg' : undefined}>
+      {a.icon} {a.label}
+    </Button>
+  ));
+  // Phone: the next step(s) stay visible, everything else lives in an accessible "More" menu (no hidden sideways scrolling).
+  const PHONE_PRIMARY_ORDER = ['capture', 'fulfil', 'ready-pickup', 'delivered', 'completed', 'processing', 'mark-paid'];
+  const phonePrimary = PHONE_PRIMARY_ORDER.map((k) => actions.find((a) => a.key === k)).filter((a): a is DetailAction => !!a).slice(0, 2);
+  const phoneMore = actions.filter((a) => !phonePrimary.includes(a));
+  const phoneBar = (
+    <div className="flex w-full items-center gap-2 sm:hidden">
+      {phonePrimary.map((a) => (
+        <Button key={a.key} size="sm" variant={a.solid ? 'primary' : 'outline'} onClick={a.onClick} loading={a.loading} disabled={a.disabled} className="flex-1 min-w-0">
+          {a.icon} <span className="truncate">{a.label}</span>
+        </Button>
+      ))}
+      {phoneMore.length > 0 && (
+        <ActionMenu
+          align="right"
+          ariaLabel="More order actions"
+          triggerClassName="shrink-0 rounded-lg border border-bone bg-white px-3 h-9 text-[13px] font-semibold text-carbon inline-flex items-center gap-1"
+          trigger={<span className="inline-flex items-center gap-1"><MoreHorizontal size={15} aria-hidden /> More</span>}
+          items={phoneMore.map((a) => ({ label: a.label, icon: a.icon, onClick: a.onClick, disabled: a.disabled, danger: a.danger }))}
+        />
+      )}
+    </div>
+  );
+
+  // The pinned phone bar sits above the store tab bar (`--store-tabbar-h` is only set while that nav is mounted).
+  const phoneBarClass = 'fixed left-0 right-0 bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[999] bg-white border-t border-bone px-4 py-3 sm:hidden';
+  const desktopStackClass = 'hidden sm:flex sm:flex-col sm:gap-2';
 
   const paymentHint = !detail.isPaid && detail.paymentStatus !== 'authorized' && ['manual', 'manual_bank_transfer', 'cash_on_delivery'].includes(detail.paymentType)
     ? (
@@ -825,7 +791,10 @@ export function StoreOrderDetail() {
                 {slipError && <p role="alert" className="text-[11.5px] text-error">{slipError}</p>}
                 {paymentHint}
                 {primaryActions.length > 0 && (
-                  <div className={primaryActionsBarClass}>{primaryActions}</div>
+                  <>
+                    <div className={phoneBarClass}>{phoneBar}</div>
+                    <div className={desktopStackClass}>{primaryActions}</div>
+                  </>
                 )}
                 {noFurtherActions}
               </div>
