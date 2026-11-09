@@ -257,3 +257,7 @@
 .ld-preloader-bar::after { content: ""; position: absolute; inset: 0; background: #fff; transform: scaleX(0); transform-origin: left; animation: ld-pre-bar 1.1s ease-in-out forwards; }
 @keyframes ld-pre-bar { to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .ld-preloader { display: none; } .ld-backdrop { animation: none; opacity: 1; } .ld-mega, .ld-search-panel { transition: none; } }
+
+/* Hero: full-bleed, rounded bottom, sits under the floating header like ledup.pt */
+.ld-root main > div:first-of-type section[aria-roledescription="carousel"] { margin-top: -5.25rem; }
+.ld-hero h1 { font-weight: 400 !important; letter-spacing: -0.01em; }

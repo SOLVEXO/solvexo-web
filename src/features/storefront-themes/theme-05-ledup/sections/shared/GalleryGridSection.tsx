@@ -1,0 +1,44 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
+import type { Block } from '@/api/services/storefrontTypes';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { PreviewBlock } from '../../../previewInspector';
+import { imageFit } from '../../../imageFit';
+import { baseTheme as t, type BaseColors } from '../../theme.base';
+import { SectionShell } from '../SectionShell';
+import type { SharedSectionProps } from './types';
+
+function Photo({ block, colors, ratio }: { block: Block; colors: BaseColors; ratio: unknown }) {
+  const { resolveLink } = useStorefront();
+  const [errored, setErrored] = useState(false);
+  const s = block.settings;
+  if (!s.imageUrl || errored) return null;
+  const fit = imageFit(ratio, '1 / 1');
+  const img = (
+    <div className="group overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
+      <img src={s.imageUrl} alt={s.alt ?? ''} loading="lazy" onError={() => setErrored(true)} className="transition-transform duration-700 group-hover:scale-105" style={fit.img} />
+    </div>
+  );
+  const target = s.link ? resolveLink(s.link) : null;
+  const linked = !target ? img : target.to ? <Link to={target.to} className="block">{img}</Link>
+    : <a href={target.href} className="block" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
+  const caption = typeof s.caption === 'string' ? s.caption.trim() : '';
+  return caption ? <figure className="m-0">{linked}<figcaption className="mt-3 text-center text-sm leading-snug" style={{ color: colors.inkMuted, unicodeBidi: 'plaintext' }}>{caption}</figcaption></figure> : linked;
+}
+
+export function GalleryGridSection({ section, blocks, colors }: SharedSectionProps) {
+  if (blocks.length === 0) return null;
+  const cols = columnCount(section.settings.columns, 3);
+  return (
+    <SectionShell colors={colors} heading={section.settings.heading}>
+      <div className="grid gap-3 md:gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
+        {blocks.map((b, i) => (
+          <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
+            <Photo block={b} colors={colors} ratio={section.settings.imageRatio} />
+          </PreviewBlock>
+        ))}
+      </div>
+    </SectionShell>
+  );
+}

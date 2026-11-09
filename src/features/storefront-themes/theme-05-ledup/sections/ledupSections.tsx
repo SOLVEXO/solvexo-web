@@ -1,23 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this file registers renderers, it exports none */
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
-import { ts } from '@/utils/tStatic';
-import { handleOf } from '@/utils/activeStoreText';
 import { renderRichText } from '@/utils/richText';
 import type { Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiGetPublicStoreProducts } from '@/api/services/store';
-import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
-import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { useLoad } from '../../core/pageHooks';
 import { featureIcon } from '../../featureIcons';
 import { PreviewBlock } from '../../previewInspector';
-import { EditableText } from '../../inlineEdit';
-import { LedupProductCard } from '../components/LedupProductCard';
 import { LedupHeroCategoryBanner } from '../components/LedupHeroCategoryBanner';
-import { LedupBox, LedupSkeleton } from '../ui/ledupUi';
-import { baseTheme as t, type BaseColors } from '../theme.base';
+import { LedupBox } from '../ui/ledupUi';
+import { baseTheme as t } from '../theme.base';
 import { registerLedupSection } from './ledupSectionRegistry';
 
 const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : '');
@@ -32,44 +23,6 @@ function Cta({ label, link, className }: { label?: string; link?: any; className
 }
 
 const solidCta = 'inline-flex items-center gap-2 rounded-full bg-[var(--ld-accent)] px-6 py-3 text-sm font-medium text-white no-underline transition hover:bg-[var(--ld-accent-hover)]';
-
-// ── Featured products ───────────────────────────────────────────────────────
-function FeaturedProducts({ settings, colors }: { settings: Record<string, any>; colors: BaseColors }) {
-  const { store } = useStorefront();
-  const { currency } = useCurrencyPreference();
-  const limit = Math.min(24, Math.max(1, Number(settings.limit) || 8));
-  const { data: items, loading, error, retry } = useLoad(
-    () => apiGetPublicStoreProducts(store.storeId, { limit, sort: 'newest' }).then(r => r.data?.products ?? []),
-    [store.storeId, limit],
-  );
-  if (!loading && !error && (items ?? []).length === 0) return null;
-  const heading = text(settings.heading);
-
-  return (
-    <section className="py-12" style={{ color: colors.ink }}>
-      <LedupBox padY={false}>
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            {heading && <h2 className="m-0 text-2xl font-bold tracking-tight md:text-3xl" style={{ fontFamily: t.fonts.display }}><EditableText value={heading} settingKey="heading" /></h2>}
-            {text(settings.subheading) && <p className="mt-1 text-sm text-stone-500">{text(settings.subheading)}</p>}
-          </div>
-          <Link to="/search" className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-4 py-2 text-xs font-medium text-stone-800 no-underline transition hover:border-stone-900">
-            {ts('ld.viewAllProducts', 'View all products')} <ArrowUpRight size={13} aria-hidden />
-          </Link>
-        </div>
-        {loading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <LedupSkeleton key={i} h={300} />)}</div>
-        ) : error ? (
-          <div role="alert" className="py-8 text-center text-sm text-red-500">{ts('pg.we_couldn_t_load_the_products', "We couldn't load the products.")} <button type="button" onClick={retry} className="cursor-pointer border-0 bg-transparent underline">{ts('checkout.tryAgain', 'Try again')}</button></div>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {(items ?? []).map(p => <LedupProductCard key={p._id} product={p} currency={currency} />)}
-          </div>
-        )}
-      </LedupBox>
-    </section>
-  );
-}
 
 // ── Rich text ───────────────────────────────────────────────────────────────
 function RichText({ settings, blocks, dynamic }: { settings: Record<string, any>; blocks: Block[]; dynamic: Record<string, string> }) {
@@ -99,30 +52,6 @@ function RichText({ settings, blocks, dynamic }: { settings: Record<string, any>
           {heading && <h2 className="m-0 text-3xl font-light tracking-tight text-stone-900 md:text-4xl" style={{ fontFamily: t.fonts.display }}>{heading}</h2>}
           {intro && <p className="m-0 whitespace-pre-line text-base leading-8 text-stone-600">{renderRichText(intro)}</p>}
           {parts}
-        </div>
-      </LedupBox>
-    </section>
-  );
-}
-
-// ── Image banner ────────────────────────────────────────────────────────────
-function ImageBanner({ settings }: { settings: Record<string, any> }) {
-  const [errored, setErrored] = useState(false);
-  const img = text(settings.imageUrl);
-  if (!img && !text(settings.heading) && !text(settings.subheading)) return null;
-  const has = !!img && !errored;
-  const overlay = Math.min(80, Math.max(0, Number(settings.overlayOpacity ?? 30)));
-  return (
-    <section className="py-6">
-      <LedupBox padY={false}>
-        <div className="relative flex min-h-[320px] items-center overflow-hidden rounded-3xl bg-stone-100 md:min-h-[440px]">
-          {has && <img src={img} alt="" onError={() => setErrored(true)} className="absolute inset-0 h-full w-full object-cover" />}
-          {has && overlay > 0 && <div aria-hidden className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlay / 100})` }} />}
-          <div className={`relative flex max-w-2xl flex-col gap-4 p-8 md:p-14 ${has ? 'text-white' : 'text-stone-900'}`}>
-            {text(settings.heading) && <h2 className="m-0 text-[clamp(28px,4.5vw,54px)] font-light leading-tight" style={{ fontFamily: t.fonts.display }}><EditableText value={settings.heading} settingKey="heading" /></h2>}
-            {text(settings.subheading) && <p className="m-0 text-base opacity-90 md:text-lg"><EditableText value={settings.subheading} settingKey="subheading" /></p>}
-            <div><Cta label={text(settings.ctaText)} link={settings.ctaLink} className={solidCta} /></div>
-          </div>
         </div>
       </LedupBox>
     </section>
@@ -166,46 +95,10 @@ function FeatureList({ settings, blocks }: { settings: Record<string, any>; bloc
   );
 }
 
-// ── Collection list ─────────────────────────────────────────────────────────
-function CollectionList({ settings }: { settings: Record<string, any> }) {
-  const { store } = useStorefront();
-  const [items, setItems] = useState<PublicCollectionSummary[] | null>(null);
-  useEffect(() => {
-    let off = false;
-    apiGetPublicCollections(store.storeId).then(r => { if (!off) setItems(r.data ?? []); }).catch(() => { if (!off) setItems([]); });
-    return () => { off = true; };
-  }, [store.storeId]);
-  if (!items || items.length === 0) return null;
-  const limit = Math.min(24, Math.max(1, Number(settings.limit) || 6));
-  return (
-    <section className="py-12">
-      <LedupBox padY={false}>
-        {text(settings.heading) && <h2 className="mb-8 mt-0 text-2xl font-bold tracking-tight text-stone-900 md:text-3xl" style={{ fontFamily: t.fonts.display }}>{settings.heading}</h2>}
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-          {items.slice(0, limit).map(c => (
-            <Link key={c._id} to={`/collections/${handleOf(c)}`} className="ld-product-card group block overflow-hidden p-4 no-underline">
-              <div className="aspect-square overflow-hidden rounded-xl bg-stone-50/60">
-                {c.image ? <img src={c.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center p-4 text-center text-sm text-stone-400">{c.name}</div>}
-              </div>
-              <h3 className="m-0 mt-3 text-sm font-semibold text-stone-900">{c.name}</h3>
-            </Link>
-          ))}
-        </div>
-      </LedupBox>
-    </section>
-  );
-}
-
 // ── Registration ────────────────────────────────────────────────────────────
 const categoryTabs = () => <section className="pb-6 pt-2"><LedupHeroCategoryBanner /></section>;
 
-registerLedupSection('featured_products', (sec, _b, col) => <FeaturedProducts settings={sec.settings} colors={col} />);
 registerLedupSection('hero_banner', categoryTabs);
-registerLedupSection('hero', (sec) => <ImageBanner settings={sec.settings} />);
-registerLedupSection('image_banner', (sec) => <ImageBanner settings={sec.settings} />);
-registerLedupSection('rich_text', (sec, blocks, _c, dynamic) => <RichText settings={sec.settings} blocks={blocks} dynamic={dynamic} />);
-registerLedupSection('feature_list', (sec, blocks) => <FeatureList settings={sec.settings} blocks={blocks} />);
-registerLedupSection('collection_list', (sec) => <CollectionList settings={sec.settings} />);
 
 // Theme-defined sections (namespace `ledup.`): the same renderers, driven by the seller's own fields.
 registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {

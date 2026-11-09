@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
@@ -31,9 +31,10 @@ function PriceFilter({ symbol, lowest, highest, minPrice, maxPrice, onApply }: {
 }
 
 /** Product list for a collection, category or search: real filters from the store's own products (stock, price, type, options, tags), sort, count and a "Load more" button. */
-export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl = true, emptyText }: { categoryId?: string; collectionId?: string; search?: string; syncUrl?: boolean; emptyText?: string }) {
+export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl = true, emptyText, heading, defaultSort, showFilters = true, onProducts }: { categoryId?: string; collectionId?: string; search?: string; syncUrl?: boolean; emptyText?: string; heading?: ReactNode; defaultSort?: BrowseSort; showFilters?: boolean; onProducts?: (products: { slug: string; name: string; images?: string[] }[]) => void }) {
   const pageSize = clampPageSize(ledupTheme.pagination.productsPerPage);
-  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search, syncUrl, pageSize, accumulate: true });
+  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search, syncUrl, pageSize, accumulate: true, defaultSort });
+  useEffect(() => { if (products && onProducts) onProducts(products.map(p => ({ slug: p.slug, name: p.name, images: p.images }))); }, [products, onProducts]);
   const [mobileFilters, setMobileFilters] = useState(false);
 
   const change = (fn: (s: BrowseState) => BrowseState) => update(s => ({ ...fn(s), page: 1 }));
@@ -76,6 +77,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
 
   return (
     <div>
+      {heading}
       <div className="mb-8 flex items-center justify-between border-b border-stone-200 pb-4">
         <p className="m-0 text-xs font-medium text-stone-500" aria-live="polite">
           {ts('browse.showingCount', 'Showing {{shown}} of {{total}} products', { shown, total })}
@@ -96,7 +98,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
       </div>
 
       <div className="flex flex-col items-start gap-10 md:flex-row">
-        <div className={`${mobileFilters ? 'block' : 'hidden'} w-full md:block md:w-auto`}>{filters}</div>
+        {showFilters && <div className={`${mobileFilters ? 'block' : 'hidden'} w-full md:block md:w-auto`}>{filters}</div>}
 
         <div className="min-w-0 flex-1">
           {error ? (

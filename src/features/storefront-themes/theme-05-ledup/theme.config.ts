@@ -4,7 +4,7 @@
 // single product page with interactive specifications table, datasheet downloads, and high-curvature espresso footer.
 
 import { readProductsPerPage } from '../themeManifest';
-import { applyMerchantThemeOverrides as applyBase, baseTheme, mixHex, relativeLuminance, type BaseMerchantColors } from './theme.base';
+import { applyMerchantThemeOverrides as applyBase, baseTheme,  relativeLuminance, type BaseMerchantColors } from './theme.base';
 
 export const LEDUP_SHAPES = {
   ledup: { button: '9999px', field: '9999px', card: '16px', image: '16px', badge: '9999px' },
@@ -74,6 +74,15 @@ const STATIC_DEFAULTS = {
   /** Products per page on collection/category/search; seller settings `custom.productsPerPage` / `custom.productShowAll`. */
   pagination: { productsPerPage: 12 },
 };
+
+/** Blend two #rrggbb colours: weight = share of the first. */
+function mixHex(a: string, b: string, weight: number): string {
+  const p = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const [r1, g1, b1] = p(a);
+  const [r2, g2, b2] = p(b);
+  const m = (x: number, y: number) => Math.round(x * weight + y * (1 - weight)).toString(16).padStart(2, '0');
+  return `#${m(r1, r2)}${m(g1, g2)}${m(b1, b2)}`;
+}
 
 export const ledupTheme = { ...STATIC_DEFAULTS };
 /** Colours before any store customisation: reset on every apply so one store's colours never leak into the next store opened in the same tab. */
