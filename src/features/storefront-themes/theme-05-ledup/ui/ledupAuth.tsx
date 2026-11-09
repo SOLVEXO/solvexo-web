@@ -16,8 +16,10 @@ import { LedupBox, LedupBreadcrumbs } from './ledupUiPort';
 export function LedupPageFrame({ crumb, title, children, narrow }: { crumb: string; title: string; children: ReactNode; narrow?: boolean }) {
   return (
     <LedupBox narrow={narrow}>
-      <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: crumb }]} />
-      <h1 className="m-0 mb-6 text-[clamp(26px,3.6vw,40px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{title}</h1>
+      <div className="ld-copper-gradient mb-6 rounded-[28px] px-6 py-8 md:px-10 md:py-10">
+        <LedupBreadcrumbs onDark items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: crumb }]} />
+        <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-semibold leading-tight text-white" style={{ fontFamily: t.fonts.display }}>{title}</h1>
+      </div>
       {children}
     </LedupBox>
   );

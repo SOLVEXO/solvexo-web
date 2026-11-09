@@ -163,7 +163,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
 
   return (
     <Page>
-      <PageTitle actions={<Link to="/cart" className="text-sm" style={{ color: t.colors.inkMuted }}>{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('h.secure_checkout', 'Secure *checkout*')}</PageTitle>
+      <PageTitle actions={<Link to="/cart" className="text-sm font-medium text-white underline">{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('h.secure_checkout', 'Secure *checkout*')}</PageTitle>
       <div className={`grid items-start gap-6 lg:gap-10 ${t.checkoutSummary === 'left' ? 'lg:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_400px]'}`}>
         <div className={`order-2 flex min-w-0 flex-col gap-5 ${t.checkoutSummary === 'left' ? 'lg:order-2' : 'lg:order-1'}`}>
           {checkout && checkout.currency !== displayCurrency && (

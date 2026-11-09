@@ -1,11 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, X } from 'lucide-react';
+import { ts } from '@/utils/tStatic';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiGetPublicCollections } from '@/api/services/collections';
 
 export function LedupSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { store } = useStorefront();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!isOpen || suggestions.length > 0) return;
+    let off = false;
+    apiGetPublicCollections(store.storeId).then(r => { if (!off) setSuggestions((r.data ?? []).map(c => c.name).filter(Boolean).slice(0, 6)); }).catch(() => {});
+    return () => { off = true; };
+  }, [isOpen, store.storeId, suggestions.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,7 +50,7 @@ export function LedupSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close search"
+          aria-label={ts('common.close', 'Close')}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow-md transition-all hover:bg-white hover:text-stone-900"
         >
           <X size={20} />
@@ -54,12 +66,13 @@ export function LedupSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose
               type="text"
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Procurar por nome, referência..."
+              placeholder={ts('search.placeholder', 'Search by name or reference…')}
+              style={{ outline: 'none', boxShadow: 'none' }}
               className="w-full bg-transparent text-xl font-light text-stone-900 placeholder:text-stone-400 focus:outline-none md:text-3xl"
             />
             <button
               type="submit"
-              aria-label="Submit search"
+              aria-label={ts('search.submit', 'Search')}
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-800 shadow-sm transition-all hover:border-stone-900 hover:bg-stone-900 hover:text-white"
             >
               <ArrowUpRight size={26} strokeWidth={1.75} />
@@ -67,9 +80,9 @@ export function LedupSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose
           </form>
 
           {/* Quick search suggestions */}
-          <div className="mt-8 flex flex-wrap items-center gap-2 text-xs text-stone-500">
-            <span className="font-medium text-stone-700">Sugestões:</span>
-            {['Downlights', 'Tracklights', 'NEXUS', 'ALCOR', '3CCT', 'Perfis LED'].map(item => (
+          {suggestions.length > 0 && <div className="mt-8 flex flex-wrap items-center gap-2 text-xs text-stone-500">
+            <span className="font-medium text-stone-700">{ts('search.suggestions', 'Suggestions:')}</span>
+            {suggestions.map(item => (
               <button
                 key={item}
                 type="button"
@@ -83,7 +96,7 @@ export function LedupSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose
                 {item}
               </button>
             ))}
-          </div>
+          </div>}
         </div>
       </div>
     </div>

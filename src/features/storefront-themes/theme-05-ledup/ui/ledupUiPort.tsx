@@ -28,12 +28,12 @@ export function LedupBox({ children, narrow, padY = true }: { children: ReactNod
   return <div className="mx-auto" style={{ maxWidth: narrow ? 860 : t.layout.maxWidth, padding: `${padY ? 'clamp(20px, 3vw, 40px)' : '0'} ${t.layout.containerPadX}`, fontFamily: t.fonts.body, color: t.colors.ink }}>{children}</div>;
 }
 
-export function LedupBreadcrumbs({ items }: { items: { label: string; to?: string }[] }) {
+export function LedupBreadcrumbs({ items, onDark }: { items: { label: string; to?: string }[]; onDark?: boolean }) {
   return (
-    <nav aria-label={ts('pg.breadcrumb', 'Breadcrumb')} className="mb-3 flex flex-wrap items-center gap-1 text-xs" style={{ color: t.colors.inkMuted }}>
+    <nav aria-label={ts('pg.breadcrumb', 'Breadcrumb')} className="mb-3 flex flex-wrap items-center gap-1 text-xs" style={{ color: onDark ? 'rgba(255,255,255,.85)' : t.colors.inkMuted }}>
       {items.map((it, i) => (
         <span key={`${it.label}-${i}`} className="inline-flex items-center gap-1">
-          {it.to ? <Link to={it.to} className="no-underline hover:underline" style={{ color: t.colors.ink }}>{it.label}</Link> : <span aria-current="page">{it.label}</span>}
+          {it.to ? <Link to={it.to} className="no-underline hover:underline" style={{ color: onDark ? '#fff' : t.colors.ink }}>{it.label}</Link> : <span aria-current="page">{it.label}</span>}
           {i < items.length - 1 && <ChevronRight size={12} aria-hidden className="tx-flip-rtl" />}
         </span>
       ))}
