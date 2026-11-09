@@ -27,12 +27,14 @@ export function variantMaxQty(v: ProductVariant | null | undefined, isDigital: b
   return Math.max(0, variantAvailable(v, isDigital));
 }
 
-export type StockState = 'in_stock' | 'low' | 'sold_out' | 'backorder';
+export type StockState = 'in_stock' | 'low' | 'sold_out' | 'backorder' | 'preorder';
 
 /** `lowThreshold` is the store's `lowStockThreshold` setting (<=0 / missing = never show low-stock text). */
 export function stockState(v: ProductVariant | null | undefined, isDigital: boolean, lowThreshold?: number | null): StockState {
   const avail = variantAvailable(v, isDigital);
   if (avail > 0) return lowThreshold && lowThreshold > 0 && avail <= lowThreshold && Number.isFinite(avail) ? 'low' : 'in_stock';
+  // Out of stock but open for pre-order: say so (never "Sold out" next to an active Pre-order button).
+  if (v?.preorder && !v.preorder.soldOut) return 'preorder';
   return v?.allowBackorder ? 'backorder' : 'sold_out';
 }
 

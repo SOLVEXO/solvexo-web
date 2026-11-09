@@ -249,7 +249,7 @@ function ProductPageInner({ slug }: { slug: string }) {
             <button type="button" aria-label={tr('product.increaseQty', 'Increase quantity')} disabled={safeQty >= rules.max} onClick={() => setQty(clampQty(safeQty + rules.step, rules))} className="grid size-11 cursor-pointer place-items-center border-0 bg-transparent disabled:opacity-40"><Plus size={15} /></button>
           </div>
           {t.showStockStatus && <span className="text-sm" style={{ color: state === 'low' ? t.colors.danger : state === 'sold_out' ? t.colors.danger : t.colors.success }}>
-            {state === 'sold_out' ? tr('product.soldOut', 'Sold out') : state === 'low' ? tr('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? tr('product.backorder', 'Available on backorder') : tr('product.inStock', 'In stock')}
+            {state === 'preorder' ? tr('product.preorder', 'Pre-order') : state === 'sold_out' ? tr('product.soldOut', 'Sold out') : state === 'low' ? tr('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? tr('product.backorder', 'Available on backorder') : tr('product.inStock', 'In stock')}
           </span>}
         </div>
         {qtyRuleHint(rules) && <p className="m-0 mt-2 text-xs" style={{ color: t.colors.inkMuted }}>{qtyRuleHint(rules)}</p>}

@@ -220,7 +220,7 @@ function Inner({ slug }: { slug: string }) {
         <div className="flex flex-wrap items-center gap-4">
           {stepper}
           <span className="text-sm font-medium" hidden={!b.showStockStatus && state !== 'sold_out'} style={{ color: state === 'sold_out' ? t.colors.danger : state === 'low' ? t.colors.warning : t.colors.success }}>
-            {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? ts('product.backorder', 'Available on backorder') : ts('product.inStock', 'In stock')}
+            {state === 'preorder' ? ts('product.preorder', 'Pre-order') : state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('product.onlyLeft', 'Only {{count}} left', { count: variantAvailable(variant, isDigital) }) : state === 'backorder' ? ts('product.backorder', 'Available on backorder') : ts('product.inStock', 'In stock')}
           </span>
         </div>
         {qtyRuleHint(rules) && <p className="m-0 mt-2 text-xs" style={{ color: t.colors.inkMuted }}>{qtyRuleHint(rules)}</p>}
