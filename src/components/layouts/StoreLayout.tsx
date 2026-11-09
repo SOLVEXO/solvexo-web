@@ -1217,7 +1217,7 @@ export function StorePageHeader({ title, subtitle, actions, titleContext = 'stor
           </button>
         )}
         <div key={title} className="min-w-0">
-          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', 'max-lg:font-bold max-lg:text-white', app ? 'max-lg:text-[28px]' : 'max-lg:text-[24px]')}>{title}</h1>
+          <h1 className={clsx('solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.2] truncate max-sm:font-semibold', 'max-lg:font-bold max-lg:text-white', app ? 'max-lg:text-[28px] max-sm:text-[22px]' : 'max-lg:text-[24px]')}>{title}</h1>
           {subtitle && <p className={clsx('solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate max-sm:text-[13px]', 'max-lg:hidden')}>{subtitle}</p>}
         </div>
       </div>
