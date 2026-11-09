@@ -55,3 +55,15 @@ describe('fonts on pre-built pages', () => {
     expect(html.match(/rel="preload"/g)).toHaveLength(2);
   });
 });
+
+describe('structured data on pre-built pages', () => {
+  const ld = (html: string) => [...html.matchAll(/<script type="application\/ld\+json">([^<]*)<\/script>/g)].map(m => JSON.parse(m[1]));
+  it('names the site on the home page and gives product pages a breadcrumb trail', () => {
+    const home = ld(buildPrerenderedHtml(template, seoForPath('/')!));
+    expect(home.some(d => d['@type'] === 'WebSite' && d.name === 'Solvexo' && d.url === 'https://www.solvexo.store/')).toBe(true);
+    const pos = ld(buildPrerenderedHtml(template, seoForPath('/products/pos')!)).find(d => d['@type'] === 'BreadcrumbList');
+    expect(pos.itemListElement.map((i: { name: string }) => i.name)).toEqual(['Solvexo', 'Products', 'Point of Sale']);
+    expect(pos.itemListElement[2].item).toBe('https://www.solvexo.store/products/pos');
+    expect(ld(buildPrerenderedHtml(template, seoForPath('/pricing')!)).some(d => d['@type'] === 'BreadcrumbList')).toBe(false);
+  });
+});
