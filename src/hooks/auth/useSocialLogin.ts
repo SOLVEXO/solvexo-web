@@ -2,7 +2,7 @@ import { trackSiteEvent } from '@/utils/siteAnalytics';
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
-import { apiSocialLogin, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type SocialLoginPayload, type AppRole } from '@/api/services/auth';
+import { apiSocialLogin, isTwoFactorChallenge, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type SocialLoginPayload, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import type { SocialProvider } from '@/components/comman/ui/SocialIcons';
 
@@ -54,12 +54,15 @@ export function useSocialLogin(role: AppRole = 'seller') {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
   const initializedRef = useRef(false);
+  // A seller with two-factor on gets a challenge instead of a session: the login page shows the code step for it.
+  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
 
   async function execute(payload: SocialLoginPayload) {
     setError('');
     setLoading(true);
     try {
       const res = await apiSocialLogin({ ...payload, role, ...(role === 'user' && !payload.storeId ? { storeId: getCurrentStorefrontStoreId() } : {}) });
+      if (isTwoFactorChallenge(res.data)) { setTwoFactorToken(res.data.challengeToken); return; }
       const { token, user } = res.data;
       const serverRole = (user.role ?? role) as AppRole;
       if (serverRole === 'seller' && (res.data as { isNewUser?: boolean }).isNewUser) {
@@ -172,5 +175,5 @@ export function useSocialLogin(role: AppRole = 'seller') {
       .catch(() => {});
   }, [ensureInitialized]);
 
-  return { execute, mount, promptOneTap, loading, error };
+  return { execute, mount, promptOneTap, loading, error, twoFactorToken, clearTwoFactor: () => setTwoFactorToken(null) };
 }

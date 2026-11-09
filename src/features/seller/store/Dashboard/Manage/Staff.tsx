@@ -3,6 +3,9 @@ import { Users, Plus, Check, X, ShieldCheck, KeyRound, Trash2 } from 'lucide-rea
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
+import client from '@/api/client';
+import { ENDPOINTS } from '@/api/endpoints';
+import { isStaffSession } from '@/hooks/auth/useCan';
 import {
   apiListStaff, apiCreateStaff, apiUpdateStaff, apiDeactivateStaff, apiReactivateStaff, apiDeleteStaff, apiResendStaffInvite,
   apiListRoles, apiCreateRole, apiUpdateRole, apiDeleteRole,
@@ -203,6 +206,20 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
   };
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<StaffMember | null>(null);
+  // Owner only: which staff members use two-factor (the reset button appears for them).
+  const [tfStaff, setTfStaff] = useState<Set<string>>(new Set());
+  const [confirmReset, setConfirmReset] = useState<StaffMember | null>(null);
+  const owner = !isStaffSession();
+  const loadTf = useCallback(() => {
+    if (!owner) return;
+    (client.get(ENDPOINTS.MEMBER_TWO_FACTOR.POLICY(storeId)) as Promise<{ data?: { staffWithTwoFactor?: string[] } }>)
+      .then((r) => setTfStaff(new Set(r.data?.staffWithTwoFactor ?? []))).catch(() => undefined);
+  }, [owner, storeId]);
+  useEffect(() => { loadTf(); }, [loadTf, staff.length]);
+  const handleResetTwoFactor = async (member: StaffMember) => {
+    await runAction(member._id, async () => { await client.post(ENDPOINTS.MEMBER_TWO_FACTOR.RESET_STAFF(storeId, member._id), {}); loadTf(); });
+    setConfirmReset(null);
+  };
 
   const runAction = async (id: string, fn: () => Promise<unknown>) => {
     setActionError('');
@@ -273,6 +290,9 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
                       : <Badge color={member.status === 'active' ? 'green' : 'gray'} size="sm">{member.status === 'active' ? 'Active' : 'Inactive'}</Badge>}
                   </div>
                   <div className="flex items-center gap-2">
+                    {owner && tfStaff.has(member._id) && (
+                      <Button size="xs" variant="ghost" icon={<ShieldCheck size={12} />} loading={busyId === member._id} onClick={() => setConfirmReset(member)} aria-label={`Reset two-factor for ${member.name}`}>Reset 2FA</Button>
+                    )}
                     {pending && member.status === 'active' && (
                       <Button size="xs" variant="ghost" loading={resendingId === member._id} onClick={() => handleResendInvite(member)}>Resend Invite</Button>
                     )}
@@ -289,6 +309,17 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
             );
           })}
         </div>
+      )}
+
+      {confirmReset && (
+        <Modal title={`Reset two-factor for ${confirmReset.name}?`} onClose={() => setConfirmReset(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmReset(null)}>Cancel</Button>
+            <Button variant="primary" loading={busyId === confirmReset._id} onClick={() => handleResetTwoFactor(confirmReset)}>Reset two-factor</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal">Use this when <strong>{confirmReset.email}</strong> lost their phone and their recovery codes. Their authenticator and recovery codes stop working; they sign in with their password and can set two-factor up again. This is recorded in your activity log.</p>
+        </Modal>
       )}
 
       {confirmDelete && (

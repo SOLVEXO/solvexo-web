@@ -207,6 +207,10 @@ client.interceptors.response.use(
           .catch((e) => handleApiError(e as AxiosError<ApiErrorBody>, sentToken));
       }
     }
+    if (err.response?.status === 403 && err.response.data?.code === 'TWO_FACTOR_REQUIRED' && typeof window !== 'undefined') {
+      const m = /^\/store\/([^/]+)\//.exec(window.location.pathname);
+      if (m && !/\/security\/?$/.test(window.location.pathname)) window.location.assign(`/store/${m[1]}/security?setup=1`);
+    }
     return handleApiError(err, sentToken);
   },
 );

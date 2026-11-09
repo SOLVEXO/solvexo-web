@@ -8,7 +8,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ShieldCheck, Sparkles, Store, AlertTriangle, Info, ArrowLeft, ChevronRight, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, Mail, LogIn, ShieldCheck, Sparkles, Store, AlertTriangle, Info, ArrowLeft, ChevronRight, UserPlus } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
@@ -202,13 +202,15 @@ export function LoginPage() {
 
   const roleLabel = (r: AppRole) => (r === 'seller' ? 'seller' : 'buyer');
 
-  if (challengeToken) {
+  // The challenge can come from the password step or from a Google sign-in of a seller who uses two-factor.
+  const activeChallenge = challengeToken ?? social.twoFactorToken;
+  if (activeChallenge) {
     return (
       <AuthSplitLayout pageContext="login" heading={<>Back to your <span className="text-brand-orange">store</span></>} subtext="One more step to keep your store safe." highlights={HIGHLIGHTS}>
         <TwoFactorStep
           code={tfCode} setCode={setTfCode} useRecovery={tfRecovery} setUseRecovery={setTfRecovery} loading={login.loading} error={login.error}
-          onSubmit={() => tfCode.trim() && login.verifyTwoFactor(challengeToken, tfCode.trim(), redirectTo, 'seller')}
-          onBack={() => { setChallengeToken(null); setTfCode(''); }}
+          onSubmit={() => tfCode.trim() && login.verifyTwoFactor(activeChallenge, tfCode.trim(), redirectTo, 'seller')}
+          onBack={() => { setChallengeToken(null); social.clearTwoFactor(); setTfCode(''); }}
         />
       </AuthSplitLayout>
     );
@@ -222,7 +224,7 @@ export function LoginPage() {
       highlights={HIGHLIGHTS}
     >
       <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">
-        <span className="text-brand-orange">Sign in</span> to Solvexo
+        Sign in to <span className="text-brand-orange">Solvexo</span>
       </h1>
       <p className="text-[12.5px] text-slate mb-1 text-center lg:text-left">
         {showChooser && !onPasswordStep ? 'Choose an account to continue' : 'Enter your details to continue'}
@@ -236,7 +238,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={backToPicker}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-bone bg-cream mb-3 text-left cursor-pointer hover:border-slate/40 transition-colors"
+              className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[#EDE3DB] bg-white mb-3 text-left cursor-pointer hover:border-slate/40 transition-colors"
             >
               <ArrowLeft size={14} className="text-slate shrink-0" />
               <Avatar name={remembered!.name} size={36} />
@@ -253,9 +255,9 @@ export function LoginPage() {
             <button
               type="button"
               onClick={selectAccount}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-bone bg-white cursor-pointer text-left hover:border-brand-orange hover:bg-brand-pale-orange/20 transition-colors mb-3"
+              className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[#EDE3DB] bg-white cursor-pointer text-left hover:border-brand-orange transition-colors mb-3"
             >
-              <Avatar name={remembered!.name} size={40} />
+              <Avatar name={remembered!.name} size={48} />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-carbon truncate">{remembered!.name}</p>
                 <p className="text-[12px] text-slate truncate">{remembered!.email}</p>
@@ -319,6 +321,7 @@ export function LoginPage() {
           <Input
             id="login-email"
             label="Email Address"
+            leftIcon={<Mail size={18} />}
             type="email" placeholder="Enter Your Email Address" autoComplete="email"
             value={values.email} onChange={set('email')} onBlur={blur('email')}
             onKeyDown={e => e.key === 'Enter' && passwordRef.current?.focus()}
@@ -382,7 +385,7 @@ export function LoginPage() {
               </div>
 
               <MagneticButton className="block mt-3 lg:mt-4">
-                <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading}>
+                <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading} icon={<LogIn size={18} />}>
                   Sign In
                 </Button>
               </MagneticButton>
