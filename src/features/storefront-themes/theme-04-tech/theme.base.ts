@@ -6,6 +6,7 @@
 // into the singleton below before any child renders, same contract every registered theme follows.
 
 import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
+import { readProductsPerPage } from '../themeManifest';
 
 const STATIC_DEFAULTS = {
   id: 'theme-04-tech',
@@ -233,8 +234,7 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
   baseTheme.mega.columns = Number(oneOf(ts?.megaColumns, ['3', '4', '5'] as const, '4'));
   baseTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');
   baseTheme.mega.photo = oneOf(ts?.megaPhoto, ['square', 'landscape', 'portrait'] as const, 'square');
-  baseTheme.pagination.productsPerPage = Number(oneOf(ts?.productsPerPage == null ? undefined : String(ts.productsPerPage), ['8', '12', '16', '24', '36', '48'] as const, '12'));
-  baseTheme.pagination.mode = oneOf(ts?.productPagination, ['pages', 'more', 'infinite'] as const, 'pages');
+  { const pp = readProductsPerPage(ts); baseTheme.pagination.productsPerPage = pp.pageSize; baseTheme.pagination.mode = pp.showAll ? 'infinite' : oneOf(ts?.productPagination, ['pages', 'more', 'infinite'] as const, 'pages'); }
   baseTheme.pagination.postsPerPage = Number(oneOf(ts?.postsPerPage == null ? undefined : String(ts.postsPerPage), ['6', '9', '12', '18', '24'] as const, '12'));
   baseTheme.pagination.reviewsPerPage = Number(oneOf(ts?.reviewsPerPage == null ? undefined : String(ts.reviewsPerPage), ['5', '10', '20'] as const, '5'));
   baseTheme.share.facebook = ts?.shareFacebook !== 'hide';

@@ -9,7 +9,7 @@ import { DEFAULT_SORT, parseBrowseState, writeBrowseState, type BrowseSort, type
 
 export const BROWSE_PAGE_SIZE = 12;
 /** How many products one request asks for (seller-chosen, kept to a safe range). */
-export const clampPageSize = (n: number) => Math.min(48, Math.max(4, Math.round(n) || BROWSE_PAGE_SIZE));
+export const clampPageSize = (n: number) => Math.min(100, Math.max(4, Math.round(n) || BROWSE_PAGE_SIZE));
 
 interface Scope { categoryId?: string; collectionId?: string; search?: string }
 

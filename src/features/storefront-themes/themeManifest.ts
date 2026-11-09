@@ -57,6 +57,8 @@ export interface ThemeSettingsFieldDef {
     | { kind: 'color'; /** Optional override: shows an "Auto (theme)" state with a Reset, and saves null when reset. */ optional?: { fallback: string } }
     | { kind: 'select'; options: { value: string; label: string }[] }
     | { kind: 'text'; maxLength?: number; placeholder?: string }
+    /** A whole number the seller types (clamped to min..max). Stored as text, like the other custom settings. */
+    | { kind: 'number'; min: number; max: number; placeholder?: string }
     /** Google Fonts picker (searchable, each font shown in its own face). `defaultLabel` adds a "theme default" row that stores nothing. */
     | { kind: 'font'; defaultLabel?: string };
   /** Shown under the field — e.g. Maison's fixed headline typeface note. */
@@ -77,6 +79,14 @@ export function themeSettingPatch(colors: StorefrontColors, field: Pick<ThemeSet
 }
 
 /** Read a theme-declared setting inside the theme (string/number/boolean), with the theme's own default. */
+/** The seller's "Products per page" (any whole number 4 to 100, default 12) and "Show all products" (loads everything in batches of 100 as the shopper scrolls). */
+export function readProductsPerPage(ts: Record<string, unknown> | undefined | null): { pageSize: number; showAll: boolean } {
+  const showAll = ts?.productShowAll === 'yes';
+  const n = Math.round(Number(ts?.productsPerPage));
+  const pageSize = showAll ? 100 : Number.isFinite(n) && n >= 4 ? Math.min(100, n) : 12;
+  return { pageSize, showAll };
+}
+
 export function customThemeSetting<T extends string | number | boolean>(colors: { themeSettings?: Record<string, string | number | boolean> } | null | undefined, name: string, fallback: T): T {
   const v = colors?.themeSettings?.[name];
   return typeof v === typeof fallback ? (v as T) : fallback;

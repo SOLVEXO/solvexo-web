@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StorefrontColors } from '@/api/services/storeTheme';
-import { customThemeSetting, readThemeSetting, themeSettingPatch } from './themeManifest';
+import { customThemeSetting, readProductsPerPage, readThemeSetting, themeSettingPatch } from './themeManifest';
 
 const colors = { primaryColor: '#000000', themeSettings: { showBadge: true, label: 'New' } } as unknown as StorefrontColors;
 
@@ -26,5 +26,20 @@ describe('theme-declared (custom.*) settings', () => {
     expect(customThemeSetting(colors, 'label', 'x')).toBe('New');
     expect(customThemeSetting(colors, 'label', 5)).toBe(5);
     expect(customThemeSetting(undefined, 'showBadge', true)).toBe(true);
+  });
+});
+
+describe('readProductsPerPage', () => {
+  it('takes any whole number from 4 to 100 and defaults to 12', () => {
+    expect(readProductsPerPage(undefined)).toEqual({ pageSize: 12, showAll: false });
+    expect(readProductsPerPage({ productsPerPage: '30' }).pageSize).toBe(30);
+    expect(readProductsPerPage({ productsPerPage: '100' }).pageSize).toBe(100);
+    expect(readProductsPerPage({ productsPerPage: '500' }).pageSize).toBe(100);
+    expect(readProductsPerPage({ productsPerPage: '2' }).pageSize).toBe(12);
+    expect(readProductsPerPage({ productsPerPage: 'abc' }).pageSize).toBe(12);
+  });
+  it('show all loads 100 at a time', () => {
+    expect(readProductsPerPage({ productShowAll: 'yes', productsPerPage: '10' })).toEqual({ pageSize: 100, showAll: true });
+    expect(readProductsPerPage({ productShowAll: 'no', productsPerPage: '10' })).toEqual({ pageSize: 10, showAll: false });
   });
 });

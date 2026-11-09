@@ -137,6 +137,22 @@ function ThemeSettingsField({ field, colors, onChange }: {
       </div>
     );
   }
+  if (field.control.kind === 'number') {
+    const c = field.control;
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Field heading={field.label}>
+          <input className={inp} type="number" inputMode="numeric" min={c.min} max={c.max} step={1} placeholder={c.placeholder} value={value}
+            onChange={e => {
+              if (e.target.value.trim() === '') return onChange(themeSettingPatch(colors, field, null));
+              const n = Math.min(c.max, Math.max(c.min, Math.round(Number(e.target.value)) || c.min));
+              onChange(themeSettingPatch(colors, field, String(n)));
+            }} />
+        </Field>
+        {field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}
+      </div>
+    );
+  }
   if (field.control.kind === 'font') {
     const c = field.control;
     return (
@@ -383,6 +399,8 @@ function SettingsTransfer({ manifest, current, onImport, onError }: {
           ? typeof v === 'string' && f.control.options.some(o => o.value === v)
           : f.control.kind === 'font'
             ? (v === null && !!f.control.defaultLabel) || (typeof v === 'string' && findCatalogFont(v) !== undefined)
+            : f.control.kind === 'number'
+            ? v === null || (typeof v === 'string' && /^\d{1,4}$/.test(v))
             : f.control.kind === 'text'
             ? v === null || (typeof v === 'string' && v.length <= (f.control.maxLength ?? 500))
             : v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v));

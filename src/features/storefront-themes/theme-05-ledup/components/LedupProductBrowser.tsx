@@ -5,10 +5,10 @@ import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/us
 import { PRODUCT_TYPE_LABEL, SORT_OPTIONS, clearFilters, hasActiveFilters, toggleIn, toggleOption, type BrowseSort, type BrowseState } from '@/features/storefront/browse/browseState';
 import { moneyText } from '../../core/money';
 import { LedupSkeleton, LedupError } from '../ui/ledupUi';
+import { ledupTheme } from '../theme.config';
 import { LedupProductCard } from './LedupProductCard';
 import { LedupFilterCheck, LedupFilterGroup, LedupFilterShell } from './LedupFilterSidebar';
 
-const PAGE_SIZE = 12;
 
 function PriceFilter({ symbol, lowest, highest, minPrice, maxPrice, onApply }: { symbol: string; lowest: number | null; highest: number | null; minPrice?: number; maxPrice?: number; onApply: (lo?: number, hi?: number) => void }) {
   const [lo, setLo] = useState(minPrice != null ? String(minPrice) : '');
@@ -32,7 +32,7 @@ function PriceFilter({ symbol, lowest, highest, minPrice, maxPrice, onApply }: {
 
 /** Product list for a collection, category or search: real filters from the store's own products (stock, price, type, options, tags), sort, count and a "Load more" button. */
 export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl = true, emptyText }: { categoryId?: string; collectionId?: string; search?: string; syncUrl?: boolean; emptyText?: string }) {
-  const pageSize = clampPageSize(PAGE_SIZE);
+  const pageSize = clampPageSize(ledupTheme.pagination.productsPerPage);
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search, syncUrl, pageSize, accumulate: true });
   const [mobileFilters, setMobileFilters] = useState(false);
 

@@ -3,6 +3,7 @@
 // pill navigation bar, minimalist white product cards with technical specs (Wattage, CCT, SKU),
 // single product page with interactive specifications table, datasheet downloads, and high-curvature espresso footer.
 
+import { readProductsPerPage } from '../themeManifest';
 import { applyMerchantThemeOverrides as applyBase, baseTheme, mixHex, relativeLuminance, type BaseMerchantColors } from './theme.base';
 
 export const LEDUP_SHAPES = {
@@ -67,6 +68,8 @@ const STATIC_DEFAULTS = {
   showCharacteristicsTable: true,
   checkoutSummary: 'right' as 'right' | 'left',
   cartUpsell: true,
+  /** Products per page on collection/category/search; seller settings `custom.productsPerPage` / `custom.productShowAll`. */
+  pagination: { productsPerPage: 12 },
 };
 
 export const ledupTheme = { ...STATIC_DEFAULTS };
@@ -75,6 +78,7 @@ export type LedupColors = typeof ledupTheme.colors;
 
 export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | undefined): void {
   applyBase(colors);
+  ledupTheme.pagination.productsPerPage = readProductsPerPage((colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings).pageSize;
   ledupTheme.fonts.body = baseTheme.fonts.body;
   ledupTheme.fonts.display = baseTheme.fonts.display;
 
