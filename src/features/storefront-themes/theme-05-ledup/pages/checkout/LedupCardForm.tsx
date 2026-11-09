@@ -1,0 +1,76 @@
+import { useRef, useState, type FormEvent } from 'react';
+import { ts } from '@/utils/tStatic';
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import type { Appearance } from '@stripe/stripe-js';
+import { ShieldCheck } from 'lucide-react';
+import { ledupTheme as t } from '../../theme.config';
+import { Notice, PillButton } from '../../ui/ledupForm';
+import { getStripe } from '../../../core/checkout/stripeLoader';
+
+interface Props {
+  clientSecret: string;
+  /** Pre-formatted amount for the button ("$42.00"). */
+  amountText: string;
+  /** Where Stripe sends the buyer back if a payment method needs a redirect (the return page then polls the status). */
+  returnUrl: string;
+  /** Stripe accepted the payment client-side; the caller now polls the order status. */
+  onConfirmed: () => void;
+}
+
+function CardFields({ amountText, returnUrl, onConfirmed }: Omit<Props, 'clientSecret'>) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const locked = useRef(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements || locked.current) return;
+    locked.current = true; setSubmitting(true); setError('');
+    try {
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl }, redirect: 'if_required' });
+      if (confirmError) { setError(confirmError.message ?? ts('checkout.err.cardDetails', 'Payment failed. Please check your details and try again.')); return; }
+      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) { onConfirmed(); return; }
+      setError(ts('checkout.err.notComplete', 'Payment did not complete. Please try again.'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : ts('checkout.err.cardFailed', 'Payment failed. Please try again.'));
+    } finally {
+      locked.current = false; setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-4" aria-label={ts('checkout.cardPaymentAria', 'Card payment')}>
+      <PaymentElement />
+      {error && <Notice tone="error">{error}</Notice>}
+      <PillButton type="submit" full loading={submitting} disabled={!stripe || !elements}>{ts('pg.pay_amount', 'Pay {{amount}}', { amount: amountText })}</PillButton>
+      <p className="m-0 flex items-center justify-center gap-1.5 text-xs" style={{ color: t.colors.inkMuted }}>
+        <ShieldCheck size={13} aria-hidden /> {ts('pg.payments_are_encrypted_and_processed', 'Payments are encrypted and processed securely by Stripe')}
+      </p>
+    </form>
+  );
+}
+
+/** Stripe Elements card form dressed in the Tech tokens (colors, radius, font follow merchant customization). */
+export function LedupCardForm({ clientSecret, ...rest }: Props) {
+  const promise = getStripe();
+  if (!promise) return <Notice tone="error">{ts('checkout.cardNotConfigured', "Card payments aren't configured for this store yet.")}</Notice>;
+  const appearance: Appearance = {
+    theme: 'flat',
+    variables: {
+      colorPrimary: t.colors.accent, colorBackground: t.colors.bg, colorText: t.colors.ink, colorDanger: t.colors.danger,
+      fontFamily: t.fonts.body, borderRadius: '4px', spacingUnit: '4px',
+    },
+    rules: {
+      '.Input': { border: `1px solid ${t.colors.border}`, boxShadow: 'none', padding: '13px 16px' },
+      '.Input:focus': { border: `1px solid ${t.colors.ink}`, boxShadow: 'none' },
+      '.Label': { fontWeight: '500' },
+    },
+  };
+  return (
+    <Elements key={clientSecret} stripe={promise} options={{ clientSecret, appearance }}>
+      <CardFields {...rest} />
+    </Elements>
+  );
+}

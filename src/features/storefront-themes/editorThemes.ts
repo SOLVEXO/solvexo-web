@@ -3,3 +3,7 @@
 import './theme-04-tech/theme.manifest';
 import './theme-04-tech/theme.preview';
 import './theme-04-tech/theme.demoPreview';
+
+import './theme-05-ledup/theme.manifest';
+import './theme-05-ledup/theme.preview';
+import './theme-05-ledup/theme.demoPreview';

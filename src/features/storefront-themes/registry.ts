@@ -97,6 +97,52 @@ const TechAuthGate: ComponentType = () => createElement(Suspense, { fallback: nu
 /** The password / coming-soon page is outside the pages' Suspense boundary, so it brings its own. */
 const TechGate: NewThemeImpl['GatePage'] = props => createElement(Suspense, { fallback: null }, createElement(LazyTechGate, props));
 
+// Ledup (theme-05-ledup) - Architectural & Commercial LED Lighting
+const LedupLayout = lazy(() => import('./theme-05-ledup/layout/LedupLayout').then(m => ({ default: m.LedupLayout })));
+const LedupHomePage = lazy(() => import('./theme-05-ledup/pages/LedupContentPages').then(m => ({ default: m.LedupHomePage })));
+const LedupCustomPage = lazy(() => import('./theme-05-ledup/pages/LedupContentPages').then(m => ({ default: m.LedupCustomPage })));
+const LedupCollectionPage = lazy(() => import('./theme-05-ledup/pages/LedupListingPages').then(m => ({ default: m.LedupCollectionPage })));
+const LedupCategoryPage = lazy(() => import('./theme-05-ledup/pages/LedupListingPages').then(m => ({ default: m.LedupCategoryPage })));
+const LedupSearchPage = lazy(() => import('./theme-05-ledup/pages/LedupListingPages').then(m => ({ default: m.LedupSearchPage })));
+const LedupProductPage = lazy(() => import('./theme-05-ledup/pages/LedupProductPage').then(m => ({ default: m.LedupProductPage })));
+const LedupCartPage = lazy(() => import('./theme-05-ledup/pages/LedupCartPage').then(m => ({ default: m.LedupCartPage })));
+const LedupCheckoutPage = lazy(() => import('./theme-05-ledup/pages/LedupCheckoutPage').then(m => ({ default: m.LedupCheckoutPage })));
+const LedupCheckoutReturnPage = lazy(() => import('./theme-05-ledup/pages/LedupCheckoutReturnPage').then(m => ({ default: m.LedupCheckoutReturnPage })));
+const LedupLoginPage = lazy(() => import('./theme-05-ledup/pages/LedupAuthPages').then(m => ({ default: m.LedupLoginPage })));
+const LedupRegisterPage = lazy(() => import('./theme-05-ledup/pages/LedupAuthPages').then(m => ({ default: m.LedupRegisterPage })));
+const LedupVerifyOtpPage = lazy(() => import('./theme-05-ledup/pages/LedupAuthPages').then(m => ({ default: m.LedupVerifyOtpPage })));
+const LedupForgotPasswordPage = lazy(() => import('./theme-05-ledup/pages/LedupAuthPages').then(m => ({ default: m.LedupForgotPasswordPage })));
+const LedupNewPasswordPage = lazy(() => import('./theme-05-ledup/pages/LedupAuthPages').then(m => ({ default: m.LedupNewPasswordPage })));
+const LedupAccountPage = lazy(() => import('./theme-05-ledup/pages/LedupAccountPages').then(m => ({ default: m.LedupAccountPage })));
+const LedupOrdersPage = lazy(() => import('./theme-05-ledup/pages/LedupAccountPages').then(m => ({ default: m.LedupOrdersPage })));
+const LedupAddressesPage = lazy(() => import('./theme-05-ledup/pages/LedupAccountPages').then(m => ({ default: m.LedupAddressesPage })));
+const LedupOrderDetailPage = lazy(() => import('./theme-05-ledup/pages/LedupOrderDetailPage').then(m => ({ default: m.LedupOrderDetailPage })));
+const LedupOrderStatusPage = lazy(() => import('./theme-05-ledup/pages/LedupOrderStatusPage').then(m => ({ default: m.LedupOrderStatusPage })));
+const LedupReturnsPage = lazy(() => import('./theme-05-ledup/pages/LedupReturnsPage').then(m => ({ default: m.LedupReturnsPage })));
+const LedupWishlistPage = lazy(() => import('./theme-05-ledup/pages/LedupWishlistPage').then(m => ({ default: m.LedupWishlistPage })));
+const LedupMyReviewsPage = lazy(() => import('./theme-05-ledup/pages/LedupMyReviewsPage').then(m => ({ default: m.LedupMyReviewsPage })));
+const LedupGiftCardsPage = lazy(() => import('./theme-05-ledup/pages/LedupGiftCardsPage').then(m => ({ default: m.LedupGiftCardsPage })));
+const LedupGiftCardViewPage = lazy(() => import('./theme-05-ledup/pages/LedupGiftCardViewPage').then(m => ({ default: m.LedupGiftCardViewPage })));
+const LedupStoreCreditPage = lazy(() => import('./theme-05-ledup/pages/LedupStoreCreditPage').then(m => ({ default: m.LedupStoreCreditPage })));
+const LedupLoyaltyPage = lazy(() => import('./theme-05-ledup/pages/LedupLoyaltyPage').then(m => ({ default: m.LedupLoyaltyPage })));
+const LedupMessagesPage = lazy(() => import('./theme-05-ledup/pages/LedupMessagesPage').then(m => ({ default: m.LedupMessagesPage })));
+const LedupNotificationsPage = lazy(() => import('./theme-05-ledup/pages/LedupNotificationsPage').then(m => ({ default: m.LedupNotificationsPage })));
+const LedupBlogIndexPage = lazy(() => import('./theme-05-ledup/pages/LedupBlogFaqPages').then(m => ({ default: m.LedupBlogIndexPage })));
+const LedupBlogPostPage = lazy(() => import('./theme-05-ledup/pages/LedupBlogFaqPages').then(m => ({ default: m.LedupBlogPostPage })));
+const LedupFaqsPage = lazy(() => import('./theme-05-ledup/pages/LedupBlogFaqPages').then(m => ({ default: m.LedupFaqsPage })));
+const LedupCollectionsPage = lazy(() => import('./theme-05-ledup/pages/LedupCollectionsPage').then(m => ({ default: m.LedupCollectionsPage })));
+const LedupNotFoundPage = lazy(() => import('./theme-05-ledup/pages/LedupContentPages').then(m => ({ default: m.LedupNotFoundPage })));
+const LedupLibraryPage = lazy(() => import('./theme-05-ledup/pages/LedupDigitalPages').then(m => ({ default: m.LedupLibraryPage })));
+const LedupMembershipsPage = lazy(() => import('./theme-05-ledup/pages/LedupDigitalPages').then(m => ({ default: m.LedupMembershipsPage })));
+const LedupLicensesPage = lazy(() => import('./theme-05-ledup/pages/LedupDigitalPages').then(m => ({ default: m.LedupLicensesPage })));
+const LedupLearnPage = lazy(() => import('./theme-05-ledup/pages/LedupDigitalPages').then(m => ({ default: m.LedupLearnPage })));
+const LazyLedupGate = lazy(() => import('./theme-05-ledup/pages/LedupStorefrontGate').then(m => ({ default: m.LedupStorefrontGate })));
+const LazyLedupCookie = lazy(() => import('./theme-05-ledup/components/LedupCookieBanner').then(m => ({ default: m.LedupCookieBanner })));
+const LazyLedupAuthGate = lazy(() => import('./theme-05-ledup/components/LedupAuthGateModal').then(m => ({ default: m.LedupAuthGateModal })));
+const LedupCookie: ComponentType<CookieBannerProps> = props => createElement(Suspense, { fallback: null }, createElement(LazyLedupCookie, props));
+const LedupAuthGate: ComponentType = () => createElement(Suspense, { fallback: null }, createElement(LazyLedupAuthGate));
+const LedupGate: NewThemeImpl['GatePage'] = props => createElement(Suspense, { fallback: null }, createElement(LazyLedupGate, props));
+
 /** Every storefront route a theme can implement. A route a theme does not cover falls back to the default theme's page, so a theme that is still being built never renders a blank screen. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
@@ -244,6 +290,65 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       totalRouteCount: 37,
     },
     installDefaults: { primaryColor: '#0156FF', bgColor: '#FFFFFF', textColor: '#020203', font: 'Poppins', buttonStyle: 'solid', buttonRadius: 'full' },
+  },
+  'theme-05-ledup': {
+    Layout: LedupLayout,
+    GatePage: LedupGate,
+    CookieBanner: LedupCookie,
+    AuthGateModal: LedupAuthGate,
+    pages: {
+      home: LedupHomePage,
+      product: LedupProductPage,
+      cart: LedupCartPage,
+      collection: LedupCollectionPage,
+      category: LedupCategoryPage,
+      search: LedupSearchPage,
+      customPage: LedupCustomPage,
+      checkout: LedupCheckoutPage,
+      checkoutReturn: LedupCheckoutReturnPage,
+      login: LedupLoginPage,
+      register: LedupRegisterPage,
+      verifyOtp: LedupVerifyOtpPage,
+      forgotPassword: LedupForgotPasswordPage,
+      newPassword: LedupNewPasswordPage,
+      account: LedupAccountPage,
+      orders: LedupOrdersPage,
+      addresses: LedupAddressesPage,
+      orderDetail: LedupOrderDetailPage,
+      orderStatus: LedupOrderStatusPage,
+      returns: LedupReturnsPage,
+      wishlist: LedupWishlistPage,
+      myReviews: LedupMyReviewsPage,
+      giftCards: LedupGiftCardsPage,
+      giftCardView: LedupGiftCardViewPage,
+      storeCredit: LedupStoreCreditPage,
+      loyalty: LedupLoyaltyPage,
+      messages: LedupMessagesPage,
+      notifications: LedupNotificationsPage,
+      blogIndex: LedupBlogIndexPage,
+      blogPost: LedupBlogPostPage,
+      faqs: LedupFaqsPage,
+      collections: LedupCollectionsPage,
+      notFound: LedupNotFoundPage,
+      library: LedupLibraryPage,
+      memberships: LedupMembershipsPage,
+      licenses: LedupLicensesPage,
+      learn: LedupLearnPage,
+    },
+    display: {
+      name: 'Ledup',
+      description: 'Architectural and commercial LED lighting: warm metallic bronze header, curved tab navigation, technical spec pills, and curved espresso footer.',
+      builtRouteCount: 37,
+      totalRouteCount: 37,
+    },
+    installDefaults: {
+      primaryColor: '#8C7355',
+      bgColor: '#FFFFFF',
+      textColor: '#1C1917',
+      font: 'Poppins',
+      buttonStyle: 'solid',
+      buttonRadius: 'full',
+    },
   },
 };
 

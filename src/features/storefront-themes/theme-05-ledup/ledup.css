@@ -1,0 +1,200 @@
+/* Ledup Theme - Architectural Lighting */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+.ld-root {
+  overflow-x: clip;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  color: #1C1917;
+  background-color: #FFFFFF;
+}
+
+.ld-root .grid > *,
+.ld-root main > * {
+  min-width: 0;
+}
+
+.ld-root h1, .ld-root h2, .ld-root h3, .ld-root p, .ld-root a {
+  overflow-wrap: anywhere;
+}
+
+/* Metallic Copper / Bronze Header Banner */
+.ld-copper-gradient {
+  background: linear-gradient(135deg, #c49466 0%, #dbb28c 45%, #b27f52 100%);
+}
+
+.ld-copper-gradient-subtle {
+  background: linear-gradient(180deg, rgba(196, 148, 102, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* Curved Dark Espresso Footer */
+.ld-footer-wrapper {
+  position: relative;
+  width: 100%;
+  border-top-left-radius: 3.125rem;
+  border-top-right-radius: 3.125rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, #423932 0%, #25201b 100%);
+}
+
+.ld-footer-title {
+  background: linear-gradient(90deg, #d0d0d0, #ffffff 58.65%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+/* Inverted Curved Category Tab Cutout */
+.ld-tab-active {
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  font-weight: 600;
+  position: relative;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+
+.ld-tab-active::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -16px;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border-bottom-right-radius: 16px;
+  box-shadow: 6px 6px 0 6px #FFFFFF;
+  pointer-events: none;
+}
+
+.ld-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -16px;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border-bottom-left-radius: 16px;
+  box-shadow: -6px 6px 0 6px #FFFFFF;
+  pointer-events: none;
+}
+
+/* Buttons and Pills */
+.ld-btn-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 9999px;
+  background: #8C7355;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.ld-btn-solid:hover {
+  background: #796247;
+  transform: translateY(-1px);
+}
+
+.ld-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 9999px;
+  background: transparent;
+  color: #1C1917;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1.5px solid #D6D3D1;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.ld-btn-outline:hover {
+  border-color: #8C7355;
+  color: #8C7355;
+}
+
+.ld-spec-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.ld-spec-pill-active {
+  background: #4A3F35;
+  color: #FFFFFF;
+  border: 1px solid #4A3F35;
+}
+
+.ld-spec-pill-idle {
+  background: transparent;
+  color: #57534E;
+  border: 1px solid #E7E5E4;
+}
+
+.ld-spec-pill-idle:hover {
+  border-color: #78716C;
+  color: #1C1917;
+}
+
+/* Product Card */
+.ld-product-card {
+  background: #FFFFFF;
+  border: 1px solid #F0EEEB;
+  border-radius: 18px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ld-product-card:hover {
+  border-color: #E2DFDB;
+  box-shadow: 0 12px 32px -8px rgba(74, 63, 53, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Smooth modal pop */
+@keyframes ld-fade-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ld-pop {
+  animation: ld-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Hide scrollbar */
+.ld-hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ld-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* Ledup design for the customer pages (account, orders, checkout, auth ...) */
+.ld-root .tx-btn,.ld-root .tx-pill{font-weight:500;letter-spacing:.01em}
+.ld-root table{border-collapse:separate;border-spacing:0}
+.ld-root th{background:#F9F8F6;font-weight:600}
+.ld-root input:focus,.ld-root select:focus,.ld-root textarea:focus{border-color:#8C7355!important;box-shadow:0 0 0 3px rgba(140,115,85,.15)}
+.ld-root input[type=checkbox],.ld-root input[type=radio]{accent-color:#8C7355}
+.ld-root hr{border-color:#EAE8E5}

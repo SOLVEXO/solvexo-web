@@ -1,0 +1,49 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
+import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
+
+interface Tab { id: string; name: string; href: string; keys: string[] }
+
+/** Bronze banner with the signature curved tab row. The tabs are the store's own top-level categories (else its collections). */
+export function LedupHeroCategoryBanner({ activeCategory }: { activeCategory?: string }) {
+  const { store } = useStorefront();
+  const { pathname } = useLocation();
+  const { tree } = useStoreCategoryTree(store.storeId);
+  const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
+
+  useEffect(() => {
+    if (tree.length > 0) return;
+    let off = false;
+    apiGetPublicCollections(store.storeId).then(r => { if (!off) setCollections(r.data ?? []); }).catch(() => {});
+    return () => { off = true; };
+  }, [store.storeId, tree.length]);
+
+  const tabs = useMemo<Tab[]>(() => {
+    if (tree.length > 0) return tree.slice(0, 10).map(c => ({ id: c._id, name: c.name, href: `/category/${c.slug || c._id}`, keys: [c._id, c.slug].filter(Boolean) as string[] }));
+    return collections.slice(0, 10).map(c => ({ id: c._id, name: c.name, href: `/collections/${c.slug || c._id}`, keys: [c._id, c.slug].filter(Boolean) as string[] }));
+  }, [tree, collections]);
+
+  if (tabs.length === 0) return null;
+
+  return (
+    <div className="w-full pt-4">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="ld-copper-gradient relative overflow-visible rounded-t-[32px] px-6 pb-0 pt-10 shadow-sm lg:px-12">
+          <nav aria-label="Categories" className="ld-hide-scrollbar flex items-end gap-2 overflow-x-auto border-b-0">
+            {tabs.map(tab => {
+              const on = tab.keys.some(k => k === activeCategory || pathname.endsWith(`/${k}`));
+              return (
+                <Link key={tab.id} to={tab.href} aria-current={on ? 'page' : undefined}
+                  className={`relative z-10 whitespace-nowrap px-6 py-3.5 text-xs font-medium uppercase tracking-wider no-underline transition-colors ${on ? 'ld-tab-active shadow-sm' : 'rounded-t-xl text-white/85 hover:bg-white/10 hover:text-white'}`}>
+                  {tab.name}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+    </div>
+  );
+}

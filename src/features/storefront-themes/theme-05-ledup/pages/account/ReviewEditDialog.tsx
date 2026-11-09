@@ -1,0 +1,83 @@
+import { useRef, useState } from 'react';
+import { ts } from '@/utils/tStatic';
+import { ImagePlus, Star, X } from 'lucide-react';
+import { apiUploadPublicFile } from '@/api/upload';
+import { apiAddReview, apiEditReview, type MyReviewEntry } from '@/api/services/rating';
+import { reviewText } from '../../../accountUi';
+import { ledupTheme as t } from '../../theme.config';
+import { Dialog } from '../../ui/ledupDialog';
+import { Field, TextArea, PillButton, Notice } from '../../ui/ledupForm';
+
+
+/** What a NEW review is about (the order line or product page it was started from). */
+export interface ReviewTarget { productId: string; productName: string; variantId?: string; orderId?: string }
+
+/** Write a review (`target`) or edit the buyer's own (`review`): rating, comment and up to 4 photos. */
+export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?: MyReviewEntry; target?: ReviewTarget; onClose: () => void; onSaved: () => void }) {
+  const [rating, setRating] = useState(review?.rating ?? 0);
+  const [comment, setComment] = useState(review ? reviewText(review) : '');
+  const [media, setMedia] = useState<string[]>(review?.media ?? []);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function addPhotos(files: FileList | null) {
+    const picked = Array.from(files ?? []).filter(f => f.type.startsWith('image/')).slice(0, Math.max(0, 4 - media.length));
+    if (fileRef.current) fileRef.current.value = '';
+    if (picked.length === 0) return;
+    setUploading(true); setError('');
+    try {
+      const urls = await Promise.all(picked.map(f => apiUploadPublicFile(f).then(r => r.data.url)));
+      setMedia(m => [...m, ...urls].slice(0, 4));
+    } catch (err) { setError(err instanceof Error ? err.message : ts('reviews.err.upload', 'Could not upload the photo.')); }
+    finally { setUploading(false); }
+  }
+
+  async function submit() {
+    if (rating < 1) { setError(ts('reviews.err.rating', 'Please select a star rating.')); return; }
+    setSaving(true); setError('');
+    try {
+      if (review) await apiEditReview(review.reviewId, { rating, comment, media });
+      else if (target) await apiAddReview({ productId: target.productId, productVariantId: target.variantId, orderId: target.orderId, rating, comment: comment.trim() || undefined, media });
+      onSaved();
+    } catch (err) { setError(err instanceof Error ? err.message : ts('reviews.err.save', 'Could not save your review.')); setSaving(false); }
+  }
+
+  return (
+    <Dialog title={review ? ts('pg.edit_review', 'Edit review') : ts('pg.write_a_review', 'Write a review')} onClose={onClose}
+      footer={<><PillButton variant="outline" className="flex-1" onClick={onClose}>{ts('common.cancel', 'Cancel')}</PillButton><PillButton className="flex-1" loading={saving} disabled={uploading} onClick={submit}>{ts('pg.save_review', 'Save review')}</PillButton></>}>
+      <div className="flex flex-col gap-5">
+        {(review?.product?.name ?? target?.productName) && <p className="m-0 text-[15px] font-semibold">{review?.product?.name ?? target?.productName}</p>}
+        <fieldset className="m-0 border-0 p-0">
+          <legend className="mb-2 text-sm font-medium">{ts('pg.rating', 'Rating')}</legend>
+          <div className="flex gap-1" role="radiogroup" aria-label={ts('pg.rating', 'Rating')}>
+            {[1, 2, 3, 4, 5].map(i => (
+              <button key={i} type="button" role="radio" aria-checked={rating === i} aria-label={ts('reviews.starsAria', '{{count}} stars', { count: i })} onClick={() => { setRating(i); setError(''); }} className="cursor-pointer border-0 bg-transparent p-1">
+                <Star size={28} aria-hidden style={{ color: t.colors.ink, fill: i <= rating ? t.colors.ink : 'transparent' }} />
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <Field label={ts('pg.your_review', 'Your review')}>{p => <TextArea {...p} value={comment} onChange={e => setComment(e.target.value)} maxLength={2000} />}</Field>
+        <div>
+          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={e => addPhotos(e.target.files)} aria-label={ts('pg.add_photos', 'Add photos')} />
+          {media.length < 4 && (
+            <PillButton variant="outline" loading={uploading} onClick={() => fileRef.current?.click()}><ImagePlus size={16} aria-hidden /> {ts('pg.add_photos', 'Add photos')}</PillButton>
+          )}
+        </div>
+        {media.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {media.map(url => (
+              <div key={url} className="relative">
+                <img src={url} alt={ts('pg.attached_to_your_review', 'Attached to your review')} className="size-16 object-cover" style={{ borderRadius: t.fieldRadiusPx }} />
+                <button type="button" onClick={() => setMedia(m => m.filter(x => x !== url))} aria-label={ts('pg.remove_photo', 'Remove photo')} className="absolute -right-2 -top-2 grid size-6 cursor-pointer place-items-center rounded-full border-0" style={{ background: t.colors.ink, color: t.colors.bg }}><X size={12} aria-hidden /></button>
+              </div>
+            ))}
+          </div>
+        )}
+        {error && <Notice tone="error">{error}</Notice>}
+      </div>
+    </Dialog>
+  );
+}

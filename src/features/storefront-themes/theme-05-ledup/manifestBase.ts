@@ -1,0 +1,131 @@
+import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
+import type { StorefrontColors } from '@/api/services/storeTheme';
+
+const DEFAULTS: Partial<StorefrontColors> = {
+  bgColor: '#FFFFFF',
+  textColor: '#1C1917',
+  primaryColor: '#8C7355',
+  mutedColor: '#78716C',
+  borderColor: '#EAE8E5',
+  saleColor: '#DC2626',
+  font: 'Poppins',
+  headingFont: 'Poppins',
+  headingWeight: 'semibold',
+  headingCase: 'none',
+  headingTracking: 'tight',
+  buttonStyle: 'solid',
+  buttonRadius: 'full',
+  buttonWidth: 'auto',
+  buttonCase: 'normal',
+  inputRadius: 'full',
+  sectionSpacing: 'comfortable',
+  containerWidth: 'standard',
+  sectionRadius: 'large',
+  imageRadius: 'large',
+  productCardRadius: 'large',
+  productImageRatio: 'square',
+  productImageHover: 'zoom',
+  cardStyle: 'outlined',
+  cardRating: 'hide',
+  cardTag: 'show',
+  cardButton: 'show',
+  badgeStyle: 'pill',
+  cartType: 'drawer',
+  cardHover: 'shadow',
+};
+
+const STYLES: ThemeStylePreset[] = [
+  {
+    id: 'lumina-bronze',
+    name: 'Lumina Bronze',
+    description: 'The signature LEDUP look: warm metallic copper banner, pure white product canvas, and dark espresso footer.',
+    settings: { ...DEFAULTS },
+  },
+  {
+    id: 'minimal-studio',
+    name: 'Minimal Studio',
+    description: 'Crisp architectural studio: pure white and charcoal with neutral stone tones.',
+    settings: { ...DEFAULTS, primaryColor: '#44403C', themeSettings: { ledupDarkFooter: 'true' } },
+  },
+  {
+    id: 'dark-gallery',
+    name: 'Dark Gallery',
+    description: 'Moody luxury lighting showroom with high contrast and golden accents.',
+    settings: { ...DEFAULTS, bgColor: '#1C1917', textColor: '#F5F5F4', primaryColor: '#D4A373', borderColor: '#292524' },
+  },
+];
+
+export const baseManifest: ThemeManifest = {
+  id: 'theme-05-ledup',
+  name: 'Ledup',
+  supportsAnnouncementBar: true,
+  headerOptionChoices: {},
+  supportedHeaderOptions: ['logoPosition', 'sticky', 'button', 'topBar', 'colours'],
+  supportedFooterOptions: ['spacing', 'colours', 'headings', 'policyLinks', 'currency', 'defaultColumns'],
+  templates: [
+    { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },
+    { id: 'product', label: 'Product', group: 'products', showChrome: true, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'collection', label: 'Collection', group: 'collections', showChrome: true, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'pages', label: 'Pages', group: 'pages', showChrome: true, resource: { kind: 'store-page', pageType: 'custom' } },
+    { id: 'search', label: 'Search', group: 'search', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
+    { id: 'cart', label: 'Cart', group: 'cart', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
+    { id: 'blogIndex', label: 'Blog index', group: 'blogs', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-index', allowAltTemplates: false, previewPicker: 'blog' } },
+    { id: 'blogArticle', label: 'Blog article', group: 'articles', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'blog-article', allowAltTemplates: false, previewPicker: 'article' } },
+    { id: 'login', label: 'Sign in', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'login', allowAltTemplates: false } },
+    { id: 'register', label: 'Create account', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'register', allowAltTemplates: false } },
+    { id: 'forgotPassword', label: 'Forgot password', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'forgot-password', allowAltTemplates: false } },
+    { id: 'resetPassword', label: 'Reset password', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'reset-password', allowAltTemplates: false } },
+    { id: 'verifyOtp', label: 'Verify code', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'verify-otp', allowAltTemplates: false } },
+    { id: 'account', label: 'Customer account', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'account', allowAltTemplates: false } },
+    { id: 'orders', label: 'Orders', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'orders', allowAltTemplates: false } },
+    { id: 'orderDetail', label: 'Order details', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'order-detail', allowAltTemplates: false } },
+    { id: 'addresses', label: 'Addresses', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'addresses', allowAltTemplates: false } },
+    { id: 'wishlist', label: 'Wishlist', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'wishlist', allowAltTemplates: false } },
+    { id: 'checkout', label: 'Checkout', group: 'customer', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'checkout', allowAltTemplates: false } },
+    { id: 'notFound', label: '404 page', group: 'other', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'not-found', allowAltTemplates: false } },
+    { id: 'password', label: 'Password page', group: 'other', showChrome: false, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'password', allowAltTemplates: false } },
+  ],
+  defaultSettings: DEFAULTS,
+  styles: STYLES,
+  customSections: [
+    {
+      key: 'ledup.category_tabs', label: 'Category tabs banner', color: '#8C7355',
+      description: 'The bronze banner with curved tabs. The tabs are your store categories (or collections).',
+      fields: [],
+    },
+    {
+      key: 'ledup.highlights', label: 'Highlights', color: '#8C7355',
+      description: 'Three or more cards with an icon, a title, a short text and an optional link.',
+      fields: [
+        { key: 'eyebrow', kind: 'text', label: 'Small label above', maxLength: 60 },
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Intro text', rows: 3, maxLength: 400 },
+      ],
+      block: {
+        key: 'item', label: 'Card',
+        fields: [
+          { key: 'title', kind: 'text', label: 'Title', maxLength: 80 },
+          { key: 'description', kind: 'textarea', label: 'Text', rows: 3, maxLength: 300 },
+          { key: 'linkText', kind: 'text', label: 'Link text', maxLength: 40 },
+        ],
+      },
+      initialBlocks: 3,
+    },
+    {
+      key: 'ledup.statement', label: 'Statement', color: '#8C7355',
+      description: 'A large centred statement with a short text.',
+      fields: [
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 600 },
+      ],
+    },
+  ],
+
+  themeSettingsFields: [
+    { key: 'primaryColor', label: 'Buttons & accent', group: 'Colors', control: { kind: 'color' }, helpText: 'Buttons, links, tags and the bronze banner tone.' },
+    { key: 'bgColor', label: 'Background', group: 'Colors', control: { kind: 'color' }, helpText: 'Page background colour.' },
+    { key: 'textColor', label: 'Text', group: 'Colors', control: { kind: 'color' }, helpText: 'Main text and headings.' },
+    { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'font' }, helpText: 'Sets body and interface text.' },
+    { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'font', defaultLabel: 'Theme default (uses body font)' }, helpText: 'Used for headlines. Theme default uses your body font.' },
+  ],
+};
