@@ -322,6 +322,11 @@ export function apiVerifyAdminTwoFactor(challengeToken: string, code: string) {
   return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.ADMIN_TWO_FACTOR.VERIFY_LOGIN, { challengeToken, code });
 }
 
+/** POST /auth/seller/2fa/verify — second seller sign-in step */
+export function apiVerifySellerTwoFactor(challengeToken: string, code: string) {
+  return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.MEMBER_TWO_FACTOR.SELLER_VERIFY_LOGIN, { challengeToken, code });
+}
+
 /** True when the stored session is a password-less guest-checkout session. */
 export function isGuestUser(): boolean {
   try {

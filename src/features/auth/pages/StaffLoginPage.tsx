@@ -8,7 +8,8 @@ import { Input } from '@/components/comman/ui/Input';
 import { Eye, EyeOff, Users, ShieldCheck, Store } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import { apiStaffLogin } from '@/api/services/staff';
+import { apiStaffLogin, apiStaffTwoFactorVerify, type StaffSession } from '@/api/services/staff';
+import { TwoFactorStep } from '@/features/auth/components/TwoFactorStep';
 import { TokenStorage } from '@/api/services/auth';
 import { invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
@@ -47,6 +48,33 @@ export function StaffLoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [tfCode, setTfCode] = useState('');
+  const [tfRecovery, setTfRecovery] = useState(false);
+
+  // Saves the session and sends the person on. If the owner asked staff to use two-factor and they have not yet, they land on the security page first.
+  async function finishLogin(session: StaffSession) {
+    if (!storeId) return;
+    const { accessToken, staff } = session;
+    // A previous seller/staff session in this browser must never leak its cached name/email/store into this staff session.
+    invalidateProfileCache();
+    invalidateMyStoresCache();
+    try { Object.keys(window.localStorage).filter(k => k.startsWith('solvexo:store:')).forEach(k => window.localStorage.removeItem(k)); } catch { /* non-critical */ }
+    TokenStorage.save(accessToken, accessToken);
+    TokenStorage.saveUser({ id: staff.id, name: staff.name, email: staff.email, role: 'staff', image: null, storeId: staff.storeId, permissions: staff.permissions });
+    if (session.twoFactorSetupRequired) { navigate(`/store/${storeId}/security?setup=1`, { replace: true }); return; }
+    // Land on the first page this role can use (not the dashboard when the role has no dashboard access).
+    const { firstAllowedPath } = await import('@/components/layouts/StoreLayout');
+    navigate(redirectTo || firstAllowedPath({ role: 'staff', permissions: staff.permissions }, storeId), { replace: true });
+  }
+
+  async function verifyCode() {
+    if (!challengeToken || !tfCode.trim()) return;
+    setApiError(''); setLoading(true);
+    try { const res = await apiStaffTwoFactorVerify(challengeToken, tfCode.trim()); await finishLogin(res.data); }
+    catch (err: unknown) { setApiError(err instanceof Error ? err.message : "That code didn't match."); }
+    finally { setLoading(false); }
+  }
 
   const { values, errors, set, blur, handleSubmit } = useForm(
     loginSchema,
@@ -58,17 +86,9 @@ export function StaffLoginPage() {
         setLoading(true);
         try {
           const res = await apiStaffLogin(storeId, data.email, data.password);
-          const { accessToken, staff } = res.data;
-          // A previous seller/staff session in this browser must never leak its
-          // cached name/email/store into this staff session.
-          invalidateProfileCache();
-          invalidateMyStoresCache();
-          try { Object.keys(window.localStorage).filter(k => k.startsWith('solvexo:store:')).forEach(k => window.localStorage.removeItem(k)); } catch { /* non-critical */ }
-          TokenStorage.save(accessToken, accessToken);
-          TokenStorage.saveUser({ id: staff.id, name: staff.name, email: staff.email, role: 'staff', image: null, storeId: staff.storeId, permissions: staff.permissions });
-          // Land on the first page this role can use (not the dashboard when the role has no dashboard access).
-          const { firstAllowedPath } = await import('@/components/layouts/StoreLayout');
-          navigate(redirectTo || firstAllowedPath({ role: 'staff', permissions: staff.permissions }, storeId), { replace: true });
+          const d = res.data;
+          if ('twoFactorRequired' in d) { setChallengeToken(d.challengeToken); setTfCode(''); setTfRecovery(false); return; }
+          await finishLogin(d);
         } catch (err: unknown) {
           setApiError(err instanceof Error ? err.message : 'Invalid email or password.');
         } finally {
@@ -77,6 +97,14 @@ export function StaffLoginPage() {
       },
     },
   );
+
+  if (challengeToken) {
+    return (
+      <AuthSplitLayout panelGradient="from-carbon via-[#1a1918] to-[#2a1a14]" pageContext="login" brandingHeader={BRANDING_HEADER} heading={<>Sign in to<br />your store.</>} subtext="One more step to keep the store safe." highlights={HIGHLIGHTS} accentIconClass="text-brand-orange">
+        <TwoFactorStep code={tfCode} setCode={setTfCode} useRecovery={tfRecovery} setUseRecovery={setTfRecovery} loading={loading} error={apiError} onSubmit={() => void verifyCode()} onBack={() => { setChallengeToken(null); setTfCode(''); setApiError(''); }} />
+      </AuthSplitLayout>
+    );
+  }
 
   return (
     <AuthSplitLayout

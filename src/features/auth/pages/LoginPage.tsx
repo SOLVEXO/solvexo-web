@@ -14,6 +14,7 @@ import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { TwoFactorStep } from '@/features/auth/components/TwoFactorStep';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
@@ -79,6 +80,9 @@ export function LoginPage() {
   const redirectTo = safeRedirectPath(searchParams.get('redirect'));
   usePageTitle('Login');
   const login      = useLogin();
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [tfCode, setTfCode] = useState('');
+  const [tfRecovery, setTfRecovery] = useState(false);
   // Defaults to whichever role this device last registered/logged in as —
   // previously always hardcoded to "Buyer", so a seller who forgot to flip
   // the toggle got a misleading "Invalid email or password" (their account
@@ -106,7 +110,8 @@ export function LoginPage() {
     { email: remembered?.email ?? '', password: '' },
     {
       onSubmit: async (data: LoginFormData) => {
-        await login.execute({ email: data.email, password: data.password, role }, redirectTo);
+        const challenge = await login.execute({ email: data.email, password: data.password, role }, redirectTo);
+        if (challenge) { setChallengeToken(challenge.challengeToken); setTfCode(''); setTfRecovery(false); }
       },
     },
   );
@@ -196,6 +201,18 @@ export function LoginPage() {
   if (TokenStorage.isLoggedIn()) return <RedirectingSpinner />;
 
   const roleLabel = (r: AppRole) => (r === 'seller' ? 'seller' : 'buyer');
+
+  if (challengeToken) {
+    return (
+      <AuthSplitLayout pageContext="login" heading={<>Back to your <span className="text-brand-orange">store</span></>} subtext="One more step to keep your store safe." highlights={HIGHLIGHTS}>
+        <TwoFactorStep
+          code={tfCode} setCode={setTfCode} useRecovery={tfRecovery} setUseRecovery={setTfRecovery} loading={login.loading} error={login.error}
+          onSubmit={() => tfCode.trim() && login.verifyTwoFactor(challengeToken, tfCode.trim(), redirectTo, 'seller')}
+          onBack={() => { setChallengeToken(null); setTfCode(''); }}
+        />
+      </AuthSplitLayout>
+    );
+  }
 
   return (
     <AuthSplitLayout

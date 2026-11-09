@@ -230,8 +230,15 @@ export interface UpdateStaffPayload {
   status?: 'active' | 'inactive';
 }
 
+export type StaffSession = { accessToken: string; twoFactorSetupRequired?: boolean; twoFactor?: { usedRecoveryCode: boolean; recoveryCodesLeft: number }; staff: { id: string; name: string; email: string; role: string; permissions: string[]; storeId: string } };
+export type StaffLoginResult = StaffSession | { twoFactorRequired: true; challengeToken: string };
+
+export function apiStaffTwoFactorVerify(challengeToken: string, code: string) {
+  return client.post<never, ApiResponse<StaffSession>>(ENDPOINTS.MEMBER_TWO_FACTOR.STAFF_VERIFY_LOGIN, { challengeToken, code });
+}
+
 export function apiStaffLogin(storeId: string, email: string, password: string) {
-  return client.post<never, ApiResponse<{ accessToken: string; staff: { id: string; name: string; email: string; role: string; permissions: string[]; storeId: string } }>>(
+  return client.post<never, ApiResponse<StaffLoginResult>>(
     ENDPOINTS.STAFF.LOGIN(storeId),
     { email, password },
   );

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiLogin, apiVerifyAdminTwoFactor, isTwoFactorChallenge, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type LoginPayload, type AppRole } from '@/api/services/auth';
+import { apiLogin, apiVerifyAdminTwoFactor, apiVerifySellerTwoFactor, isTwoFactorChallenge, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type LoginPayload, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { useToast } from '@/contexts/ToastContext';
 import { ts } from '@/utils/tStatic';
@@ -32,15 +32,15 @@ export function useLogin() {
     }
   }
 
-  async function verifyTwoFactor(challengeToken: string, code: string, redirectTo?: string | null): Promise<void> {
+  async function verifyTwoFactor(challengeToken: string, code: string, redirectTo?: string | null, role: 'admin' | 'seller' = 'admin'): Promise<void> {
     setError('');
     setLoading(true);
     try {
-      const res = await apiVerifyAdminTwoFactor(challengeToken, code);
+      const res = await (role === 'seller' ? apiVerifySellerTwoFactor : apiVerifyAdminTwoFactor)(challengeToken, code);
       if (res.data.twoFactor?.usedRecoveryCode) {
         toast.info(`Recovery code used — ${res.data.twoFactor.recoveryCodesLeft} left. Make new ones in Settings → Two-factor sign-in.`);
       }
-      await finish(res.data, 'admin', redirectTo);
+      await finish(res.data, role, redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "That code didn't match.");
     } finally {

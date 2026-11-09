@@ -788,6 +788,19 @@ export const ENDPOINTS = {
     SEND_TEST: '/api/admin/digest/send-test',
   },
 
+  MEMBER_TWO_FACTOR: {
+    SELLER_VERIFY_LOGIN: '/api/auth/seller/2fa/verify',
+    STAFF_VERIFY_LOGIN: '/api/staff/2fa/verify',
+    ME: '/api/2fa/me',
+    SETUP: '/api/2fa/me/setup',
+    ENABLE: '/api/2fa/me/enable',
+    DISABLE: '/api/2fa/me/disable',
+    RECOVERY_CODES: '/api/2fa/me/recovery-codes',
+    STEP_UP: '/api/2fa/me/step-up',
+    POLICY: (storeId: string) => `/api/2fa/store/${storeId}/policy`,
+    RESET_STAFF: (storeId: string, staffId: string) => `/api/2fa/store/${storeId}/staff/${staffId}/reset`,
+  },
+
   ADMIN_TWO_FACTOR: {
     VERIFY_LOGIN: '/api/auth/admin/2fa/verify',
     STATUS: '/api/admin/2fa',

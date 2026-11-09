@@ -127,6 +127,7 @@ const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Ma
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
+const MemberSecurityPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/security/SecurityPage'));
 const SearchSettingsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/searchSettings/SearchSettingsPage'));
 const DevelopersPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/developers/DevelopersPage'));
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
@@ -407,6 +408,7 @@ const mainRouter = createBrowserRouter([
           { path: 'sales-channels',                   element: <SalesChannelsPage /> },
           { path: 'developers',                       element: <DevelopersPage /> },
           { path: 'search-settings',                  element: <SearchSettingsPage /> },
+          { path: 'security',                         element: <MemberSecurityPage /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },

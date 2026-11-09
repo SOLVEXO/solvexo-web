@@ -141,6 +141,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'sales-channels', Icon: Package, label: 'Sales channels', path: 'sales-channels', requiredPermission: 'products.view' },
       { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage' },
       { id: 'search-settings', Icon: Package, label: 'Search & discovery', path: 'search-settings', requiredPermission: 'onlinestore.themes.manage' },
+      { id: 'security', Icon: Package, label: 'Security (2FA)', path: 'security' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
       // Hidden until this store has payment proofs or connects its own "Bank Transfer" in
       // Integrations (see `hiddenNavIds`) — buyers who pay that way upload a proof here for the
@@ -678,11 +679,13 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
     const pct = total > 0 ? Math.min(100, Math.max(0, Math.round(((trialNow - start.getTime()) / total) * 100))) : 0;
     const daysLeft = Math.max(0, Math.ceil((end.getTime() - trialNow) / 86400000));
     const fmt = (d: Date | string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const free = !!platformSub.plan?.isFree || !(platformSub.amountUSD > 0);
+    // A real (non-free) plan with $0 = complimentary, granted by Solvexo: still show the cycle.
+    const free = !!platformSub.plan?.isFree || (!platformSub.plan && !(platformSub.amountUSD > 0));
+    const complimentary = !free && !(platformSub.amountUSD > 0);
     return {
       pct, daysLeft, free,
       endOn: fmt(end),
-      price: free ? 'Free' : `$${Number(platformSub.amountUSD).toLocaleString('en-US', { maximumFractionDigits: 2 })} / ${platformSub.billingInterval === 'yearly' ? 'year' : 'month'}`,
+      price: free ? 'Free' : complimentary ? 'Complimentary' : `$${Number(platformSub.amountUSD).toLocaleString('en-US', { maximumFractionDigits: 2 })} / ${platformSub.billingInterval === 'yearly' ? 'year' : 'month'}`,
       cancelling: !!platformSub.cancelAtPeriodEnd,
       paymentFailed: (platformSub.failedPaymentAttempts ?? 0) > 0 || platformSub.status === 'past_due',
       scheduled: platformSub.scheduledPlanChange

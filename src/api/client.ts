@@ -83,6 +83,10 @@ const client = axios.create({
 });
 
 // ── Request interceptor — attach Bearer token automatically ───────────────────
+// Sensitive actions (connect a payment gateway, remove staff) ask a two-factor member for a fresh code: the server answers 403 STEP_UP_REQUIRED,
+// we ask for the code once, keep the 10-minute token in memory and repeat the request with it.
+let stepUp: { value: string; exp: number } | null = null;
+
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (!API_BASE_URL) {
@@ -97,6 +101,7 @@ client.interceptors.request.use(
       config.params = { ...(config.params ?? {}), locale: language };
     }
     config.toastStartedAt = Date.now();
+    if (stepUp && stepUp.exp > Date.now()) config.headers['x-step-up'] = stepUp.value;
     const token = getAuthCookie('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -186,6 +191,21 @@ client.interceptors.response.use(
         cfg.headers.Authorization = `Bearer ${token}`;
         return client(cfg);
       });
+    }
+    if (err.response?.status === 403 && err.response.data?.code === 'STEP_UP_REQUIRED' && cfg && !(cfg as { _stepUpTried?: boolean })._stepUpTried && typeof window !== 'undefined') {
+      (cfg as { _stepUpTried?: boolean })._stepUpTried = true;
+      const code = window.prompt('This action needs a fresh code. Enter the 6-digit code from your authenticator app (or a recovery code):');
+      if (code && code.trim()) {
+        return client.post('/api/2fa/me/step-up', { code: code.trim() }, { toast: false })
+          .then((r) => {
+            const d = (r as unknown as { data?: { token?: string; expiresInMinutes?: number } }).data;
+            if (!d?.token) return handleApiError(err, sentToken);
+            stepUp = { value: d.token, exp: Date.now() + ((d.expiresInMinutes ?? 10) - 1) * 60_000 };
+            cfg.headers['x-step-up'] = d.token;
+            return client(cfg);
+          })
+          .catch((e) => handleApiError(e as AxiosError<ApiErrorBody>, sentToken));
+      }
     }
     return handleApiError(err, sentToken);
   },
