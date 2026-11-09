@@ -127,7 +127,7 @@ function Tokens({ storeId }: { storeId: string }) {
   ];
   return (
     <div className="flex flex-col gap-4">
-      <Card padding="md"><p className="m-0 text-[13px] text-slate">Send the token as <code>Authorization: Bearer sxk_…</code> to <code>/api/merchant/v1/orders</code> or <code>/products</code> (read only today). A token only sees this store and only what you allow.</p></Card>
+      <Card padding="md"><p className="m-0 text-[13px] text-slate">Send the token as <code>Authorization: Bearer sxk_…</code> to <code>/api/merchant/v1/orders</code> or <code>/products</code> and the other read endpoints. Writes need a write permission and an <code>Idempotency-Key</code> header: <code>PATCH /products/:id</code> (status, tags) and <code>POST /inventory/adjust</code>. A token only sees this store and only what you allow.</p></Card>
       <div><Button onClick={() => setAdding(true)}>Create token</Button></div>
       {list.error ? <ErrorLine message={errorMessage(list.error)} onRetry={list.reload} /> : <Table columns={columns} data={list.data?.items ?? []} keyExtractor={(t) => t._id} loading={list.loading} emptyState={{ title: 'No tokens yet', description: 'Create a token for software that reads your store data.' }} />}
       {adding && (
