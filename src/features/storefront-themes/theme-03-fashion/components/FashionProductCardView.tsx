@@ -41,6 +41,10 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
   const onSale = t.saleBadge && !!comparePrice && percentOff > 0;
   const stars = Math.round(rating);
   const ratio = PRODUCT_CARD_RATIO[t.productImageRatio] ?? '1 / 1';
+  // "Adapt to image": the photo sets the box height itself (it must stay in the normal flow, otherwise the box is 0 px tall and nothing shows).
+  const adapt = ratio === 'auto';
+  const fit = adapt || t.productImageFit === 'whole' ? 'object-contain' : 'object-cover';
+  const photoCls = adapt ? 'block h-auto w-full' : `absolute inset-0 h-full w-full ${fit}`;
 
   return (
     <article data-fx-card data-fx-hover={t.cardHover} data-fx-align={t.cardTextAlign} className="group flex h-full flex-col overflow-hidden transition-[box-shadow,transform] duration-300"
@@ -48,9 +52,9 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
       <Link to={to} className="relative block overflow-hidden" style={{ aspectRatio: ratio === 'auto' ? undefined : ratio, background: t.colors.bgAlt }} aria-label={name}
         onMouseEnter={hoverVideo ? () => { void videoRef.current?.play().catch(() => {}); } : undefined}
         onMouseLeave={hoverVideo ? () => { const v = videoRef.current; if (v) { v.pause(); v.currentTime = 0; } } : undefined}>
-        {image ? <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={name} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="absolute inset-0" />}
-        {hoverVideo && <video ref={videoRef} src={hoverVideo} muted loop playsInline preload="none" aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100" />}
-        {secondImage && <img {...imgProps(secondImage, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100" />}
+        {image ? <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={name} loading="lazy" className={`${photoCls} transition-transform duration-500 ease-out group-hover:scale-105`} /> : <div className={adapt ? 'aspect-square w-full' : 'absolute inset-0'} />}
+        {hoverVideo && <video ref={videoRef} src={hoverVideo} muted loop playsInline preload="none" aria-hidden tabIndex={-1} className={`pointer-events-none absolute inset-0 h-full w-full ${fit} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />}
+        {secondImage && <img {...imgProps(secondImage, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt="" aria-hidden loading="lazy" className={`absolute inset-0 h-full w-full ${fit} opacity-0 transition-opacity duration-500 group-hover:opacity-100`} style={{ background: t.colors.bgAlt }} />}
         <div className="absolute left-4 top-4 flex flex-col items-start gap-1.5">
           {soldOut && t.soldOutBadge && <Chip tone="dark">{ts('product.soldOut', 'Sold out')}</Chip>}
           {!soldOut && onSale && <Chip tone="sale">{t.saleBadgeText === 'label' ? ts('product.sale', 'Sale') : `-${percentOff}%`}</Chip>}

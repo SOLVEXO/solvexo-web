@@ -87,10 +87,14 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...badgeBase, background: t.colors.danger, color: '#fff' }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
     </>
   );
+  // "Adapt to image": the photo sets the box height itself (it must stay in the normal flow, otherwise the box is 0 px tall and nothing shows).
+  const adapt = ratio === 'auto';
+  const whole = b.productImageFit === 'whole';
+  const photoCls = adapt ? 'block h-auto w-full' : `absolute inset-0 h-full w-full ${whole ? 'object-contain p-3' : 'object-cover'}`;
   const imageBox = (
-    <Link to={to} aria-label={p.name} className="group relative block overflow-hidden" style={{ aspectRatio: ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
-      {image && <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3" />}
-      {secondImage && !hoverImage && <img {...imgProps(secondImage, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-contain p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: t.colors.bgAlt }} />}
+    <Link to={to} aria-label={p.name} className="group relative block overflow-hidden" style={{ aspectRatio: adapt ? undefined : ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
+      {image ? <img {...imgProps(image, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt={p.name} loading="lazy" className={photoCls} /> : adapt ? <div className="aspect-square w-full" /> : null}
+      {secondImage && !hoverImage && <img {...imgProps(secondImage, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES)} alt="" aria-hidden loading="lazy" className={`absolute inset-0 h-full w-full ${adapt || whole ? 'object-contain' : 'object-cover'}${!adapt && whole ? ' p-3' : ''} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} style={{ background: t.colors.bgAlt }} />}
       {badges}
     </Link>
   );

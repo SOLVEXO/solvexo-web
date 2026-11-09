@@ -45,7 +45,7 @@ export const fashionThemeManifest: ThemeManifest = {
   },
   supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'button', 'topBar', 'colours'],
   // Maison's footer is a dark rounded panel: it has no background photo and no "compact" layout, so those two are not offered.
-  supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns'],
+  supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns', 'shape', 'wordmark', 'bottomLayout'],
   defaultSettings: DEFAULTS,
   styles: STYLES,
 
@@ -145,6 +145,7 @@ export const fashionThemeManifest: ThemeManifest = {
     { key: 'imageRadius', label: 'Image corners', group: 'Images', control: { kind: 'select', options: RADIUS }, helpText: 'Corners of pictures inside sections.' },
     { key: 'productCardRadius', label: 'Product card corners', group: 'Images', control: { kind: 'select', options: RADIUS }, helpText: 'Corners of product cards in grids.' },
     { key: 'productImageRatio', label: 'Product image ratio', group: 'Images', control: { kind: 'select', options: [{ value: 'adapt', label: 'Adapt to image' }, { value: 'square', label: 'Square' }, { value: 'portrait', label: 'Portrait' }, { value: 'landscape', label: 'Landscape' }] }, helpText: 'Shape of product photos in grids.' },
+    { key: 'custom.productImageFit', label: 'Product image fit', group: 'Images', control: { kind: 'select', options: [{ value: 'fill', label: 'Fill the box (edges may be cropped)' }, { value: 'whole', label: 'Show the whole image' }] }, helpText: 'Choose "Show the whole image" for book covers, posters or anything that must not be cut. "Adapt to image" above always shows the whole photo.' },
     { key: 'productImageHover', label: 'Product image hover', group: 'Images', control: { kind: 'select', options: [{ value: 'none', label: 'None' }, { value: 'zoom', label: 'Zoom' }, { value: 'second-image', label: 'Show second image' }] }, helpText: 'What happens when a shopper hovers a product photo.' },
 
     { key: 'saleBadge', label: 'Sale badge', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show a percentage badge on discounted products.' },

@@ -47,26 +47,58 @@ export function FashionFooter() {
     doneColor: '#86EFAC', errorColor: '#FCA5A5', idPrefix: 'fx', newsletterHeading: ts('pg.stay_in_the_loop', 'Stay in the loop'), blogLabel: opts.blogLabel,
   };
 
+  // Footer shape: the rounded panel inside the page width (default), or edge to edge.
+  const full = opts.footerShape === 'full';
+  const padX = 'clamp(24px, 4vw, 56px)';
+  const stacked = opts.bottomLayout === 'stacked';
+  const wordmarkSrc = opts.wordmarkSource === 'store' ? store.logo : opts.wordmarkSource === 'custom' ? opts.wordmarkUrl : null;
+  const copyrightNode = <p className="m-0">{copyright && copyrightBlock?._id && editing ? <EditableText value={copyright} settingKey="text" blockId={copyrightBlock._id} /> : copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>;
+  const socialsNode = bottomSocials.length > 0 && <div className="[&>div]:mt-0"><SocialRow socials={bottomSocials} k={{ fg, muted }} look={opts.socialStyle} center color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} /></div>;
+  const paymentNode = paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />;
+  const legalLinks = legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>);
+
   return (
     <>
     {(theme?.footer?.sections?.length ?? 0) > 0 && <FashionSectionRenderer sections={theme?.footer?.sections ?? []} />}
-    <footer style={{ padding: `0 ${t.layout.containerPadX} 24px`, fontFamily: t.fonts.body, background: t.colors.bg }}>
-      <div className="mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, background: bg, color: fg, borderRadius: t.sectionRadiusPx }}>
-        <FooterNewsletterStrip tokens={tokens} maxWidth="100%" padX="clamp(24px, 4vw, 56px)" line={line} />
-        <div className="flex flex-wrap gap-x-10 gap-y-10" style={{ padding: `${opts.padding.columns}px clamp(24px, 4vw, 56px)` }}>
+    <footer style={{ padding: full ? 0 : `0 ${t.layout.containerPadX} 24px`, fontFamily: t.fonts.body, background: full ? bg : t.colors.bg }}>
+      <div className="mx-auto overflow-hidden" style={{ maxWidth: full ? undefined : t.layout.maxWidth, background: bg, color: fg, borderRadius: full ? 0 : t.sectionRadiusPx }}>
+        <div className="mx-auto" style={{ maxWidth: full ? t.layout.maxWidth : undefined }}>
+        <FooterNewsletterStrip tokens={tokens} maxWidth="100%" padX={padX} line={line} />
+        <div className="flex flex-wrap gap-x-10 gap-y-10" style={{ padding: `${opts.padding.columns}px ${padX}` }}>
           <FooterColumns tokens={tokens} />
         </div>
         <div style={{ borderTop: `1px solid ${line}` }}>
-          <div className="flex flex-col items-center justify-between gap-3 text-[13px] md:flex-row" style={{ padding: '20px clamp(24px, 4vw, 56px)', color: muted }}>
-            <p className="m-0">{copyright && copyrightBlock?._id && editing ? <EditableText value={copyright} settingKey="text" blockId={copyrightBlock._id} /> : copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>
-            {bottomSocials.length > 0 && <div className="[&>div]:mt-0"><SocialRow socials={bottomSocials} k={{ fg, muted }} look={opts.socialStyle} center color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} /></div>}
-            {paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />}
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
-              {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
-              {opts.showCurrency && <FashionLocaleControls />}
-              {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
-            </nav>
+          {stacked ? (
+            <div className="flex flex-col gap-4 text-[13px]" style={{ padding: `20px ${padX}`, color: muted }}>
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+                <nav className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label={ts('pg.legal', 'Legal')}>
+                  {opts.showCurrency && <FashionLocaleControls />}
+                  {legalLinks}
+                  {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
+                </nav>
+                {paymentNode}
+              </div>
+              {socialsNode}
+              <div className="text-center">{copyrightNode}</div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-between gap-3 text-[13px] md:flex-row" style={{ padding: `20px ${padX}`, color: muted }}>
+              {copyrightNode}
+              {socialsNode}
+              {paymentNode}
+              <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
+                {legalLinks}
+                {opts.showCurrency && <FashionLocaleControls />}
+                {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
+              </nav>
+            </div>
+          )}
+        </div>
+        {wordmarkSrc && (
+          <div className="flex justify-center" style={{ padding: `8px ${padX} 28px` }}>
+            <img src={wordmarkSrc} alt={store.name} loading="lazy" style={{ width: `${opts.wordmarkWidth}%`, maxWidth: '100%', height: 'auto', display: 'block' }} />
           </div>
+        )}
         </div>
       </div>
     </footer>

@@ -273,12 +273,24 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
   const set = (patch: Partial<StorefrontFooter>) => onChange({ ...footer, ...patch });
   const source = footer.logoSource ?? 'none';
   const can = (k: FooterOptionKey) => !supports || supports.includes(k);
-  const anyLayout = can('layout') || can('spacing') || can('alignment') || can('newsletterTop') || can('mobileAccordion');
-  const anyBottom = can('policyLinks') || can('currency') || can('backToTop');
+  const anyLayout = can('layout') || can('shape') || can('spacing') || can('alignment') || can('newsletterTop') || can('mobileAccordion');
+  const anyBottom = can('policyLinks') || can('currency') || can('backToTop') || can('bottomLayout');
+  const wordmark = footer.wordmarkSource ?? 'none';
   return (
     <>
       {anyLayout && (
       <Group title="Layout">
+        {can('shape') && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Footer shape</span>
+            <select className={SELECT} value={footer.footerShape ?? ''} onChange={e => set({ footerShape: (e.target.value || null) as StorefrontFooter['footerShape'] })}>
+              <option value="">Theme default (rounded panel)</option>
+              <option value="panel">Rounded panel</option>
+              <option value="full">Full width, edge to edge</option>
+            </select>
+            <span className="text-[10.5px] text-slate">Full width fills the whole screen with the footer colour, with no rounded corners.</span>
+          </label>
+        )}
         {can('layout') && (
           <select className={SELECT} value={footer.footerStyle ?? 'columns'} aria-label="Footer layout" onChange={e => set({ footerStyle: e.target.value as StorefrontFooter['footerStyle'] })}>
             <option value="columns">Columns</option>
@@ -391,7 +403,32 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
         )}
         {can('currency') && <SwitchRow label="Country / currency selector" hint="Shows only when you have 2 or more countries in Markets. The currency follows the country." checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />}
         {can('backToTop') && <SwitchRow label="“Back to top” link" checked={footer.showBackToTop === true} onChange={v => set({ showBackToTop: v })} />}
+        {can('bottomLayout') && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Bottom bar layout</span>
+            <select className={SELECT} value={footer.bottomLayout ?? 'classic'} onChange={e => set({ bottomLayout: e.target.value as StorefrontFooter['bottomLayout'] })}>
+              <option value="classic">Copyright and links in one row</option>
+              <option value="stacked">Currency / language left, payment icons right, copyright centred below</option>
+            </select>
+          </label>
+        )}
         <p className="text-[10.5px] text-slate">Copyright and payment icons are blocks — add or edit them in Footer blocks.</p>
+      </Group>
+      )}
+
+      {can('wordmark') && (
+      <Group title="Big logo at the bottom">
+        <select className={SELECT} value={wordmark} aria-label="Big footer logo" onChange={e => set({ wordmarkSource: e.target.value as StorefrontFooter['wordmarkSource'] })}>
+          <option value="none">Don't show</option>
+          <option value="store">Use store logo</option>
+          <option value="custom">Upload a logo or signature image</option>
+        </select>
+        {wordmark === 'custom' && (
+          <ImageUpload value={footer.wordmarkUrl ? [footer.wordmarkUrl] : []} onChange={urls => set({ wordmarkUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
+        )}
+        {wordmark !== 'none' && (
+          <SizeField label="Width (% of the footer)" value={footer.wordmarkWidth} min={20} max={100} onChange={v => set({ wordmarkWidth: v ?? undefined })} hint="20–100, default 60. A wide image across the very bottom, like a signature." />
+        )}
       </Group>
       )}
 

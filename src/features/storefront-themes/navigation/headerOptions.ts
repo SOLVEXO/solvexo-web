@@ -164,6 +164,13 @@ export interface FooterOptions {
   showPolicyLinks: boolean;
   showCurrency: boolean;
   showBackToTop: boolean;
+  /** null = the theme's own shape. */
+  footerShape: 'panel' | 'full' | null;
+  wordmarkSource: 'none' | 'store' | 'custom';
+  wordmarkUrl: string | null;
+  /** 20–100 (% of the footer width). */
+  wordmarkWidth: number;
+  bottomLayout: 'classic' | 'stacked';
 }
 
 const FOOTER_PADDING = { compact: { columns: 32, compact: 22 }, normal: { columns: 56, compact: 32 }, spacious: { columns: 80, compact: 48 } } as const;
@@ -210,6 +217,11 @@ export function readFooterOptions(footer: Partial<StorefrontFooter> | null | und
     showPolicyLinks: f.showPolicyLinks !== false,
     showCurrency: f.showCurrency === true,
     showBackToTop: f.showBackToTop === true,
+    footerShape: f.footerShape === 'panel' || f.footerShape === 'full' ? f.footerShape : null,
+    wordmarkSource: f.wordmarkSource === 'store' || f.wordmarkSource === 'custom' ? f.wordmarkSource : 'none',
+    wordmarkUrl: typeof f.wordmarkUrl === 'string' && /^https:\/\//i.test(f.wordmarkUrl) ? f.wordmarkUrl : null,
+    wordmarkWidth: width(f.wordmarkWidth, 20, 100) ?? 60,
+    bottomLayout: f.bottomLayout === 'stacked' ? 'stacked' : 'classic',
   };
 }
 

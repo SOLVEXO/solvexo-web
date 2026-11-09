@@ -55,6 +55,8 @@ const STATIC_DEFAULTS = {
   showDelivery: true,
   productImageRatio: 'square' as 'square' | 'portrait' | 'landscape' | 'adapt',
   productImageHover: 'zoom' as 'none' | 'zoom' | 'second-image',
+  /** 'whole' = the whole photo is shown (bars around it if the shape differs); 'fill' = the photo fills its box and the edges are cropped. Seller setting `custom.productImageFit`. */
+  productImageFit: 'whole' as 'fill' | 'whole',
   saleBadge: true,
   quickView: true,
   colorSwatches: true,
@@ -226,6 +228,7 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
   baseTheme.authGate.size = oneOf(ts?.authSize, ['compact', 'standard', 'large'] as const, 'standard');
   baseTheme.authGate.social = ts?.authSocial !== 'hide';
   baseTheme.quickViewSize = oneOf(ts?.quickViewSize, ['compact', 'standard', 'large'] as const, 'standard');
+  baseTheme.productImageFit = oneOf(ts?.productImageFit, ['fill', 'whole'] as const, 'whole');
   baseTheme.mega.featured = ts?.megaFeatured !== 'hide';
   baseTheme.mega.columns = Number(oneOf(ts?.megaColumns, ['3', '4', '5'] as const, '4'));
   baseTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');

@@ -274,6 +274,15 @@ export interface StorefrontFooter {
   showPolicyLinks?:      boolean;
   showCurrency?:         boolean;
   showBackToTop?:        boolean;
+  /** 'panel' = rounded panel inside the page width, 'full' = edge to edge; null = theme default. */
+  footerShape?:          'panel' | 'full' | null;
+  /** A big logo/wordmark across the very bottom: 'store' = the store logo, 'custom' = `wordmarkUrl`. */
+  wordmarkSource?:       'none' | 'store' | 'custom';
+  wordmarkUrl?:          string | null;
+  /** Width of the big logo, 20–100 % of the footer. */
+  wordmarkWidth?:        number;
+  /** 'classic' = copyright + links in one row; 'stacked' = currency/language left, payment icons right, copyright centred below. */
+  bottomLayout?:         'classic' | 'stacked';
   preset?:               string | null;
 }
 
@@ -281,7 +290,7 @@ export interface StorefrontFooter {
 export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
   'logoSource' | 'logoUrl' | 'logoLink' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
   'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout' | 'paddingY' | 'bgImageUrl' | 'bgOverlay' | 'align' | 'headingUppercase' | 'socialStyle' | 'socialColor' | 'socialCustomColor' | 'socialFilled' | 'socialSize' |
-  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'preset' | 'sections'>>;
+  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'footerShape' | 'wordmarkSource' | 'wordmarkUrl' | 'wordmarkWidth' | 'bottomLayout' | 'preset' | 'sections'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
 

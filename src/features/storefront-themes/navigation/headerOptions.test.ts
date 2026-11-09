@@ -63,7 +63,19 @@ describe('readFooterOptions / expandCopyright', () => {
       headingUppercase: true, socialStyle: null, socialColor: null, socialCustomColor: null, socialFilled: false, socialSize: null,
       newsletterTop: false, mobileAccordion: true, showPolicyLinks: true,
       showCurrency: false, showBackToTop: false,
+      footerShape: null, wordmarkSource: 'none', wordmarkUrl: null, wordmarkWidth: 60, bottomLayout: 'classic',
     });
+  });
+  it('reads the footer shape, the big bottom logo and the bottom bar layout', () => {
+    const o = (f: Partial<StorefrontFooter>) => readFooterOptions(f, 'Journal');
+    expect(o({ footerShape: 'full' }).footerShape).toBe('full');
+    expect(o({ footerShape: 'round' as never }).footerShape).toBeNull();
+    expect(o({ wordmarkSource: 'custom', wordmarkUrl: 'https://x.com/logo.png', wordmarkWidth: 80 })).toMatchObject({ wordmarkSource: 'custom', wordmarkUrl: 'https://x.com/logo.png', wordmarkWidth: 80 });
+    expect(o({ wordmarkUrl: 'http://x.com/logo.png' }).wordmarkUrl).toBeNull();
+    expect(o({ wordmarkWidth: 500 }).wordmarkWidth).toBe(100);
+    expect(o({ wordmarkWidth: 2 }).wordmarkWidth).toBe(20);
+    expect(o({ bottomLayout: 'stacked' }).bottomLayout).toBe('stacked');
+    expect(o({ bottomLayout: 'weird' as never }).bottomLayout).toBe('classic');
   });
   it('reads the social icon colour and size, clamping the size to 24–72 px', () => {
     const o = (f: Partial<StorefrontFooter>) => readFooterOptions(f, 'Journal');

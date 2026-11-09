@@ -146,7 +146,8 @@ export type HeaderOptionKey =
  *  so a switch never appears for a theme that would ignore it. A theme with no list shows all of them (older themes keep working). */
 export type FooterOptionKey =
   | 'layout' | 'spacing' | 'alignment' | 'newsletterTop' | 'mobileAccordion' | 'colours' | 'backgroundImage'
-  | 'headings' | 'socialStyle' | 'socialColour' | 'socialSize' | 'policyLinks' | 'currency' | 'backToTop' | 'logo' | 'defaultColumns';
+  | 'headings' | 'socialStyle' | 'socialColour' | 'socialSize' | 'policyLinks' | 'currency' | 'backToTop' | 'logo' | 'defaultColumns'
+  | 'shape' | 'wordmark' | 'bottomLayout';
 
 /** One choice a theme offers for a header option (shown in the Header panel in this order). */
 export interface HeaderChoice {
