@@ -73,11 +73,14 @@ const STATIC_DEFAULTS = {
 };
 
 export const ledupTheme = { ...STATIC_DEFAULTS };
+/** Colours before any store customisation: reset on every apply so one store's colours never leak into the next store opened in the same tab. */
+const DEFAULT_COLORS = { ...STATIC_DEFAULTS.colors };
 
 export type LedupColors = typeof ledupTheme.colors;
 
 export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | undefined): void {
   applyBase(colors);
+  Object.assign(ledupTheme.colors, DEFAULT_COLORS);
   ledupTheme.pagination.productsPerPage = readProductsPerPage((colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings).pageSize;
   ledupTheme.fonts.body = baseTheme.fonts.body;
   ledupTheme.fonts.display = baseTheme.fonts.display;
@@ -95,6 +98,8 @@ export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | 
     ledupTheme.colors.ink = colors.textColor;
     ledupTheme.colors.inkMuted = mixHex(colors.textColor, ledupTheme.colors.bg, 0.6);
   }
+  if (colors?.mutedColor) ledupTheme.colors.inkMuted = colors.mutedColor;
+  if (colors?.saleColor) ledupTheme.colors.danger = colors.saleColor;
   if (colors?.borderColor) {
     ledupTheme.colors.border = colors.borderColor;
     ledupTheme.colors.borderStrong = mixHex(colors.borderColor, '#000000', 0.85);

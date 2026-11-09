@@ -110,6 +110,7 @@ export type BaseMerchantColors = Partial<{
   textColor: string | null;
   mutedColor: string | null;
   borderColor: string | null;
+  saleColor: string | null;
 }>;
 
 export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | undefined): void {

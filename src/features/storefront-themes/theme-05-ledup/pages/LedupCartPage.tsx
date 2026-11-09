@@ -29,7 +29,7 @@ export function LedupCartPage() {
   const subtotal = displayMoneySum(conv, items.map(lineOf));
 
   return (
-    <div className="py-12">
+    <div className="py-4">
       <LedupBox>
         <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: ts('footer.cart', 'Cart') }]} />
         <h1 className="mb-8 text-3xl font-bold text-stone-900 md:text-4xl">{ts('cart.shoppingCart', 'Shopping cart')}</h1>
