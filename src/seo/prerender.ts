@@ -82,6 +82,28 @@ function contentFor(page: PublicPageSeo): string {
   return '';
 }
 
+/**
+ * Structured data Google reads for the result itself: WebSite on the home page (the site name shown in results) and a
+ * breadcrumb trail on product and solution pages ("Solvexo › Products › Point of Sale").
+ */
+export function structuredDataFor(page: PublicPageSeo): Record<string, unknown>[] {
+  if (page.path === '/') {
+    return [{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Solvexo', alternateName: ['Solvexo Store', 'solvexo.store'], url: canonicalUrl('/') }];
+  }
+  const m = /^\/(products|solutions)\/[^/]+$/.exec(page.path);
+  if (!m) return [];
+  const section = m[1] === 'products' ? 'Products' : 'Solutions';
+  return [{
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Solvexo', item: canonicalUrl('/') },
+      { '@type': 'ListItem', position: 2, name: section, item: canonicalUrl(`/${m[1]}`) },
+      { '@type': 'ListItem', position: 3, name: headingFor(page).split(':')[0], item: canonicalUrl(page.path) },
+    ],
+  }];
+}
+
 /** One public page's HTML, from the built index.html (`template`). Unchanged parts (scripts, styles) are kept as-is. */
 export function buildPrerenderedHtml(template: string, page: PublicPageSeo): string {
   const url = canonicalUrl(page.path);
@@ -96,6 +118,7 @@ export function buildPrerenderedHtml(template: string, page: PublicPageSeo): str
     '<meta property="og:type" content="website" />',
     '<meta name="twitter:card" content="summary_large_image" />',
     `<meta name="robots" content="${page.index ? 'index, follow, max-image-preview:large' : 'noindex, follow'}" />`,
+    ...structuredDataFor(page).map(d => `<script type="application/ld+json">${JSON.stringify(d).replace(/</g, '\\u003c')}</script>`),
     '<!--/solvexo-platform-head-->',
   ].join('\n    '));
   html = deferThemeFonts(html);
