@@ -254,10 +254,25 @@
 @keyframes ld-pre-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
 .ld-preloader-mark { animation: ld-pre-in .7s ease .1s both; color: #fff; text-align: center; }
 .ld-preloader-bar { position: absolute; left: 50%; bottom: 18%; width: 120px; height: 2px; margin-left: -60px; background: rgba(255,255,255,.18); overflow: hidden; border-radius: 2px; }
-.ld-preloader-bar::after { content: ""; position: absolute; inset: 0; background: #fff; transform: scaleX(0); transform-origin: left; animation: ld-pre-bar 1.1s ease-in-out forwards; }
+.ld-preloader-bar > span { position: absolute; inset: 0; background: #fff; transform: scaleX(0); transform-origin: left; animation: ld-pre-bar 1.5s ease-in-out forwards; }
 @keyframes ld-pre-bar { to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .ld-preloader { display: none; } .ld-backdrop { animation: none; opacity: 1; } .ld-mega, .ld-search-panel { transition: none; } }
 
 /* Hero: full-bleed, rounded bottom, sits under the floating header like ledup.pt */
 .ld-root main > div:first-of-type section[aria-roledescription="carousel"] { margin-top: -5.25rem; }
 .ld-hero h1 { font-weight: 400 !important; letter-spacing: -0.01em; }
+
+/* ledup.pt catalogue look */
+.ld-root { background-color: #fafafa; }
+.ld-root .ld-product-card { background: #fff; border: 0; border-radius: 1.5rem; box-shadow: none; transition: transform .4s ease, box-shadow .4s ease; }
+.ld-root .ld-product-card:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -18px rgba(75,66,59,.35); }
+.ld-root .ld-search-input, .ld-root .ld-search-input:focus { border: 0 !important; border-bottom: 1px solid #a1948c !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
+.ld-banner-wrap { margin-top: -5.25rem; padding: 0 1rem; }
+@media (min-width: 640px) { .ld-banner-wrap { padding: 0 2.75rem; } }
+.ld-banner { position: relative; border-radius: 2rem; padding-top: 8.5rem; overflow: hidden; }
+.ld-sortpop { position: absolute; top: calc(100% + .5rem); inset-inline-end: 0; z-index: 30; min-width: 11rem; padding: .5rem; border-radius: 1.1rem; background: #fff; box-shadow: 0 12px 40px -12px rgba(0,0,0,.25); }
+.ld-sortpop button { display: block; width: 100%; text-align: start; padding: .6rem .9rem; border: 0; border-radius: .7rem; background: transparent; font-size: .9rem; color: var(--ld-accent); cursor: pointer; }
+.ld-sortpop button:hover, .ld-sortpop button[aria-selected="true"] { background: #f4f2f0; }
+.ld-chip { display: inline-flex; align-items: center; padding: .2rem .7rem; border-radius: 999px; background: #f1efed; color: #736c67; font-size: .72rem; font-weight: 500; }
+@keyframes ld-pre-pulse { 0%,100% { opacity: .55; transform: scale(.98); } 50% { opacity: 1; transform: scale(1); } }
+.ld-preloader-mark.is-pulse { animation: ld-pre-pulse 1.4s ease-in-out infinite; }

@@ -2,7 +2,7 @@ import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const DEFAULTS: Partial<StorefrontColors> = {
-  bgColor: '#FFFFFF',
+  bgColor: '#FAFAFA',
   textColor: '#1C1917',
   primaryColor: '#4b423b',
   mutedColor: '#78716C',
@@ -131,6 +131,11 @@ export const baseManifest: ThemeManifest = {
     { key: 'textColor', label: 'Text', group: 'Colors', control: { kind: 'color' }, helpText: 'Main text and headings.' },
     { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'font' }, helpText: 'Sets body and interface text.' },
     { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'font', defaultLabel: 'Theme default (uses body font)' }, helpText: 'Used for headlines. Theme default uses your body font.' },
-    { key: 'custom.preloader', label: 'Intro screen', group: 'Effects', control: { kind: 'select', options: [{ value: 'show', label: 'Show once per visit' }, { value: 'hide', label: 'Off' }] }, helpText: 'A short black screen with your logo the first time a visitor opens the store.' },
+    { key: 'custom.preloader', label: 'Intro screen (loader)', group: 'Effects', control: { kind: 'select', options: [{ value: 'once', label: 'Once per visit' }, { value: 'always', label: 'On every page load' }, { value: 'hide', label: 'Off' }] }, helpText: 'A full-screen intro with your logo while the store opens.' },
+    { key: 'custom.preloaderBg', label: 'Loader background', group: 'Effects', control: { kind: 'color', optional: { fallback: '#0a0a0b' } }, helpText: 'Colour behind the logo. Auto is near-black.' },
+    { key: 'custom.preloaderLogo', label: 'Loader logo (image link)', group: 'Effects', control: { kind: 'text', maxLength: 300, placeholder: 'https://… (empty = your store logo)' }, helpText: 'Paste an https image link (PNG/SVG/GIF). Empty uses your store logo, or the store name as text.' },
+    { key: 'custom.preloaderTone', label: 'Loader logo colour', group: 'Effects', control: { kind: 'select', options: [{ value: 'light', label: 'Turn the logo white' }, { value: 'original', label: 'Keep original colours' }] }, helpText: 'White suits dark logos on the dark background.' },
+    { key: 'custom.preloaderStyle', label: 'Loader animation', group: 'Effects', control: { kind: 'select', options: [{ value: 'bar', label: 'Logo + progress line' }, { value: 'pulse', label: 'Pulsing logo' }, { value: 'fade', label: 'Logo fade only' }] }, helpText: 'How the logo appears while loading.' },
+    { key: 'custom.preloaderSeconds', label: 'Loader duration', group: 'Effects', control: { kind: 'select', options: [{ value: '1', label: '1 second' }, { value: '1.5', label: '1.5 seconds' }, { value: '2', label: '2 seconds' }, { value: '3', label: '3 seconds' }, { value: '4', label: '4 seconds' }] }, helpText: 'How long the intro stays before it fades away.' },
   ],
 };

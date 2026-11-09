@@ -54,7 +54,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
 
   return (
     <article className={`ld-product-card group relative flex flex-col p-4 sm:p-5 ${className}`}>
-      <Link to={to} className="relative mb-4 block aspect-square w-full overflow-hidden rounded-xl bg-stone-50/60 p-4">
+      <Link to={to} className="relative mb-4 block aspect-square w-full overflow-hidden rounded-2xl bg-white p-2">
         {image ? (
           <img
             src={image}
@@ -83,7 +83,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
         {pills.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-1">
             {pills.map(s => (
-              <span key={s} className="inline-flex max-w-[160px] truncate rounded-md border border-stone-200 bg-stone-50/60 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
+              <span key={s} className="ld-chip max-w-[190px] truncate">
                 <bdi>{s}</bdi>
               </span>
             ))}

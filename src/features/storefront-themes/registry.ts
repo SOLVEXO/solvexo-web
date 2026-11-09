@@ -232,7 +232,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     },
     installDefaults: {
       primaryColor: '#09090B',
-      bgColor: '#FFFFFF',
+      bgColor: '#FAFAFA',
       textColor: '#09090B',
       font: 'Inter',
       buttonStyle: 'solid',

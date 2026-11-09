@@ -4,14 +4,15 @@ import { ledupTheme as t } from '../theme.config';
 
 const SEEN_KEY = 'ledup:preloader';
 
-/** Black intro screen (like ledup.pt's): the store logo fades in, a thin bar fills, then the screen fades away. Shown once per browser tab, never for reduced-motion visitors, and the seller can switch it off in Theme settings. */
+/** Intro screen (like ledup.pt's): the logo on a dark ground, then a fade away. The seller picks when it shows, the background, the logo (link, store logo or name), the logo colour, the animation and how long it stays (Theme settings > Effects). */
 export function LedupPreloader() {
   const { store, theme } = useStorefront();
+  const cfg = t.preloader;
   const [phase, setPhase] = useState<'show' | 'leaving' | 'gone'>(() => {
     try {
-      if (!t.preloader) return 'gone';
+      if (cfg.mode === 'hide') return 'gone';
       if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'gone';
-      if (sessionStorage.getItem(SEEN_KEY)) return 'gone';
+      if (cfg.mode === 'once' && sessionStorage.getItem(SEEN_KEY)) return 'gone';
     } catch { /* storage blocked: just show it */ }
     return 'show';
   });
@@ -19,23 +20,25 @@ export function LedupPreloader() {
   useEffect(() => {
     if (phase !== 'show') return;
     try { sessionStorage.setItem(SEEN_KEY, '1'); } catch { /* ignore */ }
-    const a = window.setTimeout(() => setPhase('leaving'), 1300);
-    const b = window.setTimeout(() => setPhase('gone'), 1850);
+    const ms = Math.round(cfg.seconds * 1000);
+    const a = window.setTimeout(() => setPhase('leaving'), ms);
+    const b = window.setTimeout(() => setPhase('gone'), ms + 550);
     return () => { window.clearTimeout(a); window.clearTimeout(b); };
-  }, [phase]);
+  }, [phase, cfg.seconds]);
 
   if (phase === 'gone') return null;
   const header = theme?.header;
-  const logoUrl = header?.logoSource === 'custom' && header.customLogoUrl ? header.customLogoUrl : store.logo;
+  const storeLogo = header?.logoSource === 'custom' && header.customLogoUrl ? header.customLogoUrl : store.logo;
+  const logoUrl = cfg.logo || storeLogo;
 
   return (
-    <div className={`ld-preloader ${phase === 'leaving' ? 'is-leaving' : ''}`} role="status" aria-label={store.name}>
-      <div className="ld-preloader-mark">
+    <div className={`ld-preloader ${phase === 'leaving' ? 'is-leaving' : ''}`} style={{ background: cfg.bg }} role="status" aria-label={store.name}>
+      <div className={`ld-preloader-mark ${cfg.style === 'pulse' ? 'is-pulse' : ''}`}>
         {logoUrl
-          ? <img src={logoUrl} alt="" className="mx-auto max-h-16 max-w-[220px] object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+          ? <img src={logoUrl} alt="" className="mx-auto max-h-24 max-w-[260px] object-contain" style={cfg.tone === 'light' ? { filter: 'brightness(0) invert(1)', opacity: 0.85 } : undefined} />
           : <span className="text-3xl font-light tracking-tight">{store.name}</span>}
       </div>
-      <div className="ld-preloader-bar" aria-hidden />
+      {cfg.style === 'bar' && <div className="ld-preloader-bar" aria-hidden><span style={{ animationDuration: `${cfg.seconds}s` }} /></div>}
     </div>
   );
 }

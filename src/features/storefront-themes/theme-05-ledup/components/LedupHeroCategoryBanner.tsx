@@ -36,9 +36,9 @@ export function LedupHeroCategoryBanner({ activeCategory }: { activeCategory?: s
   if (tabs.length === 0) return null;
 
   return (
-    <div className="w-full pt-4">
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="ld-copper-gradient relative overflow-visible rounded-t-[32px] px-6 pb-0 pt-10 shadow-sm lg:px-12">
+    <div className="ld-banner-wrap w-full">
+      <div className="mx-auto max-w-[1440px]">
+        <div className="ld-copper-gradient ld-banner px-6 pb-0 shadow-sm lg:px-12">
           <nav ref={navRef} aria-label="Categories" className="ld-hide-scrollbar flex items-end gap-2 overflow-x-auto border-b-0">
             {tabs.map(tab => {
               const on = tab.keys.some(k => k === activeCategory || pathname.endsWith(`/${k}`));

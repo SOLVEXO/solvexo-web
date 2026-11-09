@@ -36,6 +36,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search, syncUrl, pageSize, accumulate: true, defaultSort });
   useEffect(() => { if (products && onProducts) onProducts(products.map(p => ({ slug: p.slug, name: p.name, images: p.images }))); }, [products, onProducts]);
   const [mobileFilters, setMobileFilters] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
   const change = (fn: (s: BrowseState) => BrowseState) => update(s => ({ ...fn(s), page: 1 }));
   const loadMore = () => update(s => ({ ...s, page: s.page + 1 }));
@@ -83,16 +84,21 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
           {ts('browse.showingCount', 'Showing {{shown}} of {{total}} products', { shown, total })}
         </p>
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center">
-            <label htmlFor="ld-sort" className="me-2 text-xs font-medium text-stone-500">{ts('browse.sortBy', 'Sort by:')}</label>
-            <select id="ld-sort" value={state.sort} onChange={e => change(s => ({ ...s, sort: e.target.value as BrowseSort }))}
-              className="cursor-pointer appearance-none rounded-full border border-stone-200 bg-stone-50/70 py-1.5 ps-3 pe-8 text-xs font-medium text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-400">
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <ChevronDown size={14} className="pointer-events-none absolute end-2.5 text-stone-400" aria-hidden />
+          <div className="relative">
+            <button type="button" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen(v => !v)} className="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-base text-stone-900">
+              {ts('browse.sortLabel', 'Sort')}
+              <ChevronDown size={18} className={`transition-transform duration-300 ${sortOpen ? 'rotate-180' : ''}`} aria-hidden />
+            </button>
+            {sortOpen && (
+              <div className="ld-sortpop ld-pop" role="listbox" aria-label={ts('browse.sortBy', 'Sort by:')}>
+                {SORT_OPTIONS.map(o => (
+                  <button key={o.value} type="button" role="option" aria-selected={state.sort === o.value} onClick={() => { change(s => ({ ...s, sort: o.value as BrowseSort })); setSortOpen(false); }}>{o.label}</button>
+                ))}
+              </div>
+            )}
           </div>
-          <button type="button" aria-expanded={mobileFilters} aria-label={ts('browse.filters', 'Filters')} onClick={() => setMobileFilters(v => !v)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-stone-200 bg-stone-100 text-stone-700 md:hidden">
-            <SlidersHorizontal size={14} aria-hidden />
+          <button type="button" aria-expanded={mobileFilters} aria-label={ts('browse.filters', 'Filters')} onClick={() => setMobileFilters(v => !v)} className="ld-iconbtn md:hidden">
+            <SlidersHorizontal size={16} aria-hidden />
           </button>
         </div>
       </div>

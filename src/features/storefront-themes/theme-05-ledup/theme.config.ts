@@ -23,7 +23,7 @@ const STATIC_DEFAULTS = {
   name: 'Ledup',
   fonts: { display: `'Poppins', system-ui, sans-serif`, body: `'Poppins', system-ui, sans-serif` },
   colors: {
-    bg: '#FFFFFF',
+    bg: '#FAFAFA',
     bgAlt: '#F9F8F6',
     ink: '#1C1917',
     inkMuted: '#78716C',
@@ -68,7 +68,7 @@ const STATIC_DEFAULTS = {
   curvedFooterRadiusPx: '50px',
   showDatasheetButton: true,
   showCharacteristicsTable: true,
-  preloader: true,
+  preloader: { mode: 'once' as 'once' | 'always' | 'hide', bg: '#0a0a0b', logo: '', tone: 'light' as 'light' | 'original', style: 'bar' as 'fade' | 'bar' | 'pulse', seconds: 1.5 },
   checkoutSummary: 'right' as 'right' | 'left',
   cartUpsell: true,
   /** Products per page on collection/category/search; seller settings `custom.productsPerPage` / `custom.productShowAll`. */
@@ -97,7 +97,16 @@ export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | 
   const hex = (v: unknown) => (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : null);
   ledupTheme.colors.banner = hex(ts?.bannerColor) ?? DEFAULT_COLORS.banner;
   ledupTheme.colors.footer = hex(ts?.footerColor) ?? DEFAULT_COLORS.footer;
-  ledupTheme.preloader = ts?.preloader !== 'hide';
+  const pick = <T extends string>(v: unknown, all: readonly T[], d: T): T => (typeof v === 'string' && (all as readonly string[]).includes(v) ? (v as T) : d);
+  const secs = Number(ts?.preloaderSeconds);
+  ledupTheme.preloader = {
+    mode: pick(ts?.preloader, ['once', 'always', 'hide'] as const, 'once'),
+    bg: hex(ts?.preloaderBg) ?? '#0a0a0b',
+    logo: typeof ts?.preloaderLogo === 'string' && /^https:\/\//.test(ts.preloaderLogo.trim()) ? ts.preloaderLogo.trim() : '',
+    tone: pick(ts?.preloaderTone, ['light', 'original'] as const, 'light'),
+    style: pick(ts?.preloaderStyle, ['fade', 'bar', 'pulse'] as const, 'bar'),
+    seconds: Number.isFinite(secs) && secs >= 0.5 && secs <= 6 ? secs : 1.5,
+  };
   ledupTheme.pagination.productsPerPage = readProductsPerPage((colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings).pageSize;
   ledupTheme.fonts.body = baseTheme.fonts.body;
   ledupTheme.fonts.display = baseTheme.fonts.display;
