@@ -657,7 +657,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   social_link: [
     { key: 'platform', kind: 'select', label: 'Platform', half: true, options:
       ['facebook', 'instagram', 'x', 'tiktok', 'youtube', 'linkedin', 'whatsapp'].map(p => ({ value: p, label: p })) },
-    { key: 'url', kind: 'text', label: 'Link or WhatsApp number', half: true, placeholder: 'https://… or +92 300 1234567', hint: 'Facebook, Instagram etc. need a full https:// link. For WhatsApp you can type your number. A social icon with no link is not shown on your store.' },
+    { key: 'url', kind: 'text', label: 'Link or WhatsApp number', half: true, placeholder: 'https://… or @username or +92 300 1234567', hint: 'Paste your page link, or just your @username. For WhatsApp type your number. A social icon with no link is not shown on your store.' },
   ],
   copyright_text: [
     { key: 'text', kind: 'text', label: 'Copyright text', hint: "Leave blank to show a default © line with your store name." },

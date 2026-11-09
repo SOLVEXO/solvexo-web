@@ -11,6 +11,7 @@ import type { Section, SectionType } from '@/api/services/storefrontTypes';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { HeaderSettingsPanel, FooterSettingsPanel, Group } from './HeaderFooterSettingsPanels';
 import { footerLayoutBlocks } from '@/features/storefront-themes/navigation/headerOptions';
+import { hasSocialTarget } from '@/features/storefront-themes/navigation/socialLinks';
 import type { HeaderFooterDraftState } from './useHeaderFooterDraft';
 import type { FooterOptionKey, HeaderOptionKey, ThemeManifest } from '@/features/storefront-themes/themeManifest';
 
@@ -81,12 +82,15 @@ function BlockRow({ block, onChange, onRemove, onDuplicate, pageOptions, storeId
   const detail = block.settings.label || block.settings.heading || block.settings.platform || block.settings.text;
   const label = kind ? (detail ? `${kind}: ${detail}` : kind) : (detail || block.type);
   const hidden = block.enabled === false;
+  // A social icon with no usable link is not shown on the store — say so here instead of failing silently.
+  const noLink = block.type === 'social_link' && !hasSocialTarget(block);
   return (
     <div className={`border border-bone rounded-lg bg-white ${hidden ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-1.5 px-3 py-2">
         <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-0">
           <span className="text-[12.5px] font-medium text-charcoal truncate capitalize">{label || String(block.type).replace(/_/g, ' ')}</span>
           {hidden && <span className="text-[10px] font-bold uppercase tracking-wide text-slate shrink-0">Hidden</span>}
+          {noLink && !hidden && <span className="text-[10px] font-bold uppercase tracking-wide text-error shrink-0">No link, not shown</span>}
         </button>
         <button type="button" onClick={() => onChange({ ...block, enabled: hidden })} aria-label={hidden ? 'Show' : 'Hide'} title={hidden ? 'Show' : 'Hide'}
           className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0">
