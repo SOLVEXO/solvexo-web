@@ -1,5 +1,6 @@
 import { ts } from '@/utils/tStatic';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { useRecommendedProducts } from '../../../useRecommendedProducts';
 import { TechProductCard } from '../../components/TechProductCard';
 import { SectionShell } from '../SectionShell';
@@ -18,7 +19,7 @@ export function RelatedProductsSection({ section, colors }: SharedSectionProps) 
   const s = section.settings;
   const { items } = useRecommendedProducts(s);
   if (!items || items.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(s.columns)) ? Number(s.columns) : 4;
+  const cols = columnCount(s.columns, 4);
   return (
     <SectionShell colors={colors} heading={starterHeading(s.heading)}>
       <div className="grid tx-grid-gap" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>

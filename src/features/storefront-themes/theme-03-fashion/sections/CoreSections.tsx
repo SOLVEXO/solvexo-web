@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { ts } from '@/utils/tStatic';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { useContext } from 'react';
 import { FashionProductBrowser } from '../components/browse/FashionProductBrowser';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -18,7 +19,7 @@ function CollectionGrid({ settings: s, colors }: { settings: Record<string, any>
   return (
     <SectionShell colors={colors}>
       <FashionProductBrowser renderCard={(p, currency) => <FashionProductCard product={p} currency={currency} />}
-        collectionId={collectionId} onProducts={scope?.onProducts} syncUrl={!!scope} defaultSort={s.defaultSort} columns={Number(s.columns) as 2 | 3 | 4 | undefined} showFilters={s.showFilters !== false} />
+        collectionId={collectionId} onProducts={scope?.onProducts} syncUrl={!!scope} defaultSort={s.defaultSort} columns={s.columns ? columnCount(s.columns, 4) : undefined} showFilters={s.showFilters !== false} />
     </SectionShell>
   );
 }

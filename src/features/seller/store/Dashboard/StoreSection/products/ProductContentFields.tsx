@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { Bold, Heading2, Italic, Link2, List, ListOrdered, Plus, Trash2, Unlink } from 'lucide-react';
+import { Bold, Heading2, Heading3, Italic, Link2, List, ListOrdered, Pilcrow, Plus, Trash2, Unlink } from 'lucide-react';
 
 export interface ProductTabInput { title: string; content: string }
 
 const TOOLS = [
+  { label: 'Paragraph', Icon: Pilcrow, command: 'formatBlock', arg: '<p>' },
   { label: 'Heading', Icon: Heading2, command: 'formatBlock', arg: '<h2>' },
+  { label: 'Subheading', Icon: Heading3, command: 'formatBlock', arg: '<h3>' },
   { label: 'Bold', Icon: Bold, command: 'bold' },
   { label: 'Italic', Icon: Italic, command: 'italic' },
   { label: 'Bulleted list', Icon: List, command: 'insertUnorderedList' },
@@ -20,8 +22,32 @@ export function toEditorHtml(value: string): string {
   return HAS_HTML.test(value) ? value : escapeHtml(value).replace(/\r?\n/g, '<br>');
 }
 
+const PASTE_KEEP: Record<string, string> = { P: 'p', H1: 'h2', H2: 'h2', H3: 'h3', H4: 'h3', H5: 'h3', H6: 'h3', UL: 'ul', OL: 'ol', LI: 'li', STRONG: 'strong', B: 'strong', EM: 'em', I: 'em', BR: 'br', A: 'a' };
+const BLOCK_TAGS = new Set(['DIV', 'SECTION', 'ARTICLE', 'BLOCKQUOTE', 'TABLE', 'TR']);
+
+/** Pasted content keeps only paragraphs, headings, bold/italic, lists, links and line breaks (no colours, fonts or sizes copied from another site). */
+export function cleanPastedHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    const el = node as HTMLElement;
+    if (['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE'].includes(el.tagName)) return '';
+    const inner = Array.from(el.childNodes).map(walk).join('');
+    const tag = PASTE_KEEP[el.tagName];
+    if (tag === 'br') return '<br>';
+    if (tag === 'a') {
+      const href = el.getAttribute('href') ?? '';
+      return /^https?:\/\//i.test(href) ? `<a href="${href.replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer">${inner}</a>` : inner;
+    }
+    if (tag) return inner.trim() || tag === 'li' ? `<${tag}>${inner}</${tag}>` : '';
+    return BLOCK_TAGS.has(el.tagName) && inner.trim() ? `<p>${inner}</p>` : inner;
+  };
+  return walk(doc.body).replace(/<p>\s*<\/p>/g, '');
+}
+
 const BOX = 'border border-bone rounded-lg bg-white focus-within:border-brand-orange/50 focus-within:ring-2 focus-within:ring-brand-orange/20';
-const CONTENT = 'overflow-y-auto px-3 py-2 text-[13px] text-charcoal outline-none [&_h2]:text-base [&_h2]:font-semibold [&_h2]:my-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-brand-orange [&_a]:underline empty:before:content-[attr(data-placeholder)] empty:before:text-slate';
+const CONTENT = 'overflow-y-auto px-3 py-2 text-[13px] text-charcoal outline-none [&_h2]:text-base [&_h2]:font-semibold [&_h2]:my-2 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:my-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-brand-orange [&_a]:underline empty:before:content-[attr(data-placeholder)] empty:before:text-slate';
 
 /** Rich text field (headings, bold, italic, lists, links). The storefront sanitises the HTML again when it draws it. */
 export function ProductRichEditor({ value, onChange, placeholder, minHeight = 160, label }: { value: string; onChange: (html: string) => void; placeholder?: string; minHeight?: number; label: string }) {
@@ -45,6 +71,19 @@ export function ProductRichEditor({ value, onChange, placeholder, minHeight = 16
     if (el) onChange(el.innerHTML);
   };
   const read = () => { const el = ref.current; if (!el) return; onChange(el.textContent?.trim() || el.querySelector('img') ? el.innerHTML : ''); };
+  // Enter makes a new <p> (not a <div>), like a normal document.
+  const onFocus = () => { try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch { /* old browser: keeps <div> */ } };
+  const onPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const html = e.clipboardData.getData('text/html');
+    const text = e.clipboardData.getData('text/plain');
+    if (!html && !text) return;
+    e.preventDefault();
+    const clean = html
+      ? cleanPastedHtml(html)
+      : text.split(/\r?\n{2,}/).map(p => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>')}</p>`).join('');
+    document.execCommand('insertHTML', false, clean);
+    read();
+  };
 
   return (
     <div className={BOX}>
@@ -57,7 +96,7 @@ export function ProductRichEditor({ value, onChange, placeholder, minHeight = 16
         ))}
       </div>
       <div ref={ref} role="textbox" aria-multiline="true" aria-label={label} tabIndex={0} contentEditable suppressContentEditableWarning
-        data-placeholder={placeholder} onInput={read} onBlur={read} className={CONTENT} style={{ minHeight }} />
+        data-placeholder={placeholder} onInput={read} onBlur={read} onFocus={onFocus} onPaste={onPaste} className={CONTENT} style={{ minHeight }} />
     </div>
   );
 }

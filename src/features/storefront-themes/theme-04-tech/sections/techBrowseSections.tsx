@@ -5,6 +5,7 @@ import { CollectionScopeContext } from './collectionScope';
 import { TechProductBrowser } from '../components/TechProductBrowser';
 import { TechSectionShell } from './techSections';
 import { registerTechSection } from './techSectionRegistry';
+import { showEyebrow } from '../../sectionCopy';
 
 /** The collection page's product list: the seller's collection template holds this section, Tech draws it with the filter sidebar. */
 function CollectionGrid({ settings: s, colors }: { settings: Record<string, any>; colors: Parameters<typeof TechSectionShell>[0]['colors'] }) {
@@ -21,10 +22,16 @@ registerTechSection('collection_product_grid', (section, _b, colors) => <Collect
 
 registerTechSection('product_catalog', (section, _b, colors) => {
   const s = section.settings as Record<string, any>;
+  const eyebrow = showEyebrow(s) && typeof s.eyebrow === 'string' && s.eyebrow.trim() ? s.eyebrow : '';
   return (
     <TechSectionShell colors={colors}>
       <div id="shop">
-        <TechProductBrowser heading={s.heading ? <h2 className="m-0 mb-5 text-[clamp(20px,2.4vw,26px)] font-semibold">{s.heading}</h2> : undefined} categoryId={s.categoryId || undefined} collectionId={s.collectionId || undefined} defaultSort={s.defaultSort} showFilters={s.showFilters !== false} />
+        <TechProductBrowser heading={s.heading || eyebrow ? (
+          <div className="mb-5">
+            {eyebrow && <p className="m-0 mb-2 text-sm font-medium" style={{ color: colors.inkMuted }}>{eyebrow}</p>}
+            {s.heading && <h2 className="m-0 text-[clamp(20px,2.4vw,26px)] font-semibold">{s.heading}</h2>}
+          </div>
+        ) : undefined} categoryId={s.categoryId || undefined} collectionId={s.collectionId || undefined} defaultSort={s.defaultSort} showFilters={s.showFilters !== false} />
       </div>
     </TechSectionShell>
   );

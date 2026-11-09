@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { Fragment, type CSSProperties, type ReactNode } from 'react';
+import { sanitizeHtml } from './sanitizeHtml';
 
 /**
  * A deliberately-scoped "markdown-lite" renderer — **bold**, *italic*, and
@@ -33,6 +34,33 @@ function isSafeHttpUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+const HAS_HTML = /<\/?(p|h[1-6]|ul|ol|li|br|strong|b|em|i|a|div|span)\b[^>]*>/i;
+
+/**
+ * Seller text for a section (Multirow, Image with text, Columns, Rich text paragraphs). Two kinds of stored value:
+ *  - HTML from the rich text editor (paragraphs, headings, lists, bold/italic, links) — sanitised here before it is drawn;
+ *  - older plain / markdown-lite text — blank lines become paragraphs and single new lines become line breaks.
+ * Always renders a <div>, so it can hold block elements; the caller's colours/fonts are inherited (`headingColor` /
+ * `headingFont` style the headings inside).
+ */
+export function RichContent({ text, className = '', style, headingColor, headingFont }: {
+  text: string | undefined | null; className?: string; style?: CSSProperties; headingColor?: string; headingFont?: string;
+}) {
+  if (!text || !text.trim()) return null;
+  const vars = { ...style, ...(headingColor ? { '--rc-heading': headingColor } : {}), ...(headingFont ? { '--rc-heading-font': headingFont } : {}) } as CSSProperties;
+  if (HAS_HTML.test(text)) {
+    return <div className={`rc-rich ${className}`} style={vars} dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />;
+  }
+  const paragraphs = text.split(/\r?\n[ \t]*\r?\n/).filter(p => p.trim());
+  return (
+    <div className={`rc-rich ${className}`} style={vars}>
+      {paragraphs.map((p, i) => (
+        <p key={i}>{p.split(/\r?\n/).map((line, j) => <Fragment key={j}>{j > 0 && <br />}{renderRichText(line)}</Fragment>)}</p>
+      ))}
+    </div>
+  );
 }
 
 export function renderRichText(text: string | undefined | null): ReactNode {

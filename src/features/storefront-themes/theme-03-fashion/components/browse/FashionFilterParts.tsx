@@ -11,7 +11,7 @@ import { ts } from '@/utils/tStatic';
 
 export interface FacetGroup { id: string; label: string; body: ReactNode; count: number }
 
-export function BrowseSkeleton({ columns }: { columns?: 2 | 3 | 4 }) {
+export function BrowseSkeleton({ columns }: { columns?: number }) {
   return (
     <div className={`grid ${responsiveGridColumnsClass(columns)} fx-grid-gap`} aria-busy="true">
       {Array.from({ length: 8 }).map((_, i) => (

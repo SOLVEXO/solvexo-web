@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PreviewBlock } from '../../../previewInspector';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { fashionTheme as t, type FashionColors } from '../../theme.config';
 import { SectionShell } from '../SectionShell';
 import type { SharedSectionProps } from './types';
@@ -31,7 +32,7 @@ function Member({ name, role, bio, imageUrl, colors, center }: { name: string; r
 export function TeamGridSection({ section, blocks, colors }: SharedSectionProps) {
   const people = blocks.filter(b => b.settings.name);
   if (people.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : Math.min(Math.max(people.length, 2), 4);
+  const cols = columnCount(section.settings.columns, Math.min(Math.max(people.length, 2), 4));
   const center = section.settings.textAlign !== 'left';
   return (
     <SectionShell colors={colors} heading={section.settings.heading} align={center ? 'center' : 'left'}>

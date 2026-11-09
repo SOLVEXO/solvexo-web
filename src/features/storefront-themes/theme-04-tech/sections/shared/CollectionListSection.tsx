@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { handleOf } from '@/utils/activeStoreText';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -37,7 +38,7 @@ export function CollectionListSection({ section, colors }: SharedSectionProps) {
     return () => { off = true; };
   }, [store.storeId]);
   if (!items || items.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 3;
+  const cols = columnCount(section.settings.columns, 3);
   const limit = Math.min(24, Math.max(1, Number(section.settings.limit) || 6));
   const simple = section.settings.tileStyle === 'simple';
   const center = section.settings.textAlign === 'center';

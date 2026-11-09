@@ -46,9 +46,7 @@ const SORT_COLUMNS_FIELDS: FieldSchema[] = [
     { value: 'newest', label: 'Newest' }, { value: 'price_asc', label: 'Price: Low–High' },
     { value: 'price_desc', label: 'Price: High–Low' }, { value: 'best_rated', label: 'Best Rated' }, { value: 'best_selling', label: 'Best Selling' },
   ] },
-  { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
-    { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
-  ] },
+  { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
 ];
 
 // Shopify's "Image ratio": the section's own built-in crop, the whole image uncropped, or a fixed ratio.
@@ -127,9 +125,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual' || s.source === 'pinned',
         hint: 'Shown in this order. With none picked, your older store pin list is used.' },
       { key: 'limit', kind: 'number', label: 'How many to show', min: 1, max: 24 },
-      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
-        { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
-      ] },
+      { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       ...eyebrowFields('Blank keeps the theme\'s label (e.g. "The considered edit").'),
     ]),
   },
@@ -143,6 +139,8 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'categoryId', kind: 'categoryPicker', label: 'Filter by category', clears: ['collectionId'] },
       { key: 'collectionId', kind: 'collectionPicker', label: 'Filter by collection', clears: ['categoryId'] },
       { key: 'showFilters', kind: 'checkbox', label: 'Show tag filters' },
+      // Blank shows nothing (the catalog never had a label, so existing stores look the same).
+      { key: 'eyebrow', kind: 'text', label: 'Small label above the heading', maxLength: 60, placeholder: 'e.g. SUMMER COLLECTION', hint: 'Optional. Leave blank to show no label.' },
     ])),
   },
   {
@@ -197,13 +195,12 @@ export const SECTION_META: SectionMeta[] = [
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'categoryIds', kind: 'categoryMultiPicker', label: 'Categories', hint: 'Tiles are shown in the order chosen.', max: 12 },
-      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [
-        { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
-      ] },
+      { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'tileStyle', kind: 'select', label: 'Tile style', options: [{ value: 'card', label: 'Small card (image beside name)' }, { value: 'simple', label: 'Large image with name below' }] },
       { key: 'imageRatio', kind: 'select', label: 'Image shape (large tiles)', options: [{ value: 'default', label: 'Default' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }], showIf: s => s.tileStyle === 'simple' },
       { key: 'textAlign', kind: 'select', label: 'Name alignment (large tiles)', options: [{ value: 'center', label: 'Center' }, { value: 'left', label: 'Left' }], showIf: s => s.tileStyle === 'simple' },
       { key: 'showArrows', kind: 'checkbox', label: 'Show scroll arrows' },
+      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "Browse").'),
     ]),
   },
   {
@@ -283,9 +280,7 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: ['multicolumn_column'], blockLabel: 'Column',
     defaultBlockSettings: { imageUrl: '', heading: '', body: '', ctaText: '' },
     settingsSchema: withHeading([
-      { key: 'columns', kind: 'select', label: 'Columns per row', numeric: true, options: [
-        { value: '1', label: '1' }, { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
-      ] },
+      { key: 'columns', kind: 'number', label: 'Columns per row', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'textAlign', kind: 'select', label: 'Text alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
       { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: IMAGE_RATIO_OPTIONS },
     ]),
@@ -331,7 +326,7 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
-      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'limit', kind: 'number', label: 'How many collections', min: 1, max: 24, step: 1 },
       { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }] },
       { key: 'showDescription', kind: 'checkbox', label: 'Show each collection\'s description', defaultOff: true },
@@ -405,7 +400,7 @@ export const SECTION_META: SectionMeta[] = [
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'limit', kind: 'number', label: 'How many products', min: 2, max: 12, step: 1 },
-      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
     ]),
   },
   {
@@ -444,7 +439,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: s => s.source === 'category' },
       { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' },
       { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual', hint: 'Shown in this order, up to 24.' },
-      { key: 'columns', kind: 'select', label: 'Columns', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'limit', kind: 'number', label: 'How many products', min: 2, max: 12, step: 1 },
     ]),
   },
@@ -455,7 +450,7 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: ['gallery_image'], blockLabel: 'Photo',
     defaultBlockSettings: { imageUrl: '', alt: '' },
     settingsSchema: withHeading([
-      { key: 'columns', kind: 'select', label: 'Photos per row', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '5', label: '5' }] },
+      { key: 'columns', kind: 'number', label: 'Photos per row', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }] },
     ]),
   },
@@ -466,7 +461,7 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: ['feature_item'], blockLabel: 'Feature',
     defaultBlockSettings: { icon: 'check', title: '', description: '' },
     settingsSchema: withHeading([
-      { key: 'columns', kind: 'select', label: 'Features per row', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'columns', kind: 'number', label: 'Features per row', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'textAlign', kind: 'select', label: 'Text alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
     ]),
   },
@@ -477,7 +472,7 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: ['team_member'], blockLabel: 'Person',
     defaultBlockSettings: { name: '', role: '', bio: '', imageUrl: '' },
     settingsSchema: withHeading([
-      { key: 'columns', kind: 'select', label: 'People per row', numeric: true, options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }] },
+      { key: 'columns', kind: 'number', label: 'People per row', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'textAlign', kind: 'select', label: 'Text alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
     ]),
   },
@@ -611,7 +606,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   multirow_row: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
-    { key: 'body', kind: 'textarea', label: 'Text', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+    { key: 'body', kind: 'richtext', label: 'Text', rows: 8, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },
     { key: 'ctaText', kind: 'text', label: 'Button text', maxLength: 40 },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
     { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point' },
@@ -729,7 +724,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     ] },
   ],
   paragraph: [
-    { key: 'text', kind: 'textarea', label: 'Paragraph text', hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a custom field below.' },
+    { key: 'text', kind: 'richtext', label: 'Paragraph text', rows: 8, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links. Leave blank if binding to a custom field below.' },
     { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a custom field (optional)', pairsWith: 'text' },
   ],
   image: [
@@ -751,7 +746,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   multicolumn_column: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
-    { key: 'body', kind: 'textarea', label: 'Text', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+    { key: 'body', kind: 'richtext', label: 'Text', rows: 6, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
   ],
@@ -798,7 +793,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     ...eyebrowFields('Blank keeps the theme\'s label (e.g. "A closer look").'),
     { key: 'heading', kind: 'text', label: 'Heading' },
-    { key: 'body', kind: 'textarea', label: 'Body', maxLength: 1000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+    { key: 'body', kind: 'richtext', label: 'Body', rows: 6, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
     { key: 'imagePosition', kind: 'select', label: 'Image position', options: [

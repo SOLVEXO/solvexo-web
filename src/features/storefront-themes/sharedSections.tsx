@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import { handleOf } from '@/utils/activeStoreText';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { tt, ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
@@ -9,7 +10,7 @@ import { apiSubmitContactMessage } from '@/api/services/storeContact';
 import type { PublicStoreProduct } from '@/api/services/store';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useRecommendedProducts } from './useRecommendedProducts';
-import { renderRichText } from '@/utils/richText';
+import { RichContent } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { PreviewBlock } from './previewInspector';
 import { imageFit, focalOf } from './imageFit';
@@ -67,7 +68,7 @@ function Column({ block, colors, theme, ratio, align }: { block: Block; colors: 
         </div>
       )}
       {s.heading && <h3 style={{ fontFamily: theme.fonts.display, fontSize: '19px', fontWeight: 600, color: colors.ink, marginBottom: '8px' }}>{s.heading}</h3>}
-      {s.body && <p style={{ fontFamily: theme.fonts.body, fontSize: '14px', color: colors.inkMuted, lineHeight: 1.7, marginBottom: s.ctaText ? '16px' : 0 }}>{renderRichText(s.body)}</p>}
+      {s.body && <RichContent text={s.body} headingColor={colors.ink} headingFont={theme.fonts.display} style={{ fontFamily: theme.fonts.body, fontSize: '14px', color: colors.inkMuted, lineHeight: 1.7, marginBottom: s.ctaText ? '16px' : 0 }} />}
       <CtaButton text={s.ctaText} link={s.ctaLink} theme={theme} />
     </div>
   );
@@ -75,7 +76,7 @@ function Column({ block, colors, theme, ratio, align }: { block: Block; colors: 
 
 export function MulticolumnSection({ section, blocks, colors, theme }: Props) {
   if (blocks.length === 0) return null;
-  const cols = [1, 2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : Math.min(blocks.length, 3);
+  const cols = columnCount(section.settings.columns, Math.min(blocks.length, 3));
   const align = section.settings.textAlign === 'center' ? 'center' : 'left';
   return (
     <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
@@ -227,7 +228,7 @@ export function CollectionListSection({ section, colors, theme }: Props) {
     return () => { off = true; };
   }, [store.storeId]);
   if (!items || items.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 3;
+  const cols = columnCount(section.settings.columns, 3);
   const limit = Math.min(24, Math.max(1, Number(section.settings.limit) || 6));
   return (
     <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
@@ -262,7 +263,7 @@ function GalleryPhoto({ block, theme, colors, ratio }: { block: Block; theme: Sh
 
 export function GalleryGridSection({ section, blocks, colors, theme }: Props) {
   if (blocks.length === 0) return null;
-  const cols = [2, 3, 4, 5].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 3;
+  const cols = columnCount(section.settings.columns, 3);
   return (
     <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
@@ -385,7 +386,7 @@ export function RelatedProductsSection({ section, colors, theme }: Props) {
 
   // Nothing to show (or not on a product page, for related/complementary) → it simply does not render.
   if (!Card || !items || items.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 4;
+  const cols = columnCount(section.settings.columns, 4);
   return (
     <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>

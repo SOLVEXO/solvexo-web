@@ -1,5 +1,6 @@
 import { renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../../previewInspector';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { featureIcon } from '../../../featureIcons';
 import { fashionTheme as t } from '../../theme.config';
 import { SectionShell } from '../SectionShell';
@@ -8,7 +9,7 @@ import type { SharedSectionProps } from './types';
 /** "Feature list": icon + title + short text per item (why shop here, benefits, services). */
 export function FeatureListSection({ section, blocks, colors }: SharedSectionProps) {
   if (blocks.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : Math.min(Math.max(blocks.length, 2), 3);
+  const cols = columnCount(section.settings.columns, Math.min(Math.max(blocks.length, 2), 3));
   const center = section.settings.textAlign === 'center';
   return (
     <SectionShell colors={colors} heading={section.settings.heading} align={center ? 'center' : 'left'}>

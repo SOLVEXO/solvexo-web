@@ -11,6 +11,7 @@ import type { PageOption } from './BlockFields';
 import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
 import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOwnerResource } from '@/api/services/metafields';
 import { FOCAL_POINTS } from '@/features/storefront-themes/imageFit';
+import { ProductRichEditor } from '@/features/seller/store/Dashboard/StoreSection/products/ProductContentFields';
 
 const MediaLibraryPickerModal = lazy(() => import('./MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })));
 
@@ -39,7 +40,7 @@ const MediaLibraryPickerModal = lazy(() => import('./MediaLibraryPickerModal').t
  */
 
 export type FieldKind =
-  | 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
+  | 'text' | 'textarea' | 'richtext' | 'number' | 'select' | 'checkbox'
   | 'image' | 'video' | 'url' | 'link' | 'datetime' | 'color' | 'focalPoint'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
   | 'metaobjectTypePicker' | 'metafieldKeyPicker'
@@ -373,12 +374,22 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
     case 'textarea':
       return <textarea className={ta} rows={field.rows} maxLength={field.maxLength} placeholder={field.placeholder} value={value ?? ''} onChange={e => set({ [field.key]: e.target.value })} />;
 
+    // Shopify-style rich text: paragraphs, headings, bold/italic, lists, links. Stored as HTML; the storefront sanitises it when it draws it.
+    case 'richtext':
+      return <ProductRichEditor value={value ?? ''} onChange={html => set({ [field.key]: html })} label={field.label} placeholder={field.placeholder} minHeight={field.rows ? field.rows * 24 : 140} />;
+
     case 'number':
       return (
         <input
           type="number" className={inp} min={field.min} max={field.max} step={field.step ?? 1}
           value={value ?? ''}
-          onChange={e => set({ [field.key]: e.target.value === '' ? undefined : Number(e.target.value) })}
+          onChange={e => {
+            if (e.target.value === '') return set({ [field.key]: undefined });
+            let n = Number(e.target.value);
+            if (field.max !== undefined) n = Math.min(field.max, n);
+            if (field.min !== undefined) n = Math.max(field.min, n);
+            set({ [field.key]: n });
+          }}
         />
       );
 

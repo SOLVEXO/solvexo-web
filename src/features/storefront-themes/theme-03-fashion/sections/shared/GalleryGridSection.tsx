@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import type { Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { PreviewBlock } from '../../../previewInspector';
@@ -28,7 +29,7 @@ function Photo({ block, colors, ratio }: { block: Block; colors: FashionColors; 
 
 export function GalleryGridSection({ section, blocks, colors }: SharedSectionProps) {
   if (blocks.length === 0) return null;
-  const cols = [2, 3, 4, 5].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 3;
+  const cols = columnCount(section.settings.columns, 3);
   return (
     <SectionShell colors={colors} heading={section.settings.heading}>
       <div className="grid gap-3 md:gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>

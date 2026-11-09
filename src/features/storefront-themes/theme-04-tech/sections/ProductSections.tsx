@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef } from 'react';
+import { columnCount, sectionGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -16,8 +17,7 @@ import { baseTheme as t, type BaseColors } from '../theme.base';
 import { registerTechSection } from './techSectionRegistry';
 import { SectionShell, TextLink } from './SectionShell';
 
-const GRID: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-2 lg:grid-cols-3', 4: 'grid-cols-2 lg:grid-cols-4' };
-const cols = (n: unknown) => GRID[Number(n)] ?? GRID[4];
+const cols = (n: unknown) => sectionGridColumnsClass(columnCount(n, 4));
 
 function queryFor(s: Record<string, any>): PublicStoreProductsParams {
   const limit = Math.min(24, Math.max(1, Number(s.limit) || 8));
@@ -56,7 +56,7 @@ function FeaturedProducts({ settings: s, colors }: { settings: Record<string, an
       action={<TextLink to={s.source === 'collection' && s.collectionId ? `/collections/${s.collectionId}` : '/search'} colors={colors}>{ts('pg.view_all', 'View all')}</TextLink>}>
       {failed ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', 'We couldn\'t load these products.')} <button type="button" onClick={load} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
-      ) : items === null ? <Skeleton n={Number(s.columns) || 4} columns={s.columns} /> : (
+      ) : items === null ? <Skeleton n={columnCount(s.columns, 4)} columns={s.columns} /> : (
         <div className={`grid tx-grid-gap ${cols(s.columns)}`}>
           {items.map(p => <TechProductCard key={p._id} product={p} currency={currency} />)}
         </div>
@@ -77,7 +77,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
   const scrollRow = (dir: 1 | -1) => rowRef.current?.scrollBy({ left: dir * Math.max(240, (rowRef.current?.clientWidth ?? 600) * 0.8), behavior: 'smooth' });
   const all = flatten(tree);
   const chosen: string[] = Array.isArray(s.categoryIds) ? (s.categoryIds as string[]) : [];
-  const n = Number(s.columns) || 4;
+  const n = columnCount(s.columns, 4);
   const shown = chosen.length
     ? chosen.map(id => all.find(c => c._id === id)).filter((c): c is CategoryNode => !!c)
     : tree.slice(0, n);

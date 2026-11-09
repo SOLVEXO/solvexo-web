@@ -973,3 +973,17 @@
   html.store-app .store-scroll { scrollbar-width: none; }
   html.store-app .store-scroll::-webkit-scrollbar { display: none; }
 }
+
+/* Seller rich text on the storefront (Multirow, Image with text, Columns, Rich text paragraphs): see utils/richText.tsx RichContent. */
+.rc-rich > :first-child { margin-top: 0; }
+.rc-rich > :last-child { margin-bottom: 0; }
+.rc-rich p { margin: 0 0 0.95em; }
+.rc-rich h2, .rc-rich h3 { font-family: var(--rc-heading-font, inherit); color: var(--rc-heading, inherit); font-weight: 600; line-height: 1.25; margin: 1.35em 0 0.5em; }
+.rc-rich h2 { font-size: 1.3em; }
+.rc-rich h3 { font-size: 1.12em; }
+.rc-rich ul, .rc-rich ol { margin: 0 0 0.95em; padding-inline-start: 1.4em; }
+.rc-rich ul { list-style: disc; }
+.rc-rich ol { list-style: decimal; }
+.rc-rich li { margin-bottom: 0.3em; }
+.rc-rich a { text-decoration: underline; text-underline-offset: 2px; }
+.rc-rich strong { font-weight: 600; color: var(--rc-heading, inherit); }

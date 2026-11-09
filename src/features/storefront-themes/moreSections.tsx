@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- exports a helper next to section components */
 import { useEffect, useState } from 'react';
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { tt } from '@/utils/tStatic';
 import { Link, useParams } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
@@ -8,7 +9,7 @@ import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/servic
 import { apiGetPublicCollectionBySlug, type PublicCollectionSummary } from '@/api/services/collections';
 import { useCurrencyPreference, useCurrencyPreferenceOptional } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
-import { renderRichText } from '@/utils/richText';
+import { RichContent } from '@/utils/richText';
 import { PreviewBlock } from './previewInspector';
 import { imageFit } from './imageFit';
 import { CtaButton, Heading, type SharedColors, type SharedThemeTokens } from './sharedSections';
@@ -44,7 +45,7 @@ function Row({ block, index, colors, theme, ratio, alternate }: { block: Block; 
       </div>
       <div>
         {s.heading && <h3 style={{ fontFamily: theme.fonts.display, fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 600, color: colors.ink, marginBottom: '12px' }}>{s.heading}</h3>}
-        {s.body && <p style={{ fontFamily: theme.fonts.body, fontSize: '14.5px', color: colors.inkMuted, lineHeight: 1.75, marginBottom: s.ctaText ? '20px' : 0 }}>{renderRichText(s.body)}</p>}
+        {s.body && <RichContent text={s.body} headingColor={colors.ink} headingFont={theme.fonts.display} style={{ fontFamily: theme.fonts.body, fontSize: '14.5px', color: colors.inkMuted, lineHeight: 1.75, marginBottom: s.ctaText ? '20px' : 0 }} />}
         <CtaButton text={s.ctaText} link={s.ctaLink} theme={theme} />
       </div>
     </div>
@@ -233,7 +234,7 @@ export function RecentlyViewedSection({ section, colors, theme }: Props) {
   }, [store.storeId, limit]);
   const Card = theme.ProductCard;
   if (!Card || items.length === 0) return null;
-  const cols = [2, 3, 4].includes(Number(section.settings.columns)) ? Number(section.settings.columns) : 4;
+  const cols = columnCount(section.settings.columns, 4);
   return (
     <div style={box(theme)}>
       <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>

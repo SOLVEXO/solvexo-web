@@ -18,6 +18,8 @@ import { ts } from '@/utils/tStatic';
 interface Props {
   renderCard: (p: PublicStoreProduct, currency: string) => ReactNode;
   heading?: string;
+  /** Small label above the heading (the section's "Small label" setting); omitted = none. */
+  eyebrow?: string;
   categoryId?: string;
   collectionId?: string;
   search?: string;
@@ -25,7 +27,7 @@ interface Props {
   syncUrl?: boolean;
   /** Theme section settings; omitted values keep the storefront defaults. */
   defaultSort?: BrowseState['sort'];
-  columns?: 2 | 3 | 4;
+  columns?: number;
   showFilters?: boolean;
   emptyText?: string;
   /** Reports the products currently shown (used for the collection's structured data). */
@@ -33,7 +35,7 @@ interface Props {
 }
 
 /** Maison product listing: facet pills with popovers (drawer on phones), sort, active chips, grid, pagination. */
-export function FashionProductBrowser({ renderCard, heading, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText, onProducts }: Props) {
+export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText, onProducts }: Props) {
   const { t: tr } = useTranslation('storefront');
   const { currency } = useCurrencyPreference();
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort, pageSize: t.pagination.productsPerPage, accumulate: t.pagination.mode !== 'pages' });
@@ -141,6 +143,7 @@ export function FashionProductBrowser({ renderCard, heading, categoryId, collect
 
   return (
     <div ref={topRef} style={{ scrollMarginTop: 80, fontFamily: t.fonts.body, color: t.colors.ink }}>
+      {eyebrow && <p className="m-0 mb-2 text-sm font-medium" style={{ color: t.colors.inkMuted, fontFamily: t.fonts.body }}>{eyebrow}</p>}
       {heading && <h1 className="m-0 mb-7 text-[clamp(26px,3.4vw,40px)] font-medium leading-tight tracking-tight" style={{ fontFamily: t.fonts.display }}>{heading}</h1>}
 
       <div ref={barRef} className="mb-4 flex flex-wrap items-center justify-between gap-3">

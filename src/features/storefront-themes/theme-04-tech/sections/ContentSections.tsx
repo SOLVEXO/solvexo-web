@@ -5,7 +5,7 @@ import { Check, Gift, Headphones, Lock, RefreshCw, ShieldCheck, Star, Truck } fr
 import type { Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
-import { renderRichText } from '@/utils/richText';
+import { RichContent, renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
 import { copyText, showEyebrow } from '../../sectionCopy';
 import { imageFit } from '../../imageFit';
@@ -67,7 +67,7 @@ registerTechSection('rich_text', (section, blocks, colors, dynamic) => {
             const size = Tag === 'h2' ? 'text-4xl' : Tag === 'h4' ? 'text-xl' : 'text-2xl';
             node = <Tag className={`m-0 mt-8 mb-3 ${size}`} style={{ fontFamily: t.fonts.display, fontWeight: 500 }}>{text}</Tag>;
           }
-          else if (b.type === 'paragraph') node = <div className="mb-4 text-base leading-[1.85]" style={{ color: colors.inkMuted }}>{renderRichText(text)}</div>;
+          else if (b.type === 'paragraph') node = <RichContent text={text} headingColor={colors.ink} headingFont={t.fonts.display} className="mb-4 text-base leading-[1.85]" style={{ color: colors.inkMuted }} />;
           else if (b.type === 'quote') node = (
             <blockquote className="my-8 border-l-2 pl-6 text-xl italic" style={{ fontFamily: t.fonts.display, borderColor: colors.ink }}>
               {text}
