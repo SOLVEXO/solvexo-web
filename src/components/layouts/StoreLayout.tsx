@@ -140,6 +140,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
       { id: 'sales-channels', Icon: Package, label: 'Sales channels', path: 'sales-channels', requiredPermission: 'products.view' },
       { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage' },
+      { id: 'search-settings', Icon: Package, label: 'Search & discovery', path: 'search-settings', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
       // Hidden until this store has payment proofs or connects its own "Bank Transfer" in
       // Integrations (see `hiddenNavIds`) — buyers who pay that way upload a proof here for the
