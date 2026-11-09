@@ -3,26 +3,24 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, UserPlus, KeyRound } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { PasswordField } from '@/components/comman/ui/PasswordField';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { apiGetAdminInvite, apiAcceptAdminInvite, apiAdminForgotPassword, apiAdminResetPassword } from '@/api/services/adminTeam';
 
 const INPUT = 'w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40';
 const BTN = 'w-full py-3 rounded-lg bg-[#D97757] text-white text-[13px] font-bold cursor-pointer disabled:opacity-60';
 const msg = (err: unknown, fallback: string) => (err instanceof Error ? err.message : fallback);
 
-function Shell({ icon, title, subtitle, children }: { icon: ReactNode; title: string; subtitle?: string; children: ReactNode }) {
+function Shell({ title, subtitle, children }: { icon?: ReactNode; title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-10">
-      <div className="max-w-sm w-full bg-white border border-bone rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-bone flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">{icon}</div>
-          <div>
-            <p className="text-[14px] font-bold text-charcoal">{title}</p>
-            {subtitle && <p className="text-[11px] text-slate">{subtitle}</p>}
-          </div>
-        </div>
-        <div className="px-6 py-5 flex flex-col gap-3">{children}</div>
-      </div>
-    </div>
+    <AuthSplitLayout
+      pageContext="login"
+      heading={<>Solvexo <span className="text-brand-orange">admin team</span></>}
+      subtext="Secure access for the people who run the platform."
+    >
+      <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">{title}</h1>
+      {subtitle && <p className="text-[12.5px] text-slate mb-1 text-center lg:text-left">{subtitle}</p>}
+      <div className="flex flex-col gap-3 mt-4">{children}</div>
+    </AuthSplitLayout>
   );
 }
 

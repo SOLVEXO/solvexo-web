@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertTriangle, UserPlus } from 'lucide-react';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { apiGetStaffInvite, apiAcceptStaffInvite, type StaffInviteInfo } from '@/api/services/staff';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 
 /** Public, unauthenticated "Accept Invite" page — reached via the secure,
  *  token-secured link `StaffService.create()`/`resendInvite()` emails an
@@ -51,31 +52,27 @@ export default function StaffAcceptInvitePage() {
 
   if (error && !invite) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-sm w-full bg-white border border-bone rounded-2xl p-6 text-center flex flex-col items-center gap-3">
+      <AuthSplitLayout pageContext="login" heading={<>Invite <span className="text-brand-orange">not available</span></>} subtext="Ask the store owner to send you a new invite.">
+        <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle size={28} className="text-error" />
           <p className="text-[14px] font-semibold text-charcoal">{error}</p>
         </div>
-      </div>
+      </AuthSplitLayout>
     );
   }
 
   if (!invite) return null;
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-10">
-      <div className="max-w-sm w-full bg-white border border-bone rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-bone flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-            <UserPlus size={18} className="text-brand-orange" />
-          </div>
-          <div>
-            <p className="text-[14px] font-bold text-charcoal">Join {invite.storeName ?? 'the store'}</p>
-            <p className="text-[11px] text-slate">Invited as {invite.name} · {invite.email}</p>
-          </div>
-        </div>
+    <AuthSplitLayout
+      pageContext="new_password"
+      heading={<>Join <span className="text-brand-orange">{invite.storeName ?? 'the store'}</span></>}
+      subtext="Set your own password to activate your staff account."
+    >
+      <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">Join {invite.storeName ?? 'the store'}</h1>
+      <p className="text-[12.5px] text-slate mb-1 text-center lg:text-left">Invited as {invite.name} · {invite.email}</p>
 
-        <div className="px-6 py-5">
+        <div className="mt-4">
           {accepted ? (
             <div className="flex flex-col items-center gap-2 py-4">
               <CheckCircle2 size={32} className="text-success" />
@@ -111,7 +108,6 @@ export default function StaffAcceptInvitePage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </AuthSplitLayout>
   );
 }

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CheckCircle2, KeyRound } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { apiStaffForgotPassword } from '@/api/services/staff';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 
 /** Public "Forgot password" for a store's staff login — always shows the same
  *  confirmation so it can't be used to discover which emails are staff. */
@@ -29,13 +30,13 @@ export default function StaffForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-10">
-      <div className="max-w-sm w-full bg-white border border-bone rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-bone flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0"><KeyRound size={18} className="text-brand-orange" /></div>
-          <p className="text-[14px] font-bold text-charcoal">Reset your password</p>
-        </div>
-        <div className="px-6 py-5 flex flex-col gap-3">
+    <AuthSplitLayout
+      pageContext="forgot_password"
+      heading={<>Forgot your <span className="text-brand-orange">password</span>?</>}
+      subtext="No problem. We'll email you a link to choose a new one."
+    >
+      <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">Reset your password</h1>
+      <div className="flex flex-col gap-3 mt-3">
           {sent ? (
             <div className="flex flex-col items-center gap-2 py-3 text-center">
               <CheckCircle2 size={32} className="text-success" />
@@ -58,8 +59,7 @@ export default function StaffForgotPasswordPage() {
             </>
           )}
           <Link to={`/staff-login/${storeId}`} className="text-center text-[12.5px] text-brand-orange hover:underline">Back to sign in</Link>
-        </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle2, KeyRound } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { PasswordField } from '@/components/comman/ui/PasswordField';
 import { apiStaffResetPassword } from '@/api/services/staff';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 
 /** Public page reached from the emailed reset link — sets a new password. */
 export default function StaffResetPasswordPage() {
@@ -33,13 +34,13 @@ export default function StaffResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-10">
-      <div className="max-w-sm w-full bg-white border border-bone rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-bone flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0"><KeyRound size={18} className="text-brand-orange" /></div>
-          <p className="text-[14px] font-bold text-charcoal">Choose a new password</p>
-        </div>
-        <div className="px-6 py-5 flex flex-col gap-3">
+    <AuthSplitLayout
+      pageContext="new_password"
+      heading={<>Choose a new <span className="text-brand-orange">password</span></>}
+      subtext="Pick a strong one. Only you will know it."
+    >
+      <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">Choose a new password</h1>
+      <div className="flex flex-col gap-3 mt-3">
           {storeId ? (
             <div className="flex flex-col items-center gap-2 py-3">
               <CheckCircle2 size={32} className="text-success" />
@@ -66,8 +67,7 @@ export default function StaffResetPasswordPage() {
               <p className="text-center text-[12px] text-slate">Link expired? Open your store's staff sign-in page and use “Forgot password?”.</p>
             </>
           )}
-        </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }

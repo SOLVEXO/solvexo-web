@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, KeyRound, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, KeyRound, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
 import { Button } from '@/components/comman/ui/Button';
@@ -49,10 +49,6 @@ export function ForgotPasswordPage() {
       subtext="We'll email you a secure code to get you straight back into your account."
       highlights={HIGHLIGHTS}
     >
-      <div className="size-11 rounded-xl bg-brand-pale-orange flex items-center justify-center mb-4 mx-auto lg:mx-0">
-        <Mail size={19} className="text-brand-orange" />
-      </div>
-
       <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">
         Forgot your password?
       </h1>

@@ -5,7 +5,7 @@ import { safeRedirectPath } from '@/utils/safeRedirect';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
-import { Eye, EyeOff, Shield, Lock, Activity, ArrowLeft, KeyRound, Smartphone } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Activity, ArrowLeft } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { useLogin } from '@/hooks/auth/useLogin';
@@ -151,9 +151,6 @@ function TwoFactorStep({ code, setCode, useRecovery, setUseRecovery, loading, er
   useEffect(() => { inputRef.current?.focus(); }, [useRecovery]);
   return (
     <>
-      <div className="size-11 rounded-xl bg-brand-pale-orange text-brand-orange flex items-center justify-center mb-4 mx-auto lg:mx-0">
-        {useRecovery ? <KeyRound size={20} /> : <Smartphone size={20} />}
-      </div>
       <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">Two-factor sign-in</h1>
       <p className="text-[13px] text-slate mb-6 text-center lg:text-left">
         {useRecovery

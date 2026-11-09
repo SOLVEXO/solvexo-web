@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowLeft, KeyRound, Smartphone } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 
@@ -14,9 +14,6 @@ export function TwoFactorStep({ code, setCode, useRecovery, setUseRecovery, load
   useEffect(() => { inputRef.current?.focus(); }, [useRecovery]);
   return (
     <>
-      <div className="size-11 rounded-xl bg-brand-pale-orange text-brand-orange flex items-center justify-center mb-4 mx-auto lg:mx-0">
-        {useRecovery ? <KeyRound size={20} /> : <Smartphone size={20} />}
-      </div>
       <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">Two-factor sign-in</h1>
       <p className="text-[13px] text-slate mb-6 text-center lg:text-left">
         {useRecovery

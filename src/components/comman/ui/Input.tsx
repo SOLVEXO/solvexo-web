@@ -6,6 +6,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?:      string;
   error?:      string;
   leftAddon?:  string;
+  leftIcon?:   ReactNode;  // e.g. mail icon inside the field
   rightIcon?:  ReactNode;  // e.g. eye toggle for password
 }
 
@@ -24,7 +25,7 @@ const BASE =
   'disabled:opacity-50 disabled:bg-cream';
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, leftAddon, rightIcon, className, id, type, inputMode, ...props }, ref) => {
+  ({ label, error, leftAddon, leftIcon, rightIcon, className, id, type, inputMode, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
     return (
@@ -40,6 +41,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               {leftAddon}
             </span>
           )}
+          {leftIcon && (
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-carbon pointer-events-none flex">
+              {leftIcon}
+            </span>
+          )}
           <input
             ref={ref}
             id={inputId}
@@ -53,6 +59,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={clsx(
               BASE,
               leftAddon  && 'pl-6',
+              leftIcon   && 'pl-11',
               rightIcon  && 'pr-9',
               error      && 'border-error! focus:ring-error/10!',
               className,
