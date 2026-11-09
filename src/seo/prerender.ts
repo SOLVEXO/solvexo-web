@@ -5,7 +5,9 @@
 // the same file and replaces the plain block on mount (it is hidden at once for visitors with JavaScript).
 import { ALL_PLATFORM_PRODUCTS } from '../features/buyer/data/platformProducts';
 import { SOLUTIONS } from '../features/buyer/data/solutions';
-import { SITEMAP_PAGES, canonicalUrl, normalizePath, type PublicPageSeo } from './publicPages';
+import { BLOG_AUTHOR, SORTED_BLOG_POSTS, getBlogPost, type BlogBlock } from '../features/buyer/data/blogPosts';
+import { SITEMAP_PAGES, SITE_ORIGIN, canonicalUrl, normalizePath, type PublicPageSeo } from './publicPages';
+import { unsplashUrl } from '../assets/stockPhotos';
 
 export const PRERENDER_DIR = '_pages';
 
@@ -50,7 +52,31 @@ function links(items: { label: string; path: string }[]): string {
 }
 
 /** Page-specific body copy from the same data the React pages render. */
+function blockHtml(b: BlogBlock): string {
+  switch (b.type) {
+    case 'h2': return `<h2>${esc(b.text)}</h2>`;
+    case 'h3': return `<h3>${esc(b.text)}</h3>`;
+    case 'ul': return list(b.items);
+    case 'ol': return `<ol>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ol>`;
+    case 'tip': return `<p><strong>Tip:</strong> ${esc(b.text)}</p>`;
+    default: return `<p>${esc(b.text)}</p>`;
+  }
+}
+
+const blogSlug = (path: string) => /^\/blog\/([^/]+)$/.exec(path)?.[1] ?? null;
+
 function contentFor(page: PublicPageSeo): string {
+  const post = blogSlug(page.path) ? getBlogPost(blogSlug(page.path)!) : undefined;
+  if (post) {
+    return [
+      `<p>${esc(BLOG_AUTHOR)} · <time datetime="${post.published}">${post.published}</time> · ${post.readMinutes} min read</p>`,
+      ...post.body.map(blockHtml),
+      `<p><a href="/blog">More guides on the Solvexo blog</a></p>`,
+    ].join('');
+  }
+  if (page.path === '/blog') {
+    return `<h2>Latest guides</h2>${links(SORTED_BLOG_POSTS.map(p => ({ label: p.title, path: `/blog/${p.slug}` })))}`;
+  }
   const product = ALL_PLATFORM_PRODUCTS.find(p => `/products/${p.slug}` === page.path);
   if (product) {
     return [
@@ -89,6 +115,32 @@ function contentFor(page: PublicPageSeo): string {
 export function structuredDataFor(page: PublicPageSeo): Record<string, unknown>[] {
   if (page.path === '/') {
     return [{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Solvexo', alternateName: ['Solvexo Store', 'solvexo.store'], url: canonicalUrl('/') }];
+  }
+  const post = blogSlug(page.path) ? getBlogPost(blogSlug(page.path)!) : undefined;
+  if (post) {
+    return [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description: post.description,
+        datePublished: post.published,
+        dateModified: post.updated ?? post.published,
+        author: { '@type': 'Organization', name: 'Solvexo', url: canonicalUrl('/') },
+        publisher: { '@type': 'Organization', name: 'Solvexo', logo: { '@type': 'ImageObject', url: `${SITE_ORIGIN}/brand/solvexo-logo-120.png` } },
+        mainEntityOfPage: canonicalUrl(page.path),
+        image: unsplashUrl(post.image, 1200),
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Solvexo', item: canonicalUrl('/') },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: canonicalUrl('/blog') },
+          { '@type': 'ListItem', position: 3, name: post.title, item: canonicalUrl(page.path) },
+        ],
+      },
+    ];
   }
   const m = /^\/(products|solutions)\/[^/]+$/.exec(page.path);
   if (!m) return [];

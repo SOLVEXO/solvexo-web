@@ -74,6 +74,8 @@ const PlatformProductPage  = lazy(() => import('@/features/buyer/pages/products/
 const SolutionsOverviewPage = lazy(() => import('@/features/buyer/pages/solutions/SolutionsOverviewPage').then(m => ({ default: m.SolutionsOverviewPage })));
 const SolutionPage         = lazy(() => import('@/features/buyer/pages/solutions/SolutionPage').then(m => ({ default: m.SolutionPage })));
 const NotFoundPage   = lazy(() => import('@/features/buyer/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+const BlogIndexPage  = lazy(() => import('@/features/buyer/pages/blog/BlogIndexPage').then(m => ({ default: m.BlogIndexPage })));
+const BlogPostPage   = lazy(() => import('@/features/buyer/pages/blog/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/features/storefront/StorefrontLayout').then(m => ({ default: m.StorefrontLayout })));
@@ -325,6 +327,8 @@ const mainRouter = createBrowserRouter([
               { path: 'products/:slug',  element: <PlatformProductPage /> },
               { path: 'solutions',       element: <SolutionsOverviewPage /> },
               { path: 'solutions/:slug', element: <SolutionPage /> },
+              { path: 'blog',            element: <BlogIndexPage /> },
+              { path: 'blog/:slug',      element: <BlogPostPage /> },
               // Unknown public address: a real not-found page (noindex) instead of redirecting to the home page,
               // which search engines report as a "soft 404".
               { path: '*',               element: <NotFoundPage /> },

@@ -49,6 +49,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
   {
     heading: 'Learn & Support',
     links: [
+      { label: 'Blog',       path: '/blog' },
       { label: 'FAQ',        path: '/faq' },
       { label: 'Contact Us', path: '/contact-us' },
     ],

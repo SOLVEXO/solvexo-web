@@ -67,3 +67,27 @@ describe('structured data on pre-built pages', () => {
     expect(ld(buildPrerenderedHtml(template, seoForPath('/pricing')!)).some(d => d['@type'] === 'BreadcrumbList')).toBe(false);
   });
 });
+
+describe('blog pages', () => {
+  const ld = (html: string) => [...html.matchAll(/<script type="application\/ld\+json">([^<]*)<\/script>/g)].map(m => JSON.parse(m[1]));
+  const slug = 'how-to-start-an-online-store-in-pakistan';
+
+  it('pre-builds each article with its full text, an article schema and a breadcrumb', () => {
+    const html = buildPrerenderedHtml(template, seoForPath(`/blog/${slug}`)!);
+    expect(html).toContain(`<link rel="canonical" href="https://www.solvexo.store/blog/${slug}" />`);
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain('<h2>5. Set up delivery and cash on delivery');
+    const data = ld(html);
+    const post = data.find(d => d['@type'] === 'BlogPosting');
+    expect(post.headline).toBe('How to Start an Online Store in Pakistan: A Step-by-Step Guide');
+    expect(post.datePublished).toBe('2026-11-09');
+    expect(post.mainEntityOfPage).toBe(`https://www.solvexo.store/blog/${slug}`);
+    const crumbs = data.find(d => d['@type'] === 'BreadcrumbList');
+    expect(crumbs.itemListElement.map((i: { name: string }) => i.name)).toEqual(['Solvexo', 'Blog', post.headline]);
+  });
+
+  it('lists every article on /blog', () => {
+    const html = buildPrerenderedHtml(template, seoForPath('/blog')!);
+    for (const p of SITEMAP_PAGES.filter(p => p.path.startsWith('/blog/'))) expect(html).toContain(`<a href="${p.path}">`);
+  });
+});
