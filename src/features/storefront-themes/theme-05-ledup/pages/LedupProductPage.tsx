@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { ShoppingBag, Minus, Plus } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import type { ProductVariant } from '@/api/services/marketplace';
@@ -157,7 +158,7 @@ function Inner({ slug }: { slug: string }) {
           </div>
 
           <div className="flex flex-col lg:col-span-6">
-            {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase tracking-wider text-stone-400">{detail.product.vendor}</p>}
+            {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase tracking-wider text-stone-400"><VendorLink name={detail.product.vendor} /></p>}
             <h1 className="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl" style={{ fontFamily: t.fonts.display }}>{product.name}</h1>
             {short && <p className="mt-2 text-sm font-normal leading-relaxed text-stone-500">{short}</p>}
 

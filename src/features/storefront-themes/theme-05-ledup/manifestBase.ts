@@ -123,6 +123,7 @@ export const baseManifest: ThemeManifest = {
 
   themeSettingsFields: [
     { key: 'custom.productsPerPage', label: 'Products per page', group: 'Pagination', control: { kind: 'number', min: 4, max: 100, placeholder: '12' }, helpText: 'How many products show at once on collection, category and search pages: any number from 4 to 100. Default 12.' },
+    { key: 'custom.vendorPrefix', label: 'Text before the vendor name', group: 'Product page', control: { kind: 'text', maxLength: 30, placeholder: 'e.g. By' }, helpText: 'Optional. Written before the vendor / brand / author name on the product page, e.g. "By" gives "By George Orwell". Leave empty to show just the name.' },
     { key: 'custom.productShowAll', label: 'Show all products', group: 'Pagination', control: { kind: 'select', options: [{ value: 'no', label: 'No, use the number above' }, { value: 'yes', label: 'Yes, keep loading as shoppers scroll' }] }, helpText: 'Loads every product in batches of 100 while shoppers scroll, so big stores stay fast.' },
     { key: 'primaryColor', label: 'Buttons & accent', group: 'Colors', control: { kind: 'color' }, helpText: 'Buttons, links, tags and the bronze banner tone.' },
     { key: 'custom.bannerColor', label: 'Category banner colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#c49466' } }, helpText: 'The metallic banner with the curved tabs and the title banners on account pages. Auto uses the copper tone.' },

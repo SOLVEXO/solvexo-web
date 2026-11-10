@@ -4,6 +4,7 @@
 // into the singleton below before any child renders, same contract every registered theme follows.
 
 import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
+import { setVendorPrefix } from '../core/VendorLink';
 import { readProductsPerPage } from '../themeManifest';
 
 const STATIC_DEFAULTS = {
@@ -232,6 +233,7 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.mega.columns = Number(oneOf(ts?.megaColumns, ['3', '4', '5'] as const, '4'));
   fashionTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');
   fashionTheme.mega.photo = oneOf(ts?.megaPhoto, ['square', 'landscape', 'portrait'] as const, 'square');
+  setVendorPrefix(ts?.vendorPrefix);
   { const pp = readProductsPerPage(ts); fashionTheme.pagination.productsPerPage = pp.pageSize; fashionTheme.pagination.mode = pp.showAll ? 'infinite' : oneOf(ts?.productPagination, ['pages', 'more', 'infinite'] as const, 'pages'); }
   fashionTheme.pagination.postsPerPage = Number(oneOf(ts?.postsPerPage == null ? undefined : String(ts.postsPerPage), ['6', '9', '12', '18', '24'] as const, '12'));
   fashionTheme.pagination.reviewsPerPage = Number(oneOf(ts?.reviewsPerPage == null ? undefined : String(ts.reviewsPerPage), ['5', '10', '20'] as const, '5'));

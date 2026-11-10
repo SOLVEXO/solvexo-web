@@ -80,7 +80,7 @@ export function useProductBrowse({ categoryId, collectionId, search, syncUrl, de
     apiGetPublicStoreProducts(store.storeId, {
       page: state.page, limit: clampPageSize(pageSize), sort: state.sort, categoryId, collectionId, search,
       availability: state.availability, minPrice: state.minPrice, maxPrice: state.maxPrice, currency, marketId,
-      productTypes: state.productTypes, tags: state.tags, options: state.options, facets: true,
+      productTypes: state.productTypes, tags: state.tags, vendors: state.vendors, options: state.options, facets: true,
     }, ctrl.signal)
       .then(res => {
         const list = res.data?.products ?? [];

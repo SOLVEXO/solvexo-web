@@ -25,6 +25,8 @@ export interface BrowseState {
   maxPrice?: number;
   productTypes: string[];
   tags: string[];
+  /** Brand / author names (the product "Vendor"); a vendor link on a product opens the shop filtered by it. */
+  vendors: string[];
   options: Record<string, string[]>;
 }
 
@@ -64,6 +66,7 @@ const K_GTE = 'filter.v.price.gte';
 const K_LTE = 'filter.v.price.lte';
 const K_TYPE = 'filter.p.product_type';
 const K_TAG = 'filter.p.tag';
+const K_VENDOR = 'filter.p.vendor';
 const K_OPT = 'filter.v.option.';
 
 const num = (v: string | null): number | undefined => {
@@ -90,6 +93,7 @@ export function parseBrowseState(sp: URLSearchParams): BrowseState {
     maxPrice: num(sp.get(K_LTE)),
     productTypes: sp.getAll(K_TYPE).filter(Boolean),
     tags: sp.getAll(K_TAG).filter(Boolean),
+    vendors: sp.getAll(K_VENDOR).filter(Boolean),
     options,
   };
 }
@@ -106,6 +110,7 @@ export function writeBrowseState(base: URLSearchParams, state: BrowseState): URL
   if (state.maxPrice != null) sp.set(K_LTE, String(state.maxPrice));
   state.productTypes.forEach(v => sp.append(K_TYPE, v));
   state.tags.forEach(v => sp.append(K_TAG, v));
+  state.vendors.forEach(v => sp.append(K_VENDOR, v));
   for (const [name, values] of Object.entries(state.options)) values.forEach(v => sp.append(K_OPT + name, v));
   if (state.sort !== DEFAULT_SORT) sp.set('sort_by', SORT_TO_URL[state.sort]);
   if (state.page > 1) sp.set('page', String(state.page));
@@ -113,12 +118,12 @@ export function writeBrowseState(base: URLSearchParams, state: BrowseState): URL
 }
 
 export function hasActiveFilters(s: BrowseState): boolean {
-  return !!s.availability || s.minPrice != null || s.maxPrice != null || s.productTypes.length > 0 || s.tags.length > 0
+  return !!s.availability || s.minPrice != null || s.maxPrice != null || s.productTypes.length > 0 || s.tags.length > 0 || s.vendors.length > 0
     || Object.keys(s.options).length > 0;
 }
 
 export function clearFilters(s: BrowseState): BrowseState {
-  return { ...s, page: 1, availability: undefined, minPrice: undefined, maxPrice: undefined, productTypes: [], tags: [], options: {} };
+  return { ...s, page: 1, availability: undefined, minPrice: undefined, maxPrice: undefined, productTypes: [], tags: [], vendors: [], options: {} };
 }
 
 export function toggleIn(list: string[], value: string): string[] {

@@ -4,6 +4,7 @@
 // single product page with interactive specifications table, datasheet downloads, and high-curvature espresso footer.
 
 import { readProductsPerPage } from '../themeManifest';
+import { setVendorPrefix } from '../core/VendorLink';
 import { applyMerchantThemeOverrides as applyBase, baseTheme,  relativeLuminance, type BaseMerchantColors } from './theme.base';
 
 export const LEDUP_SHAPES = {
@@ -107,7 +108,9 @@ export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | 
     style: pick(ts?.preloaderStyle, ['fade', 'bar', 'pulse'] as const, 'bar'),
     seconds: Number.isFinite(secs) && secs >= 0.5 && secs <= 6 ? secs : 1.5,
   };
-  ledupTheme.pagination.productsPerPage = readProductsPerPage((colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings).pageSize;
+  const themeSettings = (colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings;
+  ledupTheme.pagination.productsPerPage = readProductsPerPage(themeSettings).pageSize;
+  setVendorPrefix(themeSettings?.vendorPrefix);
   ledupTheme.fonts.body = baseTheme.fonts.body;
   ledupTheme.fonts.display = baseTheme.fonts.display;
 
