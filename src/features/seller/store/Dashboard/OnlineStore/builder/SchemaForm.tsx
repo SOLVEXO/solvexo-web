@@ -387,8 +387,11 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
             if (e.target.value === '') return set({ [field.key]: undefined });
             let n = Number(e.target.value);
             if (field.max !== undefined) n = Math.min(field.max, n);
-            if (field.min !== undefined) n = Math.max(field.min, n);
             set({ [field.key]: n });
+          }}
+          onBlur={e => {
+            const n = Number(e.target.value);
+            if (e.target.value !== '' && field.min !== undefined && n < field.min) set({ [field.key]: field.min });
           }}
         />
       );

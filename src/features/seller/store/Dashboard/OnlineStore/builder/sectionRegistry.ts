@@ -64,12 +64,18 @@ export const SECTION_META: SectionMeta[] = [
     defaultBlockSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, focalPoint: 'center' },
     settingsSchema: [
       { key: 'heightPreset', kind: 'select', label: 'Slide height', hint: '"Adapt to image" shows each image whole — nothing is cropped.', options: [
-        { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+        { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'custom', label: 'Custom (my own height)' },
       ] },
+      { key: 'customHeight', kind: 'number', label: 'Custom height (px)', min: 150, max: 1400, placeholder: 'e.g. 600', showIf: s => s.heightPreset === 'custom', hint: 'Any height from 150 to 1400 px.' },
+      { key: 'imageFit', kind: 'select', label: 'Image fit', showIf: s => s.heightPreset !== 'adapt', hint: '"Show the whole image" never crops the picture; the space around it is filled with a soft blur of the same picture.', options: [
+        { value: 'fill', label: 'Fill the slide (edges may be cropped)' }, { value: 'whole', label: 'Show the whole image' },
+      ] },
+      { key: 'maxWidth', kind: 'number', label: 'Max width (px)', min: 320, max: 2400, placeholder: 'Theme width', hint: 'Optional. Leave empty to use the theme\'s page width.' },
       { key: 'mobileHeightPreset', kind: 'select', label: 'Slide height on mobile', options: [
         { value: 'same', label: 'Same as desktop' }, { value: 'adapt', label: 'Adapt to image' },
-        { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+        { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'custom', label: 'Custom (my own height)' },
       ] },
+      { key: 'mobileCustomHeight', kind: 'number', label: 'Custom height on mobile (px)', min: 150, max: 1400, placeholder: 'e.g. 400', showIf: s => s.mobileHeightPreset === 'custom' },
       { key: 'mobileTextLayout', kind: 'select', label: 'Text on mobile', hint: 'Overlay themes only . "Below image" moves the text out from over the picture.', options: [
         { value: 'overlay', label: 'Over the image' }, { value: 'below', label: 'Below the image' },
       ] },

@@ -29,12 +29,12 @@ export function imageFit(ratio: unknown, fallbackRatio: string, focal?: unknown)
 /** Theme setting "Product Image Ratio" → the product card's image box (`auto` = adapt to each image). */
 export const PRODUCT_CARD_RATIO: Record<string, string> = { square: '1 / 1', portrait: '3 / 4', landscape: '4 / 3', adapt: 'auto' };
 
-export type HeightPreset = 'small' | 'medium' | 'large' | 'adapt';
+export type HeightPreset = 'small' | 'medium' | 'large' | 'adapt' | 'custom';
 
 /** Phones are anything up to this width (px). */
 export const MOBILE_MAX = 767;
 
 /** Resolves the mobile height setting: absent / `same` follows the desktop one. */
 export function mobileHeightOf(desktop: HeightPreset | undefined, mobile: string | undefined): HeightPreset | undefined {
-  return mobile === 'small' || mobile === 'medium' || mobile === 'large' || mobile === 'adapt' ? mobile : desktop;
+  return mobile === 'small' || mobile === 'medium' || mobile === 'large' || mobile === 'adapt' || mobile === 'custom' ? mobile : desktop;
 }

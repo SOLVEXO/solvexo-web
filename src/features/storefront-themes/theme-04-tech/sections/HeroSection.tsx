@@ -13,7 +13,7 @@ import { registerTechSection } from './techSectionRegistry';
 import { LinkButton } from './SectionShell';
 import { EditableText, useInlineEditActive } from '../../inlineEdit';
 
-const HEIGHT: Record<Exclude<HeightPreset, 'adapt'>, string> = { small: 'clamp(320px, 46vh, 460px)', medium: 'clamp(420px, 68vh, 680px)', large: 'clamp(520px, 88vh, 900px)' };
+const HEIGHT: Record<Exclude<HeightPreset, 'adapt' | 'custom'>, string> = { small: 'clamp(320px, 46vh, 460px)', medium: 'clamp(420px, 68vh, 680px)', large: 'clamp(520px, 88vh, 900px)' };
 
 /** Last word of the headline set in the serif italic accent face. */
 function AccentHeading({ text }: { text: string }) {
@@ -38,15 +38,19 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
 
 const hasText = (b: Block) => !!(b.settings.heading || b.settings.subheading || b.settings.ctaText);
 
-function Slide({ block, height, active, eager, below }: { block: Block; height: string | undefined; active: boolean; eager: boolean; below: boolean }) {
+function Slide({ block, height, active, eager, below, whole }: { block: Block; height: string | undefined; active: boolean; eager: boolean; below: boolean; /** Show the whole picture (never cropped) instead of filling the box. */ whole: boolean }) {
   const s = block.settings;
   const adapt = !height;
   return (
     <div className="relative w-full shrink-0 overflow-hidden" style={{ height, background: '#1b1b1b' }} aria-hidden={!active}>
       {s.imageUrl && (
-        <img {...imgProps(s.imageUrl, HERO_SRCSET_WIDTHS, '100vw')} alt={s.heading ?? ''} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : undefined}
-          className={adapt ? 'block h-auto w-full' : 'absolute inset-0 h-full w-full object-cover'}
-          style={adapt ? undefined : { objectPosition: focalOf(s.focalPoint) }} />
+        <>
+          {/* Whole picture: the same photo, blurred, fills the space around it so there are no empty bars. */}
+          {whole && !adapt && <img src={s.imageUrl} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl" />}
+          <img {...imgProps(s.imageUrl, HERO_SRCSET_WIDTHS, '100vw')} alt={s.heading ?? ''} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : undefined}
+            className={adapt ? 'block h-auto w-full' : `absolute inset-0 h-full w-full ${whole ? 'object-contain' : 'object-cover'}`}
+            style={adapt || whole ? undefined : { objectPosition: focalOf(s.focalPoint) }} />
+        </>
       )}
       <div className="absolute inset-0" style={{ background: typeof s.overlayOpacity === 'number' ? `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` : 'linear-gradient(90deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 100%)' }} />
       {hasText(block) && (
@@ -86,15 +90,23 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   if (n === 0) return null;
   const desk = (settings.heightPreset ?? 'medium') as HeightPreset;
   const mob = mobileHeightOf(desk, settings.mobileHeightPreset);
-  const hd = desk === 'adapt' ? undefined : HEIGHT[desk];
-  const hm = mob === 'adapt' ? undefined : HEIGHT[(mob ?? 'medium') as Exclude<HeightPreset, 'adapt'>];
+  // Small / Medium / Large, or the seller's own height in px ("Custom"); the phone height falls back to the desktop one.
+  const heightOf = (p: HeightPreset | undefined, custom: unknown) => {
+    if (p === 'adapt') return undefined;
+    if (p === 'custom') return typeof custom === 'number' && Number.isFinite(custom) ? `${Math.min(1400, Math.max(150, Math.round(custom)))}px` : HEIGHT.medium;
+    return HEIGHT[p ?? 'medium'];
+  };
+  const hd = heightOf(desk, settings.customHeight);
+  const hm = heightOf(mob, settings.mobileCustomHeight ?? settings.customHeight);
+  const whole = settings.imageFit === 'whole';
+  const maxW = typeof settings.maxWidth === 'number' && settings.maxWidth >= 320 ? Math.min(2400, settings.maxWidth) : null;
   const go = (d: number) => setI(v => (v + d + n) % n);
   const pagination = settings.pagination ?? 'dots';
   const below = settings.mobileTextLayout === 'below';
   // One slide = the image box + (phones, "Below image" only) its text underneath.
   const slideBody = (b: Block, k: number) => (
     <>
-      <PreviewBlock blockId={b._id ?? String(k)}><div className="tx-h"><Slide block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} below={below} /></div></PreviewBlock>
+      <PreviewBlock blockId={b._id ?? String(k)}><div className="tx-h"><Slide whole={whole} block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} below={below} /></div></PreviewBlock>
       {below && hasText(b) && (
         <div className="md:hidden" style={{ padding: '24px 20px 8px', textAlign: b.settings.contentAlign === 'center' || b.settings.contentAlign === 'right' ? b.settings.contentAlign : 'left' }}>
           <SlideText block={b} onImage={false} color={t.colors.ink} />
@@ -108,7 +120,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
       onTouchStart={e => { touch.current = e.touches[0].clientX; }}
       onTouchEnd={e => { if (touch.current != null) { const d = e.changedTouches[0].clientX - touch.current; const s = swipeStep(d, rtl); if (s) go(s); touch.current = null; } }}>
       <style>{`.tx-hero{--h:${hm ?? 'auto'}}@media(min-width:768px){.tx-hero{--h:${hd ?? 'auto'}}}.tx-hero .tx-h{height:var(--h)!important}`}</style>
-      <div className="tx-hero mx-auto overflow-hidden" style={{ maxWidth: t.layout.maxWidth, borderRadius: t.sectionRadiusPx }}>
+      <div className="tx-hero mx-auto overflow-hidden" style={{ maxWidth: maxW ?? t.layout.maxWidth, borderRadius: t.sectionRadiusPx }}>
         {fade ? (
           <div className="relative">
             {slides.map((b, k) => (
