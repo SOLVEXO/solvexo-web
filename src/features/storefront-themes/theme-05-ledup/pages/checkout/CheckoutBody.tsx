@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { CheckoutBrandBar, CheckoutBrandFooter } from '../../../core/checkout/CheckoutBranding';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { apiListPublicStorePages } from '@/api/services/storePages';
@@ -163,6 +164,8 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
 
   return (
     <Page>
+      <div className="sx-checkout-brand">
+      <CheckoutBrandBar tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border }} />
       <PageTitle actions={<Link to="/cart" className="text-sm font-medium text-white underline">{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('h.secure_checkout', 'Secure *checkout*')}</PageTitle>
       <div className={`grid items-start gap-6 lg:gap-10 ${t.checkoutSummary === 'left' ? 'lg:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_400px]'}`}>
         <div className={`order-2 flex min-w-0 flex-col gap-5 ${t.checkoutSummary === 'left' ? 'lg:order-2' : 'lg:order-1'}`}>
@@ -204,6 +207,8 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
             {checkout ? <DiscountPanel checkout={checkout} discounts={discounts} credit={credit} currency={currency} storeCreditShown={storeCredit} /> : null}
           </OrderSummary>
         </div>
+      </div>
+      <CheckoutBrandFooter tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border }} />
       </div>
     </Page>
   );

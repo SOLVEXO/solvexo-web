@@ -95,6 +95,8 @@ export interface UpdateStorePayload {
   name?:        string;
   logo?:        string;
   faviconUrl?:  string | null;
+  /** Checkout branding (logo, accent colour, footer links) shown on every theme's checkout. `null` clears it. */
+  checkoutBranding?: { logoUrl: string | null; accentColor: string | null; footerLinks: { label: string; url: string }[] } | null;
   description?: string;
   tagline?:      string;
   contactEmail?: string;
@@ -151,6 +153,7 @@ export interface StoreData {
   slug:         string;
   logo:         string | null;
   faviconUrl:   string | null;
+  checkoutBranding?: { logoUrl: string | null; accentColor: string | null; footerLinks: { label: string; url: string }[] } | null;
   categoryId:   string;
   description:  string;
   /** Short marketing line — distinct from `description`, shown alongside the store name. */
@@ -274,6 +277,8 @@ export interface MyStoreItem extends StoreData {
   productCount:  number;
   /** All-time net revenue (gross minus refunds) across non-cancelled orders. */
   totalSalesUSD: number;
+  /** This store's own platform-plan state (trialing / trial_ended / active / past_due / locked / canceled); null when unknown. */
+  planStatus?:   string | null;
 }
 
 export interface MyStoresSummary {

@@ -18,6 +18,7 @@ import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlement
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
+import { rememberStore } from '@/utils/storePlanState';
 import { useFavicon } from '@/hooks/useFavicon';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/comman/ui';
@@ -136,6 +137,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
       { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'] },
       { id: 'subscriptions', Icon: Package, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['product_subscriptions.view', 'product_subscriptions.manage'] },
+      { id: 'checkout-rules', Icon: Package, label: 'Checkout rules', path: 'checkout-rules', requiredPermission: ['checkout_rules.view', 'checkout_rules.manage'] },
       { id: 'cod-protection', Icon: Package, label: 'COD protection', path: 'cod-protection', requiredPermission: 'settings.payments.manage' },
       { id: 'messaging', Icon: Package, label: 'WhatsApp & SMS', path: 'messaging', requiredPermission: 'marketing.manage' },
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
@@ -1463,6 +1465,22 @@ function OwnerBillingBanner() {
 // Stripe checkout code only ships when it's actually needed. ──
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
+// A seller owns many stores and each has its own plan: the gate must never trap them on the expired one, so its top bar carries
+// the store switcher (other stores keep working) and Log out.
+function GateEscapeBar({ storeId }: { storeId: string }) {
+  const { stores, loading } = useMyStores();
+  const logout = useLogout();
+  return (
+    <div className="flex items-center gap-2">
+      <StoreSwitcher stores={stores} loading={loading} currentStoreId={storeId} variant="light" compact />
+      <button type="button" onClick={() => void logout('/')}
+        className="rounded-lg border border-bone bg-white px-3 py-[7px] pointer-coarse:min-h-11 text-[12px] font-semibold text-charcoal hover:bg-cream cursor-pointer">
+        Log out
+      </button>
+    </div>
+  );
+}
+
 function TrialExpiredGateHost() {
   const { storeId } = useStoreWorkspace();
   const { pathname } = useLocation();
@@ -1480,7 +1498,7 @@ function TrialExpiredGateHost() {
 
   if (!isOwner || (status !== 'trial_ended' && status !== 'locked')) return null;
   if (pathname.endsWith('/plan-billing')) return null;
-  return <Suspense fallback={null}><PlanCheckoutFlow storeId={storeId} title="Your trial has expired. Select a plan." /></Suspense>;
+  return <Suspense fallback={null}><PlanCheckoutFlow storeId={storeId} title="Your trial has expired. Select a plan." headerExtra={<GateEscapeBar storeId={storeId} />} /></Suspense>;
 }
 
 // ── Trial billing pill — small, Shopify-style ("Get 3 months for
@@ -1701,6 +1719,8 @@ export function StoreLayout() {
   // Back/forward (POP) slides the page in from the left, a normal navigation from the right, like a native stack.
   const goingBack = useNavigationType() === 'POP';
   const { storeId: routeStoreId } = useParams<{ storeId: string }>();
+  // Remember the store the owner is working in, so the next login lands back here (unless its plan needs attention).
+  useEffect(() => { if (routeStoreId && !isStaffSession()) rememberStore(routeStoreId); }, [routeStoreId]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);
 
@@ -1728,7 +1748,7 @@ export function StoreLayout() {
              (see AdminAnnouncementsService.broadcast) — the seller sees them
              in the bell above, not a separate dismissable banner here. */}
           <ViewAsBanner />
-          <PlatformBillingBanner />
+          <PlatformBillingBanner key={routeStoreId} />
           {/* pb clears the whole tab bar: 62px flush bar + the ~31px the active
               bubble protrudes above it. */}
           <div data-lenis-prevent className="store-scroll flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-[100px] lg:pb-0">
@@ -1743,7 +1763,7 @@ export function StoreLayout() {
         </div>
       </div>
       <StoreBottomNav />
-      <TrialExpiredGateHost />
+      <TrialExpiredGateHost key={routeStoreId} />
     </StoreWorkspaceProvider>
   );
 }
