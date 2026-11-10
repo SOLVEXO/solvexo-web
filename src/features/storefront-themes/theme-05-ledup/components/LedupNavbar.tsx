@@ -76,7 +76,7 @@ export function LedupNavbar() {
               : <span className="whitespace-nowrap text-2xl font-bold tracking-tight" style={{ color: onDark ? '#fff' : 'var(--ld-accent)', transition: 'color .3s ease' }}>{store.name}</span>}
           </NavAnchor>
 
-          <nav aria-label={ts('nav.main', 'Main')} className="ld-glass-pill hidden lg:flex">
+          <nav aria-label={ts('nav.main', 'Main')} className="ld-glass-pill">
             {items.map(it => {
               const hasKids = it.children.length > 0;
               if (!hasKids) {
@@ -95,7 +95,7 @@ export function LedupNavbar() {
 
           <div className="flex items-center gap-2">
             {cta && (
-              <Link to={cta.link} className="ld-ctabtn hidden sm:inline-flex">{cta.label} <ArrowUpRight size={13} aria-hidden /></Link>
+              <Link to={cta.link} className="ld-ctabtn ld-cta-desktop">{cta.label} <ArrowUpRight size={13} aria-hidden /></Link>
             )}
             <button type="button" className="ld-iconbtn" aria-expanded={searchOpen} aria-label={ts('nav.search', 'Search')} onClick={() => { setMegaId(null); setSearchOpen(v => !v); }}>
               {searchOpen ? <X size={16} aria-hidden /> : <Search size={16} aria-hidden />}
@@ -108,7 +108,7 @@ export function LedupNavbar() {
               <ShoppingBag size={16} aria-hidden />
               {cartCount > 0 && <span className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold shadow-sm" style={{ color: 'var(--ld-accent)' }}>{cartCount > 99 ? '99+' : cartCount}</span>}
             </button>
-            <button type="button" className="ld-iconbtn lg:hidden" aria-expanded={mobileOpen} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => { setSearchOpen(false); setMobileOpen(v => !v); }}>
+            <button type="button" className="ld-iconbtn ld-burger" aria-expanded={mobileOpen} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => { setSearchOpen(false); setMobileOpen(v => !v); }}>
               {mobileOpen ? <X size={18} aria-hidden /> : <Menu size={18} aria-hidden />}
             </button>
           </div>

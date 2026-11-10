@@ -297,3 +297,29 @@
 .ld-hero-count::after { content: ""; height: 1px; width: 100%; background: currentColor; transform: scaleX(0); transition: transform .4s ease; }
 .ld-hero-count[aria-current="true"] { color: var(--ld-accent); }
 .ld-hero-count[aria-current="true"]::after { transform: scaleX(1); }
+
+/* ───────── responsive fixes: custom display rules must not override the Tailwind hidden/lg: classes ───────── */
+.ld-glass-pill { display: none; }
+@media (min-width: 1024px) { .ld-glass-pill { display: flex; } }
+.ld-cta-desktop { display: none; }
+@media (min-width: 640px) { .ld-cta-desktop { display: inline-flex; } }
+@media (min-width: 1024px) { .ld-burger { display: none; } }
+@media (max-width: 1023px) {
+  .ld-root main > div:first-of-type section[aria-roledescription="carousel"] { margin-top: -4.4rem; }
+  .ld-banner-wrap { margin-top: -4.4rem; }
+  .ld-banner { padding-top: 6rem; border-radius: 1.5rem; }
+  .ld-header { padding-top: 1rem; }
+  .ld-hero h1 { font-size: clamp(28px, 8vw, 44px) !important; }
+  .ld-mega-surface { flex-direction: column; gap: 2rem; padding: 2rem 1.5rem; }
+}
+@media (max-width: 640px) {
+  .ld-sortpop { inset-inline-end: auto; inset-inline-start: 0; }
+  .ld-search-inner { flex-wrap: wrap; }
+  .ld-preloader-mark img { max-width: 70vw; }
+  .ld-footer-wrapper { border-top-left-radius: 2rem; border-top-right-radius: 2rem; }
+}
+.ld-root img, .ld-root video { max-width: 100%; }
+
+/* the mobile filter button uses Tailwind md:hidden, which the custom .ld-iconbtn display would override */
+@media (min-width: 768px) { .ld-iconbtn.md\:hidden { display: none; } }
+@media (min-width: 1024px) { .ld-iconbtn.lg\:hidden { display: none; } }
