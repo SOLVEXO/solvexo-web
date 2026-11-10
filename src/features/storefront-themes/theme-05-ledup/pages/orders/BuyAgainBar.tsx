@@ -15,7 +15,7 @@ export function BuyAgainBar({ order }: { order: OrderDetail }) {
       <div className="flex flex-wrap items-center gap-3">
         <PillButton loading={buyAgain.busy} onClick={() => buyAgain.run(order)}>{ts('pg.buy_again', 'Buy again')}</PillButton>
         {canRequestReturn(order) && (
-          <Link to="/returns" className="tx-btn" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.requestReturn', 'Request a return')}</Link>
+          <Link to="/returns" className="lb-btn" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.requestReturn', 'Request a return')}</Link>
         )}
       </div>
       <div aria-live="polite" className="flex flex-col gap-2">

@@ -20,11 +20,11 @@ export function LedupArrowButton({ variant = 'primary', children, fullWidth, loa
   if (arrow) {
     const cta = ctaLook(variant);
     return (
-      <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} className={`tx-cta ${className ?? ''}`} style={{ ...cta.button, ...width, ...style }}>
+      <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} className={`lb-cta ${className ?? ''}`} style={{ ...cta.button, ...width, ...style }}>
         <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
-        <span className="tx-cta-icon" style={cta.chip}><ArrowUpRight size={16} className="tx-flip-rtl" /></span>
+        <span className="lb-cta-icon" style={cta.chip}><ArrowUpRight size={16} className="lb-flip-rtl" /></span>
       </button>
     );
   }
-  return <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} className={`tx-pill ${className ?? ''}`} style={{ ...look, ...width, ...style }}>{children}</button>;
+  return <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} className={`lb-pill ${className ?? ''}`} style={{ ...look, ...width, ...style }}>{children}</button>;
 }

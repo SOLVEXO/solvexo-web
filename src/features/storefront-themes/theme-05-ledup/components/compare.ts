@@ -3,11 +3,11 @@ import type { PublicStoreProduct } from '@/api/services/store';
 
 /** Client-side product compare: up to four products, kept in this browser only (no backend). Only fields the product list already returns are stored. */
 export const COMPARE_MAX = 4;
-const EVENT = 'tx-compare-change';
+const EVENT = 'lb-compare-change';
 
 export type CompareProduct = Pick<PublicStoreProduct, '_id' | 'slug' | 'name' | 'vendor' | 'tags' | 'averageRating' | 'defaultVariantPrice' | 'compareAtPrice' | 'inStock' | 'variantId' | 'type' | 'productType'> & { image?: string; options: { name: string; values: string[] }[] };
 
-const keyOf = (storeId: string) => `tx-compare:${storeId}`;
+const keyOf = (storeId: string) => `lb-compare:${storeId}`;
 
 /** The small, serialisable slice of a listed product that the compare table needs. */
 export function toCompareProduct(p: PublicStoreProduct): CompareProduct {

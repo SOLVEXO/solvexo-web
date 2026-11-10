@@ -38,7 +38,7 @@ function CopyCode({ code }: { code: string }) {
   };
   return (
     <div className="flex flex-col items-center gap-2">
-      <button type="button" onClick={copy} className="tx-btn inline-flex cursor-pointer items-center gap-2"
+      <button type="button" onClick={copy} className="lb-btn inline-flex cursor-pointer items-center gap-2"
         aria-label={ts('pg.copy_code_code', 'Copy code {{code}}', { code })}
         style={{ background: 'transparent', color: 'inherit', border: '1.5px solid currentColor', borderRadius: t.buttonRadiusPx }}>
         {copied ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
@@ -55,9 +55,9 @@ function GiftCardBody({ card }: { card: GiftCardView }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="mx-auto w-full max-w-[560px] overflow-hidden text-center" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.cardRadiusPx, padding: 'clamp(24px, 5vw, 44px)', opacity: inactive ? 0.6 : 1 }}>
-        <p className="tx-bidi m-0 inline-flex items-center gap-2 text-sm font-medium opacity-90"><Gift size={16} aria-hidden />{ts('pg.gift_card_from_store', 'A gift card from {{store}}', { store: card.storeName })}</p>
+        <p className="lb-bidi m-0 inline-flex items-center gap-2 text-sm font-medium opacity-90"><Gift size={16} aria-hidden />{ts('pg.gift_card_from_store', 'A gift card from {{store}}', { store: card.storeName })}</p>
         <p className="m-0 mt-5 text-[clamp(40px,9vw,64px)] font-semibold leading-none tracking-tight" style={{ fontFamily: t.fonts.display }}>{moneyText(card.balance, card.currency)}</p>
-        {card.message && <p className="tx-bidi m-0 mt-5 text-base italic opacity-90">“<bdi>{card.message}</bdi>”</p>}
+        {card.message && <p className="lb-bidi m-0 mt-5 text-base italic opacity-90">“<bdi>{card.message}</bdi>”</p>}
         <p dir="ltr" className="m-0 mt-7 select-all text-[clamp(20px,5vw,28px)] font-semibold tracking-[0.12em]" aria-label={ts('checkout.giftCardCode', 'Gift card code')}>{card.code}</p>
         {!inactive && <div className="mt-5"><CopyCode code={card.code} /></div>}
       </div>
@@ -70,7 +70,7 @@ function GiftCardBody({ card }: { card: GiftCardView }) {
           </Card>
         )}
       <div className="text-center">
-        <Link to="/" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>
+        <Link to="/" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>
       </div>
     </div>
   );
@@ -91,7 +91,7 @@ export function LedupGiftCardViewPage() {
         <ErrorState message={ts('pg.we_could_not_load_this_gift_card', 'We could not load this gift card.')} onRetry={retry} />
       ) : !card ? (
         <EmptyState icon={<Gift size={24} />} title={ts('pg.gift_card_not_found', 'We could not find this gift card')} text={ts('pg.gift_card_link_invalid', 'This link may be invalid or expired. Check the link in your gift card email.')}
-          action={<Link to="/" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>} />
+          action={<Link to="/" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>} />
       ) : (
         <GiftCardBody card={card} />
       )}

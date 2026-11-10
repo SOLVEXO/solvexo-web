@@ -31,7 +31,7 @@ export function LedupNotificationsPage() {
       actions={signedIn && unreadCount > 0 ? <PillButton variant="outline" onClick={() => void markAllAsRead()} style={{ height: 40, padding: '0 18px' }}><CheckCheck size={16} aria-hidden />{ts('pg.mark_all_as_read', 'Mark all as read')}</PillButton> : undefined}>
       {guest ? null : !signedIn ? (
         <EmptyState icon={<BellOff size={24} aria-hidden />} title={ts('pg.sign_in_to_see_notifications', 'Sign in to see notifications')} text={ts('pg.order_updates_and_replies_from_the_store', 'Order updates and replies from the store show up here.')}
-          action={<Link to="/login?redirect=%2Fnotifications" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />
+          action={<Link to="/login?redirect=%2Fnotifications" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />
       ) : (
         <>
           <div role="group" aria-label={ts('pg.filter_notifications', 'Filter notifications')} className="mb-5 flex gap-2">

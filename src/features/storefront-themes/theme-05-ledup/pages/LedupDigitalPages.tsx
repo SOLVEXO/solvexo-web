@@ -73,7 +73,7 @@ function Library_() {
             <div className="mb-3 flex items-center gap-3">
               {it.image && <img src={it.image} alt="" className="size-14 object-cover" style={{ borderRadius: t.fieldRadiusPx }} />}
               <div className="min-w-0 flex-1">
-                <p className="m-0 text-base font-semibold tx-bidi">{it.name}</p>
+                <p className="m-0 text-base font-semibold lb-bidi">{it.name}</p>
                 <p className="m-0 text-[13px]" style={muted}>
                   {it.downloadLimit === 'unlimited' ? ts('dg.unlimited_downloads', 'Unlimited downloads') : ts('dg.downloads_used', '{{used}} of {{limit}} downloads used', { used: it.downloadsUsed, limit: it.downloadLimit })}
                   {it.expiresAt ? ` · ${ts('dg.expires_on', 'expires {{date}}', { date: day(it.expiresAt) })}` : ''}
@@ -84,9 +84,9 @@ function Library_() {
               {it.files.map((f) => (
                 <li key={f.fileIndex} className="flex flex-wrap items-center gap-3 py-2" style={{ borderTop: `1px solid ${t.colors.border}` }}>
                   <span className="min-w-0 flex-1 text-sm">
-                    <span className="tx-bidi">{f.label || f.name}</span>{f.version && <bdi style={muted}> v{f.version}</bdi>} {isRecent(f.updatedAt) && <StatusPill tone="good">{ts('dg.updated', 'Updated')}</StatusPill>}
+                    <span className="lb-bidi">{f.label || f.name}</span>{f.version && <bdi style={muted}> v{f.version}</bdi>} {isRecent(f.updatedAt) && <StatusPill tone="good">{ts('dg.updated', 'Updated')}</StatusPill>}
                     <bdi style={muted}> {mb(f.size)}</bdi>
-                    {isRecent(f.updatedAt) && f.changelog && <span className="block text-xs tx-bidi" style={muted}>{f.changelog}</span>}
+                    {isRecent(f.updatedAt) && f.changelog && <span className="block text-xs lb-bidi" style={muted}>{f.changelog}</span>}
                   </span>
                   <PillButton variant="outline" disabled={busy === `${it.productId}:${f.fileIndex}`} onClick={() => void download(it.productId, f.fileIndex)}><Download size={15} aria-hidden /> {ts('dg.download', 'Download')}</PillButton>
                 </li>
@@ -128,7 +128,7 @@ function RenewalPayments({ storeId }: { storeId: string }) {
           return (
             <li key={i.id}><Card className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="m-0 text-base font-semibold tx-bidi">{i.planName}</p>
+                <p className="m-0 text-base font-semibold lb-bidi">{i.planName}</p>
                 <StatusPill tone={i.status === 'overdue' ? 'bad' : i.status === 'submitted' ? 'good' : 'warn'}>{statusText(i.status)}</StatusPill>
               </div>
               <p className="m-0 text-sm" style={muted}>{ts('dg.invoice_amount', 'Amount: {{amount}}', { amount: `${i.currency} ${i.amount}` })} · {ts('dg.invoice_due', 'Due {{date}}', { date: day(i.dueAt) })}</p>
@@ -144,7 +144,7 @@ function RenewalPayments({ storeId }: { storeId: string }) {
                   <div>
                     <p className="m-0 mb-1 text-sm font-medium">{ts('dg.how_to_pay', 'How to pay')}</p>
                     {i.instructions.length === 0 ? <p className="m-0 text-sm" style={muted}>{ts('dg.no_instructions', 'The store has not added payment details yet. Please contact the store.')}</p> : (
-                      <ul className="m-0 flex list-none flex-col gap-2 p-0">{i.instructions.map((x, k) => <li key={k} className="text-sm"><b className="tx-bidi">{x.label}</b><span className="tx-bidi block whitespace-pre-line" style={muted}>{x.details}</span></li>)}</ul>
+                      <ul className="m-0 flex list-none flex-col gap-2 p-0">{i.instructions.map((x, k) => <li key={k} className="text-sm"><b className="lb-bidi">{x.label}</b><span className="lb-bidi block whitespace-pre-line" style={muted}>{x.details}</span></li>)}</ul>
                     )}
                   </div>
                   <Field label={ts('dg.reference', 'Transaction reference')}>{(p) => <TextInput {...p} maxLength={100} value={f.reference} onChange={(e) => patch(i.id, { reference: e.target.value })} />}</Field>
@@ -212,7 +212,7 @@ function Memberships_() {
                   const switches = plans.filter((x) => p && x.type === 'recurring' && x._id !== s.planId);
                   return (
                     <li key={s._id}><Card>
-                      <div className="flex flex-wrap items-center gap-2"><p className="m-0 text-base font-semibold tx-bidi">{p?.name ?? ts('dg.plan', 'Plan')}</p>
+                      <div className="flex flex-wrap items-center gap-2"><p className="m-0 text-base font-semibold lb-bidi">{p?.name ?? ts('dg.plan', 'Plan')}</p>
                         <StatusPill tone={s.status === 'active' || s.status === 'trialing' ? 'good' : s.status === 'past_due' ? 'warn' : 'neutral'}>{statusText(s.status)}</StatusPill></div>
                       {s.awaitingFirstPayment && <p className="m-0 mt-1 text-sm" style={muted}>{ts('dg.waiting_payment', 'Waiting for the store to confirm your payment.')}</p>}
                       {s.currentPeriodEnd && <p className="m-0 mt-1 text-sm" style={muted}>{s.cancelAtPeriodEnd ? ts('dg.ends_on', 'Ends on {{date}}', { date: day(s.currentPeriodEnd) }) : ts('dg.renews_on', 'Renews on {{date}}', { date: day(s.currentPeriodEnd) })}</p>}
@@ -241,13 +241,13 @@ function Memberships_() {
                   const has = subs.some((s) => s.planId === p._id && LIVE.includes(s.status));
                   return (
                     <li key={p._id}><Card className="flex h-full flex-col gap-2">
-                      <p className="m-0 text-base font-semibold tx-bidi">{p.name}</p>
+                      <p className="m-0 text-base font-semibold lb-bidi">{p.name}</p>
                       {p.autoRenew && <p className="m-0 text-xs" style={muted}>{ts('dg.auto_renews', 'Renews automatically by card. Cancel any time.')}</p>}
                       {!p.autoRenew && p.type !== 'free' && <p className="m-0 text-xs" style={muted}>{ts('dg.manual_plan_note', 'You pay the store directly for each period.')}</p>}
                       <p className="m-0 text-sm font-medium">{price(p)}{p.trialDays > 0 ? ` · ${ts('dg.trial_days', '{{n}}-day trial', { n: p.trialDays })}` : ''}</p>
-                      {p.description && <p className="m-0 text-sm tx-bidi" style={muted}>{p.description}</p>}
-                      {p.benefits.length > 0 && <ul className="m-0 ps-5 text-sm">{p.benefits.map((b) => <li key={b} className="tx-bidi">{b}</li>)}</ul>}
-                      <div className="mt-auto pt-3">{p.autoRenew ? <PillButton full disabled={busy || has} onClick={() => void run(async () => { window.location.assign((await apiStartCheckout(storeId, p._id)).url); })}>{has ? ts('dg.joined', 'Joined') : ts('dg.subscribe', 'Subscribe')}</PillButton> : p.type !== 'free' && p.productSlug ? <Link to={`/product/${p.productSlug}`} className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx, width: '100%' }}>{has ? ts('dg.renew', 'Renew') : ts('dg.buy', 'Buy')}</Link> : <PillButton full disabled={busy || has} onClick={() => void run(() => apiJoinPlan(storeId, p._id), p.type === 'free' ? ts('dg.you_are_in', 'You are in.') : ts('dg.request_sent', 'Request sent. The store will confirm your payment.'))}>{has ? ts('dg.joined', 'Joined') : ts('dg.join', 'Join')}</PillButton>}</div>
+                      {p.description && <p className="m-0 text-sm lb-bidi" style={muted}>{p.description}</p>}
+                      {p.benefits.length > 0 && <ul className="m-0 ps-5 text-sm">{p.benefits.map((b) => <li key={b} className="lb-bidi">{b}</li>)}</ul>}
+                      <div className="mt-auto pt-3">{p.autoRenew ? <PillButton full disabled={busy || has} onClick={() => void run(async () => { window.location.assign((await apiStartCheckout(storeId, p._id)).url); })}>{has ? ts('dg.joined', 'Joined') : ts('dg.subscribe', 'Subscribe')}</PillButton> : p.type !== 'free' && p.productSlug ? <Link to={`/product/${p.productSlug}`} className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx, width: '100%' }}>{has ? ts('dg.renew', 'Renew') : ts('dg.buy', 'Buy')}</Link> : <PillButton full disabled={busy || has} onClick={() => void run(() => apiJoinPlan(storeId, p._id), p.type === 'free' ? ts('dg.you_are_in', 'You are in.') : ts('dg.request_sent', 'Request sent. The store will confirm your payment.'))}>{has ? ts('dg.joined', 'Joined') : ts('dg.join', 'Join')}</PillButton>}</div>
                     </Card></li>
                   );
                 })}
@@ -299,12 +299,12 @@ function LessonCard({ storeId, courseId, lesson, onChange }: { storeId: string; 
   const [busy, setBusy] = useState(false);
   async function run(fn: () => Promise<void>) { setBusy(true); setError(null); try { await fn(); } catch (e) { setError(msg(e, generic())); } finally { setBusy(false); } }
 
-  if (lesson.locked) return <li><Card tone="soft" className="flex items-center gap-2 text-sm"><Lock size={15} aria-hidden /> <span className="tx-bidi">{lesson.title}</span><span style={muted}>· {lesson.unlockAt ? ts('dg.opens_on', 'opens {{date}}', { date: day(lesson.unlockAt) }) : ts('dg.opens_later', 'opens later')}</span></Card></li>;
+  if (lesson.locked) return <li><Card tone="soft" className="flex items-center gap-2 text-sm"><Lock size={15} aria-hidden /> <span className="lb-bidi">{lesson.title}</span><span style={muted}>· {lesson.unlockAt ? ts('dg.opens_on', 'opens {{date}}', { date: day(lesson.unlockAt) }) : ts('dg.opens_later', 'opens later')}</span></Card></li>;
   return (
     <li><Card className="flex flex-col gap-3">
-      <div className="flex items-center gap-2"><p className="m-0 text-base font-semibold tx-bidi">{lesson.title}</p>{lesson.completed && <StatusPill tone="good">{lesson.score != null ? ts('dg.done_score', 'Done · {{score}}%', { score: lesson.score }) : ts('dg.done', 'Done')}</StatusPill>}</div>
+      <div className="flex items-center gap-2"><p className="m-0 text-base font-semibold lb-bidi">{lesson.title}</p>{lesson.completed && <StatusPill tone="good">{lesson.score != null ? ts('dg.done_score', 'Done · {{score}}%', { score: lesson.score }) : ts('dg.done', 'Done')}</StatusPill>}</div>
       {error && <Notice tone="error">{error}</Notice>}
-      {lesson.type === 'text' && <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed tx-bidi">{lesson.text}</p>}
+      {lesson.type === 'text' && <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed lb-bidi">{lesson.text}</p>}
       {lesson.type === 'video' && (media ? <video src={media} controls controlsList="nodownload" className="w-full" style={{ borderRadius: t.fieldRadiusPx }} onContextMenu={(e) => e.preventDefault()} />
         : <PillButton variant="outline" disabled={busy} onClick={() => void run(async () => setMedia((await apiLessonMedia(storeId, courseId, lesson.id)).url))}><Play size={15} aria-hidden /> {ts('dg.play_video', 'Play video')}</PillButton>)}
       {lesson.type === 'file' && <PillButton variant="outline" disabled={busy} onClick={() => void run(async () => { window.open((await apiLessonMedia(storeId, courseId, lesson.id)).url, '_blank', 'noopener'); })}><Download size={15} aria-hidden /> <bdi>{lesson.fileName}</bdi></PillButton>}
@@ -312,9 +312,9 @@ function LessonCard({ storeId, courseId, lesson, onChange }: { storeId: string; 
         <div className="flex flex-col gap-4">
           {lesson.quiz.questions.map((q, qi) => (
             <fieldset key={qi} className="m-0 flex flex-col gap-2 border-0 p-0">
-              <legend className="mb-1 text-sm font-medium tx-bidi">{q.q}</legend>
+              <legend className="mb-1 text-sm font-medium lb-bidi">{q.q}</legend>
               {q.options.map((o, oi) => (
-                <label key={oi} className="flex items-center gap-2 text-sm"><input type="radio" name={`${lesson.id}-${qi}`} checked={answers[qi] === oi} onChange={() => setAnswers((a) => { const n = [...a]; n[qi] = oi; return n; })} style={{ accentColor: t.colors.accent }} /> <span className="tx-bidi">{o}</span></label>
+                <label key={oi} className="flex items-center gap-2 text-sm"><input type="radio" name={`${lesson.id}-${qi}`} checked={answers[qi] === oi} onChange={() => setAnswers((a) => { const n = [...a]; n[qi] = oi; return n; })} style={{ accentColor: t.colors.accent }} /> <span className="lb-bidi">{o}</span></label>
               ))}
             </fieldset>
           ))}
@@ -356,7 +356,7 @@ function Learn_() {
           <div className="flex flex-col gap-6">
             {outline.completed && <div><PillButton onClick={() => void apiOpenCertificate(storeId, outline.courseId).catch((e) => setOutlineError(msg(e, ts('dg.certificate_error', 'Could not open the certificate'))))}><GraduationCap size={16} aria-hidden /> {ts('dg.download_certificate', 'Download certificate')}</PillButton></div>}
             {outline.modules.map((m) => (
-              <section key={m.id}><h2 className="mb-3 text-lg font-semibold tx-bidi">{m.title}</h2>
+              <section key={m.id}><h2 className="mb-3 text-lg font-semibold lb-bidi">{m.title}</h2>
                 <ul className="m-0 flex list-none flex-col gap-3 p-0">{m.lessons.map((l) => <LessonCard key={l.id} storeId={storeId} courseId={outline.courseId} lesson={l} onChange={() => void loadOutline()} />)}</ul>
               </section>
             ))}
@@ -373,7 +373,7 @@ function Learn_() {
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {list.data.map((c) => (
               <li key={c.courseId}><Card className="flex flex-wrap items-center gap-3">
-                <div className="min-w-0 flex-1"><p className="m-0 text-base font-semibold tx-bidi">{c.title}</p><p className="m-0 text-[13px]" style={muted}>{ts('dg.lessons_progress', '{{done}} of {{total}} lessons', { done: c.done, total: c.lessons })}{c.completed ? ` · ${ts('dg.completed', 'completed')}` : ''}</p></div>
+                <div className="min-w-0 flex-1"><p className="m-0 text-base font-semibold lb-bidi">{c.title}</p><p className="m-0 text-[13px]" style={muted}>{ts('dg.lessons_progress', '{{done}} of {{total}} lessons', { done: c.done, total: c.lessons })}{c.completed ? ` · ${ts('dg.completed', 'completed')}` : ''}</p></div>
                 <PillButton onClick={() => setParams({ course: c.courseId })}>{c.done ? ts('dg.continue', 'Continue') : ts('dg.start', 'Start')}</PillButton>
               </Card></li>
             ))}

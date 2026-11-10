@@ -56,7 +56,7 @@ export function ReturnItemRow({ orderId, item }: { orderId: string; item: OrderL
       <ReturnProgress status={status} rejectReason={item.returnRejectReason} />
       {hint && <p className="m-0 mt-2 text-[13px]" style={{ color: t.colors.inkMuted }}>{hint}</p>}
       {label && status === 'approved' && (
-        <div className="mt-3 rounded-[var(--tx-card-r)] p-3.5" style={{ background: t.colors.bgAlt }}>
+        <div className="mt-3 rounded-[var(--lb-card-r)] p-3.5" style={{ background: t.colors.bgAlt }}>
           <a href={label.labelUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold underline" style={{ color: t.colors.ink }}>{ts('pg.download_return_label', 'Download return label')}</a>
           {(label.carrier || label.trackingNumber) && <p className="m-0 mt-1 text-[13px]" style={{ color: t.colors.inkMuted }}>{[label.carrier, label.trackingNumber].filter(Boolean).join(' · ')}</p>}
         </div>

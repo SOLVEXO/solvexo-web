@@ -66,13 +66,13 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
         <p role="alert" className="m-0 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', "We couldn't load these products.")} <button type="button" onClick={retry} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : (
         <div className="relative">
-          <button type="button" aria-label={ts('pg.previous', 'Previous')} onClick={() => nudge(-1)} className={`${arrow} start-0 -translate-x-1/2`} style={{ background: colors.bgAlt, color: colors.ink }}><ChevronLeft size={18} className="tx-flip-rtl" /></button>
-          <div ref={scroller} className="tx-hide-scroll flex snap-x gap-3 overflow-x-auto" aria-busy={items === null}>
+          <button type="button" aria-label={ts('pg.previous', 'Previous')} onClick={() => nudge(-1)} className={`${arrow} start-0 -translate-x-1/2`} style={{ background: colors.bgAlt, color: colors.ink }}><ChevronLeft size={18} className="lb-flip-rtl" /></button>
+          <div ref={scroller} className="lb-hide-scroll flex snap-x gap-3 overflow-x-auto" aria-busy={items === null}>
             {items === null
               ? Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-[340px] w-[200px] shrink-0 animate-pulse" style={{ background: colors.bgAlt }} />)
               : items.map(p => <div key={p._id} className="w-[200px] shrink-0 snap-start sm:w-[220px]"><LedupProductCard product={p} currency={currency} /></div>)}
           </div>
-          <button type="button" aria-label={ts('pg.next', 'Next')} onClick={() => nudge(1)} className={`${arrow} end-0 translate-x-1/2`} style={{ background: colors.bgAlt, color: colors.ink }}><ChevronRight size={18} className="tx-flip-rtl" /></button>
+          <button type="button" aria-label={ts('pg.next', 'Next')} onClick={() => nudge(1)} className={`${arrow} end-0 translate-x-1/2`} style={{ background: colors.bgAlt, color: colors.ink }}><ChevronRight size={18} className="lb-flip-rtl" /></button>
         </div>
       )}
     </LedupSectionShell>
@@ -130,7 +130,7 @@ export function DealButton({ label, link }: { label: string; link: any }) {
   const target = resolveLink(link);
   if (target.to) return <LedupLinkButton to={target.to}>{label}</LedupLinkButton>;
   if (!target.href) return null;
-  return <a href={target.href} className="tx-btn" style={{ ...ledupButtonStyle('primary'), borderRadius: t.buttonRadiusPx }} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{label}</a>;
+  return <a href={target.href} className="lb-btn" style={{ ...ledupButtonStyle('primary'), borderRadius: t.buttonRadiusPx }} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{label}</a>;
 }
 custom.set('tech.deal_banner', (section, _blocks, colors) => {
   const s = section.settings;

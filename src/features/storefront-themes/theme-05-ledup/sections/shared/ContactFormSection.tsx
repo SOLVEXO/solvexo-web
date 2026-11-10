@@ -61,7 +61,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
               <input id={`${uid}-website`} tabIndex={-1} autoComplete="off" value={values.website} onChange={set('website')} />
             </div>
             {status === 'error' && <p role="alert" className="m-0 text-sm" style={{ color: t.colors.danger }}>{error}</p>}
-            <button type="submit" disabled={status === 'sending'} aria-busy={status === 'sending' || undefined} className="tx-pill self-center"
+            <button type="submit" disabled={status === 'sending'} aria-busy={status === 'sending' || undefined} className="lb-pill self-center"
               style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx, minWidth: 180 }}>
               {status === 'sending' && <Loader2 size={16} className="animate-spin" aria-hidden />}
               {status === 'sending' ? tt('sections.sending', 'Sending...') : (s.buttonLabel || tt('sections.sendMessage', 'Send message'))}

@@ -22,7 +22,7 @@ export function RelatedProductsSection({ section, colors }: SharedSectionProps) 
   const cols = columnCount(s.columns, 4);
   return (
     <SectionShell colors={colors} heading={starterHeading(s.heading)}>
-      <div className="grid tx-grid-gap" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
+      <div className="grid lb-grid-gap" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${Math.floor(1100 / cols)}px), 1fr))` }}>
         {items.map(p => <LedupProductCard key={p._id} product={p} currency={currency} />)}
       </div>
     </SectionShell>

@@ -60,7 +60,7 @@ export function LedupCheckoutReturnPage() {
           <span className="grid size-16 place-items-center rounded-full" style={{ background: `color-mix(in srgb, ${t.colors.danger} 12%, transparent)`, color: t.colors.danger }}><XCircle size={30} aria-hidden /></span>
           <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-medium leading-[1.1] tracking-tight"><AccentText text={ts('h.payment_not_completed', 'Payment wasn\'t *completed*')} size="1em" /></h1>
           <p className="m-0 max-w-[440px] text-base" style={{ color: t.colors.inkMuted }}>{ts('pg.nothing_was_charged_for_an_order_your', 'Nothing was charged for an order - your cart is still here, so you can try again or pick a different payment method.')}</p>
-          <Link to="/checkout" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
+          <Link to="/checkout" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
         </div>
       </Page>
     );
@@ -83,7 +83,7 @@ export function LedupCheckoutReturnPage() {
         {poll.timedOut && (
           <div className="flex flex-wrap items-center justify-center gap-3">
             <PillButton onClick={poll.start}>{ts('checkout.checkAgain', 'Check again')}</PillButton>
-            <Link to="/checkout" className="tx-btn" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
+            <Link to="/checkout" className="lb-btn" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('pg.back_to_checkout', 'Back to checkout')}</Link>
           </div>
         )}
       </div>

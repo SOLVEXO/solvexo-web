@@ -168,7 +168,7 @@ function OrdersContent() {
     <LedupAccountLayout title={ts('account.orders', 'My orders')}>
       {loading ? <div role="status" aria-label={ts('pg.loading_orders', 'Loading orders')}><SkeletonBlock h={48} rows={4} /></div>
         : error ? <ErrorState message={ts('pg.we_could_not_load_your_orders', 'We could not load your orders.')} onRetry={retry} />
-        : orders.length === 0 ? <EmptyState icon={<Package size={24} aria-hidden />} title={ts('orders.none', 'No orders yet')} text={ts('pg.when_you_place_an_order_it_will_show_up_', 'When you place an order it will show up here.')} action={<Link to="/search" className="tx-btn no-underline" style={{ background: t.colors.accent, color: t.colors.accentInk, borderColor: t.colors.accent, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>} />
+        : orders.length === 0 ? <EmptyState icon={<Package size={24} aria-hidden />} title={ts('orders.none', 'No orders yet')} text={ts('pg.when_you_place_an_order_it_will_show_up_', 'When you place an order it will show up here.')} action={<Link to="/search" className="lb-btn no-underline" style={{ background: t.colors.accent, color: t.colors.accentInk, borderColor: t.colors.accent, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>} />
         : <><OrdersTable orders={orders} /><LedupPager page={page} totalPages={totalPages} onChange={setPage} /></>}
     </LedupAccountLayout>
   );

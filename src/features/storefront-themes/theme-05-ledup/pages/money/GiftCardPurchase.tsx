@@ -52,7 +52,7 @@ export function GiftCardPurchase({ settings, storeId, storeName }: { settings: G
             ? ts('gift.willBeEmailed', 'The gift card code will be emailed to {{email}} on {{date}}.', { email: email.trim(), date: sendOn })
             : ts('pg.the_gift_card_code_is_being_emailed_to', 'The gift card code is being emailed to {{email}}.', { email: email.trim() }))
           : ts('gift.emailedToYou', 'The gift card code is being emailed to you. Check your inbox (and spam folder) in a few minutes.')}
-        action={<Link to="/search" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.keep_shopping', 'Keep shopping')}</Link>} />
+        action={<Link to="/search" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.keep_shopping', 'Keep shopping')}</Link>} />
     );
   }
 

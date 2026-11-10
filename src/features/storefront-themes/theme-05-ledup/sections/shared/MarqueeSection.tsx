@@ -25,22 +25,22 @@ export function MarqueeSection({ section, blocks, colors }: SharedSectionProps) 
       : <a href={target.href} className="no-underline" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{text}</a>;
     return (
       <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
-        <span className="inline-flex items-center gap-10 pr-10">{inner}<span aria-hidden className="tx-serif text-2xl" style={{ color: colors.inkMuted }}>*</span></span>
+        <span className="inline-flex items-center gap-10 pr-10">{inner}<span aria-hidden className="lb-serif text-2xl" style={{ color: colors.inkMuted }}>*</span></span>
       </PreviewBlock>
     );
   });
-  const cls = `tx-mq-${uid}`;
+  const cls = `lb-mq-${uid}`;
   return (
     // dir="ltr" must sit on the clipping container: an RTL parent would right-align the belt and push it off screen.
     <section className={`${cls} overflow-hidden py-5`} style={{ background: colors.bgAlt }} dir="ltr">
       <style>{`
-        .${cls} .tx-mq-track{display:flex;width:max-content;animation:tx-mq ${speed}s linear infinite;animation-direction:${reverse ? 'reverse' : 'normal'}}
-        ${pause ? `.${cls}:hover .tx-mq-track{animation-play-state:paused}` : ''}
-        @keyframes tx-mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-        @media (prefers-reduced-motion:reduce){.${cls} .tx-mq-track{animation:none}}
+        .${cls} .lb-mq-track{display:flex;width:max-content;animation:lb-mq ${speed}s linear infinite;animation-direction:${reverse ? 'reverse' : 'normal'}}
+        ${pause ? `.${cls}:hover .lb-mq-track{animation-play-state:paused}` : ''}
+        @keyframes lb-mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+        @media (prefers-reduced-motion:reduce){.${cls} .lb-mq-track{animation:none}}
       `}</style>
       {/* The belt always runs left-to-right so the loop has no gap in an RTL page; each text sets its own direction. */}
-      <div className="tx-mq-track">
+      <div className="lb-mq-track">
         <div className="flex">{items}{items}</div>
         <div className="flex" aria-hidden>{items}{items}</div>
       </div>

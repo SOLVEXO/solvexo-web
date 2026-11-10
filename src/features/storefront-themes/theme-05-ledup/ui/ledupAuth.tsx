@@ -162,7 +162,7 @@ export function LedupSocialSignIn({ providers, onStart, loading, disabled, divid
       </div>
       <div className="flex flex-col gap-2.5" aria-busy={loading || undefined}>
         {providers.map(p => (
-          <button key={p} type="button" disabled={blocked} onClick={() => onStart(p)} className="tx-btn tx-btn-block"
+          <button key={p} type="button" disabled={blocked} onClick={() => onStart(p)} className="lb-btn lb-btn-block"
             style={{ background: t.colors.bg, color: t.colors.ink, borderColor: t.colors.borderStrong, borderRadius: t.buttonRadiusPx, opacity: blocked ? 0.6 : 1 }}>
             {loading ? <Loader2 size={16} className="animate-spin" aria-hidden /> : p === 'google' ? <GoogleMark /> : <FacebookMark />}
             {ts('pg.continue_with_provider', 'Continue with {{provider}}', { provider: p === 'google' ? 'Google' : 'Facebook' })}

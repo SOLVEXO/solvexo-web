@@ -10,9 +10,9 @@ export function ledupButtonStyle(variant: LedupButtonVariant): CSSProperties {
   return { background: t.colors.accent, color: t.colors.accentInk, borderColor: t.colors.accent };
 }
 
-/** CSS variables the tx- classes read; set on the root wrapper so merchant colours flow into the stylesheet. */
+/** CSS variables the lb- classes read; set on the root wrapper so merchant colours flow into the stylesheet. */
 export function ledupCssVars(): CSSProperties {
-  return { '--tx-bg': t.colors.bg, '--tx-border': t.colors.border, '--tx-muted': t.colors.inkMuted, '--tx-accent': t.colors.accent, '--tx-btn-h': t.buttonHeightPx, '--tx-field-r': t.fieldRadiusPx, '--tx-card-r': t.cardRadiusPx } as CSSProperties;
+  return { '--lb-bg': t.colors.bg, '--lb-border': t.colors.border, '--lb-muted': t.colors.inkMuted, '--lb-accent': t.colors.accent, '--lb-btn-h': t.buttonHeightPx, '--lb-field-r': t.fieldRadiusPx, '--lb-card-r': t.cardRadiusPx } as CSSProperties;
 }
 
 /** Shared look of text inputs, selects and textareas (also used by the phone field). */

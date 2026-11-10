@@ -25,7 +25,7 @@ export function LogoListSection({ section, blocks, colors }: SharedSectionProps)
   const height = Math.min(120, Math.max(16, Number(section.settings.logoHeight) || 40));
   return (
     <SectionShell colors={colors} heading={section.settings.heading} align="center">
-      <div className="flex flex-wrap items-center justify-center rounded-[var(--tx-card-r)] px-6 py-8 md:px-12" style={{ gap: '28px 56px', background: colors.bgAlt }}>
+      <div className="flex flex-wrap items-center justify-center rounded-[var(--lb-card-r)] px-6 py-8 md:px-12" style={{ gap: '28px 56px', background: colors.bgAlt }}>
         {blocks.map((b, i) => (
           <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
             <Logo block={b} height={height} grayscale={section.settings.grayscale !== false} />

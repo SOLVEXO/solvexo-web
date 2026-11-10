@@ -62,7 +62,7 @@ function LedupCheckoutPageContent() {
       <Page narrow>
         <EmptyState
           icon={<ShoppingBag size={24} aria-hidden />} title={ts('cart.cartEmpty', 'Your cart is empty')} text={ts('checkout.cartEmptyBefore', 'Add something to your cart before checking out.')}
-          action={<Link to="/search" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>}
+          action={<Link to="/search" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>}
         />
       </Page>
     );

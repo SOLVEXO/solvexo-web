@@ -31,7 +31,7 @@ function OrderDetail() {
       ) : error ? (
         <ErrorState message={ts('pg.we_could_not_load_this_order', 'We could not load this order.')} onRetry={retry} />
       ) : !order ? (
-        <EmptyState icon={<Package size={24} />} title={ts('orders.notFound', 'Order not found')} text={ts('pg.it_may_belong_to_another_account_or_no_l', 'It may belong to another account, or no longer exist.')} action={<Link to="/orders" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('orders.backToOrders', 'Back to orders')}</Link>} />
+        <EmptyState icon={<Package size={24} />} title={ts('orders.notFound', 'Order not found')} text={ts('pg.it_may_belong_to_another_account_or_no_l', 'It may belong to another account, or no longer exist.')} action={<Link to="/orders" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('orders.backToOrders', 'Back to orders')}</Link>} />
       ) : (
         <OrderView order={order} mode="account" actions={<BuyAgainBar order={order} />} />
       )}

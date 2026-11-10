@@ -64,7 +64,7 @@ function LoginContent() {
         </LedupPanel>
         <LedupPanel heading={ts('auth.newCustomer', 'New customer?')} intro={ts('auth.newCustomerIntro', 'Creating an account has many benefits:')}>
           <Benefits />
-          <div className="mt-6"><Link to={withRedirect('/register', redirectTo)} className="tx-btn no-underline" style={{ background: t.colors.accent, color: t.colors.accentInk, borderColor: t.colors.accent, borderRadius: t.buttonRadiusPx }}>{ts('auth.createAnAccount', 'Create an account')}</Link></div>
+          <div className="mt-6"><Link to={withRedirect('/register', redirectTo)} className="lb-btn no-underline" style={{ background: t.colors.accent, color: t.colors.accentInk, borderColor: t.colors.accent, borderRadius: t.buttonRadiusPx }}>{ts('auth.createAnAccount', 'Create an account')}</Link></div>
         </LedupPanel>
       </div>
     </LedupPageFrame>
@@ -112,7 +112,7 @@ function RegisterContent() {
         </LedupPanel>
         <LedupPanel heading={ts('auth.haveAccountHeading', 'Already registered?')} intro={ts('auth.haveAccountIntro', 'Sign in to use your saved details.')}>
           <Benefits />
-          <div className="mt-6"><Link to={withRedirect('/login', redirectTo)} className="tx-btn no-underline" style={{ background: 'transparent', color: t.colors.accent, borderColor: t.colors.accent, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link></div>
+          <div className="mt-6"><Link to={withRedirect('/login', redirectTo)} className="lb-btn no-underline" style={{ background: 'transparent', color: t.colors.accent, borderColor: t.colors.accent, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link></div>
         </LedupPanel>
       </div>
     </LedupPageFrame>

@@ -38,12 +38,12 @@ function LedupWishlistPageContent() {
       actions={signedIn && count > 0 && !confirmClear ? <PillButton variant="outline" onClick={() => setConfirmClear(true)} style={{ height: 40, padding: '0 20px' }}>{ts('pg.clear_all', 'Clear all')}</PillButton> : undefined}>
       {guest ? null : !signedIn ? (
         <EmptyState icon={<Heart size={24} aria-hidden />} title={ts('pg.sign_in_to_use_your_wishlist', 'Sign in to use your wishlist')} text={ts('pg.save_products_you_love_and_find_them_her', 'Save products you love and find them here on any device.')}
-          action={<Link to="/login?redirect=%2Fwishlist" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />
+          action={<Link to="/login?redirect=%2Fwishlist" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('auth.signInLink', 'Sign in')}</Link>} />
       ) : loading ? (
         <div role="status" aria-label={ts('pg.loading_wishlist', 'Loading wishlist')}><SkeletonBlock h={170} rows={3} /></div>
       ) : count === 0 ? (
         <EmptyState icon={<Heart size={24} aria-hidden />} title={ts('pg.nothing_saved_yet', 'Nothing saved yet')} text={ts('pg.tap_the_heart_on_any_product_to_keep_it_', 'Tap the heart on any product to keep it here for later.')}
-          action={<Link to="/search" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.start_browsing', 'Start browsing')}</Link>} />
+          action={<Link to="/search" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.start_browsing', 'Start browsing')}</Link>} />
       ) : (
         <>
           {confirmClear && (

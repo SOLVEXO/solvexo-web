@@ -42,7 +42,7 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
   const s = block.settings;
   const adapt = !height;
   return (
-    <div className="relative w-full shrink-0 overflow-hidden" style={{ height, background: '#1b1b1b' }} aria-hidden={!active}>
+    <div className="relative w-full shrink-0 overflow-hidden" style={{ height, background: s.imageUrl ? '#1b1b1b' : 'radial-gradient(90% 120% at 75% 10%, #8a6a4d 0%, #4b423b 45%, #1f1b18 100%)' }} aria-hidden={!active}>
       {s.imageUrl && (
         <>
           {/* Whole picture: the same photo, blurred, fills the space around it so there are no empty bars. */}
@@ -142,8 +142,8 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
 
       {n > 1 && settings.showArrows === true && (
         <>
-          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className="absolute start-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronLeft size={20} className="tx-flip-rtl" /></button>
-          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className="absolute end-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronRight size={20} className="tx-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className="absolute start-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronLeft size={20} className="lb-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className="absolute end-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronRight size={20} className="lb-flip-rtl" /></button>
         </>
       )}
 

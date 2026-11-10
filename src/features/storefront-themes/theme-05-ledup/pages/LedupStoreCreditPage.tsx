@@ -43,7 +43,7 @@ function StoreCredit() {
               {data?.nextExpiry && <p className="m-0 mt-3 text-sm" style={{ opacity: 0.75 }}>{ts('pg.amount_expires_on_date', '{{amount}} expires on {{date}}', { amount: money(data.nextExpiry.amount, from), date: formatStoreCreditDate(data.nextExpiry.expiresAt) })}</p>}
             </div>
             <div className="flex items-center p-6 md:p-8" style={{ background: t.colors.accent, color: t.colors.accentInk }}>
-              <Link to="/cart" className="tx-btn" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.goToCart', 'Go to cart')}</Link>
+              <Link to="/cart" className="lb-btn" style={{ background: t.colors.bg, color: t.colors.ink, borderRadius: t.buttonRadiusPx }}>{ts('orders.goToCart', 'Go to cart')}</Link>
             </div>
           </div>
 

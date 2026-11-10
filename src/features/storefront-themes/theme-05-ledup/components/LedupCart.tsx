@@ -94,7 +94,7 @@ function MiniCart({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[60]">
       <button type="button" aria-label={ts('cart.close', 'Close cart')} onClick={onClose} className="absolute inset-0 border-0" style={{ background: 'rgba(2,2,3,.35)' }} />
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={ts('cart.myCart', 'My cart')} className="tx-pop absolute end-3 top-3 flex max-h-[calc(100dvh-24px)] w-[min(94vw,360px)] flex-col sm:end-6 sm:top-20"
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={ts('cart.myCart', 'My cart')} className="lb-pop absolute end-3 top-3 flex max-h-[calc(100dvh-24px)] w-[min(94vw,360px)] flex-col sm:end-6 sm:top-20"
         style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, border: `1px solid ${t.colors.border}`, boxShadow: '0 16px 40px -12px rgba(2,2,3,.35)' }}>
         <div className="flex items-start justify-between gap-3 p-4 text-center">
           <div className="flex-1">
@@ -123,7 +123,7 @@ function MiniCart({ onClose }: { onClose: () => void }) {
                   {cartLineNotes(i).preorder &&<p role="status" className="m-0 text-[11px]" style={{ color: t.colors.inkMuted }}>{cartLineNotes(i).preorder}</p>}
                   {(i.unavailable || i.b2bError) && <p role="alert" className="m-0 text-[11px]" style={{ color: t.colors.danger }}>{i.b2bError ?? ts('cart.itemUnavailableShort', 'No longer available')}</p>}
                 </div>
-                <button type="button" onClick={() => remove(i.productId, i.productVariantId)} disabled={busy === i.productVariantId} aria-label={ts('cart.removeItem', 'Remove {{name}}', { name: i.name })} className="tx-icon-btn disabled:opacity-40"><X size={14} aria-hidden /></button>
+                <button type="button" onClick={() => remove(i.productId, i.productVariantId)} disabled={busy === i.productVariantId} aria-label={ts('cart.removeItem', 'Remove {{name}}', { name: i.name })} className="lb-icon-btn disabled:opacity-40"><X size={14} aria-hidden /></button>
               </li>
             );
           })}

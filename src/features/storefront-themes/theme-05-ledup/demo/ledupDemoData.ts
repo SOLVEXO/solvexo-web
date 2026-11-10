@@ -8,6 +8,7 @@ export const LEDUP_DEMO_STORE = {
 };
 
 export const LEDUP_DEMO_SECTIONS: Section[] = [
+  { _id: 'd-hero0', type: 'hero', settings: { heightPreset: 'large', autoplay: false, pagination: 'dots' }, blocks: [{ _id: 'hs1', type: 'hero_slide', settings: { heading: 'Light that shapes every space', subheading: 'Professional LED lighting for architects, installers and designers.', ctaText: 'View products', contentAlign: 'left' } }] },
   { _id: 'd-hero', type: 'theme_section', settings: { sectionKey: 'ledup.category_tabs' }, blocks: [] },
   { _id: 'demo-products', type: 'featured_products', settings: { heading: 'Featured products', subheading: 'Efficient, high-performance lighting.' }, blocks: [] },
   {

@@ -101,7 +101,7 @@ export function SkeletonBlock({ h = 96, rows = 1 }: { h?: number; rows?: number 
 export function PillButton({ children, variant = 'primary', loading, full, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'outline' | 'ghost'; loading?: boolean; full?: boolean }) {
   const style: CSSProperties = variant === 'ghost' ? { background: 'transparent', color: t.colors.ink, borderColor: 'transparent' } : ledupButtonStyle(variant === 'outline' ? 'outline' : 'primary');
   return (
-    <button type="button" {...rest} disabled={rest.disabled || loading} aria-busy={loading || undefined} className={`tx-btn ${full ? 'tx-btn-block' : ''} ${rest.className ?? ''}`.trim()} style={{ ...style, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...rest.style }}>
+    <button type="button" {...rest} disabled={rest.disabled || loading} aria-busy={loading || undefined} className={`lb-btn ${full ? 'lb-btn-block' : ''} ${rest.className ?? ''}`.trim()} style={{ ...style, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...rest.style }}>
       {loading && <Loader2 size={16} className="animate-spin" aria-hidden />}{children}
     </button>
   );

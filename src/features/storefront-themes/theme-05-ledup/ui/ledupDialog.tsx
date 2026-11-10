@@ -36,7 +36,7 @@ export function LedupDialog({ title, onClose, children, footer, size = 'md' }: {
 
   return createPortal(
     <div role="presentation" className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-6" style={{ background: 'rgba(2,2,3,0.55)' }} onMouseDown={e => { if (e.target === e.currentTarget) closeRef.current(); }}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="tx-pop flex max-h-[92vh] w-full flex-col overflow-hidden outline-none"
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="lb-pop flex max-h-[92vh] w-full flex-col overflow-hidden outline-none"
         style={{ maxWidth: typeof size === 'number' ? size : SIZES[size], background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.cardRadiusPx, borderTop: `4px solid ${t.colors.accent}`, boxShadow: '0 24px 70px rgba(2,2,3,0.35)' }}>
         <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-4" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
           <h2 id={titleId} className="m-0 text-lg font-semibold" style={{ fontFamily: t.fonts.display }}>{title}</h2>
@@ -57,7 +57,7 @@ export function LedupConfirmDialog({ title, message, confirmLabel = ts('pg.word_
     <LedupDialog title={title} onClose={busy ? () => {} : onClose} size="sm"
       footer={<>
         <PillButton variant="outline" className="flex-1" disabled={busy} onClick={onClose}>{cancelLabel}</PillButton>
-        <button type="button" disabled={busy} aria-busy={busy || undefined} onClick={onConfirm} className="tx-btn flex-1" style={{ background: tone === 'destructive' ? t.colors.danger : t.colors.accent, color: '#FFFFFF', borderColor: tone === 'destructive' ? t.colors.danger : t.colors.accent, borderRadius: t.buttonRadiusPx }}>
+        <button type="button" disabled={busy} aria-busy={busy || undefined} onClick={onConfirm} className="lb-btn flex-1" style={{ background: tone === 'destructive' ? t.colors.danger : t.colors.accent, color: '#FFFFFF', borderColor: tone === 'destructive' ? t.colors.danger : t.colors.accent, borderRadius: t.buttonRadiusPx }}>
           {busy && <Loader2 size={16} className="animate-spin" aria-hidden />}{confirmLabel}
         </button>
       </>}>

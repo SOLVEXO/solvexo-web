@@ -10,7 +10,7 @@ type Variant = 'primary' | 'outline' | 'dark';
 export function LedupButton({ variant = 'primary', small, block, loading, style, className = '', children, type = 'button', disabled, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; small?: boolean; block?: boolean; loading?: boolean; style?: CSSProperties; children?: ReactNode }) {
   return (
     <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest}
-      className={`tx-btn ${small ? 'tx-btn-sm' : ''} ${block ? 'tx-btn-block' : ''} ${className}`.trim()}
+      className={`lb-btn ${small ? 'lb-btn-sm' : ''} ${block ? 'lb-btn-block' : ''} ${className}`.trim()}
       style={{ ...ledupButtonStyle(variant), borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...style }}>
       {children}
     </button>
@@ -19,7 +19,7 @@ export function LedupButton({ variant = 'primary', small, block, loading, style,
 
 export function LedupLinkButton({ to, variant = 'primary', small, block, children, style }: { to: string; variant?: Variant; small?: boolean; block?: boolean; children: ReactNode; style?: CSSProperties }) {
   return (
-    <Link to={to} className={`tx-btn ${small ? 'tx-btn-sm' : ''} ${block ? 'tx-btn-block' : ''}`.trim()} style={{ ...ledupButtonStyle(variant), borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...style }}>{children}</Link>
+    <Link to={to} className={`lb-btn ${small ? 'lb-btn-sm' : ''} ${block ? 'lb-btn-block' : ''}`.trim()} style={{ ...ledupButtonStyle(variant), borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...style }}>{children}</Link>
   );
 }
 
@@ -34,7 +34,7 @@ export function LedupBreadcrumbs({ items, onDark }: { items: { label: string; to
       {items.map((it, i) => (
         <span key={`${it.label}-${i}`} className="inline-flex items-center gap-1">
           {it.to ? <Link to={it.to} className="no-underline hover:underline" style={{ color: onDark ? '#fff' : t.colors.ink }}>{it.label}</Link> : <span aria-current="page">{it.label}</span>}
-          {i < items.length - 1 && <ChevronRight size={12} aria-hidden className="tx-flip-rtl" />}
+          {i < items.length - 1 && <ChevronRight size={12} aria-hidden className="lb-flip-rtl" />}
         </span>
       ))}
     </nav>

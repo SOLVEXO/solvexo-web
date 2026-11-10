@@ -228,7 +228,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
           <>
             {s.heading && <p style={heading}>{s.heading}</p>}
             <NavAnchor link={resolveLink(s.link ?? { linkType: 'home' })} className="block" style={{ width: px, maxWidth: '100%', marginInline: center ? 'auto' : undefined }}>
-              <img src={s.imageUrl} alt={s.alt || ''} style={{ width: '100%', height: 'auto', borderRadius: 'var(--tx-card-r)', display: 'block' }} />
+              <img src={s.imageUrl} alt={s.alt || ''} style={{ width: '100%', height: 'auto', borderRadius: 'var(--lb-card-r)', display: 'block' }} />
             </NavAnchor>
           </>
         );

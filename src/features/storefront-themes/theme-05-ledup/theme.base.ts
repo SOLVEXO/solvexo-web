@@ -323,7 +323,7 @@ export function resolveSectionColors(
 export function baseTypographyCss(scope: string): string {
   const t = baseTheme;
   const h = `${scope} :is(h1,h2,h3,h4)`;
-  const btn = `${scope} :is(.tx-pill,.tx-cta)`;
+  const btn = `${scope} :is(.lb-pill,.lb-cta)`;
   const rules = [
     `${h}{font-weight:${t.headingWeight}}`,
     t.headingCase === 'uppercase' ? `${h}{text-transform:uppercase}` : '',
@@ -331,17 +331,17 @@ export function baseTypographyCss(scope: string): string {
     t.headingScale !== 'medium' ? `${scope} :is(h1,h2){zoom:${HEADING_ZOOM[t.headingScale]}}` : '',
     t.headingLineHeight !== 'auto' ? `${h}{line-height:${LINE_HEIGHT[t.headingLineHeight]}}` : '',
     // headings drawn over a photo keep their own colour
-    t.headingColor ? `${h}{color:${t.headingColor}}${scope} .tx-on-image :is(h1,h2,h3,h4){color:inherit}` : '',
+    t.headingColor ? `${h}{color:${t.headingColor}}${scope} .lb-on-image :is(h1,h2,h3,h4){color:inherit}` : '',
     t.bodyScale !== 'medium' ? `${scope} p{zoom:${BODY_ZOOM[t.bodyScale]}}` : '',
     t.linkUnderline !== 'auto' ? `${scope} :is(p,li,dd) a{text-decoration:${t.linkUnderline === 'always' ? 'underline' : 'none'}}` : '',
     t.linkColor ? `${scope} :is(p,li,dd) a{color:${t.linkColor}}` : '',
-    t.buttonCase === 'uppercase' ? '.tx-pill,.tx-cta{text-transform:uppercase;letter-spacing:.06em;font-size:13px}' : '',
+    t.buttonCase === 'uppercase' ? '.lb-pill,.lb-cta{text-transform:uppercase;letter-spacing:.06em;font-size:13px}' : '',
     t.buttonSize !== 'md' ? `${btn}{height:${BUTTON_HEIGHT[t.buttonSize]}}` : '',
     t.buttonHover === 'lift' ? `${btn}:hover:not([disabled]){transform:translateY(-2px)}` : '',
     t.buttonHover === 'grow' ? `${btn}:hover:not([disabled]){transform:scale(1.03)}` : '',
     t.buttonShadow === 'soft' ? `${btn}{box-shadow:0 8px 20px -10px rgba(0,0,0,.4)}` : '',
     t.gridGap !== 'standard' ? `${scope}{--fx-gap-x:${GRID_GAP[t.gridGap][0]};--fx-gap-y:${GRID_GAP[t.gridGap][1]}}` : '',
-    !t.animations ? `${scope} .tx-up{animation:none!important;opacity:1!important;transform:none!important}${btn}{transition:none}` : '',
+    !t.animations ? `${scope} .lb-up{animation:none!important;opacity:1!important;transform:none!important}${btn}{transition:none}` : '',
     t.bodyWeight === 'medium' ? `${scope} :is(p,li,dd){font-weight:500}` : '',
     t.sectionDividers === 'line' ? `[data-sx]+[data-sx]{border-top:1px solid ${t.colors.border}}` : '',
     t.selection === 'accent' ? `${scope} ::selection{background:${t.colors.accent};color:${t.colors.accentInk}}` : '',

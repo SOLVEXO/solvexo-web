@@ -168,8 +168,8 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
         {s.subtext && <p className="m-0 mb-8 text-[15px] leading-[1.7]" style={{ color: colors.inkMuted }}>{s.subtext}</p>}
         {state === 'done' ? <p role="status" className="m-0 text-[15px]" style={{ color: t.colors.success }}>{message}</p> : (
           <form onSubmit={submit} className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <label htmlFor="tx-nl" className="sr-only">{ts('auth.email', 'Email')}</label>
-            <input id="tx-nl" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(s, 'placeholder', 'Your email')}
+            <label htmlFor="lb-nl" className="sr-only">{ts('auth.email', 'Email')}</label>
+            <input id="lb-nl" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(s, 'placeholder', 'Your email')}
               className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm outline-none" style={{ border: `1px solid ${colors.ink}`, color: colors.ink, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }} />
             <button type="submit" disabled={state === 'loading'} className="cursor-pointer px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] disabled:opacity-60"
               style={{ background: colors.accent, color: colors.accentInk, border: `1px solid ${colors.accent}`, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>

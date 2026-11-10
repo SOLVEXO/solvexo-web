@@ -58,7 +58,7 @@ export function OrderPlaced({ orders, storeName, guestEmail, paymentConfirmed }:
 
       <div className="mt-8 flex flex-col items-center gap-4 text-center">
         <OrderPlacedActions orderId={orders[0]?.orderId} guestEmail={guestEmail} />
-        <Link to="/" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>
+        <Link to="/" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>
       </div>
     </Page>
   );

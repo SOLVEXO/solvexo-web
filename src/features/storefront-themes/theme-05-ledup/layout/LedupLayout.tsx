@@ -10,7 +10,7 @@ import { ledupTheme as t, applyMerchantThemeOverrides } from '../theme.config';
 import { ledupCssVars } from '../ui/ledupStyle';
 import '../ledup.css';
 import { ledupCssVars as txCssVars } from '../ui/ledupStylePort';
-import '../ledup-tx.css';
+import '../ledup-base.css';
 
 export function LedupLayout({ children }: { children: ReactNode }) {
   const { theme } = useStorefront();
@@ -28,7 +28,7 @@ export function LedupLayout({ children }: { children: ReactNode }) {
   return (
     <LedupCartProvider>
       <div
-        className="ld-root tx-root flex min-h-screen flex-col"
+        className="ld-root lb-root flex min-h-screen flex-col"
         style={{
           ...ledupCssVars(),
           ...txCssVars(),

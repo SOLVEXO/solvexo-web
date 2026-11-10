@@ -192,7 +192,7 @@
 
 
 /* Ledup design for the customer pages (account, orders, checkout, auth ...) */
-.ld-root .tx-btn,.ld-root .tx-pill{font-weight:500;letter-spacing:.01em}
+.ld-root .lb-btn,.ld-root .lb-pill{font-weight:500;letter-spacing:.01em}
 .ld-root table{border-collapse:separate;border-spacing:0}
 .ld-root th{background:#F9F8F6;font-weight:600}
 .ld-root input:focus,.ld-root select:focus,.ld-root textarea:focus{border-color:var(--ld-accent)!important;box-shadow:0 0 0 3px rgba(140,115,85,.15)}
@@ -333,7 +333,8 @@
 .ld-rv.is-in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .ld-up { animation: none; } .ld-rv { opacity: 1; transform: none; transition: none; } }
 .ld-sim { background: #e4e0dd; border-radius: 0 0 2.5rem 2.5rem; overflow: hidden; }
-.ld-sim-scene { position: relative; aspect-ratio: 16 / 8; background: radial-gradient(120% 90% at 50% 100%, #3a3430 0%, #1b1815 70%); }
+.ld-sim-scene { position: relative; aspect-ratio: 16 / 8; background: linear-gradient(180deg, #2b2622 0%, #1f1b18 62%, #14110f 62.2%, #231f1b 100%); }
+.ld-sim-scene::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 100%) 0 0 / 12.5% 100%; pointer-events: none; }
 .ld-sim-layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
 .ld-sim-layer.is-on { opacity: 1; }
 .ld-sim-glow { position: absolute; inset: 0; opacity: 0; transition: opacity .6s ease; background: radial-gradient(60% 70% at var(--gx, 50%) 85%, rgba(255,214,150,.55), transparent 70%); pointer-events: none; }

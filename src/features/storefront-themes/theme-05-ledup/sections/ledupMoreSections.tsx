@@ -41,11 +41,11 @@ function HeroSlider({ section, blocks }: { section: Section; blocks: Block[] }) 
           {text(s.text) && <p className="m-0 mt-4 max-w-[460px] text-base leading-relaxed opacity-80">{text(s.text)}</p>}
           {text(s.buttonLabel) && s.link && <div className="mt-7"><DealButton label={text(s.buttonLabel)} link={s.link} /></div>}
         </div>
-        {text(s.imageUrl) && <img key={text(s.imageUrl)} src={text(s.imageUrl)} alt={text(s.imageAlt)} loading={index === 0 ? 'eager' : 'lazy'} className="tx-fade max-h-[420px] w-full object-contain" />}
+        {text(s.imageUrl) && <img key={text(s.imageUrl)} src={text(s.imageUrl)} alt={text(s.imageAlt)} loading={index === 0 ? 'eager' : 'lazy'} className="lb-fade max-h-[420px] w-full object-contain" />}
         {count > 1 && (
           <>
-            <button type="button" aria-label={ts('pg.previous', 'Previous')} onClick={() => setIndex(i => (i - 1 + count) % count)} className={`${arrow} start-2`} style={{ background: 'rgba(255,255,255,.14)', color: '#fff' }}><ChevronLeft size={20} className="tx-flip-rtl" /></button>
-            <button type="button" aria-label={ts('pg.next', 'Next')} onClick={() => setIndex(i => (i + 1) % count)} className={`${arrow} end-2`} style={{ background: 'rgba(255,255,255,.14)', color: '#fff' }}><ChevronRight size={20} className="tx-flip-rtl" /></button>
+            <button type="button" aria-label={ts('pg.previous', 'Previous')} onClick={() => setIndex(i => (i - 1 + count) % count)} className={`${arrow} start-2`} style={{ background: 'rgba(255,255,255,.14)', color: '#fff' }}><ChevronLeft size={20} className="lb-flip-rtl" /></button>
+            <button type="button" aria-label={ts('pg.next', 'Next')} onClick={() => setIndex(i => (i + 1) % count)} className={`${arrow} end-2`} style={{ background: 'rgba(255,255,255,.14)', color: '#fff' }}><ChevronRight size={20} className="lb-flip-rtl" /></button>
             <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2" role="group" aria-label={ts('pg.slides', 'Slides')}>
               {slides.map((_, i) => <button key={i} type="button" aria-label={ts('pg.go_to_slide', 'Go to slide {{n}}', { n: i + 1 })} aria-current={i === index} onClick={() => setIndex(i)} className="size-2.5 cursor-pointer rounded-full border-0 p-0" style={{ background: i === index ? t.colors.accent : 'rgba(255,255,255,.4)' }} />)}
             </div>
@@ -143,7 +143,7 @@ function TabbedProducts({ section, blocks, colors }: { section: Section; blocks:
   if (tabs.length === 0) return null;
   return (
     <LedupSectionShell colors={colors} heading={text(section.settings.heading)}>
-      <div role="tablist" aria-label={text(section.settings.heading) || ts('pg.products', 'Products')} className="tx-hide-scroll mb-5 flex gap-1 overflow-x-auto" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
+      <div role="tablist" aria-label={text(section.settings.heading) || ts('pg.products', 'Products')} className="lb-hide-scroll mb-5 flex gap-1 overflow-x-auto" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
         {tabs.map((b, i) => (
           <button key={b._id ?? i} type="button" role="tab" aria-selected={i === active} onClick={() => setActive(i)} className="cursor-pointer whitespace-nowrap border-0 bg-transparent px-4 py-3 text-sm font-semibold"
             style={{ color: i === active ? t.colors.accent : t.colors.inkMuted, boxShadow: i === active ? `inset 0 -2px 0 ${t.colors.accent}` : 'none' }}>{text(b.settings.label)}</button>

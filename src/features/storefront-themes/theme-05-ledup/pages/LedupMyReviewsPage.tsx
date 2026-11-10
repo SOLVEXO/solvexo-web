@@ -40,7 +40,7 @@ export function LedupMyReviewsPage() {
       <PendingReviews onReviewed={reload} />
       {loading && !reviews ? <div aria-busy="true"><SkeletonBlock h={130} rows={3} /></div>
         : error && !reviews ? <ErrorState message={error} onRetry={reload} />
-        : !reviews || reviews.length === 0 ? <EmptyState icon={<Star size={22} aria-hidden />} title={ts('pg.no_reviews_yet', 'No reviews yet')} text={ts('pg.review_a_product_from_one_of_your_orders', 'Review a product from one of your orders.')} action={<Link to="/orders" className="tx-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.view_your_orders', 'View your orders')}</Link>} />
+        : !reviews || reviews.length === 0 ? <EmptyState icon={<Star size={22} aria-hidden />} title={ts('pg.no_reviews_yet', 'No reviews yet')} text={ts('pg.review_a_product_from_one_of_your_orders', 'Review a product from one of your orders.')} action={<Link to="/orders" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('pg.view_your_orders', 'View your orders')}</Link>} />
         : (
           <>
             {error && <div className="mb-4"><Notice tone="error" action={<button type="button" onClick={reload} className={link}>{ts('cart.retry', 'Retry')}</button>}>{error}</Notice></div>}

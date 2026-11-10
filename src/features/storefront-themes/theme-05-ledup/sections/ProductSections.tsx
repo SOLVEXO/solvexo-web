@@ -34,7 +34,7 @@ function queryFor(s: Record<string, any>): PublicStoreProductsParams {
 
 function Skeleton({ n, columns }: { n: number; columns: unknown }) {
   return (
-    <div className={`grid tx-grid-gap ${cols(columns)}`} aria-busy="true">
+    <div className={`grid lb-grid-gap ${cols(columns)}`} aria-busy="true">
       {Array.from({ length: n }).map((_, i) => (
         <div key={i}><div className="animate-pulse" style={{ aspectRatio: '3 / 4', background: t.colors.bgAlt }} /><div className="mt-4 h-3 w-3/4 animate-pulse" style={{ background: t.colors.bgAlt }} /></div>
       ))}
@@ -57,7 +57,7 @@ function FeaturedProducts({ settings: s, colors }: { settings: Record<string, an
       {failed ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', 'We couldn\'t load these products.')} <button type="button" onClick={load} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : items === null ? <Skeleton n={columnCount(s.columns, 4)} columns={s.columns} /> : (
-        <div className={`grid tx-grid-gap ${cols(s.columns)}`}>
+        <div className={`grid lb-grid-gap ${cols(s.columns)}`}>
           {items.map(p => <LedupProductCard key={p._id} product={p} currency={currency} />)}
         </div>
       )}
@@ -88,7 +88,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
       {error ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_categories', 'We couldn\'t load categories.')} <button type="button" onClick={refetch} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : loading ? <Skeleton n={n} columns={n} /> : (
-        <div className="relative"><ul ref={rowRef} className="tx-hide-scroll m-0 flex list-none gap-5 overflow-x-auto scroll-smooth p-0 pb-1">
+        <div className="relative"><ul ref={rowRef} className="lb-hide-scroll m-0 flex list-none gap-5 overflow-x-auto scroll-smooth p-0 pb-1">
           {shown.map(c => {
             const name = localize.collection(c).name ?? c.name;
             if (s.tileStyle === 'simple') {

@@ -59,7 +59,7 @@ export function LedupAccountLayout({ title, crumb, subtitle, actions, children }
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[280px_1fr] lg:gap-10">
         <nav aria-label={ts('nav.account', 'Account')} className="lg:sticky lg:top-24">
-          <ul className="tx-hide-scroll m-0 flex list-none gap-1 overflow-x-auto p-0 lg:hidden">
+          <ul className="lb-hide-scroll m-0 flex list-none gap-1 overflow-x-auto p-0 lg:hidden">
             {flat.map(i => (
               <li key={i.to} className="shrink-0"><NavLink to={i.to} end={i.end} className={`${linkBase}`} style={({ isActive }) => ({ background: isActive ? t.colors.accent : t.colors.bgAlt, color: isActive ? t.colors.accentInk : t.colors.ink, borderRadius: t.fieldRadiusPx })}>{i.label}</NavLink></li>
             ))}
@@ -114,7 +114,7 @@ export function LedupOrderChip({ badge }: { badge: OrderBadgeInfo }) {
 }
 
 export function LedupBackLink({ to, children }: { to: string; children: ReactNode }) {
-  return <Link to={to} className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium no-underline" style={{ color: t.colors.accent }}><ArrowLeft size={15} className="tx-flip-rtl" aria-hidden />{children}</Link>;
+  return <Link to={to} className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium no-underline" style={{ color: t.colors.accent }}><ArrowLeft size={15} className="lb-flip-rtl" aria-hidden />{children}</Link>;
 }
 
 /** Previous / Next pager with a live "Page x of y" label. Renders nothing for a single page. */

@@ -32,11 +32,11 @@ export function SectionShell({ colors, eyebrow, heading, action, align = 'left',
 /** "See all" pill with the sliding arrow chip. */
 export function TextLink({ to, children, colors }: { to: string; children: ReactNode; colors?: BaseColors }) {
   const cta = ctaLook('primary', colors);
-  // size + hover padding live in `.tx-cta-sm` (inline padding would beat the hover rule and park the chip on the text)
+  // size + hover padding live in `.lb-cta-sm` (inline padding would beat the hover rule and park the chip on the text)
   return (
-    <Link to={to} className="tx-cta tx-cta-sm" style={cta.button}>
+    <Link to={to} className="lb-cta lb-cta-sm" style={cta.button}>
       <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
-      <span className="tx-cta-icon" style={cta.chip}><ArrowUpRight size={15} className="tx-flip-rtl" /></span>
+      <span className="lb-cta-icon" style={cta.chip}><ArrowUpRight size={15} className="lb-flip-rtl" /></span>
     </Link>
   );
 }
@@ -47,9 +47,9 @@ export function LinkButton({ text, link, variant = 'primary', style }: { text?: 
   if (!text || !link) return null;
   const target = resolveLink(link);
   const cta = ctaLook(variant);
-  const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="tx-cta-icon" style={cta.chip}><ArrowUpRight size={16} className="tx-flip-rtl" /></span></>;
+  const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="lb-cta-icon" style={cta.chip}><ArrowUpRight size={16} className="lb-flip-rtl" /></span></>;
   const base: CSSProperties = { ...cta.button, ...style };
   return target.to
-    ? <Link to={target.to} className="tx-cta" style={base}>{inner}</Link>
-    : <a href={target.href ?? '#'} className="tx-cta" style={base} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{inner}</a>;
+    ? <Link to={target.to} className="lb-cta" style={base}>{inner}</Link>
+    : <a href={target.href ?? '#'} className="lb-cta" style={base} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{inner}</a>;
 }
