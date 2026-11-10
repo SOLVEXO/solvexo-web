@@ -22,6 +22,10 @@ import { useCartDrawer } from '../../cartDrawerContext';
 import { LedupBox, LedupBreadcrumbs, LedupButton, LedupError, LedupSkeleton } from '../ui/ledupUi';
 import { LedupProductCard } from '../components/LedupProductCard';
 import { ledupTheme as t } from '../theme.config';
+import { Link as WholesaleLink } from 'react-router-dom';
+import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
+import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
+import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
 
 /** `/product/:slug`. Gallery card on the left; title, price, a technical-characteristics table (reference, every option as pills) and the buy row on the right; related products below. */
 export function LedupProductPage() {
@@ -85,6 +89,10 @@ function Inner({ slug }: { slug: string }) {
   }, [variant, detail?.product.images]);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
 
+  // Wholesale gate + price: hooks stay above the early return below.
+  const wholesale = useWholesaleGate();
+  const wholesalePrice = useWholesalePrice(variant?._id, qty, wholesale.approved);
+
   const { origin, pathname } = window.location;
   const pageUrl = `${origin}${pathname}`;
   useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160), image: images[0] });
@@ -116,6 +124,8 @@ function Inner({ slug }: { slug: string }) {
   const sale = saleInfo({ ...conv, fixedPriceFor }, variant.price, variant.compareAtPrice, base, ref);
   const state = stockState(variant, isDigital, store.lowStockThreshold);
   const canBuy = variantCanBuy(variant, isDigital);
+  // Shared parity pieces (same behaviour as Maison / Tech): pre-order note, wholesale gate + price.
+  const pre = productPreorderNote(detail.product, variant);
   const maxQty = variantMaxQty(variant, isDigital);
   const rules = resolveQtyRules(detail.product, Number.isFinite(maxQty) ? maxQty : 999);
   const safeQty = clampQty(qty, rules);
@@ -163,8 +173,8 @@ function Inner({ slug }: { slug: string }) {
             {short && <p className="mt-2 text-sm font-normal leading-relaxed text-stone-500">{short}</p>}
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3">
-              <span className="text-2xl font-bold" style={{ color: sale.onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>
-              {sale.onSale && <s className="text-base text-stone-400">{show(sale.compareAmount, true)}</s>}
+              {!wholesale.locked && <span className="text-2xl font-bold" style={{ color: sale.onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>}
+              {!wholesale.locked && sale.onSale && <s className="text-base text-stone-400">{show(sale.compareAmount, true)}</s>}
             </div>
 
             <div className="mt-8 border-t border-stone-200/80 pt-6">
@@ -202,16 +212,33 @@ function Inner({ slug }: { slug: string }) {
               {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('product.lowStock', 'Low stock') : state === 'preorder' ? ts('product.preorder', 'Pre-order') : ts('product.inStock', 'In stock')}
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-4">
+            {wholesale.locked && (
+              <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-stone-200 p-4">
+                <p className="m-0 text-sm font-medium">{ts('b2b.locked_title', 'Wholesale customers only')}</p>
+                <p className="m-0 text-xs text-stone-500">{wholesale.signedIn ? ts('b2b.locked_apply', 'Prices and ordering are for approved wholesale accounts. Apply for one to start buying.') : ts('b2b.locked_signin', 'Sign in with your wholesale account to see prices and order.')}</p>
+                <WholesaleLink to={wholesale.signedIn ? '/wholesale' : '/login'} className="text-sm font-medium underline">{wholesale.signedIn ? ts('b2b.apply_link', 'Apply for wholesale') : ts('b2b.signin_link', 'Sign in')}</WholesaleLink>
+              </div>
+            )}
+            {!wholesale.locked && pre && <p className="mt-3 text-sm font-medium text-stone-600" role="status">{pre}</p>}
+            {!wholesale.locked && wholesalePrice?.available && wholesalePrice.unitPrice != null && (
+              <div role="status" className="mt-3 text-sm text-stone-900">
+                <p className="m-0 font-medium">{ts('b2b.your_price', 'Your wholesale price: {{price}} each', { price: show(wholesalePrice.unitPrice) })}</p>
+                {(wholesalePrice.priceBreaks ?? []).length > 0 && <p className="m-0 mt-1 text-xs text-stone-500">{(wholesalePrice.priceBreaks ?? []).map((b) => `${b.minQty}+ → ${show(b.price)}`).join(' · ')}</p>}
+              </div>
+            )}
+            {!wholesale.locked && wholesalePrice && !wholesalePrice.available && wholesalePrice.error && <p role="alert" className="mt-2 text-xs font-medium" style={{ color: t.colors.danger }}>{wholesalePrice.error}</p>}
+            {!wholesale.locked && <div className="mt-3"><BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} /></div>}
+
+            {!wholesale.locked && <div className="mt-4 flex flex-wrap items-center gap-4">
               <div className="flex items-center rounded-full border border-stone-300 bg-white px-3 py-1.5">
                 <button type="button" aria-label={ts('product.decreaseQty', 'Decrease quantity')} disabled={safeQty <= rules.min} onClick={() => setQty(clampQty(safeQty - rules.step, rules))} className="p-1 text-stone-500 hover:text-stone-900 disabled:opacity-30"><Minus size={14} aria-hidden /></button>
                 <span className="w-10 text-center text-sm font-semibold text-stone-900" aria-live="polite">{safeQty}</span>
                 <button type="button" aria-label={ts('product.increaseQty', 'Increase quantity')} disabled={safeQty >= rules.max} onClick={() => setQty(clampQty(safeQty + rules.step, rules))} className="p-1 text-stone-500 hover:text-stone-900 disabled:opacity-30"><Plus size={14} aria-hidden /></button>
               </div>
               <LedupButton variant="primary" onClick={add} loading={busy} disabled={!canBuy} className="!h-12 !px-8 flex-1">
-                <ShoppingBag size={16} aria-hidden /> {canBuy ? ts('product.addToCart', 'Add to cart') : ts('product.soldOut', 'Sold out')}
+                <ShoppingBag size={16} aria-hidden /> {!canBuy ? ts('product.soldOut', 'Sold out') : pre ? ts('product.preorder', 'Pre-order') : ts('product.addToCart', 'Add to cart')}
               </LedupButton>
-            </div>
+            </div>}
 
             {description && (
               <div className="mt-10 border-t border-stone-200/80 pt-6">
