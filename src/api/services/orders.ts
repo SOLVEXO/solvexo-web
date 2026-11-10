@@ -103,6 +103,8 @@ export interface OrderSummary {
   currency:         string;
   shippingAddress:  Record<string, unknown> | null;
   fulfillmentMethod?: 'ship' | 'pickup';
+  localDelivery?: boolean;
+  localDeliveryEta?: string | null;
   pickupLocation?:  { name: string | null; address: string | null; instructions: string | null } | null;
   /** Present when this order is the replacement order of an exchange. */
   exchangeOf?:      { orderId: string; orderNumber: string; itemIds: string[] } | null;
@@ -138,6 +140,8 @@ export interface OrderDetail {
   currency:        string;
   shippingAddress: Record<string, unknown> | null;
   fulfillmentMethod?: 'ship' | 'pickup';
+  localDelivery?: boolean;
+  localDeliveryEta?: string | null;
   pickupLocation?: { name: string | null; address: string | null; instructions: string | null } | null;
   /** What the buyer wrote at checkout (Shopify cart note). */
   customerNote?: string;

@@ -727,6 +727,14 @@ export function StoreOrderDetail() {
               </Card>
             )}
 
+            {!isPickup && detail.localDelivery && (
+              <Card title="Local delivery" icon={MapPin}>
+                <p className="text-[12.5px] text-charcoal leading-relaxed">
+                  Delivered by your store (local delivery){detail.localDeliveryEta ? <><br />Promised window: {detail.localDeliveryEta}</> : null}
+                </p>
+              </Card>
+            )}
+
             {!isPickup && detail.shippingAddress && (
               <Card
                 title="Shipping Address"

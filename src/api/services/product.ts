@@ -804,7 +804,7 @@ export interface GetSellerOrdersData {
 
 export function apiGetSellerOrders(
   storeId: string, page = 1, limit = 10, userId?: string,
-  filters?: { status?: string; type?: string; q?: string; preorder?: boolean },
+  filters?: { status?: string; type?: string; q?: string; preorder?: boolean; localDelivery?: boolean },
 ) {
   const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
   // status / type / search run on the SERVER over the whole order history, not on the loaded page.
@@ -812,7 +812,8 @@ export function apiGetSellerOrders(
     (filters?.status ? `&status=${encodeURIComponent(filters.status)}` : '') +
     (filters?.type ? `&type=${encodeURIComponent(filters.type)}` : '') +
     (filters?.q ? `&q=${encodeURIComponent(filters.q)}` : '') +
-    (filters?.preorder ? '&preorder=true' : '');
+    (filters?.preorder ? '&preorder=true' : '') +
+    (filters?.localDelivery ? '&localDelivery=true' : '');
   return client.get<never, ApiResponse<GetSellerOrdersData>>(
     `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}${userIdParam}${filterParams}`,
   );
@@ -958,6 +959,8 @@ export interface SellerOrderDetail {
   shippingAddress: SellerOrderDetailShippingAddress | null;
   /** 'pickup' orders have no shippingAddress; the pickup point is in `pickupLocation`. */
   fulfillmentMethod?: 'ship' | 'pickup';
+  localDelivery?: boolean;
+  localDeliveryEta?: string | null;
   pickupLocation?: PickupLocationInfo | null;
   buyer:           SellerOrderDetailBuyer;
   /** Present on an exchange order: the original order and the return lines it replaces. */

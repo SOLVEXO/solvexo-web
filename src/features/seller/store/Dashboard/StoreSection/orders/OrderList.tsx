@@ -64,6 +64,7 @@ export function StoreOrderList() {
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
   const [preorderOnly, setPreorderOnly] = useState(false);
+  const [localOnly, setLocalOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
@@ -109,6 +110,7 @@ export function StoreOrderList() {
       status: statusF || undefined,
       type: typeF || undefined,
       preorder: preorderOnly || undefined,
+      localDelivery: localOnly || undefined,
       q: debouncedSearch.trim() || undefined,
     })
       .then(res => {
@@ -124,7 +126,7 @@ export function StoreOrderList() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF, preorderOnly]);
+  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF, preorderOnly, localOnly]);
 
   const handlePageChange = (p: number) => {
     setSelected(new Set());
@@ -135,7 +137,7 @@ export function StoreOrderList() {
   };
 
   // A new search / filter always starts from page 1.
-  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF, preorderOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF, preorderOnly, localOnly]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -586,6 +588,9 @@ export function StoreOrderList() {
                 <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
                   <input type="checkbox" className="accent-brand-orange" checked={preorderOnly} onChange={e => setPreorderOnly(e.target.checked)} /> Pre-orders
                 </label>
+                <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
+                  <input type="checkbox" className="accent-brand-orange" checked={localOnly} onChange={e => setLocalOnly(e.target.checked)} /> Local delivery
+                </label>
                 <select
                   value={typeF || 'All Types'}
                   onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)}
@@ -647,7 +652,7 @@ export function StoreOrderList() {
           title="Filters"
           onClose={() => setFiltersOpen(false)}
           footer={<>
-            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setPreorderOnly(false); setFiltersOpen(false); }}>Reset</Button>
+            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setPreorderOnly(false); setLocalOnly(false); setFiltersOpen(false); }}>Reset</Button>
             <Button size="sm" onClick={() => setFiltersOpen(false)}>Done</Button>
           </>}
         >
