@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this file registers renderers, it exports none */
 import { useRef, useState } from 'react';
+import { Download, Power } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
@@ -118,9 +119,15 @@ function Bento({ settings, blocks }: { settings: Record<string, any>; blocks: Bl
             const s = (b.settings ?? {}) as Record<string, any>;
             const id = String(b._id ?? i);
             const img = text(s.imageUrl);
-            const light = s.tone === 'light' || !img;
+            const stat = s.tone === 'stat';
+            const light = s.tone === 'light' || (!img && !stat);
             const target = s.link ? resolveLink(s.link) : null;
-            const inner = (
+            const inner = stat ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-4 text-center">
+                <span className="text-4xl font-light md:text-5xl"><bdi>{text(s.title)}</bdi></span>
+                <span className="text-[11px] font-medium leading-tight opacity-90">{text(s.caption)}</span>
+              </div>
+            ) : (
               <>
                 {img && <img src={img} alt="" loading="lazy" className={`absolute inset-0 h-full w-full transition duration-700 group-hover:scale-105 ${light ? 'object-contain p-6' : 'object-cover'}`} />}
                 {!light && <div aria-hidden className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(40,32,26,.78) 0%, rgba(40,32,26,0) 62%)' }} />}
@@ -130,7 +137,7 @@ function Bento({ settings, blocks }: { settings: Record<string, any>; blocks: Bl
                 </div>
               </>
             );
-            const cls = `group relative overflow-hidden rounded-3xl bg-white no-underline ${BENTO_SPAN[String(s.size)] ?? BENTO_SPAN.normal} ${s.size === 'wide' ? 'col-span-2' : ''}`;
+            const cls = `group relative overflow-hidden rounded-3xl bg-white no-underline ${stat ? 'ld-stat-tile ' : ''}${BENTO_SPAN[String(s.size)] ?? BENTO_SPAN.normal} ${s.size === 'wide' ? 'col-span-2' : ''}`;
             return (
               <PreviewBlock key={id} blockId={id}>
                 {target?.to ? <Link to={target.to} className={cls}>{inner}</Link>
@@ -266,6 +273,111 @@ function Stacked({ settings, blocks }: { settings: Record<string, any>; blocks: 
   );
 }
 
+// ── Lighting simulation (ledup.pt "Interruptores"): switches turn zones of a scene on and off ──
+function Simulation({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const [on, setOn] = useState<Record<string, boolean>>({});
+  if (blocks.length === 0) return null;
+  const base = text(settings.baseImage);
+  return (
+    <section className="py-6" data-ld-dark>
+      <div className="ld-sim mx-auto max-w-[1440px]">
+        <div className="ld-sim-scene">
+          {base && <img src={base} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />}
+          {blocks.map((b, i) => {
+            const s = (b.settings ?? {}) as Record<string, any>;
+            const id = String(b._id ?? i);
+            const img = text(s.imageUrl);
+            const gx = `${Math.round(((i + 0.5) / blocks.length) * 100)}%`;
+            return img
+              ? <img key={id} src={img} alt="" loading="lazy" className={`ld-sim-layer ${on[id] ? 'is-on' : ''}`} />
+              : <div key={id} className={`ld-sim-glow ${on[id] ? 'is-on' : ''}`} style={{ ['--gx' as string]: gx }} />;
+          })}
+        </div>
+        <div className="px-4 pb-6 pt-5 text-center">
+          {text(settings.label) && <p className="m-0 mb-3 text-xs text-[#8c847e]">{text(settings.label)}</p>}
+          <div className="flex flex-wrap items-start justify-center gap-5 sm:gap-7">
+            {blocks.map((b, i) => {
+              const s = (b.settings ?? {}) as Record<string, any>;
+              const id = String(b._id ?? i);
+              return (
+                <PreviewBlock key={id} blockId={id}>
+                  <div className="flex flex-col items-center gap-2">
+                    <button type="button" className="ld-sim-switch" aria-pressed={!!on[id]} aria-label={text(s.title)} onClick={() => setOn(p => ({ ...p, [id]: !p[id] }))}><i /></button>
+                    <span className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-[#8c847e]"><Power size={11} aria-hidden />{text(s.title)}</span>
+                  </div>
+                </PreviewBlock>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Timeline (about page): year + text ──
+function Timeline({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  if (blocks.length === 0) return null;
+  return (
+    <section className="py-14">
+      <LedupBox padY={false}>
+        {text(settings.heading) && <h2 className="m-0 mb-10 text-center text-2xl font-normal md:text-4xl" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{text(settings.heading)}</h2>}
+        <ol className="m-0 mx-auto flex max-w-3xl list-none flex-col gap-0 p-0">
+          {blocks.map((b, i) => {
+            const s = (b.settings ?? {}) as Record<string, any>;
+            const id = String(b._id ?? i);
+            return (
+              <PreviewBlock key={id} blockId={id}>
+                <li className="grid grid-cols-[84px_1fr] gap-6 border-t border-[#e2dedb] py-6">
+                  <span className="text-3xl font-light" style={{ color: 'var(--ld-accent)' }}><bdi>{text(s.year)}</bdi></span>
+                  <div>
+                    <h3 className="m-0 text-base font-medium">{text(s.title)}</h3>
+                    {text(s.text) && <p className="mt-1 text-sm leading-relaxed text-[#736c67]">{text(s.text)}</p>}
+                  </div>
+                </li>
+              </PreviewBlock>
+            );
+          })}
+        </ol>
+      </LedupBox>
+    </section>
+  );
+}
+
+// ── Documents list (datasheets / catalogues / brochures): one row per file with a download pill ──
+function Documents({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const { resolveLink } = useStorefront();
+  if (blocks.length === 0) return null;
+  return (
+    <section className="py-14">
+      <LedupBox padY={false}>
+        {text(settings.heading) && <h2 className="m-0 mb-8 text-2xl font-normal md:text-4xl" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{text(settings.heading)}</h2>}
+        <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+          {blocks.map((b, i) => {
+            const s = (b.settings ?? {}) as Record<string, any>;
+            const id = String(b._id ?? i);
+            const target = s.link ? resolveLink(s.link) : null;
+            const href = target?.href ?? target?.to ?? '#';
+            return (
+              <PreviewBlock key={id} blockId={id}>
+                <li className="flex items-center justify-between gap-4 rounded-3xl bg-white p-5">
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-sm font-medium">{text(s.title)}</p>
+                    {text(s.kind) && <p className="m-0 mt-0.5 text-xs text-[#8c847e]">{text(s.kind)}</p>}
+                  </div>
+                  <a href={href} {...(target?.newTab !== false ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="ld-pillbtn shrink-0" aria-label={text(s.title)}>
+                    <Download size={14} aria-hidden />
+                  </a>
+                </li>
+              </PreviewBlock>
+            );
+          })}
+        </ul>
+      </LedupBox>
+    </section>
+  );
+}
+
 // ── Registration ────────────────────────────────────────────────────────────
 const categoryTabs = () => <section className="pb-6 pt-2"><LedupHeroCategoryBanner /></section>;
 
@@ -279,6 +391,9 @@ registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {
   if (key === 'ledup.switcher') return <Switcher settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.stacked') return <Stacked settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.bento') return <Bento settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.simulation') return <Simulation settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.timeline') return <Timeline settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.documents') return <Documents settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.highlights') return <FeatureList settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.statement') return <RichText settings={sec.settings} blocks={blocks} dynamic={dynamic} />;
   void col;

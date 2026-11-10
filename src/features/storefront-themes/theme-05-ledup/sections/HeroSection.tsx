@@ -20,7 +20,7 @@ function AccentHeading({ text }: { text: string }) {
   const words = String(text).trim().split(/\s+/);
   if (words.length < 2) return <>{text}</>;
   const last = words.pop();
-  return <>{words.join(' ')} <span className="tx-serif" style={{ fontSize: '1.08em' }}>{last}</span></>;
+  return <>{words.join(' ')} <span className="ld-serif" style={{ fontSize: '1.08em' }}>{last}</span></>;
 }
 
 /** The slide's heading / text / button. Used over the image, and again under it on phones when the seller picks "Below image". */
@@ -28,9 +28,9 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
   const s = block.settings;
   const editing = useInlineEditActive();
   return (
-    <div className={`${onImage ? 'tx-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
-      {s.heading && <h1 className="tx-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
-      {s.subheading && <p className="tx-up tx-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
+    <div className={`${onImage ? 'ld-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
+      {s.heading && <h1 className="ld-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
+      {s.subheading && <p className="ld-up ld-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
       <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} />
     </div>
   );
@@ -106,7 +106,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   // One slide = the image box + (phones, "Below image" only) its text underneath.
   const slideBody = (b: Block, k: number) => (
     <>
-      <PreviewBlock blockId={b._id ?? String(k)}><div className="tx-h"><Slide whole={whole} block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} below={below} /></div></PreviewBlock>
+      <PreviewBlock blockId={b._id ?? String(k)}><div className="ld-h"><Slide whole={whole} block={b} height={hd ? 'inherit' : undefined} active={k === cur} eager={k === 0} below={below} /></div></PreviewBlock>
       {below && hasText(b) && (
         <div className="md:hidden" style={{ padding: '24px 20px 8px', textAlign: b.settings.contentAlign === 'center' || b.settings.contentAlign === 'right' ? b.settings.contentAlign : 'left' }}>
           <SlideText block={b} onImage={false} color={t.colors.ink} />
@@ -119,8 +119,8 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
     <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: 0 }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onTouchStart={e => { touch.current = e.touches[0].clientX; }}
       onTouchEnd={e => { if (touch.current != null) { const d = e.changedTouches[0].clientX - touch.current; const s = swipeStep(d, rtl); if (s) go(s); touch.current = null; } }}>
-      <style>{`.tx-hero{--h:${hm ?? 'auto'}}@media(min-width:768px){.tx-hero{--h:${hd ?? 'auto'}}}.tx-hero .tx-h{height:var(--h)!important}`}</style>
-      <div className="tx-hero ld-hero overflow-hidden" style={{ borderRadius: '0 0 3.125rem 3.125rem', ...(maxW ? { maxWidth: maxW, marginInline: 'auto' } : null) }}>
+      <style>{`.ld-herobox{--h:${hm ?? 'auto'}}@media(min-width:768px){.ld-herobox{--h:${hd ?? 'auto'}}}.ld-herobox .ld-h{height:var(--h)!important}`}</style>
+      <div className="ld-herobox ld-hero overflow-hidden" style={{ borderRadius: '0 0 3.125rem 3.125rem', ...(maxW ? { maxWidth: maxW, marginInline: 'auto' } : null) }}>
         {fade ? (
           <div className="relative">
             {slides.map((b, k) => (

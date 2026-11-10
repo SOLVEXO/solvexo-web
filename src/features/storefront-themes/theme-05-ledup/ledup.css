@@ -323,3 +323,28 @@
 /* the mobile filter button uses Tailwind md:hidden, which the custom .ld-iconbtn display would override */
 @media (min-width: 768px) { .ld-iconbtn.md\:hidden { display: none; } }
 @media (min-width: 1024px) { .ld-iconbtn.lg\:hidden { display: none; } }
+
+/* ───────── own motion + new sections (no Tech classes) ───────── */
+.ld-serif { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+@keyframes ld-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+.ld-up { animation: ld-up .8s cubic-bezier(.21,.47,.32,.98) both; }
+.ld-up-1 { animation-delay: .1s; }
+.ld-rv { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+.ld-rv.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .ld-up { animation: none; } .ld-rv { opacity: 1; transform: none; transition: none; } }
+.ld-sim { background: #e4e0dd; border-radius: 0 0 2.5rem 2.5rem; overflow: hidden; }
+.ld-sim-scene { position: relative; aspect-ratio: 16 / 8; background: radial-gradient(120% 90% at 50% 100%, #3a3430 0%, #1b1815 70%); }
+.ld-sim-layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
+.ld-sim-layer.is-on { opacity: 1; }
+.ld-sim-glow { position: absolute; inset: 0; opacity: 0; transition: opacity .6s ease; background: radial-gradient(60% 70% at var(--gx, 50%) 85%, rgba(255,214,150,.55), transparent 70%); pointer-events: none; }
+.ld-sim-glow.is-on { opacity: 1; }
+.ld-sim-switch { width: 52px; height: 30px; border-radius: 999px; border: 0; background: #b9b2ad; display: inline-flex; align-items: center; padding: 0 5px; cursor: pointer; transition: background .3s ease; }
+.ld-sim-switch[aria-pressed="true"] { background: var(--ld-accent); }
+.ld-sim-switch i { width: 20px; height: 20px; border-radius: 50%; background: #fff; display: block; transition: transform .3s ease; }
+.ld-sim-switch[aria-pressed="true"] i { transform: translateX(22px); }
+[dir="rtl"] .ld-sim-switch[aria-pressed="true"] i { transform: translateX(-22px); }
+.ld-stat-tile { background: linear-gradient(135deg, #b5733f 0%, #e1a36c 50%, #a8683a 100%); color: #fff; }
+.ld-mega-feature { background: #fff; border-radius: 1.25rem; box-shadow: 0 6px 24px rgba(75,66,59,.08); overflow: hidden; }
+.ld-circ-text { animation: ld-spin 18s linear infinite; }
+@keyframes ld-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ld-circ-text { animation: none; } }

@@ -126,9 +126,10 @@ export const baseManifest: ThemeManifest = {
         fields: [
           { key: 'imageUrl', kind: 'image', label: 'Photo' },
           { key: 'title', kind: 'text', label: 'Title', maxLength: 80 },
+          { key: 'caption', kind: 'text', label: 'Small text (big-number style)', maxLength: 60 },
           { key: 'link', kind: 'link', label: 'Link (optional)' },
           { key: 'size', kind: 'select', label: 'Size', options: [{ value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' }, { value: 'tall', label: 'Tall' }, { value: 'small', label: 'Small' }] },
-          { key: 'tone', kind: 'select', label: 'Style', options: [{ value: 'photo', label: 'Photo with dark fade' }, { value: 'light', label: 'White card' }] },
+          { key: 'tone', kind: 'select', label: 'Style', options: [{ value: 'photo', label: 'Photo with dark fade' }, { value: 'light', label: 'White card' }, { value: 'stat', label: 'Big number (copper)' }] },
         ],
       },
       initialBlocks: 4,
@@ -167,6 +168,47 @@ export const baseManifest: ThemeManifest = {
       initialBlocks: 4,
     },
     {
+      key: 'ledup.simulation', label: 'Lighting simulation', color: '#4b423b',
+      description: 'A scene with switches ("Zone 1-5"): each switch turns its light layer on and off.',
+      fields: [
+        { key: 'baseImage', kind: 'image', label: 'Scene photo (lights off)' },
+        { key: 'label', kind: 'text', label: 'Label above the switches', maxLength: 40 },
+      ],
+      defaults: { label: 'Switches' },
+      block: {
+        key: 'zone', label: 'Zone',
+        fields: [
+          { key: 'title', kind: 'text', label: 'Zone name', maxLength: 30 },
+          { key: 'imageUrl', kind: 'image', label: 'Photo with this zone lit (optional, a soft glow is used when empty)' },
+        ],
+      },
+      initialBlocks: 5,
+    },
+    {
+      key: 'ledup.timeline', label: 'Timeline', color: '#4b423b',
+      description: 'Years with a short story each (about page).',
+      fields: [{ key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 }],
+      defaults: { heading: 'Our journey' },
+      block: { key: 'step', label: 'Year', fields: [
+        { key: 'year', kind: 'text', label: 'Year', maxLength: 10 },
+        { key: 'title', kind: 'text', label: 'Title', maxLength: 80 },
+        { key: 'text', kind: 'textarea', label: 'Text', rows: 3, maxLength: 300 },
+      ] },
+      initialBlocks: 3,
+    },
+    {
+      key: 'ledup.documents', label: 'Documents list', color: '#4b423b',
+      description: 'Catalogues, datasheets and brochures: one row each with a download button.',
+      fields: [{ key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 }],
+      defaults: { heading: 'Catalogues' },
+      block: { key: 'doc', label: 'Document', fields: [
+        { key: 'title', kind: 'text', label: 'Name', maxLength: 80 },
+        { key: 'kind', kind: 'text', label: 'Type (PDF, brochure...)', maxLength: 30 },
+        { key: 'link', kind: 'link', label: 'File link' },
+      ] },
+      initialBlocks: 3,
+    },
+    {
       key: 'ledup.statement', label: 'Statement', color: '#4b423b',
       description: 'A large centred statement with a short text.',
       fields: [
@@ -194,6 +236,7 @@ export const baseManifest: ThemeManifest = {
     { key: 'custom.preloaderLogo', label: 'Loader logo (image link)', group: 'Effects', control: { kind: 'text', maxLength: 300, placeholder: 'https://… (empty = your store logo)' }, helpText: 'Paste an https image link (PNG/SVG/GIF). Empty uses your store logo, or the store name as text.' },
     { key: 'custom.preloaderTone', label: 'Loader logo colour', group: 'Effects', control: { kind: 'select', options: [{ value: 'light', label: 'Turn the logo white' }, { value: 'original', label: 'Keep original colours' }] }, helpText: 'White suits dark logos on the dark background.' },
     { key: 'custom.preloaderStyle', label: 'Loader animation', group: 'Effects', control: { kind: 'select', options: [{ value: 'fade', label: 'Logo fade only' }, { value: 'pulse', label: 'Pulsing logo' }, { value: 'bar', label: 'Logo + progress line' }] }, helpText: 'How the logo appears while loading.' },
+    { key: 'custom.reveal', label: 'Scroll animation', group: 'Effects', control: { kind: 'select', options: [{ value: 'on', label: 'Sections fade up as you scroll' }, { value: 'off', label: 'No scroll animation' }] }, helpText: 'Sections ease in when they enter the screen. Visitors who prefer reduced motion never see it.' },
     { key: 'custom.preloaderSeconds', label: 'Loader duration', group: 'Effects', control: { kind: 'select', options: [{ value: '1', label: '1 second' }, { value: '1.5', label: '1.5 seconds' }, { value: '2', label: '2 seconds' }, { value: '3', label: '3 seconds' }, { value: '4', label: '4 seconds' }] }, helpText: 'How long the intro stays before it fades away.' },
   ],
 };

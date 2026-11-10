@@ -68,6 +68,7 @@ export function LedupCategoryPage() {
   const category = flat(tree).find(c => c._id === slugOrId || c.slug === slugOrId) ?? null;
   useStorefrontSeo({ title: category?.name, description: category?.description });
   const { before, after, main } = splitAround(useTemplateSections(store.storeId, 'page', 'category'), 'category_product_grid');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- seller-authored section settings
   const grid = (main?.settings ?? {}) as Record<string, any>;
   if (loading) return <LedupBox><LedupSkeleton h={320} /></LedupBox>;
   if (error) return <LedupBox><LedupError message={ts('pg.we_couldn_t_load_this_category', "We couldn't load this category.")} onRetry={refetch} /></LedupBox>;

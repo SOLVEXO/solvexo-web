@@ -57,8 +57,10 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
 
           {current.imageUrl && (
             <div className="w-1/5 shrink-0 ps-5">
-              <NavAnchor link={current.link} onClick={onClose} className="group block overflow-hidden rounded-3xl bg-stone-100 no-underline" tabIndex={visible ? 0 : -1}>
-                <img src={current.imageUrl} alt={current.label} loading="lazy" className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105" />
+              <p className="m-0 mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a69d98]">{ts('ld.featured', 'Featured')}</p>
+              <NavAnchor link={current.link} onClick={onClose} className="ld-mega-feature group block no-underline" tabIndex={visible ? 0 : -1}>
+                <img src={current.imageUrl} alt="" loading="lazy" className="aspect-[4/3] w-full object-contain p-4 transition duration-500 group-hover:scale-105" />
+                <span className="block px-4 pb-4 text-xs font-medium uppercase text-[#4b423b]">{current.label}</span>
               </NavAnchor>
             </div>
           )}

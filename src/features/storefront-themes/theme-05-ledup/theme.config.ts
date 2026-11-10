@@ -70,6 +70,7 @@ const STATIC_DEFAULTS = {
   showDatasheetButton: true,
   showCharacteristicsTable: true,
   footerVideo: '',
+  reveal: true,
   preloader: { mode: 'once' as 'once' | 'always' | 'hide', bg: '#0a0a0b', logo: '', video: '', tone: 'light' as 'light' | 'original', style: 'fade' as 'fade' | 'bar' | 'pulse', seconds: 1.5 },
   checkoutSummary: 'right' as 'right' | 'left',
   cartUpsell: true,
@@ -100,6 +101,7 @@ export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | 
   ledupTheme.colors.banner = hex(ts?.bannerColor) ?? DEFAULT_COLORS.banner;
   ledupTheme.colors.footer = hex(ts?.footerColor) ?? DEFAULT_COLORS.footer;
   const pick = <T extends string>(v: unknown, all: readonly T[], d: T): T => (typeof v === 'string' && (all as readonly string[]).includes(v) ? (v as T) : d);
+  ledupTheme.reveal = ts?.reveal !== 'off';
   const secs = Number(ts?.preloaderSeconds);
   ledupTheme.footerVideo = typeof ts?.footerVideo === 'string' && /^https:\/\//.test(ts.footerVideo.trim()) ? ts.footerVideo.trim() : '';
   ledupTheme.preloader = {

@@ -6,6 +6,8 @@ import { resolveSectionColors, baseTypographyCss } from '../theme.base';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
+import { useEffect, useRef } from 'react';
+import { ledupTheme } from '../theme.config';
 import './register';
 import { resolveLedupSection } from './ledupSectionRegistry';
 
@@ -31,6 +33,19 @@ const EDITOR_CSS = `
 [data-inline-edit]{cursor:text;outline:1px dashed transparent;outline-offset:3px;border-radius:2px}
 [data-inline-edit]:hover{outline-color:rgba(140,115,85,.7)}
 [data-inline-edit]:focus{outline:2px solid var(--ld-accent);background:rgba(140,115,85,.08)}`;
+
+function RevealBox({ children, ...rest }: React.HTMLAttributes<HTMLDivElement> & { 'data-sx'?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') { el.classList.add('is-in'); return; }
+    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { el.classList.add('is-in'); io.disconnect(); } }, { rootMargin: '0px 0px -8% 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <div ref={ref} {...rest}>{children}</div>;
+}
 
 export function LedupSectionRenderer({
   sections: authored,
@@ -64,11 +79,13 @@ export function LedupSectionRenderer({
         const common = { id: sectionAnchorId(section.settings), 'data-sx': key, style: { backgroundColor: colors.bg, color: colors.ink, ...spacing.style } };
 
         if (!selectable) {
+          const reveal = ledupTheme.reveal && i > 0 && section.type !== 'hero';
+          const Box = reveal ? RevealBox : 'div';
           return (
-            <div key={key} {...common} className={spacing.className}>
+            <Box key={key} {...common} className={`${spacing.className} ${reveal ? 'ld-rv' : ''}`}>
               {scoped && <style>{scoped}</style>}
               {render(section, blocks, colors, dynamic, previewContext)}
-            </div>
+            </Box>
           );
         }
         const on = selectedSectionId === key;
