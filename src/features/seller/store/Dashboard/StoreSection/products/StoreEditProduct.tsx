@@ -15,6 +15,10 @@ import {
 } from '@/api/services/product';
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
 import { SubcategoryField } from './SubcategoryField';
+import { can } from '@/hooks/auth/useCan';
+import { ProductCollectionsField } from './ProductCollectionsField';
+import { apiGetProductCollections, apiSetProductCollections } from '@/api/services/collections';
+import { useToast } from '@/contexts/ToastContext';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
@@ -224,6 +228,19 @@ export default function StoreEditProduct() {
   const currencySymbol = symbolForCurrency(store?.baseCurrency);
   const { tree: categoryTree, loading: catLoading, refetch: refetchCats } = useStoreCategoryTree(storeId);
 
+  const toast = useToast();
+  // Manual collections the product is in. Saved only once the real list has loaded, so a failed load can never wipe them.
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [collectionsReady, setCollectionsReady] = useState(false);
+  const initialCollections = useRef<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    apiGetProductCollections(storeId, productId)
+      .then(res => { if (alive) { const ids = res.data.collectionIds ?? []; setCollectionIds(ids); initialCollections.current = ids; setCollectionsReady(true); } })
+      .catch(() => { /* picker stays locked on "Loading…"; nothing is sent on save */ });
+    return () => { alive = false; };
+  }, [storeId, productId]);
+
   const [fetching,          setFetching]          = useState(true);
   const [saving,            setSaving]            = useState(false);
   const [error,             setError]             = useState('');
@@ -425,6 +442,10 @@ export default function StoreEditProduct() {
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
       }
+      if (collectionsReady && [...collectionIds].sort().join() !== [...initialCollections.current].sort().join()) {
+        try { await apiSetProductCollections(storeId, productId, collectionIds); }
+        catch { toast.error('The product was saved, but its collections could not be updated. Open it again to retry.'); }
+      }
       navigate(`/store/${storeId}/products`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -558,6 +579,13 @@ export default function StoreEditProduct() {
               refetch={refetchCats}
             />
           </Card>
+
+          {/* Collections (a product can be in many; Category above stays one) */}
+          {can('collections.manage') && (
+            <Card title="Collections">
+              <ProductCollectionsField storeId={storeId} value={collectionIds} onChange={setCollectionIds} ready={collectionsReady} />
+            </Card>
+          )}
 
           {/* Product Images */}
           <Card title="Product Images">

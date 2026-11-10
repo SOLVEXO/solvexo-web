@@ -269,7 +269,8 @@ export const ENDPOINTS = {
     UPDATE:          (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}`,
     UPDATE_PRODUCTS: (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}/products`,
     DELETE:          (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}`,
-    PUBLIC_LIST:     (storeId: string) => `/api/public/collections/${storeId}`,
+    FOR_PRODUCT:     (storeId: string, productId: string) => `/api/collections/${storeId}/for-product/${productId}`,
+    PUBLIC_LIST:    (storeId: string) => `/api/public/collections/${storeId}`,
     PUBLIC_GET:      (storeId: string, slugOrId: string) => `/api/public/collections/${storeId}/${slugOrId}`,
   },
 

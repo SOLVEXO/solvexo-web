@@ -114,6 +114,16 @@ export function apiUpdateCollectionProducts(storeId: string, collectionId: strin
   return client.patch<never, ApiResponse<CollectionData>>(ENDPOINTS.COLLECTIONS.UPDATE_PRODUCTS(storeId, collectionId), { productIds });
 }
 
+/** Product form: ids of the manual collections this product is in. */
+export function apiGetProductCollections(storeId: string, productId: string) {
+  return client.get<never, ApiResponse<{ collectionIds: string[] }>>(ENDPOINTS.COLLECTIONS.FOR_PRODUCT(storeId, productId));
+}
+
+/** Product form: put the product in exactly these manual collections. */
+export function apiSetProductCollections(storeId: string, productId: string, collectionIds: string[]) {
+  return client.put<never, ApiResponse<{ collectionIds: string[] }>>(ENDPOINTS.COLLECTIONS.FOR_PRODUCT(storeId, productId), { collectionIds });
+}
+
 export function apiDeleteCollection(storeId: string, collectionId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.COLLECTIONS.DELETE(storeId, collectionId));
 }

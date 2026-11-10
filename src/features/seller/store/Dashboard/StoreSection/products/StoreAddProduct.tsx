@@ -10,6 +10,10 @@ import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, ty
 import { addCachedProduct } from './_cache';
 import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
 import { SubcategoryField } from './SubcategoryField';
+import { can } from '@/hooks/auth/useCan';
+import { ProductCollectionsField } from './ProductCollectionsField';
+import { apiSetProductCollections } from '@/api/services/collections';
+import { useToast } from '@/contexts/ToastContext';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, DateTimePickerModal } from '@/components/comman/ui';
@@ -134,6 +138,8 @@ export default function StoreAddProduct() {
 
   const [pType,             setPType]             = useState<ProductType>('physical');
   const [saving,            setSaving]            = useState(false);
+  const toast = useToast();
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [error,             setError]             = useState('');
   const [nameError,         setNameError]         = useState('');
   const [phys,              setPhys]              = useState<PhysForm>(initPhys);
@@ -190,6 +196,7 @@ export default function StoreAddProduct() {
       // "Publish Listing" publishes (or keeps a chosen schedule); only "Save Draft" saves a draft.
       const chosen = pType === 'physical' ? phys.status : dig.status;
       const finalStatus = statusOverride ?? (chosen === 'scheduled' ? 'scheduled' : 'active');
+      let newProductId = '';
       if (pType === 'physical') {
         const variants: VariantInput[] = hasVariants
           ? phys.variantRows.map(r => ({
@@ -232,6 +239,7 @@ export default function StoreAddProduct() {
           variants,
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
+        newProductId = res.data.product._id;
       } else {
         const files = filesPayload(dig.files);
         const res = await apiCreateDigitalProduct({
@@ -247,6 +255,11 @@ export default function StoreAddProduct() {
           digital: { files, licenseKeys: { enabled: dig.licenseEnabled, activationLimit: Math.max(1, Number(dig.licenseLimit) || 1) }, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
+        newProductId = res.data.product._id;
+      }
+      if (newProductId && collectionIds.length > 0) {
+        try { await apiSetProductCollections(storeId, newProductId, collectionIds); }
+        catch { toast.error('The product was saved, but it could not be added to the chosen collections. Open it to retry.'); }
       }
       invalidateMyStoresCache();
       navigate(`/store/${storeId}/products`);
@@ -358,6 +371,13 @@ export default function StoreAddProduct() {
               refetch={refetchCats}
             />
           </Card>
+
+          {/* Collections (a product can be in many; Category above stays one) */}
+          {can('collections.manage') && (
+            <Card title="Collections">
+              <ProductCollectionsField storeId={storeId} value={collectionIds} onChange={setCollectionIds} />
+            </Card>
+          )}
 
           {/* Product Images */}
           <Card title="Product Images">

@@ -22,6 +22,22 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
+export function isChunkLoadError(error: unknown): boolean {
+  const msg = error instanceof Error ? `${error.name} ${error.message}` : String(error ?? '');
+  return /dynamically imported module|Importing a module script failed|ChunkLoadError|error loading dynamically|Loading chunk [\w-]+ failed|Unable to preload CSS/i.test(msg);
+}
+
+/** Reloads the page once per 30 s for a stale-chunk error. Returns true when it reloaded. */
+export function reloadOnceForChunkError(): boolean {
+  try {
+    const last = Number(sessionStorage.getItem('chunk-reload-at') || 0);
+    if (Date.now() - last < 30_000) return false;
+    sessionStorage.setItem('chunk-reload-at', String(Date.now()));
+  } catch { /* storage blocked: still try once */ }
+  window.location.reload();
+  return true;
+}
+
 // Catches render-time errors and failed lazy-chunk loads anywhere below it so a
 // single broken page can't take down the whole app with a blank white screen.
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -32,6 +48,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    // After a deploy the old tab asks for JS files that no longer exist ("Failed to fetch dynamically imported module").
+    // A reload fetches the new build, so do it once automatically (guarded, so a real outage cannot loop).
+    if (isChunkLoadError(error) && reloadOnceForChunkError()) return;
     console.error(`[ErrorBoundary]${this.props.section ? ` ${this.props.section}:` : ''} Uncaught error:`, error, info.componentStack);
   }
 

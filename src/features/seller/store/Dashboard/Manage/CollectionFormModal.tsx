@@ -75,18 +75,8 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
     apiGetCategoryById(categoryId).then(res => setCategoryLabel(res.data.category.name)).catch(() => {});
   }, [categoryId]);
 
-  // Clear the "add a product" warning as soon as its condition is satisfied
-  // (or no longer applies), instead of leaving it on screen describing a
-  // state that's no longer true.
-  useEffect(() => {
-    if (error === 'Add at least one product, or switch to Automatic.' && (type !== 'manual' || productIds.length > 0)) {
-      setError('');
-    }
-  }, [type, productIds, error]);
-
   const handleSave = async () => {
     if (!name.trim()) { setError('Name is required.'); return; }
-    if (type === 'manual' && productIds.length === 0) { setError('Add at least one product, or switch to Automatic.'); return; }
     setError('');
     setSaving(true);
     try {
@@ -179,7 +169,7 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
                 <Button size="sm" variant="outline" onClick={() => setShowProductPicker(true)}>Add Products</Button>
               </div>
               {productIds.length === 0 ? (
-                <p className="text-[12px] text-slate py-3 text-center border border-dashed border-bone rounded-lg">No products added yet.</p>
+                <p className="text-[12px] text-slate py-3 text-center border border-dashed border-bone rounded-lg">No products added yet. You can save it empty and add products later, or tick this collection in a product's form.</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {productIds.map(id => (

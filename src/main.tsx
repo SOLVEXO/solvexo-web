@@ -9,6 +9,7 @@ import { CurrencyPreferenceProvider } from '@/contexts/CurrencyPreferenceContext
 import { AuthGateProvider } from '@/contexts/AuthGateContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { captureSellerAcquisitionAttribution } from '@/utils/sellerAcquisitionAttribution';
+import { reloadOnceForChunkError } from '@/components/comman/ErrorBoundary';
 import { i18nReady } from './i18n';
 import './index.css';
 
@@ -18,6 +19,11 @@ import './index.css';
 // on ANY page, not only /register — has that touch captured immediately.
 // Read back later, at seller-registration submit time, by RegisterPage.tsx.
 captureSellerAcquisitionAttribution();
+
+// Vite fires this when a lazy chunk/CSS fails to load (typically right after a deploy replaced the old files).
+window.addEventListener('vite:preloadError', (e) => {
+  if (reloadOnceForChunkError()) e.preventDefault();
+});
 
 void i18nReady.then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
