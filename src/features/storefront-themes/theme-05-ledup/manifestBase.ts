@@ -112,6 +112,27 @@ export const baseManifest: ThemeManifest = {
       initialBlocks: 3,
     },
     {
+      key: 'ledup.bento', label: 'Photo tiles (bento)', color: '#4b423b',
+      description: 'The ledup.pt "Destaques" grid: photo tiles of different sizes, each with a title and a round arrow link.',
+      fields: [
+        { key: 'eyebrow', kind: 'text', label: 'Small label above', maxLength: 60 },
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Intro text', rows: 3, maxLength: 400 },
+      ],
+      defaults: { eyebrow: 'Highlights', heading: 'The right information at the right time.' },
+      block: {
+        key: 'tile', label: 'Tile',
+        fields: [
+          { key: 'imageUrl', kind: 'image', label: 'Photo' },
+          { key: 'title', kind: 'text', label: 'Title', maxLength: 80 },
+          { key: 'link', kind: 'link', label: 'Link (optional)' },
+          { key: 'size', kind: 'select', label: 'Size', options: [{ value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' }, { value: 'tall', label: 'Tall' }, { value: 'small', label: 'Small' }] },
+          { key: 'tone', kind: 'select', label: 'Style', options: [{ value: 'photo', label: 'Photo with dark fade' }, { value: 'light', label: 'White card' }] },
+        ],
+      },
+      initialBlocks: 4,
+    },
+    {
       key: 'ledup.statement', label: 'Statement', color: '#4b423b',
       description: 'A large centred statement with a short text.',
       fields: [
@@ -127,7 +148,7 @@ export const baseManifest: ThemeManifest = {
     { key: 'custom.productShowAll', label: 'Show all products', group: 'Pagination', control: { kind: 'select', options: [{ value: 'no', label: 'No, use the number above' }, { value: 'yes', label: 'Yes, keep loading as shoppers scroll' }] }, helpText: 'Loads every product in batches of 100 while shoppers scroll, so big stores stay fast.' },
     { key: 'primaryColor', label: 'Buttons & accent', group: 'Colors', control: { kind: 'color' }, helpText: 'Buttons, links, tags and the bronze banner tone.' },
     { key: 'custom.bannerColor', label: 'Category banner colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#c49466' } }, helpText: 'The metallic banner with the curved tabs and the title banners on account pages. Auto uses the copper tone.' },
-    { key: 'custom.footerColor', label: 'Footer colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#3b352f' } }, helpText: 'Base colour of the curved footer. Auto uses dark espresso.' },
+    { key: 'custom.footerColor', label: 'Footer colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#54453a' } }, helpText: 'Base colour of the curved footer. Auto uses warm brown.' },
     { key: 'bgColor', label: 'Background', group: 'Colors', control: { kind: 'color' }, helpText: 'Page background colour.' },
     { key: 'textColor', label: 'Text', group: 'Colors', control: { kind: 'color' }, helpText: 'Main text and headings.' },
     { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'font' }, helpText: 'Sets body and interface text.' },
@@ -136,7 +157,7 @@ export const baseManifest: ThemeManifest = {
     { key: 'custom.preloaderBg', label: 'Loader background', group: 'Effects', control: { kind: 'color', optional: { fallback: '#0a0a0b' } }, helpText: 'Colour behind the logo. Auto is near-black.' },
     { key: 'custom.preloaderLogo', label: 'Loader logo (image link)', group: 'Effects', control: { kind: 'text', maxLength: 300, placeholder: 'https://… (empty = your store logo)' }, helpText: 'Paste an https image link (PNG/SVG/GIF). Empty uses your store logo, or the store name as text.' },
     { key: 'custom.preloaderTone', label: 'Loader logo colour', group: 'Effects', control: { kind: 'select', options: [{ value: 'light', label: 'Turn the logo white' }, { value: 'original', label: 'Keep original colours' }] }, helpText: 'White suits dark logos on the dark background.' },
-    { key: 'custom.preloaderStyle', label: 'Loader animation', group: 'Effects', control: { kind: 'select', options: [{ value: 'bar', label: 'Logo + progress line' }, { value: 'pulse', label: 'Pulsing logo' }, { value: 'fade', label: 'Logo fade only' }] }, helpText: 'How the logo appears while loading.' },
+    { key: 'custom.preloaderStyle', label: 'Loader animation', group: 'Effects', control: { kind: 'select', options: [{ value: 'fade', label: 'Logo fade only' }, { value: 'pulse', label: 'Pulsing logo' }, { value: 'bar', label: 'Logo + progress line' }] }, helpText: 'How the logo appears while loading.' },
     { key: 'custom.preloaderSeconds', label: 'Loader duration', group: 'Effects', control: { kind: 'select', options: [{ value: '1', label: '1 second' }, { value: '1.5', label: '1.5 seconds' }, { value: '2', label: '2 seconds' }, { value: '3', label: '3 seconds' }, { value: '4', label: '4 seconds' }] }, helpText: 'How long the intro stays before it fades away.' },
   ],
 };

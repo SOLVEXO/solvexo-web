@@ -136,12 +136,11 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
       )}
 
       {n > 1 && pagination !== 'none' && (
-        <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">
+        <div className="absolute inset-x-0 bottom-8 flex items-center justify-start gap-3 ps-6 md:ps-14">
           {pagination === 'counter'
             ? <span className="text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
             : slides.map((_, k) => (
-              <button key={k} type="button" aria-label={ts('sections.goToSlide', 'Go to slide {{n}}', { n: k + 1 })} aria-current={k === cur} onClick={() => setI(k)} className="h-[3px] cursor-pointer border-0 p-0 transition-all"
-                style={{ width: k === cur ? 36 : 20, background: k === cur ? '#fff' : 'rgba(255,255,255,.5)' }} />
+              <button key={k} type="button" aria-label={ts('sections.goToSlide', 'Go to slide {{n}}', { n: k + 1 })} aria-current={k === cur} onClick={() => setI(k)} className="ld-hero-count">{String(k + 1).padStart(2, '0')}</button>
             ))}
           {settings.autoplay !== false && settings.showPauseButton === true && (
             <button type="button" aria-label={paused ? ts('sections.playSlideshow', 'Play slideshow') : ts('sections.pauseSlideshow', 'Pause slideshow')} onClick={() => setPaused(p => !p)} className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black">

@@ -32,7 +32,7 @@ const STATIC_DEFAULTS = {
     borderStrong: '#D6D3D1',
     accent: '#4b423b',
     banner: '#c49466',
-    footer: '#3b352f',
+    footer: '#54453a',
     accentInk: '#FFFFFF',
     accentGradient: 'linear-gradient(135deg, #C29367 0%, #D4A373 50%, #B07D50 100%)',
     footerBg: 'linear-gradient(180deg, #423932 0%, #2A241F 100%)',
@@ -69,7 +69,7 @@ const STATIC_DEFAULTS = {
   curvedFooterRadiusPx: '50px',
   showDatasheetButton: true,
   showCharacteristicsTable: true,
-  preloader: { mode: 'once' as 'once' | 'always' | 'hide', bg: '#0a0a0b', logo: '', tone: 'light' as 'light' | 'original', style: 'bar' as 'fade' | 'bar' | 'pulse', seconds: 1.5 },
+  preloader: { mode: 'once' as 'once' | 'always' | 'hide', bg: '#0a0a0b', logo: '', tone: 'light' as 'light' | 'original', style: 'fade' as 'fade' | 'bar' | 'pulse', seconds: 1.5 },
   checkoutSummary: 'right' as 'right' | 'left',
   cartUpsell: true,
   /** Products per page on collection/category/search; seller settings `custom.productsPerPage` / `custom.productShowAll`. */
@@ -105,7 +105,7 @@ export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | 
     bg: hex(ts?.preloaderBg) ?? '#0a0a0b',
     logo: typeof ts?.preloaderLogo === 'string' && /^https:\/\//.test(ts.preloaderLogo.trim()) ? ts.preloaderLogo.trim() : '',
     tone: pick(ts?.preloaderTone, ['light', 'original'] as const, 'light'),
-    style: pick(ts?.preloaderStyle, ['fade', 'bar', 'pulse'] as const, 'bar'),
+    style: pick(ts?.preloaderStyle, ['fade', 'bar', 'pulse'] as const, 'fade'),
     seconds: Number.isFinite(secs) && secs >= 0.5 && secs <= 6 ? secs : 1.5,
   };
   const themeSettings = (colors as { themeSettings?: Record<string, unknown> } | null | undefined)?.themeSettings;

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Search, User, ShoppingBag, Menu, X, ArrowUpRight } from 'lucide-react';
+import { ChevronDown, Search, User, ShoppingBag, Menu, X, ArrowUpRight, Phone } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
+import { TokenStorage } from '@/api/services/auth';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCartDrawer } from '../../cartDrawerContext';
@@ -101,29 +102,30 @@ export function LedupNavbar() {
         <LedupSearchPanel visible={searchOpen} onClose={closeAll} suggestions={items.filter(i => i.link.to || i.link.href)} />
 
         {mobileOpen && (
-          <div className="ld-pop mt-3 max-h-[75vh] overflow-y-auto rounded-3xl bg-[#fafafa] px-6 py-6 lg:hidden">
-            <ul className="m-0 flex list-none flex-col gap-4 p-0">
+          <div className="ld-mobile-panel lg:hidden" role="dialog" aria-modal="true" aria-label={ts('nav.openMenu', 'Open menu')}>
+            <div className="flex justify-end">
+              <button type="button" onClick={closeAll} aria-label={ts('common.close', 'Close')} className="cursor-pointer border-0 bg-transparent p-1" style={{ color: 'var(--ld-banner)' }}><X size={30} strokeWidth={1.25} aria-hidden /></button>
+            </div>
+            <ul className="m-0 mt-4 flex list-none flex-col gap-1 p-0">
               {items.map(it => (
                 <li key={it.id}>
-                  <NavAnchor link={it.link} onClick={closeAll} className="text-base font-medium no-underline" style={{ color: 'var(--ld-accent)' }}>{it.label}</NavAnchor>
+                  <NavAnchor link={it.link} onClick={closeAll} className="ld-mobile-item">{it.label}</NavAnchor>
                   {it.children.length > 0 && (
-                    <ul className="m-0 mt-2 flex list-none flex-col gap-2 border-s border-stone-200 p-0 ps-4">
-                      {it.children.map(c => (
-                        <li key={c.id}>
-                          <NavAnchor link={c.link} onClick={closeAll} className="text-sm text-stone-600 no-underline">{c.label}</NavAnchor>
-                          {c.children.length > 0 && (
-                            <ul className="m-0 mt-1.5 flex list-none flex-col gap-1.5 p-0 ps-3">
-                              {c.children.map(g => <li key={g.id}><NavAnchor link={g.link} onClick={closeAll} className="text-xs text-stone-500 no-underline">{g.label}</NavAnchor></li>)}
-                            </ul>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mb-2 ps-3">
+                      {it.children.map(c => <NavAnchor key={c.id} link={c.link} onClick={closeAll} className="ld-mobile-sub">{c.label}</NavAnchor>)}
+                    </div>
                   )}
                 </li>
               ))}
             </ul>
-            {cta && <Link to={cta.link} onClick={closeAll} className="ld-ctabtn mt-5 w-full justify-center">{cta.label} <ArrowUpRight size={14} aria-hidden /></Link>}
+            <div className="mt-4 flex items-center gap-3 border-t border-[#efeded] pt-5">
+              {store.contactPhone && <a href={`tel:${store.contactPhone}`} className="ld-iconbtn" style={{ width: '2.9rem', height: '2.9rem' }} aria-label={ts('ld.callUs', 'Call us')}><Phone size={18} aria-hidden /></a>}
+              <button type="button" className="ld-iconbtn" style={{ width: '2.9rem', height: '2.9rem' }} aria-label={ts('nav.search', 'Search')} onClick={() => { setMobileOpen(false); setSearchOpen(true); }}><Search size={18} aria-hidden /></button>
+              <Link to={TokenStorage.isLoggedIn() ? '/account' : '/login'} onClick={closeAll} className="flex h-[2.9rem] flex-1 items-center justify-between rounded-full px-6 text-base text-white no-underline" style={{ background: 'var(--ld-accent)' }}>
+                {TokenStorage.isLoggedIn() ? ts('nav.account', 'Account') : ts('auth.signInBtn', 'Sign In')}<User size={18} aria-hidden />
+              </Link>
+            </div>
+            {cta && <Link to={cta.link} onClick={closeAll} className="ld-ctabtn mt-4 w-full justify-center">{cta.label} <ArrowUpRight size={14} aria-hidden /></Link>}
           </div>
         )}
       </header>

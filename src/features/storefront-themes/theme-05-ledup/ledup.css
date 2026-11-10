@@ -33,7 +33,7 @@
   border-top-left-radius: 3.125rem;
   border-top-right-radius: 3.125rem;
   overflow: hidden;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ld-footer, #3b352f) 86%, #fff) 0%, var(--ld-footer, #3b352f) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ld-footer, #54453a) 62%, #a58b66) 0%, var(--ld-footer, #54453a) 100%);
 }
 
 .ld-footer-title {
@@ -276,3 +276,24 @@
 .ld-chip { display: inline-flex; align-items: center; padding: .2rem .7rem; border-radius: 999px; background: #f1efed; color: #736c67; font-size: .72rem; font-weight: 500; }
 @keyframes ld-pre-pulse { 0%,100% { opacity: .55; transform: scale(.98); } 50% { opacity: 1; transform: scale(1); } }
 .ld-preloader-mark.is-pulse { animation: ld-pre-pulse 1.4s ease-in-out infinite; }
+
+/* seen on ledup.pt: header links get a soft pill on hover, no underline */
+.ld-navlink { border-radius: 999px; transition: background-color .25s ease, color .25s ease; }
+.ld-navlink::after { display: none; }
+.ld-navlink:hover, .ld-navlink[aria-expanded="true"] { background: rgba(75,66,59,.08); }
+/* product page: page background is split, grey left / white right */
+.ld-split-bg { background: #fafafa; }
+@media (min-width: 1024px) { .ld-split-bg { background: linear-gradient(90deg, #f1f1f1 50%, #fff 50%); } }
+.ld-root .ld-spec-pill { font-size: .75rem; border-radius: 999px; padding: .4rem 1rem; }
+.ld-root .ld-spec-pill-idle { background: transparent; border: 1px solid #beb5ae; color: #8c847e; }
+.ld-root .ld-spec-pill-active { background: #9c8b80; border: 1px solid #9c8b80; color: #fff; }
+/* mobile menu panel */
+.ld-mobile-panel { position: fixed; inset: 0 0 auto 0; z-index: 101; max-height: 100dvh; overflow-y: auto; background: #fff; border-radius: 0 0 2rem 2rem; padding: 1.5rem 2rem 2rem; box-shadow: 0 20px 60px -20px rgba(0,0,0,.35); animation: ld-drop .35s ease both; }
+@keyframes ld-drop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+.ld-mobile-item { display: block; margin: 0 -1rem; padding: .75rem 1rem; border-radius: 999px; font-size: 1.75rem; font-weight: 300; line-height: 1.3; color: var(--ld-accent); text-decoration: none; transition: background-color .25s ease; }
+.ld-mobile-item:hover, .ld-mobile-item:active { background: #efeded; }
+.ld-mobile-sub { display: block; padding: .4rem 0 .4rem 1rem; font-size: 1rem; font-weight: 300; color: #736c67; text-decoration: none; }
+.ld-hero-count { display: inline-flex; flex-direction: column; align-items: center; gap: .35rem; min-width: 2.5rem; padding: 0 .75rem; border: 0; background: transparent; cursor: pointer; font-size: .9rem; color: #a69d98; }
+.ld-hero-count::after { content: ""; height: 1px; width: 100%; background: currentColor; transform: scaleX(0); transition: transform .4s ease; }
+.ld-hero-count[aria-current="true"] { color: var(--ld-accent); }
+.ld-hero-count[aria-current="true"]::after { transform: scaleX(1); }

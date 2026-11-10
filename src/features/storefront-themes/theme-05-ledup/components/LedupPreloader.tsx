@@ -35,7 +35,7 @@ export function LedupPreloader() {
     <div className={`ld-preloader ${phase === 'leaving' ? 'is-leaving' : ''}`} style={{ background: cfg.bg }} role="status" aria-label={store.name}>
       <div className={`ld-preloader-mark ${cfg.style === 'pulse' ? 'is-pulse' : ''}`}>
         {logoUrl
-          ? <img src={logoUrl} alt="" className="mx-auto max-h-24 max-w-[260px] object-contain" style={cfg.tone === 'light' ? { filter: 'brightness(0) invert(1)', opacity: 0.85 } : undefined} />
+          ? <img src={logoUrl} alt="" className="mx-auto max-h-[38vh] max-w-[min(70vw,520px)] object-contain" style={cfg.tone === 'light' ? { filter: 'brightness(0) invert(1)', opacity: 0.85 } : undefined} />
           : <span className="text-3xl font-light tracking-tight">{store.name}</span>}
       </div>
       {cfg.style === 'bar' && <div className="ld-preloader-bar" aria-hidden><span style={{ animationDuration: `${cfg.seconds}s` }} /></div>}

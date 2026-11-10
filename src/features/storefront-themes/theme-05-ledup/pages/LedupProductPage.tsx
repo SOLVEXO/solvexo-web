@@ -139,17 +139,17 @@ function Inner({ slug }: { slug: string }) {
     if (ok && drawerMounted) openDrawer(); else if (ok) navigate('/cart');
   };
 
-  const rowCls = 'flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 py-2';
+  const rowCls = 'grid grid-cols-[minmax(0,1fr)_2.2fr] items-center gap-4 border-b border-[#e2dedb] py-5 last:border-b-0';
   const labelCls = 'font-medium text-stone-600';
 
   return (
-    <div className="py-8">
+    <div className="ld-split-bg py-8">
       <LedupBox padY={false}>
         <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: product.name }]} />
 
         <div className="mt-6 grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
           <div className="flex flex-col gap-4 lg:col-span-6">
-            <div className="relative flex aspect-square w-full items-center justify-center rounded-3xl border border-stone-200/60 bg-white p-8 shadow-sm sm:p-12">
+            <div className="relative flex aspect-square w-full items-center justify-center rounded-3xl bg-white p-8 sm:p-12">
               {mainImage
                 ? <img src={mainImage} alt={product.name} className="max-h-full max-w-full object-contain transition duration-300" />
                 : <div className="text-sm text-stone-300">{ts('ld.noImage', 'No image')}</div>}
@@ -169,7 +169,7 @@ function Inner({ slug }: { slug: string }) {
 
           <div className="flex flex-col lg:col-span-6">
             {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase tracking-wider text-stone-400"><VendorLink name={detail.product.vendor} /></p>}
-            <h1 className="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl" style={{ fontFamily: t.fonts.display }}>{product.name}</h1>
+            <h1 className="m-0 text-[clamp(32px,4vw,48px)] font-bold uppercase leading-tight tracking-tight" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{product.name}</h1>
             {short && <p className="mt-2 text-sm font-normal leading-relaxed text-stone-500">{short}</p>}
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3">

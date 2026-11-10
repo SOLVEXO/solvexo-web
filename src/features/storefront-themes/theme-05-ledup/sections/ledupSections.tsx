@@ -95,6 +95,55 @@ function FeatureList({ settings, blocks }: { settings: Record<string, any>; bloc
   );
 }
 
+// ── Bento grid (ledup.pt "Destaques"): photo tiles of different sizes with a round arrow ──
+const BENTO_SPAN: Record<string, string> = { wide: 'md:col-span-6', tall: 'md:col-span-3 md:row-span-2', small: 'md:col-span-2', normal: 'md:col-span-3' };
+function Bento({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const { resolveLink } = useStorefront();
+  if (blocks.length === 0) return null;
+  const heading = text(settings.heading);
+  const eyebrow = text(settings.eyebrow);
+  return (
+    <section className="py-16">
+      <LedupBox padY={false}>
+        {(heading || eyebrow) && (
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            {eyebrow && <p className="m-0 mb-1 text-xs text-[#a69d98]">{eyebrow}</p>}
+            {heading && <h2 className="m-0 text-2xl font-normal tracking-tight md:text-4xl" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{heading}</h2>}
+            {text(settings.text) && <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-[#736c67]">{text(settings.text)}</p>}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-4 auto-rows-[190px] md:grid-cols-12 md:auto-rows-[230px] md:gap-5">
+          {blocks.map((b, i) => {
+            const s = (b.settings ?? {}) as Record<string, any>;
+            const id = String(b._id ?? i);
+            const img = text(s.imageUrl);
+            const light = s.tone === 'light' || !img;
+            const target = s.link ? resolveLink(s.link) : null;
+            const inner = (
+              <>
+                {img && <img src={img} alt="" loading="lazy" className={`absolute inset-0 h-full w-full transition duration-700 group-hover:scale-105 ${light ? 'object-contain p-6' : 'object-cover'}`} />}
+                {!light && <div aria-hidden className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(40,32,26,.78) 0%, rgba(40,32,26,0) 62%)' }} />}
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
+                  <span className={`text-sm font-medium ${light ? 'text-[var(--ld-accent)]' : 'text-white'}`}>{text(s.title)}</span>
+                  {target && <span aria-hidden className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition duration-300 group-hover:bg-white group-hover:text-[var(--ld-accent)] ${light ? 'border-[var(--ld-accent)] text-[var(--ld-accent)]' : 'border-white/70 text-white'}`}><ArrowUpRight size={18} /></span>}
+                </div>
+              </>
+            );
+            const cls = `group relative overflow-hidden rounded-3xl bg-white no-underline ${BENTO_SPAN[String(s.size)] ?? BENTO_SPAN.normal} ${s.size === 'wide' ? 'col-span-2' : ''}`;
+            return (
+              <PreviewBlock key={id} blockId={id}>
+                {target?.to ? <Link to={target.to} className={cls}>{inner}</Link>
+                  : target?.href ? <a href={target.href} className={cls} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{inner}</a>
+                  : <div className={cls}>{inner}</div>}
+              </PreviewBlock>
+            );
+          })}
+        </div>
+      </LedupBox>
+    </section>
+  );
+}
+
 // ── Registration ────────────────────────────────────────────────────────────
 const categoryTabs = () => <section className="pb-6 pt-2"><LedupHeroCategoryBanner /></section>;
 
@@ -104,6 +153,7 @@ registerLedupSection('hero_banner', categoryTabs);
 registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {
   const key = String(sec.settings?.sectionKey || '');
   if (key === 'ledup.category_tabs') return categoryTabs();
+  if (key === 'ledup.bento') return <Bento settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.highlights') return <FeatureList settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.statement') return <RichText settings={sec.settings} blocks={blocks} dynamic={dynamic} />;
   void col;
