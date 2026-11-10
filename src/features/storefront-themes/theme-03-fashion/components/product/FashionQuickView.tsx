@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { handleOf } from '@/utils/activeStoreText';
+import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { Minus, Plus } from 'lucide-react';
@@ -69,7 +70,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
         </div>
         <div className="flex min-w-0 flex-col gap-4">
           <div>
-            {detail.product.vendor && <p className="m-0 mb-1 text-sm" style={{ color: t.colors.inkMuted }}>{detail.product.vendor}</p>}
+            {detail.product.vendor && <p className="m-0 mb-1 text-sm" style={{ color: t.colors.inkMuted }}><VendorLink name={detail.product.vendor} /></p>}
             <h3 className="m-0 text-2xl font-semibold leading-tight tracking-tight">{product.name}</h3>
           </div>
           <p className="m-0 flex flex-wrap items-baseline gap-3">

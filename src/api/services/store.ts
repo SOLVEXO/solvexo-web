@@ -611,6 +611,8 @@ export interface PublicStoreProductsParams {
   onSale?:       boolean;
   /** Multi-value filters (any-of within a group). */
   tags?:         string[];
+  /** Brand / author names: only products whose vendor is one of these. */
+  vendors?:      string[];
   productTypes?: string[];
   /** Variant option filters, e.g. { Color: ['Red','Blue'] } (any-of within a name, all names must match). */
   options?:      Record<string, string[]>;
@@ -684,6 +686,7 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
   if (params?.currency)         query.set('currency',     params.currency);
   if (params?.marketId)         query.set('marketId',     params.marketId);
   if (params?.tags?.length)         query.set('tags',        params.tags.join(','));
+  if (params?.vendors?.length)      query.set('vendors',     params.vendors.join(','));
   if (params?.productTypes?.length) query.set('productType', params.productTypes.join(','));
   for (const [name, values] of Object.entries(params?.options ?? {})) {
     if (values.length) query.set('option.' + name, values.join(','));

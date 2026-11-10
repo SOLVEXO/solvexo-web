@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { imgProps } from '../components/imgProps';
+import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Minus, Play, Plus, Star, ZoomIn } from 'lucide-react';
@@ -185,7 +186,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   const info: Record<string, (settings: Record<string, unknown>) => ReactNode> = {
     product_title: () => (
       <div>
-        {detail.product.vendor && t.showVendor && <p className="m-0 mb-2 text-sm font-medium" style={{ color: t.colors.inkMuted }}>{detail.product.vendor}</p>}
+        {detail.product.vendor && t.showVendor && <p className="m-0 mb-2 text-sm font-medium" style={{ color: t.colors.inkMuted }}><VendorLink name={detail.product.vendor} /></p>}
         <h1 className="m-0 text-[clamp(28px,3.4vw,42px)] font-semibold leading-[1.1] tracking-tight">{product.name}</h1>
       </div>
     ),

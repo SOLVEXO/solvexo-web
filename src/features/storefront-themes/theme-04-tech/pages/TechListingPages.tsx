@@ -98,15 +98,16 @@ export function TechCategoryPage() {
 export function TechSearchPage() {
   const [params] = useSearchParams();
   const q = (params.get('q') ?? '').trim();
+  const vendor = (params.get('filter.p.vendor') ?? '').trim();
   const { store } = useStorefront();
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'search'), 'search_results');
-  useStorefrontSeo({ title: q ? ts('pg.search_q', 'Search: {{q}}', { q }) : ts('nav.allProducts', 'All products'), noindex: !!q });
+  useStorefrontSeo({ title: vendor && !q ? vendor : q ? ts('pg.search_q', 'Search: {{q}}', { q }) : ts('nav.allProducts', 'All products'), noindex: !!q });
   return (
     <>
       {before.length > 0 && <TechSectionRenderer sections={before} />}
       <TechBox>
         <TechBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: ts('nav.search', 'Search') }]} />
-        <Title>{q ? tsNodes('h.results_for', 'Results for {{query}}', { query: <span style={{ color: t.colors.accent }}>“{q}”</span> }) : ts('nav.allProducts', 'All products')}</Title>
+        <Title>{vendor && !q ? vendor : q ? tsNodes('h.results_for', 'Results for {{query}}', { query: <span style={{ color: t.colors.accent }}>“{q}”</span> }) : ts('nav.allProducts', 'All products')}</Title>
         <TechProductBrowser search={q || undefined} syncUrl emptyText={q ? ts('pg.nothing_matched_q_try_a_different_word', 'Nothing matched “{{q}}”. Try a different word.', { q }) : undefined} />
       </TechBox>
       {after.length > 0 && <TechSectionRenderer sections={after} />}

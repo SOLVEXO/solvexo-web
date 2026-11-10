@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Minus, Plus, ShoppingCart, ZoomIn } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import type { ProductVariant } from '@/api/services/marketplace';
@@ -172,7 +173,7 @@ function Inner({ slug }: { slug: string }) {
   const info: Record<string, (settings: Record<string, unknown>) => ReactNode> = {
     product_title: () => (
       <div>
-        {b.showVendor && detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{detail.product.vendor}</p>}
+        {b.showVendor && detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}><VendorLink name={detail.product.vendor} /></p>}
         <h1 className="m-0 text-[clamp(24px,3vw,34px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{product.name}</h1>
       </div>
     ),
