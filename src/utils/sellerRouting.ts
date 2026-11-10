@@ -1,4 +1,5 @@
 import { apiGetMyStores, type MyStoreItem } from '@/api/services/store';
+import { isPlanUsable, readRecentStoreIds } from '@/utils/storePlanState';
 
 /** Where an authenticated seller actually belongs, based on their REAL
  *  backend store state — never a hardcoded "/onboard". Used by OTP-verify,
@@ -11,21 +12,32 @@ import { apiGetMyStores, type MyStoreItem } from '@/api/services/store';
  *  StoreService.createStore's `selfServeActivation`), so a seller lands
  *  directly on THAT store's own dashboard, never an intermediate page.
  *
+ *  Every store has its OWN plan, so a store whose trial ended (or that is
+ *  locked) is skipped as a landing page while another store can be worked in.
+ *
  *  Rules (deliberately simple/deterministic — this only decides where the
  *  seller LANDS, it doesn't replace the route guards that protect each
  *  destination):
- *  - No stores yet                    → /onboard (create the first one)
- *  - Any store is `active`            → that store's own dashboard
+ *  - No stores yet                          → /onboard (create the first one)
+ *  - The store used last (this browser) that is active and has a usable plan
+ *                                           → that store's dashboard
+ *  - Else the first active store with a usable plan
+ *                                           → that store's dashboard
  *  - Exactly one store, still
- *    `pending`/`rejected` (legacy —   → straight to that store's verification
- *    pre-dates self-serve activation)   page (resubmit / awaiting review)
- *  - Anything else                    → the first store's own dashboard
+ *    `pending`/`rejected` (legacy —         → straight to that store's verification
+ *    pre-dates self-serve activation)        page (resubmit / awaiting review)
+ *  - Else the first store with a usable plan → its dashboard
+ *  - Else (every store needs a plan)        → the last-used (or first) store: its
+ *                                             plan gate opens, with a store switcher
  */
-export function resolveSellerDestination(stores: MyStoreItem[]): string {
+export function resolveSellerDestination(stores: MyStoreItem[], recentIds: string[] = readRecentStoreIds()): string {
   if (stores.length === 0) return '/onboard';
+  const dash = (s: MyStoreItem) => `/store/${s._id}/dashboard`;
 
-  const active = stores.find(s => s.status === 'active');
-  if (active) return `/store/${active._id}/dashboard`;
+  const workable = stores.filter(s => s.status === 'active' && isPlanUsable(s.planStatus));
+  const lastUsed = recentIds.map(id => workable.find(s => s._id === id)).find(Boolean);
+  if (lastUsed) return dash(lastUsed);
+  if (workable[0]) return dash(workable[0]);
 
   if (stores.length === 1) {
     const only = stores[0];
@@ -34,7 +46,11 @@ export function resolveSellerDestination(stores: MyStoreItem[]): string {
     }
   }
 
-  return `/store/${stores[0]._id}/dashboard`;
+  const usableAny = stores.find(s => isPlanUsable(s.planStatus));
+  if (usableAny) return dash(usableAny);
+
+  const lastUsedAny = recentIds.map(id => stores.find(s => s._id === id)).find(Boolean);
+  return dash(lastUsedAny ?? stores[0]);
 }
 
 /** Fetches the seller's own stores and resolves the destination in one call

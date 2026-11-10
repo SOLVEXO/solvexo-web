@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import {
@@ -19,8 +19,10 @@ import { pickCheckoutPlan, type OnboardingBilling } from '@/features/auth/pages/
 // (billImmediately: true), then reloads so every part of the workspace (sidebar
 // card, banners, entitlements, billing tab) picks up the new plan.
 export default function PlanCheckoutFlow({
-  storeId, title, initialPlanId, initialBilling = 'monthly', onClose,
+  storeId, title, initialPlanId, initialBilling = 'monthly', onClose, headerExtra,
 }: {
+  /** Shown in the top bar of both screens — the blocking gate uses it for the store switcher + Log out. */
+  headerExtra?: ReactNode;
   storeId: string;
   /** Heading on the plans sheet. */
   title?: string;
@@ -98,6 +100,7 @@ export default function PlanCheckoutFlow({
           onContinue={finish}
           onViewPlans={() => setView('plans')}
           onBack={() => setView('plans')}
+          headerExtra={headerExtra}
         />
       )}
       <AnimatePresence>
@@ -111,6 +114,7 @@ export default function PlanCheckoutFlow({
             onBillingChange={setBilling}
             onSelect={planId => { setSelectedPlanId(planId); setView('checkout'); }}
             onClose={onClose}
+            headerExtra={headerExtra}
           />
         )}
       </AnimatePresence>

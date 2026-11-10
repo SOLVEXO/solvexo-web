@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import { ArrowLeft, ArrowRight, AlertTriangle, Check, ChevronDown, CreditCard, Globe, Loader2, Minus, ShieldCheck, X } from 'lucide-react';
@@ -28,8 +28,10 @@ const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day
 // the store if it doesn't exist yet and buys the plan with billImmediately.
 export function OnboardingCheckoutPage({
   plans, selectedPlanId, billing, paidPlanId, trialDurationDays, hasCardOnFile = false,
-  onSubscribe, onContinue, onStartTrial, onViewPlans, onBack, taxStoreId,
+  onSubscribe, onContinue, onStartTrial, onViewPlans, onBack, taxStoreId, headerExtra,
 }: {
+  /** Extra controls in the top bar (the blocking plan gate puts the store switcher + Log out here). */
+  headerExtra?: ReactNode;
   /** The store being billed: when given, the exact Solvexo tax on today's charge is shown. */
   taxStoreId?: string;
   plans: PlatformPlan[]; selectedPlanId: string | null; billing: OnboardingBilling;
@@ -124,10 +126,13 @@ export function OnboardingCheckoutPage({
     <div className="fixed inset-0 z-50 bg-cream overflow-y-auto" data-lenis-prevent>
       <div className="px-6 md:px-8 pt-6 flex items-center justify-between">
         <SolvexoLogo size={34} variant="dark" />
-        {onBack && <button type="button" onClick={onBack} disabled={paying || !!paidPlanId}
-          className="text-[12.5px] font-semibold text-slate hover:text-carbon disabled:opacity-40 inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer">
-          <ArrowLeft size={13} /> Back
-        </button>}
+        <div className="flex items-center gap-3">
+          {onBack && <button type="button" onClick={onBack} disabled={paying || !!paidPlanId}
+            className="text-[12.5px] font-semibold text-slate hover:text-carbon disabled:opacity-40 inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer">
+            <ArrowLeft size={13} /> Back
+          </button>}
+          {headerExtra}
+        </div>
       </div>
 
       <div className="max-w-[980px] mx-auto px-4 md:px-8 py-6 md:py-8">
@@ -368,7 +373,9 @@ function CellView({ v }: { v: Cell }) {
 // rounded sheet below it holding the plan cards (one card per plan) and, under
 // them, the "Compare plans" table — bare rows, a sticky header with the select
 // buttons, filled check marks. Only the actions use Solvexo orange.
-export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingChange, onSelect, onClose, title = 'Select a plan' }: {
+export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingChange, onSelect, onClose, title = 'Select a plan', headerExtra }: {
+  /** Extra controls on the right of the top bar (the blocking plan gate puts the store switcher + Log out here). */
+  headerExtra?: ReactNode;
   plans: PlatformPlan[]; selectedPlanId: string | null;
   billing: OnboardingBilling; onBillingChange: (b: OnboardingBilling) => void;
   onSelect: (planId: string) => void;
@@ -405,8 +412,9 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
       initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
       transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
     >
-      <div className="h-16 px-6 md:px-8 flex items-center">
+      <div className="h-16 px-4 md:px-8 flex items-center justify-between gap-3">
         <SolvexoLogo size={32} variant="light" />
+        {headerExtra}
       </div>
 
       <div className="absolute inset-x-0 top-16 bottom-0 bg-cream rounded-t-[28px] overflow-y-auto scroll-smooth">

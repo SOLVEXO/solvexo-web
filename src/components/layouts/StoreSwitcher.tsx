@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { Check, ChevronDown, Plus, Search, Store as StoreIcon, X } from 'lucide-react';
 import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 import type { MyStoreItem } from '@/api/services/store';
+import { planBadge, readRecentStoreIds, rememberStore } from '@/utils/storePlanState';
 
 // Shopify-style store switcher — shared by SellerLayout (cross-store pages,
 // no single active store) and StoreLayout (a specific store's own dashboard,
@@ -28,20 +29,7 @@ interface StoreSwitcherProps {
   compact?: boolean;
 }
 
-const RECENT_STORES_KEY = 'solvexo:storeSwitchRecent';
 const PANEL_WIDTH = 340;
-
-/** Stores visited most recently, newest first. Empty for a first-time or
- *  unreadable (private mode, corrupt JSON) read — that only costs the Recent group. */
-function readRecentIds(): string[] {
-  try {
-    const raw = localStorage.getItem(RECENT_STORES_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 function labelize(value?: string | null) {
   if (!value) return '';
@@ -54,7 +42,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [query, setQuery] = useState('');
-  const [recentIds, setRecentIds] = useState<string[]>(readRecentIds);
+  const [recentIds, setRecentIds] = useState<string[]>(readRecentStoreIds);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -110,13 +98,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
   const select = (store: MyStoreItem) => {
     setOpen(false);
     if (store._id === currentStoreId) { triggerRef.current?.focus(); return; }
-    const next = [store._id, ...recentIds.filter(id => id !== store._id)].slice(0, 5);
-    setRecentIds(next);
-    try {
-      localStorage.setItem(RECENT_STORES_KEY, JSON.stringify(next));
-    } catch {
-      // An unwritable localStorage only costs the Recent group.
-    }
+    setRecentIds(rememberStore(store._id));
     navigate(`/store/${store._id}/dashboard`);
   };
 
@@ -303,7 +285,7 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
                       </span>
                       <span className="flex items-center gap-[5px] min-w-0">
                         <span
-                          className={clsx('size-[5px] rounded-full shrink-0', row.store.status === 'active' ? 'bg-[#3FA36B]' : 'bg-[#D9A441]')}
+                          className={clsx('size-[5px] rounded-full shrink-0', row.store.status !== 'active' ? 'bg-[#D9A441]' : planBadge(row.store.planStatus)?.tone === 'bad' ? 'bg-error' : 'bg-[#3FA36B]')}
                           aria-hidden="true"
                         />
                         <span className={clsx('block text-[10px] pointer-coarse:text-[12.5px] truncate leading-[1.35]', isLight ? 'text-slate' : 'text-dark-label')}>
@@ -317,6 +299,12 @@ export function StoreSwitcher({ stores, loading, currentStoreId, variant = 'dark
                             {labelize(row.store.plan)}
                           </span>
                         )}
+                        {(() => {
+                          const b = planBadge(row.store.planStatus);
+                          return b && b.tone !== 'info' ? (
+                            <span className={clsx('shrink-0 rounded-full px-[5px] text-[9px] font-semibold leading-[14px]', b.tone === 'bad' ? 'bg-error-bg text-error' : 'bg-[#fdf2da] text-[#946200]')}>{b.label}</span>
+                          ) : null;
+                        })()}
                         {row.store.status !== 'active' && (
                           <span className={clsx('shrink-0 text-[9px] font-semibold uppercase', isLight ? 'text-[#B9832F]' : 'text-dark-label')}>
                             {labelize(row.store.status)}
