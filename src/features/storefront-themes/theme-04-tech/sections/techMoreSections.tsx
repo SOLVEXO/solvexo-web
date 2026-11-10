@@ -80,7 +80,7 @@ techCustom.set('tech.bento_grid', (section, blocks, colors) => {
 });
 
 // ── Image grid, Instagram-style: seller-chosen photos with optional captions and links. Never a live feed. ──────
-const GRID_COLS: Record<number, string> = { 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5', 6: 'lg:grid-cols-6' };
+const GRID_COLS: Record<number, string> = { 1: 'lg:grid-cols-1', 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5', 6: 'lg:grid-cols-6', 7: 'lg:grid-cols-7', 8: 'lg:grid-cols-8' };
 techCustom.set('tech.image_grid', (section, blocks, colors) => {
   const items = blocks.filter(b => b.type === 'theme_block' && text(b.settings.imageUrl));
   if (items.length === 0) return null;

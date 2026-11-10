@@ -259,6 +259,15 @@ export const SECTION_META: SectionMeta[] = [
     settingsSchema: [...SORT_COLUMNS_FIELDS, { key: 'showFilters', kind: 'checkbox', label: 'Show tag filters' }],
   },
   {
+    type: 'category_product_grid', label: 'Category Product Grid', description: 'The product grid for whichever category a buyer is currently browsing.',
+    Icon: LayoutList, color: '#0EA5E9',
+    defaultSettings: { defaultSort: 'newest', columns: 4, showFilters: true },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    hidden: true,
+    settingsSchema: [...SORT_COLUMNS_FIELDS, { key: 'showFilters', kind: 'checkbox', label: 'Show tag filters' }],
+  },
+  {
     type: 'drop_countdown', label: 'Drop Countdown', description: 'A live countdown to a launch/drop date, with an optional call-to-action button.',
     Icon: Timer, color: '#DC2626',
     defaultSettings: { heading: 'New Drop', subheading: 'Coming soon', targetDate: '', ctaText: '', ctaLink: { linkType: 'home' } },

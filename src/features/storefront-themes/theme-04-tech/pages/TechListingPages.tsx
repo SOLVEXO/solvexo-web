@@ -77,10 +77,14 @@ export function TechCategoryPage() {
   const { tree, loading, error, refetch } = useStoreCategoryTree(store.storeId);
   const category = flat(tree).find(c => c._id === slugOrId || c.slug === slugOrId) ?? null;
   useStorefrontSeo({ title: category?.name, description: category?.description });
+  const { before, after, main } = splitAround(useTemplateSections(store.storeId, 'page', 'category'), 'category_product_grid');
+  const grid = (main?.settings ?? {}) as Record<string, any>;
   if (loading) return <TechBox><TechSkeleton h={320} /></TechBox>;
   if (error) return <TechError message={ts('pg.we_couldn_t_load_this_category', "We couldn't load this category.")} onRetry={refetch} />;
   if (!category) return <TechNotFoundPage />;
   return (
+    <>
+    {before.length > 0 && <TechSectionRenderer sections={before} />}
     <TechBox>
       <TechBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: category.name }]} />
       <Title note={category.description}>{category.name}</Title>
@@ -89,8 +93,10 @@ export function TechCategoryPage() {
           {category.children.map(c => <li key={c._id}><a href={`/category/${c.slug || c._id}`} className="inline-block border px-3 py-1.5 text-xs font-medium no-underline" style={{ borderColor: t.colors.border, color: t.colors.ink, borderRadius: t.fieldRadiusPx }}>{c.name}</a></li>)}
         </ul>
       )}
-      <TechProductBrowser categoryId={category._id} syncUrl />
+      <TechProductBrowser categoryId={category._id} syncUrl defaultSort={grid.defaultSort} columns={grid.columns} showFilters={grid.showFilters !== false} />
     </TechBox>
+    {after.length > 0 && <TechSectionRenderer sections={after} />}
+    </>
   );
 }
 

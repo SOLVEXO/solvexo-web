@@ -230,7 +230,7 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.quickViewSize = oneOf(ts?.quickViewSize, ['compact', 'standard', 'large'] as const, 'standard');
   fashionTheme.productImageFit = oneOf(ts?.productImageFit, ['fill', 'whole'] as const, 'fill');
   fashionTheme.mega.featured = ts?.megaFeatured !== 'hide';
-  fashionTheme.mega.columns = Number(oneOf(ts?.megaColumns, ['3', '4', '5'] as const, '4'));
+  fashionTheme.mega.columns = Math.min(6, Math.max(2, Math.round(Number(ts?.megaColumns)) || 4));
   fashionTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');
   fashionTheme.mega.photo = oneOf(ts?.megaPhoto, ['square', 'landscape', 'portrait'] as const, 'square');
   setVendorPrefix(ts?.vendorPrefix);

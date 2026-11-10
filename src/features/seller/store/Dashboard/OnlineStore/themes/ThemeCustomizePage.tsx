@@ -95,6 +95,7 @@ const ADMIN_ACCENT = '#D97757';
 const SCOPE_HELPER_TEXT: Record<string, string> = {
   pages: 'Pick a page to edit. Its sections render through the active theme.',
   product: 'This product\'s page always shows its media, title, price, variant picker, quantity and buy buttons — the locked "Main Product" card below. Hide or reorder its individual items there, or add more sections to customize what surrounds it.',
+  category: 'The Category page always shows its products — the locked "Category Product Grid" card below, where you set the columns, sort and filters. Add sections to customize what surrounds it.',
   search: 'The Search page always shows its live results grid — the locked "Search Results" card below. Add sections to customize what surrounds it.',
   cart: 'The Cart page always shows its line items and summary/checkout button — the two locked cards below. Add sections to customize what surrounds them.',
   blogIndex: 'The Blog index always shows your list of posts — the locked "Blog Posts" card below. Add sections to customize what surrounds it.',

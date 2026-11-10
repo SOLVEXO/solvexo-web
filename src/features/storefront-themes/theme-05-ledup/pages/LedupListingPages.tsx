@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { LedupSectionRenderer } from '../sections';
+import { splitAround, useLoad, useTemplateSections } from '../../core/pageHooks';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug } from '@/api/services/collections';
@@ -10,7 +12,6 @@ import { renderRichText } from '@/utils/richText';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { breadcrumbJsonLd, collectionJsonLd, pageUrlBuilder } from '../../core/seo/jsonLd';
-import { useLoad } from '../../core/pageHooks';
 import { LedupProductBrowser } from '../components/LedupProductBrowser';
 import { LedupHeroCategoryBanner } from '../components/LedupHeroCategoryBanner';
 import { LedupBox, LedupBreadcrumbs, LedupSkeleton, LedupError } from '../ui/ledupUi';
@@ -66,12 +67,15 @@ export function LedupCategoryPage() {
   const { tree, loading, error, refetch } = useStoreCategoryTree(store.storeId);
   const category = flat(tree).find(c => c._id === slugOrId || c.slug === slugOrId) ?? null;
   useStorefrontSeo({ title: category?.name, description: category?.description });
+  const { before, after, main } = splitAround(useTemplateSections(store.storeId, 'page', 'category'), 'category_product_grid');
+  const grid = (main?.settings ?? {}) as Record<string, any>;
   if (loading) return <LedupBox><LedupSkeleton h={320} /></LedupBox>;
   if (error) return <LedupBox><LedupError message={ts('pg.we_couldn_t_load_this_category', "We couldn't load this category.")} onRetry={refetch} /></LedupBox>;
   if (!category) return <LedupNotFoundPage />;
   return (
     <div className="w-full pb-20">
       <LedupHeroCategoryBanner activeCategory={category._id} />
+      {before.length > 0 && <LedupSectionRenderer sections={before} />}
       <LedupBox padY={false} className="mt-8">
         <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: category.name }]} />
         <Title note={category.description}>{category.name}</Title>
@@ -82,8 +86,9 @@ export function LedupCategoryPage() {
             ))}
           </ul>
         )}
-        <LedupProductBrowser categoryId={category._id} syncUrl />
+        <LedupProductBrowser categoryId={category._id} syncUrl defaultSort={grid.defaultSort} columns={grid.columns} showFilters={grid.showFilters !== false} />
       </LedupBox>
+      {after.length > 0 && <LedupSectionRenderer sections={after} />}
     </div>
   );
 }

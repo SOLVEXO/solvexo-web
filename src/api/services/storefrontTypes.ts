@@ -77,6 +77,7 @@ export const SECTION_TYPES = [
   // representative placeholder.
   'product_main',
   'search_results',
+  'category_product_grid',
   'cart_items',
   'cart_summary',
   'blog_post_list',
@@ -126,6 +127,7 @@ export interface CoreSectionPreviewContext {
 export const CORE_SECTION_TYPES: readonly SectionType[] = [
   'product_main',
   'search_results',
+  'category_product_grid',
   'cart_items',
   'cart_summary',
   'blog_post_list',

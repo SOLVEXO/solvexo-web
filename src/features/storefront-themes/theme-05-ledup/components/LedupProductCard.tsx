@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { ShoppingBag, ArrowUpRight } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { handleOf } from '@/utils/activeStoreText';
@@ -77,7 +78,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
           <h3 className="m-0 line-clamp-2 text-sm font-semibold leading-snug text-stone-900">
             <Link to={to} className="text-inherit no-underline">{p.name}</Link>
           </h3>
-          {product.vendor && <p className="mt-1 text-[11px] uppercase tracking-wider text-stone-400">{product.vendor}</p>}
+          {product.vendor && <p className="mt-1 text-[11px] uppercase tracking-wider text-stone-400"><VendorLink name={product.vendor} plain /></p>}
         </div>
 
         {pills.length > 0 && (

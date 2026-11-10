@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- this module registers renderers as a side effect */
+import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Block, Section } from '@/api/services/storefrontTypes';
@@ -24,12 +25,12 @@ const text = (v: unknown) => (typeof v === 'string' ? v : '');
 custom.set('maison.lookbook', (section, blocks, colors) => {
   const looks = blocks.filter(b => b.type === 'theme_block' && text(b.settings.imageUrl));
   if (looks.length === 0) return null;
-  const cols = section.settings.columns === 2 ? 2 : 3;
+  const cols = columnCount(section.settings.columns, 3);
   const ratio = imageFit(section.settings.imageRatio, '3 / 4');
   return (
     <SectionShell colors={colors} heading={text(section.settings.heading)} eyebrow={text(section.settings.eyebrow) || undefined}>
       {text(section.settings.intro) && <p className="m-0 mb-8 max-w-[640px] text-base leading-relaxed" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{text(section.settings.intro)}</p>}
-      <div className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${cols === 3 ? 'lg:grid-cols-3' : ''}`}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
         {looks.map((b, i) => <LookTile key={b._id ?? i} block={b} fit={ratio} colors={colors} />)}
       </div>
     </SectionShell>

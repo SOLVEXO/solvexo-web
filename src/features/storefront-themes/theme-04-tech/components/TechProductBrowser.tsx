@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
+import { columnCount, responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { ts } from '@/utils/tStatic';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
@@ -26,6 +27,8 @@ interface Props {
   syncUrl?: boolean;
   defaultSort?: BrowseState['sort'];
   showFilters?: boolean;
+  /** Seller-chosen columns (1 to 8) for the product grid; omitted keeps the theme layout. */
+  columns?: number;
   emptyText?: string;
   onProducts?: (products: PublicStoreProduct[]) => void;
   /** Extra blocks the page wants in the sidebar (e.g. a wishlist summary). */
@@ -97,7 +100,7 @@ function Pagination({ page, totalPages, onPage }: { page: number; totalPages: nu
 }
 
 /** Tech listing: filter sidebar on the left (a slide-in panel on phones), sort + grid/list switch on top, chips, pagination. */
-export function TechProductBrowser({ heading, categoryId, collectionId, search, syncUrl = false, defaultSort, showFilters = true, emptyText, onProducts, sidebarExtra }: Props) {
+export function TechProductBrowser({ heading, categoryId, collectionId, search, syncUrl = false, defaultSort, showFilters = true, columns, emptyText, onProducts, sidebarExtra }: Props) {
   const { currency } = useCurrencyPreference();
   const pageSize = clampPageSize(t.pagination.productsPerPage);
   const mode = t.pagination.mode;
@@ -231,7 +234,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
           {products !== null && products.length > 0 && !error && (
             <div aria-busy={loading} style={{ opacity: loading ? 0.5 : 1, transition: 'opacity .15s' }}>
               {view === 'grid'
-                ? <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" style={GAP}>{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} />)}</div>
+                ? <div className={`grid ${columns ? responsiveGridColumnsClass(columnCount(columns, 4)) : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4'}`} style={GAP}>{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} />)}</div>
                 : <div className="flex flex-col gap-3">{products.map(p => <TechProductCard key={p._id} product={p} currency={currency} layout="list" />)}</div>}
               {mode === 'pages' && totalPages > 1 && <Pagination page={state.page} totalPages={totalPages} onPage={goPage} />}
               {canMore && (

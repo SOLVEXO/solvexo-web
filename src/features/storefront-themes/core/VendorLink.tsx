@@ -10,10 +10,10 @@ export function setVendorPrefix(value: unknown): void {
 }
 
 /** A vendor name that opens all of that vendor's products (like clicking an author on a book shop). Inherits the text colour of its place. */
-export function VendorLink({ name }: { name: string }) {
+export function VendorLink({ name, plain = false }: { name: string; /** On product cards: no "By" text before the name. */ plain?: boolean }) {
   return (
     <>
-      {vendorPrefix && <>{vendorPrefix}{' '}</>}
+      {!plain && vendorPrefix && <>{vendorPrefix}{' '}</>}
       <Link to={vendorPath(name)} className="text-inherit no-underline hover:underline">{name}</Link>
     </>
   );

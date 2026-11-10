@@ -1,5 +1,6 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
+import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Link } from 'react-router-dom';
 import { BarChart3, Eye, Heart, ShoppingCart } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
@@ -138,7 +139,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         {imageBox}
         <div className="flex min-w-0 flex-col gap-2">
           <TechStock inStock={inStock} />
-          {b.cardTag && product.vendor && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{product.vendor}</p>}
+          {b.cardTag && product.vendor && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}><VendorLink name={product.vendor} plain /></p>}
           <Link to={to} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
           {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
           {swatchRow}
@@ -161,7 +162,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         {(quickBtn || heartBtn || compareBtn) && <div className="tx-card-actions">{quickBtn}{heartBtn}{compareBtn}</div>}
       </div>
       {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
-      {b.cardTag && product.vendor && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{product.vendor}</p>}
+      {b.cardTag && product.vendor && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}><VendorLink name={product.vendor} plain /></p>}
       <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
       <div className="mt-auto flex flex-col gap-3 pt-1">
         {swatchRow}

@@ -13,6 +13,8 @@ export interface ProductCardViewProps {
   image?: string;
   secondImage?: string;
   tag?: string;
+  /** Where the tag leads (e.g. the vendor's products); the tag is plain text when omitted. */
+  tagHref?: string;
   rating?: number;
   price?: string;
   comparePrice?: string;
@@ -36,7 +38,7 @@ export interface ProductCardViewProps {
 const BORDER: Record<string, string> = { theme: '1px solid var(--fx-b)', flat: 'none', outlined: '1px solid var(--fx-b)', elevated: 'none' };
 
 /** Presentational product card shared by the live storefront and the Theme Library demo (no store/cart context needed). */
-export function FashionProductCardView({ to, name, image, secondImage, tag, rating = 0, price, comparePrice, percentOff = 0, soldOut, wished = null, onWish, onAdd, adding, onQuickView, swatches, onSwatch, hoverVideo }: ProductCardViewProps) {
+export function FashionProductCardView({ to, name, image, secondImage, tag, tagHref, rating = 0, price, comparePrice, percentOff = 0, soldOut, wished = null, onWish, onAdd, adding, onQuickView, swatches, onSwatch, hoverVideo }: ProductCardViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onSale = t.saleBadge && !!comparePrice && percentOff > 0;
   const stars = Math.round(rating);
@@ -72,7 +74,9 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, rati
 
       <div className="fx-card-body flex flex-1 flex-col gap-3 p-4 md:p-5">
         <div className="flex flex-col gap-1.5">
-          {tag && t.cardTag && <span className="text-xs capitalize" style={{ color: t.colors.inkMuted }}>{tag}</span>}
+          {tag && t.cardTag && (tagHref
+            ? <Link to={tagHref} className="w-fit text-xs capitalize no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{tag}</Link>
+            : <span className="text-xs capitalize" style={{ color: t.colors.inkMuted }}>{tag}</span>)}
           <Link to={to} className="no-underline" style={{ color: t.colors.ink }}><h3 className="m-0 line-clamp-1 text-base font-medium md:text-lg">{name}</h3></Link>
           {stars > 0 && t.cardRating && (
             <div className="flex items-center gap-1.5" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: stars })}>

@@ -18,6 +18,14 @@ function CollectionGrid({ settings: s, colors }: { settings: Record<string, any>
     </LedupSectionShell>
   );
 }
+registerLedupSection('category_product_grid', (section, _b, colors) => {
+  const s = section.settings as Record<string, any>;
+  return (
+    <LedupSectionShell colors={colors}>
+      <LedupProductBrowser defaultSort={s.defaultSort} columns={s.columns} showFilters={s.showFilters !== false} />
+    </LedupSectionShell>
+  );
+});
 registerLedupSection('collection_product_grid', (section, _b, colors) => <CollectionGrid settings={section.settings} colors={colors} />);
 
 registerLedupSection('product_catalog', (section, _b, colors) => {

@@ -20,6 +20,15 @@ function CollectionGrid({ settings: s, colors }: { settings: Record<string, any>
 }
 registerTechSection('collection_product_grid', (section, _b, colors) => <CollectionGrid settings={section.settings} colors={colors} />);
 
+registerTechSection('category_product_grid', (section, _b, colors) => {
+  const s = section.settings as Record<string, any>;
+  return (
+    <TechSectionShell colors={colors}>
+      <TechProductBrowser defaultSort={s.defaultSort} columns={s.columns} showFilters={s.showFilters !== false} />
+    </TechSectionShell>
+  );
+});
+
 registerTechSection('product_catalog', (section, _b, colors) => {
   const s = section.settings as Record<string, any>;
   const eyebrow = showEyebrow(s) && typeof s.eyebrow === 'string' && s.eyebrow.trim() ? s.eyebrow : '';

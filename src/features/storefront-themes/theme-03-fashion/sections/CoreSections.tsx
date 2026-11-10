@@ -10,6 +10,18 @@ import { registerFashionSection } from './sectionRegistry';
 import { SectionShell } from './SectionShell';
 import { CollectionScopeContext } from './collectionScope';
 
+registerFashionSection('category_product_grid', (section, _b, colors) => <CategoryGrid settings={section.settings} colors={colors} />);
+
+/** Customize preview of the Category template: all products, laid out with the seller's columns / sort / filter settings (the live page draws the grid itself). */
+function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; colors: typeof t.colors }) {
+  return (
+    <SectionShell colors={colors}>
+      <FashionProductBrowser renderCard={(p, currency) => <FashionProductCard product={p} currency={currency} />}
+        defaultSort={s.defaultSort} columns={s.columns ? columnCount(s.columns, 4) : undefined} showFilters={s.showFilters !== false} />
+    </SectionShell>
+  );
+}
+
 registerFashionSection('collection_product_grid', (section, _b, colors) => <CollectionGrid settings={section.settings} colors={colors} />);
 
 function CollectionGrid({ settings: s, colors }: { settings: Record<string, any>; colors: typeof t.colors }) {

@@ -113,7 +113,7 @@ export const techThemeManifest: ThemeManifest = {
     {
       key: 'tech.image_grid', label: 'Image grid', color: '#DB2777',
       description: 'An Instagram-style grid of photos you choose, with optional captions and links. It is not a live feed.',
-      fields: [SECTION_HEADING, { key: 'columns', kind: 'select', label: 'Columns on desktop', numeric: true, options: [{ value: '3', label: '3' }, { value: '4', label: '4' }, { value: '5', label: '5' }, { value: '6', label: '6' }] }],
+      fields: [SECTION_HEADING, { key: 'columns', kind: 'number', label: 'Columns on desktop', min: 1, max: 8 }],
       defaults: { heading: 'Follow us for news and offers', columns: 6 },
       block: { key: 'photo', label: 'Photo', fields: [
         { key: 'imageUrl', kind: 'image', label: 'Photo', required: true },

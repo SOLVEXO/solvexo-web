@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { columnCount, responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { ts } from '@/utils/tStatic';
 import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
 import { PRODUCT_TYPE_LABEL, SORT_OPTIONS, clearFilters, hasActiveFilters, toggleIn, toggleOption, type BrowseSort, type BrowseState } from '@/features/storefront/browse/browseState';
@@ -31,7 +32,7 @@ function PriceFilter({ symbol, lowest, highest, minPrice, maxPrice, onApply }: {
 }
 
 /** Product list for a collection, category or search: real filters from the store's own products (stock, price, type, options, tags), sort, count and a "Load more" button. */
-export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl = true, emptyText, heading, defaultSort, showFilters = true, onProducts }: { categoryId?: string; collectionId?: string; search?: string; syncUrl?: boolean; emptyText?: string; heading?: ReactNode; defaultSort?: BrowseSort; showFilters?: boolean; onProducts?: (products: { slug: string; name: string; images?: string[] }[]) => void }) {
+export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl = true, emptyText, heading, defaultSort, showFilters = true, columns, onProducts }: { categoryId?: string; collectionId?: string; search?: string; syncUrl?: boolean; emptyText?: string; heading?: ReactNode; defaultSort?: BrowseSort; showFilters?: boolean; columns?: number; onProducts?: (products: { slug: string; name: string; images?: string[] }[]) => void }) {
   const pageSize = clampPageSize(ledupTheme.pagination.productsPerPage);
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search, syncUrl, pageSize, accumulate: true, defaultSort });
   useEffect(() => { if (products && onProducts) onProducts(products.map(p => ({ slug: p.slug, name: p.name, images: p.images }))); }, [products, onProducts]);
@@ -115,7 +116,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
             <div className="rounded-2xl border border-stone-200 bg-stone-50 p-12 text-center text-stone-500">{emptyText ?? ts('browse.noProducts', 'No products found.')}</div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className={`grid gap-5 ${columns ? responsiveGridColumnsClass(columnCount(columns, 4)) : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
                 {products.map(p => <LedupProductCard key={p._id} product={p} currency={currency} />)}
               </div>
               {canMore && (

@@ -1,5 +1,6 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
+import { vendorPath } from '@/features/storefront-themes/core/VendorLink';
 import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -77,6 +78,7 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
       secondImage={t.productImageHover === 'second-image' ? product.images?.[1] : undefined}
       hoverVideo={previewVideoSrc(product.videoUrl)}
       tag={product.vendor}
+      tagHref={product.vendor ? vendorPath(product.vendor) : undefined}
       rating={product.averageRating ?? 0}
       price={!priceLocked && price != null ? show(price) : undefined}
       comparePrice={!priceLocked && sale.onSale ? show(sale.compareAmount, true) : undefined}
