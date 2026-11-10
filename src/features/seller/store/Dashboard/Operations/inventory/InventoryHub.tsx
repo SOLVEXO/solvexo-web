@@ -8,6 +8,7 @@ import { BarcodeScanModal } from './BarcodeScanModal';
 import ExpiryTab from './tabs/ExpiryTab';
 import SupplierReturnsTab from './tabs/SupplierReturnsTab';
 import SuppliersTab from './tabs/SuppliersTab';
+import FulfillmentTab from './tabs/FulfillmentTab';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { useRouteTabs } from '@/hooks/useRouteTabs';
 import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
@@ -26,6 +27,7 @@ const TABS: Tab[] = [
   { id: 'reorder',         label: 'Reorder',          icon: <AlertTriangle size={13} /> },
   { id: 'counts',          label: 'Stock Counts',     icon: <ClipboardCheck size={13} /> },
   { id: 'suppliers',       label: 'Suppliers',        icon: <Building2 size={13} /> },
+  { id: 'fulfillment',     label: 'Fulfilment',       icon: <Truck size={13} /> },
   { id: 'returns',         label: 'Supplier Returns', icon: <Undo2 size={13} /> },
   { id: 'expiry',          label: 'Expiry',           icon: <CalendarClock size={13} /> },
   { id: 'preorders',       label: 'Pre-orders',       icon: <Clock size={13} /> },
@@ -56,6 +58,7 @@ const TAB_PERMS: Record<string, string[]> = {
   reorder: ['purchase_orders.manage'],
   counts: ['inventory.count', 'inventory.approve'],
   suppliers: ['purchase_orders.manage'],
+  fulfillment: ['fulfillment.view', 'fulfillment.manage'],
   returns: ['purchase_orders.manage'],
   expiry: ['inventory.view'],
   preorders: ['inventory.view'],
@@ -91,6 +94,7 @@ export function InventoryHub({ forcedTab }: { forcedTab?: string } = {}) {
       {isVisited('reorder')         && <div className={paneClassName('reorder')}><ReorderSuggestions embedded /></div>}
       {isVisited('counts')          && <div className={paneClassName('counts')}><StockCountsTab /></div>}
       {isVisited('suppliers')       && <div className={paneClassName('suppliers')}><SuppliersTab /></div>}
+      {isVisited('fulfillment')     && <div className={paneClassName('fulfillment')}><FulfillmentTab /></div>}
       {isVisited('returns')         && <div className={paneClassName('returns')}><SupplierReturnsTab /></div>}
       {isVisited('expiry')          && <div className={paneClassName('expiry')}><ExpiryTab /></div>}
       {isVisited('preorders')       && <div className={paneClassName('preorders')}><PreordersTab /></div>}

@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import FulfillmentSendCard from './FulfillmentSendCard';
 import { clsx } from 'clsx';
 import {
   ArrowLeft, Package, MapPin, User, CreditCard, Truck, AlertCircle,
@@ -726,6 +727,8 @@ export function StoreOrderDetail() {
                 {so.pickupReadyAt && <p className="text-[11px] text-slate mt-2">Ready since {formatDate(so.pickupReadyAt)}</p>}
               </Card>
             )}
+
+            {!isPickup && canFulfilPerm && so.fulfillmentType !== 'digital' && !['cancelled', 'refunded', 'completed'].includes(so.status) && <FulfillmentSendCard storeId={storeId} orderId={orderId} />}
 
             {!isPickup && detail.localDelivery && (
               <Card title="Local delivery" icon={MapPin}>
