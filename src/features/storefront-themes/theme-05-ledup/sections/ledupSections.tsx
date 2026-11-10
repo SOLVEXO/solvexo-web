@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this file registers renderers, it exports none */
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
@@ -144,6 +145,127 @@ function Bento({ settings, blocks }: { settings: Record<string, any>; blocks: Bl
   );
 }
 
+// ── Projects carousel ──
+function Projects({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const row = useRef<HTMLDivElement>(null);
+  if (blocks.length === 0) return null;
+  const nudge = (d: 1 | -1) => row.current?.scrollBy({ left: d * Math.max(280, (row.current?.clientWidth ?? 600) * 0.7), behavior: 'smooth' });
+  return (
+    <section className="py-10">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-8">
+        <div className="grid items-center gap-8 rounded-[2.5rem] bg-white px-6 py-12 md:grid-cols-[minmax(0,1fr)_1.7fr] md:px-12">
+          <div>
+            {text(settings.eyebrow) && <p className="m-0 mb-2 text-xs text-[#a69d98]">{text(settings.eyebrow)}</p>}
+            {text(settings.heading) && <h2 className="m-0 text-[clamp(24px,3vw,38px)] font-medium leading-tight" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{text(settings.heading)}</h2>}
+            {text(settings.text) && <p className="mt-4 max-w-md text-sm leading-relaxed text-[#736c67]">{text(settings.text)}</p>}
+            {blocks.length > 1 && (
+              <div className="mt-6 flex gap-2">
+                <button type="button" aria-label="Previous" onClick={() => nudge(-1)} className="ld-iconbtn"><span aria-hidden>‹</span></button>
+                <button type="button" aria-label="Next" onClick={() => nudge(1)} className="ld-iconbtn"><span aria-hidden>›</span></button>
+              </div>
+            )}
+          </div>
+          <div ref={row} className="ld-hide-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth">
+            {blocks.map((b, i) => {
+              const s = (b.settings ?? {}) as Record<string, any>;
+              const id = String(b._id ?? i);
+              return (
+                <PreviewBlock key={id} blockId={id}>
+                  <figure className="m-0 w-[min(78vw,440px)] shrink-0 snap-start">
+                    <div className="aspect-[4/3] overflow-hidden rounded-3xl bg-[#f1efed]">
+                      {text(s.imageUrl) && <img src={text(s.imageUrl)} alt={text(s.title)} loading="lazy" className="h-full w-full object-cover transition duration-700 hover:scale-105" />}
+                    </div>
+                    {text(s.title) && <figcaption className="mt-2 text-xs text-[#736c67]">{text(s.title)}</figcaption>}
+                  </figure>
+                </PreviewBlock>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Photo switcher ("Interruptores") ──
+function Switcher({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const [on, setOn] = useState(0);
+  if (blocks.length === 0) return null;
+  const cur = Math.min(on, blocks.length - 1);
+  return (
+    <section className="py-10">
+      <div className="mx-auto max-w-[1440px] px-0 sm:px-8">
+        <div className="overflow-hidden bg-[#e4e0dc] sm:rounded-[2.5rem]">
+          <div className="relative aspect-[16/8] w-full bg-[#d9d4cf]">
+            {blocks.map((b, i) => {
+              const img = text(((b.settings ?? {}) as Record<string, any>).imageUrl);
+              return img ? <img key={String(b._id ?? i)} src={img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ opacity: i === cur ? 1 : 0, transition: 'opacity .7s ease' }} /> : null;
+            })}
+          </div>
+          <div className="px-4 py-5 text-center">
+            {text(settings.label) && <p className="m-0 mb-3 text-[11px] text-[#8c847e]">{text(settings.label)}</p>}
+            <div className="flex flex-wrap justify-center gap-3">
+              {blocks.map((b, i) => {
+                const s = (b.settings ?? {}) as Record<string, any>;
+                const id = String(b._id ?? i);
+                return (
+                  <PreviewBlock key={id} blockId={id}>
+                    <button type="button" aria-pressed={i === cur} onClick={() => setOn(i)} className="min-w-[4.6rem] cursor-pointer rounded-full border-0 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-white transition duration-300"
+                      style={{ background: i === cur ? 'var(--ld-accent)' : 'color-mix(in srgb, var(--ld-accent) 55%, transparent)', boxShadow: i === cur ? '0 0 0 3px rgba(255,255,255,.55)' : 'none' }}>
+                      {text(s.title) || String(i + 1)}
+                    </button>
+                  </PreviewBlock>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Dark stacked card ──
+function Stacked({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const img1 = text(settings.imageUrl);
+  const img2 = text(settings.imageUrl2);
+  if (!text(settings.heading) && blocks.length === 0) return null;
+  return (
+    <section className="py-10" data-ld-dark>
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-8">
+        <div className="relative overflow-hidden rounded-[2.5rem] text-white" style={{ background: 'var(--ld-accent)' }}>
+          <div className="grid gap-8 px-6 pb-0 pt-12 md:grid-cols-[1.2fr_1fr] md:px-12">
+            <div className="pb-8">
+              {text(settings.heading) && <h2 className="m-0 text-[clamp(24px,3vw,36px)] font-medium leading-tight" style={{ fontFamily: t.fonts.display }}>{text(settings.heading)}</h2>}
+              {text(settings.text) && <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80">{text(settings.text)}</p>}
+            </div>
+            {(img1 || img2) && (
+              <div className="relative hidden min-h-[240px] md:block">
+                {img1 && <img src={img1} alt="" loading="lazy" className="absolute end-0 top-0 h-[190px] w-[62%] rounded-2xl object-cover shadow-xl" />}
+                {img2 && <img src={img2} alt="" loading="lazy" className="absolute bottom-0 start-0 h-[170px] w-[52%] rounded-2xl object-cover shadow-xl" />}
+              </div>
+            )}
+          </div>
+          <ol className="m-0 list-none p-0">
+            {blocks.map((b, i) => {
+              const s = (b.settings ?? {}) as Record<string, any>;
+              const id = String(b._id ?? i);
+              return (
+                <PreviewBlock key={id} blockId={id}>
+                  <li className="-mt-4 flex items-center gap-3 rounded-b-[1.6rem] px-6 pb-4 pt-8 text-xs font-medium uppercase tracking-wide md:px-12"
+                    style={{ background: `color-mix(in srgb, var(--ld-accent) ${Math.max(55, 100 - i * 9)}%, #fff)` }}>
+                    <span className="opacity-70">{String(i + 1).padStart(2, '0')}.</span>{text(s.title)}
+                  </li>
+                </PreviewBlock>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Registration ────────────────────────────────────────────────────────────
 const categoryTabs = () => <section className="pb-6 pt-2"><LedupHeroCategoryBanner /></section>;
 
@@ -153,6 +275,9 @@ registerLedupSection('hero_banner', categoryTabs);
 registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {
   const key = String(sec.settings?.sectionKey || '');
   if (key === 'ledup.category_tabs') return categoryTabs();
+  if (key === 'ledup.projects') return <Projects settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.switcher') return <Switcher settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.stacked') return <Stacked settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.bento') return <Bento settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.highlights') return <FeatureList settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.statement') return <RichText settings={sec.settings} blocks={blocks} dynamic={dynamic} />;

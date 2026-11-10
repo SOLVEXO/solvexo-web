@@ -66,6 +66,7 @@ export const baseManifest: ThemeManifest = {
     { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },
     { id: 'product', label: 'Product', group: 'products', showChrome: true, resource: { kind: 'collection-template', resourceType: 'product', templateKey: 'default', allowAltTemplates: true } },
     { id: 'collection', label: 'Collection', group: 'collections', showChrome: true, resource: { kind: 'collection-template', resourceType: 'collection', templateKey: 'default', allowAltTemplates: true } },
+    { id: 'category', label: 'Category', group: 'collections', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'category', allowAltTemplates: false } },
     { id: 'pages', label: 'Pages', group: 'pages', showChrome: true, resource: { kind: 'store-page', pageType: 'custom' } },
     { id: 'search', label: 'Search', group: 'search', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'search', allowAltTemplates: false } },
     { id: 'cart', label: 'Cart', group: 'cart', showChrome: true, resource: { kind: 'collection-template', resourceType: 'page', templateKey: 'cart', allowAltTemplates: false } },
@@ -133,6 +134,39 @@ export const baseManifest: ThemeManifest = {
       initialBlocks: 4,
     },
     {
+      key: 'ledup.projects', label: 'Projects carousel', color: '#4b423b',
+      description: 'A white panel: text on the left, a sideways-scrolling row of rounded project photos on the right.',
+      fields: [
+        { key: 'eyebrow', kind: 'text', label: 'Small label', maxLength: 60 },
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Text', rows: 3, maxLength: 400 },
+      ],
+      defaults: { eyebrow: 'Projects', heading: 'Ideas that light the way.' },
+      block: { key: 'photo', label: 'Photo', fields: [{ key: 'imageUrl', kind: 'image', label: 'Photo' }, { key: 'title', kind: 'text', label: 'Caption (optional)', maxLength: 80 }] },
+      initialBlocks: 3,
+    },
+    {
+      key: 'ledup.switcher', label: 'Photo switcher', color: '#4b423b',
+      description: 'One big photo with round toggle buttons underneath (like ledup.pt "Interruptores"): each button shows another photo.',
+      fields: [
+        { key: 'label', kind: 'text', label: 'Small label above the buttons', maxLength: 60 },
+      ],
+      block: { key: 'scene', label: 'Scene', fields: [{ key: 'imageUrl', kind: 'image', label: 'Photo' }, { key: 'title', kind: 'text', label: 'Button label', maxLength: 30 }] },
+      initialBlocks: 3,
+    },
+    {
+      key: 'ledup.stacked', label: 'Dark stacked card', color: '#4b423b',
+      description: 'A dark rounded card: heading and text, a numbered list shown as stacked layers, and up to two photos on the right.',
+      fields: [
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 500 },
+        { key: 'imageUrl', kind: 'image', label: 'Photo 1' },
+        { key: 'imageUrl2', kind: 'image', label: 'Photo 2' },
+      ],
+      block: { key: 'point', label: 'List item', fields: [{ key: 'title', kind: 'text', label: 'Text', maxLength: 60 }] },
+      initialBlocks: 4,
+    },
+    {
       key: 'ledup.statement', label: 'Statement', color: '#4b423b',
       description: 'A large centred statement with a short text.',
       fields: [
@@ -154,6 +188,8 @@ export const baseManifest: ThemeManifest = {
     { key: 'font', label: 'Body & UI font', group: 'Typography', control: { kind: 'font' }, helpText: 'Sets body and interface text.' },
     { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'font', defaultLabel: 'Theme default (uses body font)' }, helpText: 'Used for headlines. Theme default uses your body font.' },
     { key: 'custom.preloader', label: 'Intro screen (loader)', group: 'Effects', control: { kind: 'select', options: [{ value: 'once', label: 'Once per visit' }, { value: 'always', label: 'On every page load' }, { value: 'hide', label: 'Off' }] }, helpText: 'A full-screen intro with your logo while the store opens.' },
+    { key: 'custom.preloaderVideo', label: 'Loader video (link)', group: 'Effects', control: { kind: 'text', maxLength: 300, placeholder: 'https://… .mp4 or .webm' }, helpText: 'Optional: a muted background video for the intro screen (ledup.pt uses one). Empty uses the logo.' },
+    { key: 'custom.footerVideo', label: 'Footer background video (link)', group: 'Effects', control: { kind: 'text', maxLength: 300, placeholder: 'https://… .mp4 or .webm' }, helpText: 'Optional: a muted looping video behind the footer. Empty uses the colour gradient.' },
     { key: 'custom.preloaderBg', label: 'Loader background', group: 'Effects', control: { kind: 'color', optional: { fallback: '#0a0a0b' } }, helpText: 'Colour behind the logo. Auto is near-black.' },
     { key: 'custom.preloaderLogo', label: 'Loader logo (image link)', group: 'Effects', control: { kind: 'text', maxLength: 300, placeholder: 'https://… (empty = your store logo)' }, helpText: 'Paste an https image link (PNG/SVG/GIF). Empty uses your store logo, or the store name as text.' },
     { key: 'custom.preloaderTone', label: 'Loader logo colour', group: 'Effects', control: { kind: 'select', options: [{ value: 'light', label: 'Turn the logo white' }, { value: 'original', label: 'Keep original colours' }] }, helpText: 'White suits dark logos on the dark background.' },

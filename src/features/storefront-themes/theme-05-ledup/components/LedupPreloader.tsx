@@ -33,8 +33,9 @@ export function LedupPreloader() {
 
   return (
     <div className={`ld-preloader ${phase === 'leaving' ? 'is-leaving' : ''}`} style={{ background: cfg.bg }} role="status" aria-label={store.name}>
+      {cfg.video && <video src={cfg.video} autoPlay muted loop playsInline aria-hidden className="absolute inset-0 h-full w-full object-cover" />}
       <div className={`ld-preloader-mark ${cfg.style === 'pulse' ? 'is-pulse' : ''}`}>
-        {logoUrl
+        {cfg.video ? null : logoUrl
           ? <img src={logoUrl} alt="" className="mx-auto max-h-[38vh] max-w-[min(70vw,520px)] object-contain" style={cfg.tone === 'light' ? { filter: 'brightness(0) invert(1)', opacity: 0.85 } : undefined} />
           : <span className="text-3xl font-light tracking-tight">{store.name}</span>}
       </div>

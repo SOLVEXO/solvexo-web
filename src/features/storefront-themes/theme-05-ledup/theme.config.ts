@@ -69,7 +69,8 @@ const STATIC_DEFAULTS = {
   curvedFooterRadiusPx: '50px',
   showDatasheetButton: true,
   showCharacteristicsTable: true,
-  preloader: { mode: 'once' as 'once' | 'always' | 'hide', bg: '#0a0a0b', logo: '', tone: 'light' as 'light' | 'original', style: 'fade' as 'fade' | 'bar' | 'pulse', seconds: 1.5 },
+  footerVideo: '',
+  preloader: { mode: 'once' as 'once' | 'always' | 'hide', bg: '#0a0a0b', logo: '', video: '', tone: 'light' as 'light' | 'original', style: 'fade' as 'fade' | 'bar' | 'pulse', seconds: 1.5 },
   checkoutSummary: 'right' as 'right' | 'left',
   cartUpsell: true,
   /** Products per page on collection/category/search; seller settings `custom.productsPerPage` / `custom.productShowAll`. */
@@ -100,9 +101,11 @@ export function applyMerchantThemeOverrides(colors: BaseMerchantColors | null | 
   ledupTheme.colors.footer = hex(ts?.footerColor) ?? DEFAULT_COLORS.footer;
   const pick = <T extends string>(v: unknown, all: readonly T[], d: T): T => (typeof v === 'string' && (all as readonly string[]).includes(v) ? (v as T) : d);
   const secs = Number(ts?.preloaderSeconds);
+  ledupTheme.footerVideo = typeof ts?.footerVideo === 'string' && /^https:\/\//.test(ts.footerVideo.trim()) ? ts.footerVideo.trim() : '';
   ledupTheme.preloader = {
     mode: pick(ts?.preloader, ['once', 'always', 'hide'] as const, 'once'),
     bg: hex(ts?.preloaderBg) ?? '#0a0a0b',
+    video: typeof ts?.preloaderVideo === 'string' && /^https:\/\//.test(ts.preloaderVideo.trim()) ? ts.preloaderVideo.trim() : '',
     logo: typeof ts?.preloaderLogo === 'string' && /^https:\/\//.test(ts.preloaderLogo.trim()) ? ts.preloaderLogo.trim() : '',
     tone: pick(ts?.preloaderTone, ['light', 'original'] as const, 'light'),
     style: pick(ts?.preloaderStyle, ['fade', 'bar', 'pulse'] as const, 'fade'),

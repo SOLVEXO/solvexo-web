@@ -46,8 +46,9 @@ export function LedupFooter() {
     <>
       {(theme?.footer?.sections?.length ?? 0) > 0 && <LedupSectionRenderer sections={theme?.footer?.sections ?? []} />}
       <footer className="w-full pt-16" style={{ fontFamily: t.fonts.body }}>
-        <div className="ld-footer-wrapper" style={{ color: fg, ...(opts.bgColor ? { background: opts.bgColor } : {}) }}>
-          <div className="mx-auto max-w-7xl px-6 pb-6 pt-16 sm:px-10 lg:px-16 lg:pt-24">
+        <div className="ld-footer-wrapper" data-ld-dark style={{ color: fg, ...(opts.bgColor ? { background: opts.bgColor } : {}) }}>
+          {t.footerVideo && <video src={t.footerVideo} autoPlay muted loop playsInline aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-70" />}
+          <div className="relative mx-auto max-w-7xl px-6 pb-6 pt-16 sm:px-10 lg:px-16 lg:pt-24">
             {!blocks.some(b => b.type === 'footer_brand') && <h2 className="ld-footer-title m-0 mb-12 text-[clamp(28px,4.5vw,58px)] font-light leading-tight"><bdi>{store.name}</bdi></h2>}
             <FooterNewsletterStrip tokens={tokens} maxWidth="100%" padX="0px" line={line} />
             <div className="flex flex-wrap gap-x-12 gap-y-10 pb-14 pt-8">

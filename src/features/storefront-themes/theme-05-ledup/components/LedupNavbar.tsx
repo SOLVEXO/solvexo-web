@@ -34,6 +34,22 @@ export function LedupNavbar() {
   const cta = o.cta;
   const panelOpen = megaId !== null || searchOpen;
 
+  // The logo turns white while the header sits over a dark section (marked data-ld-dark), like ledup.pt.
+  const [onDark, setOnDark] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    const check = () => {
+      raf = 0;
+      const hit = document.elementsFromPoint(80, 36).some(e => e instanceof HTMLElement && !!e.closest('[data-ld-dark]'));
+      setOnDark(prev => (prev === hit ? prev : hit));
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(check); };
+    document.addEventListener('scroll', on, true);
+    window.addEventListener('resize', on);
+    on();
+    return () => { document.removeEventListener('scroll', on, true); window.removeEventListener('resize', on); if (raf) cancelAnimationFrame(raf); };
+  }, []);
+
   // A page change or Esc closes every panel.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- close the open panels when the route changes
@@ -56,8 +72,8 @@ export function LedupNavbar() {
         <div className="ld-header-row">
           <NavAnchor link={resolveLink(header?.logoLink ?? { linkType: 'home' })} className="flex shrink-0 items-center text-stone-900 no-underline">
             {logoUrl
-              ? <img src={logoUrl} alt={store.name} className={logo.className} style={logo.style} />
-              : <span className="whitespace-nowrap text-2xl font-bold tracking-tight" style={{ color: 'var(--ld-accent)' }}>{store.name}</span>}
+              ? <img src={logoUrl} alt={store.name} className={logo.className} style={{ ...logo.style, transition: 'filter .3s ease', ...(onDark ? { filter: 'brightness(0) invert(1)' } : {}) }} />
+              : <span className="whitespace-nowrap text-2xl font-bold tracking-tight" style={{ color: onDark ? '#fff' : 'var(--ld-accent)', transition: 'color .3s ease' }}>{store.name}</span>}
           </NavAnchor>
 
           <nav aria-label={ts('nav.main', 'Main')} className="ld-glass-pill hidden lg:flex">
