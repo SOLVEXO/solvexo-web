@@ -10,6 +10,7 @@ import { Footer } from '@/components/comman/ui/Footer';
 import { formatUsd, yearlyMonthlyEquivalent, yearlyTotal, maxYearlySavingsPercent } from '@/utils/planPricing';
 import { salesMailto } from '@/utils/contact';
 import { displayPrice, gatewayFeeRange, money, planFeatures } from './pricing/planFeatures';
+import { formatLocal, useLocalCurrency } from './pricing/localPrice';
 
 // Bright pricing page: launch-offer hero, plan cards with the crossed-out "was" price and
 // plain-language features, "Included in every plan", a plan picker, what each sale costs,
@@ -144,8 +145,11 @@ export function PricingPage() {
   const offs = priced.map(p => displayPrice(p, 'monthly').percentOff);
   const minOff = offs.length && offs.every(o => o > 0) ? Math.min(...offs) : 0;
   const maxOff = offs.length ? Math.max(...offs) : 0;
+  // Country sites (/pk/pricing) show prices in the local currency; billing stays in US$.
+  const local = useLocalCurrency();
+  const price = (usd: number) => (local ? formatLocal(usd, local) : `US${money(usd)}`);
   const introPlan = plans.find(p => p.introOfferEnabled && p.introPriceUSD != null && p.introDurationCycles != null);
-  const introText = introPlan ? `${money(introPlan.introPriceUSD!)} a month for your first ${introPlan.introDurationCycles} month${introPlan.introDurationCycles === 1 ? '' : 's'}` : null;
+  const introText = introPlan ? `${price(introPlan.introPriceUSD!)} a month for your first ${introPlan.introDurationCycles} month${introPlan.introDurationCycles === 1 ? '' : 's'}` : null;
   const feeRange = gatewayFeeRange(plans);
   const trialCta = trialDurationDays ? `Start ${trialDurationDays}-day free trial` : 'Start free trial';
 
@@ -227,22 +231,27 @@ export function PricingPage() {
                     ) : (
                       <>
                         <div className="min-h-[24px] flex items-center gap-2 text-[14px] text-[#9a988f]">
-                          {was != null && <><s>US{money(was)}</s><span className="rounded-md px-2 py-[2px] text-[11.5px] font-bold" style={{ background: '#eaf6ec', color: GREEN }}>{percentOff}% OFF</span></>}
+                          {was != null && <><s>{price(was)}</s><span className="rounded-md px-2 py-[2px] text-[11.5px] font-bold" style={{ background: '#eaf6ec', color: GREEN }}>{percentOff}% OFF</span></>}
                         </div>
                         <p className="mt-1 flex items-baseline gap-1">
-                          <span className="text-[38px] font-bold tracking-[-0.03em] tabular-nums">US{money(now)}</span>
+                          <span className="text-[38px] font-bold tracking-[-0.03em] tabular-nums">{price(now)}</span>
                           <span className="text-[14px]" style={{ color: MUTED }}>/month</span>
                         </p>
                         <p className="min-h-[19px] text-[12.5px] font-semibold" style={{ color: GREEN }}>
-                          {billing === 'annual' ? `Billed US${money(yearlyTotal(plan))} a year` : was != null ? `You save US${money(Math.round((was - now) * 100) / 100)} every month` : ''}
+                          {billing === 'annual' ? `Billed ${price(yearlyTotal(plan))} a year` : was != null ? `You save ${price(Math.round((was - now) * 100) / 100)} every month` : ''}
                         </p>
+                        {local && (
+                          <p className="mt-0.5 text-[11.5px]" style={{ color: MUTED }}>
+                            Billed in US dollars: US{money(billing === 'annual' ? yearlyTotal(plan) : now)}{billing === 'annual' ? ' a year' : ' a month'}
+                          </p>
+                        )}
                       </>
                     )}
 
                     {intro && (
                       <div className="mt-3.5 rounded-[10px] px-3 py-2.5 text-[12.5px] leading-[1.5]" style={{ background: '#fdf0ea', color: '#7a3f2a' }}>
-                        <span className="inline-flex items-center gap-1.5 font-bold"><Gift size={13} aria-hidden /> First {plan.introDurationCycles} month{plan.introDurationCycles === 1 ? '' : 's'}: US{money(plan.introPriceUSD!)}/month</span>
-                        <br />then US{money(plan.monthlyPriceUSD ?? 0)}/month
+                        <span className="inline-flex items-center gap-1.5 font-bold"><Gift size={13} aria-hidden /> First {plan.introDurationCycles} month{plan.introDurationCycles === 1 ? '' : 's'}: {price(plan.introPriceUSD!)}/month</span>
+                        <br />then {price(plan.monthlyPriceUSD ?? 0)}/month
                       </div>
                     )}
 
@@ -274,7 +283,10 @@ export function PricingPage() {
               })}
         </div>
         <p className="mt-6 text-center text-[13px]" style={{ color: MUTED }}>
-          Prices in US dollars. <a href="#compare" className="underline underline-offset-4" style={{ color: INK }}>Compare all features</a>
+          {local
+            ? `Prices in ${local.code === 'PKR' ? 'Rs' : local.code} are approximate, at today's rate of US$1 = ${local.ratePerUSD.toFixed(2)} ${local.code}. Plans are billed in US dollars; your bank converts at its own rate. `
+            : 'Prices in US dollars. '}
+          <a href="#compare" className="underline underline-offset-4" style={{ color: INK }}>Compare all features</a>
         </p>
       </section>
 
@@ -309,7 +321,7 @@ export function PricingPage() {
                   <p className="text-[16px] font-semibold leading-[1.4]">“{k.quote}”</p>
                   <p className="mt-2 mb-4 flex-1 text-[13px] leading-[1.6]" style={{ color: MUTED }}>{k.body(plan)}</p>
                   <button type="button" onClick={() => onCta(plan)} className="self-start inline-flex items-center gap-1 bg-transparent border-0 p-0 text-[14px] font-semibold cursor-pointer" style={{ color: ACCENT }}>
-                    {plan.name} · US{money(displayPrice(plan, 'monthly').now)}/mo <ArrowRight size={14} aria-hidden />
+                    {plan.name} · {price(displayPrice(plan, 'monthly').now)}/mo <ArrowRight size={14} aria-hidden />
                   </button>
                 </div>
               );
