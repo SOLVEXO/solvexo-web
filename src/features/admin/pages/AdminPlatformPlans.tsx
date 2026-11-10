@@ -181,6 +181,8 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
   const [isFree, setIsFree] = useState(p?.isFree ?? false);
   const [monthlyPrice, setMonthlyPrice] = useState(p?.monthlyPriceUSD != null ? String(p.monthlyPriceUSD) : '');
   const [yearlyPrice, setYearlyPrice] = useState(p?.yearlyPriceUSD != null ? String(p.yearlyPriceUSD) : '');
+  const [wasMonthly, setWasMonthly] = useState(p?.compareAtMonthlyPriceUSD != null ? String(p.compareAtMonthlyPriceUSD) : '');
+  const [wasYearly, setWasYearly] = useState(p?.compareAtYearlyPriceUSD != null ? String(p.compareAtYearlyPriceUSD) : '');
   const [sortOrder, setSortOrder] = useState(p ? String(p.sortOrder ?? 0) : '0');
   const [isPubliclyVisible, setIsPubliclyVisible] = useState(p?.isPubliclyVisible ?? true);
   const [featuresText, setFeaturesText] = useState(p?.featureBullets?.join('\n') ?? '');
@@ -216,6 +218,13 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
     if (step === 2 && introOfferEnabled && monthlyPrice && Number(introPriceUSD) >= Number(monthlyPrice)) {
       return 'Intro price should be lower than the regular monthly price — otherwise it isn\'t really an intro discount.';
     }
+    if (step === 2) return wasPriceProblem();
+    return '';
+  }
+  /** A crossed-out "was" price only makes sense above the real price. */
+  function wasPriceProblem(): string {
+    if (wasMonthly.trim() && !(Number(wasMonthly) > Number(monthlyPrice))) return '"Was" monthly price must be higher than the monthly price, or left empty.';
+    if (wasYearly.trim() && !(yearlyPrice.trim() && Number(wasYearly) > Number(yearlyPrice))) return '"Was" yearly price must be higher than the yearly price, or left empty.';
     return '';
   }
   function goNext() {
@@ -243,6 +252,8 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
       setError('Intro price should be lower than the regular monthly price — otherwise it isn\'t really an intro discount.');
       return;
     }
+    const wasErr = isFree || isCustom ? '' : wasPriceProblem();
+    if (wasErr) { setError(wasErr); return; }
     // Limit/feature changes reach every store already on the plan immediately — make the admin say yes to that.
     const onPlan = isEdit ? (plan as PlatformPlan).subscriberCount ?? 0 : 0;
     if (isEdit && onPlan > 0 && !window.confirm(
@@ -254,6 +265,9 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
         name: name.trim(), description: description.trim() || undefined, badge: badge.trim() || undefined,
         isFree, monthlyPriceUSD: monthlyPrice ? Number(monthlyPrice) : undefined,
         yearlyPriceUSD: yearlyPrice ? Number(yearlyPrice) : undefined,
+        // null clears the strike-through on the pricing page.
+        compareAtMonthlyPriceUSD: !isFree && !isCustom && wasMonthly.trim() ? Number(wasMonthly) : null,
+        compareAtYearlyPriceUSD: !isFree && !isCustom && wasYearly.trim() ? Number(wasYearly) : null,
         sortOrder: Number(sortOrder) || 0,
         isPubliclyVisible,
         featureBullets: featuresText.split('\n').map(f => f.trim()).filter(Boolean),
@@ -354,6 +368,12 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                     Yearly = {(Number(yearlyPrice) / 12).toFixed(2)}/mo, a {Math.round((1 - Number(yearlyPrice) / (Number(monthlyPrice) * 12)) * 100)}% discount. Shopify gives 25% on every plan; keep it the same across plans.
                   </p>
                 )}
+                  <Input label={'"Was" monthly $ (crossed out, optional)'} type="number" min={0} value={wasMonthly} onChange={e => setWasMonthly(e.target.value)} />
+                  <Input label={'"Was" yearly $ (crossed out, optional)'} type="number" min={0} value={wasYearly} onChange={e => setWasYearly(e.target.value)} />
+                  <p className="sm:col-span-2 text-[11px] text-slate -mt-1 leading-[1.5]">
+                    Shown crossed out on the pricing page next to the real price, with the % off (e.g. <s>$49</s> $29 · 40% off).
+                    Sellers are always charged the Monthly / Yearly price above. Leave empty to show no discount.
+                  </p>
                 </div>
               )}
               <p className="text-[11px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2 leading-[1.5]">

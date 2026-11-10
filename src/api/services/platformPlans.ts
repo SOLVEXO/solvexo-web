@@ -32,6 +32,9 @@ export interface PlatformPlan {
   introOfferEnabled: boolean;
   introPriceUSD: number | null;
   introDurationCycles: number | null;
+  /** "Was" prices shown crossed out on the pricing page (launch offer). Display only — checkout charges monthlyPriceUSD / yearlyPriceUSD. */
+  compareAtMonthlyPriceUSD?: number | null;
+  compareAtYearlyPriceUSD?: number | null;
   /** Days a locked/trial-ended store's storefront stays browsable before it's hidden from buyers — see SellerPlatformSubscriptionsService.expireGracePeriods. Checkout is blocked immediately regardless, unaffected by this. */
   gracePeriodDays: number;
 }
