@@ -147,7 +147,7 @@ const LedupGate: NewThemeImpl['GatePage'] = props => createElement(Suspense, { f
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'collections' | 'faqs' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
-  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'library' | 'memberships' | 'licenses' | 'learn' | 'wholesale' | 'codConfirm' | 'messagingPrefs' | 'orderStatus' | 'addresses' | 'myReviews'
+  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'giftCardView' | 'storeCredit' | 'orders' | 'orderDetail' | 'library' | 'memberships' | 'licenses' | 'learn' | 'wholesale' | 'subscriptions' | 'codConfirm' | 'messagingPrefs' | 'orderStatus' | 'addresses' | 'myReviews'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 

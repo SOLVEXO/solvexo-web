@@ -17,6 +17,7 @@ import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
 import { clampQty, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
+import { SubscribeBox } from '../../core/subscriptions/SubscribeBox';
 import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
 import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
 import { Link as WholesaleLink } from 'react-router-dom';
@@ -247,6 +248,7 @@ function Inner({ slug }: { slug: string }) {
           )}
           {wholesalePrice && !wholesalePrice.available && wholesalePrice.error && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{wholesalePrice.error}</p>}
           <BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} />
+          <SubscribeBox productId={detail.product._id} variantId={variant?._id} quantity={qty} format={(n) => show(n)} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, accent: t.colors.accent }} />
           <TechButton block disabled={!canBuy} loading={busy} onClick={() => add(false)}><ShoppingCart size={16} aria-hidden />{!canBuy ? (own('soldOutLabel') ?? addLabel) : pre ? (own('preorderLabel') ?? addLabel) : (own('addToCartLabel') ?? addLabel)}</TechButton>
         </div>
       );

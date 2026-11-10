@@ -21,6 +21,7 @@ import { ProductPageContext } from '../../productContext';
 import { recordRecentlyViewed } from '../../moreSections';
 import { resolveProductMainLayout, splitProductTemplateSections } from '../../productPageLayout';
 import { clampQty, qtyRuleHint, resolveQtyRules } from '../../sellingRules';
+import { SubscribeBox } from '../../core/subscriptions/SubscribeBox';
 import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
 import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
 import { Link as WholesaleLink } from 'react-router-dom';
@@ -277,6 +278,7 @@ function ProductPageInner({ slug }: { slug: string }) {
           )}
           {wholesalePrice && !wholesalePrice.available && wholesalePrice.error && <p role="alert" className="m-0 text-xs font-medium" style={{ color: t.colors.danger }}>{wholesalePrice.error}</p>}
           <BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} />
+          <SubscribeBox productId={detail.product._id} variantId={variant?._id} quantity={qty} format={(n) => show(n)} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, accent: t.colors.accent }} />
           <FashionButton arrow fullWidth disabled={!canBuy} loading={busy} onClick={() => add(false)}>{!canBuy ? (own('soldOutLabel') ?? tr('product.soldOut', 'Sold out')) : pre ? (own('preorderLabel') ?? tr('product.preorder', 'Pre-order')) : busy ? tr('product.adding', 'Adding…') : (own('addToCartLabel') ?? tr('product.addToCart', 'Add to cart'))}</FashionButton>
         </div>
       );

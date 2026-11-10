@@ -23,6 +23,7 @@ import { LedupBox, LedupBreadcrumbs, LedupButton, LedupError, LedupSkeleton } fr
 import { LedupProductCard } from '../components/LedupProductCard';
 import { ledupTheme as t } from '../theme.config';
 import { Link as WholesaleLink } from 'react-router-dom';
+import { SubscribeBox } from '../../core/subscriptions/SubscribeBox';
 import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
 import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
@@ -228,6 +229,7 @@ function Inner({ slug }: { slug: string }) {
             )}
             {!wholesale.locked && wholesalePrice && !wholesalePrice.available && wholesalePrice.error && <p role="alert" className="mt-2 text-xs font-medium" style={{ color: t.colors.danger }}>{wholesalePrice.error}</p>}
             {!wholesale.locked && <div className="mt-3"><BundleIncludes bundle={detail.bundle} ink={t.colors.ink} inkMuted={t.colors.inkMuted} /></div>}
+            {!wholesale.locked && <SubscribeBox productId={detail.product._id} variantId={variant?._id} quantity={qty} format={(n) => show(n)} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, accent: t.colors.accent }} />}
 
             {!wholesale.locked && <div className="mt-4 flex flex-wrap items-center gap-4">
               <div className="flex items-center rounded-full border border-stone-300 bg-white px-3 py-1.5">

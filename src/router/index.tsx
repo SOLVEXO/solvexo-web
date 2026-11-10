@@ -137,6 +137,7 @@ const KhataHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSecti
 const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
 const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/CodProtectionPage'));
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
+const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
@@ -267,6 +268,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'licenses', element: <ThemedRoute routeKey="licenses" /> },
           { path: 'learn', element: <ThemedRoute routeKey="learn" /> },
           { path: 'wholesale', element: <ThemedRoute routeKey="wholesale" /> },
+          { path: 'subscriptions', element: <ThemedRoute routeKey="subscriptions" /> },
           { path: 'cod-confirm/:token', element: <ThemedRoute routeKey="codConfirm" /> },
           { path: 'messaging-preferences', element: <ThemedRoute routeKey="messagingPrefs" /> },
           { path: 'order-status/:token', element: <ThemedRoute routeKey="orderStatus" /> },
@@ -406,6 +408,7 @@ const mainRouter = createBrowserRouter([
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'digital',                          element: <DigitalHub /> },
           { path: 'wholesale',                        element: <WholesaleHub /> },
+          { path: 'subscriptions',                    element: <SubscriptionsHub /> },
           { path: 'cod-protection',                   element: <CodProtectionPage /> },
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'khata',                            element: <KhataHub /> },

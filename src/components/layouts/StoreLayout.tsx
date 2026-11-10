@@ -135,6 +135,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
       { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'] },
+      { id: 'subscriptions', Icon: Package, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['product_subscriptions.view', 'product_subscriptions.manage'] },
       { id: 'cod-protection', Icon: Package, label: 'COD protection', path: 'cod-protection', requiredPermission: 'settings.payments.manage' },
       { id: 'messaging', Icon: Package, label: 'WhatsApp & SMS', path: 'messaging', requiredPermission: 'marketing.manage' },
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
