@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { Star, Users, Store, TrendingUp, BadgeCheck, PackageCheck } from 'lucide-react';
+import { Star, Users, Store, TrendingUp, ShieldCheck, PackageCheck } from 'lucide-react';
 import { type PublicStoreListItem } from '@/api/services/store';
 
 // ── Featured seller card — cover, avatar, badges, rating/followers/products ──
@@ -40,10 +40,12 @@ export function StoreFeatureCard({ store, onClick, className }: {
           </div>
         </div>
 
-        <div className="flex items-center gap-[5px] mb-[3px]">
-          <p className="text-[13.5px] font-bold text-carbon leading-tight truncate">{store.name}</p>
-          {isVerified && <BadgeCheck size={14} className="text-info fill-info/15 shrink-0" />}
-        </div>
+        <p className="text-[13.5px] font-bold text-carbon leading-tight truncate mb-[3px]">{store.name}</p>
+        {isVerified && (
+          <p className="inline-flex items-center gap-[4px] mb-[5px] px-[7px] py-[2px] rounded-full bg-success-bg text-success text-[10.5px] font-semibold">
+            <ShieldCheck size={11} aria-hidden /> Verified business
+          </p>
+        )}
         {store.description && (
           <p className="text-[10.5px] text-slate leading-snug line-clamp-1 mb-[10px]">{store.description}</p>
         )}

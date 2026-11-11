@@ -1434,7 +1434,9 @@
     "your_coupon_was_removed_with_the_gift": "Your coupon was removed with the gift card - apply it again if you still want to use it.",
     "your_gift_card_was_removed_with_the": "Your gift card was removed with the coupon - apply it again if you still want to use it.",
     "your_profile_is_not_available": "Your profile is not available.",
-    "your_review": "Your review"
+    "your_review": "Your review",
+    "verified_business": "Verified business",
+    "verified_business_hint": "Business identity checked by Solvexo"
   },
   "product": {
     "addToCart": "Add to Cart",

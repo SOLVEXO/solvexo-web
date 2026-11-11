@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
-  Package, Wallet, Globe, ShieldCheck, Bell, Languages, FileText, Scale,
+  Package, Wallet, Globe, ShieldCheck, Bell, Languages, FileText, Scale, BadgeCheck,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -23,6 +23,7 @@ import { OrderDocumentsSettings } from './orderDocuments/OrderDocumentsSettings'
 import { PoliciesSettings } from './policies/PoliciesSettings';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 import { MarketsSettings } from '../Operations/MarketsSettings';
+import { VerifyBusinessPage } from '../verification/VerifyBusinessPage';
 
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
 const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
@@ -37,6 +38,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
       { id: 'profile',       label: 'Store Profile',  icon: <Store size={13} />,       hint: 'Name, logo, currency, tax' },
       { id: 'product-types', label: 'Product Types',  icon: <Package size={13} />,     hint: 'What this store can sell' },
       { id: 'privacy',       label: 'Privacy',        icon: <ShieldCheck size={13} />, hint: 'Visibility, consent, data requests' },
+      { id: 'verification',  label: 'Verify your business', icon: <BadgeCheck size={13} />, hint: 'Verified badge, marketplace, payouts' },
     ],
   },
   {
@@ -176,6 +178,8 @@ const TAB_PERMS: Record<string, string[]> = {
   billing: ['settings.billing.view', 'settings.billing.manage'], integrations: ['settings.payments.manage', 'settings.shipping.manage'],
   staff: ['staff.manage'], 'custom-fields': ['content.menus.manage', 'content.metaobjects.manage'],
   'content-types': ['content.menus.manage', 'content.metaobjects.manage'], 'activity-log': ['settings.general.manage'],
+  // Store owner only: the verification endpoints are seller-only, so no staff permission unlocks this tab.
+  verification: [],
 };
 
 /** Single tabbed "Settings" hub — same Inventory-Hub-style consolidation
@@ -278,6 +282,7 @@ export default function SettingsHub() {
         {isVisited('payment-methods')  && <div className={paneClassName('payment-methods')}><PaymentMethodsTab /></div>}
         {isVisited('domains')          && <div className={paneClassName('domains')}><DomainSettingsTab /></div>}
         {isVisited('privacy')          && <div className={paneClassName('privacy')}><PrivacyTab /></div>}
+        {isVisited('verification')     && <div className={paneClassName('verification')}><VerifyBusinessPage key={storeId} storeId={storeId} /></div>}
         {isVisited('markets')          && <div className={paneClassName('markets') + ' px-4 lg:px-7 py-6'}><MarketsSettings embedded /></div>}
         {isVisited('notifications') && (
           <div className={paneClassName('notifications') + ' px-4 lg:px-7 py-6'}>

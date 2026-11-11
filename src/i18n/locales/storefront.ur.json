@@ -1436,7 +1436,9 @@
     "your_coupon_was_removed_with_the_gift": "آپ کا کوپن گفٹ کارڈ کے ساتھ ہٹا دیا گیا - اگر اب بھی استعمال کرنا چاہتے ہیں تو دوبارہ لاگو کریں۔",
     "your_gift_card_was_removed_with_the": "آپ کا گفٹ کارڈ کوپن کے ساتھ ہٹا دیا گیا - اگر اب بھی استعمال کرنا چاہتے ہیں تو دوبارہ لاگو کریں۔",
     "your_profile_is_not_available": "آپ کا پروفائل دستیاب نہیں ہے۔",
-    "your_review": "آپ کا جائزہ"
+    "your_review": "آپ کا جائزہ",
+    "verified_business": "تصدیق شدہ کاروبار",
+    "verified_business_hint": "کاروبار کی شناخت Solvexo نے چیک کی ہے"
   },
   "product": {
     "addToCart": "کارٹ میں شامل کریں",

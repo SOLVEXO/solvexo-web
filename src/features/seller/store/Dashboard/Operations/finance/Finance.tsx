@@ -13,6 +13,7 @@ import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useToast } from '@/contexts/ToastContext';
 import { StripeMoneySection } from './StripeMoneySection';
+import { PayoutHoldNotice } from '../../verification/PayoutHoldNotice';
 import {
   apiGetFinanceDashboard, apiGetFinancePayoutForecast, apiGetFinanceTransactions, apiExportFinanceTransactions,
   apiRequestPayout, apiGetPayouts, apiGetPayoutById,
@@ -575,6 +576,9 @@ export function StoreFinance() {
             <Button size="sm" variant="outline" onClick={loadWalletScoped}>Try Again</Button>
           </div>
         )}
+
+        {/* Unverified store past its verification deadline: the API refuses payouts; say why up front. */}
+        <PayoutHoldNotice storeId={storeId} />
 
         {/* Card sales: money, payouts and per-payout transactions live in the store's own Stripe account (Shopify Payments style). */}
         {stripeConnectActive && <StripeMoneySection storeId={storeId} />}

@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { apiUploadPrivateFile } from '../upload';
 import type { ActiveCampaignBadge } from './marketplace';
 import type { ContentTranslations } from '@/utils/localize';
 
@@ -252,7 +253,7 @@ export interface StoreData {
   status:       'pending' | 'active' | 'rejected' | 'suspended';
   /** KYC/business-verification review state — see store.schema.ts's
    *  VERIFICATION_TRANSITIONS. Drives seller-workspace nav gating. */
-  verificationStatus: 'not_started' | 'pending' | 'under_review' | 'verified' | 'rejected';
+  verificationStatus: SellerVerificationStatus;
   /** Server-computed only (determineVerificationLevel) — never trust a
    *  client-side guess of this value. */
   verificationLevel: 'basic' | 'business' | 'enhanced' | null;
@@ -954,4 +955,162 @@ export function apiEraseCustomerData(storeId: string, customerId: string) {
   return client.post<never, ApiResponse<{ isErased: boolean; ordersScrubbed: number }>>(
     ENDPOINTS.STORE.CUSTOMERS.ERASE_DATA(storeId, customerId),
   );
+}
+
+// ── Seller business verification ("Verify your business") ─────────────────────
+// Every verification call the seller dashboard makes lives here, so the
+// request/response shapes can be adjusted in one place. The backend is the
+// authority on every rule (required fields/documents, NTN/CNIC formats,
+// deadlines, limits); the dashboard only renders what these return.
+
+export type SellerVerificationStatus = 'not_started' | 'pending' | 'under_review' | 'needs_info' | 'verified' | 'rejected';
+export type BusinessType = 'individual' | 'company' | 'partnership';
+export type IdDocumentType = 'cnic' | 'passport' | 'national_id';
+export type VerificationDocType =
+  | 'owner_id' | 'tax_registration' | 'address_proof' | 'business_registration'
+  | 'authorization_proof' | 'brand_authorization' | 'product_licence';
+
+export type SourcingType = 'manufacturer' | 'reseller' | 'importer' | 'dropshipper';
+export type RegulatedCategory = 'cosmetics' | 'medicines' | 'food' | 'mobile_phones';
+export type PremisesType = 'shop' | 'warehouse' | 'home';
+export type YearsSelling = 'lt_6m' | '6m_1y' | '1_3y' | 'gt_3y';
+export type DispatchTime = 'same_day' | '1_2_days' | '3_plus_days';
+export type ReturnPolicy = '7_day_returns' | 'exchange_only' | 'no_returns';
+export type MonthlyOrders = 'lt_50' | '50_300' | 'gt_300';
+
+/** `verification.businessProfile` — the "Products and services" questionnaire. */
+export interface BusinessProfile {
+  sourcing:             SourcingType | null;
+  sellsBrandedGoods:    boolean | null;
+  regulatedCategories:  RegulatedCategory[];
+  premises:             PremisesType | null;
+  yearsSelling:         YearsSelling | null;
+  otherChannels:        string[];
+  couriers:             string[];
+  dispatchTime:         DispatchTime | null;
+  returnPolicy:         ReturnPolicy | null;
+  monthlyOrders:        MonthlyOrders | null;
+  bankAccountInOwnName: boolean | null;
+}
+
+export interface VerificationAuthorizedContact {
+  name:        string | null;
+  designation: string | null;
+  email:       string | null;
+  phone:       string | null;
+}
+
+/** One checklist row — the API renders the full list (required + optional). */
+export interface VerificationDocumentRow {
+  type:       VerificationDocType;
+  required:   boolean;
+  state:      'uploaded' | 'missing' | 'not_required';
+  fileName:   string | null;
+  uploadedAt: string | null;
+  /** Short-lived signed URL to the seller's own upload (null when none). */
+  viewUrl:    string | null;
+}
+
+export interface VerificationHistoryItem {
+  action:    string; // submitted | resubmitted | under_review | info_requested | approved | rejected | …
+  note:      string | null;
+  actorRole: 'seller' | 'admin';
+  at:        string;
+}
+
+export interface VerificationRequirements {
+  country:            string;
+  businessType:       BusinessType | null;
+  verificationLevel:  'basic' | 'business' | 'enhanced';
+  /** Dot-paths, e.g. 'authorizedContact.email', 'cnicNumber', 'businessProfile.sourcing'. */
+  requiredFields:     string[];
+  requiredDocuments:  VerificationDocType[];
+  optionalDocuments:  VerificationDocType[];
+}
+
+/** Enforcement deadline for this store. `enforcementStarted: false` ⇒ nothing is limited yet. */
+export interface VerificationDeadline {
+  dueAt:              string | null;
+  limited:            boolean;
+  enforcementStarted: boolean;
+}
+
+export interface SellerVerification {
+  country:            string;
+  businessType:       BusinessType | null;
+  verificationLevel:  'basic' | 'business' | 'enhanced' | null;
+  verificationStatus: SellerVerificationStatus;
+  legalBusinessName:  string | null;
+  registrationNumber: string | null;
+  taxId:              string | null;
+  cnicNumber?:        string | null;
+  /** ID number for non-PK sellers (Emirates ID / national ID / passport). */
+  strn?:              string | null;
+  businessAddress:    string | null;
+  idDocumentType:     IdDocumentType | null;
+  authorizedContact:  VerificationAuthorizedContact | null;
+  businessProfile?:   Partial<BusinessProfile> | null;
+  documents:          VerificationDocumentRow[];
+  missingFields:      string[];
+  missingDocuments:   VerificationDocType[];
+  canSubmit:          boolean;
+  history:            VerificationHistoryItem[];
+  storeStatus:        string;
+  rejectionReason:    string | null;
+  requirements?:      VerificationRequirements;
+  deadline?:          VerificationDeadline;
+}
+
+export interface UpdateVerificationPayload {
+  businessType?:       BusinessType;
+  legalBusinessName?:  string;
+  registrationNumber?: string;
+  taxId?:              string;
+  cnicNumber?:         string;
+  strn?:               string;
+  businessAddress?:    string;
+  idDocumentType?:     IdDocumentType;
+  authorizedContact?:  Partial<VerificationAuthorizedContact>;
+  businessProfile?:    Partial<BusinessProfile>;
+}
+
+/** GET /api/store/:storeId/verification  (seller only) */
+export function apiGetStoreVerification(storeId: string, opts: { quiet?: boolean } = {}) {
+  return client.get<never, ApiResponse<SellerVerification>>(
+    ENDPOINTS.STORE.VERIFICATION(storeId), opts.quiet ? { toast: false } : undefined,
+  );
+}
+
+/** GET /api/store/:storeId/verification/requirements  (seller only) — what applies
+ *  for this country / business type. Used when GET verification has no `requirements`. */
+export function apiGetStoreVerificationRequirements(storeId: string, params: { country?: string; businessType?: BusinessType } = {}) {
+  return client.get<never, ApiResponse<VerificationRequirements>>(
+    ENDPOINTS.STORE.VERIFICATION_REQUIREMENTS(storeId), { params, toast: false },
+  );
+}
+
+/** PATCH /api/store/:storeId/verification  (seller only) — draft save. 400 carries a readable message (e.g. bad NTN/CNIC format). */
+export function apiUpdateStoreVerification(storeId: string, payload: UpdateVerificationPayload) {
+  return client.patch<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION(storeId), payload);
+}
+
+/** POST /api/store/:storeId/verification/documents  (seller only) — attach a file already uploaded privately. */
+export function apiAttachVerificationDocument(
+  storeId: string,
+  doc: { type: VerificationDocType; publicId: string; resourceType: string; fileName: string },
+) {
+  return client.post<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION_DOCUMENTS(storeId), doc);
+}
+
+/** Private upload (purpose `kyc_document`) followed by attaching it to this store's verification. */
+export async function apiUploadVerificationDocument(storeId: string, type: VerificationDocType, file: File) {
+  const res = await apiUploadPrivateFile(file, 'kyc_document');
+  const { publicId, resourceType, fileName } = res.data;
+  return apiAttachVerificationDocument(storeId, { type, publicId, resourceType, fileName: fileName || file.name });
+}
+
+/** POST /api/store/:storeId/verification/submit  (seller only). A 400 lists
+ *  `missingFields` / `missingDocuments` in the error's `details`. */
+export function apiSubmitStoreVerification(storeId: string) {
+  return client.post<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION_SUBMIT(storeId), {});
 }

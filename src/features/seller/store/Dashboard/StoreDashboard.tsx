@@ -37,6 +37,7 @@ import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 import { SetupGuideCard } from './SetupGuideCard';
+import { DashboardVerificationBanner } from './verification/VerificationBanner';
 import { storeLiveStatus } from './storeLiveStatus';
 import { useTestimonialPrompt } from '@/hooks/seller/useTestimonialPrompt';
 import { TestimonialPromptCard } from '@/features/seller/components/TestimonialPromptCard';
@@ -1086,7 +1087,11 @@ export default function StoreDashboard() {
             </div>
           )}
 
+          {/* Business verification: deadline / limits / Solvexo's request, or a soft "get the badge" prompt. Owner only. */}
+          {!staff && !layout.editing && <DashboardVerificationBanner storeId={storeId} />}
+
           <DashboardHero store={store} storeId={storeId} />
+
 
           {layout.loadError && (
             <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10" role="alert">
