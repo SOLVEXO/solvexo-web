@@ -58,7 +58,7 @@ const GROUPS: Group[] = [
   ] },
   { title: 'AI features', rows: [
     { label: 'AI Studio (product text, SEO, emails, prices)', get: () => true },
-    { label: 'AI credits per month', get: p => count(p.limits.aiCreditsPerMonth) },
+    { label: 'AI credits per month (each AI use costs 5 to 10)', get: p => count(p.limits.aiCreditsPerMonth) },
   ] },
   { title: 'Hosting', rows: [
     { label: 'Hosting and free SSL', get: () => true },
@@ -70,7 +70,7 @@ const GROUPS: Group[] = [
     { label: 'Gift cards', get: () => true },
     { label: 'Email campaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
     { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-    { label: 'Marketing emails per month', get: p => num(p.limits.monthlyEmailSends) },
+    { label: 'Marketing emails per month (offers and news to your customers)', get: p => num(p.limits.monthlyEmailSends) },
     { label: 'Loyalty program', get: p => flag(p.limits.loyaltyProgramAllowed) },
   ] },
   { title: 'Wholesale & digital products', rows: [

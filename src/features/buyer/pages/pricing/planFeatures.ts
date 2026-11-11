@@ -31,14 +31,16 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): Pl
       : l.maxPosLocations === 1 ? '1 shop location with the POS till' : `${l.maxPosLocations} shop / warehouse locations` });
   }
   if (more(l.aiCreditsPerMonth, p.aiCreditsPerMonth)) {
-    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: first ? 'AI Studio: product text, SEO, emails and price ideas. Renews monthly.' : undefined });
+    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: unlimited(l.aiCreditsPerMonth) ? undefined
+      : first ? `AI writes your product descriptions, SEO text, emails and price ideas. Each use costs 5 to 10 credits, so about ${Math.floor(l.aiCreditsPerMonth! / 10)} to ${Math.floor(l.aiCreditsPerMonth! / 5)} uses a month. Renews every month.`
+      : `About ${Math.floor(l.aiCreditsPerMonth! / 10)} to ${Math.floor(l.aiCreditsPerMonth! / 5)} AI uses a month` });
   }
   if (on('abandonedCartRecoveryAllowed')) out.push({ title: 'Recover abandoned carts', hint: 'Remind shoppers who leave without paying' });
   if (on('loyaltyProgramAllowed')) out.push({ title: 'Loyalty points', hint: 'Bring customers back for more' });
   if (on('whiteLabelAllowed')) out.push({ title: 'Remove Solvexo branding', hint: 'Your brand only, everywhere' });
   if (on('calculatedShippingRatesAllowed')) out.push({ title: 'Live courier rates at checkout' });
   if (on('customDomainAllowed')) out.push({ title: 'Your own web address', hint: 'e.g. yourshop.com' });
-  if (on('emailCampaignsAllowed')) out.push({ title: 'Email marketing', hint: 'Send offers and automatic emails' });
+  if (on('emailCampaignsAllowed')) out.push({ title: 'Email marketing', hint: 'Email your customers offers and news. Automatic emails too: welcome, forgotten cart, back in stock.' });
   if (on('advancedSeoToolsAllowed')) out.push({ title: 'SEO tools', hint: 'Help Google find your store' });
   if (on('seoAiSuggestionsAllowed')) out.push({ title: 'AI SEO suggestions' });
   if (on('customRedirectsAllowed')) out.push({ title: 'Custom redirects', hint: 'Keep old links working' });
@@ -46,7 +48,7 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): Pl
 
   // Sales/promotions and homepage banners are unlimited on every plan, so they are not a plan feature any more.
   if (more(l.monthlyEmailSends, p.monthlyEmailSends)) {
-    out.push({ title: unlimited(l.monthlyEmailSends) ? 'Unlimited marketing emails' : `${l.monthlyEmailSends!.toLocaleString('en-US')} marketing emails a month`, hint: first ? 'Offers, newsletters and automatic emails' : undefined });
+    out.push({ title: unlimited(l.monthlyEmailSends) ? 'Unlimited marketing emails' : `${l.monthlyEmailSends!.toLocaleString('en-US')} marketing emails a month`, hint: first ? 'Each email sent to one customer counts as 1. Starts again every month.' : undefined });
   }
   if (l.b2bWholesaleAllowed) {
     const catalogs = unlimited(l.maxB2BCatalogs) ? 'Unlimited wholesale catalogs' : l.maxB2BCatalogs ? plural(l.maxB2BCatalogs, 'wholesale catalog', 'wholesale catalogs') : null;
