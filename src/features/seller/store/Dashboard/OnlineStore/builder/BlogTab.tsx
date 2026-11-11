@@ -346,7 +346,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
       {showComments && <CommentsModal storeId={storeId} onClose={() => setShowComments(false)} />}
 
       {showCreate && (
-        <Modal title="New Post" onClose={() => setShowCreate(false)} footer={
+        <Modal title="New Post" width={640} onClose={() => setShowCreate(false)} footer={
           <>
             <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button variant="primary" onClick={handleCreate} loading={creating}>Create Post</Button>
@@ -442,7 +442,7 @@ function CommentsModal({ storeId, onClose }: { storeId: string; onClose: () => v
   };
 
   return (
-    <Modal title="Blog Comments" width={560} onClose={onClose}>
+    <Modal title="Blog Comments" width={720} onClose={onClose}>
       <div className="flex gap-1 mb-3">
         {COMMENT_STATUS_FILTERS.map(s => (
           <button key={s} type="button" onClick={() => setStatusFilter(s)}

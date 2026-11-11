@@ -140,7 +140,7 @@ export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, onD
       </button>
 
       {showCreate && (
-        <Modal title="New Page" onClose={() => setShowCreate(false)} footer={
+        <Modal title="New Page" width={640} onClose={() => setShowCreate(false)} footer={
           <>
             <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button variant="primary" onClick={handleCreate} loading={creating}>Create Page</Button>

@@ -83,7 +83,7 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
   };
 
   return (
-    <Modal title={isHome ? 'Home Page Settings' : 'Page Settings'} onClose={onClose} width={520} footer={
+    <Modal title={isHome ? 'Home Page Settings' : 'Page Settings'} onClose={onClose} width={720} footer={
       <>
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button variant="primary" onClick={handleSave} loading={saving}>Save</Button>
