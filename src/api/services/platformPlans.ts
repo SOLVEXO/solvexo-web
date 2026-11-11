@@ -106,6 +106,8 @@ export interface PlanChangePreview {
   effectiveAt?: string | null;
   /** Only populated for a downgrade — usage that already exceeds the target plan's limit. Nothing is ever deleted; this is purely a heads-up before confirming. */
   usageWarnings: { label: string; used: number; newLimit: number }[];
+  /** Only for a downgrade: features of the current plan that the target plan does not have. Missing on older API versions. */
+  lostFeatures?: string[];
 }
 
 export interface EntitlementsSummary {
@@ -230,7 +232,11 @@ export interface TransactionFeeBill {
   periodKey: string; // 'YYYY-MM'
   amountUSD: number;
   saleCount: number;
-  status: 'creating' | 'invoiced' | 'paid' | 'payment_failed' | 'failed';
+  status: 'creating' | 'invoiced' | 'awaiting_payment' | 'paid' | 'payment_failed' | 'failed';
+  /** 'manual' = no card on file: the bill waits for a bank transfer (or a card added later). */
+  collectionMode?: 'stripe' | 'manual';
+  taxAmountUSD?: number;
+  dueAt?: string | null;
   hostedInvoiceUrl: string | null;
   createdAt: string;
   breakdown: Array<{ currency: string; amount: number; amountUSD: number; saleCount: number }>;

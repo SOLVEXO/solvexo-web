@@ -56,6 +56,7 @@ function newAddonIdempotencyKey(storeId: string, addonType: string): string {
 const FEE_BILL_STATUS_STYLE: Record<string, string> = {
   paid: 'bg-success-bg text-success',
   invoiced: 'bg-warning-bg text-warning',
+  awaiting_payment: 'bg-warning-bg text-warning',
   creating: 'bg-warning-bg text-warning',
   payment_failed: 'bg-error-bg text-error',
   failed: 'bg-error-bg text-error',
@@ -119,11 +120,16 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
                 <div key={b._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium text-charcoal">{b.periodKey}</p>
-                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)} · {b.saleCount} sale(s)</p>
+                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)}{(b.taxAmountUSD ?? 0) > 0 ? ` + ${b.taxAmountUSD!.toFixed(2)} tax` : ''} · {b.saleCount} sale(s)</p>
+                    {b.status === 'awaiting_payment' && (
+                      <p className="text-[11px] text-warning mt-0.5 max-w-[420px]">
+                        No card on file. Please pay this by bank transfer{b.dueAt ? ` by ${new Date(b.dueAt).toLocaleDateString()}` : ''} and tell us through Help, so we can mark it paid.
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${FEE_BILL_STATUS_STYLE[b.status] ?? 'bg-bone text-slate'}`}>
-                      {b.status.replace('_', ' ')}
+                      {b.status === 'awaiting_payment' ? 'Payment due' : b.status.replace('_', ' ')}
                     </span>
                     {b.hostedInvoiceUrl && (
                       <a href={b.hostedInvoiceUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-brand-orange hover:underline">View invoice</a>
@@ -823,6 +829,20 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               ))}
               <p className="text-[11px] text-error/80 pl-[19px]">
                 Nothing will be deleted — you just won't be able to add more until you're back under the limit.
+              </p>
+            </div>
+          )}
+
+          {preview && (preview.lostFeatures?.length ?? 0) > 0 && (
+            <div className="mt-3 bg-warning-bg border border-warning/30 rounded-lg p-3 flex flex-col gap-1.5">
+              <p className="text-[12px] font-semibold text-warning flex items-center gap-1.5">
+                <AlertTriangle size={13} className="shrink-0" /> This plan does not include
+              </p>
+              <ul className="list-disc pl-[34px] text-[11.5px] text-warning/90 m-0">
+                {preview.lostFeatures!.map(f => <li key={f}>{f}</li>)}
+              </ul>
+              <p className="text-[11px] text-warning/80 pl-[19px]">
+                Your data stays safe. These tools stop working on this plan, and come back if you upgrade again.
               </p>
             </div>
           )}

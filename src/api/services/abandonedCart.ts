@@ -7,9 +7,16 @@ export interface AbandonedCartSettings {
   delayMinutes: number;
   subject:      string;
   message:      string;
+  /** An existing coupon code of the store, shown in the reminder. Missing on older API versions. */
+  discountCode?: string | null;
+  secondReminderEnabled?: boolean;
+  secondReminderDelayHours?: number;
+  secondSubject?: string;
+  secondMessage?: string;
 }
 
-export type UpdateAbandonedCartSettingsPayload = Partial<Pick<AbandonedCartSettings, 'enabled' | 'delayMinutes' | 'subject' | 'message'>>;
+export type UpdateAbandonedCartSettingsPayload = Partial<Pick<AbandonedCartSettings,
+  'enabled' | 'delayMinutes' | 'subject' | 'message' | 'discountCode' | 'secondReminderEnabled' | 'secondReminderDelayHours' | 'secondSubject' | 'secondMessage'>>;
 
 export interface AbandonedCartStats {
   abandonedCount:   number;

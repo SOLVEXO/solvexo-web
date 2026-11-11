@@ -26,6 +26,7 @@ import {
 import { EmailCampaignTestModal } from './EmailCampaignTestModal';
 import { EmailCampaignEditor } from './EmailCampaignEditor';
 import { MarketingAutomations } from './MarketingAutomations';
+import { AbandonedCartExtras } from './AbandonedCartExtras';
 import {
   apiGetAffiliateProgram, apiUpdateAffiliateProgram, apiGetAffiliateStats, apiListAffiliateReferrals,
   apiCreateAffiliate, apiListAffiliates, apiUpdateAffiliate, apiDeleteAffiliate, apiPayAffiliate,
@@ -286,6 +287,11 @@ export function StoreMarketing() {
         delayMinutes: cartSettings.delayMinutes,
         subject: cartSettings.subject,
         message: cartSettings.message,
+        discountCode: cartSettings.discountCode ?? '',
+        secondReminderEnabled: cartSettings.secondReminderEnabled ?? false,
+        secondReminderDelayHours: cartSettings.secondReminderDelayHours ?? 24,
+        secondSubject: cartSettings.secondSubject ?? '',
+        secondMessage: cartSettings.secondMessage ?? '',
       });
       setCartSettings(res.data);
       setCartSettingsSaved(true);
@@ -854,7 +860,7 @@ export function StoreMarketing() {
             <div>
               <p className="text-[15px] font-bold text-carbon">Abandoned Cart Recovery</p>
               <p className="text-[12.5px] text-slate mt-0.5">
-                A buyer who leaves items in their cart gets one automatic reminder email once your delay below has passed. On by default — same as Shopify's own abandoned checkout recovery.
+                A buyer who leaves items in their cart gets an automatic reminder email once your delay below has passed, and, if you switch it on, one more later. You can add a discount code to the email. On by default — same as Shopify's own abandoned checkout recovery.
               </p>
             </div>
 
@@ -915,6 +921,7 @@ export function StoreMarketing() {
                   />
                   <p className="text-[11px] text-slate mt-1">Use {'{{customerName}}'}, {'{{storeName}}'} and {'{{cartUrl}}'} — replaced automatically when each email is sent.</p>
                 </div>
+                <AbandonedCartExtras settings={cartSettings} onChange={patch => setCartSettings(s => s && ({ ...s, ...patch }))} />
                 {cartSettingsError && <p className="text-[12px] text-error">{cartSettingsError}</p>}
                 {cartSettingsSaved && <p className="text-[12px] text-success">Saved.</p>}
                 <div>

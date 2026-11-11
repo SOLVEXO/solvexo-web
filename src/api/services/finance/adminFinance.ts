@@ -437,7 +437,8 @@ export interface TransactionFeeBillRow {
   sellerEmail: string;
   amountUSD: number;
   saleCount: number;
-  status: 'creating' | 'invoiced' | 'paid' | 'payment_failed' | 'failed';
+  status: 'creating' | 'invoiced' | 'awaiting_payment' | 'paid' | 'payment_failed' | 'failed';
+  collectionMode?: 'stripe' | 'manual';
   failureReason: string | null;
   hostedInvoiceUrl: string | null;
   paidAt: string | null;
@@ -450,10 +451,15 @@ export interface AdminTransactionFeeBillsData {
   outstanding: { count: number; amountUSD: number };
   bills: TransactionFeeBillRow[];
 }
-export type FeeBillFilter = 'open' | 'payment_failed' | 'invoiced' | 'paid' | 'all';
+export type FeeBillFilter = 'open' | 'awaiting_payment' | 'payment_failed' | 'invoiced' | 'paid' | 'all';
 
 export function apiAdminTransactionFeeBills(params: { status?: FeeBillFilter; page?: number; limit?: number } = {}) {
   return client.get<never, ApiResponse<AdminTransactionFeeBillsData>>(`${ENDPOINTS.FINANCE.ADMIN.TRANSACTION_FEE_BILLS}${qs(params)}`);
+}
+
+/** The money arrived outside Stripe (a bank transfer): close the bill. PATCH /api/admin/finance/transaction-fee-bills/:billId/mark-paid */
+export function apiAdminMarkFeeBillPaid(billId: string, note?: string) {
+  return client.patch<never, ApiResponse<{ billId: string; status: 'paid' }>>(`${ENDPOINTS.FINANCE.ADMIN.TRANSACTION_FEE_BILLS}/${billId}/mark-paid`, note ? { note } : {});
 }
 
 export function apiAdminFinancePlatformRevenue(params: AdminFinanceParams = {}) {
