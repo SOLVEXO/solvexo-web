@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   Wallet, ShoppingBag, Palette, CreditCard, Truck, Globe2,
-  Check, ArrowRight, ChevronDown, ChevronUp, ListChecks,
+  Check, ArrowRight, ChevronDown, ChevronUp, ListChecks, ShieldCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiGetOnboardingProgress, apiGetStorePlatformPlan } from '@/api/services/platformPlans';
@@ -138,6 +138,18 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       ? 'Pick a plan before your trial ends so your store keeps selling without interruption.'
       : 'Optional — add a card for your Solvexo subscription after the trial ends.';
 
+  const verificationStatus = store?.verificationStatus ?? 'not_started';
+  const verifyDesc = verificationStatus === 'pending' || verificationStatus === 'under_review'
+    ? 'Submitted. Solvexo is reviewing your business details.'
+    : verificationStatus === 'needs_info'
+      ? 'Solvexo asked for more information. Reply to finish verification.'
+      : verificationStatus === 'rejected'
+        ? 'Your verification was not approved. Fix the details and resubmit.'
+        : 'Get the “Verified business” badge and be listed on the Solvexo marketplace.';
+  const verifyCta = verificationStatus === 'pending' || verificationStatus === 'under_review'
+    ? 'View status'
+    : verificationStatus === 'needs_info' || verificationStatus === 'rejected' ? 'Update details' : 'Verify now';
+
   const tasks: SetupTask[] = [
     {
       id: 'billing', label: billingLabel, desc: billingDesc, cta: storeLocked ? 'Unlock store' : 'Select a plan',
@@ -152,6 +164,11 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       id: 'get-paid', label: 'Set up payments',
       desc: 'Cash on Delivery is already on. Connect an online payment provider, or add bank or wallet transfer details, so buyers can pay you at checkout.',
       cta: 'Activate payments', Icon: Wallet, path: 'integrations', done: paymentsReady, manual: false,
+    },
+    {
+      // Real state: StoreData.verificationStatus (no extra request). Done only once Solvexo approves.
+      id: 'verify', label: 'Verify your business', desc: verifyDesc, cta: verifyCta,
+      Icon: ShieldCheck, path: 'settings/verification', done: verificationStatus === 'verified', manual: false,
     },
     {
       id: 'product', label: 'Add your first product',
