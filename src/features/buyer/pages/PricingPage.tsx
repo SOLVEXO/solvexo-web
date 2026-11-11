@@ -117,6 +117,15 @@ function getFallbackFaqs(trialDurationDays: number, isPk: boolean) { return [
   { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards. Payments are processed securely by Stripe — we never see or store your card number.' },
 ]; }
 
+/** Everything else the dashboard gives every store (no plan check anywhere in the code), so a seller can see it before signing up.
+ *  Each line is a real page or feature a store owner can open; keep this list in step with the sidebar. */
+const ALSO_INCLUDED: { title: string; items: string[] }[] = [
+  { title: 'Orders & customers', items: ['Orders, returns and refunds', 'Draft orders for phone and in-person sales', 'Customer list, tags and notes', 'Reviews from your customers', 'Chat with your customers', 'Store credit'] },
+  { title: 'Products & stock', items: ['Inventory and stock counts', 'Purchase orders and suppliers', 'Categories and collections', 'Digital downloads', 'Product subscriptions', 'CSV import and export'] },
+  { title: 'Checkout & delivery', items: ['Checkout rules', 'Delivery zones, rates and pickup', 'Taxes', 'Guest checkout', 'Customer accounts with Google and Facebook login'] },
+  { title: 'Store tools', items: ['Files library', 'FAQ and policy pages', 'Tracking pixels', 'Custom fields', 'Finance and payout reports', 'Two-step login (2FA)', 'Branded mobile app request'] },
+];
+
 const EVERY_PLAN = [
   { Icon: Store, title: 'Your online store', body: 'A ready-made shop with themes you can edit. No coding.' },
   { Icon: ScanBarcode, title: 'In-store till (POS)', body: 'Sell in your shop; stock updates online automatically.' },
@@ -329,6 +338,23 @@ export function PricingPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* Everything else every plan includes */}
+      <section className="px-4 md:px-8 pt-10 max-w-[1240px] mx-auto" aria-labelledby="also-included-h">
+        <h3 id="also-included-h" className="mb-4 text-center text-[18px] font-semibold">And all of this too</h3>
+        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {ALSO_INCLUDED.map(g => (
+            <div key={g.title} className="rounded-[14px] bg-white p-[18px]" style={{ border: `1px solid ${LINE}` }}>
+              <p className="mb-2 text-[14.5px] font-semibold">{g.title}</p>
+              <ul className="list-none m-0 p-0">
+                {g.items.map(item => (
+                  <li key={item} className="flex gap-2.5 py-[5px] text-[13px] leading-[1.45]"><Tick /><span>{item}</span></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Plan picker */}
