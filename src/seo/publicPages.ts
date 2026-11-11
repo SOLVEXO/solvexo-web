@@ -79,6 +79,7 @@ const NOINDEX_PAGES: Record<string, string> = {
   '/forgot-password': 'Reset your password',
   '/new-password': 'Choose a new password',
   '/onboard': 'Set up your store',
+  '/start': 'Start your online store',
 };
 
 const PRODUCT_PAGES: PublicPageSeo[] = ALL_PLATFORM_PRODUCTS.map(p => ({

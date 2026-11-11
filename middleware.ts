@@ -2,7 +2,7 @@ import { next, rewrite } from '@vercel/functions';
 import { prerenderedFile, stripCountryPrefix } from './src/seo/prerender';
 
 // Platform pages that live under a country prefix (`/pk/pricing`). Dashboards (/store, /admin, ...) never get one.
-const COUNTRY_PAGES = new Set(['/', '/login', '/register', '/signup', '/forgot-password', '/new-password', '/verify-otp', '/onboard', '/pricing', '/about', '/contact', '/contact-us', '/faq', '/help', '/terms-of-service', '/privacy-policy', '/cookie-policy', '/mobile-app']);
+const COUNTRY_PAGES = new Set(['/', '/login', '/register', '/signup', '/forgot-password', '/new-password', '/verify-otp', '/onboard', '/pricing', '/about', '/contact', '/contact-us', '/faq', '/help', '/terms-of-service', '/privacy-policy', '/cookie-policy', '/mobile-app', '/start']);
 // Crawlers and link-preview fetchers never get the country redirect: they must see the plain address they asked for.
 // "google" covers Google-InspectionTool (Search Console's URL Inspection / Request indexing) and GoogleOther, whose
 // user agents do not contain "bot"; "inspection" and the named engines are belt and braces.
