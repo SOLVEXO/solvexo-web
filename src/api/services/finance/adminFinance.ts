@@ -439,6 +439,10 @@ export interface TransactionFeeBillRow {
   saleCount: number;
   status: 'creating' | 'invoiced' | 'awaiting_payment' | 'paid' | 'payment_failed' | 'failed';
   collectionMode?: 'stripe' | 'manual';
+  dueAt?: string | null;
+  /** The seller pressed "I have paid" for a bank transfer; the bill is still open until an admin marks it paid. */
+  sellerReportedPaidAt?: string | null;
+  sellerPaymentNote?: string | null;
   failureReason: string | null;
   hostedInvoiceUrl: string | null;
   paidAt: string | null;

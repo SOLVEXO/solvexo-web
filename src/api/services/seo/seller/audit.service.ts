@@ -9,7 +9,7 @@ export interface SeoAuditIssue {
   severity: SeoIssueSeverity;
   code: string;
   message: string;
-  entityType?: 'product' | 'category' | 'store' | null;
+  entityType?: 'product' | 'category' | 'store' | 'collection' | 'page' | null;
   entityId?: string | null;
 }
 

@@ -25,6 +25,7 @@ import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd }
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 import { salesMailto } from '@/utils/contact';
+import { FeeBillPayment } from './FeeBillPayment';
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
 const INVOICES_PER_PAGE = 10;
@@ -71,6 +72,7 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
   const [data, setData] = useState<TransactionFeesOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!storeId) return;
@@ -81,7 +83,7 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load transaction fees.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, reloadKey]);
 
   const accrued = data?.accrued;
   return (
@@ -120,12 +122,7 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
                 <div key={b._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium text-charcoal">{b.periodKey}</p>
-                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)}{(b.taxAmountUSD ?? 0) > 0 ? ` + ${b.taxAmountUSD!.toFixed(2)} tax` : ''} · {b.saleCount} sale(s)</p>
-                    {b.status === 'awaiting_payment' && (
-                      <p className="text-[11px] text-warning mt-0.5 max-w-[420px]">
-                        No card on file. Please pay this by bank transfer{b.dueAt ? ` by ${new Date(b.dueAt).toLocaleDateString()}` : ''} and tell us through Help, so we can mark it paid.
-                      </p>
-                    )}
+                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)}{(b.taxAmountUSD ?? 0) > 0 ? ` + $${b.taxAmountUSD!.toFixed(2)} tax` : ''} · {b.saleCount} sale(s)</p>
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${FEE_BILL_STATUS_STYLE[b.status] ?? 'bg-bone text-slate'}`}>
@@ -135,6 +132,9 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
                       <a href={b.hostedInvoiceUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-brand-orange hover:underline">View invoice</a>
                     )}
                   </div>
+                  {b.status === 'awaiting_payment' && (
+                    <FeeBillPayment storeId={storeId} bill={b} payTo={data?.payTo ?? null} onReported={() => setReloadKey(k => k + 1)} />
+                  )}
                 </div>
               ))}
             </div>

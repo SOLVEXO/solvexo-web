@@ -237,6 +237,9 @@ export interface TransactionFeeBill {
   collectionMode?: 'stripe' | 'manual';
   taxAmountUSD?: number;
   dueAt?: string | null;
+  /** When the seller pressed "I have paid" for a bank transfer. */
+  sellerReportedPaidAt?: string | null;
+  sellerPaymentNote?: string | null;
   hostedInvoiceUrl: string | null;
   createdAt: string;
   breakdown: Array<{ currency: string; amount: number; amountUSD: number; saleCount: number }>;
@@ -250,9 +253,19 @@ export interface TransactionFeesOverview {
     minimumBillableUSD: number;
   };
   bills: TransactionFeeBill[];
+  /** The company's bank / wallet details to pay a bill that waits for a bank transfer. Null when the admin has set none. */
+  payTo?: FeePayTo | null;
+}
+export interface FeePayTo {
+  bankName: string | null; accountTitle: string | null; accountNumber: string | null; iban: string | null;
+  jazzcashNumber: string | null; easypaisaNumber: string | null; instructions: string | null;
 }
 export function apiGetTransactionFees(storeId: string) {
   return client.get<never, ApiResponse<TransactionFeesOverview>>(`/api/transaction-fees/${storeId}`);
+}
+/** POST /api/transaction-fees/:storeId/bills/:billId/paid-notice — "I sent the bank transfer". The admin closes the bill. */
+export function apiReportFeeBillPaid(storeId: string, billId: string, note?: string) {
+  return client.post<never, ApiResponse<{ alreadyReported: boolean; reportedAt: string }>>(`/api/transaction-fees/${storeId}/bills/${billId}/paid-notice`, note ? { note } : {});
 }
 
 export function apiGetStoreInvoices(storeId: string, query: { page?: number; limit?: number } = {}) {

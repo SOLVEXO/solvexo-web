@@ -3,6 +3,7 @@ import { Check, ExternalLink, Receipt } from 'lucide-react';
 import { Badge, Button, FilterDropdown, Modal, Table, type TableColumn } from '@/components/comman/ui';
 import { useAdminTransactionFeeBills } from '@/hooks/admin/useAdminFinance';
 import { apiAdminMarkFeeBillPaid, type FeeBillFilter, type TransactionFeeBillRow } from '@/api/services/finance/adminFinance';
+import { FeePaymentDetailsButton } from './FeePaymentDetailsButton';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
 import { formatMoneyCompact } from '@/utils/currency';
@@ -64,6 +65,11 @@ export function FeeBillsCard() {
           <div>
             <Badge color={s.color}>{s.label}</Badge>
             {b.failureReason && b.status !== 'paid' && <p className="text-[11px] text-slate mt-1 max-w-[220px]">{b.failureReason}</p>}
+            {b.status === 'awaiting_payment' && b.sellerReportedPaidAt && (
+              <p className="text-[11px] text-success mt-1 max-w-[220px]">
+                Seller says paid on {formatDate(b.sellerReportedPaidAt)}{b.sellerPaymentNote ? `: ${b.sellerPaymentNote}` : ''}
+              </p>
+            )}
           </div>
         );
       },
@@ -93,6 +99,7 @@ export function FeeBillsCard() {
               : ' Nothing outstanding.'}
           </p>
         </div>
+        <FeePaymentDetailsButton />
         <FilterDropdown options={FILTERS} value={status} onChange={(v) => { setStatus(v as FeeBillFilter); setPage(1); }} />
       </div>
       {bills.error ? (
