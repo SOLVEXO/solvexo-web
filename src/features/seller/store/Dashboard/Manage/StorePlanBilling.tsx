@@ -424,7 +424,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     if (isPastDue) {
       return {
         tone: 'error' as const, Icon: AlertTriangle,
-        text: `We couldn't process your last payment (attempt ${current?.failedPaymentAttempts ?? 1}). Update your payment method to avoid losing your plan.`,
+        text: `We couldn't process your last payment. ${current?.lockDate ? `Pay by ${new Date(current.lockDate).toDateString()} or this store will be locked.` : 'Update your payment method to avoid losing your plan.'}`,
         actionLabel: 'Update payment method', onAction: openBillingPortal,
       };
     }
@@ -691,9 +691,9 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                         </button>
                       )}
                       {(inv.hostedInvoiceUrl || inv.invoicePdfUrl) && (
-                        <a href={inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#'} target="_blank" rel="noreferrer"
+                        <a href={inv.status === 'failed' ? (inv.hostedInvoiceUrl ?? inv.invoicePdfUrl ?? '#') : (inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#')} target="_blank" rel="noreferrer"
                           className="text-[11px] font-semibold text-brand-orange hover:underline">
-                          Download
+                          {inv.status === 'failed' ? 'Pay now' : 'Download'}
                         </a>
                       )}
                     </div>

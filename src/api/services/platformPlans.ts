@@ -84,6 +84,8 @@ export interface StorePlatformSubscription {
   _id: string; storeId: string; platformPlanId: string | null; billingInterval: 'monthly' | 'yearly';
   amountUSD: number; status: string; startedAt: string; trialEndsAt: string | null; currentPeriodEnd: string; nextBillingDate: string;
   cancelAtPeriodEnd: boolean; cancelReason: string | null; failedPaymentAttempts: number;
+  // While status is past_due: when the store will be locked if still unpaid (set by the API).
+  lockDate?: string | null; pastDueSince?: string | null;
   creditBalanceUSD: number; stripeCustomerId: string | null;
   // Pre-trial-model stores only (see backend schema comment) — controls
   // whether a cancellation/dunning-exhaustion/trial-expiry actually lands on
