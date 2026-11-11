@@ -1207,6 +1207,12 @@ export const ENDPOINTS = {
     ADMIN_ALL:    '/api/contact/admin/all',
     UPDATE_STATUS:(id: string) => `/api/contact/admin/${id}/status`,
     DELETE:       (id: string) => `/api/contact/admin/${id}`,
+    ADMIN_REPLY:  (id: string) => `/api/contact/admin/${id}/reply`,
+  },
+
+  // ── SUPPORT (help requests from a store dashboard to Solvexo) ─────────────
+  SUPPORT: {
+    REQUESTS: (storeId: string) => `/api/support/${storeId}/requests`,
   },
 
   TESTIMONIALS: {
@@ -1475,6 +1481,7 @@ export const ENDPOINTS = {
       AI: {
         GENERATE:      (storeId: string) => `/api/store/${storeId}/seo/ai/generate`,
         GENERATE_BULK: (storeId: string) => `/api/store/${storeId}/seo/ai/generate-bulk`,
+        ACCEPT:        (storeId: string) => `/api/store/${storeId}/seo/ai/accept`,
         SUGGESTIONS:   (storeId: string) => `/api/store/${storeId}/seo/ai/suggestions`,
       },
 

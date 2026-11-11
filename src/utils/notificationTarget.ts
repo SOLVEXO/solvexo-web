@@ -61,6 +61,8 @@ export function notificationTarget(n: Pick<NotificationItem, 'type' | 'storeId' 
       return own('messages');
     case 'contact_form_message':
       return own('online-store/contact-messages');
+    case 'support_reply':
+      return own('help');
     case 'low_stock':
       return own('inventory');
     case 'purchase_order_overdue':

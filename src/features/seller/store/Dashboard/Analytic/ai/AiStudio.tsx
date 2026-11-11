@@ -28,6 +28,9 @@ export function StoreAIStudio() {
   const [activeTool, setActiveTool] = useState<AiToolType>('listing_writer');
   const { data: credits, loading: creditsLoading, refetch: refetchCredits } = useAiStudioCredits(storeId);
   const canUse = can('aistudio.use'); // a view-only role sees credits/history but cannot generate
+  // Exactly `false` = text tools switched off on this server (undefined = older API, behave as before).
+  const textOff = credits?.textAvailable === false;
+  const toolOff = (id: AiToolType) => textOff && id !== 'image_enhancer';
 
   return (
     <>
@@ -45,15 +48,24 @@ export function StoreAIStudio() {
           </div>
         )}
 
+        {textOff && (
+          <div role="status" className="bg-warning-bg rounded-xl border border-bone px-5 py-4 text-[13px] text-warning">
+            AI Studio is being set up and is not available yet. No credits are used.
+          </div>
+        )}
+
         {/* ── Tool selector ── */}
         {canUse && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {TOOLS.filter(t => t.id !== 'image_enhancer' || credits?.imageEnhancerAvailable === true).map(tool => {
-            const active = activeTool === tool.id;
+            const off = toolOff(tool.id);
+            const active = activeTool === tool.id && !off;
             return (
               <button
                 key={tool.id}
+                disabled={off}
+                aria-disabled={off}
                 onClick={() => setActiveTool(tool.id)}
-                className="text-left px-5 py-[18px] rounded-[10px] cursor-pointer transition-[border-color,background] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+                className={`text-left px-5 py-[18px] rounded-[10px] transition-[border-color,background] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 ${off ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 style={{
                   border: `2px solid ${active ? '#D97757' : '#E8E6DC'}`,
                   background: active ? '#FBECE4' : '#fff',
@@ -74,11 +86,11 @@ export function StoreAIStudio() {
         </div>}
 
         {/* ── Active tool workspace ── */}
-        {canUse && activeTool === 'listing_writer'    && <ListingWriterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {canUse && activeTool === 'seo_booster'       && <SeoBoosterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {canUse && activeTool === 'email_campaigns'   && <EmailCampaignsTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {canUse && activeTool === 'worksheet_builder' && <WorksheetBuilderTool storeId={storeId} onCreditsChanged={refetchCredits} />}
-        {canUse && activeTool === 'price_optimizer'   && <PriceOptimizerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && !textOff && activeTool === 'listing_writer'    && <ListingWriterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && !textOff && activeTool === 'seo_booster'       && <SeoBoosterTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && !textOff && activeTool === 'email_campaigns'   && <EmailCampaignsTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && !textOff && activeTool === 'worksheet_builder' && <WorksheetBuilderTool storeId={storeId} onCreditsChanged={refetchCredits} />}
+        {canUse && !textOff && activeTool === 'price_optimizer'   && <PriceOptimizerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
         {canUse && activeTool === 'image_enhancer' && credits?.imageEnhancerAvailable === true && <ImageEnhancerTool storeId={storeId} onCreditsChanged={refetchCredits} />}
       </div>
     </>

@@ -44,6 +44,8 @@ export interface AiCreditsOverview {
   buyCredits: { endpoint: string; addonType: string; creditsPerUnit: number };
   /** False while no real image-enhancement provider is configured (the tool is hidden, nothing is billed). */
   imageEnhancerAvailable?: boolean;
+  /** False while the text tools are switched off on this server (no AI key): generate calls are refused, nothing is billed. */
+  textAvailable?: boolean;
 }
 
 export function apiGetAiStudioCredits(storeId: string) {

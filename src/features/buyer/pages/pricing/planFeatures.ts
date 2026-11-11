@@ -31,7 +31,7 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): Pl
       : l.maxPosLocations === 1 ? '1 shop location with the POS till' : `${l.maxPosLocations} shop / warehouse locations` });
   }
   if (more(l.aiCreditsPerMonth, p.aiCreditsPerMonth)) {
-    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: first ? 'AI writes product descriptions for you' : undefined });
+    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: first ? 'AI Studio: product text, SEO, emails and price ideas. Renews monthly.' : undefined });
   }
   if (on('abandonedCartRecoveryAllowed')) out.push({ title: 'Recover abandoned carts', hint: 'Remind shoppers who leave without paying' });
   if (on('loyaltyProgramAllowed')) out.push({ title: 'Loyalty points', hint: 'Bring customers back for more' });

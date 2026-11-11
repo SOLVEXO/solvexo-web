@@ -11,7 +11,7 @@ import {
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, Landmark, ShieldOff,
+  Store, TrendingUp, Landmark, ShieldOff, LifeBuoy,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -265,6 +265,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
           'staff.manage', 'content.metaobjects.manage', 'activity_log.view',
         ],
       },
+      // Send a request to the Solvexo team; the API route needs `home.view` for staff.
+      { id: 'help', Icon: LifeBuoy, label: 'Help', path: 'help', requiredPermission: 'home.view' },
     ],
   },
 ];
