@@ -10,6 +10,7 @@ import { Footer } from '@/components/comman/ui/Footer';
 import { formatUsd, yearlyMonthlyEquivalent, yearlyTotal, maxYearlySavingsPercent } from '@/utils/planPricing';
 import { salesMailto } from '@/utils/contact';
 import { displayPrice, gatewayFeeRange, money, planFeatures } from './pricing/planFeatures';
+import { FeatureHelp } from './pricing/FeatureHelp';
 import { formatLocal, useLocalCurrency } from './pricing/localPrice';
 import { countryFromPathname } from '@/utils/countryPrefix';
 
@@ -303,7 +304,8 @@ export function PricingPage() {
                       {features.map(f => (
                         <li key={f.title} className="flex gap-2.5 py-[7px] text-[13.5px] leading-[1.45]">
                           <Tick />
-                          <span>{f.title}{f.hint && <span className="block text-[12px]" style={{ color: MUTED }}>{f.hint}</span>}</span>
+                          <span>{f.title}</span>
+                          {f.hint && <FeatureHelp text={f.hint} label={f.title} />}
                         </li>
                       ))}
                     </ul>

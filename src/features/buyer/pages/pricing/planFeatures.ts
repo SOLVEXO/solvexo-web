@@ -21,50 +21,65 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): Pl
   const on = (k: keyof PlatformPlanLimits) => !!l[k] && (first || !p[k]);
   const out: PlanFeature[] = [];
 
-  if (more(l.maxProducts, p.maxProducts)) out.push({ title: unlimited(l.maxProducts) ? 'Unlimited products' : `Sell up to ${plural(l.maxProducts!, 'product', 'products')}` });
+  if (more(l.maxProducts, p.maxProducts)) {
+    out.push({ title: unlimited(l.maxProducts) ? 'Unlimited products' : `Sell up to ${plural(l.maxProducts!, 'product', 'products')}`,
+      hint: unlimited(l.maxProducts) ? 'There is no limit on how many products you can list.' : `The most products you can have in your store at one time: ${l.maxProducts!.toLocaleString('en-US')}.` });
+  }
   if (more(l.maxStaffAccounts, p.maxStaffAccounts)) {
-    out.push(unlimited(l.maxStaffAccounts) ? { title: 'Unlimited staff logins' }
-      : { title: first ? `${plural(l.maxStaffAccounts!, 'extra staff login', 'extra staff logins')}` : plural(l.maxStaffAccounts!, 'staff login', 'staff logins'), hint: first ? 'Let a helper manage orders' : undefined });
+    out.push(unlimited(l.maxStaffAccounts) ? { title: 'Unlimited staff logins', hint: 'Add as many helpers as you need. Each one gets their own login and only the access you give them.' }
+      : { title: first ? `${plural(l.maxStaffAccounts!, 'extra staff login', 'extra staff logins')}` : plural(l.maxStaffAccounts!, 'staff login', 'staff logins'),
+          hint: `Let up to ${l.maxStaffAccounts} helper${l.maxStaffAccounts === 1 ? '' : 's'} log in to manage orders and products. Each gets their own login and only the access you choose.` });
   }
   if (more(l.maxPosLocations, p.maxPosLocations)) {
     out.push({ title: unlimited(l.maxPosLocations) ? 'Unlimited locations'
-      : l.maxPosLocations === 1 ? '1 shop location with the POS till' : `${l.maxPosLocations} shop / warehouse locations` });
+      : l.maxPosLocations === 1 ? '1 shop location with the POS till' : `${l.maxPosLocations} shop / warehouse locations`,
+      hint: unlimited(l.maxPosLocations) ? 'Sell from any number of shops and warehouses. Stock stays in step with your online store.'
+        : `Sell in person with the Solvexo POS app from up to ${l.maxPosLocations} place${l.maxPosLocations === 1 ? '' : 's'}. Stock stays in step with your online store.` });
   }
   if (more(l.aiCreditsPerMonth, p.aiCreditsPerMonth)) {
-    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: unlimited(l.aiCreditsPerMonth) ? undefined
-      : first ? `AI writes your product descriptions, SEO text, emails and price ideas. Each use costs 5 to 10 credits, so about ${Math.floor(l.aiCreditsPerMonth! / 10)} to ${Math.floor(l.aiCreditsPerMonth! / 5)} uses a month. Renews every month.`
-      : `About ${Math.floor(l.aiCreditsPerMonth! / 10)} to ${Math.floor(l.aiCreditsPerMonth! / 5)} AI uses a month` });
+    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: unlimited(l.aiCreditsPerMonth)
+      ? 'AI writes product text, SEO, emails and price ideas for you, with no monthly limit.'
+      : `AI writes product text, SEO, emails and price ideas for you. Each use costs 5 to 10 credits, so about ${Math.floor(l.aiCreditsPerMonth! / 10)} to ${Math.floor(l.aiCreditsPerMonth! / 5)} uses a month. Credits renew every month.` });
   }
-  if (on('abandonedCartRecoveryAllowed')) out.push({ title: 'Recover abandoned carts', hint: 'Remind shoppers who leave without paying' });
-  if (on('loyaltyProgramAllowed')) out.push({ title: 'Loyalty points', hint: 'Bring customers back for more' });
-  if (on('whiteLabelAllowed')) out.push({ title: 'Remove Solvexo branding', hint: 'Your brand only, everywhere' });
-  if (on('calculatedShippingRatesAllowed')) out.push({ title: 'Live courier rates at checkout' });
-  if (on('customDomainAllowed')) out.push({ title: 'Your own web address', hint: 'e.g. yourshop.com' });
+  if (on('abandonedCartRecoveryAllowed')) out.push({ title: 'Recover abandoned carts', hint: 'When a shopper leaves items in the cart without paying, we email them a link back to that cart.' });
+  if (on('loyaltyProgramAllowed')) out.push({ title: 'Loyalty points', hint: 'Customers earn points on their orders and swap them for rewards, so they come back to buy again.' });
+  if (on('whiteLabelAllowed')) out.push({ title: 'Remove Solvexo branding', hint: 'Hide the Solvexo name and logo, so your customers only see your brand.' });
+  if (on('calculatedShippingRatesAllowed')) out.push({ title: 'Live courier rates at checkout', hint: 'Checkout shows the real delivery price from the courier for each order, instead of one fixed price.' });
+  if (on('customDomainAllowed')) out.push({ title: 'Your own web address', hint: 'Use your own address like yourshop.com for your store instead of a Solvexo one. A secure (https) lock is included.' });
   if (on('emailCampaignsAllowed')) out.push({ title: 'Email marketing', hint: 'Email your customers offers and news. Automatic emails too: welcome, forgotten cart, back in stock.' });
-  if (on('advancedSeoToolsAllowed')) out.push({ title: 'SEO tools', hint: 'Help Google find your store' });
-  if (on('seoAiSuggestionsAllowed')) out.push({ title: 'AI SEO suggestions' });
-  if (on('customRedirectsAllowed')) out.push({ title: 'Custom redirects', hint: 'Keep old links working' });
-  if (on('searchConsoleIntegrationAllowed')) out.push({ title: 'Google Search Console connection' });
+  if (on('advancedSeoToolsAllowed')) out.push({ title: 'SEO tools', hint: 'Page titles, descriptions, a sitemap and checks that help Google find and rank your products.' });
+  if (on('seoAiSuggestionsAllowed')) out.push({ title: 'AI SEO suggestions', hint: 'AI proposes a page title and description for a product. You read it first and only click Use this if you like it.' });
+  if (on('customRedirectsAllowed')) out.push({ title: 'Custom redirects', hint: 'When you change a page address, send the old link to the new one, so visitors never land on an error page.' });
+  if (on('searchConsoleIntegrationAllowed')) out.push({ title: 'Google Search Console connection', hint: 'See which Google searches bring people to your store, right inside your dashboard.' });
 
   // Sales/promotions and homepage banners are unlimited on every plan, so they are not a plan feature any more.
   if (more(l.monthlyEmailSends, p.monthlyEmailSends)) {
-    out.push({ title: unlimited(l.monthlyEmailSends) ? 'Unlimited marketing emails' : `${l.monthlyEmailSends!.toLocaleString('en-US')} marketing emails a month`, hint: first ? 'Each email sent to one customer counts as 1. Starts again every month.' : undefined });
+    out.push({ title: unlimited(l.monthlyEmailSends) ? 'Unlimited marketing emails' : `${l.monthlyEmailSends!.toLocaleString('en-US')} marketing emails a month`, hint: 'How many offer and news emails you can send to your customers each month. One email to one customer counts as 1. The count starts again every month.' });
   }
   if (l.b2bWholesaleAllowed) {
     const catalogs = unlimited(l.maxB2BCatalogs) ? 'Unlimited wholesale catalogs' : l.maxB2BCatalogs ? plural(l.maxB2BCatalogs, 'wholesale catalog', 'wholesale catalogs') : null;
-    if (on('b2bWholesaleAllowed')) out.push({ title: 'B2B wholesale prices', hint: catalogs ?? undefined });
-    else if (catalogs && more(l.maxB2BCatalogs, p.maxB2BCatalogs)) out.push({ title: catalogs });
+    const wholesaleHint = (n?: number) => `Set special prices for business buyers who order in bulk. A catalog is one separate price list${unlimited(n) ? '; you can make as many as you like.' : n ? `; this plan allows ${n}.` : '.'}`;
+    if (on('b2bWholesaleAllowed')) out.push({ title: 'B2B wholesale prices', hint: catalogs ? wholesaleHint(l.maxB2BCatalogs) : 'Set special prices for business buyers who order in bulk.' });
+    else if (catalogs && more(l.maxB2BCatalogs, p.maxB2BCatalogs)) out.push({ title: catalogs, hint: wholesaleHint(l.maxB2BCatalogs) });
   }
   const digital = ([['digitalMembershipsAllowed', 'memberships'], ['digitalLicensesAllowed', 'license keys'], ['digitalCoursesAllowed', 'courses']] as const)
     .filter(([k]) => on(k)).map(([, label]) => label);
   if (digital.length) {
     const text = digital.length === 1 ? digital[0] : `${digital.slice(0, -1).join(', ')} & ${digital[digital.length - 1]}`;
-    out.push({ title: `Sell ${text}`, hint: 'Digital products, paid plans and online courses' });
+    const what: Record<string, string> = {
+      memberships: 'memberships (customers pay to join and get members-only files and content)',
+      'license keys': 'license keys (every buyer of your software gets their own code)',
+      courses: 'online courses (lessons, quizzes and certificates)',
+    };
+    out.push({ title: `Sell ${text}`, hint: `Sell more than physical goods: ${digital.map(d => what[d]).join(', ')}.` });
   }
-  if (on('apiWebhooksAllowed')) out.push({ title: 'Webhooks & API', hint: 'Connect your store to other tools' });
-  if (more(l.maxMarkets, p.maxMarkets)) out.push({ title: unlimited(l.maxMarkets) ? 'Unlimited currencies' : `Accept up to ${l.maxMarkets} currencies` });
-  if (on('prioritySupport')) out.push({ title: 'Priority support', hint: 'Faster answers from our team' });
-  if (on('dedicatedAccountManager')) out.push({ title: 'Your own account manager', hint: 'One person who knows your business' });
+  if (on('apiWebhooksAllowed')) out.push({ title: 'Webhooks & API', hint: 'Send your store events, like a new order, to other tools, and read your store data from your own software.' });
+  if (more(l.maxMarkets, p.maxMarkets)) {
+    out.push({ title: unlimited(l.maxMarkets) ? 'Unlimited currencies' : `Accept up to ${l.maxMarkets} currencies`,
+      hint: unlimited(l.maxMarkets) ? 'Show prices in any currency, so buyers in other countries see and pay in their own.' : `Show prices in up to ${l.maxMarkets} currencies, so buyers in other countries see and pay in their own.` });
+  }
+  if (on('prioritySupport')) out.push({ title: 'Priority support', hint: 'Your help requests are answered before the ones from the Basic plan. We do not promise an exact reply time.' });
+  if (on('dedicatedAccountManager')) out.push({ title: 'Your own account manager', hint: 'One person from our team looks after your account and knows your business.' });
   return out;
 }
 

@@ -31,8 +31,15 @@ describe('pricing page plan features', () => {
       'Recover abandoned carts', 'Your own web address', 'Email marketing', 'SEO tools', 'Custom redirects',
       '2,000 marketing emails a month', 'B2B wholesale prices', 'Accept up to 3 currencies',
     ]);
-    expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toBe('e.g. yourshop.com');
-    expect(planFeatures(basic).find(f => f.title === 'B2B wholesale prices')?.hint).toBe('1 wholesale catalog');
+    expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toContain('yourshop.com');
+    expect(planFeatures(basic).find(f => f.title === 'B2B wholesale prices')?.hint).toContain('this plan allows 1');
+  });
+
+  it('every line on every plan card carries an explanation for the ? icon', () => {
+    for (const plan of [basic, grow]) {
+      const prev = plan === basic ? null : basic;
+      for (const f of planFeatures(plan, prev)) expect(`${f.title}: ${f.hint ?? ''}`.length > f.title.length + 5).toBe(true);
+    }
   });
 
   it('never prints banner or promotion lines, even when they are unlimited', () => {
