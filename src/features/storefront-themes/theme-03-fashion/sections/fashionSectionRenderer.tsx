@@ -5,6 +5,7 @@ import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss 
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { registry } from './sectionRegistry';
 import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
+import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
 
@@ -39,7 +40,8 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
   const { theme } = useStorefront();
   // Visitors in another language see the seller's translations; the editor always shows the source text.
   const textIndex = useStoreTextIndex();
-  const sections = selectable ? authored : localizeSections(authored, textIndex);
+  // A/B tests: the visitor's variant of an experiment section (never in the editor).
+  const sections = useExperimentSections(selectable ? authored : localizeSections(authored, textIndex), !selectable);
   const schemes = theme?.theme?.colorSchemes;
   const dynamic = dynamicSourceValues ?? {};
 

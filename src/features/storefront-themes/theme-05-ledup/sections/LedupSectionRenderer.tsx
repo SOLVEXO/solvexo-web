@@ -1,6 +1,7 @@
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
+import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
 import { resolveSectionColors, baseTypographyCss } from '../theme.base';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
@@ -60,7 +61,8 @@ export function LedupSectionRenderer({
 }: Props) {
   const { theme } = useStorefront();
   const textIndex = useStoreTextIndex();
-  const sections = selectable ? authored : localizeSections(authored, textIndex);
+  // A/B tests: the visitor's variant of an experiment section (never in the editor).
+  const sections = useExperimentSections(selectable ? authored : localizeSections(authored, textIndex), !selectable);
   const schemes = theme?.theme?.colorSchemes;
   const dynamic = dynamicSourceValues ?? {};
 

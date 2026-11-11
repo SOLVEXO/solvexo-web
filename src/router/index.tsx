@@ -139,6 +139,7 @@ const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/S
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
 const CheckoutRulesHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/checkoutRules/CheckoutRulesHub'));
+const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/experiments/ExperimentsHub'));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
@@ -412,6 +413,7 @@ const mainRouter = createBrowserRouter([
           { path: 'wholesale',                        element: <WholesaleHub /> },
           { path: 'subscriptions',                    element: <SubscriptionsHub /> },
           { path: 'checkout-rules',                   element: <CheckoutRulesHub /> },
+          { path: 'experiments',                      element: <ExperimentsHub /> },
           { path: 'cod-protection',                   element: <CodProtectionPage /> },
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'khata',                            element: <KhataHub /> },

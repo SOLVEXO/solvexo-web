@@ -140,6 +140,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'], requiredEntitlement: 'b2bWholesaleAllowed' },
       { id: 'subscriptions', Icon: Package, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['product_subscriptions.view', 'product_subscriptions.manage'] },
       { id: 'checkout-rules', Icon: Package, label: 'Checkout rules', path: 'checkout-rules', requiredPermission: ['checkout_rules.view', 'checkout_rules.manage'] },
+      { id: 'experiments', Icon: Package, label: 'Experiments', path: 'experiments', requiredPermission: ['experiments.view', 'experiments.manage'] },
       { id: 'cod-protection', Icon: Package, label: 'COD protection', path: 'cod-protection', requiredPermission: 'settings.payments.manage' },
       { id: 'messaging', Icon: Package, label: 'WhatsApp & SMS', path: 'messaging', requiredPermission: 'marketing.manage' },
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
@@ -695,6 +696,10 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       price: free ? 'Free' : complimentary ? 'Complimentary' : `$${Number(platformSub.amountUSD).toLocaleString('en-US', { maximumFractionDigits: 2 })} / ${platformSub.billingInterval === 'yearly' ? 'year' : 'month'}`,
       cancelling: !!platformSub.cancelAtPeriodEnd,
       paymentFailed: (platformSub.failedPaymentAttempts ?? 0) > 0 || platformSub.status === 'past_due',
+      // Unpaid: the renewal date is stale, so show when the store gets locked instead (date comes from the API).
+      lockOn: platformSub.status === 'past_due' && platformSub.lockDate ? fmt(platformSub.lockDate) : null,
+      lockDaysLeft: platformSub.status === 'past_due' && platformSub.lockDate
+        ? Math.max(0, Math.ceil((new Date(platformSub.lockDate).getTime() - trialNow) / 86400000)) : null,
       scheduled: platformSub.scheduledPlanChange
         ? { name: platformSub.scheduledPlanChange.planName, on: fmt(platformSub.scheduledPlanChange.scheduledAt) }
         : null,
@@ -1065,8 +1070,8 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                           <div className="h-full bg-white rounded-full transition-[width] duration-300" style={{ width: `${planCycle.pct}%` }} />
                         </div>
                         <div className="flex justify-between gap-2 mb-[11px] mt-[4px] text-white/70 text-[8.5px] font-medium tabular-nums whitespace-nowrap">
-                          <span>{planCycle.cancelling ? `Ends ${planCycle.endOn}` : `Renews ${planCycle.endOn}`}</span>
-                          <span>{planCycle.daysLeft} day{planCycle.daysLeft === 1 ? '' : 's'} left</span>
+                          <span>{planCycle.lockOn ? `Locks ${planCycle.lockOn}` : planCycle.cancelling ? `Ends ${planCycle.endOn}` : `Renews ${planCycle.endOn}`}</span>
+                          <span>{planCycle.lockDaysLeft != null ? `${planCycle.lockDaysLeft} day${planCycle.lockDaysLeft === 1 ? '' : 's'} to pay` : `${planCycle.daysLeft} day${planCycle.daysLeft === 1 ? '' : 's'} left`}</span>
                         </div>
                       </>
                     )}
@@ -1448,7 +1453,7 @@ function OwnerBillingBanner() {
     return <BillingBar tone="error" onClick={goToBilling} text="This store is locked — choose a plan and complete payment to resume selling. Your data is safe." action="Unlock now" />;
   }
   if (sub.status === 'past_due') {
-    return <BillingBar tone="error" onClick={goToBilling} text={`Your plan payment failed${sub.failedPaymentAttempts > 0 ? ` (attempt ${sub.failedPaymentAttempts})` : ''} — update your payment method to avoid losing access.`} action="Fix now" />;
+    return <BillingBar tone="error" onClick={goToBilling} text={`Your plan payment failed — ${sub.lockDate ? `pay by ${new Date(sub.lockDate).toDateString()} or this store will be locked.` : 'update your payment method to avoid losing access.'}`} action="Fix now" />;
   }
   if (sub.cancelAtPeriodEnd) {
     return <BillingBar tone="warn" onClick={goToBilling} text={`Your plan is set to cancel on ${new Date(sub.currentPeriodEnd).toDateString()}.`} action="Reactivate" />;
