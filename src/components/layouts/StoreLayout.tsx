@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Languages,
+  Settings, ChevronLeft, ChevronRight, ChevronDown, Languages,
   ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
@@ -219,7 +219,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // Hidden via FEATURES.loyalty (not built-in on Shopify) — to become an installable App later; code/data kept.
       ...(FEATURES.loyalty ? [{ id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' as const }] : []),
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
-      { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],
   },
   {

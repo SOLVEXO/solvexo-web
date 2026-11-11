@@ -58,8 +58,7 @@ const GROUPS: Group[] = [
     { label: 'Translations in 22 languages', get: () => true },
   ] },
   { title: 'AI features', rows: [
-    { label: 'AI Studio (product text, SEO, emails, prices)', get: () => true },
-    { label: 'AI credits per month (each AI use costs 5 to 10)', get: p => count(p.limits.aiCreditsPerMonth) },
+    { label: 'AI credits per month (for AI SEO suggestions)', get: p => (p.limits.seoAiSuggestionsAllowed ? count(p.limits.aiCreditsPerMonth) : false) },
   ] },
   { title: 'Hosting', rows: [
     { label: 'Hosting and free SSL', get: () => true },
@@ -116,7 +115,7 @@ function getFallbackFaqs(trialDurationDays: number, isPk: boolean) { return [
     ? 'No. Solvexo takes no commission and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through a payment gateway such as Safepay.'
     : 'No. There is no commission on card payments processed through Solvexo Payments — you only pay the card processing fee — and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through another payment gateway with your own account, such as Stripe or PayPal.' },
   { q: 'Is there a free trial?', a: `Yes — every new store gets a free ${trialDurationDays}-day trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready.` },
-  { q: 'How do AI credits work?', a: 'AI Studio writes product descriptions and SEO text, drafts marketing emails, suggests prices and builds worksheets. Each use costs credits: 5 for a product description, SEO text, an email or an AI SEO suggestion, and 10 for a price suggestion or a worksheet. Your plan\'s credits renew on the 1st of every month and unused ones do not carry over. If you need more, you can buy 500 extra credits for US$10 — credits you buy stay until you use them. Every free trial includes 50 credits.' },
+  { q: 'How do AI credits work?', a: 'AI credits are spent on AI SEO suggestions: the AI proposes a page title and description for one of your products, you read it first, and only click Use this if you like it. Each suggestion costs 5 credits. Your plan\'s credits renew on the 1st of every month and unused ones do not carry over. If you need more, you can buy 500 extra credits for US$10 — credits you buy do not expire at the end of the month. Every free trial includes 50 credits.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards. Payments are processed securely by Stripe — we never see or store your card number.' },
 ]; }
 

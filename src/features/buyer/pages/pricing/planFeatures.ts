@@ -36,10 +36,13 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): Pl
       hint: unlimited(l.maxPosLocations) ? 'Sell from any number of shops and warehouses. Stock stays in step with your online store.'
         : `Sell in person with the Solvexo POS app from up to ${l.maxPosLocations} place${l.maxPosLocations === 1 ? '' : 's'}. Stock stays in step with your online store.` });
   }
-  if (more(l.aiCreditsPerMonth, p.aiCreditsPerMonth)) {
-    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: unlimited(l.aiCreditsPerMonth)
-      ? 'AI writes product text, SEO, emails and price ideas for you, with no monthly limit.'
-      : `AI writes product text, SEO, emails and price ideas for you. Each use costs 5 to 10 credits, so about ${Math.floor(l.aiCreditsPerMonth! / 10)} to ${Math.floor(l.aiCreditsPerMonth! / 5)} uses a month. Credits renew every month.` });
+  // Credits are spent only by AI SEO suggestions, so a plan that does not have them shows no credits line at all.
+  if (l.seoAiSuggestionsAllowed && (!p.seoAiSuggestionsAllowed || more(l.aiCreditsPerMonth, p.aiCreditsPerMonth))) {
+    const used = 'Used for AI SEO suggestions: AI proposes a page title and description for a product, you read it first and click Use this.';
+    out.push({
+      title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`,
+      hint: unlimited(l.aiCreditsPerMonth) ? `${used} There is no monthly limit.` : `${used} Each suggestion costs 5 credits. Credits renew every month.`,
+    });
   }
   if (on('abandonedCartRecoveryAllowed')) out.push({ title: 'Recover abandoned carts', hint: 'When a shopper leaves items in the cart without paying, we email them a link back to that cart.' });
   if (on('loyaltyProgramAllowed')) out.push({ title: 'Loyalty points', hint: 'Customers earn points on their orders and swap them for rewards, so they come back to buy again.' });

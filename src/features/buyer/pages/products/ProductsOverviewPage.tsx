@@ -20,7 +20,7 @@ export function ProductsOverviewPage() {
           kicker="One platform"
           as="h1"
           title="Every product you need to run a business."
-          subtitle="Store, POS, AI tools and analytics — under one login, sharing the same real data."
+          subtitle="Store, POS, inventory and analytics — under one login, sharing the same real data."
           align="center"
           size="lg"
         />

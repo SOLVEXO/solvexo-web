@@ -37,7 +37,7 @@ function RedirectingSpinner() {
 // since Register is seller-only now (see SELLER_ONLY_REGISTER below).
 const HIGHLIGHTS = [
   { Icon: Store,       text: 'A store built around how you sell' },
-  { Icon: Sparkles,    text: 'AI Studio and analytics from day one' },
+  { Icon: Sparkles,    text: 'Analytics from day one' },
   { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
 

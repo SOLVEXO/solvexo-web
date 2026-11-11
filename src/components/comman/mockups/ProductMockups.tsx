@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
   Search, ShoppingCart, CreditCard, Wallet, Banknote, Check,
-  TrendingUp, TrendingDown, Users, Package, DollarSign, Sparkles,
-  ArrowRight, Bell, PackageCheck, Gift, Ticket, Store, MonitorSmartphone, BarChart3,
+  TrendingUp, TrendingDown, Users, Package, DollarSign,
+  Bell, PackageCheck, Gift, Ticket, Store, MonitorSmartphone, BarChart3,
   Truck, Globe, Percent, UserCircle, Coins,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -201,43 +201,6 @@ export function SellerDashboardPreview({ className }: { className?: string }) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// AICommercePreview — AI insight feed with per-insight actions.
-// ────────────────────────────────────────────────────────────────────────────
-const AI_INSIGHTS = [
-  { text: "Demand for “Wireless Earbuds” is trending up — consider raising the price by 8%.", action: 'Apply' },
-  { text: "“Leather Wallet” has a thin description — generate a stronger one from its photos.", action: 'Generate' },
-  { text: '23 customers viewed “Yoga Mat” but didn’t buy — send them a limited discount?', action: 'Send' },
-];
-
-export function AICommercePreview({ className }: { className?: string }) {
-  return (
-    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-bone bg-gradient-to-r from-accent-violet-bg to-transparent">
-        <span className="w-6 h-6 rounded-md bg-accent-violet flex items-center justify-center shrink-0">
-          <Sparkles size={13} className="text-white" />
-        </span>
-        <p className="text-[12px] font-bold text-carbon">AI Commerce Assistant</p>
-      </div>
-      <div className="p-4 flex flex-col gap-2.5">
-        {AI_INSIGHTS.map((insight, i) => (
-          <div key={i} className="rounded-xl bg-cream p-3 flex items-start gap-2.5">
-            <span className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0 mt-[1px]">
-              <Sparkles size={12} className="text-accent-violet" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-charcoal leading-[1.5]">{insight.text}</p>
-              <button className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-accent-violet bg-accent-violet-bg rounded-full px-2.5 py-1">
-                {insight.action} <ArrowRight size={9} />
-              </button>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -733,7 +696,6 @@ export function MarketsPreview({ className }: { className?: string }) {
 export const PRODUCT_ICONS: Record<string, LucideIcon> = {
   'store-builder': Store,
   pos: MonitorSmartphone,
-  'ai-commerce': Sparkles,
   analytics: BarChart3,
   inventory: PackageCheck,
   'orders-customers': Users,
@@ -754,7 +716,6 @@ export function mockupForProductSlug(slug: string) {
   switch (slug) {
     case 'store-builder': return <StorefrontPreview />;
     case 'pos':            return <POSPreview />;
-    case 'ai-commerce':    return <AICommercePreview />;
     case 'analytics':      return <AnalyticsPreview />;
     case 'inventory':      return <InventoryPreview />;
     case 'loyalty':        return <LoyaltyPreview />;

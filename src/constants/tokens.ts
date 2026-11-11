@@ -160,7 +160,7 @@ export const PRICING_PLANS = [
     transactionFee: '1%',
     features: [
       'Unlimited products', 'Custom domain (.com)', 'Full Store Builder',
-      'POS register', 'Advanced analytics', 'AI Studio — 1,000 credits / mo',
+      'POS register', 'Advanced analytics',
       '5 staff accounts', 'Email campaigns', 'Abandoned cart recovery',
       'Priority support', '1% transaction fee', 'Marketplace featured badge',
     ],
@@ -175,7 +175,7 @@ export const PRICING_PLANS = [
     transactionFee: '0.5%',
     features: [
       'Everything in Professional', 'Multi-location POS', 'Unlimited staff accounts',
-      'AI Studio — 5,000 credits / mo', 'Loyalty & Rewards program',
+      'Loyalty & Rewards program',
       'Advanced shipping rules',
       'API access & webhooks', 'Dedicated account manager',
       '0.5% transaction fee', 'White-label store option', 'SLA — 99.9% uptime',

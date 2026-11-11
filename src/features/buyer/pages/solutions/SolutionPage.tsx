@@ -12,7 +12,7 @@ import { stockPhotoAlt, unsplashUrl } from '@/assets/stockPhotos';
 import { getSolution } from '@/features/buyer/data/solutions';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview, PRODUCT_ICONS,
+  StorefrontPreview, POSPreview, SellerDashboardPreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview, PRODUCT_ICONS,
 } from '@/components/comman/mockups/ProductMockups';
 
 const SERIF = "'Lora', Georgia, serif";
@@ -25,7 +25,7 @@ const SOLUTION_PREVIEW: Record<string, () => ReactElement> = {
   fashion:         () => <InventoryPreview />,
   restaurants:     () => <POSPreview />,
   beauty:          () => <StorefrontPreview />,
-  creators:        () => <AICommercePreview />,
+  creators:        () => <SellerDashboardPreview />,
   'small-business': () => <AnalyticsPreview />,
 };
 
@@ -33,10 +33,10 @@ const SOLUTION_PREVIEW: Record<string, () => ReactElement> = {
 // genuine cross-links into /products/:slug, not invented per-industry copy.
 const RELATED_PRODUCTS: Record<string, string[]> = {
   retail:           ['store-builder', 'pos', 'inventory'],
-  fashion:          ['store-builder', 'inventory', 'ai-commerce'],
+  fashion:          ['store-builder', 'inventory', 'analytics'],
   restaurants:      ['pos', 'inventory', 'orders-customers'],
-  beauty:           ['store-builder', 'loyalty', 'ai-commerce'],
-  creators:         ['ai-commerce', 'store-builder', 'analytics'],
+  beauty:           ['store-builder', 'loyalty', 'analytics'],
+  creators:         ['store-builder', 'analytics', 'domains'],
   'small-business': ['store-builder', 'pos', 'analytics'],
 };
 

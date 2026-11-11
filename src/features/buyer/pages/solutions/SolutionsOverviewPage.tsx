@@ -21,7 +21,7 @@ export function SolutionsOverviewPage() {
           kicker="Built for the way you sell"
           as="h1"
           title="Solvexo, tailored to your industry."
-          subtitle="The same real platform underneath — store, POS, inventory, AI tools — applied to how your specific business actually sells."
+          subtitle="The same real platform underneath — store, POS, inventory and analytics — applied to how your specific business actually sells."
           align="center"
           size="lg"
         />

@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import {
   LayoutDashboard, Gauge, Users, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
-  BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
+  BarChart3, Search, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
   Tag, Target, Handshake,
   MousePointerClick,
@@ -55,7 +55,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
-  { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
   // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
   // tabbed page — see ADMIN_MODULES' doc comment below for why.
   { id: 'content',       Icon: ImageIcon,       label: 'Site Content',    path: '/admin/content'       },
@@ -157,7 +156,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   // queue (seller white-label branded apps), unrelated to buyer-subscribes-
   // to-seller-plan monitoring or Solvexo's own SaaS plan catalog, which is
   // what Billing actually is.
-  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter', 'platform-coupons'], collapsible: true },
+  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'newsletter', 'platform-coupons'], collapsible: true },
   // Manual bank-transfer verification moved to each seller's own Store
   // Workspace (money lands directly in the seller's own bank account now,
   // never Solvexo's — see ManualPaymentsService) — just one destination
@@ -205,7 +204,7 @@ const NAV_PERMISSION: Record<string, string | string[]> = {
   earnings: ['partner.portal', 'sales.access', 'sales.manage'],
   overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
-  'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',
+  'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage',
   content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage', 'app-platform': 'config.manage',
 };
 const navAllowed = (id: string) => !NAV_PERMISSION[id] || can(NAV_PERMISSION[id]);

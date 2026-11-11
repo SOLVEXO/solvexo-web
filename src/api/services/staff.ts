@@ -45,7 +45,6 @@ export const STAFF_PERMISSIONS = [
   'messaging.view', 'messaging.manage',
   'loyalty.view', 'loyalty.manage', 'loyalty.points.award',
   'seo.view', 'seo.manage',
-  'aistudio.view', 'aistudio.use',
   'staff.manage',
 ] as const;
 export type StaffPermission = (typeof STAFF_PERMISSIONS)[number];
@@ -138,8 +137,6 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'loyalty.points.award': 'Manually award loyalty points',
   'seo.view': 'View SEO data & audits',
   'seo.manage': 'Manage SEO settings',
-  'aistudio.view': 'View AI Studio credit usage & history',
-  'aistudio.use': 'Use AI Studio generation tools',
   'staff.manage': 'Manage staff & roles',
 };
 
@@ -151,7 +148,7 @@ export const PERMISSION_AREAS: { title: string; prefixes: string[] }[] = [
   { title: 'Collections & categories', prefixes: ['collections', 'categories'] },
   { title: 'Inventory & purchasing', prefixes: ['inventory', 'purchase_orders'] },
   { title: 'Customers, reviews & messages', prefixes: ['customers', 'reviews', 'messaging', 'loyalty'] },
-  { title: 'Marketing, gift cards & growth', prefixes: ['marketing', 'discounts', 'giftcards', 'seo', 'aistudio'] },
+  { title: 'Marketing, gift cards & growth', prefixes: ['marketing', 'discounts', 'giftcards', 'seo'] },
   { title: 'Digital commerce', prefixes: ['digital', 'members', 'courses', 'licenses'] },
   { title: 'Wholesale (B2B)', prefixes: ['b2b'] },
   { title: 'Fulfilment services', prefixes: ['fulfillment'] },

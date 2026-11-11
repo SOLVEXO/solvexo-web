@@ -56,7 +56,6 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'tip', text: 'Use your best three products in the banner and featured section. Visitors decide in seconds whether to keep scrolling.' },
       { type: 'h2', text: '4. Add products the right way' },
       { type: 'p', text: 'Good product pages sell. For each product add clear photos taken in daylight, the price, the sizes or colours you have (as variants, so stock is tracked for each one), and a description that answers the questions customers usually ask on WhatsApp: fabric, size chart, care instructions and delivery time.' },
-      { type: 'p', text: 'If writing descriptions takes you too long, Solvexo AI Studio can draft them for you from a few details, which you then check and edit.' },
       { type: 'h2', text: '5. Set up delivery and cash on delivery' },
       { type: 'p', text: 'Delivery is where many new stores lose money, so set it up before you launch. Decide which cities or regions you deliver to and what each one costs. In Solvexo you create shipping zones and list the courier services you use, and checkout works out the shipping cost for each order automatically.' },
       { type: 'p', text: 'Most shoppers in Pakistan still prefer to pay cash on delivery, so offer it from day one. Solvexo checkout supports cash on delivery as well as card payments.' },

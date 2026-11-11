@@ -25,7 +25,7 @@ import { RequireRole }  from './RequireRole';
 
 // ── Every route below is code-split via React.lazy() — this used to be ~100
 // EAGER imports, meaning literally every seller/admin/buyer/storefront page
-// (analytics charts, the theme builder, AI Studio, POS, every admin screen)
+// (analytics charts, the theme builder, POS, every admin screen)
 // shipped in ONE ~3.2MB JS bundle that had to fully download+parse before
 // the very first pixel could paint, regardless of which single page was
 // actually being visited — the real cause of a long white-screen on load.
@@ -155,7 +155,6 @@ const ReorderSuggestions = lazy(() => import('@/features/seller/store/Dashboard/
 const StoreReturnList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList').then(m => ({ default: m.StoreReturnList })));
 const DisputesList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DisputesList'));
 const StoreAnalytics = lazy(() => import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics').then(m => ({ default: m.StoreAnalytics })));
-const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio').then(m => ({ default: m.StoreAIStudio })));
 const StoreFaqs = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreFaqs'));
 const AdminPlatformCoupons = lazy(() => import('@/features/admin/pages/AdminPlatformCoupons'));
 const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO').then(m => ({ default: m.StoreSEO })));
@@ -209,7 +208,6 @@ const AdminConfig = lazy(() => import('@/features/admin/pages/AdminConfig').then
 const AdminFxSettings = lazy(() => import('@/features/admin/pages/AdminFxSettings').then(m => ({ default: m.AdminFxSettings })));
 const AdminSettingsHub = lazy(() => import('@/features/admin/pages/settings/AdminSettingsHub'));
 const AdminSEO = lazy(() => import('@/features/admin/pages/AdminSEO').then(m => ({ default: m.AdminSEO })));
-const AdminAiStudio = lazy(() => import('@/features/admin/pages/AdminAiStudio').then(m => ({ default: m.AdminAiStudio })));
 const AdminStoreAppRequests = lazy(() => import('@/features/admin/pages/AdminStoreAppRequests').then(m => ({ default: m.AdminStoreAppRequests })));
 
 // ── Storefront subdomain router ────────────────────────────────────────────────
@@ -503,7 +501,6 @@ const mainRouter = createBrowserRouter([
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'disputes',                         element: <DisputesList /> },
           { path: 'seo/:tab?',                        element: <StoreSEO /> },
-          { path: 'ai/studio',                        element: <StoreAIStudio /> },
           { path: 'reviews',                          element: <StoreReviews /> },
           { path: 'finance',                          element: <StoreFinance /> },
           { path: 'inventory/:tab?',                  element: <InventoryHub /> },
@@ -624,7 +621,6 @@ const mainRouter = createBrowserRouter([
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },
           { path: 'settings',     element: <RequireRole role="admin"><AdminSettingsHub /></RequireRole> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
-          { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
           { path: 'platform-coupons', element: <RequireRole role="admin"><AdminPlatformCoupons /></RequireRole> },
           { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },
           { path: 'store-app-requests', element: <RequireRole role="admin"><AdminStoreAppRequests /></RequireRole> },

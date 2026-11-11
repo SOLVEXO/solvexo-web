@@ -36,7 +36,7 @@ const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
   { Icon: Gift,        title: 'Loyalty & Rewards',    desc: 'Give buyers points, tiers and perks that keep them coming back.' },
   { Icon: Hammer,      title: 'Custom Storefront',    desc: 'Your brand, your domain, your store.'              },
   { Icon: Download,    title: 'Digital Delivery',     desc: 'Instant file delivery for digital products.'       },
-  { Icon: Sparkles,    title: 'AI Tools',             desc: 'AI-powered listing optimization and pricing.'      },
+  { Icon: Sparkles,    title: 'AI SEO suggestions',   desc: 'AI proposes page titles and descriptions. You approve each one.' },
   { Icon: BarChart2,   title: 'Analytics',            desc: 'Real-time sales data and customer insights.'       },
   { Icon: Monitor,     title: 'Point of Sale',        desc: 'Accept payments in person with our mobile POS.'   },
   { Icon: CreditCard,  title: 'Fast Payouts',         desc: 'Get paid within 2 business days, every time.'     },

@@ -5,18 +5,18 @@ export type ActivityCategory = 'products' | 'orders' | 'finance' | 'marketing' |
 
 /** Full backend category enum — wider than the seller-facing `ActivityCategory`
  *  above, since the platform-wide admin log also carries platform-level
- *  categories (billing, plans, SEO, AI Studio, moderation, etc.) that never
+ *  categories (billing, plans, SEO, moderation, etc.) that never
  *  originate from a single store. Mirrors `ACTIVITY_LOG_CATEGORIES` in
  *  `activity-log.schema.ts`. */
 export type AdminActivityCategory =
   | ActivityCategory
   | 'loyalty' | 'subscriptions' | 'platform_billing' | 'platform_plans'
-  | 'seo' | 'ai_studio' | 'announcements' | 'moderation' | 'promotions' | 'admin_audit' | 'admin_team';
+  | 'seo' | 'announcements' | 'moderation' | 'promotions' | 'admin_audit' | 'admin_team';
 
 export const ADMIN_ACTIVITY_CATEGORIES: AdminActivityCategory[] = [
   'products', 'orders', 'finance', 'marketing', 'customers', 'settings', 'security',
   'loyalty', 'subscriptions', 'platform_billing', 'platform_plans',
-  'seo', 'ai_studio', 'announcements', 'moderation', 'promotions',
+  'seo', 'announcements', 'moderation', 'promotions',
 ];
 
 /** City/country resolved from `ip` — see the backend's `resolveLocationFromIp`. Null for a private/local IP. */

@@ -347,9 +347,8 @@ const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) =>
     { label: 'Live carrier shipping rates at checkout', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
     { label: 'Selling currencies (markets)', get: p => num(p.limits.maxMarkets) },
   ] },
-  { group: 'AI Studio', rows: [
-    { label: 'AI Studio tools', get: ALL },
-    { label: 'AI credits every month', get: p => num(p.limits.aiCreditsPerMonth) },
+  { group: 'AI', rows: [
+    { label: 'AI credits every month (for AI SEO suggestions)', get: p => (p.limits.seoAiSuggestionsAllowed ? num(p.limits.aiCreditsPerMonth) : false) },
   ] },
   { group: 'Apps & channels', rows: [
     { label: 'Payments & shipping integrations (Stripe, bank transfer, WhatsApp, Shippo)', get: ALL },

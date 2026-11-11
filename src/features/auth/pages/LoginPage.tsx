@@ -39,7 +39,7 @@ const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 
 // BUYER-checkout language — no longer described what this page is for.
 const HIGHLIGHTS = [
   { Icon: Store,       text: 'A store built around how you sell' },
-  { Icon: Sparkles,    text: 'AI Studio and analytics from day one' },
+  { Icon: Sparkles,    text: 'Analytics from day one' },
   { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
 

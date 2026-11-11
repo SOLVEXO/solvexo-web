@@ -30,13 +30,13 @@ const ROLE_OPTIONS = [
 
 const PAGE_SIZE = 20;
 
-// Cycled over a small palette — 16 categories, 6 colors, repeats by design
+// Cycled over a small palette — 15 categories, 6 colors, repeats by design
 // rather than needing a bespoke color per category.
 const CATEGORY_COLOR: Record<AdminActivityCategory, BadgeColor> = {
   products: 'blue', orders: 'blue', finance: 'orange', marketing: 'yellow',
   customers: 'green', settings: 'gray', security: 'red',
   loyalty: 'green', subscriptions: 'blue', platform_billing: 'orange',
-  platform_plans: 'orange', seo: 'yellow', ai_studio: 'yellow',
+  platform_plans: 'orange', seo: 'yellow',
   announcements: 'gray', moderation: 'red', promotions: 'green', admin_audit: 'orange', admin_team: 'orange',
 };
 

@@ -27,7 +27,7 @@ const titles = (p: PlatformPlan, prev?: PlatformPlan) => planFeatures(p, prev).m
 describe('pricing page plan features', () => {
   it('lists everything on the first plan in plain words', () => {
     expect(titles(basic)).toEqual([
-      'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till', '100 AI credits a month',
+      'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till',
       'Recover abandoned carts', 'Your own web address', 'Email marketing', 'SEO tools', 'Custom redirects',
       '2,000 marketing emails a month', 'B2B wholesale prices', 'Accept up to 3 currencies',
     ]);
@@ -40,6 +40,14 @@ describe('pricing page plan features', () => {
       const prev = plan === basic ? null : basic;
       for (const f of planFeatures(plan, prev)) expect(`${f.title}: ${f.hint ?? ''}`.length > f.title.length + 5).toBe(true);
     }
+  });
+
+  it('AI credits are shown only on a plan that has AI SEO suggestions, and the hint says what they are for', () => {
+    expect(titles(basic).some(t => /AI credits/i.test(t))).toBe(false); // credits are spent only by AI SEO suggestions
+    const credits = planFeatures(grow, basic).find(f => /AI credits/i.test(f.title));
+    expect(credits?.title).toBe('500 AI credits a month');
+    expect(credits?.hint).toContain('AI SEO suggestions');
+    expect(credits?.hint).toContain('5 credits');
   });
 
   it('never prints banner or promotion lines, even when they are unlimited', () => {

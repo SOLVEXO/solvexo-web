@@ -1,7 +1,7 @@
 import { apiGetStoreInventory } from '@/api/services/product';
 import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 
-/** Lightweight product list for AI Studio's product-picker dropdowns — reuses the existing inventory endpoint. */
+/** Lightweight product list for product-picker dropdowns (for example the AI SEO tab) — reuses the existing inventory endpoint. */
 export function useStoreProductPicker(storeId: string) {
   const { data, loading, error } = useAnalyticsQuery(
     (p: { storeId: string }) => apiGetStoreInventory(p.storeId, 1, 100),

@@ -30,7 +30,6 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
       { label: 'Point of Sale',       path: '/products/pos' },
       { label: 'Inventory',           path: '/products/inventory' },
       { label: 'Orders & Customers',  path: '/products/orders-customers' },
-      { label: 'AI Commerce',         path: '/products/ai-commerce' },
       { label: 'Analytics',           path: '/products/analytics' },
       { label: 'Loyalty & Rewards',   path: '/products/loyalty' },
     ],
@@ -261,7 +260,7 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
           <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <SolvexoLogo size={34} variant="light" textWordmark />
             <p className="text-[12.5px] mt-4 leading-relaxed max-w-[260px] text-[#9a9894]">
-              The commerce OS for sellers, creators and educators — your own storefront, POS, and AI-powered tools in one platform.
+              The commerce OS for sellers, creators and educators — your own storefront, POS and inventory in one platform.
             </p>
 
             <a href={`mailto:${SALES_EMAIL}`} className="inline-block mt-4 text-[13px] text-[#b0aea8] hover:text-white transition-colors">{SALES_EMAIL}</a>

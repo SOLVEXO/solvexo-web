@@ -16,7 +16,7 @@ const CATEGORY_COLOR: Record<string, BadgeColor> = {
   products: 'blue', orders: 'blue', finance: 'orange', marketing: 'yellow',
   customers: 'green', settings: 'gray', security: 'red',
   loyalty: 'green', subscriptions: 'blue', platform_billing: 'orange',
-  platform_plans: 'orange', seo: 'yellow', ai_studio: 'yellow',
+  platform_plans: 'orange', seo: 'yellow',
   announcements: 'gray', moderation: 'red', promotions: 'green',
 };
 

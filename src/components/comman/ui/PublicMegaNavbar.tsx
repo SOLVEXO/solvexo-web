@@ -28,7 +28,7 @@ const NAV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const PRODUCT_JOURNEY = [
   { stage: 'Build your website', slugs: ['store-builder', 'domains', 'customer-accounts'] },
   { stage: 'Sell anywhere',      slugs: ['pos', 'markets'] },
-  { stage: 'Marketing & analytics', slugs: ['analytics', 'discounts', 'ai-commerce', 'loyalty'] },
+  { stage: 'Marketing & analytics', slugs: ['analytics', 'discounts', 'loyalty'] },
   { stage: 'Run your business',  slugs: ['orders-customers', 'inventory', 'shipping'] },
   { stage: 'Get paid',           slugs: ['payments', 'checkout'] },
 ] as const;
@@ -52,7 +52,7 @@ const PRODUCT_NAV_COLUMNS = [
 // to pull a genuine "updates" list from).
 const WHY_SOLVEXO = [
   'Store, POS and inventory share one real-time system',
-  'AI Studio built into the dashboard, not a bolt-on',
+  'Theme editor and your own domain on every plan',
   'Direct-to-you payouts via your own Stripe account',
 ] as const;
 
