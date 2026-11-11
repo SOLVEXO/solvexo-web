@@ -291,7 +291,17 @@ export function ImageUpload({
     const url = value[0] ?? null;
     return (
       <div className={clsx('flex flex-col items-start gap-1.5', className)}>
-        <div className="flex items-end gap-2">
+        <div className="relative flex items-end gap-2">
+          {url && !uploading && (
+            <button
+              type="button"
+              aria-label="Remove image"
+              onClick={() => remove(0)}
+              className="absolute -top-1.5 -right-1.5 z-10 size-5 rounded-full bg-charcoal text-white flex items-center justify-center border-2 border-white cursor-pointer hover:bg-error"
+            >
+              <X size={11} />
+            </button>
+          )}
           <label className={clsx(
             'size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange',
             'flex items-center justify-center shrink-0 overflow-hidden',
