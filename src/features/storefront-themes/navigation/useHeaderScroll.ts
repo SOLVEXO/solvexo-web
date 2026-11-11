@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type CSSProperties, type RefObject } from 'react';
+import { scrollRootRef } from '@/utils/scrollRoot';
 
 /**
  * Header behaviour while the page scrolls: sticky, "show only when scrolling up", and a transparent header that
@@ -18,16 +19,20 @@ export function useHeaderScroll(stickyMode: 'off' | 'always' | 'scroll-up', tran
 
   useEffect(() => {
     if (stickyMode === 'off' && !transparent) return;
-    let lastY = window.scrollY;
+    // The app scrolls inside RootLayout's container, not the window (see utils/scrollRoot.ts); fall back to the window elsewhere (previews).
+    const root = scrollRootRef.current;
+    const target: HTMLElement | Window = root ?? window;
+    const read = () => (root ? root.scrollTop : window.scrollY);
+    let lastY = read();
     const onScroll = () => {
-      const y = window.scrollY;
+      const y = read();
       setAtTop(y < 8);
       if (stickyMode === 'scroll-up') setHidden(y > 120 && y > lastY);
       lastY = y;
     };
     onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    target.addEventListener('scroll', onScroll, { passive: true });
+    return () => target.removeEventListener('scroll', onScroll);
   }, [stickyMode, transparent]);
 
   useEffect(() => {
