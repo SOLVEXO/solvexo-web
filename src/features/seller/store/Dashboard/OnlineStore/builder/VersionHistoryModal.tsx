@@ -24,7 +24,7 @@ export function VersionHistoryModal<T extends VersionRow>({
   if (!open) return null;
 
   return (
-    <Modal title={title} width={480} onClose={onClose}>
+    <Modal title={title} width={680} onClose={onClose}>
       {loading ? (
         <p className="text-[12.5px] text-slate py-4 text-center">Loading…</p>
       ) : versions.length === 0 ? (

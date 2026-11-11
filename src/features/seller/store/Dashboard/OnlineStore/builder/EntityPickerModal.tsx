@@ -121,7 +121,7 @@ export function EntityPickerModal({
   return (
     <Modal
       title={title ?? `Select ${MODE_LABEL[mode]}`}
-      width={520}
+      width={760}
       onClose={onClose}
       mobileSheet
       footer={

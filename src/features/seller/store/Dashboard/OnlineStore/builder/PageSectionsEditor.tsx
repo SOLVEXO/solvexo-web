@@ -155,7 +155,8 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
   ownerResource?: MetafieldOwnerResource | null;
 
 }) {
-  const [open, setOpen] = useState(true);
+  // Closed by default: the seller opens only the section they want to edit.
+  const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const meta = resolveSectionMeta(section);
   const cardRef = useRef<HTMLDivElement>(null);

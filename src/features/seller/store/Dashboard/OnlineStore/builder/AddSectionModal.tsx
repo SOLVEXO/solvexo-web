@@ -99,7 +99,7 @@ export function AddSectionModal({
   );
 
   return (
-    <Modal title="Add a section" onClose={onClose}>
+    <Modal title="Add a section" width={1040} onClose={onClose}>
       <div role="tablist" className="flex gap-2 border-b border-bone -mt-1 mb-3">
         {tabBtn('designs', 'Ready designs')}
         {tabBtn('layouts', 'Whole page layouts')}
@@ -126,7 +126,7 @@ export function AddSectionModal({
             ))}
           </div>
           {presets.length === 0 && <p role="status" className="text-[13px] text-slate py-6 text-center">No designs match.</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {presets.map(p => (
               <button key={p.id} type="button" onClick={() => pickPreset(p.id)}
                 className="flex flex-col gap-2 p-2 rounded-xl border border-bone bg-[#faf8f4] text-left cursor-pointer transition-colors hover:border-brand-orange/50">
@@ -163,7 +163,7 @@ export function AddSectionModal({
       ) : (
         <>
           {pickable.length === 0 && customDefs.length === 0 && <p role="status" className="text-[13px] text-slate py-6 text-center">No sections match &ldquo;{query}&rdquo;.</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {customDefs.flatMap(def => [
               { def, preset: undefined as ThemeCustomSectionPreset | undefined },
               ...(def.presets ?? []).map(preset => ({ def, preset })),

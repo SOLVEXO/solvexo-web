@@ -112,7 +112,7 @@ export function MediaLibraryPickerModal({
   if (!open) return null;
 
   return (
-    <Modal title={`Choose ${mediaType} from Files Library`} width={640} onClose={onClose} mobileSheet>
+    <Modal title={`Choose ${mediaType} from Files Library`} width={960} onClose={onClose} mobileSheet>
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
           <div className="relative flex-1">
