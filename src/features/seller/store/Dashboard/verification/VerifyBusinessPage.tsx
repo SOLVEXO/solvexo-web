@@ -16,7 +16,7 @@ import { VerificationBanner } from './VerificationBanner';
 import {
   countryGroup, draftFromVerification, profileFromVerification, detailsPayload, formatProblem,
   computeMissing, documentChecklist, documentLabel, fieldLabel, isEditable, latestInfoRequest,
-  QUESTION_LABELS, LICENCE_HINTS, CNIC_HINT, NTN_HINT, formatDueDate,
+  QUESTION_LABELS, LICENCE_HINTS, CNIC_HINT, formatDueDate,
   type DetailsDraft,
 } from './verificationForm';
 
@@ -230,6 +230,13 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [uploadingType, setUploadingType] = useState<VerificationDocType | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  // Individuals registered with FBR since 2019 have their CNIC as their NTN. Ticked by default for an
+  // individual whose NTN is empty or already equals the CNIC; while ticked, the NTN follows the CNIC.
+  const [ntnIsCnic, setNtnIsCnic] = useState(() => {
+    const d = draftFromVerification(v);
+    const digits = (x: string) => x.replace(/\D/g, '');
+    return (d.businessType || 'individual') === 'individual' && (!d.taxId || digits(d.taxId) === digits(d.idNumber));
+  });
 
   const goTo = (s: Step) => { setMsg(null); setStep(s); };
 
@@ -254,6 +261,8 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
   const isRequired = (path: string) => req.requiredFields.includes(path);
 
   const set = <K extends keyof DetailsDraft>(k: K, val: DetailsDraft[K]) => setDraft(d => ({ ...d, [k]: val }));
+  const isIndividual = (draft.businessType || 'individual') === 'individual';
+  const useCnicAsNtn = isIndividual && ntnIsCnic;
   const setP = <K extends keyof BusinessProfile>(k: K, val: BusinessProfile[K]) => setProfile(p => ({ ...p, [k]: val }));
 
   async function saveDetails(next?: Step) {
@@ -367,7 +376,7 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
                   <SettingsChoice
                     key={o.value} name="business-type" checked={draft.businessType === o.value}
                     label={o.label} description={o.description} icon={<o.Icon size={14} />}
-                    onChange={() => set('businessType', o.value)} disabled={!editable}
+                    onChange={() => setDraft(d => ({ ...d, businessType: o.value, ...(o.value !== 'individual' && useCnicAsNtn ? { taxId: '' } : {}) }))} disabled={!editable}
                   />
                 ))}
               </div>
@@ -381,16 +390,34 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                 <Field label="CNIC number" required={isRequired('cnicNumber')} hint={CNIC_HINT} error={fieldError('cnicNumber', draft.idNumber)}>
                   <Input value={draft.idNumber} inputMode="numeric" placeholder="12345-1234567-1" maxLength={17}
-                    onChange={e => set('idNumber', e.target.value)} onBlur={() => setTouched(t => ({ ...t, cnicNumber: true }))} />
+                    onChange={e => {
+                      const cnic = e.target.value;
+                      setDraft(d => ({ ...d, idNumber: cnic, ...(useCnicAsNtn ? { taxId: cnic } : {}) }));
+                    }} onBlur={() => setTouched(t => ({ ...t, cnicNumber: true }))} />
                 </Field>
                 <div>
-                  <Field label={isRequired('taxId') ? 'NTN (required)' : 'NTN (optional)'} error={fieldError('taxId', draft.taxId)}>
-                    <Input value={draft.taxId} inputMode="numeric" placeholder="1234567-8" maxLength={10}
+                  <Field label="NTN" required={isRequired('taxId')} error={useCnicAsNtn ? undefined : fieldError('taxId', draft.taxId)}>
+                    <Input value={draft.taxId} inputMode="numeric" placeholder={useCnicAsNtn ? '12345-1234567-1' : '1234567-8'} maxLength={useCnicAsNtn ? 17 : 10}
+                      disabled={useCnicAsNtn || !editable} aria-describedby="ntn-is-cnic"
                       onChange={e => set('taxId', e.target.value)} onBlur={() => setTouched(t => ({ ...t, taxId: true }))} />
                   </Field>
-                  {!fieldError('taxId', draft.taxId) && (
-                    <p className="-mt-[10px] mb-[14px] text-[11px] text-slate">
-                      {NTN_HINT} Don't have one? <a href={FBR_IRIS_URL} target="_blank" rel="noopener noreferrer" className="text-brand-deep-orange font-medium">Register free on FBR IRIS</a>.
+                  {isIndividual && (
+                    <label id="ntn-is-cnic" htmlFor="ntn-is-cnic-box" className="-mt-[8px] mb-[8px] flex items-start gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                      <input id="ntn-is-cnic-box" type="checkbox" className="mt-[3px] accent-brand-orange" checked={useCnicAsNtn} disabled={!editable}
+                        onChange={e => {
+                          const on = e.target.checked;
+                          setNtnIsCnic(on);
+                          set('taxId', on ? draft.idNumber : '');
+                        }} />
+                      <span>My NTN is my CNIC <span className="text-slate">(FBR issues individuals' NTN on their CNIC)</span></span>
+                    </label>
+                  )}
+                  {(useCnicAsNtn || !fieldError('taxId', draft.taxId)) && (
+                    <p className="mb-[14px] text-[11px] text-slate">
+                      {useCnicAsNtn
+                        ? 'Your CNIC is used as your NTN.'
+                        : <>NTN has 7 digits and a check digit, like 1234567-8.</>}
+                      {' '}Not registered with FBR yet? <a href={FBR_IRIS_URL} target="_blank" rel="noopener noreferrer" className="text-brand-deep-orange font-medium">Register free on FBR IRIS</a>.
                     </p>
                   )}
                 </div>
