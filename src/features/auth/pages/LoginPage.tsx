@@ -17,6 +17,10 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { TwoFactorStep } from '@/features/auth/components/TwoFactorStep';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { LOGIN_TEXT } from './LoginPage.text';
+import { AUTH_SHARED_TEXT, formError } from './authPages.text';
 
 // Same spinner RootLayout.tsx shows for a lazy-loaded route (not exported
 // from there, so duplicated here rather than reworking that file's exports
@@ -37,11 +41,8 @@ const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 
 // seller-only now (see SELLER_ONLY_LOGIN below), so "curated marketplace of
 // independent creators" / "secure payments on every purchase" — both real
 // BUYER-checkout language — no longer described what this page is for.
-const HIGHLIGHTS = [
-  { Icon: Store,       text: 'A store built around how you sell' },
-  { Icon: Sparkles,    text: 'AI Studio and analytics from day one' },
-  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
-];
+// The text lives in AUTH_SHARED_TEXT.sellerHighlights (one per icon, same order).
+const HIGHLIGHT_ICONS = [Store, Sparkles, ShieldCheck];
 
 // Three possible openings, exactly mirroring Google's real account-chooser
 // flow (see RememberedAccount, api/services/auth.ts — a device-local UX
@@ -78,7 +79,13 @@ export function LoginPage() {
   const navigate   = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect'));
-  usePageTitle('Login');
+  const { pageLang } = useSiteLang();
+  const t = useSiteText(LOGIN_TEXT);
+  const s = useSiteText(AUTH_SHARED_TEXT);
+  const HIGHLIGHTS = s.sellerHighlights.map((text, i) => ({ Icon: HIGHLIGHT_ICONS[i], text }));
+  // Email/password stay left-to-right inside the Arabic page; the placeholder sits on the right until typing starts.
+  const ltrPlaceholder = pageLang === 'ar' ? 'placeholder-shown:text-right' : undefined;
+  usePageTitle(t.pageTitle);
   const login      = useLogin();
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [tfCode, setTfCode] = useState('');
@@ -200,13 +207,14 @@ export function LoginPage() {
   // above. A spinner in the same slot is never blank, whichever path led here.
   if (TokenStorage.isLoggedIn()) return <RedirectingSpinner />;
 
-  const roleLabel = (r: AppRole) => (r === 'seller' ? 'seller' : 'buyer');
+  const roleLabel = (r: AppRole) => (r === 'seller' ? t.roleSeller : t.roleBuyer);
+  const heroHeading = <>{t.heroBefore}<span className="text-brand-orange">{t.heroAccent}</span>{t.heroAfter}</>;
 
   // The challenge can come from the password step or from a Google sign-in of a seller who uses two-factor.
   const activeChallenge = challengeToken ?? social.twoFactorToken;
   if (activeChallenge) {
     return (
-      <AuthSplitLayout pageContext="login" heading={<>Back to your <span className="text-brand-orange">store</span></>} subtext="One more step to keep your store safe." highlights={HIGHLIGHTS}>
+      <AuthSplitLayout pageContext="login" heading={heroHeading} subtext={t.twoFactorSubtext} highlights={HIGHLIGHTS}>
         <TwoFactorStep
           code={tfCode} setCode={setTfCode} useRecovery={tfRecovery} setUseRecovery={setTfRecovery} loading={login.loading} error={login.error}
           onSubmit={() => tfCode.trim() && login.verifyTwoFactor(activeChallenge, tfCode.trim(), redirectTo, 'seller')}
@@ -219,15 +227,15 @@ export function LoginPage() {
   return (
     <AuthSplitLayout
       pageContext="login"
-      heading={<>Back to your <span className="text-brand-orange">store</span></>}
-      subtext="Sign in to manage your products, orders, and storefront — all in one place."
+      heading={heroHeading}
+      subtext={t.subtext}
       highlights={HIGHLIGHTS}
     >
-      <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-left">
-        Sign in to <span className="text-brand-orange">Solvexo</span>
+      <h1 className="text-[20px] font-bold text-carbon mb-1 text-center lg:text-start">
+        {t.titleBefore}<span className="text-brand-orange">Solvexo</span>{t.titleAfter}
       </h1>
-      <p className="text-[12.5px] text-slate mb-1 text-center lg:text-left">
-        {showChooser && !onPasswordStep ? 'Choose an account to continue' : 'Enter your details to continue'}
+      <p className="text-[12.5px] text-slate mb-1 text-center lg:text-start">
+        {showChooser && !onPasswordStep ? t.chooseAccount : t.enterDetails}
       </p>
 
       {showChooser ? (
@@ -238,9 +246,9 @@ export function LoginPage() {
             <button
               type="button"
               onClick={backToPicker}
-              className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[#EDE3DB] bg-white mb-3 text-left cursor-pointer hover:border-slate/40 transition-colors"
+              className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[#EDE3DB] bg-white mb-3 text-start cursor-pointer hover:border-slate/40 transition-colors"
             >
-              <ArrowLeft size={14} className="text-slate shrink-0" />
+              <ArrowLeft size={14} className="text-slate shrink-0 rtl:-scale-x-100" />
               <Avatar name={remembered!.name} size={36} />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-carbon truncate">{remembered!.name}</p>
@@ -255,14 +263,14 @@ export function LoginPage() {
             <button
               type="button"
               onClick={selectAccount}
-              className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[#EDE3DB] bg-white cursor-pointer text-left hover:border-brand-orange transition-colors mb-3"
+              className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[#EDE3DB] bg-white cursor-pointer text-start hover:border-brand-orange transition-colors mb-3"
             >
               <Avatar name={remembered!.name} size={48} />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-carbon truncate">{remembered!.name}</p>
                 <p className="text-[12px] text-slate truncate">{remembered!.email}</p>
               </div>
-              <ChevronRight size={16} className="text-slate shrink-0" />
+              <ChevronRight size={16} className="text-slate shrink-0 rtl:-scale-x-100" />
             </button>
 
             <Button
@@ -271,19 +279,19 @@ export function LoginPage() {
               icon={<UserPlus size={14} />}
               className="mb-3 lg:mb-4"
             >
-              Add new account
+              {s.addNewAccount}
             </Button>
           </>
         )
       ) : (
         <>
           {!SELLER_ONLY_LOGIN && (
-            <p className="text-center lg:text-left mb-2.5 lg:mb-4">
+            <p className="text-center lg:text-start mb-2.5 lg:mb-4">
               <span className="text-[11.5px] text-slate">
-                Signing in as a <strong className="text-charcoal">{roleLabel(role)}</strong> —{' '}
+                {t.signingInAs} <strong className="text-charcoal">{roleLabel(role)}</strong> —{' '}
               </span>
               <Button variant="link" size="sm" onClick={switchRole} className="font-semibold! text-[11.5px]!">
-                switch to {roleLabel(otherRole)}
+                {t.switchTo} {roleLabel(otherRole)}
               </Button>
             </p>
           )}
@@ -306,13 +314,13 @@ export function LoginPage() {
               {social.error && (
                 <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info" {...fadeSlide}>
                   <Info size={14} className="shrink-0" />
-                  <span>{social.error}</span>
+                  <span>{formError(social.error, pageLang)}</span>
                 </motion.div>
               )}
 
               <div className="flex items-center gap-3 mb-3 lg:mb-4">
                 <div className="flex-1 h-px bg-bone" />
-                <span className="text-[11px] text-slate">or continue with email</span>
+                <span className="text-[11px] text-slate">{s.orContinueWithEmail}</span>
                 <div className="flex-1 h-px bg-bone" />
               </div>
             </>
@@ -320,12 +328,13 @@ export function LoginPage() {
 
           <Input
             id="login-email"
-            label="Email Address"
+            label={s.emailLabel}
             leftIcon={<Mail size={18} />}
-            type="email" placeholder="Enter Your Email Address" autoComplete="email"
+            type="email" placeholder={s.emailPlaceholder} autoComplete="email"
+            dir="ltr" className={ltrPlaceholder}
             value={values.email} onChange={set('email')} onBlur={blur('email')}
             onKeyDown={e => e.key === 'Enter' && passwordRef.current?.focus()}
-            error={errors.email}
+            error={formError(errors.email, pageLang)}
             autoFocus
           />
         </>
@@ -340,7 +349,7 @@ export function LoginPage() {
           {googleOnlyContinue ? (
             <>
               <p className="text-[12.5px] text-slate text-center mb-3">
-                This account signs in with Google.
+                {t.googleOnly}
               </p>
               <SocialLoginRow
                 mount={social.mount}
@@ -349,7 +358,7 @@ export function LoginPage() {
               {social.error && (
                 <motion.div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
                   <AlertTriangle size={14} className="shrink-0" />
-                  <span>{social.error}</span>
+                  <span>{formError(social.error, pageLang)}</span>
                 </motion.div>
               )}
             </>
@@ -358,11 +367,12 @@ export function LoginPage() {
               <Input
                 ref={passwordRef}
                 id="login-password"
-                label="Password"
-                type={showPass ? 'text' : 'password'} placeholder="Enter Your Password" autoComplete="current-password"
+                label={s.passwordLabel}
+                type={showPass ? 'text' : 'password'} placeholder={t.passwordPlaceholder} autoComplete="current-password"
+                dir="ltr" className={ltrPlaceholder}
                 value={values.password} onChange={set('password')} onBlur={blur('password')}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                error={errors.password}
+                error={formError(errors.password, pageLang)}
                 // Only steal focus here when we arrived via the account picker
                 // (nothing else was focused) — in the fresh-email flow this
                 // field mounts the instant the FIRST character is typed into
@@ -372,7 +382,7 @@ export function LoginPage() {
                 autoFocus={showChooser}
                 rightIcon={
                   <button type="button" onClick={() => setShowPass(s => !s)}
-                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                    aria-label={showPass ? s.hidePassword : s.showPassword}
                     className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -380,13 +390,13 @@ export function LoginPage() {
               />
               <div className="flex justify-end mt-2">
                 <Button variant="link" size="sm" onClick={() => navigate('/forgot-password')}>
-                  Forgot password?
+                  {t.forgotPassword}
                 </Button>
               </div>
 
               <MagneticButton className="block mt-3 lg:mt-4">
-                <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading} icon={<LogIn size={18} />}>
-                  Sign In
+                <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading} icon={<LogIn size={18} className="rtl:-scale-x-100" />}>
+                  {s.signIn}
                 </Button>
               </MagneticButton>
 
@@ -399,13 +409,13 @@ export function LoginPage() {
               {!login.error && social.error && (
                 <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info" {...fadeSlide}>
                   <Info size={14} className="shrink-0" />
-                  <span>{social.error}</span>
+                  <span>{formError(social.error, pageLang)}</span>
                 </motion.div>
               )}
 
               <div className="flex items-center gap-3 my-2.5 lg:my-4">
                 <div className="flex-1 h-px bg-bone" />
-                <span className="text-[11px] text-slate">or continue with</span>
+                <span className="text-[11px] text-slate">{s.orContinueWith}</span>
                 <div className="flex-1 h-px bg-bone" />
               </div>
 
@@ -422,9 +432,9 @@ export function LoginPage() {
       {/* Covers the "account doesn't exist" case without a real
          pre-check — a failed sign-in still lands right next to this. */}
       <p className="text-center text-[12px] text-slate mt-3">
-        New to Solvexo?{' '}
+        {t.newToSolvexo}{' '}
         <Button variant="link" size="sm" onClick={() => navigate('/register')} className="font-semibold!">
-          Create an account
+          {t.createAccount}
         </Button>
       </p>
     </AuthSplitLayout>

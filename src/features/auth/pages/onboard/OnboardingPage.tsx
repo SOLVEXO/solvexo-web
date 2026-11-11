@@ -29,12 +29,14 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { AnimatePresence } from 'motion/react';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { FEATURES } from '@/constants/features';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { ONBOARDING_TEXT } from './OnboardingPage.text';
+import { AUTH_SHARED_TEXT, countryLabel } from '../authPages.text';
+import { planDisplayName } from './onboardingPlans';
 
-const ONBOARDING_HIGHLIGHTS = [
-  { Icon: Store,     text: 'A store built around how you sell' },
-  { Icon: Sparkles,  text: 'AI Studio and analytics from day one' },
-  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
-];
+// Text: AUTH_SHARED_TEXT.sellerHighlights (one per icon, same order).
+const ONBOARDING_HIGHLIGHT_ICONS = [Store, Sparkles, ShieldCheck];
 
 // One short seller-activation journey, Shopify-style — collect only what's
 // needed to spin up a real store (name, payment, seller type, what you
@@ -107,23 +109,25 @@ export function OnboardingEntry() {
 const STEP_WIDTH = 'max-w-[760px]';
 const NARROW_CONTENT = 'max-w-[480px] mx-auto';
 
-const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; desc: string }[] = [
-  { id: 'creator',  Icon: Palette,   title: 'Creator',          desc: 'Sell digital art, templates, fonts, music, presets' },
-  { id: 'creator',  Icon: BookOpen,  title: 'Educator',         desc: 'Worksheets, lesson plans, curriculum, assessments' },
-  { id: 'retailer',      Icon: Store,     title: 'Retailer',         desc: 'Physical goods, handmade products, branded items' },
-  { id: 'brand_business', Icon: Briefcase, title: 'Brand / Business', desc: 'Run a full online store with inventory and POS' },
-  { id: 'freelancer',    Icon: Monitor,   title: 'Freelancer / Reseller', desc: 'Source and resell products from suppliers' },
-  { id: 'mix',      Icon: Globe,     title: 'Mix of the above', desc: 'I sell across multiple categories and formats' },
+// Title/description per entry: ONBOARDING_TEXT.sellerTypes, same order (Creator, Educator, Retailer, Brand, Freelancer, Mix).
+const SELLER_TYPES: { id: SellerType; Icon: React.ElementType }[] = [
+  { id: 'creator',  Icon: Palette },
+  { id: 'creator',  Icon: BookOpen },
+  { id: 'retailer',      Icon: Store },
+  { id: 'brand_business', Icon: Briefcase },
+  { id: 'freelancer',    Icon: Monitor },
+  { id: 'mix',      Icon: Globe },
 ];
 
+// Title/description per id: ONBOARDING_TEXT.productTypes.
 const PRODUCT_TYPES = ([
-  { id: 'physical_products', Icon: Package,           title: 'Physical Products',     desc: 'Ship items to customers' },
-  { id: 'digital_downloads', Icon: Download,          title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
-  { id: 'educational_resources', Icon: BookOpen,      title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
-  { id: 'services_bookings', Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
-  { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
+  { id: 'physical_products', Icon: Package },
+  { id: 'digital_downloads', Icon: Download },
+  { id: 'educational_resources', Icon: BookOpen },
+  { id: 'services_bookings', Icon: Calendar },
+  { id: 'in_person_pos',     Icon: MonitorSmartphone },
   // Bookings is hidden until it returns as an App (FEATURES.bookings), so it isn't offered here either.
-] as { id: ProductType; Icon: React.ElementType; title: string; desc: string }[]).filter(t => t.id !== 'services_bookings' || FEATURES.bookings);
+] as { id: ProductType; Icon: React.ElementType }[]).filter(t => t.id !== 'services_bookings' || FEATURES.bookings);
 
 /** Seller kind for the live background photo. "Educator" shares the `creator`
  *  id in SELLER_TYPES, so it is told apart by its list index in `sellerKey`. */
@@ -208,9 +212,14 @@ function StepPane({ step, children }: { step: number; children: ReactNode }) {
 function Step1StoreInfo({ form, setForm, onNext }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void;
 }) {
+  const t = useSiteText(ONBOARDING_TEXT);
+  const { pageLang } = useSiteLang();
   const [preview, setPreview] = useState('');
   const canProceed = form.storeName.trim().length > 0 && !!form.country;
   const [countryTouched, setCountryTouched] = useState(false);
+  const countryOptions = pageLang === 'en'
+    ? COUNTRY_OPTIONS
+    : COUNTRY_OPTIONS.map(c => ({ ...c, name: countryLabel(c.code, c.name, pageLang) })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
   const { upload: uploadLogo, uploadUrl: uploadLogoUrl, uploading: logoUploading } = useUpload('public');
   const [currencyOptions, setCurrencyOptions] = useState<string[]>([]);
   // Tracks whether the seller has manually touched the currency picker —
@@ -275,8 +284,8 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <div className={clsx(NARROW_CONTENT, 'text-center mb-9')}>
-        <h1 className="text-[28px] font-bold text-carbon mb-2">Set up your store</h1>
-        <p className="text-[14px] text-slate">You can always update these details later from Settings.</p>
+        <h1 className="text-[28px] font-bold text-carbon mb-2">{t.setupTitle}</h1>
+        <p className="text-[14px] text-slate">{t.setupSubtitle}</p>
       </div>
       <div className={NARROW_CONTENT}>
         <div className="flex gap-5 items-center p-4 bg-cream rounded-xl mb-6">
@@ -287,27 +296,27 @@ function Step1StoreInfo({ form, setForm, onNext }: {
             {logoUploading
               ? <Loader2 size={28} className="text-brand-orange animate-spin" />
               : preview
-                ? <img loading="lazy" decoding="async" src={preview} alt="logo" className="max-w-full max-h-full object-contain" />
+                ? <img loading="lazy" decoding="async" src={preview} alt={t.logoAlt} className="max-w-full max-h-full object-contain" />
                 : <Camera size={28} className="text-brand-orange" />}
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} disabled={logoUploading} />
           </label>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-carbon mb-1">Store Logo</p>
-            <p className="text-[12px] text-slate">PNG, JPG or WebP. Click to upload.</p>
-            {logoUploading && <p className="text-[11px] text-brand-orange mt-1">Uploading…</p>}
-            {!logoUploading && form.logo && <p className="text-[11px] text-success mt-1">✓ Logo uploaded</p>}
+            <p className="text-[13px] font-semibold text-carbon mb-1">{t.logoLabel}</p>
+            <p className="text-[12px] text-slate">{t.logoHint}</p>
+            {logoUploading && <p className="text-[11px] text-brand-orange mt-1">{t.uploading}</p>}
+            {!logoUploading && form.logo && <p className="text-[11px] text-success mt-1">{t.logoUploaded}</p>}
             <PasteImageUrl upload={uploadLogoUrl} onUploaded={handleLogoUrlUploaded} className="mt-1.5" />
           </div>
         </div>
 
         <div className="mb-4">
-          <label htmlFor="onboard-store-name" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Name <span className="text-brand-orange">*</span></label>
-          <input id="onboard-store-name" placeholder="e.g. Creative Classroom Resources"
+          <label htmlFor="onboard-store-name" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.storeNameLabel} <span className="text-brand-orange">*</span></label>
+          <input id="onboard-store-name" placeholder={t.storeNamePlaceholder}
             value={form.storeName} onChange={e => setForm({ ...form, storeName: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           {form.storeName && (
             <p className="text-[11px] text-slate mt-[5px]">
-              Your store URL will look like: <span className="text-brand-orange">
+              {t.storeUrlHint} <span className="text-brand-orange" dir="ltr">
                 {getStorefrontUrl(form.storeName.toLowerCase().replace(/\s+/g, '-')).replace(/^https?:\/\//, '')}
               </span>
             </p>
@@ -315,27 +324,27 @@ function Step1StoreInfo({ form, setForm, onNext }: {
         </div>
 
         <div className="mb-6">
-          <label htmlFor="onboard-description" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Description <span className="text-slate font-normal">(optional)</span></label>
-          <textarea id="onboard-description" placeholder="Tell buyers what makes your store special..."
+          <label htmlFor="onboard-description" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.descriptionLabel} <span className="text-slate font-normal">{t.optional}</span></label>
+          <textarea id="onboard-description" placeholder={t.descriptionPlaceholder}
             rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
         </div>
 
         <div className="mb-6">
-          <label htmlFor="onboard-country" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Country <span className="text-brand-orange">*</span></label>
+          <label htmlFor="onboard-country" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.countryLabel} <span className="text-brand-orange">*</span></label>
           <select id="onboard-country" value={form.country ?? ''}
             onChange={e => { setCountryTouched(true); setForm({ ...form, country: e.target.value }); }}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-            <option value="">Select your country</option>
-            {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+            <option value="">{t.countryPlaceholder}</option>
+            {countryOptions.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
           </select>
           <p className="text-[11px] text-slate mt-[5px]">
-            Where your business is based. It decides which payment providers you can connect (for example Stripe or local gateways). Disconnect your payment providers before changing it later.
+            {t.countryHelp}
           </p>
         </div>
 
         <div className="mb-6">
-          <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Currency <span className="text-brand-orange">*</span></label>
+          <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.currencyLabel} <span className="text-brand-orange">*</span></label>
           <select id="onboard-currency" value={form.baseCurrency}
             onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
@@ -345,12 +354,12 @@ function Step1StoreInfo({ form, setForm, onNext }: {
             {currencyOptions.map(code => <option key={code} value={code}>{code}</option>)}
           </select>
           <p className="text-[11px] text-slate mt-[5px]">
-            All your product prices will be set in this currency. It's locked once your store has its first product.
+            {t.currencyHelp}
           </p>
         </div>
 
         <Button variant="primary" size="lg" fullWidth onClick={() => canProceed && onNext()} disabled={!canProceed}>
-          Continue <ArrowRight size={14} className="inline align-middle ml-1" />
+          {t.continue} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
         </Button>
       </div>
     </div>
@@ -362,25 +371,26 @@ function Step1StoreInfo({ form, setForm, onNext }: {
 function Step3SellerType({ form, setForm, onNext, onBack }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void;
 }) {
+  const t = useSiteText(ONBOARDING_TEXT);
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <div className="text-center mb-9">
-        <h1 className="text-[28px] font-bold text-carbon mb-2">What kind of seller are you?</h1>
-        <p className="text-[14px] text-slate">We'll personalise your dashboard and tools based on your answer.</p>
+        <h1 className="text-[28px] font-bold text-carbon mb-2">{t.sellerTypeTitle}</h1>
+        <p className="text-[14px] text-slate">{t.sellerTypeSubtitle}</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px] mb-7">
-        {SELLER_TYPES.map((t, idx) => {
-          const selKey = `${t.id}-${idx}`;
+        {SELLER_TYPES.map((type, idx) => {
+          const selKey = `${type.id}-${idx}`;
           const isSelected = form.sellerKey === selKey;
           return (
-            <div key={selKey} onClick={() => setForm({ ...form, sellerType: t.id, sellerKey: selKey })}
+            <div key={selKey} onClick={() => setForm({ ...form, sellerType: type.id, sellerKey: selKey })}
               className={clsx(
                 'rounded-[14px] p-5 border-2 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0',
                 isSelected ? 'bg-brand-pale-orange/40 border-brand-orange' : 'bg-white border-bone hover:border-slate/40',
               )}
             >
               <div className="flex justify-between items-start mb-3">
-                <t.Icon size={32} />
+                <type.Icon size={32} />
                 <div className={clsx(
                   'size-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-200',
                   isSelected ? 'border-brand-orange bg-brand-orange' : 'border-bone bg-white',
@@ -388,18 +398,18 @@ function Step3SellerType({ form, setForm, onNext, onBack }: {
                   {isSelected && <Check size={10} className="text-white" />}
                 </div>
               </div>
-              <p className="text-[14px] font-bold text-carbon mb-1">{t.title}</p>
-              <p className="text-[11px] text-slate leading-[1.5]">{t.desc}</p>
+              <p className="text-[14px] font-bold text-carbon mb-1">{t.sellerTypes[idx].title}</p>
+              <p className="text-[11px] text-slate leading-[1.5]">{t.sellerTypes[idx].desc}</p>
             </div>
           );
         })}
       </div>
       <div className="flex gap-[10px]">
         <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
-          <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
+          <ArrowLeft size={14} className="inline align-middle me-1 rtl:-scale-x-100" /> {t.back}
         </Button>
         <Button variant="primary" size="lg" className="flex-1 justify-center" onClick={() => form.sellerType && onNext()} disabled={!form.sellerType}>
-          {form.sellerType ? <span>Continue <ArrowRight size={14} className="inline align-middle ml-1" /></span> : 'Select one to continue'}
+          {form.sellerType ? <span>{t.continue} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" /></span> : t.selectOneToContinue}
         </Button>
       </div>
     </div>
@@ -420,31 +430,35 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
   const toggle = (id: ProductType) =>
     setForm({ ...form, productTypes: form.productTypes.includes(id) ? form.productTypes.filter(x => x !== id) : [...form.productTypes, id] });
   const selectedPlan = form.selectedPlanId ? plans.find(p => p._id === form.selectedPlanId) : null;
+  const t = useSiteText(ONBOARDING_TEXT);
+  const { pageLang } = useSiteLang();
+  const selectedPlanName = selectedPlan ? planDisplayName(selectedPlan, pageLang) : '';
 
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <div className="text-center mb-9">
-        <h1 className="text-[28px] font-bold text-carbon mb-2">What will you sell?</h1>
-        <p className="text-[14px] text-slate">Select all that apply — we'll activate the right tools for you.</p>
+        <h1 className="text-[28px] font-bold text-carbon mb-2">{t.whatTitle}</h1>
+        <p className="text-[14px] text-slate">{t.whatSubtitle}</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px] mb-7">
-        {PRODUCT_TYPES.map((t, idx) => {
-          const on = form.productTypes.includes(t.id);
+        {PRODUCT_TYPES.map((type, idx) => {
+          const on = form.productTypes.includes(type.id);
+          const text = t.productTypes[type.id];
           return (
-            <div key={idx} onClick={() => toggle(t.id)}
+            <div key={idx} onClick={() => toggle(type.id)}
               className={clsx(
                 'rounded-[14px] px-4 py-[18px] border-2 cursor-pointer transition-all duration-200 ease-out relative hover:-translate-y-0.5 active:translate-y-0',
                 on ? 'bg-brand-pale-orange/40 border-brand-orange' : 'bg-white border-bone hover:border-slate/40',
               )}
             >
               {on && (
-                <div className="absolute top-[10px] right-[10px] size-5 rounded-full bg-brand-orange flex items-center justify-center transition-transform duration-200">
+                <div className="absolute top-[10px] end-[10px] size-5 rounded-full bg-brand-orange flex items-center justify-center transition-transform duration-200">
                   <Check size={10} className="text-white" />
                 </div>
               )}
-              <t.Icon size={30} className="block mb-[10px]" />
-              <p className="text-[13px] font-bold text-carbon mb-1">{t.title}</p>
-              <p className="text-[11px] text-slate">{t.desc}</p>
+              <type.Icon size={30} className="block mb-[10px]" />
+              <p className="text-[13px] font-bold text-carbon mb-1">{text.title}</p>
+              <p className="text-[11px] text-slate">{text.desc}</p>
             </div>
           );
         })}
@@ -454,34 +468,34 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
         <div className="bg-brand-pale-orange rounded-xl px-[18px] py-[14px] mb-5 flex gap-3 items-start">
           <Sparkles size={18} className="text-brand-deep-orange shrink-0" />
           <div>
-            <p className="text-[13px] font-semibold text-brand-deep-orange mb-[6px]">We'll activate these tools for you:</p>
+            <p className="text-[13px] font-semibold text-brand-deep-orange mb-[6px]">{t.activateHeading}</p>
             <div className="flex gap-[6px] flex-wrap">
-              {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Inventory Manager</span>}
-              {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Digital Delivery</span>}
-              {form.productTypes.includes('educational_resources') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Worksheet Builder</span>}
-              {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">POS Register</span>}
-              {FEATURES.bookings && form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
-              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Studio</span>
-              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Marketplace</span>
+              {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.inventory}</span>}
+              {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.digitalDelivery}</span>}
+              {form.productTypes.includes('educational_resources') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.worksheetBuilder}</span>}
+              {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.posRegister}</span>}
+              {FEATURES.bookings && form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.bookings}</span>}
+              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.aiStudio}</span>
+              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.marketplace}</span>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex items-start gap-2 text-left mb-5 bg-success-bg rounded-xl px-[14px] py-[12px]">
+      <div className="flex items-start gap-2 text-start mb-5 bg-success-bg rounded-xl px-[14px] py-[12px]">
         <ShieldCheck size={16} className="text-success shrink-0 mt-[1px]" />
         <p className="text-[12.5px] text-success leading-[1.6]">
           {selectedPlan && form.paidPlanId
-            ? `Your store goes live immediately — no waiting on review. You're already on the ${selectedPlan.name} plan.`
+            ? t.alreadyOnPlan(selectedPlanName)
             : selectedPlan
-            ? `Your store goes live immediately — no waiting on review. You'll launch on the ${selectedPlan.name} plan.`
+            ? t.launchOnPlan(selectedPlanName)
             // During the trial the storefront shows "Coming soon" and checkout is closed until a plan is chosen.
-            : `Your store is created right away — no waiting on review, no card needed. Build it during your free ${trialDurationDays}-day trial; buyers can order once you choose a plan.`}
+            : t.trialNote(trialDurationDays)}
         </p>
       </div>
 
       {submitError && (
-        <div className="flex items-start gap-2 text-left mb-4">
+        <div className="flex items-start gap-2 text-start mb-4">
           <AlertTriangle size={14} className="text-error shrink-0 mt-[2px]" />
           <p className="text-[12.5px] text-error leading-[1.6]">{submitError}</p>
         </div>
@@ -489,14 +503,14 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
 
       <div className="flex gap-[10px]">
         <Button variant="ghost" size="md" onClick={onBack} className="shrink-0" disabled={submitting}>
-          <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
+          <ArrowLeft size={14} className="inline align-middle me-1 rtl:-scale-x-100" /> {t.back}
         </Button>
         <MagneticButton className="flex-1">
           <Button variant="primary" size="lg" fullWidth
             onClick={() => form.productTypes.length > 0 && onSubmit()}
             loading={submitting}
             disabled={form.productTypes.length === 0}>
-            {form.productTypes.length > 0 ? 'Launch My Store' : 'Select at least one'}
+            {form.productTypes.length > 0 ? t.launch : t.selectAtLeastOne}
           </Button>
         </MagneticButton>
       </div>
@@ -506,7 +520,10 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function OnboardingPage() {
-  usePageTitle('Onboarding');
+  const t = useSiteText(ONBOARDING_TEXT);
+  const s = useSiteText(AUTH_SHARED_TEXT);
+  const ONBOARDING_HIGHLIGHTS = s.sellerHighlights.map((text, i) => ({ Icon: ONBOARDING_HIGHLIGHT_ICONS[i], text }));
+  usePageTitle(t.pageTitle);
   const createStore = useCreateStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -669,7 +686,7 @@ export function OnboardingPage() {
         baseCurrency: form.baseCurrency,
         country:      form.country || undefined,
       });
-      if (!store) throw new Error('We could not create your store. Please try again.');
+      if (!store) throw new Error(t.createStoreFailed);
       trackSiteEvent('store_created');
       storeId = store._id;
       const withStore = { ...form, createdStoreId: storeId };
@@ -681,7 +698,7 @@ export function OnboardingPage() {
         `platform-plan-onboarding-${storeId}-${planId}-${chargeAttempt.current}`);
     } catch (err) {
       chargeAttempt.current += 1;
-      throw new Error(err instanceof Error && err.message ? err.message : 'Your card was declined — please try again or use a different card.', { cause: err });
+      throw new Error(err instanceof Error && err.message ? err.message : t.cardDeclined, { cause: err });
     }
     advanceWith({ ...form, createdStoreId: storeId, selectedPlanId: planId, paidPlanId: planId }, 3);
   };
@@ -715,7 +732,7 @@ export function OnboardingPage() {
           baseCurrency: form.baseCurrency,
           country:      form.country || undefined,
         });
-        if (!store) { setSubmitError(createStore.error || 'Failed to create store. Please try again.'); return; }
+        if (!store) { setSubmitError(createStore.error || t.createStoreFailedShort); return; }
         trackSiteEvent('store_created');
         const freePlan = plans.find(p => p._id === form.selectedPlanId && p.isFree);
         if (freePlan) {
@@ -731,7 +748,7 @@ export function OnboardingPage() {
       await apiSaveOnboardingDraft({ step: 1, maxReached: 1, form: {} }).catch(() => {});
       navigate(`/store/${store._id}/dashboard`, { replace: true });
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create store. Please try again.');
+      setSubmitError(err instanceof Error ? err.message : t.createStoreFailedShort);
     } finally {
       setSubmitting(false);
     }
@@ -744,8 +761,8 @@ export function OnboardingPage() {
       <AuthSplitLayout
         panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
         pageContext="onboarding"
-        heading="Your store, your way."
-        subtext="A few quick steps and your store is ready — no waiting on review."
+        heading={t.heading}
+        subtext={t.subtext}
         highlights={ONBOARDING_HIGHLIGHTS}
         bare
       >
@@ -797,8 +814,8 @@ export function OnboardingPage() {
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
       pageContext={step === 1 ? 'onboarding_store' : step === 3 ? 'onboarding_seller_type' : 'onboarding_products'}
       visualTopic={step === 4 ? visualTopicFor(form) : undefined}
-      heading="Your store, your way."
-      subtext="A few quick steps and your store is ready — no waiting on review."
+      heading={t.heading}
+      subtext={t.subtext}
       highlights={ONBOARDING_HIGHLIGHTS}
       bare
     >
