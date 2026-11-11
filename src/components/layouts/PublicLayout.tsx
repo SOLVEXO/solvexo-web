@@ -8,6 +8,8 @@ import { clsx } from 'clsx';
 import { rememberCampaignTags } from '@/utils/campaignTags';
 import { capturePartnerCode } from '@/utils/sellerAcquisitionAttribution';
 import { SalesChatWidget } from '@/components/comman/sales/SalesChatWidget';
+import { ElevenLabsSupportWidget } from '@/components/comman/support/ElevenLabsSupportWidget';
+import { SUPPORT_AGENT_ID } from '@/components/comman/support/supportAgent';
 
 // Public marketing/product/solutions pages share one navigation system —
 // PublicMegaNavbar's Products/Solutions/Resources mega-menus — instead of
@@ -55,8 +57,9 @@ export function PublicLayout() {
           </BrandSplashReadyProvider>
         </Suspense>
       </main>
-      {/* Solvexo's AI sales assistant: shows only when switched on in Super Admin → Sales Ops → AI agent. */}
-      {splashReady && <SalesChatWidget />}
+      {/* Customer support: the ElevenLabs "Solvexo Support" agent when its id is configured; otherwise Solvexo's own
+          AI sales assistant (shows only when switched on in Super Admin → Sales Ops → AI agent). Never both: they share a corner. */}
+      {splashReady && (SUPPORT_AGENT_ID ? <ElevenLabsSupportWidget /> : <SalesChatWidget />)}
     </div>
   );
 }
