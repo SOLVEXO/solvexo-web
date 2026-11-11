@@ -6,12 +6,16 @@ import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { useAdminUsersStats, useAdminUsersList } from '@/hooks/admin/useAdminUsers';
 import type { SellerRow } from '@/api/services/users/adminUsers';
 import {
-  Table, StatusBadge, MetricCard, AdminPageHeader, SearchInput, FilterDropdown,
+  Table, StatusBadge, MetricCard, AdminPageHeader, SearchInput, FilterDropdown, Button,
 } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate, formatNumber } from '@/components/comman/analytics/format';
-import { Users2, Store as StoreIcon, ChevronRight, Shield, HeartPulse } from 'lucide-react';
+import { Users2, Store as StoreIcon, Shield, HeartPulse, Download } from 'lucide-react';
+import { useToast } from '@/contexts/ToastContext';
+import { apiExportClients, type RiskLevel, type VerificationStatus, type YesNo } from '@/api/services/admin/adminSellerTrust';
+import { NtnValue, RiskPill, VerificationPill } from './sellerTrust/TrustBits';
+import { COUNTRY_OPTIONS, RISK_OPTIONS, VERIFICATION_OPTIONS, countryName } from './sellerTrust/trust.utils';
 import { MerchantHealthTab } from './clients/MerchantHealthTab';
 import { AdminModeration } from './AdminModeration';
 
@@ -19,6 +23,11 @@ const STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
   { value: 'suspended', label: 'Suspended' },
   { value: 'pending', label: 'Pending' },
+];
+
+const NTN_OPTIONS = [
+  { value: 'yes', label: 'Has NTN / tax no.' },
+  { value: 'no', label: 'No NTN / tax no.' },
 ];
 
 const TABS: Tab[] = [
@@ -47,12 +56,29 @@ export function AdminClients() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [country, setCountry] = useState('');
+  const [ntn, setNtn] = useState('');
+  const [verification, setVerification] = useState('');
+  const [risk, setRisk] = useState('');
   const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const toast = useToast();
 
-  const query = useMemo(
-    () => ({ search: search || undefined, status: statusFilter || undefined, page, limit: 10 }),
-    [search, statusFilter, page],
-  );
+  const filters = useMemo(() => ({
+    search: search || undefined,
+    status: statusFilter || undefined,
+    country: country || undefined,
+    ntn: (ntn || undefined) as YesNo | undefined,
+    verification: (verification || undefined) as VerificationStatus | undefined,
+    risk: (risk || undefined) as RiskLevel | undefined,
+  }), [search, statusFilter, country, ntn, verification, risk]);
+  const query = useMemo(() => ({ ...filters, page, limit: 10 }), [filters, page]);
+  const setFilter = (set: (v: string) => void) => (v: string) => { set(v); setPage(1); };
+
+  async function exportCsv() {
+    setExporting(true);
+    try { await apiExportClients(filters); } catch (e) { toast.error(e instanceof Error ? e.message : 'Export failed.'); } finally { setExporting(false); }
+  }
 
   const { data, loading, error, refetch } = useAdminUsersList(query);
 
@@ -65,31 +91,25 @@ export function AdminClients() {
           <div className="w-7 h-7 rounded-full bg-brand-pale-orange text-brand-deep-orange text-[9px] font-bold flex items-center justify-center shrink-0">
             {initialsOf(u.name)}
           </div>
-          <div>
-            <p className="text-[12px] font-semibold text-charcoal">{u.name}</p>
-            <p className="text-[11px] text-slate">{u.id.slice(-8)}</p>
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-charcoal flex items-center gap-1.5">
+              {u.name}
+              {u.status !== 'active' && <StatusBadge status={u.status} size="sm" />}
+            </p>
+            <p className="text-[11px] text-slate truncate max-w-[220px]">{u.email}</p>
+            <p className="text-[11px] text-slate inline-flex items-center gap-1 whitespace-nowrap">
+              <StoreIcon size={11} />{u.storeCount} {u.storeCount === 1 ? 'store' : 'stores'} · joined {formatDate(u.createdAt)}
+            </p>
           </div>
         </div>
       ),
     },
-    { key: 'email', header: 'Email', render: (u) => <span className="text-[13px] text-graphite">{u.email}</span> },
-    {
-      key: 'storeCount',
-      header: 'Stores',
-      render: (u) => (
-        <span className="inline-flex items-center gap-1.5 text-[13px] text-graphite">
-          <StoreIcon size={13} className="text-slate" />
-          {u.storeCount} {u.storeCount === 1 ? 'store' : 'stores'}
-        </span>
-      ),
-    },
-    { key: 'status', header: 'Status', render: (u) => <StatusBadge status={u.status} size="sm" /> },
-    { key: 'createdAt', header: 'Joined', render: (u) => <span className="text-[13px] text-slate whitespace-nowrap">{formatDate(u.createdAt)}</span> },
-    {
-      key: 'open',
-      header: '',
-      render: () => <ChevronRight size={15} className="text-slate" />,
-    },
+    { key: 'phone', header: 'Phone', render: (u) => <span className="text-[12.5px] text-graphite whitespace-nowrap">{u.phone || '—'}</span> },
+    { key: 'country', header: 'Country', render: (u) => <span className="text-[12.5px] text-graphite whitespace-nowrap">{countryName(u.country)}</span> },
+    { key: 'ntn', header: 'NTN', render: (u) => (u.storeCount === 0 ? <span className="text-[12px] text-slate">—</span> : <NtnValue hasNtn={u.hasNtn} ntn={u.ntn} />) },
+    { key: 'verification', header: 'Verification', render: (u) => (u.storeCount === 0 ? <span className="text-[12px] text-slate">No store</span> : <VerificationPill status={u.verificationStatus} dueAt={u.dueAt} />) },
+    { key: 'risk', header: 'Risk', render: (u) => <RiskPill level={u.riskLevel} /> },
+    { key: 'sells', header: 'Sells', render: (u) => <span className="text-[12.5px] text-graphite">{u.sells || '—'}</span> },
   ];
 
   return (
@@ -119,7 +139,12 @@ export function AdminClients() {
             <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
               <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
                 <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or email…" className="flex-1 max-w-[280px]" />
-                <FilterDropdown placeholder="All Statuses" options={STATUS_OPTIONS} value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }} />
+                <FilterDropdown placeholder="All Statuses" options={STATUS_OPTIONS} value={statusFilter} onChange={setFilter(setStatusFilter)} />
+                <FilterDropdown placeholder="All countries" options={COUNTRY_OPTIONS} value={country} onChange={setFilter(setCountry)} />
+                <FilterDropdown placeholder="NTN: any" options={NTN_OPTIONS} value={ntn} onChange={setFilter(setNtn)} />
+                <FilterDropdown placeholder="Verification: any" options={VERIFICATION_OPTIONS} value={verification} onChange={setFilter(setVerification)} />
+                <FilterDropdown placeholder="Risk: any" options={RISK_OPTIONS} value={risk} onChange={setFilter(setRisk)} />
+                <Button size="sm" variant="outline" icon={<Download size={13} />} loading={exporting} onClick={exportCsv} className="ml-auto">Export CSV</Button>
               </div>
 
               {error ? (
