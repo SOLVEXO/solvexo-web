@@ -434,11 +434,14 @@ export function ThemeCustomizePage() {
   }, [storeId]);
 
   const templateLoadToken = useRef(0);
+  // Which template was last requested, so the template-switch effect below does not fetch the same one again.
+  const lastTemplateFetch = useRef('');
   const loadResourceTemplates = useCallback((resourceType: ResourceTemplateType, key: string, allowAlt: boolean, wantKey?: string | null) => {
     setLoading(true);
     setResourceLoadError('');
     // Only the latest scope's response may land (a slow earlier scope must not overwrite it).
     const token = ++templateLoadToken.current;
+    lastTemplateFetch.current = `${resourceType}:${key}:${installedThemeId}`;
     const listPromise = allowAlt ? apiListResourceTemplates(storeId, resourceType, installedThemeId) : Promise.resolve({ data: [] as CollectionTemplateData[] });
     Promise.all([listPromise, apiGetCollectionTemplate(storeId, resourceType, key, installedThemeId)])
       .then(([listRes, docRes]) => { if (token !== templateLoadToken.current) return; setTemplateList(listRes.data); setActiveTemplate(docRes.data); if (wantKey && wantKey !== key && listRes.data.some(t => t.templateKey === wantKey)) setTemplateKey(wantKey); })
@@ -452,8 +455,9 @@ export function ThemeCustomizePage() {
 
   useEffect(() => {
     if (scope === 'theme') { setLoading(false); return; }
-    if (isStorePage) { loadPages(); return; }
+    // Wait for the theme id: loading before it is known fetched everything twice (once without the id, once with it).
     if (!installedThemeId) return;
+    if (isStorePage) { loadPages(); return; }
     if (!config) return; // scope not (yet) resolvable against the manifest — nothing to load
     if (config.previewPicker) loadBlogsAndPosts();
     if (config.resourceType === 'product') loadProducts();
@@ -509,7 +513,10 @@ export function ThemeCustomizePage() {
   // switches which alternate template they're editing (Product/Collection
   // only — the other scopes' `templateKey` never changes from its fixed value).
   useEffect(() => {
-    if (!config || !config.allowAltTemplates) return;
+    if (!config || !config.allowAltTemplates || !installedThemeId) return;
+    const fetchKey = `${config.resourceType}:${templateKey}:${installedThemeId}`;
+    if (lastTemplateFetch.current === fetchKey) return; // already requested by the scope loader
+    lastTemplateFetch.current = fetchKey;
     // Ignore a response for a template the seller has already switched away
     // from — otherwise it lands late and replaces the doc being edited.
     let cancelled = false;
@@ -865,8 +872,10 @@ export function ThemeCustomizePage() {
   // open — `pages` above is only loaded on the Pages scope.
   const [linkPages, setLinkPages] = useState<StorePageData[]>([]);
   useEffect(() => {
+    // Only needed outside page scopes (those already load the pages list themselves).
+    if (!installedThemeId || isStorePage) return;
     apiListStorePages(storeId, installedThemeId).then(res => setLinkPages(res.data)).catch(() => setLinkPages([]));
-  }, [storeId, installedThemeId]);
+  }, [storeId, installedThemeId, isStorePage]);
   const pageOptions = useMemo(() => [
     { slug: '', title: 'Home' },
     ...(pages.length ? pages : linkPages).filter(p => p.type === 'custom').map(p => ({ slug: p.slug, title: p.title })),
