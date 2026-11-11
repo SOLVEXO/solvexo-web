@@ -140,6 +140,10 @@ const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreS
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
 const CheckoutRulesHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/checkoutRules/CheckoutRulesHub'));
 const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/experiments/ExperimentsHub'));
+const ConnectedAppsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/ConnectedAppsHub'));
+const AppAuthorizePage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppAuthorizePage'));
+const AppEmbedPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppEmbedPage'));
+const AdminAppPlatform = lazy(() => import('@/features/admin/pages/AdminAppPlatform').then(m => ({ default: m.AdminAppPlatform })));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
@@ -414,6 +418,9 @@ const mainRouter = createBrowserRouter([
           { path: 'subscriptions',                    element: <SubscriptionsHub /> },
           { path: 'checkout-rules',                   element: <CheckoutRulesHub /> },
           { path: 'experiments',                      element: <ExperimentsHub /> },
+          { path: 'app-platform',                     element: <ConnectedAppsHub /> },
+          { path: 'app-platform/authorize',           element: <AppAuthorizePage /> },
+          { path: 'app-platform/:installId',          element: <AppEmbedPage /> },
           { path: 'cod-protection',                   element: <CodProtectionPage /> },
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'khata',                            element: <KhataHub /> },
@@ -590,6 +597,7 @@ const mainRouter = createBrowserRouter([
           // convention as the content-page redirects below.
           { path: 'users',        element: <Navigate to="../clients" replace /> },
           { path: 'clients',      element: <RequireRole role="admin"><AdminClients /></RequireRole> },
+          { path: 'app-platform', element: <RequireRole role="admin"><AdminAppPlatform /></RequireRole> },
           { path: 'clients/:id',  element: <RequireRole role="admin"><AdminClientDetail /></RequireRole> },
           // Moderation is a tab inside Clients Manage now (AdminClients.tsx
           // renders AdminModeration directly, embedded) — not its own route.

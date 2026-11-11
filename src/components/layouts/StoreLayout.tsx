@@ -146,6 +146,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
       { id: 'sales-channels', Icon: Package, label: 'Sales channels', path: 'sales-channels', requiredPermission: 'products.view' },
       { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage', requiredEntitlement: 'apiWebhooksAllowed' },
+      { id: 'connected-apps', Icon: Package, label: 'Connected apps', path: 'app-platform', requiredPermission: ['apps.view', 'apps.manage'], requiredEntitlement: 'apiWebhooksAllowed' },
       { id: 'search-settings', Icon: Package, label: 'Search & discovery', path: 'search-settings', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'security', Icon: Package, label: 'Security (2FA)', path: 'security' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },

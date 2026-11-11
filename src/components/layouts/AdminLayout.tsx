@@ -50,6 +50,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // side) and StoreAppRequestsModule (backend) for the full flow. Distinct
   // from Solvexo's own POS app, which needs no admin review at all.
   { id: 'store-app-requests', Icon: Smartphone, label: 'Store App Requests', path: '/admin/store-app-requests' },
+  { id: 'app-platform', Icon: Smartphone, label: 'App Platform', path: '/admin/app-platform' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
@@ -164,6 +165,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
 
   { id: 'store-app-requests', label: 'Store App Requests', Icon: Smartphone, ids: ['store-app-requests'] },
+  { id: 'app-platform', label: 'App Platform', Icon: Smartphone, ids: ['app-platform'] },
   { id: 'settings',  label: 'Settings',              Icon: UserCog,        ids: ['settings'] },
 ];
 
@@ -204,7 +206,7 @@ const NAV_PERMISSION: Record<string, string | string[]> = {
   overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
   'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',
-  content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage',
+  content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage', 'app-platform': 'config.manage',
 };
 const navAllowed = (id: string) => !NAV_PERMISSION[id] || can(NAV_PERMISSION[id]);
 const findNav = (id: string) => { const n = ADMIN_NAV.find(x => x.id === id); return n && navAllowed(n.id) ? n : undefined; };
