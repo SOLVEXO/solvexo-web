@@ -12,6 +12,10 @@ import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { mockupForProductSlug } from '@/components/comman/mockups/ProductMockups';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
+import { localizeProduct } from '@/features/buyer/data/localizedData';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { PLATFORM_PRODUCT_TEXT } from './PlatformProductPage.text';
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -24,7 +28,7 @@ function ProductFaqItem({ question, answer }: { question: string; answer: string
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
         aria-controls={id}
-        className="w-full flex items-center justify-between gap-4 py-[16px] text-left bg-transparent border-none cursor-pointer group"
+        className="w-full flex items-center justify-between gap-4 py-[16px] text-start bg-transparent border-none cursor-pointer group"
       >
         <span className={clsx('text-[13.5px] font-semibold transition-colors', open ? 'text-brand-orange' : 'text-carbon group-hover:text-brand-orange')}>
           {question}
@@ -33,7 +37,7 @@ function ProductFaqItem({ question, answer }: { question: string; answer: string
       </button>
       <div className={clsx('grid transition-[grid-template-rows] duration-300 ease-out', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
         <div className="overflow-hidden">
-          <p id={id} className="text-[12.5px] text-slate leading-[1.7] pb-4 pr-8">{answer}</p>
+          <p id={id} className="text-[12.5px] text-slate leading-[1.7] pb-4 pe-8">{answer}</p>
         </div>
       </div>
     </div>
@@ -44,8 +48,11 @@ export function PlatformProductPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
-  const product = getPlatformProduct(slug);
-  usePageTitle(product?.name ?? 'Products');
+  const t = useSiteText(PLATFORM_PRODUCT_TEXT);
+  const { pageLang } = useSiteLang();
+  const found = getPlatformProduct(slug);
+  const product = found && localizeProduct(found, pageLang);
+  usePageTitle(product?.name ?? t.fallbackTitle);
 
   if (!product) return <Navigate to="/products" replace />;
 
@@ -72,24 +79,24 @@ export function PlatformProductPage() {
               <div className="flex flex-wrap gap-3">
                 <MagneticButton>
                   <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-                    Start Selling Free <ArrowRight size={14} className="inline align-middle ml-1" />
+                    {t.startSelling} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
                   </Button>
                 </MagneticButton>
                 <Button variant="outline" size="lg" onClick={() => navigate('/products')}>
-                  Explore other products
+                  {t.exploreOther}
                 </Button>
               </div>
             </Reveal>
           </div>
           <Reveal delay={0.12} className="w-full">
-            {mockupForProductSlug(product.slug)}
+            <div dir="ltr">{mockupForProductSlug(product.slug)}</div>
           </Reveal>
         </div>
       </div>
 
       {/* ── Benefits ── */}
       <div className="px-4 md:px-8 lg:px-12 py-14 md:py-16 max-w-[1100px] mx-auto">
-        <SectionHeading title="Why it works this way" align="left" className="mb-9" />
+        <SectionHeading title={t.whyTitle} align="left" className="mb-9" />
         <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 gap-5" step={0.08} y={18}>
           {product.benefits.map(b => (
             <PremiumCard key={b.title} className="p-6">
@@ -104,7 +111,7 @@ export function PlatformProductPage() {
       <div className="bg-cream px-4 md:px-8 lg:px-12 py-14 md:py-16">
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
           <Reveal>
-            <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-3">What's included</p>
+            <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-3">{t.included}</p>
             <div className="flex flex-col gap-2.5">
               {product.features.map(f => (
                 <div key={f} className="flex items-start gap-2.5">
@@ -115,11 +122,11 @@ export function PlatformProductPage() {
             </div>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-3">Common use cases</p>
+            <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-3">{t.useCases}</p>
             <div className="flex flex-col gap-2.5">
               {product.useCases.map(u => (
                 <div key={u} className="flex items-start gap-2.5">
-                  <ArrowRight size={13} className="text-brand-orange shrink-0 mt-[2px]" />
+                  <ArrowRight size={13} className="text-brand-orange shrink-0 mt-[2px] rtl:-scale-x-100" />
                   <span className="text-[13.5px] text-charcoal leading-[1.6]">{u}</span>
                 </div>
               ))}
@@ -131,7 +138,7 @@ export function PlatformProductPage() {
       {/* ── FAQ ── */}
       {product.faq.length > 0 && (
         <div className="px-4 md:px-8 lg:px-12 py-14 md:py-16 max-w-[720px] mx-auto">
-          <SectionHeading title={`Questions about ${product.name}`} align="left" className="mb-6" />
+          <SectionHeading title={t.faqTitle(product.name)} align="left" className="mb-6" />
           <div>
             {product.faq.map(f => <ProductFaqItem key={f.q} question={f.q} answer={f.a} />)}
           </div>
@@ -140,11 +147,11 @@ export function PlatformProductPage() {
 
       {/* ── CTA ── */}
       <div className="bg-carbon px-4 md:px-8 lg:px-12 py-14 md:py-16 text-center">
-        <SectionHeading title={`Ready to use ${product.name}?`} subtitle="Start free — no credit card required." tone="dark" align="center" size="lg" className="mb-8" />
+        <SectionHeading title={t.ctaTitle(product.name)} subtitle={t.ctaSubtitle} tone="dark" align="center" size="lg" className="mb-8" />
         <Reveal>
           <MagneticButton>
             <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-              Start Selling Free <ArrowRight size={14} className="inline align-middle ml-1" />
+              {t.startSelling} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
             </Button>
           </MagneticButton>
         </Reveal>
