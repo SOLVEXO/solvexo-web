@@ -9,12 +9,18 @@ const plan = (over: Partial<PlatformPlan>): PlatformPlan => ({
 });
 
 const basic = plan({ name: 'Basic', monthlyPriceUSD: 6, yearlyPriceUSD: 60, compareAtMonthlyPriceUSD: 10, compareAtYearlyPriceUSD: 100, limits: {
-  maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 100, maxMarkets: 3, maxActiveStoreBanners: 4, maxActivePromotions: 1,
-  customDomainAllowed: true, emailCampaignsAllowed: true, advancedSeoToolsAllowed: true, transactionFeeRate: 0.02,
+  maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 100, maxMarkets: 3, maxActiveStoreBanners: -1, maxActivePromotions: -1,
+  customDomainAllowed: true, emailCampaignsAllowed: true, advancedSeoToolsAllowed: true, abandonedCartRecoveryAllowed: true, customRedirectsAllowed: true,
+  b2bWholesaleAllowed: true, maxB2BCatalogs: 1, monthlyEmailSends: 2000, transactionFeeRate: 0.02,
 } });
 const grow = plan({ name: 'Grow', monthlyPriceUSD: 29, yearlyPriceUSD: 282, compareAtMonthlyPriceUSD: 49, compareAtYearlyPriceUSD: 470, limits: {
-  ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 500, maxMarkets: 5, maxActiveStoreBanners: 10, maxActivePromotions: 5,
-  abandonedCartRecoveryAllowed: true, loyaltyProgramAllowed: true, prioritySupport: true, transactionFeeRate: 0.01,
+  ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 500, maxMarkets: 5, maxB2BCatalogs: 3, monthlyEmailSends: 10000,
+  loyaltyProgramAllowed: true, seoAiSuggestionsAllowed: true, prioritySupport: true,
+  digitalMembershipsAllowed: true, digitalLicensesAllowed: true, digitalCoursesAllowed: true, transactionFeeRate: 0.01,
+} });
+const advanced = plan({ name: 'Advanced', limits: {
+  ...grow.limits, maxStaffAccounts: 15, maxB2BCatalogs: 10, monthlyEmailSends: 50000, whiteLabelAllowed: true, apiWebhooksAllowed: true, searchConsoleIntegrationAllowed: true,
+  calculatedShippingRatesAllowed: true, transactionFeeRate: 0.006,
 } });
 const titles = (p: PlatformPlan, prev?: PlatformPlan) => planFeatures(p, prev).map(f => f.title);
 
@@ -22,20 +28,35 @@ describe('pricing page plan features', () => {
   it('lists everything on the first plan in plain words', () => {
     expect(titles(basic)).toEqual([
       'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till', '100 AI credits a month',
-      'Your own web address', 'Email marketing', 'SEO tools', '1 sale running at a time · 4 homepage banners', 'Accept up to 3 currencies',
+      'Recover abandoned carts', 'Your own web address', 'Email marketing', 'SEO tools', 'Custom redirects',
+      '2,000 marketing emails a month', 'B2B wholesale prices', 'Accept up to 3 currencies',
     ]);
     expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toBe('e.g. yourshop.com');
+    expect(planFeatures(basic).find(f => f.title === 'B2B wholesale prices')?.hint).toBe('1 wholesale catalog');
+  });
+
+  it('never prints banner or promotion lines, even when they are unlimited', () => {
+    const all = [...titles(basic), ...titles(grow, basic), ...titles(advanced, grow)].join(' | ').toLowerCase();
+    expect(all).not.toMatch(/banner|sales running|sale running|sales at once/);
   });
 
   it('lists only what is new or bigger on the next plan', () => {
     expect(titles(grow, basic)).toEqual([
       'Unlimited products', '5 staff logins', '3 shop / warehouse locations', '500 AI credits a month',
-      'Recover abandoned carts', 'Loyalty points', '5 sales running at once · 10 homepage banners', 'Accept up to 5 currencies', 'Priority support',
+      'Loyalty points', 'AI SEO suggestions', '10,000 marketing emails a month', '3 wholesale catalogs',
+      'Sell memberships, license keys & courses', 'Accept up to 5 currencies', 'Priority support',
     ]);
   });
 
+  it('shows premium-only items on the plan that first has them', () => {
+    const t = titles(advanced, grow);
+    expect(t).toEqual(expect.arrayContaining(['Remove Solvexo branding', 'Webhooks & API', 'Live courier rates at checkout', 'Google Search Console connection']));
+    expect(t).not.toContain('Sell memberships, license keys & courses');
+  });
+
   it('never lists a feature the plan does not include', () => {
-    expect(titles(basic)).not.toContain('Recover abandoned carts');
+    expect(titles(basic)).not.toContain('Loyalty points');
+    expect(titles(basic).join(' ')).not.toMatch(/memberships|Webhooks/);
     expect(titles(plan({ limits: { maxStaffAccounts: 0 } }))).toEqual([]);
   });
 });

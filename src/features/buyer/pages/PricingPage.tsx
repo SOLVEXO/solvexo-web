@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from 'react';
 import { clsx } from 'clsx';
-import { Check, Minus, Plus, ArrowRight, Store, ScanBarcode, Banknote, Truck, Package, Tag, Lock, BarChart3, Gift, PartyPopper, Star } from 'lucide-react';
+import { Check, Minus, Plus, ArrowRight, Store, ScanBarcode, Banknote, Truck, Tag, Lock, Gift, PartyPopper, Star, Palette, LayoutTemplate, FileText, Languages, ShieldCheck, MessageCircle, Rss } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
@@ -11,6 +11,7 @@ import { formatUsd, yearlyMonthlyEquivalent, yearlyTotal, maxYearlySavingsPercen
 import { salesMailto } from '@/utils/contact';
 import { displayPrice, gatewayFeeRange, money, planFeatures } from './pricing/planFeatures';
 import { formatLocal, useLocalCurrency } from './pricing/localPrice';
+import { countryFromPathname } from '@/utils/countryPrefix';
 
 // Bright pricing page: launch-offer hero, plan cards with the crossed-out "was" price and
 // plain-language features, "Included in every plan", a plan picker, what each sale costs,
@@ -25,11 +26,12 @@ const GREEN = '#2f8a3e';
 
 // ── Compare table ────────────────────────────────────────────────────────────
 type Cell = boolean | string | null;
-interface Row { label: string; get: (p: PlatformPlan) => Cell }
+interface Row { label: string; get: (p: PlatformPlan) => Cell; /** Hidden on the Pakistan site: the card rail is not available to Pakistani stores. */ hideOnPk?: boolean }
 interface Group { title: string; rows: Row[] }
 
 const count = (n?: number) => (n === undefined || n === null ? null : n < 0 ? 'Unlimited' : `${n}`);
 const flag = (v?: boolean) => (v === undefined ? null : !!v);
+const num = (n?: number) => (n === undefined || n === null ? null : n < 0 ? 'Unlimited' : n.toLocaleString('en-US'));
 const pct = (n?: number) => (n === undefined || n === null ? null : `${Number((n * 100).toFixed(2))}%`);
 
 const GROUPS: Group[] = [
@@ -46,6 +48,13 @@ const GROUPS: Group[] = [
     { label: 'POS locations', get: p => count(p.limits.maxPosLocations) },
     { label: 'Reports and analytics', get: p => p.limits.advancedAnalyticsAllowed ? 'Advanced' : 'Standard' },
     { label: 'Support', get: p => p.limits.dedicatedAccountManager ? 'Dedicated manager' : p.limits.prioritySupport ? 'Priority support' : 'Standard support' },
+    { label: 'Webhooks & API', get: p => flag(p.limits.apiWebhooksAllowed) },
+  ] },
+  { title: 'Online store & themes', rows: [
+    { label: 'Themes and theme editor', get: () => true },
+    { label: 'Header & footer editor', get: () => true },
+    { label: 'Pages, blog and navigation', get: () => true },
+    { label: 'Translations in 22 languages', get: () => true },
   ] },
   { title: 'AI features', rows: [
     { label: 'AI credits per month', get: p => count(p.limits.aiCreditsPerMonth) },
@@ -60,7 +69,15 @@ const GROUPS: Group[] = [
     { label: 'Gift cards', get: () => true },
     { label: 'Email campaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
     { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-    { label: 'Active promotions', get: p => count(p.limits.maxActivePromotions) },
+    { label: 'Marketing emails per month', get: p => num(p.limits.monthlyEmailSends) },
+    { label: 'Loyalty program', get: p => flag(p.limits.loyaltyProgramAllowed) },
+  ] },
+  { title: 'Wholesale & digital products', rows: [
+    { label: 'B2B wholesale', get: p => flag(p.limits.b2bWholesaleAllowed) },
+    { label: 'B2B wholesale catalogs', get: p => (p.limits.b2bWholesaleAllowed ? count(p.limits.maxB2BCatalogs) : null) },
+    { label: 'Memberships', get: p => flag(p.limits.digitalMembershipsAllowed) },
+    { label: 'License keys', get: p => flag(p.limits.digitalLicensesAllowed) },
+    { label: 'Courses', get: p => flag(p.limits.digitalCoursesAllowed) },
   ] },
   { title: 'SEO', rows: [
     { label: 'Built-in SEO features', get: () => true },
@@ -74,7 +91,7 @@ const GROUPS: Group[] = [
     { label: 'Live carrier shipping rates', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
   ] },
   { title: 'Payments', rows: [
-    { label: 'Card payments via Solvexo Payments', get: () => 'No commission' },
+    { label: 'Card payments via Solvexo Payments', get: () => 'No commission', hideOnPk: true },
     { label: 'Cash on delivery / bank transfer', get: () => 'No fee' },
     { label: 'Third-party gateway fee', get: p => pct(p.limits.transactionFeeRate) },
   ] },
@@ -91,23 +108,29 @@ function Tick() {
 }
 
 // ── FAQ fallback (until admin adds FAQs under the pricing category) ──────────
-function getFallbackFaqs(trialDurationDays: number) { return [
+function getFallbackFaqs(trialDurationDays: number, isPk: boolean) { return [
   { q: 'Can I switch plans anytime?', a: "Yes. You can upgrade or downgrade your plan at any time. Upgrades take effect immediately and we'll prorate the difference; downgrades start at your next renewal." },
-  { q: 'Does Solvexo take a commission on my sales?', a: 'No. There is no commission on card payments processed through Solvexo Payments — you only pay the card processing fee — and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through another payment gateway such as SafePay.' },
+  { q: 'Does Solvexo take a commission on my sales?', a: isPk
+    ? 'No. Solvexo takes no commission and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through a payment gateway such as Safepay.'
+    : 'No. There is no commission on card payments processed through Solvexo Payments — you only pay the card processing fee — and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through another payment gateway with your own account, such as Stripe or PayPal.' },
   { q: 'Is there a free trial?', a: `Yes — every new store gets a free ${trialDurationDays}-day trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready.` },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards. Payments are processed securely by Stripe — we never see or store your card number.' },
-  { q: 'Do you offer discounts for educators or non-profits?', a: 'Yes — educators and registered non-profits qualify for a 40% discount on any paid plan. Contact our support team with your credentials.' },
 ]; }
 
 const EVERY_PLAN = [
   { Icon: Store, title: 'Your online store', body: 'A ready-made shop with themes you can edit. No coding.' },
   { Icon: ScanBarcode, title: 'In-store till (POS)', body: 'Sell in your shop; stock updates online automatically.' },
   { Icon: Banknote, title: 'Cash on delivery', body: 'Take cash on delivery and card payments at checkout.' },
-  { Icon: Truck, title: 'Delivery settings', body: 'Set delivery areas and charges for each city or zone.' },
-  { Icon: Package, title: 'Orders & stock', body: 'Track every order and know what is running low.' },
+  { Icon: Truck, title: 'Delivery & stock', body: 'Set delivery charges per zone and track every order and your stock.' },
   { Icon: Tag, title: 'Discount codes & gift cards', body: 'Run sales and reward loyal customers.' },
   { Icon: Lock, title: 'Hosting & free SSL', body: 'Fast, secure hosting with the padlock included.' },
-  { Icon: BarChart3, title: 'Sales reports', body: 'See what sells, when, and to whom.' },
+  { Icon: Palette, title: 'Themes & theme editor', body: 'Change colours, fonts and layout with a visual editor, no coding.' },
+  { Icon: LayoutTemplate, title: 'Header & footer editor', body: 'Design your menus, logo and footer without code.' },
+  { Icon: FileText, title: 'Pages, blog & navigation', body: 'Add pages and blog posts and organise your menus.' },
+  { Icon: Languages, title: '22 languages', body: 'Show your store in your customers’ own language.' },
+  { Icon: ShieldCheck, title: 'COD protection & Khata', body: 'Fewer fake orders, and a ledger for customers who pay later.' },
+  { Icon: MessageCircle, title: 'WhatsApp & SMS', body: 'Send order updates where customers actually read them.' },
+  { Icon: Rss, title: 'Google & Meta product feeds', body: 'List your products in Google Shopping and Facebook shops.' },
 ];
 
 /** "Pick the one that sounds like you" — one line per core plan, built from its live limits. */
@@ -137,9 +160,11 @@ export function PricingPage() {
       .catch(() => {});
   }, []);
 
-  const { faqs: liveFaqs } = useFaqs();
+  // Country sites: the Solvexo Payments card rail is not available to Pakistani stores, so don't advertise it there.
+  const isPk = typeof window !== 'undefined' && countryFromPathname(window.location.pathname) === 'pk';
+  const { faqs: liveFaqs } = useFaqs('pricing');
   const trialDays = trialDurationDays ?? 7;
-  const faqs = liveFaqs.length > 0 ? liveFaqs.map(f => ({ q: f.question, a: f.answer })) : getFallbackFaqs(trialDays);
+  const faqs = liveFaqs.length > 0 ? liveFaqs.map(f => ({ q: f.question, a: f.answer })) : getFallbackFaqs(trialDays, isPk);
   const save = maxYearlySavingsPercent(plans);
   const priced = plans.filter(p => !p.isFree && !p.isCustomPricing);
   const offs = priced.map(p => displayPrice(p, 'monthly').percentOff);
@@ -275,7 +300,7 @@ export function PricingPage() {
                     {typeof fee === 'number' && (
                       <p className="mt-auto pt-3.5 text-[12px] leading-[1.6]" style={{ color: MUTED, borderTop: `1px dashed ${LINE}` }}>
                         Other payment gateways: <strong className="font-semibold" style={{ color: INK }}>{pct(fee)}</strong><br />
-                        COD &amp; Solvexo Payments: <strong className="font-semibold" style={{ color: INK }}>0%</strong>
+                        {isPk ? 'COD & bank transfer' : 'COD & Solvexo Payments'}: <strong className="font-semibold" style={{ color: INK }}>0%</strong>
                       </p>
                     )}
                   </div>
@@ -335,7 +360,7 @@ export function PricingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr] items-center gap-5 rounded-[20px] bg-white p-7" style={{ border: `1px solid ${LINE}` }}>
           <h2 className="text-[21px] font-semibold leading-[1.35]">What you pay on each sale</h2>
           <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>on <strong style={{ color: INK }}>cash on delivery</strong>, bank transfer and in-store sales.</p></div>
-          <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>commission on card payments through <strong style={{ color: INK }}>Solvexo Payments</strong> (only the normal card processing fee).</p></div>
+          {!isPk && <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>commission on card payments through <strong style={{ color: INK }}>Solvexo Payments</strong> (only the normal card processing fee).</p></div>}
           {feeRange && <div><p className="text-[26px] font-bold">{feeRange}</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>only if you connect <strong style={{ color: INK }}>another payment gateway</strong>. Lower on bigger plans.</p></div>}
         </div>
       </section>
@@ -359,7 +384,7 @@ export function PricingPage() {
               {GROUPS.map(g => (
                 <Fragment key={g.title}>
                   <h3 className="text-[20px] md:text-[22px] font-semibold pt-10 pb-3">{g.title}</h3>
-                  {g.rows.map(r => (
+                  {g.rows.filter(r => !(isPk && r.hideOnPk)).map(r => (
                     <div key={r.label} className="grid items-center gap-4 py-4 text-[14.5px]" style={{ ...cols, borderTop: `1px solid ${LINE}` }}>
                       <span>{r.label}</span>
                       {plans.map(p => <div key={p._id} className="min-h-[24px] flex items-center"><CellView v={r.get(p)} /></div>)}

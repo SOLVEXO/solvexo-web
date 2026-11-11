@@ -26,6 +26,8 @@ import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { useNavBadgeCounts, useClearViewedBadges, useRefreshServerBadges } from '@/hooks/useNavBadges';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { FEATURES } from '@/constants/features';
+import { planGateFor } from './planGate';
+import { PlanUpgradeNeeded } from './PlanUpgradeNeeded';
 import { ViewAsBanner } from './ViewAsBanner';import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -135,14 +137,14 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
-      { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'] },
+      { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'], requiredEntitlement: 'b2bWholesaleAllowed' },
       { id: 'subscriptions', Icon: Package, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['product_subscriptions.view', 'product_subscriptions.manage'] },
       { id: 'checkout-rules', Icon: Package, label: 'Checkout rules', path: 'checkout-rules', requiredPermission: ['checkout_rules.view', 'checkout_rules.manage'] },
       { id: 'cod-protection', Icon: Package, label: 'COD protection', path: 'cod-protection', requiredPermission: 'settings.payments.manage' },
       { id: 'messaging', Icon: Package, label: 'WhatsApp & SMS', path: 'messaging', requiredPermission: 'marketing.manage' },
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
       { id: 'sales-channels', Icon: Package, label: 'Sales channels', path: 'sales-channels', requiredPermission: 'products.view' },
-      { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage' },
+      { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage', requiredEntitlement: 'apiWebhooksAllowed' },
       { id: 'search-settings', Icon: Package, label: 'Search & discovery', path: 'search-settings', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'security', Icon: Package, label: 'Security (2FA)', path: 'security' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
@@ -1642,6 +1644,11 @@ export function navItemForPath(relPath: string): NavItem | null {
   return best;
 }
 
+/** The plan feature (entitlement key) a URL needs, from the sidebar item that owns it; null = not plan-gated. */
+export function entitlementForPath(relPath: string): string | null {
+  return navItemForPath(relPath)?.requiredEntitlement ?? null;
+}
+
 /** Staff opened a page by URL that their role doesn't cover — the sidebar hides it, this stops the page itself. */
 function NoAccess({ storeId }: { storeId: string }) {
   const navigate = useNavigate();
@@ -1657,11 +1664,11 @@ function NoAccess({ storeId }: { storeId: string }) {
 }
 
 function GatedOutlet() {
-  const { loading, error, refetch, storeId } = useStoreWorkspace();
+  const { loading, error, refetch, storeId, entitlements } = useStoreWorkspace();
   const { pathname } = useLocation();
   if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
+  const rel = pathname.replace(new RegExp(`^/store/${storeId}/?`), '');
   if (isStaffSession()) {
-    const rel = pathname.replace(new RegExp(`^/store/${storeId}/?`), '');
     const gate = permissionForPath(rel);
     const me = TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>();
     if (gate && !hasNavPermission(me, gate.required ?? undefined)) {
@@ -1670,6 +1677,9 @@ function GatedOutlet() {
       return <NoAccess storeId={storeId} />;
     }
   }
+  // The store's plan, for every role (owner, staff, admin view-as): checked after the staff permission gate.
+  const planGate = planGateFor(entitlements, entitlementForPath(rel));
+  if (planGate.blocked) return <PlanUpgradeNeeded storeId={storeId} requiredPlan={planGate.requiredPlan} canUpgrade={!isStaffSession()} />;
   // Local Suspense boundary (same reasoning/pattern as PublicLayout/BuyerLayout)
   // so a not-yet-loaded-this-session lazy route chunk suspends only this
   // content area, not RootLayout's outer big-spinner Suspense — otherwise

@@ -44,15 +44,22 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): Pl
   if (on('customRedirectsAllowed')) out.push({ title: 'Custom redirects', hint: 'Keep old links working' });
   if (on('searchConsoleIntegrationAllowed')) out.push({ title: 'Google Search Console connection' });
 
-  const promos = more(l.maxActivePromotions, p.maxActivePromotions);
-  const banners = more(l.maxActiveStoreBanners, p.maxActiveStoreBanners);
-  if (promos && banners && unlimited(l.maxActivePromotions) && unlimited(l.maxActiveStoreBanners)) out.push({ title: 'Unlimited sales & banners' });
-  else {
-    const bits: string[] = [];
-    if (promos) bits.push(unlimited(l.maxActivePromotions) ? 'Unlimited sales at once' : l.maxActivePromotions === 1 ? '1 sale running at a time' : `${l.maxActivePromotions} sales running at once`);
-    if (banners) bits.push(unlimited(l.maxActiveStoreBanners) ? 'unlimited banners' : plural(l.maxActiveStoreBanners!, 'homepage banner', 'homepage banners'));
-    if (bits.length) out.push({ title: bits.join(' · ') });
+  // Sales/promotions and homepage banners are unlimited on every plan, so they are not a plan feature any more.
+  if (more(l.monthlyEmailSends, p.monthlyEmailSends)) {
+    out.push({ title: unlimited(l.monthlyEmailSends) ? 'Unlimited marketing emails' : `${l.monthlyEmailSends!.toLocaleString('en-US')} marketing emails a month`, hint: first ? 'Offers, newsletters and automatic emails' : undefined });
   }
+  if (l.b2bWholesaleAllowed) {
+    const catalogs = unlimited(l.maxB2BCatalogs) ? 'Unlimited wholesale catalogs' : l.maxB2BCatalogs ? plural(l.maxB2BCatalogs, 'wholesale catalog', 'wholesale catalogs') : null;
+    if (on('b2bWholesaleAllowed')) out.push({ title: 'B2B wholesale prices', hint: catalogs ?? undefined });
+    else if (catalogs && more(l.maxB2BCatalogs, p.maxB2BCatalogs)) out.push({ title: catalogs });
+  }
+  const digital = ([['digitalMembershipsAllowed', 'memberships'], ['digitalLicensesAllowed', 'license keys'], ['digitalCoursesAllowed', 'courses']] as const)
+    .filter(([k]) => on(k)).map(([, label]) => label);
+  if (digital.length) {
+    const text = digital.length === 1 ? digital[0] : `${digital.slice(0, -1).join(', ')} & ${digital[digital.length - 1]}`;
+    out.push({ title: `Sell ${text}`, hint: 'Digital products, paid plans and online courses' });
+  }
+  if (on('apiWebhooksAllowed')) out.push({ title: 'Webhooks & API', hint: 'Connect your store to other tools' });
   if (more(l.maxMarkets, p.maxMarkets)) out.push({ title: unlimited(l.maxMarkets) ? 'Unlimited currencies' : `Accept up to ${l.maxMarkets} currencies` });
   if (on('prioritySupport')) out.push({ title: 'Priority support', hint: 'Faster answers from our team' });
   if (on('dedicatedAccountManager')) out.push({ title: 'Your own account manager', hint: 'One person who knows your business' });

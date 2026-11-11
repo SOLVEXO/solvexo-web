@@ -13,16 +13,7 @@ import type { TableColumn } from '@/components/comman/ui/Table';
 import { CoursesTab } from './CoursesTab';
 import { RenewalQueue } from './RenewalQueue';
 
-type Tab = 'overview' | 'plans' | 'subscribers' | 'courses' | 'licenses' | 'reports' | 'log';
-const TABS: { id: Tab; label: string; perm: string }[] = [
-  { id: 'overview', label: 'Overview', perm: 'digital.view' },
-  { id: 'plans', label: 'Plans', perm: 'members.manage' },
-  { id: 'subscribers', label: 'Subscribers', perm: 'members.manage' },
-  { id: 'courses', label: 'Courses', perm: 'courses.manage' },
-  { id: 'licenses', label: 'Licenses', perm: 'licenses.manage' },
-  { id: 'reports', label: 'Reports', perm: 'digital.view' },
-  { id: 'log', label: 'Delivery log', perm: 'digital.view' },
-];
+import { activeDigitalTab, visibleDigitalTabs, type Tab } from './digitalTabs';
 const PAGE_SIZE = 20;
 
 const errText = (e: unknown) => errorMessage(e);
@@ -379,9 +370,11 @@ function DeliveryLog({ base }: { base: string }) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function DigitalHub() {
-  const { storeId } = useStoreWorkspace();
-  const visible = TABS.filter((t) => can(t.perm as StaffPermission));
-  const [tab, setTab] = useState<Tab>(visible[0]?.id ?? 'overview');
+  const { storeId, entitlements } = useStoreWorkspace();
+  const visible = visibleDigitalTabs((perm) => can(perm as StaffPermission), entitlements);
+  const [chosen, setTab] = useState<Tab>(visible[0]?.id ?? 'overview');
+  // The chosen tab can disappear (plan loads late, or changes): fall back to the first visible one.
+  const tab = activeDigitalTab(chosen, visible);
   const base = `/api/digital/${storeId}`;
   const change = useCallback((id: string) => setTab(id as Tab), []);
   return (

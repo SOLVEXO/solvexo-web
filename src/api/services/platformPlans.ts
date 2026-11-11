@@ -17,6 +17,12 @@ export interface PlatformPlanLimits {
   calculatedShippingRatesAllowed?: boolean;
   /** How many checkout currencies (markets) the store can sell in, base currency included. -1 = unlimited. */
   maxMarkets?: number;
+  /** Courses (Digital hub). Older API versions omit it. */
+  digitalCoursesAllowed?: boolean;
+  /** B2B catalogs the store can publish. -1 = unlimited. */
+  maxB2BCatalogs?: number;
+  /** Marketing emails (campaigns/automations) per month. -1 = unlimited. */
+  monthlyEmailSends?: number;
 }
 
 export interface PlatformPlan {
@@ -110,6 +116,11 @@ export interface EntitlementsSummary {
   maxPosLocations: { limit: number; used: number; allowed: boolean };
   /** Checkout currencies (markets) the plan allows, base included. -1 = unlimited. */
   maxMarkets?: number;
+  /** B2B catalogs allowed (-1 = unlimited) and marketing emails per month (-1 = unlimited). Older APIs omit them. */
+  maxB2BCatalogs?: number;
+  monthlyEmailSends?: number;
+  /** Boolean features arrive as `{ allowed, requiredPlan }`, e.g. `digitalCoursesAllowed`. */
+  digitalCoursesAllowed?: { allowed: boolean; requiredPlan: string | null };
   aiCredits: { monthlyAllowance: number; balance: number };
   transactionFeeRate: number;
   dedicatedAccountManager: boolean;

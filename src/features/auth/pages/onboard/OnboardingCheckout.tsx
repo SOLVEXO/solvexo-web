@@ -295,7 +295,7 @@ const moPrice = (n: number | null | undefined): Cell => typeof n === 'number' ? 
 // The compare table, grouped by Solvexo module. Rows with `ALL` are features that exist
 // in the product but aren't gated by plan (so every plan includes them); every other row
 // reads the plan's real, backend-enforced limit — see platform-plan.catalog.ts in the API.
-// Never add a row for something Solvexo doesn't actually do (no analytics tier, no API/webhooks).
+// Never add a row for something Solvexo doesn't actually do (no analytics tier). Sales/promotions and banners are unlimited, so they get no row.
 const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) => Cell }[] }[] = [
   { group: 'Pricing', rows: [
     { label: 'Pay monthly', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.monthlyPriceUSD) },
@@ -327,7 +327,12 @@ const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) =>
     { label: 'Email campaigns & automations', get: p => flag(p.limits.emailCampaignsAllowed) },
     { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
     { label: 'Loyalty & rewards program', get: p => flag(p.limits.loyaltyProgramAllowed) },
-    { label: 'Active promotions', get: p => num(p.limits.maxActivePromotions) },
+    { label: 'Marketing emails per month', get: p => num(p.limits.monthlyEmailSends) },
+    { label: 'B2B wholesale', get: p => flag(p.limits.b2bWholesaleAllowed) },
+    { label: 'B2B wholesale catalogs', get: p => (p.limits.b2bWholesaleAllowed ? num(p.limits.maxB2BCatalogs) : null) },
+    { label: 'Memberships (paid plans for buyers)', get: p => flag(p.limits.digitalMembershipsAllowed) },
+    { label: 'License keys', get: p => flag(p.limits.digitalLicensesAllowed) },
+    { label: 'Courses', get: p => flag(p.limits.digitalCoursesAllowed) },
     { label: 'Newsletter, affiliates & tracking pixels', get: ALL },
     { label: 'Customer reviews & messaging', get: ALL },
   ] },
@@ -352,6 +357,7 @@ const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) =>
     { label: 'Mobile app request', get: ALL },
   ] },
   { group: 'Support', rows: [
+    { label: 'Webhooks & API', get: p => flag(p.limits.apiWebhooksAllowed) },
     { label: 'Priority support', get: p => flag(p.limits.prioritySupport) },
     { label: 'Dedicated account manager', get: p => flag(p.limits.dedicatedAccountManager) },
   ] },

@@ -28,8 +28,11 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
   advancedAnalyticsAllowed: false, abandonedCartRecoveryAllowed: false, emailCampaignsAllowed: false,
   apiWebhooksAllowed: false, dedicatedAccountManager: false, prioritySupport: false, marketplaceFeaturedBadge: false,
   advancedSeoToolsAllowed: false, seoAiSuggestionsAllowed: false, searchConsoleIntegrationAllowed: false, customRedirectsAllowed: false,
-  maxActiveStoreBanners: 4, maxActivePromotions: 1,
+  // Banners and promotions are unlimited on every plan (no longer a plan limit).
+  maxActiveStoreBanners: -1, maxActivePromotions: -1,
   calculatedShippingRatesAllowed: false, maxMarkets: 3,
+  b2bWholesaleAllowed: false, maxB2BCatalogs: 1, monthlyEmailSends: 2000,
+  digitalMembershipsAllowed: false, digitalLicensesAllowed: false, digitalCoursesAllowed: false,
 };
 
 // Plans saved before these two fields existed get the same defaults the
@@ -45,10 +48,10 @@ type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K 
 // real Shopify plans do this too: "priority support" is fulfilled by a
 // person, not code). A toggle that does NOTHING at all is worse than not
 // having it — it lets an admin build/sell a plan that lies to the seller.
-// `advancedAnalyticsAllowed`, `apiWebhooksAllowed`, and
+// `advancedAnalyticsAllowed` and
 // `marketplaceFeaturedBadge` were REMOVED from this list for exactly that
-// reason: no seller-facing "advanced" analytics tier, no seller API/webhooks
-// system, and no reachable place left for a "featured" badge to actually
+// reason (`apiWebhooksAllowed` is back: the Developers page is plan-gated):
+// no seller-facing "advanced" analytics tier, and no reachable place left for a "featured" badge to actually
 // show (its one consumer, admin marketplace-listing curation, was
 // disconnected in the marketplace-to-standalone-store pivot) exist in this
 // codebase to back them. The `PlatformPlanLimits` schema fields themselves
@@ -70,6 +73,12 @@ const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string; soon?: 
   { key: 'customRedirectsAllowed', label: 'Custom redirects' },
   // Shopify: third-party calculated (live carrier) rates at checkout — Advanced and up.
   { key: 'calculatedShippingRatesAllowed', label: 'Live shipping rates' },
+  { key: 'b2bWholesaleAllowed', label: 'B2B wholesale' },
+  { key: 'digitalMembershipsAllowed', label: 'Memberships' },
+  { key: 'digitalLicensesAllowed', label: 'License keys' },
+  { key: 'digitalCoursesAllowed', label: 'Courses' },
+  // Gated in the seller dashboard (Developers page), so a plan can honestly sell it.
+  { key: 'apiWebhooksAllowed', label: 'Webhooks & API' },
 ];
 
 // ── Trial Settings — the ONE platform-wide "Solvexo Free Trial" policy.
@@ -428,7 +437,8 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
                   label="Uptime guarantee % (optional)" type="number" step="0.1" min={0} max={100}
                   value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', e.target.value === '' ? undefined : Number(e.target.value))}
                 />
-                <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
+                <Input label="Marketing emails/month (-1=∞)" type="number" min={-1} value={limits.monthlyEmailSends ?? ''} onChange={e => setLimit('monthlyEmailSends', Number(e.target.value))} />
+                <Input label="Max B2B catalogs (-1=∞)" type="number" min={-1} value={limits.maxB2BCatalogs ?? ''} onChange={e => setLimit('maxB2BCatalogs', Number(e.target.value))} />
                 <Input label="Max markets / currencies (-1=∞)" type="number" min={-1} value={limits.maxMarkets ?? ''} onChange={e => setLimit('maxMarkets', Number(e.target.value))} />
                 <Input label="Grace period (days)" type="number" min={0} value={gracePeriodDays} onChange={e => setGracePeriodDays(e.target.value)} />
               </div>
