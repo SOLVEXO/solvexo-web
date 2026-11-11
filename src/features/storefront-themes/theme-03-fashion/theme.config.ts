@@ -74,7 +74,7 @@ const STATIC_DEFAULTS = {
   /** Quick view pop-up width; seller setting `custom.quickViewSize`. */
   quickViewSize: 'standard' as 'compact' | 'standard' | 'large',
   /** Mega menu look; seller settings `custom.mega*`. */
-  mega: { featured: true, columns: 4, heading: 'upper' as 'upper' | 'normal', photo: 'square' as 'square' | 'landscape' | 'portrait' },
+  mega: { width: 'full' as 'full' | 'fit', featured: true, columns: 4, heading: 'upper' as 'upper' | 'normal', photo: 'square' as 'square' | 'landscape' | 'portrait' },
   /** Listing sizes and the way shoppers move on; seller settings `custom.productsPerPage` etc. */
   pagination: { productsPerPage: 12, mode: 'pages' as 'pages' | 'more' | 'infinite', postsPerPage: 12, reviewsPerPage: 5 },
   /** Share popup networks; seller settings `custom.share*` (hide = off). */
@@ -229,6 +229,7 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.authGate.social = ts?.authSocial !== 'hide';
   fashionTheme.quickViewSize = oneOf(ts?.quickViewSize, ['compact', 'standard', 'large'] as const, 'standard');
   fashionTheme.productImageFit = oneOf(ts?.productImageFit, ['fill', 'whole'] as const, 'fill');
+  fashionTheme.mega.width = oneOf(ts?.megaWidth, ['full', 'fit'] as const, 'full');
   fashionTheme.mega.featured = ts?.megaFeatured !== 'hide';
   fashionTheme.mega.columns = Math.min(6, Math.max(2, Math.round(Number(ts?.megaColumns)) || 4));
   fashionTheme.mega.heading = oneOf(ts?.megaHeading, ['upper', 'normal'] as const, 'upper');

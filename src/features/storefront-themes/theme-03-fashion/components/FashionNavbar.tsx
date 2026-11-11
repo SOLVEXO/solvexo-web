@@ -175,8 +175,8 @@ export function FashionNavbar() {
                     return (
                       <MegaPanel className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
-                          <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
-                            <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: `repeat(${t.mega.columns}, minmax(0, 1fr))` }}>
+                          <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
+                            <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${t.mega.columns}, minmax(150px, max-content))` : `repeat(${t.mega.columns}, minmax(0, 1fr))` }}>
                               {plain.length > 0 && (
                                 <div>
                                   <MegaHeading label={item.label} />
