@@ -66,3 +66,60 @@ export const MANUALS: Manual[] = [
 export function formatFileSize(bytes: number): string {
   return bytes >= 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.round(bytes / 1e3)} KB`;
 }
+
+/**
+ * Arabic text of the manuals page (title, summary and part names). The PDFs themselves are English only,
+ * which the Arabic page says. Keyed by manual key and PDF file name; anything missing stays English.
+ */
+const MANUALS_AR: Record<Manual['key'], Pick<Manual, 'title' | 'kicker' | 'summary' | 'audience'> & { labels: Record<string, string> }> = {
+  store: {
+    title: 'أنشئ متجرك',
+    kicker: 'المتجر الإلكتروني',
+    summary: 'من إنشاء حسابك إلى متجر يعمل ويستقبل أول طلب: المنتجات والمدفوعات والشحن والتصميم والباقات والإطلاق.',
+    audience: 'أصحاب المتاجر الجدد',
+    labels: {
+      'solvexo-create-your-store-complete-manual.pdf': 'الدليل الكامل',
+      '00-welcome-and-setup-journey.pdf': 'مرحبًا بك ومراحل الإعداد',
+      '01-chapter-1-create-your-account.pdf': 'الفصل 1: أنشئ حسابك',
+      '02-chapter-2-create-your-store.pdf': 'الفصل 2: أنشئ متجرك',
+      '03-chapter-3-your-dashboard.pdf': 'الفصل 3: لوحة التحكم',
+      '04-chapter-4-add-your-products.pdf': 'الفصل 4: أضف منتجاتك',
+      '05-chapter-5-get-paid.pdf': 'الفصل 5: استلم مدفوعاتك',
+      '06-chapter-6-shipping-tax-and-settings.pdf': 'الفصل 6: الشحن والضرائب والإعدادات',
+      '07-chapter-7-design-your-storefront.pdf': 'الفصل 7: صمّم واجهة متجرك',
+      '08-chapter-8-choose-your-plan.pdf': 'الفصل 8: اختر باقتك',
+      '09-chapter-9-go-live-and-first-order.pdf': 'الفصل 9: الإطلاق وأول طلب',
+      '10-faq-and-getting-help.pdf': 'الأسئلة الشائعة والحصول على المساعدة',
+    },
+  },
+  pos: {
+    title: 'نقطة البيع من Solvexo',
+    kicker: 'البيع في المتجر',
+    summary: 'جهّز فريقك وصناديق البيع وأجهزة الكاشير، ثم بِع واستلم المدفوعات وتعامل مع المرتجعات وأدر المخزون واعدّ النقد وأغلق الوردية.',
+    audience: 'أصحاب المتاجر والمديرون والكاشير',
+    labels: {
+      'solvexo-pos-complete-manual.pdf': 'الدليل الكامل',
+      '00-welcome-to-solvexo-pos.pdf': 'مرحبًا بك في نقطة البيع من Solvexo',
+      '01-chapter-1-get-started.pdf': 'الفصل 1: البداية',
+      '02-chapter-2-team-registers-and-plan.pdf': 'الفصل 2: الفريق وصناديق البيع والباقة',
+      '03-chapter-3-set-up-the-till-device.pdf': 'الفصل 3: إعداد جهاز الكاشير',
+      '04-chapter-4-start-your-shift.pdf': 'الفصل 4: ابدأ ورديتك',
+      '05-chapter-5-make-a-sale.pdf': 'الفصل 5: إتمام عملية بيع',
+      '06-chapter-6-held-sales-receipts-and-returns.pdf': 'الفصل 6: المبيعات المعلّقة والإيصالات والمرتجعات',
+      '07-chapter-7-customers.pdf': 'الفصل 7: العملاء',
+      '08-chapter-8-products-and-stock.pdf': 'الفصل 8: المنتجات والمخزون',
+      '09-chapter-9-cash-and-closing-your-shift.pdf': 'الفصل 9: النقد وإغلاق الوردية',
+      '10-chapter-10-reports-and-needs-attention.pdf': 'الفصل 10: التقارير وما يحتاج إلى متابعة',
+      '11-chapter-11-offline-devices-and-account.pdf': 'الفصل 11: العمل دون اتصال والأجهزة والحساب',
+      '12-faq-and-getting-help.pdf': 'الأسئلة الشائعة والحصول على المساعدة',
+    },
+  },
+};
+
+/** A manual's page text in the site language ('en' returns it unchanged). Files and sizes never change. */
+export function localizeManual(m: Manual, lang: 'en' | 'ar'): Manual {
+  const ar = lang === 'ar' ? MANUALS_AR[m.key] : undefined;
+  if (!ar) return m;
+  const label = (file: ManualFile): ManualFile => ({ ...file, label: ar.labels[file.file.split('/').pop() ?? ''] ?? file.label });
+  return { ...m, title: ar.title, kicker: ar.kicker, summary: ar.summary, audience: ar.audience, complete: label(m.complete), chapters: m.chapters.map(label) };
+}
