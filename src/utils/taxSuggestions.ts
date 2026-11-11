@@ -1,9 +1,9 @@
 /** Standard national consumption-tax rates offered as a STARTING POINT only (from memory, not live data). Rates change and
  *  many have reduced rates, state/provincial parts or registration thresholds, so every use must be confirmed with an
  *  accountant: admin adds them as DRAFT, a seller adds them as an editable tax region. */
-export interface TaxSuggestion { rate: number; label: string }
+export interface TaxSuggestion { rate: number; label: string; /** A suggestion is never verified: it is a template, not a confirmed rate. */ verified: false }
 
-export const TAX_SUGGESTIONS: Record<string, TaxSuggestion> = {
+const RAW_SUGGESTIONS: Record<string, { rate: number; label: string }> = {
   PK: { rate: 18, label: 'Sales Tax' },
   AE: { rate: 5, label: 'VAT' },
   SA: { rate: 15, label: 'VAT' },
@@ -22,6 +22,10 @@ export const TAX_SUGGESTIONS: Record<string, TaxSuggestion> = {
   ZA: { rate: 15, label: 'VAT' },
   TR: { rate: 20, label: 'VAT' },
 };
+
+export const TAX_SUGGESTIONS: Record<string, TaxSuggestion> = Object.fromEntries(
+  Object.entries(RAW_SUGGESTIONS).map(([cc, s]) => [cc, { ...s, verified: false as const }]),
+);
 
 export function taxSuggestionFor(country: string | null | undefined): TaxSuggestion | null {
   return TAX_SUGGESTIONS[String(country ?? '').trim().toUpperCase()] ?? null;

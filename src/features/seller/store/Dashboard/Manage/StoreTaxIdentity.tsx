@@ -1,6 +1,7 @@
 import { Info } from 'lucide-react';
 import { taxIdLabelForCountry } from '@/utils/taxIdLabel';
 import { taxSuggestionFor } from '@/utils/taxSuggestions';
+import { UNVERIFIED_STARTING_POINT } from '@/utils/complianceWording';
 
 interface Props {
   country: string;
@@ -42,7 +43,7 @@ export function StoreTaxIdentity({ country, taxId, taxRegistered, regionCountrie
         <div className="flex items-start gap-2 rounded-md bg-cream px-3 py-2.5">
           <Info size={14} className="mt-0.5 shrink-0 text-slate" />
           <div className="text-[12px] text-charcoal">
-            <p>Your store is in {cc}. A common starting point is {suggestion.label} {suggestion.rate}%.</p>
+            <p>Your store is in {cc}. {suggestion.label} {suggestion.rate}% is an {UNVERIFIED_STARTING_POINT}.</p>
             <p className="text-[11px] text-slate mt-0.5">Rates change and some products or regions differ: confirm the right rate with your accountant, then edit it in Tax Regions below.</p>
             <button type="button" disabled={disabled} onClick={() => onAddRegion(cc, suggestion.rate)} className="mt-2 text-[12px] font-semibold text-brand-orange hover:underline disabled:opacity-50">
               Add {suggestion.label} {suggestion.rate}% to Tax Regions
