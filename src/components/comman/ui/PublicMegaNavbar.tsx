@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import type { Variants } from 'motion/react';
 import {
   Store, ChevronDown, ArrowRight, Plus, Building2, ShieldCheck,
-  MonitorSmartphone, PackageCheck, Users, ArrowUpRight, BookOpen,
+  MonitorSmartphone, PackageCheck, Users, ArrowUpRight, BookOpen, FileText,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -69,6 +69,7 @@ const COMPANY_LINKS = [
   { Icon: Building2,   label: 'About Solvexo', desc: 'Why we built one connected commerce platform', path: '/about' },
   { Icon: ShieldCheck, label: 'Security', desc: 'How we protect your account, data and payments', path: '/security' },
   { Icon: BookOpen,    label: 'Blog', desc: 'Guides for selling online and in person', path: '/blog' },
+  { Icon: FileText,    label: 'User manuals', desc: 'Step-by-step PDF guides for your store and POS', path: '/manuals' },
 ];
 
 type MenuKey = 'products' | 'company' | null;
