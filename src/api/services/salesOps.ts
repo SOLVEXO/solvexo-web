@@ -261,7 +261,8 @@ export const apiLeadChats = (leadId: string) => client.get<never, ApiResponse<Ch
 export const apiResolveAiDraft = (leadId: string, sent: boolean) => client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${leadId}/ai-draft`, { sent });
 
 /** Public (no login): the website chat. */
-export const apiChatConfig = () => client.get<never, ApiResponse<{ enabled: boolean; agentName: string; greeting: string }>>('/api/sales/chat/config');
+/** `whatsappNumber`: Solvexo's WhatsApp sales line, once connected in Sales → WhatsApp (else null). */
+export const apiChatConfig = () => client.get<never, ApiResponse<{ enabled: boolean; agentName: string; greeting: string; whatsappNumber?: string | null }>>('/api/sales/chat/config');
 export const apiChatStart = (body: { page?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; partnerCode?: string }) =>
   client.post<never, ApiResponse<{ token: string; agentName: string; greeting: string }>>('/api/sales/chat/start', body);
 export const apiChatSend = (token: string, message: string) =>

@@ -9,9 +9,11 @@ import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analyt
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { can } from '@/hooks/auth/useCan';
 import { useStableToast } from './sales/sales.utils';
+import { whatsappHref } from '@/utils/whatsapp';
 import { Card, Empty } from './saas/parts';
 import {
   apiSaveSiteSettings, apiSiteAcquisition, apiSiteContent, apiSiteFunnel, apiSiteOverview, apiSiteRealtime, apiSiteSettings,
+  apiSiteSetupSteps, apiStoreJourney, type StoreJourney,
   type SiteAcquisition, type SiteAnalyticsSettings, type SiteContent, type SiteFunnel, type SiteOverview, type SiteRange,
   type SiteRealtime, type TotalMetric,
 } from '@/api/services/siteAnalytics';
@@ -101,6 +103,8 @@ export function AdminVisitors() {
             <Realtime />
             <Overview range={range} />
             <Funnel range={range} />
+            <SetupSteps range={range} />
+            <StoreJourneyCard range={range} />
             <Acquisition range={range} />
             <Content range={range} />
           </>
@@ -358,27 +362,100 @@ function Content({ range }: { range: SiteRange }) {
   );
 }
 
+/** One bar per step, as a share of the first step. */
+function StepBars({ steps, unit }: { steps: { key: string; label: string; count: number; fromPrevious: number | null }[]; unit?: string }) {
+  const first = steps[0]?.count || 1;
+  return (
+    <ol className="flex flex-col gap-2">
+      {steps.map((s, i) => (
+        <li key={s.key} className="grid grid-cols-[minmax(0,180px)_1fr_auto] items-center gap-3 text-[12.5px]">
+          <span className="text-charcoal">{i + 1}. {s.label}</span>
+          <div className="h-6 rounded-[6px] bg-mist overflow-hidden" aria-hidden>
+            <div className="h-full bg-brand-orange rounded-[6px]" style={{ width: `${Math.max((s.count / first) * 100, s.count ? 1.5 : 0)}%` }} />
+          </div>
+          <span className="tabular-nums text-graphite text-right min-w-[110px]">
+            <strong className="text-charcoal">{fmt(s.count)}</strong>{unit && i === 0 ? <span className="text-slate"> {unit}</span> : null}
+            {s.fromPrevious !== null && <span className="text-slate"> · {pct(s.fromPrevious)} of previous</span>}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Funnel({ range }: { range: SiteRange }) {
   const r = useReport<SiteFunnel>(range, () => apiSiteFunnel(range));
   if (r.error) return <AnalyticsErrorState message={r.error} onRetry={r.reload} />;
   if (!r.data) return <TableCardSkeleton rows={5} />;
-  const first = r.data.steps[0]?.users || 1;
   return (
     <Card title="Sign-up funnel" subtitle="Visitors who reached each step in this period (each step counted on its own, so a later step can include people who skipped an earlier one)">
-      <ol className="flex flex-col gap-2">
-        {r.data.steps.map((s, i) => (
-          <li key={s.key} className="grid grid-cols-[minmax(0,180px)_1fr_auto] items-center gap-3 text-[12.5px]">
-            <span className="text-charcoal">{i + 1}. {s.label}</span>
-            <div className="h-6 rounded-[6px] bg-mist overflow-hidden" aria-hidden>
-              <div className="h-full bg-brand-orange rounded-[6px]" style={{ width: `${Math.max((s.users / first) * 100, s.users ? 1.5 : 0)}%` }} />
-            </div>
-            <span className="tabular-nums text-graphite text-right min-w-[110px]">
-              <strong className="text-charcoal">{fmt(s.users)}</strong>
-              {s.fromPrevious !== null && <span className="text-slate"> · {pct(s.fromPrevious)} of previous</span>}
-            </span>
-          </li>
-        ))}
-      </ol>
+      <StepBars steps={r.data.steps.map(s => ({ key: s.key, label: s.label, count: s.users, fromPrevious: s.fromPrevious }))} />
+    </Card>
+  );
+}
+
+function SetupSteps({ range }: { range: SiteRange }) {
+  const r = useReport<SiteFunnel>(range, () => apiSiteSetupSteps(range));
+  if (r.error) return <AnalyticsErrorState message={r.error} onRetry={r.reload} />;
+  if (!r.data) return <TableCardSkeleton rows={5} />;
+  return (
+    <Card title="Store setup steps" subtitle="Visitors who opened each step of the store setup wizard. The biggest drop shows the step to simplify.">
+      <StepBars steps={r.data.steps.map(s => ({ key: s.key, label: s.label, count: s.users, fromPrevious: s.fromPrevious }))} />
+    </Card>
+  );
+}
+
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+function StoreJourneyCard({ range }: { range: SiteRange }) {
+  const r = useReport<StoreJourney>(range, () => apiStoreJourney(range));
+  if (r.error) return <AnalyticsErrorState message={r.error} onRetry={r.reload} />;
+  if (!r.data) return <TableCardSkeleton rows={6} />;
+  const { steps, followUp, followUpTotal } = r.data;
+  return (
+    <Card title="From new store to live store" subtitle="Stores created in this period and how far they got. From Solvexo's own data, so it includes every store, not only visitors Google Analytics saw.">
+      <StepBars steps={steps.map(s => ({ key: s.key, label: s.label, count: s.stores, fromPrevious: s.fromPrevious }))} unit="stores" />
+      <div className="mt-5">
+        <p className="text-[12.5px] font-semibold text-charcoal">Help these stores add their first product</p>
+        <p className="text-[11.5px] text-slate mt-0.5">
+          {followUpTotal === 0 ? 'Every new store in this period has added a product.' : `${fmt(followUpTotal)} new store${followUpTotal === 1 ? ' has' : 's have'} no products yet${followUpTotal > followUp.length ? ` (showing the newest ${followUp.length})` : ''}. A quick WhatsApp or call usually gets them going.`}
+        </p>
+        {followUp.length > 0 && (
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full text-[12.5px] min-w-[620px]">
+              <thead>
+                <tr className="text-left text-slate border-b border-bone">
+                  <th className="py-2 pr-3 font-medium">Store</th>
+                  <th className="py-2 pr-3 font-medium">Owner</th>
+                  <th className="py-2 pr-3 font-medium">Contact</th>
+                  <th className="py-2 pr-3 font-medium">Created</th>
+                  <th className="py-2 font-medium">Plan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {followUp.map(s => {
+                  const wa = whatsappHref(s.phone);
+                  return (
+                    <tr key={s.storeId} className="border-b border-bone/70 align-top">
+                      <td className="py-2 pr-3 text-charcoal">{s.storeUrl ? <a href={s.storeUrl} target="_blank" rel="noreferrer" className="hover:text-brand-orange">{s.storeName || 'Untitled store'}</a> : (s.storeName || 'Untitled store')}</td>
+                      <td className="py-2 pr-3 text-charcoal">{s.ownerName || '—'}</td>
+                      <td className="py-2 pr-3">
+                        <div className="flex flex-col">
+                          {s.phone && (wa ? <a href={wa} target="_blank" rel="noreferrer" className="text-brand-orange hover:underline">{s.phone}</a> : <span>{s.phone}</span>)}
+                          {s.email && <a href={`mailto:${s.email}`} className="text-graphite hover:underline">{s.email}</a>}
+                          {!s.phone && !s.email && <span className="text-slate">—</span>}
+                        </div>
+                      </td>
+                      <td className="py-2 pr-3 text-graphite tabular-nums">{shortDate(s.createdAt)}</td>
+                      <td className="py-2 text-graphite">{s.planChosen ? 'Chosen' : 'Trial'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
