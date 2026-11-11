@@ -35,6 +35,7 @@ import { hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetSellerOrderDetail } from '@/api/services/product';
 import { openOrderDocuments, toDocumentOrder, type DocKind, type DocumentOrder } from '@/utils/orderDocuments';
+import { loadOrderFbr } from '@/utils/fbrInvoice';
 import { cachedOrderDocuments, loadOrderDocuments } from '@/api/services/orderDocuments';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
@@ -229,10 +230,13 @@ export function StoreOrderList() {
     for (let i = 0; i < targets.length; i += 5) {
       const batch = targets.slice(i, i + 5);
       setBulkProgress(`Loading ${Math.min(i + batch.length, targets.length)} of ${targets.length}...`);
-      const results = await Promise.allSettled(batch.map(o => apiGetSellerOrderDetail(storeId, o.orderId)));
+      const [results, fbrs] = await Promise.all([
+        Promise.allSettled(batch.map(o => apiGetSellerOrderDetail(storeId, o.orderId))),
+        kind === 'invoice' ? Promise.all(batch.map(o => loadOrderFbr(storeId, o.orderId))) : Promise.resolve([] as DocumentOrder['fbr'][]),
+      ]);
       results.forEach((r, idx) => {
         const o = batch[idx];
-        if (r.status === 'fulfilled') slips.push(toDocumentOrder(r.value.data, o.orderNumber));
+        if (r.status === 'fulfilled') slips.push({ ...toDocumentOrder(r.value.data, o.orderNumber), fbr: fbrs[idx] ?? null });
         else failures.push(`${o.orderNumber}: ${r.reason instanceof Error ? r.reason.message : 'failed to load'}`);
       });
     }

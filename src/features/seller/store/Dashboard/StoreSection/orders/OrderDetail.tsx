@@ -35,7 +35,8 @@ import { CourierBookingsCard } from '@/features/seller/store/Dashboard/courier/C
 import { EditTrackingModal } from './EditTrackingModal';
 import { ReturnLabelModal } from './ReturnLabelModal';
 import { ReturnLinesPanel } from './ReturnLinesPanel';
-import { openOrderDocuments, toDocumentOrder, type DocKind } from '@/utils/orderDocuments';
+import { openOrderDocuments, toDocumentOrder, type DocKind, type DocumentOrder } from '@/utils/orderDocuments';
+import { loadOrderFbr } from '@/utils/fbrInvoice';
 import { cachedOrderDocuments, loadOrderDocuments } from '@/api/services/orderDocuments';
 import { FulfilItemsModal } from './FulfilItemsModal';
 import { shippedQuantities, isShippableLine } from './fulfilment';
@@ -254,12 +255,21 @@ export function StoreOrderDetail() {
   // Warm the document settings so a print click can open its window right away (pop-up blockers dislike waiting).
   useEffect(() => { if (storeId) void loadOrderDocuments(storeId, { name: store?.name ?? 'Store', logo: store?.logo ?? null, contactEmail: null, phone: null, currency: store?.baseCurrency ?? null }); }, [storeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The FBR number/QR for the printed invoice is fetched ahead of time so the print click can still open its window at once.
+  const [orderFbr, setOrderFbr] = useState<DocumentOrder['fbr']>(null);
+  useEffect(() => {
+    if (!storeId || !orderId) return;
+    let live = true;
+    void loadOrderFbr(storeId, orderId).then(f => { if (live) setOrderFbr(f); });
+    return () => { live = false; };
+  }, [storeId, orderId]);
+
   const handlePrint = async (kind: DocKind) => {
     if (!detail) return;
     setSlipError('');
     const fallback = { name: store?.name ?? 'Store', logo: store?.logo ?? null, contactEmail: null, phone: null, currency: store?.baseCurrency ?? null };
     const docs = cachedOrderDocuments(storeId) ?? await loadOrderDocuments(storeId, fallback);
-    const ok = openOrderDocuments(kind, [toDocumentOrder(detail, detail.orderNumber)], docs.settings, docs.store);
+    const ok = openOrderDocuments(kind, [{ ...toDocumentOrder(detail, detail.orderNumber), fbr: kind === 'invoice' ? orderFbr : null }], docs.settings, docs.store);
     if (!ok) setSlipError('Your browser blocked the print window — allow pop-ups for this site and try again.');
   };
 

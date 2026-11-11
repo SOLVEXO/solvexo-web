@@ -25,6 +25,8 @@ import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd }
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 import { salesMailto } from '@/utils/contact';
+import { openSolvexoInvoice } from '@/utils/solvexoInvoice';
+import { useToast } from '@/contexts/ToastContext';
 import { FeeBillPayment } from './FeeBillPayment';
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
@@ -170,6 +172,12 @@ function UsageBar({ label, used, max, Icon }: { label: string; used: number; max
 
 export default function StorePlanBilling({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
+  const toast = useToast();
+  const [invoiceOpening, setInvoiceOpening] = useState<string | null>(null);
+  const showInvoice = async (invoiceId: string) => {
+    setInvoiceOpening(invoiceId);
+    try { await openSolvexoInvoice(storeId, invoiceId); } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not open the invoice.'); } finally { setInvoiceOpening(null); }
+  };
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [current, setCurrent] = useState<StorePlatformSubscription | null>(null);
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
@@ -676,6 +684,12 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                       <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
                         {inv.status.replace('_', ' ')}
                       </span>
+                      {inv.status !== 'failed' && (
+                        <button type="button" onClick={() => showInvoice(inv._id)} disabled={invoiceOpening === inv._id}
+                          className="text-[11px] font-semibold text-brand-orange hover:underline disabled:opacity-60">
+                          {invoiceOpening === inv._id ? 'Opening…' : 'Invoice'}
+                        </button>
+                      )}
                       {(inv.hostedInvoiceUrl || inv.invoicePdfUrl) && (
                         <a href={inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#'} target="_blank" rel="noreferrer"
                           className="text-[11px] font-semibold text-brand-orange hover:underline">

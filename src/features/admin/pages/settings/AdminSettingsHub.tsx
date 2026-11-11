@@ -17,6 +17,7 @@ import { AdminSessions } from './AdminSessions';
 import { AdminTwoFactor } from './AdminTwoFactor';
 import { AdminDigestSettings } from './AdminDigestSettings';
 import { AdminPlatformTax } from './AdminPlatformTax';
+import { AdminFbrInvoicing } from './AdminFbrInvoicing';
 import { AdminDigital } from './AdminDigital';
 import { can } from '@/hooks/auth/useCan';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
@@ -116,7 +117,7 @@ export default function AdminSettingsHub() {
         {isVisited('digital')          && <div className={paneClassName('digital')}><ErrorBoundary section="Digital delivery"><AdminDigital /></ErrorBoundary></div>}
         {isVisited('commission-rules') && <div className={paneClassName('commission-rules')}><ErrorBoundary section="Commission Rules"><AdminCommissionRules embedded /></ErrorBoundary></div>}
         {isVisited('fx-settings')      && <div className={paneClassName('fx-settings')}><ErrorBoundary section="FX Settings"><AdminFxSettings embedded /></ErrorBoundary></div>}
-        {isVisited('tax')              && <div className={paneClassName('tax')}><ErrorBoundary section="Tax"><AdminPlatformTax /></ErrorBoundary></div>}
+        {isVisited('tax')              && <div className={paneClassName('tax')}><ErrorBoundary section="Tax"><AdminPlatformTax /><AdminFbrInvoicing /></ErrorBoundary></div>}
         {isVisited('notifications')    && <div className={paneClassName('notifications') + ' px-4 sm:px-7 py-6'}><ErrorBoundary section="Notifications"><div className="flex flex-col gap-3"><AdminDigestSettings /><NotificationsPanel /></div></ErrorBoundary></div>}
         {isVisited('email')            && <div className={paneClassName('email')}><ErrorBoundary section="Email"><AdminEmailHealth /></ErrorBoundary></div>}
         {isVisited('activity-log')     && <div className={paneClassName('activity-log')}><ErrorBoundary section="Activity Log"><AdminActivityLog embedded /></ErrorBoundary></div>}
