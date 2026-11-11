@@ -77,8 +77,8 @@
   --color-dark-hover:   #242220;
 
   /* ── Fonts ── */
-  --font-sans:  'Poppins', system-ui, sans-serif;
-  --font-serif: 'Lora', Georgia, serif;
+  --font-sans:  'Poppins', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-serif: 'Lora', 'IBM Plex Sans Arabic', Georgia, serif;
 
   /* ── Typography scale — every screen previously picked its own arbitrary
      text-[Npx] value ad hoc; these give the same set of decisions a name so
@@ -279,7 +279,7 @@
   }
 
   body {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: 'Poppins', 'IBM Plex Sans Arabic', system-ui, sans-serif;
     background: #FAF9F5;
     color: #2C2A28;
     -webkit-font-smoothing: antialiased;

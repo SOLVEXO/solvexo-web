@@ -1,62 +1,78 @@
 import type { PlatformPlan, PlatformPlanLimits } from '@/api/services/platformPlans';
 import { yearlyMonthlyEquivalent, yearlyTotal } from '@/utils/planPricing';
+import type { SiteLang } from '@/i18n/site/siteLanguage';
+import { PLAN_BADGES_AR, PLAN_FEATURES_TEXT, PLAN_NAMES_AR } from './planFeatures.text';
 
 /** One plan-card line in plain words, with an optional short explanation underneath. */
 export interface PlanFeature { title: string; hint?: string }
 
 const unlimited = (n?: number) => n !== undefined && n !== null && n < 0;
 const more = (n?: number, prev?: number) => n !== undefined && n !== null && n !== 0 && (prev === undefined || prev === null || unlimited(n) ? !unlimited(prev) : n > prev);
-const plural = (n: number, one: string, many: string) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
 
 /**
  * The plan card's feature list, written for a first-time seller rather than in platform terms.
  * Built from the plan's REAL limits (the same ones the backend enforces), so the page can't promise
  * more than a plan gives. With `prev` (the tier below), only what is new or bigger is listed —
- * the card shows "Everything in <prev>, plus".
+ * the card shows "Everything in <prev>, plus". `lang` picks the site language (English by default).
  */
-export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null): PlanFeature[] {
+export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lang: SiteLang = 'en'): PlanFeature[] {
+  const t = PLAN_FEATURES_TEXT[lang];
   const l: PlatformPlanLimits = plan.limits ?? {};
   const p: PlatformPlanLimits = prev?.limits ?? {};
   const first = !prev;
   const on = (k: keyof PlatformPlanLimits) => !!l[k] && (first || !p[k]);
   const out: PlanFeature[] = [];
 
-  if (more(l.maxProducts, p.maxProducts)) out.push({ title: unlimited(l.maxProducts) ? 'Unlimited products' : `Sell up to ${plural(l.maxProducts!, 'product', 'products')}` });
+  if (more(l.maxProducts, p.maxProducts)) out.push({ title: unlimited(l.maxProducts) ? t.unlimitedProducts : t.products(l.maxProducts!) });
   if (more(l.maxStaffAccounts, p.maxStaffAccounts)) {
-    out.push(unlimited(l.maxStaffAccounts) ? { title: 'Unlimited staff logins' }
-      : { title: first ? `${plural(l.maxStaffAccounts!, 'extra staff login', 'extra staff logins')}` : plural(l.maxStaffAccounts!, 'staff login', 'staff logins'), hint: first ? 'Let a helper manage orders' : undefined });
+    out.push(unlimited(l.maxStaffAccounts) ? { title: t.unlimitedStaff }
+      : { title: first ? t.extraStaff(l.maxStaffAccounts!) : t.staff(l.maxStaffAccounts!), hint: first ? t.staffHint : undefined });
   }
   if (more(l.maxPosLocations, p.maxPosLocations)) {
-    out.push({ title: unlimited(l.maxPosLocations) ? 'Unlimited locations'
-      : l.maxPosLocations === 1 ? '1 shop location with the POS till' : `${l.maxPosLocations} shop / warehouse locations` });
+    out.push({ title: unlimited(l.maxPosLocations) ? t.unlimitedLocations
+      : l.maxPosLocations === 1 ? t.oneLocation : t.locations(l.maxPosLocations!) });
   }
   if (more(l.aiCreditsPerMonth, p.aiCreditsPerMonth)) {
-    out.push({ title: unlimited(l.aiCreditsPerMonth) ? 'Unlimited AI credits' : `${l.aiCreditsPerMonth!.toLocaleString('en-US')} AI credits a month`, hint: first ? 'AI writes product descriptions for you' : undefined });
+    out.push({ title: unlimited(l.aiCreditsPerMonth) ? t.unlimitedAi : t.ai(l.aiCreditsPerMonth!), hint: first ? t.aiHint : undefined });
   }
-  if (on('abandonedCartRecoveryAllowed')) out.push({ title: 'Recover abandoned carts', hint: 'Remind shoppers who leave without paying' });
-  if (on('loyaltyProgramAllowed')) out.push({ title: 'Loyalty points', hint: 'Bring customers back for more' });
-  if (on('whiteLabelAllowed')) out.push({ title: 'Remove Solvexo branding', hint: 'Your brand only, everywhere' });
-  if (on('calculatedShippingRatesAllowed')) out.push({ title: 'Live courier rates at checkout' });
-  if (on('customDomainAllowed')) out.push({ title: 'Your own web address', hint: 'e.g. yourshop.com' });
-  if (on('emailCampaignsAllowed')) out.push({ title: 'Email marketing', hint: 'Send offers and automatic emails' });
-  if (on('advancedSeoToolsAllowed')) out.push({ title: 'SEO tools', hint: 'Help Google find your store' });
-  if (on('seoAiSuggestionsAllowed')) out.push({ title: 'AI SEO suggestions' });
-  if (on('customRedirectsAllowed')) out.push({ title: 'Custom redirects', hint: 'Keep old links working' });
-  if (on('searchConsoleIntegrationAllowed')) out.push({ title: 'Google Search Console connection' });
+  if (on('abandonedCartRecoveryAllowed')) out.push({ title: t.abandoned, hint: t.abandonedHint });
+  if (on('loyaltyProgramAllowed')) out.push({ title: t.loyalty, hint: t.loyaltyHint });
+  if (on('whiteLabelAllowed')) out.push({ title: t.whiteLabel, hint: t.whiteLabelHint });
+  if (on('calculatedShippingRatesAllowed')) out.push({ title: t.courierRates });
+  if (on('customDomainAllowed')) out.push({ title: t.domain, hint: t.domainHint });
+  if (on('emailCampaignsAllowed')) out.push({ title: t.email, hint: t.emailHint });
+  if (on('advancedSeoToolsAllowed')) out.push({ title: t.seo, hint: t.seoHint });
+  if (on('seoAiSuggestionsAllowed')) out.push({ title: t.seoAi });
+  if (on('customRedirectsAllowed')) out.push({ title: t.redirects, hint: t.redirectsHint });
+  if (on('searchConsoleIntegrationAllowed')) out.push({ title: t.searchConsole });
 
   const promos = more(l.maxActivePromotions, p.maxActivePromotions);
   const banners = more(l.maxActiveStoreBanners, p.maxActiveStoreBanners);
-  if (promos && banners && unlimited(l.maxActivePromotions) && unlimited(l.maxActiveStoreBanners)) out.push({ title: 'Unlimited sales & banners' });
+  if (promos && banners && unlimited(l.maxActivePromotions) && unlimited(l.maxActiveStoreBanners)) out.push({ title: t.unlimitedSalesBanners });
   else {
     const bits: string[] = [];
-    if (promos) bits.push(unlimited(l.maxActivePromotions) ? 'Unlimited sales at once' : l.maxActivePromotions === 1 ? '1 sale running at a time' : `${l.maxActivePromotions} sales running at once`);
-    if (banners) bits.push(unlimited(l.maxActiveStoreBanners) ? 'unlimited banners' : plural(l.maxActiveStoreBanners!, 'homepage banner', 'homepage banners'));
+    if (promos) bits.push(unlimited(l.maxActivePromotions) ? t.unlimitedSales : l.maxActivePromotions === 1 ? t.oneSale : t.sales(l.maxActivePromotions!));
+    if (banners) bits.push(unlimited(l.maxActiveStoreBanners) ? t.unlimitedBanners : t.banners(l.maxActiveStoreBanners!));
     if (bits.length) out.push({ title: bits.join(' · ') });
   }
-  if (more(l.maxMarkets, p.maxMarkets)) out.push({ title: unlimited(l.maxMarkets) ? 'Unlimited currencies' : `Accept up to ${l.maxMarkets} currencies` });
-  if (on('prioritySupport')) out.push({ title: 'Priority support', hint: 'Faster answers from our team' });
-  if (on('dedicatedAccountManager')) out.push({ title: 'Your own account manager', hint: 'One person who knows your business' });
+  if (more(l.maxMarkets, p.maxMarkets)) out.push({ title: unlimited(l.maxMarkets) ? t.unlimitedCurrencies : t.currencies(l.maxMarkets!) });
+  if (on('prioritySupport')) out.push({ title: t.priority, hint: t.priorityHint });
+  if (on('dedicatedAccountManager')) out.push({ title: t.manager, hint: t.managerHint });
   return out;
+}
+
+/**
+ * A plan's name, description and badge in the site language. The four core plans (by key) have Arabic copy;
+ * a description the admin has reworded since (or any other plan) keeps the API's English text.
+ */
+export function planCopy(plan: Pick<PlatformPlan, 'key' | 'name' | 'description' | 'badge'>, lang: SiteLang = 'en'): { name: string; description: string | null; badge: string | null } {
+  const ar = lang === 'ar' && plan.key ? PLAN_NAMES_AR[plan.key] : undefined;
+  if (lang !== 'ar') return { name: plan.name, description: plan.description, badge: plan.badge };
+  return {
+    name: ar?.name ?? plan.name,
+    description: (ar && plan.description && ar.descriptions[plan.description.trim()]) || plan.description,
+    badge: plan.badge ? PLAN_BADGES_AR[plan.badge] ?? plan.badge : plan.badge,
+  };
 }
 
 /** Price shown per month for the chosen billing, and the crossed-out "was" price when the plan has one. */

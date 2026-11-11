@@ -1,6 +1,8 @@
 import { useRef, type KeyboardEvent, type ClipboardEvent } from 'react';
 import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { OTP_INPUT_TEXT } from './OTPInput.text';
 
 interface OTPInputProps {
   values:   string[];
@@ -13,6 +15,7 @@ interface OTPInputProps {
 // supports backspace/arrow navigation and paste-splitting a full code.
 export function OTPInput({ values, onChange, length = 6 }: OTPInputProps) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const t = useSiteText(OTP_INPUT_TEXT);
 
   const handleChange = (i: number, val: string) => {
     if (!/^\d?$/.test(val)) return;
@@ -37,11 +40,11 @@ export function OTPInput({ values, onChange, length = 6 }: OTPInputProps) {
 
   return (
     <div>
-      <div role="group" aria-label={`${length}-digit verification code`} className="flex gap-2 sm:gap-3 justify-center mb-3">
+      <div role="group" dir="ltr" aria-label={t.group(length)} className="flex gap-2 sm:gap-3 justify-center mb-3">
         {values.map((val, i) => (
           <input key={i}
             ref={el => { refs.current[i] = el; }}
-            aria-label={`Digit ${i + 1} of ${length}`}
+            aria-label={t.digit(i + 1, length)}
             type="text" inputMode="numeric" maxLength={1} value={val}
             onChange={e => handleChange(i, e.target.value)}
             onKeyDown={e => handleKeyDown(i, e)}
@@ -62,7 +65,7 @@ export function OTPInput({ values, onChange, length = 6 }: OTPInputProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         >
-          <Check size={11} /> Code entered
+          <Check size={11} /> {t.entered}
         </motion.p>
       )}
     </div>

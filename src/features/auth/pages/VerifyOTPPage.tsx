@@ -12,23 +12,20 @@ import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { VERIFY_OTP_TEXT } from './VerifyOTPPage.text';
+import { formError } from './authPages.text';
 
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
-const EMAIL_HIGHLIGHTS = [
-  { Icon: Mail,        text: 'Check your inbox for a 6-digit code' },
-  { Icon: KeyRound,    text: 'Codes expire after a short window' },
-  { Icon: ShieldCheck, text: 'This keeps your account secure' },
-];
-
-const IDENTITY_HIGHLIGHTS = [
-  { Icon: Fingerprint, text: "We're just confirming it's really you" },
-  { Icon: KeyRound,    text: 'Codes expire after a short window' },
-  { Icon: ShieldCheck, text: 'Your account stays protected throughout' },
-];
+// Text: VERIFY_OTP_TEXT.emailHighlights / identityHighlights (one per icon, same order).
+const EMAIL_HIGHLIGHT_ICONS = [Mail, KeyRound, ShieldCheck];
+const IDENTITY_HIGHLIGHT_ICONS = [Fingerprint, KeyRound, ShieldCheck];
 
 function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole; isIdentity: boolean }) {
   const toast = useToast();
+  const t = useSiteText(VERIFY_OTP_TEXT);
   const [seconds,    setSeconds]    = useState(59);
   const [canResend,  setCanResend]  = useState(false);
   const [sending,    setSending]    = useState(false);
@@ -67,9 +64,9 @@ function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole
       setSeconds(59);
       setCanResend(false);
       setResendKey(k => k + 1);
-      toast.success('Code resent');
+      toast.success(t.codeResent);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend code.');
+      setError(err instanceof Error ? err.message : t.resendFailed);
     } finally {
       setSending(false);
     }
@@ -79,7 +76,7 @@ function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole
     return (
       <div className="flex flex-col items-center gap-1">
         <Button variant="link" size="sm" onClick={handleResend} loading={sending} disabled={sending}>
-          Resend code
+          {t.resendCode}
         </Button>
         {error && <p className="text-[11px] text-error">{error}</p>}
       </div>
@@ -87,13 +84,15 @@ function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole
   }
   return (
     <span className="text-[13px] text-slate">
-      Resend in <span className="font-semibold text-charcoal">{seconds}s</span>
+      {t.resendIn} <span className="font-semibold text-charcoal">{t.seconds(seconds)}</span>
     </span>
   );
 }
 
 export function VerifyOTPPage() {
-  usePageTitle('Verify OTP');
+  const { pageLang } = useSiteLang();
+  const t = useSiteText(VERIFY_OTP_TEXT);
+  usePageTitle(t.pageTitle);
   const navigate   = useNavigate();
   const verifyOtp  = useVerifyOtp();
   const [otp, setOtp]     = useState(['', '', '', '', '', '']);
@@ -130,7 +129,7 @@ export function VerifyOTPPage() {
         AuthContext.set({ email: userEmail, role: userRole, flow: 'forgot', otp: code });
         navigate('/new-password');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Invalid or expired code.');
+        setError(err instanceof Error ? err.message : t.invalidCode);
       } finally {
         setCheckingOtp(false);
       }
@@ -144,30 +143,31 @@ export function VerifyOTPPage() {
   return (
     <AuthSplitLayout
       pageContext="otp"
-      heading={isIdentity ? 'Confirm it\'s you.' : 'One last step.'}
-      subtext={isIdentity
-        ? "Enter the code we sent to confirm your identity before resetting your password."
-        : 'Verify your email address to finish setting up your Solvexo account.'}
-      highlights={isIdentity ? IDENTITY_HIGHLIGHTS : EMAIL_HIGHLIGHTS}
+      heading={isIdentity ? t.identityHeading : t.emailHeading}
+      subtext={isIdentity ? t.identitySubtext : t.emailSubtext}
+      highlights={isIdentity
+        ? t.identityHighlights.map((text, i) => ({ Icon: IDENTITY_HIGHLIGHT_ICONS[i], text }))
+        : t.emailHighlights.map((text, i) => ({ Icon: EMAIL_HIGHLIGHT_ICONS[i], text }))}
     >
       <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
-        {isIdentity ? 'Verify your identity' : 'Verify your email'}
+        {isIdentity ? t.identityTitle : t.emailTitle}
       </h1>
       <p className="text-[13px] text-slate text-center mb-1 leading-[1.6]">
-        We sent a 6-digit verification code to
+        {t.sentTo}
       </p>
-      <p className="text-[14px] font-semibold text-carbon text-center mb-6">
+      <p dir="ltr" className="text-[14px] font-semibold text-carbon text-center mb-6">
         {userEmail || '—'}
       </p>
 
-      <div className="mb-5">
+      {/* Digits are entered left to right in Arabic too. */}
+      <div className="mb-5" dir="ltr">
         <OTPInput values={otp} onChange={handleChange} />
       </div>
 
       {(error || verifyOtp.error) && (
         <motion.div role="alert" className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2" {...fadeSlide}>
           <AlertTriangle size={14} className="text-error shrink-0" />
-          <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
+          <span className="text-[13px] text-error">{formError(error, pageLang) || verifyOtp.error}</span>
         </motion.div>
       )}
 
@@ -177,14 +177,14 @@ export function VerifyOTPPage() {
           onClick={handleVerify}
           disabled={otp.join('').length < 6 || checkingOtp}
           loading={verifyOtp.loading || checkingOtp}
-          iconRight={!verifyOtp.loading && !checkingOtp && <ArrowRight size={14} />}
+          iconRight={!verifyOtp.loading && !checkingOtp && <ArrowRight size={14} className="rtl:-scale-x-100" />}
         >
-          Verify Code
+          {t.verifyCode}
         </Button>
       </MagneticButton>
 
       <div className="flex items-center justify-center gap-[6px] mt-5">
-        <span className="text-[13px] text-slate">Didn't receive it?</span>
+        <span className="text-[13px] text-slate">{t.didntReceive}</span>
         <ResendTimer email={userEmail} role={userRole} isIdentity={isIdentity} />
       </div>
     </AuthSplitLayout>

@@ -11,6 +11,10 @@ import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { stockPhotoAlt, unsplashUrl } from '@/assets/stockPhotos';
 import { getSolution } from '@/features/buyer/data/solutions';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
+import { localizeProduct, localizeSolution } from '@/features/buyer/data/localizedData';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { SOLUTION_PAGE_TEXT } from './SolutionPage.text';
 import {
   StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview, PRODUCT_ICONS,
 } from '@/components/comman/mockups/ProductMockups';
@@ -44,8 +48,11 @@ export function SolutionPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
-  const solution = getSolution(slug);
-  usePageTitle(solution?.name ?? 'Solutions');
+  const t = useSiteText(SOLUTION_PAGE_TEXT);
+  const { pageLang } = useSiteLang();
+  const found = getSolution(slug);
+  const solution = found && localizeSolution(found, pageLang);
+  usePageTitle(solution?.name ?? t.fallbackTitle);
 
   if (!solution) return <Navigate to="/solutions" replace />;
 
@@ -53,12 +60,12 @@ export function SolutionPage() {
     <div className="bg-white min-h-full">
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={unsplashUrl(solution.image, 1200)} alt={`${solution.name}: ${stockPhotoAlt(solution.image)}`} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-carbon/90 via-carbon/70 to-carbon/40" />
+          <img src={unsplashUrl(solution.image, 1200)} alt={t.imageAlt(solution.name, stockPhotoAlt(solution.image))} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-carbon/90 via-carbon/70 to-carbon/40" />
         </div>
         <div className="relative z-[1] px-4 md:px-8 lg:px-12 pt-20 md:pt-28 pb-16 md:pb-20 max-w-[640px]">
           <Reveal delay={0}>
-            <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.12em] mb-3">Built for {solution.name}</p>
+            <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.12em] mb-3">{t.builtFor(solution.name)}</p>
           </Reveal>
           <Reveal delay={0.08}>
             <h1 className="text-[26px] sm:text-[36px] lg:text-[42px] font-bold text-white leading-[1.15] mb-4" style={{ fontFamily: SERIF }}>
@@ -73,7 +80,7 @@ export function SolutionPage() {
           <Reveal delay={0.24}>
             <MagneticButton>
               <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-                Start Selling Free <ArrowRight size={14} className="inline align-middle ml-1" />
+                {t.startSelling} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
               </Button>
             </MagneticButton>
           </Reveal>
@@ -82,7 +89,7 @@ export function SolutionPage() {
 
       <div className="px-4 md:px-8 lg:px-12 py-14 md:py-16 max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
         <Reveal>
-          <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-3">What you get</p>
+          <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-3">{t.whatYouGet}</p>
           <div className="flex flex-col gap-3">
             {solution.highlights.map(h => (
               <div key={h} className="flex items-start gap-2.5">
@@ -92,11 +99,11 @@ export function SolutionPage() {
             ))}
           </div>
           <Button variant="outline" className="mt-6" onClick={() => navigate('/products')}>
-            See every product <ArrowRight size={14} className="inline align-middle ml-1" />
+            {t.seeEveryProduct} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
           </Button>
         </Reveal>
         <Reveal delay={0.1}>
-          {(SOLUTION_PREVIEW[solution.slug] ?? SOLUTION_PREVIEW.retail)()}
+          <div dir="ltr">{(SOLUTION_PREVIEW[solution.slug] ?? SOLUTION_PREVIEW.retail)()}</div>
         </Reveal>
       </div>
 
@@ -104,11 +111,12 @@ export function SolutionPage() {
          cross-links, not repeated marketing copy. ── */}
       <div className="bg-cream px-4 md:px-8 lg:px-12 py-14 md:py-16">
         <div className="max-w-[1100px] mx-auto">
-          <SectionHeading kicker="Built on" title={`What powers ${solution.name.toLowerCase()} on Solvexo`} align="center" className="mb-10" />
+          <SectionHeading kicker={t.builtOn} title={t.poweredTitle(solution.name)} align="center" className="mb-10" />
           <RevealStagger className="grid grid-cols-1 sm:grid-cols-3 gap-5" step={0.08} y={16}>
             {(RELATED_PRODUCTS[solution.slug] ?? []).map(slug => {
-              const product = getPlatformProduct(slug);
-              if (!product) return null;
+              const enProduct = getPlatformProduct(slug);
+              if (!enProduct) return null;
+              const product = localizeProduct(enProduct, pageLang);
               const Icon = PRODUCT_ICONS[slug] ?? Store;
               return (
                 <PremiumCard key={slug} to={`/products/${slug}`} className="p-6">
@@ -118,7 +126,7 @@ export function SolutionPage() {
                   <p className="text-[14.5px] font-bold text-carbon mb-1">{product.name}</p>
                   <p className="text-[12.5px] text-slate leading-[1.6] mb-3">{product.tagline}</p>
                   <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-orange">
-                    Learn more <ArrowRight size={12} />
+                    {t.learnMore} <ArrowRight size={12} className="rtl:-scale-x-100" />
                   </span>
                 </PremiumCard>
               );
@@ -128,11 +136,11 @@ export function SolutionPage() {
       </div>
 
       <div className="bg-carbon px-4 md:px-8 lg:px-12 py-14 text-center">
-        <SectionHeading title={`Start selling in ${solution.name.toLowerCase()} today.`} tone="dark" align="center" size="lg" className="mb-8" />
+        <SectionHeading title={t.ctaTitle(solution.name)} tone="dark" align="center" size="lg" className="mb-8" />
         <Reveal>
           <MagneticButton>
             <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-              Start Selling Free <ArrowRight size={14} className="inline align-middle ml-1" />
+              {t.startSelling} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
             </Button>
           </MagneticButton>
         </Reveal>

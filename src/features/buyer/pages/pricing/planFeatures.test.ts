@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PlatformPlan } from '@/api/services/platformPlans';
-import { displayPrice, gatewayFeeRange, money, planFeatures } from './planFeatures';
+import { displayPrice, gatewayFeeRange, money, planCopy, planFeatures } from './planFeatures';
+import { arCount, AR_DAYS } from './arabicCount';
 
 const plan = (over: Partial<PlatformPlan>): PlatformPlan => ({
   _id: over.name ?? 'p', key: null, name: 'Plan', description: null, badge: null, sortOrder: 1, isFree: false, isCustomPricing: false,
@@ -37,6 +38,23 @@ describe('pricing page plan features', () => {
   it('never lists a feature the plan does not include', () => {
     expect(titles(basic)).not.toContain('Recover abandoned carts');
     expect(titles(plan({ limits: { maxStaffAccounts: 0 } }))).toEqual([]);
+  });
+});
+
+describe('pricing page in Arabic', () => {
+  it('writes the feature lines in Arabic with the right noun for each number', () => {
+    expect(titles(basic).length).toBe(planFeatures(basic, null, 'ar').length);
+    expect(planFeatures(basic, null, 'ar')[0].title).toBe('بيع ما يصل إلى 25 منتجًا');
+    expect(planFeatures(grow, basic, 'ar')[0].title).toBe('منتجات غير محدودة');
+    expect([1, 2, 7, 14, 100].map(n => arCount(n, AR_DAYS))).toEqual(['يوم واحد', 'يومين', '7 أيام', '14 يومًا', '100 يوم']);
+  });
+
+  it('names the core plans in Arabic by key and keeps any other plan or reworded description as the API sent it', () => {
+    const core = plan({ key: 'grow', name: 'Grow', description: 'For growing sellers who want more reach, more staff and marketing tools.', badge: 'Most Popular' });
+    expect(planCopy(core, 'ar')).toEqual({ name: 'النمو', description: 'للتجار في مرحلة النمو الذين يريدون وصولًا أوسع وموظفين أكثر وأدوات تسويق.', badge: 'الأكثر طلبًا' });
+    expect(planCopy({ ...core, description: 'Edited by the admin' }, 'ar').description).toBe('Edited by the admin');
+    expect(planCopy(plan({ key: null, name: 'Custom deal' }), 'ar').name).toBe('Custom deal');
+    expect(planCopy(core)).toEqual({ name: 'Grow', description: core.description, badge: 'Most Popular' });
   });
 });
 
