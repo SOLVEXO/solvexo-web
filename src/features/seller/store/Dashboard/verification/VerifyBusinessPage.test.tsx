@@ -52,10 +52,12 @@ describe('VerifyBusinessPage', () => {
   it('step 1 shows the PK fields with NTN required and a format hint, and saves through the API', async () => {
     api.update.mockResolvedValue({ success: true });
     renderPage(verification());
-    expect(await screen.findByText('NTN (required)')).toBeInTheDocument();
+    const sameAsCnic = await screen.findByLabelText(/My NTN is my CNIC/);
     expect(screen.getByText('CNIC number')).toBeInTheDocument();
     expect(screen.getByText(/Verify your business by 30 Nov 2099/)).toBeInTheDocument();
 
+    // A separate NTN: untick "My NTN is my CNIC" and type it.
+    fireEvent.click(sameAsCnic);
     const ntn = screen.getByPlaceholderText('1234567-8');
     fireEvent.change(ntn, { target: { value: '123' } });
     fireEvent.blur(ntn);
@@ -126,7 +128,20 @@ describe('VerifyBusinessPage', () => {
     cleanup();
     renderPage(verification({ verificationStatus: 'pending' }));
     expect(await screen.findByText('Submitted for review')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('1234567-8')).toBeDisabled();
+    expect(screen.getByLabelText(/My NTN is my CNIC/)).toBeDisabled();
+  });
+
+  it('an individual can use their CNIC as their NTN', async () => {
+    api.update.mockResolvedValue({ success: true });
+    renderPage(verification());
+    const box = await screen.findByLabelText(/My NTN is my CNIC/);
+    expect(box).toBeChecked();
+    const [cnicInput, ntnInput] = screen.getAllByPlaceholderText('12345-1234567-1');
+    expect(ntnInput).toBeDisabled();
+    fireEvent.change(cnicInput, { target: { value: '4240120120513' } });
+    expect(ntnInput).toHaveValue('4240120120513');
+    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
+    await waitFor(() => expect(api.update).toHaveBeenCalledWith('s1', expect.objectContaining({ cnicNumber: '42401-2012051-3', taxId: '42401-2012051-3' })));
   });
 
   it('rejected shows the reason', async () => {
