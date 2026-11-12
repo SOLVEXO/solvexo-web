@@ -5,13 +5,7 @@ import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
-  LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, ChevronLeft, ChevronRight, ChevronDown, Languages,
-  ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
-  Truck, MessageSquare, FolderTree, Undo2,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, Landmark, ShieldOff, LifeBuoy,
+  LayoutDashboard, Package, ShoppingBag, ChevronLeft, ChevronRight, ChevronDown, MessageSquare, PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, MoreHorizontal, ShieldOff,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -25,7 +19,6 @@ import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/co
 import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { useNavBadgeCounts, useClearViewedBadges, useRefreshServerBadges } from '@/hooks/useNavBadges';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
-import { FEATURES } from '@/constants/features';
 import { planGateFor } from './planGate';
 import { PlanUpgradeNeeded } from './PlanUpgradeNeeded';
 import { ViewAsBanner } from './ViewAsBanner';import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
@@ -73,7 +66,7 @@ const isStaffSession = () => TokenStorage.getUser<{ role?: AppRole }>()?.role ==
 // should never require a click to reveal). A group the seller is currently
 // standing inside still shows its items regardless (see `groupHasActiveItem`
 // below) — closed-by-default only affects a group with nothing active in it.
-const DEFAULT_COLLAPSED_GROUPS = ['Orders', 'Catalog', 'Online Store', 'Customers', 'Marketing', 'Growth Tools'];
+const DEFAULT_COLLAPSED_GROUPS = ['Orders', 'Products', 'Customers', 'Marketing', 'Sales channels'];
 const SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:sidebar:collapsed-groups';
 
 function loadCollapsedGroups(): Set<string> {

@@ -52,7 +52,7 @@ export interface NavItem { id: string; Icon: LucideIcon; label: string; path: st
 // IMPORTANT: every `id` and `path` below is UNCHANGED from before this
 // restructure — only which `group` an item lives under (and whether that
 // group collapses) moved. No route, no page, no functionality was removed.
-export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIcon?: LucideIcon }[] = [
+const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIcon?: LucideIcon }[] = [
   {
     group: 'Overview',
     items: [
@@ -274,3 +274,34 @@ export function visibleNavForUser(user: { role?: AppRole; permissions?: string[]
     }))
     .filter(section => section.items.length > 0);
 }
+
+// ── Shopify-style grouping (docs/parity/NAV-MAP.md) ───────────────────────
+// Items are declared once in RAW_NAV above; this map only decides which sidebar
+// group each item id sits in and in what order. Routes/paths never change here.
+type Group = { group: string; items: NavItem[]; collapsible?: boolean; groupIcon?: LucideIcon };
+const ALL_ITEMS: NavItem[] = RAW_NAV.flatMap(s => s.items);
+const byId = (id: string) => ALL_ITEMS.find(i => i.id === id);
+const pick = (ids: string[]): NavItem[] => ids.map(byId).filter((i): i is NavItem => !!i);
+
+const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?: LucideIcon }[] = [
+  { group: 'Overview', ids: ['dashboard', 'analytics'] },
+  { group: 'Orders', collapsible: true, groupIcon: Package, ids: ['orders', 'draft-orders', 'returns', 'disputes', 'payment-proofs'] },
+  { group: 'Products', collapsible: true, groupIcon: ShoppingBag, ids: ['products', 'collections', 'categories', 'inventory', 'gift-cards', 'subscriptions', 'digital'] },
+  { group: 'Customers', collapsible: true, groupIcon: Users, ids: ['customers', 'wholesale', 'khata', 'reviews', 'messages', 'online-store-contact', 'loyalty'] },
+  { group: 'Marketing', collapsible: true, groupIcon: Megaphone, ids: ['marketing', 'messaging', 'creatives', 'seo'] },
+  { group: 'Discounts', ids: ['discounts'] },
+  { group: 'Sales channels', collapsible: true, groupIcon: Store, ids: ['online-store-themes', 'online-store-pages', 'online-store-menus', 'online-store-blog', 'online-store-files', 'online-store-translations', 'search-settings', 'experiments', 'sales-channels', 'mobile-app'] },
+  { group: 'Apps', ids: ['connected-apps'] },
+  { group: 'Finance', ids: ['finance'] },
+  { group: 'Settings', ids: ['settings', 'shipping', 'checkout-rules', 'cod-protection', 'developers', 'help'] },
+];
+
+/** Personal (account-level) pages: reached from the avatar/Account page and the command palette, not the store sidebar. */
+export const ACCOUNT_NAV: NavItem[] = pick(['security']);
+
+/** Ids that no longer appear in the sidebar on purpose (kept as routes). */
+export const NAV_UNLISTED_IDS = ['security'];
+
+export const NAV: Group[] = LAYOUT
+  .map(g => ({ group: g.group, collapsible: g.collapsible, groupIcon: g.groupIcon, items: pick(g.ids) }))
+  .filter(g => g.items.length > 0);
