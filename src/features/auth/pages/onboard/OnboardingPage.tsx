@@ -354,15 +354,13 @@ function Step1StoreInfo({ form, setForm, onNext }: {
           </p>
         </div>
 
-        {form.country && (
+        {form.country && currencyFollowsCountry && (
+          <p className="text-[12px] text-slate -mt-3 mb-6">{t.currencyNote(naturalCurrency!)}</p>
+        )}
+        {form.country && !currencyFollowsCountry && (
           <div className="mb-6">
-            <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.currencyLabel}</label>
-            {currencyFollowsCountry ? (
-              <>
-                <div id="onboard-currency" className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] font-medium text-charcoal bg-white">{naturalCurrency}</div>
-                <p className="text-[11px] text-slate mt-[5px]">{t.currencyFromCountry} {t.currencyHelp}</p>
-              </>
-            ) : (
+            <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.currencyLabel} <span className="text-brand-orange">*</span></label>
+            {(
               <>
                 <select id="onboard-currency" value={currencyTouched ? form.baseCurrency : ''}
                   onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }}

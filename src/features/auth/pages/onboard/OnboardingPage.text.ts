@@ -29,6 +29,7 @@ export const ONBOARDING_TEXT = siteText({
     currencyLabel: 'Store Currency',
     currencyHelp: 'All your product prices will be set in this currency. It\'s locked once your store has its first product.',
     currencyFromCountry: 'Set from your country.',
+    currencyNote: (code: string) => `Your prices will be in ${code}. It\'s locked once your store has its first product.`,
     currencyUnavailable: 'We can\'t set a currency from this country yet. Please pick one of the available currencies.',
     currencyPick: 'Select a currency',
 
@@ -100,6 +101,7 @@ export const ONBOARDING_TEXT = siteText({
     currencyLabel: 'عملة المتجر',
     currencyHelp: 'ستُحدَّد جميع أسعار منتجاتك بهذه العملة. لا يمكن تغييرها بعد إضافة أول منتج إلى متجرك.',
     currencyFromCountry: 'تُحدَّد من دولتك.',
+    currencyNote: (code: string) => `ستكون أسعارك بعملة ${code}. لا يمكن تغييرها بعد إضافة أول منتج إلى متجرك.`,
     currencyUnavailable: 'لا يمكننا تحديد العملة من هذه الدولة حاليًا. يرجى اختيار إحدى العملات المتاحة.',
     currencyPick: 'اختر عملة',
 
