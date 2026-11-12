@@ -6,7 +6,7 @@ import {
   ShoppingCart, AlertCircle, RefreshCw,
   DollarSign, Clock, TrendingUp, Printer,
 } from 'lucide-react';
-import { apiUpdateOrderStatus } from '@/api/services/orders';
+import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
@@ -85,12 +85,13 @@ export function StoreOrderList() {
 
   // Bulk selection (current page only) - cleared whenever the list reloads.
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkBusy, setBulkBusy] = useState<null | 'print' | 'processing'>(null);
+  const [bulkBusy, setBulkBusy] = useState<null | 'print' | 'processing' | 'paid'>(null);
   const [bulkProgress, setBulkProgress] = useState('');
   const [bulkResult, setBulkResult] = useState<{ tone: 'success' | 'error'; message: string; failures: string[] } | null>(null);
   const staffUser = TokenStorage.getUser<{ role?: string; permissions?: string[] }>() as Parameters<typeof hasNavPermission>[0];
   const canPrint = hasNavPermission(staffUser, 'orders.view');
   const canFulfill = hasNavPermission(staffUser, 'orders.fulfill');
+  const canRecordPayment = hasNavPermission(staffUser, 'orders.record_payment');
   const canBookCourier = hasNavPermission(staffUser, 'orders.buy_shipping_label');
   const { t: tc } = useTranslation();
   const [showBulkCourier, setShowBulkCourier] = useState(false);
@@ -260,6 +261,50 @@ export function StoreOrderList() {
     } else {
       setBulkResult({ tone: 'success', message: `Opened ${slips.length} packing slip${slips.length !== 1 ? 's' : ''}.`, failures: [] });
     }
+  };
+
+  const unpaidSelected = selectedOrders.filter(o => !o.isPaid && o.status !== 'cancelled' && o.status !== 'refunded');
+
+  const handleBulkPaid = async () => {
+    if (bulkBusy || unpaidSelected.length === 0) return;
+    setBulkBusy('paid');
+    setBulkResult(null);
+    const targets = [...unpaidSelected];
+    const failures: string[] = [];
+    const done = new Set<string>();
+    for (let i = 0; i < targets.length; i++) {
+      setBulkProgress(`Updating ${i + 1} of ${targets.length}...`);
+      try {
+        await apiMarkOrderPaid(storeId, targets[i].orderId);
+        done.add(targets[i].orderId);
+      } catch (err: unknown) {
+        failures.push(`${targets[i].orderNumber}: ${err instanceof Error ? err.message : 'failed'}`);
+      }
+    }
+    setOrders(prev => prev.map(x => (done.has(x.orderId) ? { ...x, isPaid: true } : x)));
+    setBulkBusy(null);
+    setBulkProgress('');
+    const skipped = selectedOrders.length - targets.length;
+    setBulkResult({
+      tone: failures.length > 0 ? 'error' : 'success',
+      message: `${done.size} order${done.size !== 1 ? 's' : ''} marked as paid${failures.length ? `, ${failures.length} failed` : ''}${skipped ? `, ${skipped} skipped (already paid or closed)` : ''}.`,
+      failures,
+    });
+  };
+
+  // CSV of the selected rows (current page). Cells starting with = + - @ are prefixed so a spreadsheet never runs them as a formula.
+  const handleBulkExport = () => {
+    const cell = (v: unknown) => {
+      let s = String(v ?? '');
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
+    const rows = selectedOrders.map(o => [o.orderNumber, o.date, o.customer?.name, o.customer?.email, o.status, o.isPaid ? 'paid' : 'unpaid', o.paymentType, o.amount, o.currency ?? store?.baseCurrency ?? ''].map(cell).join(','));
+    const csv = ['Order,Date,Customer,Email,Status,Payment status,Payment type,Amount,Currency', ...rows].join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orders.csv'; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleBulkProcessing = async () => {
@@ -472,6 +517,12 @@ export function StoreOrderList() {
                           </Button>
                           </>
                         )}
+                        {canRecordPayment && (
+                          <Button variant="outline" size="sm" onClick={() => void handleBulkPaid()} loading={bulkBusy === 'paid'} disabled={bulkBusy !== null || unpaidSelected.length === 0}>
+                            Mark as paid{unpaidSelected.length > 0 ? ` (${unpaidSelected.length})` : ''}
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={handleBulkExport} disabled={bulkBusy !== null}>Export CSV</Button>
                         {canBookCourier && (
                           <Button variant="outline" size="sm" onClick={() => setShowBulkCourier(true)} disabled={bulkBusy !== null}>
                             {tc('courier.bulkBook')}
