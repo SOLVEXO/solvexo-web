@@ -4,9 +4,9 @@ import { BulkCourierModal } from '@/features/seller/store/Dashboard/courier/Bulk
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
-  DollarSign, Clock, TrendingUp, CheckCheck, Truck, Printer,
+  DollarSign, Clock, TrendingUp, Printer,
 } from 'lucide-react';
-import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
+import { apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
@@ -15,7 +15,6 @@ import {
   Card,
   Avatar,
   SearchInput,
-  ActionMenu,
   Modal,
   Field,
   Input,
@@ -65,13 +64,12 @@ export function StoreOrderList() {
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
   const [preorderOnly, setPreorderOnly] = useState(false);
+  const [view, setView] = useState('');
   const [localOnly, setLocalOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
   const [refreshKey,    setRefreshKey]    = useState(0);
-  const [markingPaidId,    setMarkingPaidId]    = useState<string | null>(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   // Shipping an order requires a tracking number server-side — this modal is what
   // actually collects it before the status update is sent, instead of firing the
@@ -111,6 +109,7 @@ export function StoreOrderList() {
       status: statusF || undefined,
       type: typeF || undefined,
       preorder: preorderOnly || undefined,
+      view: view || undefined,
       localDelivery: localOnly || undefined,
       q: debouncedSearch.trim() || undefined,
     })
@@ -127,7 +126,7 @@ export function StoreOrderList() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF, preorderOnly, localOnly]);
+  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF, preorderOnly, localOnly, view]);
 
   const handlePageChange = (p: number) => {
     setSelected(new Set());
@@ -138,7 +137,7 @@ export function StoreOrderList() {
   };
 
   // A new search / filter always starts from page 1.
-  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF, preorderOnly, localOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF, preorderOnly, localOnly, view]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -381,73 +380,6 @@ export function StoreOrderList() {
       key: 'status', header: 'Status',
       render: o => <StatusBadge status={o.status} />,
     },
-    {
-      key: 'actions', header: '', align: 'center', width: '60px',
-      render: o => {
-        const busy = markingPaidId === o.orderId || updatingStatusId === o.orderId;
-
-        const changeStatus = (status: 'processing' | 'completed' | 'cancelled') => {
-          if (busy) return;
-          setUpdatingStatusId(o.orderId);
-          apiUpdateOrderStatus({ orderId: o.orderId, storeId, status })
-            .then(() => {
-              setOrders(prev =>
-                prev.map(x => x.orderId === o.orderId ? { ...x, status } : x)
-              );
-            })
-            .catch((err: unknown) => {
-              setError(err instanceof Error ? err.message : 'Failed to update status.');
-            })
-            .finally(() => setUpdatingStatusId(null));
-        };
-
-        return (
-          <ActionMenu
-            align="right"
-            items={[
-              ...(!o.isPaid ? [{
-                label: markingPaidId === o.orderId ? 'Marking…' : 'Mark as Paid',
-                icon: <CheckCheck size={13} />,
-                onClick: () => {
-                  if (busy) return;
-                  setMarkingPaidId(o.orderId);
-                  apiMarkOrderPaid(storeId, o.orderId)
-                    .then(() => setOrders(prev =>
-                      prev.map(x => x.orderId === o.orderId ? { ...x, isPaid: true } : x)
-                    ))
-                    .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
-                    .finally(() => setMarkingPaidId(null));
-                },
-              }] : []),
-              ...(o.status === 'pending' ? [{
-                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Processing',
-                icon: <RefreshCw size={13} />,
-                onClick: () => changeStatus('processing'),
-              }] : []),
-              // Forward-only (mirrors the backend's isAllowedSellerOrderTransition): a
-              // delivered/completed/cancelled/refunded order can't be shipped again, and
-              // only an order that hasn't been closed out can be completed.
-              ...(['pending', 'processing', 'shipped'].includes(o.status) ? [{
-                label: 'Mark Shipped',
-                icon: <Truck size={13} />,
-                onClick: () => {
-                  if (busy) return;
-                  setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' });
-                  setTrackingErrors({});
-                  setSelectedCarrierId('');
-                  setShippingOrder(o);
-                },
-              }] : []),
-              ...(['pending', 'processing', 'shipped', 'delivered'].includes(o.status) ? [{
-                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Completed',
-                icon: <CheckCheck size={13} />,
-                onClick: () => changeStatus('completed'),
-              }] : []),
-            ]}
-          />
-        );
-      },
-    },
   ];
 
   return (
@@ -590,9 +522,6 @@ export function StoreOrderList() {
                   ))}
                 </select>
                 <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
-                  <input type="checkbox" className="accent-brand-orange" checked={preorderOnly} onChange={e => setPreorderOnly(e.target.checked)} /> Pre-orders
-                </label>
-                <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
                   <input type="checkbox" className="accent-brand-orange" checked={localOnly} onChange={e => setLocalOnly(e.target.checked)} /> Local delivery
                 </label>
                 <select
@@ -605,6 +534,19 @@ export function StoreOrderList() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div role="tablist" aria-label="Order views" className="flex gap-1.5 overflow-x-auto px-4 sm:px-5 pt-3">
+              {([['', 'All'], ['unfulfilled', 'Unfulfilled'], ['unpaid', 'Unpaid'], ['open', 'Open'], ['preorders', 'Pre-orders'], ['cod_awaiting', 'COD awaiting confirmation']] as const).map(([id, label]) => {
+                const active = id === 'preorders' ? preorderOnly : (!preorderOnly && view === id);
+                return (
+                  <button
+                    key={id || 'all'} type="button" role="tab" aria-selected={active}
+                    onClick={() => { if (id === 'preorders') { setView(''); setPreorderOnly(true); } else { setPreorderOnly(false); setView(id); } }}
+                    className={'shrink-0 px-3 py-1.5 rounded-full text-[12.5px] font-semibold border cursor-pointer transition-colors ' + (active ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:bg-cream')}
+                  >{label}</button>
+                );
+              })}
             </div>
 
             {bulkResult && (
@@ -656,7 +598,7 @@ export function StoreOrderList() {
           title="Filters"
           onClose={() => setFiltersOpen(false)}
           footer={<>
-            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setPreorderOnly(false); setLocalOnly(false); setFiltersOpen(false); }}>Reset</Button>
+            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setView(''); setPreorderOnly(false); setLocalOnly(false); setFiltersOpen(false); }}>Reset</Button>
             <Button size="sm" onClick={() => setFiltersOpen(false)}>Done</Button>
           </>}
         >
