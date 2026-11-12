@@ -141,6 +141,7 @@ const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/S
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
 const CheckoutRulesHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/checkoutRules/CheckoutRulesHub'));
+const SocialCreatives = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/creatives/SocialCreatives'));
 const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/experiments/ExperimentsHub'));
 const ConnectedAppsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/ConnectedAppsHub'));
 const AppAuthorizePage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppAuthorizePage'));
@@ -422,6 +423,7 @@ const mainRouter = createBrowserRouter([
           { path: 'subscriptions',                    element: <SubscriptionsHub /> },
           { path: 'checkout-rules',                   element: <CheckoutRulesHub /> },
           { path: 'experiments',                      element: <ExperimentsHub /> },
+          { path: 'creatives',                        element: <SocialCreatives /> },
           { path: 'app-platform',                     element: <ConnectedAppsHub /> },
           { path: 'app-platform/authorize',           element: <AppAuthorizePage /> },
           { path: 'app-platform/:installId',          element: <AppEmbedPage /> },

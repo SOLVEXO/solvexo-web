@@ -141,6 +141,7 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       { id: 'subscriptions', Icon: Package, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['product_subscriptions.view', 'product_subscriptions.manage'] },
       { id: 'checkout-rules', Icon: Package, label: 'Checkout rules', path: 'checkout-rules', requiredPermission: ['checkout_rules.view', 'checkout_rules.manage'] },
       { id: 'experiments', Icon: Package, label: 'Experiments', path: 'experiments', requiredPermission: ['experiments.view', 'experiments.manage'] },
+      { id: 'creatives', Icon: Package, label: 'Social creatives', path: 'creatives', requiredPermission: 'marketing.manage' },
       { id: 'cod-protection', Icon: Package, label: 'COD protection', path: 'cod-protection', requiredPermission: 'settings.payments.manage' },
       { id: 'messaging', Icon: Package, label: 'WhatsApp & SMS', path: 'messaging', requiredPermission: 'marketing.manage' },
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
