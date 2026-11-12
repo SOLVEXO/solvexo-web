@@ -15,7 +15,7 @@ export const ABOUT_TEXT = siteText({
     pillars: [
       { title: 'One workspace', desc: 'A store, POS, orders, inventory and analytics that all read from the same real data — not five separate tools stitched together.' },
       { title: 'Sell anywhere', desc: 'The same catalog and stock, whether a sale happens online or at an in-person counter.' },
-      { title: 'AI where it helps', desc: 'Real, metered AI tools for the writing and analysis work that eats a seller\'s time — not a decorative label.' },
+      { title: 'AI where it helps', desc: 'AI can suggest a page title and description for a product. You read it first and nothing changes until you say so.' },
       { title: 'Numbers you can trust', desc: 'Every figure a seller sees is computed from their actual orders and payments, never a simulated placeholder.' },
     ],
     valuesKicker: 'Platform philosophy',

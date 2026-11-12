@@ -15,12 +15,6 @@ import { ABOUT_TEXT } from './AboutPage.text';
 
 const SERIF = "'Lora', Georgia, serif";
 
-const PILLARS = [
-  { Icon: Store, title: 'One workspace', desc: 'A store, POS, orders, inventory and analytics that all read from the same real data — not five separate tools stitched together.' },
-  { Icon: MonitorSmartphone, title: 'Sell anywhere', desc: 'The same catalog and stock, whether a sale happens online or at an in-person counter.' },
-  { Icon: Sparkles, title: 'AI where it helps', desc: 'AI can suggest a page title and description for a product. You read it first and nothing changes until you say so.' },
-  { Icon: BarChart3, title: 'Numbers you can trust', desc: 'Every figure a seller sees is computed from their actual orders and payments, never a simulated placeholder.' },
-] as const;
 // Text lives in AboutPage.text.ts in the same order.
 const PILLAR_ICONS = [Store, MonitorSmartphone, Sparkles, BarChart3] as const;
 

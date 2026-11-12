@@ -306,13 +306,6 @@ const moPrice = (n: number | null | undefined, t: CheckoutText): Cell => typeof 
 // in the product but aren't gated by plan (so every plan includes them); every other row
 // reads the plan's real, backend-enforced limit — see platform-plan.catalog.ts in the API.
 // Never add a row for something Solvexo doesn't actually do (no analytics tier). Sales/promotions and banners are unlimited, so they get no row.
-const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) => Cell }[] }[] = [
-  { group: 'Pricing', rows: [
-    { label: 'Pay monthly', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.monthlyPriceUSD) },
-    { label: 'Pay yearly (per month)', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.yearlyPriceUSD != null ? Math.round(p.yearlyPriceUSD / 12) : null) },
-    { label: 'No Solvexo commission on card sales, COD or bank transfer (card processing fee only)', get: ALL },
-    { label: 'Third-party payment gateway fee (SafePay, JazzCash…)', get: p => p.limits.transactionFeeRate === undefined ? null : `${Number((p.limits.transactionFeeRate * 100).toFixed(2))}%` },
-// Never add a row for something Solvexo doesn't actually do (no analytics tier, no API/webhooks).
 const COMPARE: { group: keyof CheckoutText['groups']; rows: { key: keyof CheckoutText['rows']; get: (p: PlatformPlan, t: CheckoutText) => Cell }[] }[] = [
   { group: 'pricing', rows: [
     { key: 'payMonthly', get: (p, t) => p.isCustomPricing ? t.custom : moPrice(p.monthlyPriceUSD, t) },
@@ -340,23 +333,16 @@ const COMPARE: { group: keyof CheckoutText['groups']; rows: { key: keyof Checkou
     { key: 'staff', get: (p, t) => num(p.limits.maxStaffAccounts, t) },
     { key: 'roles', get: ALL },
   ] },
-  { group: 'Marketing', rows: [
-    { label: 'Email campaigns & automations', get: p => flag(p.limits.emailCampaignsAllowed) },
-    { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-    { label: 'Loyalty & rewards program', get: p => flag(p.limits.loyaltyProgramAllowed) },
-    { label: 'Marketing emails per month', get: p => num(p.limits.monthlyEmailSends) },
-    { label: 'B2B wholesale', get: p => flag(p.limits.b2bWholesaleAllowed) },
-    { label: 'B2B wholesale catalogs', get: p => (p.limits.b2bWholesaleAllowed ? num(p.limits.maxB2BCatalogs) : null) },
-    { label: 'Memberships (paid plans for buyers)', get: p => flag(p.limits.digitalMembershipsAllowed) },
-    { label: 'License keys', get: p => flag(p.limits.digitalLicensesAllowed) },
-    { label: 'Courses', get: p => flag(p.limits.digitalCoursesAllowed) },
-    { label: 'Newsletter, affiliates & tracking pixels', get: ALL },
-    { label: 'Customer reviews & messaging', get: ALL },
   { group: 'marketing', rows: [
     { key: 'emailCampaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
     { key: 'abandonedCart', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
     { key: 'loyalty', get: p => flag(p.limits.loyaltyProgramAllowed) },
-    { key: 'promotions', get: (p, t) => num(p.limits.maxActivePromotions, t) },
+    { key: 'emailsPerMonth', get: (p, t) => num(p.limits.monthlyEmailSends, t) },
+    { key: 'b2b', get: p => flag(p.limits.b2bWholesaleAllowed) },
+    { key: 'b2bCatalogs', get: (p, t) => (p.limits.b2bWholesaleAllowed ? num(p.limits.maxB2BCatalogs, t) : null) },
+    { key: 'memberships', get: p => flag(p.limits.digitalMembershipsAllowed) },
+    { key: 'licenseKeys', get: p => flag(p.limits.digitalLicensesAllowed) },
+    { key: 'courses', get: p => flag(p.limits.digitalCoursesAllowed) },
     { key: 'newsletter', get: ALL },
     { key: 'reviews', get: ALL },
   ] },
@@ -371,22 +357,16 @@ const COMPARE: { group: keyof CheckoutText['groups']; rows: { key: keyof Checkou
     { key: 'carrierRates', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
     { key: 'markets', get: (p, t) => num(p.limits.maxMarkets, t) },
   ] },
-  { group: 'AI', rows: [
-    { label: 'AI credits every month (for AI SEO suggestions)', get: p => (p.limits.seoAiSuggestionsAllowed ? num(p.limits.aiCreditsPerMonth) : false) },
   { group: 'ai', rows: [
-    { key: 'aiTools', get: ALL },
-    { key: 'aiCredits', get: (p, t) => num(p.limits.aiCreditsPerMonth, t) },
+    { key: 'aiCredits', get: (p, t) => (p.limits.seoAiSuggestionsAllowed ? num(p.limits.aiCreditsPerMonth, t) : false) },
   ] },
   { group: 'apps', rows: [
     { key: 'integrations', get: ALL },
     { key: 'customFields', get: ALL },
     { key: 'mobileApp', get: ALL },
   ] },
-  { group: 'Support', rows: [
-    { label: 'Webhooks & API', get: p => flag(p.limits.apiWebhooksAllowed) },
-    { label: 'Priority support', get: p => flag(p.limits.prioritySupport) },
-    { label: 'Dedicated account manager', get: p => flag(p.limits.dedicatedAccountManager) },
   { group: 'support', rows: [
+    { key: 'webhooksApi', get: p => flag(p.limits.apiWebhooksAllowed) },
     { key: 'prioritySupport', get: p => flag(p.limits.prioritySupport) },
     { key: 'accountManager', get: p => flag(p.limits.dedicatedAccountManager) },
   ] },

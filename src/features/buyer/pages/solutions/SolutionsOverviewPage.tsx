@@ -26,8 +26,6 @@ export function SolutionsOverviewPage() {
         <SectionHeading
           kicker={t.kicker}
           as="h1"
-          title="Solvexo, tailored to your industry."
-          subtitle="The same real platform underneath — store, POS, inventory and analytics — applied to how your specific business actually sells."
           title={t.title}
           subtitle={t.subtitle}
           align="center"

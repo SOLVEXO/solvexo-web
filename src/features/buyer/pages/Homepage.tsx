@@ -151,23 +151,6 @@ function TestimonialSpotlight({ testimonials }: { testimonials: Testimonial[] })
   );
 }
 
-const HOW_IT_WORKS = [
-  { Icon: Store,    step: 'Create',  desc: 'Build your storefront from a curated theme, or set up POS to sell in person.' },
-  { Icon: Link2,    step: 'Connect', desc: 'Add products, connect a payment method, and your inventory syncs across every channel.' },
-  { Icon: Rows3,     step: 'Sell',    desc: 'Take orders online and in person — from the same catalog, the same stock.' },
-  { Icon: TrendingUp, step: 'Grow',   desc: 'Use real analytics to see what\'s working and do more of it.' },
-] as const;
-
-const EXPLORER_SLUGS = ['analytics', 'inventory', 'orders-customers'] as const;
-const POS_STEPS = ['Search', 'Cart', 'Payment', 'Receipt'] as const;
-
-const SHORT_PRODUCT_LABEL: Record<string, string> = {
-  'store-builder': 'Store',
-  pos: 'POS',
-  analytics: 'Analytics',
-  inventory: 'Inventory',
-  'orders-customers': 'Orders',
-};
 // Icons of the "How Solvexo works" steps; the step names and descriptions are HOMEPAGE_TEXT.howSteps, same order.
 const HOW_IT_WORKS_ICONS = [Store, Link2, Rows3, TrendingUp] as const;
 
@@ -254,38 +237,6 @@ function ConnectedSystemDiagram({ onNavigate, activeIndex, onHover, onLeave }: {
   );
 }
 
-// ── "AI that helps you sell smarter" gets its own visual — a data → analysis
-// → recommendation flow, distinct from `AICommercePreview` (which stays the
-// dashboard-shaped card used in the mega menu / explorer / connected-system
-// panel) so this section doesn't just repeat the same mockup it's next to. ──
-function AIFlowVisual() {
-  const text = useSiteText(HOMEPAGE_TEXT);
-  const STAGES = [
-    { ...text.aiStages[0], Icon: BarChart3, tone: 'bg-white/10 text-white' },
-    { ...text.aiStages[1], Icon: Sparkles, tone: 'bg-accent-violet text-white' },
-    { ...text.aiStages[2], Icon: Check, tone: 'bg-success text-white' },
-  ] as const;
-  return (
-    <div className="w-full rounded-2xl bg-white/[0.06] backdrop-blur-md border border-white/12 p-6 sm:p-7">
-      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-2">
-        {STAGES.map((s, i) => (
-          <div key={s.label} className="flex items-center gap-2 flex-1 w-full sm:w-auto">
-            <div className="flex-1 rounded-xl bg-white/[0.04] border border-white/10 p-4 text-center">
-              <span className={clsx('inline-flex w-9 h-9 rounded-lg items-center justify-center mb-2.5', s.tone)}>
-                <s.Icon size={16} />
-              </span>
-              <p className="text-[12.5px] font-bold text-white">{s.label}</p>
-              <p className="text-[10.5px] text-white/50 mt-0.5">{s.sub}</p>
-            </div>
-            {i < STAGES.length - 1 && (
-              <ArrowRight size={16} className="text-white/25 shrink-0 hidden sm:block rtl:-scale-x-100" />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function Homepage() {
   const navigate = useNavigate();
@@ -417,7 +368,6 @@ export function Homepage() {
             </h2>
             <Reveal delay={0.4}>
               <p className="text-[15px] sm:text-[17px] text-slate leading-[1.7] mt-7 max-w-[660px] mx-auto">
-                Store Builder, Point of Sale, Inventory, Orders &amp; Customers, Analytics and Loyalty &amp; Rewards — six real tools reading from the same data, in one commerce platform.
                 {text.systemLead}
               </p>
             </Reveal>
@@ -541,38 +491,6 @@ export function Homepage() {
               ))}
             </div>
             <POSPreview />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── AI Commerce ── */}
-      <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-12 bg-carbon relative overflow-hidden">
-        <div className="absolute w-[300px] h-[300px] rounded-full bg-accent-violet/15 blur-3xl -top-20 -left-16 pointer-events-none" />
-        <div className="relative z-[1] max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-[0.82fr_1.18fr] gap-10 lg:gap-14 items-center">
-          <Reveal>
-            <p className="text-[11px] font-semibold text-accent-violet uppercase tracking-[0.1em] rtl:tracking-normal mb-3">{text.aiKicker}</p>
-            <h2 className="text-[24px] sm:text-[32px] font-bold text-white leading-[1.2] mb-4" style={{ fontFamily: "'Lora', 'IBM Plex Sans Arabic', Georgia, serif" }}>
-              {text.aiTitle}
-            </h2>
-            <p className="text-[14px] text-[#b0aea8] leading-[1.7] mb-5">
-              {text.aiLead}
-            </p>
-            <div className="flex flex-col gap-2 mb-6">
-              {text.aiFeatures.map(f => (
-                <div key={f} className="flex items-center gap-2.5">
-                  <Check size={14} className="text-accent-violet shrink-0" />
-                  <span className="text-[13px] text-[#d8d6d0]">{f}</span>
-                </div>
-              ))}
-            </div>
-            <MagneticButton>
-              <Button variant="dark" onClick={() => navigate('/products/ai-commerce')}>
-                {text.aiCta} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
-              </Button>
-            </MagneticButton>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <AIFlowVisual />
           </Reveal>
         </div>
       </section>

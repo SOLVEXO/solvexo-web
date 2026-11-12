@@ -25,8 +25,6 @@ export function ProductsOverviewPage() {
         <SectionHeading
           kicker={t.kicker}
           as="h1"
-          title="Every product you need to run a business."
-          subtitle="Store, POS, inventory and analytics — under one login, sharing the same real data."
           title={t.title}
           subtitle={t.subtitle}
           align="center"

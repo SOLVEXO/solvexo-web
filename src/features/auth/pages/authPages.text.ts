@@ -7,7 +7,7 @@ export const AUTH_SHARED_TEXT = siteText({
     /** Same three lines on Login, Register and the onboarding wizard (one voice across the seller funnel). */
     sellerHighlights: [
       'A store built around how you sell',
-      'AI Studio and analytics from day one',
+      'Analytics from day one',
       'Verified sellers buyers can trust',
     ],
     emailLabel: 'Email Address',
@@ -23,7 +23,7 @@ export const AUTH_SHARED_TEXT = siteText({
   ar: {
     sellerHighlights: [
       'متجر مصمَّم حول طريقة بيعك',
-      'استوديو الذكاء الاصطناعي والتحليلات من اليوم الأول',
+      'التحليلات من اليوم الأول',
       'بائعون موثَّقون يثق بهم المشترون',
     ],
     emailLabel: 'البريد الإلكتروني',

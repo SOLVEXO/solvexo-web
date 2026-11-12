@@ -39,11 +39,6 @@ function RedirectingSpinner() {
 // one consistent voice across the seller funnel. "Shop from thousands of
 // independent sellers" was real BUYER-marketplace language, stale here
 // since Register is seller-only now (see SELLER_ONLY_REGISTER below).
-const HIGHLIGHTS = [
-  { Icon: Store,       text: 'A store built around how you sell' },
-  { Icon: Sparkles,    text: 'Analytics from day one' },
-  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
-];
 // The text lives in AUTH_SHARED_TEXT.sellerHighlights (one per icon, same order).
 const HIGHLIGHT_ICONS = [Store, Sparkles, ShieldCheck];
 

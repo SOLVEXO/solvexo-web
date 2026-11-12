@@ -9,12 +9,10 @@ import { Reveal } from '@/components/comman/motion/Reveal';
 import { Footer } from '@/components/comman/ui/Footer';
 import { formatUsd, yearlyMonthlyEquivalent, yearlyTotal, maxYearlySavingsPercent } from '@/utils/planPricing';
 import { salesMailto } from '@/utils/contact';
-import { displayPrice, gatewayFeeRange, money, planFeatures } from './pricing/planFeatures';
+import { displayPrice, gatewayFeeRange, money, planCopy, planFeatures } from './pricing/planFeatures';
 import { FeatureHelp } from './pricing/FeatureHelp';
 import { formatLocal, useLocalCurrency } from './pricing/localPrice';
 import { countryFromPathname } from '@/utils/countryPrefix';
-import { displayPrice, gatewayFeeRange, money, planCopy, planFeatures } from './pricing/planFeatures';
-import { formatLocal, useLocalCurrency } from './pricing/localPrice';
 import { ltr } from './pricing/arabicCount';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
 import { useSiteText } from '@/i18n/site/useSiteText';
@@ -40,71 +38,9 @@ interface Group { title: string; rows: Row[] }
 
 const count = (n: number | undefined, t: PricingText) => (n === undefined || n === null ? null : n < 0 ? t.unlimited : `${n}`);
 const flag = (v?: boolean) => (v === undefined ? null : !!v);
-const num = (n?: number) => (n === undefined || n === null ? null : n < 0 ? 'Unlimited' : n.toLocaleString('en-US'));
+const num = (n: number | undefined, t: PricingText) => (n === undefined || n === null ? null : n < 0 ? t.unlimited : n.toLocaleString('en-US'));
 const pct = (n?: number) => (n === undefined || n === null ? null : `${Number((n * 100).toFixed(2))}%`);
 
-const GROUPS: Group[] = [
-  { title: 'Pricing', rows: [
-    { label: 'Pay monthly', get: p => p.isCustomPricing ? 'Custom' : p.isFree ? 'Free' : `${formatUsd(p.monthlyPriceUSD ?? 0)} USD/month` },
-    { label: 'Pay yearly', get: p => p.isCustomPricing ? 'Custom' : p.isFree ? 'Free' : `${formatUsd(yearlyMonthlyEquivalent(p))} USD/month` },
-  ] },
-  { title: 'Core features', rows: [
-    { label: 'Online store', get: () => true },
-    { label: 'Themes and templates', get: () => true },
-    { label: 'Products', get: p => count(p.limits.maxProducts) },
-    { label: 'Inventory management', get: () => true },
-    { label: 'Additional staff accounts', get: p => count(p.limits.maxStaffAccounts) },
-    { label: 'POS locations', get: p => count(p.limits.maxPosLocations) },
-    { label: 'Reports and analytics', get: p => p.limits.advancedAnalyticsAllowed ? 'Advanced' : 'Standard' },
-    { label: 'Support', get: p => p.limits.dedicatedAccountManager ? 'Dedicated manager' : p.limits.prioritySupport ? 'Priority support' : 'Standard support' },
-    { label: 'Webhooks & API', get: p => flag(p.limits.apiWebhooksAllowed) },
-  ] },
-  { title: 'Online store & themes', rows: [
-    { label: 'Themes and theme editor', get: () => true },
-    { label: 'Header & footer editor', get: () => true },
-    { label: 'Pages, blog and navigation', get: () => true },
-    { label: 'Translations in 22 languages', get: () => true },
-  ] },
-  { title: 'AI features', rows: [
-    { label: 'AI credits per month (for AI SEO suggestions)', get: p => (p.limits.seoAiSuggestionsAllowed ? count(p.limits.aiCreditsPerMonth) : false) },
-  ] },
-  { title: 'Hosting', rows: [
-    { label: 'Hosting and free SSL', get: () => true },
-    { label: 'Custom domain', get: p => flag(p.limits.customDomainAllowed) },
-    { label: 'Remove Solvexo branding', get: p => flag(p.limits.whiteLabelAllowed) },
-  ] },
-  { title: 'Marketing', rows: [
-    { label: 'Discount codes', get: () => true },
-    { label: 'Gift cards', get: () => true },
-    { label: 'Email campaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
-    { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-    { label: 'Marketing emails per month (offers and news to your customers)', get: p => num(p.limits.monthlyEmailSends) },
-    { label: 'Loyalty program', get: p => flag(p.limits.loyaltyProgramAllowed) },
-  ] },
-  { title: 'Wholesale & digital products', rows: [
-    { label: 'B2B wholesale', get: p => flag(p.limits.b2bWholesaleAllowed) },
-    { label: 'B2B wholesale catalogs', get: p => (p.limits.b2bWholesaleAllowed ? count(p.limits.maxB2BCatalogs) : null) },
-    { label: 'Memberships', get: p => flag(p.limits.digitalMembershipsAllowed) },
-    { label: 'License keys', get: p => flag(p.limits.digitalLicensesAllowed) },
-    { label: 'Courses', get: p => flag(p.limits.digitalCoursesAllowed) },
-  ] },
-  { title: 'SEO', rows: [
-    { label: 'Built-in SEO features', get: () => true },
-    { label: 'Advanced SEO tools', get: p => flag(p.limits.advancedSeoToolsAllowed) },
-    { label: 'AI SEO suggestions', get: p => flag(p.limits.seoAiSuggestionsAllowed) },
-    { label: 'Search Console integration', get: p => flag(p.limits.searchConsoleIntegrationAllowed) },
-    { label: 'Custom redirects', get: p => flag(p.limits.customRedirectsAllowed) },
-  ] },
-  { title: 'Sell globally', rows: [
-    { label: 'Selling currencies (markets)', get: p => count(p.limits.maxMarkets) },
-    { label: 'Live carrier shipping rates', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
-  ] },
-  { title: 'Payments', rows: [
-    { label: 'Card payments via Solvexo Payments', get: () => 'No commission', hideOnPk: true },
-    { label: 'Cash on delivery / bank transfer', get: () => 'No fee' },
-    { label: 'Third-party gateway fee', get: p => pct(p.limits.transactionFeeRate) },
-  ] },
-];
 function compareGroups(t: PricingText): Group[] {
   const g = t.groups, r = t.rows;
   const c = (n?: number) => count(n, t);
@@ -122,9 +58,16 @@ function compareGroups(t: PricingText): Group[] {
       { label: r.posLocations, get: p => c(p.limits.maxPosLocations) },
       { label: r.reports, get: p => p.limits.advancedAnalyticsAllowed ? t.advanced : t.standard },
       { label: r.support, get: p => p.limits.dedicatedAccountManager ? t.dedicatedManager : p.limits.prioritySupport ? t.prioritySupport : t.standardSupport },
+      { label: r.webhooks, get: p => flag(p.limits.apiWebhooksAllowed) },
+    ] },
+    { title: g.online, rows: [
+      { label: r.themesEditor, get: () => true },
+      { label: r.headerFooter, get: () => true },
+      { label: r.pagesBlog, get: () => true },
+      { label: r.translations, get: () => true },
     ] },
     { title: g.ai, rows: [
-      { label: r.aiCredits, get: p => c(p.limits.aiCreditsPerMonth) },
+      { label: r.aiCredits, get: p => (p.limits.seoAiSuggestionsAllowed ? c(p.limits.aiCreditsPerMonth) : false) },
     ] },
     { title: g.hosting, rows: [
       { label: r.hostingSsl, get: () => true },
@@ -136,7 +79,15 @@ function compareGroups(t: PricingText): Group[] {
       { label: r.giftCards, get: () => true },
       { label: r.emailCampaigns, get: p => flag(p.limits.emailCampaignsAllowed) },
       { label: r.abandoned, get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-      { label: r.promotions, get: p => c(p.limits.maxActivePromotions) },
+      { label: r.emailsPerMonth, get: p => num(p.limits.monthlyEmailSends, t) },
+      { label: r.loyalty, get: p => flag(p.limits.loyaltyProgramAllowed) },
+    ] },
+    { title: g.wholesale, rows: [
+      { label: r.b2b, get: p => flag(p.limits.b2bWholesaleAllowed) },
+      { label: r.b2bCatalogs, get: p => (p.limits.b2bWholesaleAllowed ? c(p.limits.maxB2BCatalogs) : null) },
+      { label: r.memberships, get: p => flag(p.limits.digitalMembershipsAllowed) },
+      { label: r.licenseKeys, get: p => flag(p.limits.digitalLicensesAllowed) },
+      { label: r.courses, get: p => flag(p.limits.digitalCoursesAllowed) },
     ] },
     { title: g.seo, rows: [
       { label: r.seoBuiltIn, get: () => true },
@@ -150,7 +101,7 @@ function compareGroups(t: PricingText): Group[] {
       { label: r.carrierRates, get: p => flag(p.limits.calculatedShippingRatesAllowed) },
     ] },
     { title: g.payments, rows: [
-      { label: r.cardPayments, get: () => t.noCommission },
+      { label: r.cardPayments, get: () => t.noCommission, hideOnPk: true },
       { label: r.codBank, get: () => t.noFee },
       { label: r.gatewayFee, get: p => pct(p.limits.transactionFeeRate) },
     ] },
@@ -167,49 +118,7 @@ function Tick() {
   return <span className="mt-[2px] size-[18px] shrink-0 rounded-full inline-flex items-center justify-center" style={{ background: '#eaf6ec', color: GREEN }}><Check size={11} strokeWidth={3} aria-hidden /></span>;
 }
 
-// ── FAQ fallback (until admin adds FAQs under the pricing category) ──────────
-function getFallbackFaqs(trialDurationDays: number, isPk: boolean) { return [
-  { q: 'Can I switch plans anytime?', a: "Yes. You can upgrade or downgrade your plan at any time. Upgrades take effect immediately and we'll prorate the difference; downgrades start at your next renewal." },
-  { q: 'Does Solvexo take a commission on my sales?', a: isPk
-    ? 'No. Solvexo takes no commission and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through a payment gateway such as Safepay.'
-    : 'No. There is no commission on card payments processed through Solvexo Payments — you only pay the card processing fee — and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through another payment gateway with your own account, such as Stripe or PayPal.' },
-  { q: 'Is there a free trial?', a: `Yes — every new store gets a free ${trialDurationDays}-day trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready.` },
-  { q: 'How do AI credits work?', a: 'AI credits are spent on AI SEO suggestions: the AI proposes a page title and description for one of your products, you read it first, and only click Use this if you like it. Each suggestion costs 5 credits. Your plan\'s credits renew on the 1st of every month and unused ones do not carry over. If you need more, you can buy 500 extra credits for US$10 — credits you buy do not expire at the end of the month. Every free trial includes 50 credits.' },
-  { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards. Payments are processed securely by Stripe — we never see or store your card number.' },
-]; }
-
-/** Everything else the dashboard gives every store (no plan check anywhere in the code), so a seller can see it before signing up.
- *  Each line is a real page or feature a store owner can open; keep this list in step with the sidebar. */
-const ALSO_INCLUDED: { title: string; items: string[] }[] = [
-  { title: 'Orders & customers', items: ['Orders, returns and refunds', 'Draft orders for phone and in-person sales', 'Customer list, tags and notes', 'Reviews from your customers', 'Chat with your customers', 'Store credit'] },
-  { title: 'Products & stock', items: ['Inventory and stock counts', 'Purchase orders and suppliers', 'Categories and collections', 'Digital downloads', 'Product subscriptions', 'CSV import and export'] },
-  { title: 'Checkout & delivery', items: ['Checkout rules', 'Delivery zones, rates and pickup', 'Taxes', 'Guest checkout', 'Customer accounts with Google and Facebook login'] },
-  { title: 'Store tools', items: ['Files library', 'FAQ and policy pages', 'Tracking pixels', 'Custom fields', 'Finance and payout reports', 'Two-step login (2FA)', 'Branded mobile app request'] },
-];
-
-const EVERY_PLAN = [
-  { Icon: Store, title: 'Your online store', body: 'A ready-made shop with themes you can edit. No coding.' },
-  { Icon: ScanBarcode, title: 'In-store till (POS)', body: 'Sell in your shop; stock updates online automatically.' },
-  { Icon: Banknote, title: 'Cash on delivery', body: 'Take cash on delivery and card payments at checkout.' },
-  { Icon: Truck, title: 'Delivery & stock', body: 'Set delivery charges per zone and track every order and your stock.' },
-  { Icon: Tag, title: 'Discount codes & gift cards', body: 'Run sales and reward loyal customers.' },
-  { Icon: Lock, title: 'Hosting & free SSL', body: 'Fast, secure hosting with the padlock included.' },
-  { Icon: Palette, title: 'Themes & theme editor', body: 'Change colours, fonts and layout with a visual editor, no coding.' },
-  { Icon: LayoutTemplate, title: 'Header & footer editor', body: 'Design your menus, logo and footer without code.' },
-  { Icon: FileText, title: 'Pages, blog & navigation', body: 'Add pages and blog posts and organise your menus.' },
-  { Icon: Languages, title: '22 languages', body: 'Show your store in your customers’ own language.' },
-  { Icon: ShieldCheck, title: 'COD protection & Khata', body: 'Fewer fake orders, and a ledger for customers who pay later.' },
-  { Icon: MessageCircle, title: 'WhatsApp & SMS', body: 'Send order updates where customers actually read them.' },
-  { Icon: Rss, title: 'Google & Meta product feeds', body: 'List your products in Google Shopping and Facebook shops.' },
-];
-
-/** "Pick the one that sounds like you" — one line per core plan, built from its live limits. */
-const PICKS: { key: string; quote: string; body: (p: PlatformPlan) => string }[] = [
-  { key: 'basic', quote: 'I’m just starting and have a few products.', body: p => `Up to ${p.limits.maxProducts ?? 25} products, ${p.limits.customDomainAllowed ? 'your own web address ' : ''}and the POS for one shop.` },
-  { key: 'grow', quote: 'My shop is growing and I have staff.', body: p => `${count(p.limits.maxProducts) === 'Unlimited' ? 'Unlimited' : p.limits.maxProducts} products, ${count(p.limits.maxStaffAccounts)} staff logins, ${count(p.limits.maxPosLocations)} locations${p.limits.abandonedCartRecoveryAllowed ? ' and automatic reminders to shoppers who leave without paying' : ''}.` },
-  { key: 'advanced', quote: 'I run several branches or a big brand.', body: p => `${count(p.limits.maxPosLocations)} locations, ${count(p.limits.maxStaffAccounts)} staff${p.limits.whiteLabelAllowed ? ', your own branding only' : ''}${p.limits.calculatedShippingRatesAllowed ? ', and live courier rates at checkout' : ''}.` },
-];
-const EVERY_PLAN_ICONS = [Store, ScanBarcode, Banknote, Truck, Package, Tag, Lock, BarChart3];
+const EVERY_PLAN_ICONS = [Store, ScanBarcode, Banknote, Truck, Tag, Lock, Palette, LayoutTemplate, FileText, Languages, ShieldCheck, MessageCircle, Rss];
 
 /** "Pick the one that sounds like you" — one line per core plan, built from its live limits (text in PricingPage.text.ts). */
 const PICK_KEYS = ['basic', 'grow', 'advanced'] as const;
@@ -240,9 +149,8 @@ export function PricingPage() {
   const isPk = typeof window !== 'undefined' && countryFromPathname(window.location.pathname) === 'pk';
   const { faqs: liveFaqs } = useFaqs('pricing');
   const trialDays = trialDurationDays ?? 7;
-  const faqs = liveFaqs.length > 0 ? liveFaqs.map(f => ({ q: f.question, a: f.answer })) : getFallbackFaqs(trialDays, isPk);
   // Admin-managed FAQs are written in English; the Arabic page shows its own translated set.
-  const faqs = liveFaqs.length > 0 && pageLang === 'en' ? liveFaqs.map(f => ({ q: f.question, a: f.answer })) : t.faqs(trialDays);
+  const faqs = liveFaqs.length > 0 && pageLang === 'en' ? liveFaqs.map(f => ({ q: f.question, a: f.answer })) : t.faqs(trialDays, isPk);
   const save = maxYearlySavingsPercent(plans);
   const priced = plans.filter(p => !p.isFree && !p.isCustomPricing);
   const offs = priced.map(p => displayPrice(p, 'monthly').percentOff);
@@ -383,10 +291,8 @@ export function PricingPage() {
 
                     {typeof fee === 'number' && (
                       <p className="mt-auto pt-3.5 text-[12px] leading-[1.6]" style={{ color: MUTED, borderTop: `1px dashed ${LINE}` }}>
-                        Other payment gateways: <strong className="font-semibold" style={{ color: INK }}>{pct(fee)}</strong><br />
-                        {isPk ? 'COD & bank transfer' : 'COD & Solvexo Payments'}: <strong className="font-semibold" style={{ color: INK }}>0%</strong>
                         {t.otherGateways}<strong className="font-semibold" style={{ color: INK }}>{pct(fee)}</strong><br />
-                        {t.codAndPayments}<strong className="font-semibold" style={{ color: INK }}>0%</strong>
+                        {isPk ? t.codAndBank : t.codAndPayments}<strong className="font-semibold" style={{ color: INK }}>0%</strong>
                       </p>
                     )}
                   </div>
@@ -419,9 +325,9 @@ export function PricingPage() {
 
       {/* Everything else every plan includes */}
       <section className="px-4 md:px-8 pt-10 max-w-[1240px] mx-auto" aria-labelledby="also-included-h">
-        <h3 id="also-included-h" className="mb-4 text-center text-[18px] font-semibold">And all of this too</h3>
+        <h3 id="also-included-h" className="mb-4 text-center text-[18px] font-semibold">{t.alsoTitle}</h3>
         <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {ALSO_INCLUDED.map(g => (
+          {t.alsoIncluded.map(g => (
             <div key={g.title} className="rounded-[14px] bg-white p-[18px]" style={{ border: `1px solid ${LINE}` }}>
               <p className="mb-2 text-[14.5px] font-semibold">{g.title}</p>
               <ul className="list-none m-0 p-0">
@@ -462,13 +368,9 @@ export function PricingPage() {
       {/* What each sale costs */}
       <section className="px-4 md:px-8 pt-20 max-w-[1240px] mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr] items-center gap-5 rounded-[20px] bg-white p-7" style={{ border: `1px solid ${LINE}` }}>
-          <h2 className="text-[21px] font-semibold leading-[1.35]">What you pay on each sale</h2>
-          <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>on <strong style={{ color: INK }}>cash on delivery</strong>, bank transfer and in-store sales.</p></div>
-          {!isPk && <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>commission on card payments through <strong style={{ color: INK }}>Solvexo Payments</strong> (only the normal card processing fee).</p></div>}
-          {feeRange && <div><p className="text-[26px] font-bold">{feeRange}</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>only if you connect <strong style={{ color: INK }}>another payment gateway</strong>. Lower on bigger plans.</p></div>}
           <h2 className="text-[21px] font-semibold leading-[1.35]">{t.eachSaleTitle}</h2>
           <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>{t.codPre}<strong style={{ color: INK }}>{t.codStrong}</strong>{t.codPost}</p></div>
-          <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>{t.cardPre}<strong style={{ color: INK }}>{t.cardStrong}</strong>{t.cardPost}</p></div>
+          {!isPk && <div><p className="text-[26px] font-bold" style={{ color: GREEN }}>0%</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>{t.cardPre}<strong style={{ color: INK }}>{t.cardStrong}</strong>{t.cardPost}</p></div>}
           {feeRange && <div><p className="text-[26px] font-bold">{feeRange}</p><p className="mt-1 text-[13px] leading-[1.55]" style={{ color: MUTED }}>{t.gatewayPre}<strong style={{ color: INK }}>{t.gatewayStrong}</strong>{t.gatewayPost}</p></div>}
         </div>
       </section>

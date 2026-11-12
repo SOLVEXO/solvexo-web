@@ -20,7 +20,7 @@ export const HOMEPAGE_TEXT = siteText({
       { step: 'Create',  desc: 'Build your storefront from a curated theme, or set up POS to sell in person.' },
       { step: 'Connect', desc: 'Add products, connect a payment method, and your inventory syncs across every channel.' },
       { step: 'Sell',    desc: 'Take orders online and in person — from the same catalog, the same stock.' },
-      { step: 'Grow',    desc: 'Use real analytics and AI tools to see what\'s working and do more of it.' },
+      { step: 'Grow',    desc: 'Use real analytics to see what\'s working and do more of it.' },
     ],
 
     posSteps: ['Search', 'Cart', 'Payment', 'Receipt'],
@@ -52,7 +52,7 @@ export const HOMEPAGE_TEXT = siteText({
     systemKicker: 'Create · Sell · Manage · Understand · Grow',
     systemTitle1: 'Everything you need',
     systemTitle2: 'to build, sell and grow.',
-    systemLead: 'Store Builder, Point of Sale, Inventory, Orders & Customers, AI Commerce, Analytics and Loyalty & Rewards — seven real tools reading from the same data, in one commerce platform.',
+    systemLead: 'Store Builder, Point of Sale, Inventory, Orders & Customers, Analytics and Loyalty & Rewards — six real tools reading from the same data, in one commerce platform.',
 
     // Store Builder
     storeKicker: 'Store Builder',
@@ -81,7 +81,7 @@ export const HOMEPAGE_TEXT = siteText({
     dashboardSubtitle: 'Revenue, orders, customers and top products — computed from your real data, not a simulated preview.',
     explorerKicker: 'Keep exploring',
     explorerTitle: 'Step inside the workspace',
-    explorerSubtitle: 'The same dashboard a seller actually uses — revenue, stock, orders and AI, all live in one place.',
+    explorerSubtitle: 'The same dashboard a seller actually uses — revenue, stock and orders, all live in one place.',
 
     // Industries
     industriesKicker: 'Built for the way you sell',
@@ -110,7 +110,7 @@ export const HOMEPAGE_TEXT = siteText({
       { step: 'أنشئ', desc: 'أنشئ متجرك الإلكتروني من مجموعة قوالب مختارة، أو جهّز نقطة البيع للبيع في المتجر.' },
       { step: 'اربط', desc: 'أضف منتجاتك واربط وسيلة دفع، ويتزامن مخزونك عبر كل قنوات البيع.' },
       { step: 'بِع', desc: 'استقبل الطلبات عبر الإنترنت وفي المتجر — من الكتالوج نفسه والمخزون نفسه.' },
-      { step: 'انمُ', desc: 'استخدم تحليلات حقيقية وأدوات الذكاء الاصطناعي لتعرف ما ينجح وتزيد منه.' },
+      { step: 'انمُ', desc: 'استخدم تحليلات حقيقية لتعرف ما ينجح وتزيد منه.' },
     ],
 
     posSteps: ['البحث', 'السلة', 'الدفع', 'الإيصال'],
@@ -138,7 +138,7 @@ export const HOMEPAGE_TEXT = siteText({
     systemKicker: 'أنشئ · بِع · أدِر · افهم · انمُ',
     systemTitle1: 'كل ما تحتاجه',
     systemTitle2: 'لتبني وتبيع وتنمو.',
-    systemLead: 'منشئ المتاجر ونقطة البيع والمخزون والطلبات والعملاء والتجارة بالذكاء الاصطناعي والتحليلات والولاء والمكافآت — سبع أدوات حقيقية تعمل على البيانات نفسها، في منصة تجارة واحدة.',
+    systemLead: 'منشئ المتاجر ونقطة البيع والمخزون والطلبات والعملاء والتحليلات والولاء والمكافآت — ست أدوات حقيقية تعمل على البيانات نفسها، في منصة تجارة واحدة.',
 
     storeKicker: 'منشئ المتاجر',
     storeTitle: 'أنشئ متجرًا يعكس علامتك التجارية.',
@@ -163,7 +163,7 @@ export const HOMEPAGE_TEXT = siteText({
     dashboardSubtitle: 'الإيرادات والطلبات والعملاء وأفضل المنتجات — محسوبة من بياناتك الحقيقية، وليست معاينة محاكاة.',
     explorerKicker: 'تابع الاستكشاف',
     explorerTitle: 'ادخل إلى مساحة العمل',
-    explorerSubtitle: 'لوحة التحكم نفسها التي يستخدمها التاجر فعلًا — الإيرادات والمخزون والطلبات والذكاء الاصطناعي، كلها مباشرة في مكان واحد.',
+    explorerSubtitle: 'لوحة التحكم نفسها التي يستخدمها التاجر فعلًا — الإيرادات والمخزون والطلبات، كلها مباشرة في مكان واحد.',
 
     industriesKicker: 'مصمَّم لطريقة بيعك',
     industriesTitle: 'مهما كان ما تبيعه، لدينا ما يناسبك.',

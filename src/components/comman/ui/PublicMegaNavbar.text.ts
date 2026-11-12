@@ -20,7 +20,7 @@ export const PUBLIC_NAV_TEXT = siteText({
     glyph: ['Storefront', 'POS', 'Inventory', 'Orders'],
     whySolvexo: [
       'Store, POS and inventory share one real-time system',
-      'AI Studio built into the dashboard, not a bolt-on',
+      'Theme editor and your own domain on every plan',
       'Direct-to-you payouts via your own Stripe account',
     ],
     oneConnectedPlatform: 'One connected platform',
@@ -70,7 +70,7 @@ export const PUBLIC_NAV_TEXT = siteText({
     glyph: ['المتجر', 'POS', 'المخزون', 'الطلبات'],
     whySolvexo: [
       'المتجر ونقطة البيع والمخزون في نظام واحد يتحدّث فورًا',
-      'استوديو الذكاء الاصطناعي مدمج في لوحة التحكم، وليس إضافة خارجية',
+      'محرر القوالب ونطاقك الخاص في كل الخطط',
       'تصلك المدفوعات مباشرة عبر حساب Stripe الخاص بك',
     ],
     oneConnectedPlatform: 'منصة واحدة متكاملة',

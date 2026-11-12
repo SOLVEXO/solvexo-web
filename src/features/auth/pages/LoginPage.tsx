@@ -41,11 +41,6 @@ const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 
 // seller-only now (see SELLER_ONLY_LOGIN below), so "curated marketplace of
 // independent creators" / "secure payments on every purchase" — both real
 // BUYER-checkout language — no longer described what this page is for.
-const HIGHLIGHTS = [
-  { Icon: Store,       text: 'A store built around how you sell' },
-  { Icon: Sparkles,    text: 'Analytics from day one' },
-  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
-];
 // The text lives in AUTH_SHARED_TEXT.sellerHighlights (one per icon, same order).
 const HIGHLIGHT_ICONS = [Store, Sparkles, ShieldCheck];
 

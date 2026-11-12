@@ -10,7 +10,7 @@ import { ToastContainer } from '@/components/comman/ui/ToastContainer';
 import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
 import { SiteAnalyticsTracker } from '@/components/comman/SiteAnalyticsTracker';
 import { SeoHead } from '@/components/comman/SeoHead';
-import { SiteLanguageProvider } from '@/i18n/site/SiteLanguage';
+import { SiteLanguageProvider } from '@/i18n/site/SiteLanguageProvider';
 
 // A store's own host must never show the platform's orange loader: its visitors never signed up to Solvexo.
 const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate());

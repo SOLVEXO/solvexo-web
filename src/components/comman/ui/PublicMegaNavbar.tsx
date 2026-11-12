@@ -31,15 +31,10 @@ const NAV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // rather than faked; every slug below has a real backend module behind it
 // and its own /products/:slug page, see platformProducts.ts).
 const PRODUCT_JOURNEY = [
-  { stage: 'Build your website', slugs: ['store-builder', 'domains', 'customer-accounts'] },
-  { stage: 'Sell anywhere',      slugs: ['pos', 'markets'] },
-  { stage: 'Marketing & analytics', slugs: ['analytics', 'discounts', 'loyalty'] },
-  { stage: 'Run your business',  slugs: ['orders-customers', 'inventory', 'shipping'] },
-  { stage: 'Get paid',           slugs: ['payments', 'checkout'] },
   // `stage` indexes PUBLIC_NAV_TEXT.stages (the group label in the visitor's language).
   { stage: 0, slugs: ['store-builder', 'domains', 'customer-accounts'] },
   { stage: 1, slugs: ['pos', 'markets'] },
-  { stage: 2, slugs: ['analytics', 'discounts', 'ai-commerce', 'loyalty'] },
+  { stage: 2, slugs: ['analytics', 'discounts', 'loyalty'] },
   { stage: 3, slugs: ['orders-customers', 'inventory', 'shipping'] },
   { stage: 4, slugs: ['payments', 'checkout'] },
 ] as const;
@@ -60,12 +55,6 @@ const PRODUCT_NAV_COLUMNS = [
 // here with the same non-reactive shape: one fixed real screenshot + one
 // fixed caption, standing in for Shopify's "Latest updates" list with real,
 // honest claims about the platform instead (Solvexo has no changelog feed
-// to pull a genuine "updates" list from).
-const WHY_SOLVEXO = [
-  'Store, POS and inventory share one real-time system',
-  'Theme editor and your own domain on every plan',
-  'Direct-to-you payouts via your own Stripe account',
-] as const;
 // to pull a genuine "updates" list from). The lines themselves live in
 // PUBLIC_NAV_TEXT.whySolvexo.
 
