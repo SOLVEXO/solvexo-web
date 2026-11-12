@@ -7,6 +7,8 @@ import { BrandSplash } from '@/components/comman/motion/BrandSplash';
 import { useAuthVisual } from '@/hooks/auth/useAuthVisual';
 import type { AuthPageContext, AuthVisualTopic } from '@/api/services/auth';
 import { motion, useReducedMotion } from 'motion/react';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { AUTH_LAYOUT_TEXT } from './AuthSplitLayout.text';
 
 interface AuthHighlight {
   Icon: LucideIcon;
@@ -57,6 +59,7 @@ export function AuthSplitLayout({
   children,
 }: AuthSplitLayoutProps) {
   const reduceMotion = useReducedMotion();
+  const t = useSiteText(AUTH_LAYOUT_TEXT);
   // Real, region-appropriate photo; stays null until resolved so a slow or
   // failed lookup just shows the card's own gradient.
   const { imageUrl: visualImageUrl } = useAuthVisual(pageContext, visualTopic);
@@ -106,21 +109,21 @@ export function AuthSplitLayout({
       {/* ── Branding column (desktop only): logo on the peach page, photo card
          below it. A custom `brandingHeader` (e.g. AdminLoginPage's Shield
          badge) keeps its original slot inside the card. ───────────────── */}
-      <div className="hidden lg:flex lg:w-[calc(100%_-_var(--auth-card-w)_+_96px)] h-full min-w-0 flex-col p-6 pr-0 gap-4 relative z-10">
+      <div className="hidden lg:flex lg:w-[calc(100%_-_var(--auth-card-w)_+_96px)] h-full min-w-0 flex-col p-6 pe-0 gap-4 relative z-10">
         {!brandingHeader && (
-          <div className="shrink-0 pl-2">
+          <div className="shrink-0 ps-2">
             <SolvexoLogo size={48} variant="dark" />
           </div>
         )}
 
-        <div className={clsx('relative flex-1 min-h-0 overflow-hidden rounded-l-[44px] bg-gradient-to-br', panelGradient)}>
+        <div className={clsx('relative flex-1 min-h-0 overflow-hidden rounded-s-[44px] bg-gradient-to-br', panelGradient)}>
           {visualImageUrl && (
             <>
               <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
               {/* Darker on the text side (left) so white copy always reads. */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/5" />
+              <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-black/70 via-black/35 to-black/5" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-              <div className="absolute inset-y-0 right-0 w-[24%] bg-gradient-to-l from-[#FBECE4] via-[#FBECE4]/35 to-transparent" />
+              <div className="absolute inset-y-0 end-0 w-[24%] bg-gradient-to-l rtl:bg-gradient-to-r from-[#FBECE4] via-[#FBECE4]/35 to-transparent" />
             </>
           )}
 
@@ -132,7 +135,7 @@ export function AuthSplitLayout({
             <div className="min-h-0 overflow-hidden">
               <Reveal delay={0}>
                 <span className="inline-flex items-center gap-2 rounded-full border border-brand-orange bg-black/25 px-5 py-2 text-[14px] font-semibold text-white mb-[clamp(14px,2.6vh,26px)]">
-                  Grow Your Business <Rocket size={15} className="text-brand-orange" />
+                  {t.pill} <Rocket size={15} className="text-brand-orange" />
                 </span>
               </Reveal>
               <Reveal delay={0.03}>
@@ -178,7 +181,7 @@ export function AuthSplitLayout({
       {/* ── Form side. Mobile: bottom sheet over the photo strip. Desktop: a
          rounded white card that is only as tall as its form (centered), or the
          full height for the onboarding wizard (`bare`). Scrollbar hidden. */}
-      <div className={clsx('flex-1 min-w-0 min-h-0 flex flex-col relative z-20 lg:flex-none lg:w-[calc(var(--auth-card-w)_+_24px)] lg:-ml-[120px] lg:pr-6 lg:pb-6', brandingHeader ? 'lg:pt-6' : 'lg:pt-[88px]')}>
+      <div className={clsx('flex-1 min-w-0 min-h-0 flex flex-col relative z-20 lg:flex-none lg:w-[calc(var(--auth-card-w)_+_24px)] lg:-ms-[120px] lg:pe-6 lg:pb-6', brandingHeader ? 'lg:pt-6' : 'lg:pt-[88px]')}>
         <div data-lenis-prevent className={clsx(
           'flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col',
           'rounded-t-[28px] -mt-6 bg-cream',
@@ -206,7 +209,7 @@ export function AuthSplitLayout({
               </div>
               {children}
               <p className="mt-6 pt-5 border-t border-[#EDE3DB] flex items-center justify-center gap-2 text-[12px] text-slate">
-                <Lock size={13} className="shrink-0" /> Secure, encrypted sign-in
+                <Lock size={13} className="shrink-0" /> {t.secure}
               </p>
             </motion.div>
           )}

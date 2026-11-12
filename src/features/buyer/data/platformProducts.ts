@@ -55,24 +55,6 @@ export const PLATFORM_PRODUCTS: PlatformProduct[] = [
     ],
   },
   {
-    slug: 'ai-commerce',
-    name: 'AI Commerce',
-    tagline: 'AI tools built into your workflow',
-    heroHeadline: 'AI that helps you sell smarter.',
-    heroSubtext: 'AI Studio gives sellers real, usable AI tools inside the dashboard — not a marketing gimmick — for the writing and analysis work that normally eats the most time.',
-    benefits: [
-      { title: 'Product copy, generated for you', desc: 'Turn a rough product idea or photo set into a real listing description, instead of writing every one by hand.' },
-      { title: 'Backed by real AI credits', desc: 'Usage is metered through an AI credits wallet tied to your plan, so cost stays predictable rather than open-ended.' },
-      { title: 'A genuine product capability', desc: 'AI Studio is a real workspace section built on Anthropic\'s Claude models — not a decorative "AI-powered" label with nothing behind it.' },
-    ],
-    features: ['AI-assisted product descriptions', 'AI credits wallet metering', 'Available directly inside the seller dashboard', 'Gated by your platform plan'],
-    useCases: ['Writing first-draft listings for a large catalog quickly', 'Refreshing weak or thin product descriptions', 'Getting a second opinion on a listing before publishing'],
-    faq: [
-      { q: 'Does AI guarantee more sales?', a: 'No — AI Studio speeds up the writing and analysis work of running a store. It\'s a productivity tool, not a sales guarantee.' },
-      { q: 'How is usage billed?', a: 'Through an AI credits wallet included with your plan, with add-on credits available if you need more.' },
-    ],
-  },
-  {
     slug: 'analytics',
     name: 'Analytics',
     tagline: 'Real numbers, not vanity metrics',

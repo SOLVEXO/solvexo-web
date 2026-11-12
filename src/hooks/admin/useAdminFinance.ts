@@ -39,7 +39,7 @@ import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 
 // ── A. Dashboard overview ───────────────────────────────────────────────────────
 
-export function useAdminTransactionFeeBills(params: { status?: 'open' | 'payment_failed' | 'invoiced' | 'paid' | 'all'; page?: number; limit?: number }) {
+export function useAdminTransactionFeeBills(params: { status?: 'open' | 'awaiting_payment' | 'payment_failed' | 'invoiced' | 'paid' | 'all'; page?: number; limit?: number }) {
   return useAnalyticsQuery(apiAdminTransactionFeeBills, params);
 }
 

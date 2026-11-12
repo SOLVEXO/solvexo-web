@@ -37,7 +37,7 @@ const STATIC_PAGES: PublicPageSeo[] = [
     description: 'Everything sellers, creators and educators need to sell online and in person: your own branded store, POS, inventory, orders, payments and marketing tools.' },
   { path: '/products', index: true, priority: 0.8, changefreq: 'monthly',
     title: t('All Products: Store Builder, POS, Inventory & More'),
-    description: 'Explore every Solvexo product: store builder, point of sale, inventory, orders, payments, checkout, discounts, shipping, analytics and AI commerce.' },
+    description: 'Explore every Solvexo product: store builder, point of sale, inventory, orders, payments, checkout, discounts, shipping and analytics.' },
   { path: '/solutions', index: true, priority: 0.8, changefreq: 'monthly',
     title: t('Solutions by Industry'),
     description: 'See how Solvexo fits retail, fashion, restaurants and food, beauty and cosmetics, creators and digital sellers, and small businesses.' },
@@ -47,6 +47,9 @@ const STATIC_PAGES: PublicPageSeo[] = [
   { path: '/faq', index: true, priority: 0.6, changefreq: 'monthly',
     title: t('Frequently Asked Questions'),
     description: 'Answers to common questions about Solvexo: setting up your store, plans and billing, POS, payments, domains, shipping and getting support.' },
+  { path: '/manuals', index: true, priority: 0.6, changefreq: 'monthly',
+    title: t('User Manuals: Step-by-Step Guides'),
+    description: 'Download the Solvexo user manuals as PDF: create your online store and run your shop with Solvexo POS. Real screenshots, English and Urdu.' },
   { path: '/contact-us', index: true, priority: 0.5, changefreq: 'yearly',
     title: t('Contact Us'),
     description: 'Get in touch with the Solvexo team for sales questions, plan enquiries or support. Email sales@solvexo.store or send us a message.' },
@@ -76,6 +79,7 @@ const NOINDEX_PAGES: Record<string, string> = {
   '/forgot-password': 'Reset your password',
   '/new-password': 'Choose a new password',
   '/onboard': 'Set up your store',
+  '/start': 'Start your online store',
 };
 
 const PRODUCT_PAGES: PublicPageSeo[] = ALL_PLATFORM_PRODUCTS.map(p => ({

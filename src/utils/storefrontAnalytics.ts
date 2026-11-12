@@ -75,6 +75,18 @@ export function storefrontAnalyticsAllowed(): boolean {
   return consented;
 }
 
+/** The random visitor id, only when the visitor allowed analytics (an A/B test never uses anything else to pick a variant). */
+export function experimentVisitorId(): string | null {
+  return consented ? visitorId() : null;
+}
+
+/** Ids an A/B exposure needs: only with analytics consent and an active visit. */
+export function experimentIdentity(storeId: string): { visitorId: string; sessionId: string } | null {
+  if (!consented || !storeId) return null;
+  const sessionId = currentSessionId(storeId);
+  return sessionId ? { visitorId: visitorId(), sessionId } : null;
+}
+
 /** Spread into add-to-cart / create-checkout bodies: `{ analyticsSessionId }` when tracking is on, else nothing. */
 export function analyticsSessionFields(storeId: string | null | undefined): { analyticsSessionId?: string } {
   if (!consented || !storeId) return {};

@@ -10,6 +10,8 @@ export interface PlatformTaxRate {
   ratePercent: number;
   status: 'draft' | 'confirmed';
   effectiveFrom: string | null;
+  /** Sent when a rate is newly Confirmed (or a confirmed rate is changed): where it comes from and who confirmed it. */
+  verification?: { source: string; accountantName: string } | null;
 }
 
 export interface PlatformTaxSettings {

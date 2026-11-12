@@ -13,6 +13,12 @@ import { pickCheckoutPlan, type OnboardingBilling } from './onboardingPlans';
 import { maxYearlySavingsPercent } from '@/utils/planPricing';
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 import { salesMailto } from '@/utils/contact';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { planDisplayName } from './onboardingPlans';
+import { ONBOARDING_CHECKOUT_TEXT } from './OnboardingCheckout.text';
+
+type CheckoutText = typeof ONBOARDING_CHECKOUT_TEXT.en;
 
 /** Same-day-next-month arithmetic, clamped so Jan 31 + 1 month is Feb 28/29, not Mar 3. */
 function addMonths(d: Date, n: number): Date {
@@ -20,7 +26,7 @@ function addMonths(d: Date, n: number): Date {
   r.setDate(Math.min(d.getDate(), new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate()));
   return r;
 }
-const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const fmtDate = (d: Date, locale = 'en-US') => d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 
 // ── Shopify-style checkout: dark panel (plan + offer) left, card form right ────
 // Real full-viewport page outside the wizard's split layout. Submitting the
@@ -43,9 +49,14 @@ export function OnboardingCheckoutPage({
   onContinue: () => void; onStartTrial?: () => void; onViewPlans: () => void; onBack?: () => void;
 }) {
   const plan = pickCheckoutPlan(plans, selectedPlanId);
+  const t = useSiteText(ONBOARDING_CHECKOUT_TEXT);
+  const { pageLang } = useSiteLang();
+  const planName = plan ? planDisplayName(plan, pageLang) : '';
+  const fd = (d: Date) => fmtDate(d, t.dateLocale);
   const stripeReady = isStripeConfigured();
   const [clientSecret, setClientSecret] = useState('');
-  const [intentError, setIntentError] = useState('');
+  // The card form could not be loaded (the message itself is in the page language, see below).
+  const [intentError, setIntentError] = useState(false);
   const [payError, setPayError] = useState('');
   const [paying, setPaying] = useState(false);
   const [domainOpen, setDomainOpen] = useState(false);
@@ -60,7 +71,7 @@ export function OnboardingCheckoutPage({
     let cancelled = false;
     apiCreateOnboardingSetupIntent()
       .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
-      .catch(() => { if (!cancelled) setIntentError('Could not load the card form right now — try again, or start with the free trial instead.'); });
+      .catch(() => { if (!cancelled) setIntentError(true); });
     return () => { cancelled = true; };
   }, [stripeReady, needsCardForm]);
 
@@ -70,7 +81,7 @@ export function OnboardingCheckoutPage({
     try {
       await onSubscribe(plan._id);
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : 'Payment failed — please try again.');
+      setPayError(err instanceof Error ? err.message : t.paymentFailed);
     } finally {
       setPaying(false);
     }
@@ -82,7 +93,7 @@ export function OnboardingCheckoutPage({
       await apiConfirmOnboardingPaymentMethod(setupIntentId);
       setCardOnFile(true);
     } catch {
-      setPayError('We saved your card with Stripe, but could not confirm it on our side — try again.');
+      setPayError(t.cardNotConfirmed);
       setPaying(false);
       return;
     }
@@ -96,7 +107,7 @@ export function OnboardingCheckoutPage({
   const hasIntro = !!plan && !yearly && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null;
   const cycles = plan?.introDurationCycles ?? 0;
   const dueToday = !plan ? 0 : yearly ? yearlyTotal : hasIntro ? plan.introPriceUSD! : monthly;
-  const payLabel = `Subscribe for $${dueToday} USD`;
+  const payLabel = t.payLabel(dueToday);
 
   // Real dates, computed from today — what the seller would actually be billed
   // if they subscribed right now (same anchor the backend's monthly cycle uses).
@@ -104,23 +115,23 @@ export function OnboardingCheckoutPage({
   const introEnd = addMonths(today, cycles);
   const nextCharge = yearly ? addMonths(today, 12) : addMonths(today, 1);
   const schedule: { when: string; what: string }[] = !plan || plan.isFree ? [] : yearly
-    ? [{ when: 'Today', what: `$${yearlyTotal}` }, { when: fmtDate(nextCharge), what: `$${yearlyTotal}/yr, renews yearly` }]
+    ? [{ when: t.today, what: t.money(yearlyTotal) }, { when: fd(nextCharge), what: t.perYearRenews(yearlyTotal) }]
     : hasIntro
       ? [
-          ...Array.from({ length: cycles }, (_, i) => ({ when: i === 0 ? 'Today' : fmtDate(addMonths(today, i)), what: `$${plan.introPriceUSD}` })),
-          { when: fmtDate(introEnd), what: `$${monthly}/mo, then every month` },
+          ...Array.from({ length: cycles }, (_, i) => ({ when: i === 0 ? t.today : fd(addMonths(today, i)), what: t.money(plan.introPriceUSD!) })),
+          { when: fd(introEnd), what: t.perMonthThen(monthly) },
         ]
-      : [{ when: 'Today', what: `$${monthly}` }, { when: fmtDate(nextCharge), what: `$${monthly}/mo, then every month` }];
+      : [{ when: t.today, what: t.money(monthly) }, { when: fd(nextCharge), what: t.perMonthThen(monthly) }];
   const firstFullCharge = hasIntro ? introEnd : nextCharge;
 
-  const headline = !plan ? 'Start your free trial'
-    : plan.isFree ? `Start on ${plan.name}`
-    : hasIntro ? `Start ${plan.name} for $${plan.introPriceUSD}` : `Start on ${plan.name}`;
-  const subline = !plan ? `Full platform access for ${trialDurationDays} days — no card needed.`
-    : plan.isFree ? 'Free forever — active immediately, no trial.'
-    : yearly ? `Pay $${yearlyTotal}/year — renews ${fmtDate(nextCharge)}.`
-    : hasIntro ? `Pay $${plan.introPriceUSD}/month until ${fmtDate(introEnd)}.`
-    : `Pay $${monthly}/month — next charge ${fmtDate(nextCharge)}.`;
+  const headline = !plan ? t.startTrial
+    : plan.isFree ? t.startOn(planName)
+    : hasIntro ? t.startFor(planName, plan.introPriceUSD!) : t.startOn(planName);
+  const subline = !plan ? t.trialSubline(trialDurationDays)
+    : plan.isFree ? t.freeSubline
+    : yearly ? t.yearlySubline(yearlyTotal, fd(nextCharge))
+    : hasIntro ? t.introSubline(plan.introPriceUSD!, fd(introEnd))
+    : t.monthlySubline(monthly, fd(nextCharge));
 
   return (
     <div className="fixed inset-0 z-50 bg-cream overflow-y-auto" data-lenis-prevent>
@@ -129,29 +140,29 @@ export function OnboardingCheckoutPage({
         <div className="flex items-center gap-3">
           {onBack && <button type="button" onClick={onBack} disabled={paying || !!paidPlanId}
             className="text-[12.5px] font-semibold text-slate hover:text-carbon disabled:opacity-40 inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer">
-            <ArrowLeft size={13} /> Back
+            <ArrowLeft size={13} className="rtl:-scale-x-100" /> {t.back}
           </button>}
           {headerExtra}
         </div>
       </div>
 
       <div className="max-w-[980px] mx-auto px-4 md:px-8 py-6 md:py-8">
-        <div className="grid md:grid-cols-2 md:h-[510px] md:p-2 md:pl-0 rounded-[26px] overflow-hidden border border-bone bg-gradient-to-br from-carbon via-[#241f1b] to-brand-deep-orange">
+        <div className="grid md:grid-cols-2 md:h-[510px] md:p-2 md:ps-0 rounded-[26px] overflow-hidden border border-bone bg-gradient-to-br from-carbon via-[#241f1b] to-brand-deep-orange">
           {/* Left — plan + offer */}
           <div className="p-8 md:p-10 flex flex-col min-h-[320px]">
             <h1 className="text-[32px] md:text-[40px] leading-[1.08] font-normal tracking-[-0.02em] text-white mb-6 max-w-[440px]">{headline}</h1>
             <p className="text-[16px] text-white/85 mb-2">{subline}</p>
-            <p className="text-[16px] text-white/85">No commitment, cancel anytime.</p>
+            <p className="text-[16px] text-white/85">{t.noCommitment}</p>
 
             {schedule.length > 0 && (
               <ol className="mt-8 max-w-[360px]">
                 {schedule.map((s, i) => (
-                  <li key={i} className="relative flex items-baseline justify-between gap-6 pl-6 pb-5 last:pb-0 text-[14px]">
+                  <li key={i} className="relative flex items-baseline justify-between gap-6 ps-6 pb-5 last:pb-0 text-[14px]">
                     {/* timeline: dot per charge, hairline between them */}
-                    <span className={clsx('absolute left-0 top-[7px] size-[9px] rounded-full', i === 0 ? 'bg-brand-orange' : 'bg-white/30')} />
-                    {i < schedule.length - 1 && <span className="absolute left-[4px] top-[20px] bottom-[-2px] w-px bg-white/15" />}
+                    <span className={clsx('absolute start-0 top-[7px] size-[9px] rounded-full', i === 0 ? 'bg-brand-orange' : 'bg-white/30')} />
+                    {i < schedule.length - 1 && <span className="absolute start-[4px] top-[20px] bottom-[-2px] w-px bg-white/15" />}
                     <span className={i === 0 ? 'text-white' : 'text-white/60'}>{s.when}</span>
-                    <span className={clsx('text-right', i === 0 ? 'text-white' : 'text-white/60')}>{s.what}</span>
+                    <span className={clsx('text-end', i === 0 ? 'text-white' : 'text-white/60')}>{s.what}</span>
                   </li>
                 ))}
               </ol>
@@ -160,7 +171,7 @@ export function OnboardingCheckoutPage({
             <div className="mt-auto pt-10">
               <button type="button" onClick={onViewPlans} disabled={paying || !!paidPlanId}
                 className="text-[15px] font-semibold text-white underline underline-offset-4 bg-transparent border-0 cursor-pointer p-0 disabled:opacity-40">
-                View all plans
+                {t.viewAllPlans}
               </button>
             </div>
           </div>
@@ -171,16 +182,16 @@ export function OnboardingCheckoutPage({
               <div className="flex justify-end mb-2">
                 <button type="button" onClick={onStartTrial} disabled={paying}
                   className="text-[12.5px] font-semibold text-slate hover:text-carbon disabled:opacity-40 bg-transparent border-0 cursor-pointer p-0">
-                  Skip — start free {trialDurationDays}-day trial instead
+                  {t.skipToTrial(trialDurationDays)}
                 </button>
               </div>
             )}
             {plan && !plan.isFree && plan.limits.customDomainAllowed && (
               <div className="mb-2 rounded-xl bg-brand-pale-orange">
                 <button type="button" onClick={() => setDomainOpen(o => !o)} aria-expanded={domainOpen}
-                  className="w-full flex items-center gap-[10px] px-[14px] py-[8px] bg-transparent border-0 cursor-pointer text-left">
+                  className="w-full flex items-center gap-[10px] px-[14px] py-[8px] bg-transparent border-0 cursor-pointer text-start">
                   <Globe size={16} className="shrink-0 text-brand-deep-orange" />
-                  <span className="flex-1 text-[13.5px] text-carbon">Includes custom domain</span>
+                  <span className="flex-1 text-[13.5px] text-carbon">{t.includesDomain}</span>
                   <ChevronDown size={16} className={clsx('shrink-0 text-carbon transition-transform duration-300 ease-out', domainOpen && 'rotate-180')} />
                 </button>
                 {/* grid-rows 0fr → 1fr animates to the content's real height — a smooth
@@ -191,7 +202,7 @@ export function OnboardingCheckoutPage({
                 )}>
                   <div className="overflow-hidden">
                     <p className="px-[14px] pb-3 text-[12.5px] text-charcoal leading-[1.5]">
-                      Connect your own domain (like yourbrand.com) to your store — included with {plan.name}.
+                      {t.domainDetail(planName)}
                     </p>
                   </div>
                 </div>
@@ -200,40 +211,40 @@ export function OnboardingCheckoutPage({
             {!plan ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 rounded-lg bg-cream px-[14px] py-[12px] text-[13px] text-slate">
-                  <CreditCard size={14} className="shrink-0" /> No paid plans are available right now.
+                  <CreditCard size={14} className="shrink-0" /> {t.noPaidPlans}
                 </div>
                 {onStartTrial && <Button variant="primary" size="lg" fullWidth onClick={onStartTrial}>
-                  Start free {trialDurationDays}-day trial <ArrowRight size={14} className="inline align-middle ml-1" />
+                  {t.startFreeTrial(trialDurationDays)} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
                 </Button>}
               </div>
             ) : plan.isFree ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 rounded-lg bg-success-bg px-[14px] py-[12px]">
                   <ShieldCheck size={16} className="text-success shrink-0" />
-                  <p className="text-[12.5px] text-success">{plan.name} is free — no card needed.</p>
+                  <p className="text-[12.5px] text-success">{t.planIsFree(planName)}</p>
                 </div>
                 <Button variant="primary" size="lg" fullWidth onClick={onContinue}>
-                  Continue <ArrowRight size={14} className="inline align-middle ml-1" />
+                  {t.continue} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
                 </Button>
               </div>
             ) : paid ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 rounded-lg bg-success-bg px-[14px] py-[12px]">
                   <ShieldCheck size={16} className="text-success shrink-0" />
-                  <p className="text-[12.5px] text-success">Payment successful — you're on {plan.name}.</p>
+                  <p className="text-[12.5px] text-success">{t.paymentSuccess(planName)}</p>
                 </div>
                 <Button variant="primary" size="lg" fullWidth onClick={onContinue}>
-                  Continue <ArrowRight size={14} className="inline align-middle ml-1" />
+                  {t.continue} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
                 </Button>
               </div>
             ) : !stripeReady ? (
               <div className="flex items-center gap-2 rounded-lg bg-cream px-[14px] py-[12px] text-[12.5px] text-slate">
-                <CreditCard size={14} className="shrink-0" /> Card setup isn't available right now — start with the free trial instead.
+                <CreditCard size={14} className="shrink-0" /> {t.cardUnavailable}
               </div>
             ) : cardOnFile ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 rounded-lg bg-cream px-[14px] py-[12px] text-[12.5px] text-carbon">
-                  <CreditCard size={14} className="shrink-0 text-brand-orange" /> Card saved — ready to charge.
+                  <CreditCard size={14} className="shrink-0 text-brand-orange" /> {t.cardSaved}
                 </div>
                 {payError && (
                   <div className="flex items-start gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] text-[12.5px] text-error">
@@ -241,14 +252,14 @@ export function OnboardingCheckoutPage({
                   </div>
                 )}
                 <Button variant="primary" size="lg" fullWidth loading={paying} onClick={charge}>{payLabel}</Button>
-                <button type="button" disabled={paying} onClick={() => { setClientSecret(''); setIntentError(''); setCardOnFile(false); setPayError(''); }}
+                <button type="button" disabled={paying} onClick={() => { setClientSecret(''); setIntentError(false); setCardOnFile(false); setPayError(''); }}
                   className="text-[12.5px] font-semibold text-slate hover:text-carbon bg-transparent border-0 cursor-pointer">
-                  Use a different card
+                  {t.useDifferentCard}
                 </button>
               </div>
             ) : intentError ? (
               <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] text-[12.5px] text-error">
-                <AlertTriangle size={14} className="shrink-0" /> {intentError}
+                <AlertTriangle size={14} className="shrink-0" /> {t.cardFormError}
               </div>
             ) : clientSecret ? (
               <div>
@@ -256,17 +267,16 @@ export function OnboardingCheckoutPage({
                   clientSecret={clientSecret}
                   onConfirmed={handleConfirmed}
                   submitLabel={payLabel}
-                  footnote="Secured by Stripe — your card is charged right away"
+                  footnote={t.securedFootnote}
                 />
-                {paying && <p className="text-[11px] text-slate mt-2 text-center">Processing payment…</p>}
+                {paying && <p className="text-[11px] text-slate mt-2 text-center">{t.processing}</p>}
                 {payError && (
                   <div className="flex items-start gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] text-[12.5px] text-error mt-3">
                     <AlertTriangle size={14} className="shrink-0 mt-[2px]" /> {payError}
                   </div>
                 )}
                 <p className="text-[11px] text-slate text-center leading-[1.5] mt-2">
-                  By subscribing, you agree to be charged ${yearly ? `${yearlyTotal}/yr` : `${monthly}/mo`} ({plan.name}) + taxes
-                  starting on {fmtDate(firstFullCharge)}. Cancel anytime in Settings.
+                  {t.agreeCharge(yearly ? t.amountPerYear(yearlyTotal) : t.amountPerMonth(monthly), planName, fd(firstFullCharge))}
                 </p>
                 {taxStoreId && <PlatformTaxNote storeId={taxStoreId} amountUSD={dueToday} className="text-[12px] text-charcoal text-center mt-1" />}
               </div>
@@ -286,74 +296,79 @@ export function OnboardingCheckoutPage({
 // ── "View all plans" — Shopify-style: plan columns on top, "Compare plans" grid below ──
 type Cell = string | boolean | null;
 const fmt = (n: number) => n.toLocaleString('en-US');
-const num = (v: number | undefined): Cell => v === undefined ? null : v < 0 ? 'Unlimited' : fmt(v);
+const num = (v: number | undefined, t: CheckoutText): Cell => v === undefined ? null : v < 0 ? t.unlimited : fmt(v);
 const flag = (v: boolean | undefined): Cell => v === undefined ? null : v;
 /** A feature with no plan gate in Solvexo — every plan has it. */
-const ALL: (p: PlatformPlan) => Cell = () => true;
-const moPrice = (n: number | null | undefined): Cell => typeof n === 'number' ? `$${n % 1 ? n.toFixed(2) : n}/mo` : null;
+const ALL: (p: PlatformPlan, t: CheckoutText) => Cell = () => true;
+const moPrice = (n: number | null | undefined, t: CheckoutText): Cell => typeof n === 'number' ? t.moPrice(String(n % 1 ? n.toFixed(2) : n)) : null;
 
 // The compare table, grouped by Solvexo module. Rows with `ALL` are features that exist
 // in the product but aren't gated by plan (so every plan includes them); every other row
 // reads the plan's real, backend-enforced limit — see platform-plan.catalog.ts in the API.
-// Never add a row for something Solvexo doesn't actually do (no analytics tier, no API/webhooks).
-const COMPARE: { group: string; rows: { label: string; get: (p: PlatformPlan) => Cell }[] }[] = [
-  { group: 'Pricing', rows: [
-    { label: 'Pay monthly', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.monthlyPriceUSD) },
-    { label: 'Pay yearly (per month)', get: p => p.isCustomPricing ? 'Custom' : moPrice(p.yearlyPriceUSD != null ? Math.round(p.yearlyPriceUSD / 12) : null) },
-    { label: 'No Solvexo commission on card sales, COD or bank transfer (card processing fee only)', get: ALL },
-    { label: 'Third-party payment gateway fee (SafePay, JazzCash…)', get: p => p.limits.transactionFeeRate === undefined ? null : `${Number((p.limits.transactionFeeRate * 100).toFixed(2))}%` },
+// Never add a row for something Solvexo doesn't actually do (no analytics tier). Sales/promotions and banners are unlimited, so they get no row.
+const COMPARE: { group: keyof CheckoutText['groups']; rows: { key: keyof CheckoutText['rows']; get: (p: PlatformPlan, t: CheckoutText) => Cell }[] }[] = [
+  { group: 'pricing', rows: [
+    { key: 'payMonthly', get: (p, t) => p.isCustomPricing ? t.custom : moPrice(p.monthlyPriceUSD, t) },
+    { key: 'payYearly', get: (p, t) => p.isCustomPricing ? t.custom : moPrice(p.yearlyPriceUSD != null ? Math.round(p.yearlyPriceUSD / 12) : null, t) },
+    { key: 'noCommission', get: ALL },
+    { key: 'gatewayFee', get: p => p.limits.transactionFeeRate === undefined ? null : `${Number((p.limits.transactionFeeRate * 100).toFixed(2))}%` },
   ] },
-  { group: 'Online store', rows: [
-    { label: 'Themes & theme editor', get: ALL },
-    { label: 'Pages, blog & menus', get: ALL },
-    { label: 'Custom domain', get: p => flag(p.limits.customDomainAllowed) },
-    { label: 'White-label branding', get: p => flag(p.limits.whiteLabelAllowed) },
+  { group: 'store', rows: [
+    { key: 'themes', get: ALL },
+    { key: 'pages', get: ALL },
+    { key: 'customDomain', get: p => flag(p.limits.customDomainAllowed) },
+    { key: 'whiteLabel', get: p => flag(p.limits.whiteLabelAllowed) },
   ] },
-  { group: 'Products & orders', rows: [
-    { label: 'Products', get: p => num(p.limits.maxProducts) },
-    { label: 'Orders, draft orders, returns & disputes', get: ALL },
-    { label: 'Gift cards', get: ALL },
-    { label: 'Discount codes', get: ALL },
+  { group: 'products', rows: [
+    { key: 'products', get: (p, t) => num(p.limits.maxProducts, t) },
+    { key: 'orders', get: ALL },
+    { key: 'giftCards', get: ALL },
+    { key: 'discounts', get: ALL },
   ] },
-  { group: 'Inventory & POS', rows: [
-    { label: 'Inventory, purchase orders & stock counts', get: ALL },
-    { label: 'POS / inventory locations', get: p => num(p.limits.maxPosLocations) },
+  { group: 'inventory', rows: [
+    { key: 'inventory', get: ALL },
+    { key: 'locations', get: (p, t) => num(p.limits.maxPosLocations, t) },
   ] },
-  { group: 'Team', rows: [
-    { label: 'Staff accounts', get: p => num(p.limits.maxStaffAccounts) },
-    { label: 'Staff roles & permissions', get: ALL },
+  { group: 'team', rows: [
+    { key: 'staff', get: (p, t) => num(p.limits.maxStaffAccounts, t) },
+    { key: 'roles', get: ALL },
   ] },
-  { group: 'Marketing', rows: [
-    { label: 'Email campaigns & automations', get: p => flag(p.limits.emailCampaignsAllowed) },
-    { label: 'Abandoned cart recovery', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
-    { label: 'Loyalty & rewards program', get: p => flag(p.limits.loyaltyProgramAllowed) },
-    { label: 'Active promotions', get: p => num(p.limits.maxActivePromotions) },
-    { label: 'Newsletter, affiliates & tracking pixels', get: ALL },
-    { label: 'Customer reviews & messaging', get: ALL },
+  { group: 'marketing', rows: [
+    { key: 'emailCampaigns', get: p => flag(p.limits.emailCampaignsAllowed) },
+    { key: 'abandonedCart', get: p => flag(p.limits.abandonedCartRecoveryAllowed) },
+    { key: 'loyalty', get: p => flag(p.limits.loyaltyProgramAllowed) },
+    { key: 'emailsPerMonth', get: (p, t) => num(p.limits.monthlyEmailSends, t) },
+    { key: 'b2b', get: p => flag(p.limits.b2bWholesaleAllowed) },
+    { key: 'b2bCatalogs', get: (p, t) => (p.limits.b2bWholesaleAllowed ? num(p.limits.maxB2BCatalogs, t) : null) },
+    { key: 'memberships', get: p => flag(p.limits.digitalMembershipsAllowed) },
+    { key: 'licenseKeys', get: p => flag(p.limits.digitalLicensesAllowed) },
+    { key: 'courses', get: p => flag(p.limits.digitalCoursesAllowed) },
+    { key: 'newsletter', get: ALL },
+    { key: 'reviews', get: ALL },
   ] },
-  { group: 'SEO', rows: [
-    { label: 'SEO audit & score tools', get: p => flag(p.limits.advancedSeoToolsAllowed) },
-    { label: 'Custom redirects & canonical rules', get: p => flag(p.limits.customRedirectsAllowed) },
-    { label: 'AI SEO suggestions', get: p => flag(p.limits.seoAiSuggestionsAllowed) },
-    { label: 'Google Search Console integration', get: p => flag(p.limits.searchConsoleIntegrationAllowed) },
+  { group: 'seo', rows: [
+    { key: 'seoAudit', get: p => flag(p.limits.advancedSeoToolsAllowed) },
+    { key: 'redirects', get: p => flag(p.limits.customRedirectsAllowed) },
+    { key: 'seoAi', get: p => flag(p.limits.seoAiSuggestionsAllowed) },
+    { key: 'searchConsole', get: p => flag(p.limits.searchConsoleIntegrationAllowed) },
   ] },
-  { group: 'Shipping & currencies', rows: [
-    { label: 'Shipping zones, rates & labels', get: ALL },
-    { label: 'Live carrier shipping rates at checkout', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
-    { label: 'Selling currencies (markets)', get: p => num(p.limits.maxMarkets) },
+  { group: 'shipping', rows: [
+    { key: 'shippingZones', get: ALL },
+    { key: 'carrierRates', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
+    { key: 'markets', get: (p, t) => num(p.limits.maxMarkets, t) },
   ] },
-  { group: 'AI Studio', rows: [
-    { label: 'AI Studio tools', get: ALL },
-    { label: 'AI credits every month', get: p => num(p.limits.aiCreditsPerMonth) },
+  { group: 'ai', rows: [
+    { key: 'aiCredits', get: (p, t) => (p.limits.seoAiSuggestionsAllowed ? num(p.limits.aiCreditsPerMonth, t) : false) },
   ] },
-  { group: 'Apps & channels', rows: [
-    { label: 'Payments & shipping integrations (Stripe, bank transfer, WhatsApp, Shippo)', get: ALL },
-    { label: 'Custom fields & content types', get: ALL },
-    { label: 'Mobile app request', get: ALL },
+  { group: 'apps', rows: [
+    { key: 'integrations', get: ALL },
+    { key: 'customFields', get: ALL },
+    { key: 'mobileApp', get: ALL },
   ] },
-  { group: 'Support', rows: [
-    { label: 'Priority support', get: p => flag(p.limits.prioritySupport) },
-    { label: 'Dedicated account manager', get: p => flag(p.limits.dedicatedAccountManager) },
+  { group: 'support', rows: [
+    { key: 'webhooksApi', get: p => flag(p.limits.apiWebhooksAllowed) },
+    { key: 'prioritySupport', get: p => flag(p.limits.prioritySupport) },
+    { key: 'accountManager', get: p => flag(p.limits.dedicatedAccountManager) },
   ] },
 ];
 
@@ -373,7 +388,7 @@ function CellView({ v }: { v: Cell }) {
 // rounded sheet below it holding the plan cards (one card per plan) and, under
 // them, the "Compare plans" table — bare rows, a sticky header with the select
 // buttons, filled check marks. Only the actions use Solvexo orange.
-export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingChange, onSelect, onClose, title = 'Select a plan', headerExtra }: {
+export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingChange, onSelect, onClose, title, headerExtra }: {
   /** Extra controls on the right of the top bar (the blocking plan gate puts the store switcher + Log out here). */
   headerExtra?: ReactNode;
   plans: PlatformPlan[]; selectedPlanId: string | null;
@@ -382,6 +397,12 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
   /** Omit to hide the close button (a blocking gate has nothing to go back to). */
   onClose?: () => void; title?: string;
 }) {
+  const t = useSiteText(ONBOARDING_CHECKOUT_TEXT);
+  const { pageLang } = useSiteLang();
+  const nameOf = (p: PlatformPlan) => planDisplayName(p, pageLang);
+  // Plan descriptions and bullets come from the API in English: on the Arabic page they keep their own
+  // (left-to-right) word order and punctuation, aligned right with the rest of the card.
+  const apiText = pageLang === 'ar' ? { dir: 'auto', className: 'text-right' } : { dir: undefined, className: undefined };
   const list = [...plans].sort((a, b) => a.sortOrder - b.sortOrder);
   const current = pickCheckoutPlan(plans, selectedPlanId)?._id ?? null;
   // One label column + one column per plan — shared by the sticky header and every row.
@@ -391,7 +412,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
     billing === 'monthly' && !p.isFree && p.introOfferEnabled && p.introPriceUSD != null && p.introDurationCycles != null
       ? { price: p.introPriceUSD, cycles: p.introDurationCycles } : null;
 
-  const pickLabel = (p: PlatformPlan) => p.isCustomPricing ? 'Contact sales' : current === p._id ? `Continue with ${p.name}` : p.isFree ? 'Choose Free' : `Select ${p.name}`;
+  const pickLabel = (p: PlatformPlan) => p.isCustomPricing ? t.contactSales : current === p._id ? t.continueWith(nameOf(p)) : p.isFree ? t.chooseFree : t.selectNamed(nameOf(p));
   // Enterprise has no self-serve checkout — it's a sales conversation, then an admin assigns it.
   const choose = (p: PlatformPlan) => {
     if (p.isCustomPricing) { window.location.href = salesMailto(`${p.name} Plan Inquiry`); return; }
@@ -419,8 +440,8 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
 
       <div className="absolute inset-x-0 top-16 bottom-0 bg-cream rounded-t-[28px] overflow-y-auto scroll-smooth">
         {onClose && (
-          <button type="button" onClick={onClose} aria-label="Close"
-            className="fixed right-3 md:right-5 top-[84px] z-40 size-10 rounded-full bg-white border border-bone hover:bg-bone text-carbon flex items-center justify-center cursor-pointer transition-colors duration-200">
+          <button type="button" onClick={onClose} aria-label={t.close}
+            className="fixed end-3 md:end-5 top-[84px] z-40 size-10 rounded-full bg-white border border-bone hover:bg-bone text-carbon flex items-center justify-center cursor-pointer transition-colors duration-200">
             <X size={18} />
           </button>
         )}
@@ -429,21 +450,22 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
           className="px-4 md:px-10 lg:px-[88px] pt-10 pb-20 max-w-[1360px] mx-auto"
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <h1 className="text-[26px] md:text-[34px] font-semibold tracking-[-0.01em] text-carbon text-center mb-6">{title}</h1>
+          <h1 className="text-[26px] md:text-[34px] font-semibold tracking-[-0.01em] text-carbon text-center mb-6">{title ?? t.selectPlan}</h1>
 
           {list.some(p => !p.isFree) && (
             <div className="flex justify-center mb-8">
-              <div className="relative inline-grid grid-cols-2 bg-white border border-bone rounded-full p-1" role="group" aria-label="Billing interval">
+              <div className="relative inline-grid grid-cols-2 bg-white border border-bone rounded-full p-1" role="group" aria-label={t.billingInterval}>
                 {/* sliding pill */}
                 <span
-                  className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-full bg-brand-orange transition-transform duration-300 ease-out"
-                  style={{ transform: billing === 'annual' ? 'translateX(100%)' : 'translateX(0)' }}
+                  className="absolute top-1 bottom-1 start-1 w-[calc(50%-4px)] rounded-full bg-brand-orange transition-transform duration-300 ease-out"
+                  // Slides toward the end side: right in English, left in Arabic (right-to-left).
+                  style={{ transform: billing === 'annual' ? (pageLang === 'ar' ? 'translateX(-100%)' : 'translateX(100%)') : 'translateX(0)' }}
                 />
                 {(['monthly', 'annual'] as const).map(b => (
                   <button key={b} type="button" onClick={() => onBillingChange(b)} aria-pressed={billing === b}
                     className="relative z-10 px-7 py-2 rounded-full cursor-pointer flex items-center justify-center gap-[6px] border-0 bg-transparent">
-                    <span className={clsx('text-[13px] capitalize transition-colors duration-300', billing === b ? 'font-semibold text-white' : 'font-medium text-slate')}>{b}</span>
-                    {b === 'annual' && maxYearlySavingsPercent(plans) > 0 && <span className={clsx('text-[10px] font-semibold transition-colors duration-300', billing === b ? 'text-white/90' : 'text-success')}>Save {maxYearlySavingsPercent(plans)}%</span>}
+                    <span className={clsx('text-[13px] capitalize transition-colors duration-300', billing === b ? 'font-semibold text-white' : 'font-medium text-slate')}>{t[b]}</span>
+                    {b === 'annual' && maxYearlySavingsPercent(plans) > 0 && <span className={clsx('text-[10px] font-semibold transition-colors duration-300', billing === b ? 'text-white/90' : 'text-success')}>{t.save(maxYearlySavingsPercent(plans))}</span>}
                   </button>
                 ))}
               </div>
@@ -464,28 +486,28 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
                   current === p._id ? 'border-brand-orange' : 'border-bone',
                 )}>
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-[18px] font-semibold text-carbon leading-tight">{p.name}</p>
+                    <p className="text-[18px] font-semibold text-carbon leading-tight">{nameOf(p)}</p>
                     {intro && (
                       <span className="shrink-0 text-[11px] font-medium text-success bg-success-bg rounded-full px-[9px] py-[3px]">
-                        {intro.cycles}-month offer
+                        {t.monthOffer(intro.cycles)}
                       </span>
                     )}
                   </div>
-                  <p className="text-[13px] text-slate mt-1 mb-4 min-h-[36px] leading-[1.4]">{p.description ?? ' '}</p>
+                  <p {...apiText} className={clsx('text-[13px] text-slate mt-1 mb-4 min-h-[36px] leading-[1.4]', apiText.className)}>{p.description ?? ' '}</p>
                   <div className="flex items-baseline gap-[6px] mb-1">
                     {intro && <span className="text-[15px] text-slate line-through">${monthly}</span>}
-                    <span className="text-[26px] font-semibold text-carbon leading-none">{p.isCustomPricing ? 'Custom' : p.isFree ? 'Free' : `$${intro ? intro.price : perMonth}`}</span>
-                    {!p.isFree && !p.isCustomPricing && <span className="text-[12px] text-slate">/mo</span>}
+                    <span className="text-[26px] font-semibold text-carbon leading-none">{p.isCustomPricing ? t.custom : p.isFree ? t.free : t.money(intro ? intro.price : perMonth)}</span>
+                    {!p.isFree && !p.isCustomPricing && <span className="text-[12px] text-slate">{t.perMonthUnit}</span>}
                   </div>
                   <p className="text-[12px] text-slate mb-4 min-h-[16px]">
-                    {p.isFree || p.isCustomPricing ? ' ' : intro ? `for ${intro.cycles} month${intro.cycles === 1 ? '' : 's'}, then $${monthly}/mo` : annual ? `billed $${yearlyTotal} yearly` : ' '}
+                    {p.isFree || p.isCustomPricing ? ' ' : intro ? t.introThen(intro.cycles, monthly) : annual ? t.billedYearly(yearlyTotal) : ' '}
                   </p>
                   <button type="button" onClick={() => choose(p)} className={clsx(btn, 'w-full py-[11px] text-[14px] mb-5')}>
                     {pickLabel(p)}
                   </button>
                   <ul className="flex flex-col gap-[9px]">
                     {(p.featureBullets ?? []).slice(0, 5).map(f => (
-                      <li key={f} className="text-[13px] text-charcoal leading-[1.4]">{f}</li>
+                      <li key={f} {...apiText} className={clsx('text-[13px] text-charcoal leading-[1.4]', apiText.className)}>{f}</li>
                     ))}
                   </ul>
                 </div>
@@ -497,7 +519,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
           <div className="mt-14">
             <div className="sticky top-0 z-20 -mx-4 md:-mx-10 lg:-mx-[88px] px-4 md:px-10 lg:px-[88px] bg-cream border-b border-bone">
               <div className="grid items-center gap-x-7 gap-y-4 py-4" style={cols}>
-                <h2 className="text-[20px] md:text-[26px] font-semibold tracking-[-0.01em] text-carbon">Compare plans</h2>
+                <h2 className="text-[20px] md:text-[26px] font-semibold tracking-[-0.01em] text-carbon">{t.comparePlans}</h2>
                 {list.map(p => (
                   <button key={p._id} type="button" onClick={() => choose(p)}
                     className={clsx(btn, 'w-full py-[9px] md:py-[10px] px-2 text-[12px] md:text-[14px] truncate')}>
@@ -509,11 +531,11 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
 
             {COMPARE.map(g => (
               <Fragment key={g.group}>
-                <div className="pt-10 pb-4 text-[17px] font-medium text-carbon">{g.group}</div>
+                <div className="pt-10 pb-4 text-[17px] font-medium text-carbon">{t.groups[g.group]}</div>
                 {g.rows.map(r => (
-                  <div key={r.label} className="grid items-center gap-x-7 py-[21px] border-t border-bone text-[14px] md:text-[16px] text-charcoal" style={cols}>
-                    <span className="pr-2">{r.label}</span>
-                    {list.map(p => <span key={p._id} className="flex justify-center text-center"><CellView v={r.get(p)} /></span>)}
+                  <div key={r.key} className="grid items-center gap-x-7 py-[21px] border-t border-bone text-[14px] md:text-[16px] text-charcoal" style={cols}>
+                    <span className="pe-2">{t.rows[r.key]}</span>
+                    {list.map(p => <span key={p._id} className="flex justify-center text-center"><CellView v={r.get(p, t)} /></span>)}
                   </div>
                 ))}
               </Fragment>
@@ -521,7 +543,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
           </div>
 
           <p className="mt-14 text-[12px] text-slate leading-[1.6] max-w-[900px]">
-            All prices are in USD and exclude taxes. Intro offers apply to the first billing months shown, after which the regular monthly price applies. You can change or cancel your plan any time from Billing.
+            {t.footer}
           </p>
         </motion.div>
       </div>

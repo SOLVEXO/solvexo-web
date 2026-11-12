@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Languages,
+  Settings, ChevronLeft, ChevronRight, ChevronDown, Languages,
   ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree, MoreHorizontal,
-  Store, TrendingUp, Landmark, ShieldOff,
+  Store, TrendingUp, Landmark, ShieldOff, LifeBuoy,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, apiBrowsePlatformPlans, apiGetStoreEntitlements, type StorePlatformSubscription, type EntitlementsSummary } from '@/api/services/platformPlans';
@@ -26,6 +26,8 @@ import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { useNavBadgeCounts, useClearViewedBadges, useRefreshServerBadges } from '@/hooks/useNavBadges';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { FEATURES } from '@/constants/features';
+import { planGateFor } from './planGate';
+import { PlanUpgradeNeeded } from './PlanUpgradeNeeded';
 import { ViewAsBanner } from './ViewAsBanner';import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -135,14 +137,16 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders',  requiredPermission: 'orders.view' },
       { id: 'digital', Icon: Package, label: 'Digital', path: 'digital', requiredPermission: ['digital.view', 'members.manage', 'courses.manage', 'licenses.manage'] },
-      { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'] },
+      { id: 'wholesale', Icon: Package, label: 'Wholesale', path: 'wholesale', requiredPermission: ['b2b.view', 'b2b.manage'], requiredEntitlement: 'b2bWholesaleAllowed' },
       { id: 'subscriptions', Icon: Package, label: 'Subscriptions', path: 'subscriptions', requiredPermission: ['product_subscriptions.view', 'product_subscriptions.manage'] },
       { id: 'checkout-rules', Icon: Package, label: 'Checkout rules', path: 'checkout-rules', requiredPermission: ['checkout_rules.view', 'checkout_rules.manage'] },
+      { id: 'experiments', Icon: Package, label: 'Experiments', path: 'experiments', requiredPermission: ['experiments.view', 'experiments.manage'] },
       { id: 'cod-protection', Icon: Package, label: 'COD protection', path: 'cod-protection', requiredPermission: 'settings.payments.manage' },
       { id: 'messaging', Icon: Package, label: 'WhatsApp & SMS', path: 'messaging', requiredPermission: 'marketing.manage' },
       { id: 'khata', Icon: Package, label: 'Khata', path: 'khata', requiredPermission: 'khata.view' },
       { id: 'sales-channels', Icon: Package, label: 'Sales channels', path: 'sales-channels', requiredPermission: 'products.view' },
-      { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage' },
+      { id: 'developers', Icon: Package, label: 'Webhooks & API', path: 'developers', requiredPermission: 'settings.general.manage', requiredEntitlement: 'apiWebhooksAllowed' },
+      { id: 'connected-apps', Icon: Package, label: 'Connected apps', path: 'app-platform', requiredPermission: ['apps.view', 'apps.manage'], requiredEntitlement: 'apiWebhooksAllowed' },
       { id: 'search-settings', Icon: Package, label: 'Search & discovery', path: 'search-settings', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'security', Icon: Package, label: 'Security (2FA)', path: 'security' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
@@ -215,7 +219,6 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
       // Hidden via FEATURES.loyalty (not built-in on Shopify) — to become an installable App later; code/data kept.
       ...(FEATURES.loyalty ? [{ id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty',       requiredPermission: ['loyalty.view', 'loyalty.manage', 'loyalty.points.award'], requiredEntitlement: 'loyaltyProgramAllowed' as const }] : []),
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo',           requiredPermission: ['seo.view', 'seo.manage'] },
-      { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio',     requiredPermission: ['aistudio.view', 'aistudio.use'] },
     ],
   },
   {
@@ -263,6 +266,8 @@ export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; grou
           'staff.manage', 'content.metaobjects.manage', 'activity_log.view',
         ],
       },
+      // Send a request to the Solvexo team; the API route needs `home.view` for staff.
+      { id: 'help', Icon: LifeBuoy, label: 'Help', path: 'help', requiredPermission: 'home.view' },
     ],
   },
 ];
@@ -691,6 +696,10 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       price: free ? 'Free' : complimentary ? 'Complimentary' : `$${Number(platformSub.amountUSD).toLocaleString('en-US', { maximumFractionDigits: 2 })} / ${platformSub.billingInterval === 'yearly' ? 'year' : 'month'}`,
       cancelling: !!platformSub.cancelAtPeriodEnd,
       paymentFailed: (platformSub.failedPaymentAttempts ?? 0) > 0 || platformSub.status === 'past_due',
+      // Unpaid: the renewal date is stale, so show when the store gets locked instead (date comes from the API).
+      lockOn: platformSub.status === 'past_due' && platformSub.lockDate ? fmt(platformSub.lockDate) : null,
+      lockDaysLeft: platformSub.status === 'past_due' && platformSub.lockDate
+        ? Math.max(0, Math.ceil((new Date(platformSub.lockDate).getTime() - trialNow) / 86400000)) : null,
       scheduled: platformSub.scheduledPlanChange
         ? { name: platformSub.scheduledPlanChange.planName, on: fmt(platformSub.scheduledPlanChange.scheduledAt) }
         : null,
@@ -1061,8 +1070,8 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                           <div className="h-full bg-white rounded-full transition-[width] duration-300" style={{ width: `${planCycle.pct}%` }} />
                         </div>
                         <div className="flex justify-between gap-2 mb-[11px] mt-[4px] text-white/70 text-[8.5px] font-medium tabular-nums whitespace-nowrap">
-                          <span>{planCycle.cancelling ? `Ends ${planCycle.endOn}` : `Renews ${planCycle.endOn}`}</span>
-                          <span>{planCycle.daysLeft} day{planCycle.daysLeft === 1 ? '' : 's'} left</span>
+                          <span>{planCycle.lockOn ? `Locks ${planCycle.lockOn}` : planCycle.cancelling ? `Ends ${planCycle.endOn}` : `Renews ${planCycle.endOn}`}</span>
+                          <span>{planCycle.lockDaysLeft != null ? `${planCycle.lockDaysLeft} day${planCycle.lockDaysLeft === 1 ? '' : 's'} to pay` : `${planCycle.daysLeft} day${planCycle.daysLeft === 1 ? '' : 's'} left`}</span>
                         </div>
                       </>
                     )}
@@ -1444,7 +1453,7 @@ function OwnerBillingBanner() {
     return <BillingBar tone="error" onClick={goToBilling} text="This store is locked — choose a plan and complete payment to resume selling. Your data is safe." action="Unlock now" />;
   }
   if (sub.status === 'past_due') {
-    return <BillingBar tone="error" onClick={goToBilling} text={`Your plan payment failed${sub.failedPaymentAttempts > 0 ? ` (attempt ${sub.failedPaymentAttempts})` : ''} — update your payment method to avoid losing access.`} action="Fix now" />;
+    return <BillingBar tone="error" onClick={goToBilling} text={`Your plan payment failed — ${sub.lockDate ? `pay by ${new Date(sub.lockDate).toDateString()} or this store will be locked.` : 'update your payment method to avoid losing access.'}`} action="Fix now" />;
   }
   if (sub.cancelAtPeriodEnd) {
     return <BillingBar tone="warn" onClick={goToBilling} text={`Your plan is set to cancel on ${new Date(sub.currentPeriodEnd).toDateString()}.`} action="Reactivate" />;
@@ -1642,6 +1651,11 @@ export function navItemForPath(relPath: string): NavItem | null {
   return best;
 }
 
+/** The plan feature (entitlement key) a URL needs, from the sidebar item that owns it; null = not plan-gated. */
+export function entitlementForPath(relPath: string): string | null {
+  return navItemForPath(relPath)?.requiredEntitlement ?? null;
+}
+
 /** Staff opened a page by URL that their role doesn't cover — the sidebar hides it, this stops the page itself. */
 function NoAccess({ storeId }: { storeId: string }) {
   const navigate = useNavigate();
@@ -1657,11 +1671,11 @@ function NoAccess({ storeId }: { storeId: string }) {
 }
 
 function GatedOutlet() {
-  const { loading, error, refetch, storeId } = useStoreWorkspace();
+  const { loading, error, refetch, storeId, entitlements } = useStoreWorkspace();
   const { pathname } = useLocation();
   if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
+  const rel = pathname.replace(new RegExp(`^/store/${storeId}/?`), '');
   if (isStaffSession()) {
-    const rel = pathname.replace(new RegExp(`^/store/${storeId}/?`), '');
     const gate = permissionForPath(rel);
     const me = TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>();
     if (gate && !hasNavPermission(me, gate.required ?? undefined)) {
@@ -1670,6 +1684,9 @@ function GatedOutlet() {
       return <NoAccess storeId={storeId} />;
     }
   }
+  // The store's plan, for every role (owner, staff, admin view-as): checked after the staff permission gate.
+  const planGate = planGateFor(entitlements, entitlementForPath(rel));
+  if (planGate.blocked) return <PlanUpgradeNeeded storeId={storeId} requiredPlan={planGate.requiredPlan} canUpgrade={!isStaffSession()} />;
   // Local Suspense boundary (same reasoning/pattern as PublicLayout/BuyerLayout)
   // so a not-yet-loaded-this-session lazy route chunk suspends only this
   // content area, not RootLayout's outer big-spinner Suspense — otherwise

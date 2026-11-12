@@ -15,6 +15,13 @@ export interface ContactSubmission {
   status:    ContactSubmissionStatus;
   createdAt: string;
   updatedAt: string;
+  /** 'seller' = a help request from a store dashboard; rows from before this field are 'public'. */
+  source?:    'public' | 'seller';
+  tier?:      'standard' | 'priority' | 'dedicated';
+  category?:  string | null;
+  storeId?:   string | null;
+  storeName?: string | null;
+  replies?:   { message: string; sentAt: string; sentBy: string }[];
 }
 
 export interface ContactStats { new: number; read: number; resolved: number }
@@ -46,6 +53,10 @@ export function apiUpdateContactStatus(id: string, status: ContactSubmissionStat
   return client.patch<never, { success: boolean; message: string; data: ContactSubmission }>(
     ENDPOINTS.CONTACT.UPDATE_STATUS(id), { status },
   );
+}
+
+export function apiReplyContactSubmission(id: string, message: string) {
+  return client.post<never, { success: boolean; data: ContactSubmission }>(ENDPOINTS.CONTACT.ADMIN_REPLY(id), { message });
 }
 
 export function apiDeleteContactSubmission(id: string) {

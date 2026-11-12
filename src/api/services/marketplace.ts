@@ -174,30 +174,6 @@ export function apiGetEducationFacets() {
   return client.get<never, EducationFacetsResponse>(ENDPOINTS.PRODUCT.EDUCATION_FACETS);
 }
 
-interface WorksheetTrialPayload {
-  subject: string;
-  gradeLevel: string;
-  topics: string[];
-  questionCount: number;
-  includeAnswerKey: boolean;
-}
-
-interface WorksheetTrialResponse {
-  success: boolean;
-  data: {
-    title: string;
-    sections: { instructions: string; questions: { prompt: string; type: string; choices?: string[]; answer?: string }[] }[];
-    provider: string;
-  };
-}
-
-/** POST /api/public/worksheet-builder/try-free — public, unauthenticated, rate-limited (3/hr/IP). */
-export function apiGenerateWorksheetTrial(payload: WorksheetTrialPayload) {
-  return client.post<never, WorksheetTrialResponse>(
-    ENDPOINTS.AI_STUDIO_PUBLIC.WORKSHEET_TRY_FREE, payload,
-  );
-}
-
 export function apiGetProductById(id: string) {
   return client.get<never, ProductByIdResponse>(
     ENDPOINTS.MARKETPLACE.PRODUCT_BY_ID(id),

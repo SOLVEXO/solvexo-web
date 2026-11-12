@@ -58,6 +58,8 @@ export interface DocumentOrder {
   items: DocumentItem[];
   totals: DocumentTotals | null;
   customerNote: string | null;
+  /** Filled in by the caller when FBR accepted this order's invoice: printed on the INVOICE (never the packing slip). */
+  fbr?: { invoiceNumber: string; qrDataUrl: string; dated?: string | null; sandbox?: boolean } | null;
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -257,6 +259,14 @@ function totalsHtml(o: DocumentOrder): string {
   return `<table class="totals"><tbody>${parts.join('')}</tbody></table>`;
 }
 
+/** FBR's required block: the digital-invoicing QR (1 x 1 inch) and the FBR invoice number. */
+function fbrHtml(o: DocumentOrder): string {
+  const f = o.fbr;
+  if (!f || !f.invoiceNumber) return '';
+  const qr = f.qrDataUrl.startsWith('data:image/') ? `<img class="fbr-qr" src="${esc(f.qrDataUrl)}" alt="FBR QR code">` : '';
+  return `<div class="fbr">${qr}<div><div class="fbr-t">FBR Digital Invoicing System</div><div>Invoice No: <b>${esc(f.invoiceNumber)}</b></div>${f.dated ? `<div class="muted">${esc(f.dated)}</div>` : ''}${f.sandbox ? '<div class="fbr-test">TEST invoice (FBR sandbox) — not a valid tax invoice</div>' : ''}</div></div>`;
+}
+
 function slipHtml(kind: DocKind, o: DocumentOrder, s: OrderDocumentSettings, store: OrderDocumentStore): string {
   const slip = kind === 'slip';
   const collect = slip && s.slipShowPayment && !s.slipShowPrices && !o.isPaid && o.paymentType === 'cash_on_delivery' && o.totals
@@ -266,7 +276,7 @@ function slipHtml(kind: DocKind, o: DocumentOrder, s: OrderDocumentSettings, sto
   const foot = slip ? s.slipFooter : s.invoiceFooter;
   const terms = !slip && s.invoiceTerms ? `<div class="terms"><h2>Terms</h2><p>${lines(s.invoiceTerms)}</p></div>` : '';
   const showTotals = !slip || s.slipShowPrices;
-  return `<section class="slip">${headerHtml(kind, o, s, store)}${partiesHtml(kind, o)}${collect}${itemsHtml(kind, o, s)}${showTotals ? totalsHtml(o) : ''}${note}${terms}${message ? `<p class="msg">${lines(message)}</p>` : ''}${foot ? `<footer class="ft">${lines(foot)}</footer>` : ''}</section>`;
+  return `<section class="slip">${headerHtml(kind, o, s, store)}${partiesHtml(kind, o)}${collect}${itemsHtml(kind, o, s)}${showTotals ? totalsHtml(o) : ''}${slip ? '' : fbrHtml(o)}${note}${terms}${message ? `<p class="msg">${lines(message)}</p>` : ''}${foot ? `<footer class="ft">${lines(foot)}</footer>` : ''}</section>`;
 }
 
 function css(s: OrderDocumentSettings, preview: boolean): string {
@@ -311,6 +321,8 @@ th{font-size:${p.font - 2}px;text-transform:uppercase;letter-spacing:.05em;color
 .note,.terms{margin-top:16px;padding:10px 12px;border:1px solid #ccc;border-radius:6px}.note p,.terms p{margin:0;white-space:pre-wrap}
 .msg{margin:18px 0 0;text-align:center;font-size:${p.font + 1}px;font-weight:600}
 .ft{margin-top:14px;padding-top:8px;border-top:1px solid #ddd;text-align:center;color:#666;font-size:${p.font - 1}px}
+.fbr{display:flex;align-items:center;gap:12px;margin-top:16px;padding:10px 12px;border:1px solid #ccc;border-radius:6px;break-inside:avoid;page-break-inside:avoid}
+.fbr-qr{width:1in;height:1in;image-rendering:pixelated;flex:none}.fbr-t{font-weight:700}.fbr-test{color:#b45309;font-weight:700;margin-top:3px}
 `;
 }
 

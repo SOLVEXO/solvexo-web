@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PlatformPlan } from '@/api/services/platformPlans';
-import { displayPrice, gatewayFeeRange, money, planFeatures } from './planFeatures';
+import { displayPrice, gatewayFeeRange, money, planCopy, planFeatures } from './planFeatures';
+import { arCount, AR_DAYS } from './arabicCount';
 
 const plan = (over: Partial<PlatformPlan>): PlatformPlan => ({
   _id: over.name ?? 'p', key: null, name: 'Plan', description: null, badge: null, sortOrder: 1, isFree: false, isCustomPricing: false,
@@ -9,34 +10,87 @@ const plan = (over: Partial<PlatformPlan>): PlatformPlan => ({
 });
 
 const basic = plan({ name: 'Basic', monthlyPriceUSD: 6, yearlyPriceUSD: 60, compareAtMonthlyPriceUSD: 10, compareAtYearlyPriceUSD: 100, limits: {
-  maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 100, maxMarkets: 3, maxActiveStoreBanners: 4, maxActivePromotions: 1,
-  customDomainAllowed: true, emailCampaignsAllowed: true, advancedSeoToolsAllowed: true, transactionFeeRate: 0.02,
+  maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 100, maxMarkets: 3, maxActiveStoreBanners: -1, maxActivePromotions: -1,
+  customDomainAllowed: true, emailCampaignsAllowed: true, advancedSeoToolsAllowed: true, abandonedCartRecoveryAllowed: true, customRedirectsAllowed: true,
+  b2bWholesaleAllowed: true, maxB2BCatalogs: 1, monthlyEmailSends: 2000, transactionFeeRate: 0.02,
 } });
 const grow = plan({ name: 'Grow', monthlyPriceUSD: 29, yearlyPriceUSD: 282, compareAtMonthlyPriceUSD: 49, compareAtYearlyPriceUSD: 470, limits: {
-  ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 500, maxMarkets: 5, maxActiveStoreBanners: 10, maxActivePromotions: 5,
-  abandonedCartRecoveryAllowed: true, loyaltyProgramAllowed: true, prioritySupport: true, transactionFeeRate: 0.01,
+  ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 500, maxMarkets: 5, maxB2BCatalogs: 3, monthlyEmailSends: 10000,
+  loyaltyProgramAllowed: true, seoAiSuggestionsAllowed: true, prioritySupport: true,
+  digitalMembershipsAllowed: true, digitalLicensesAllowed: true, digitalCoursesAllowed: true, transactionFeeRate: 0.01,
+} });
+const advanced = plan({ name: 'Advanced', limits: {
+  ...grow.limits, maxStaffAccounts: 15, maxB2BCatalogs: 10, monthlyEmailSends: 50000, whiteLabelAllowed: true, apiWebhooksAllowed: true, searchConsoleIntegrationAllowed: true,
+  calculatedShippingRatesAllowed: true, transactionFeeRate: 0.006,
 } });
 const titles = (p: PlatformPlan, prev?: PlatformPlan) => planFeatures(p, prev).map(f => f.title);
 
 describe('pricing page plan features', () => {
   it('lists everything on the first plan in plain words', () => {
     expect(titles(basic)).toEqual([
-      'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till', '100 AI credits a month',
-      'Your own web address', 'Email marketing', 'SEO tools', '1 sale running at a time · 4 homepage banners', 'Accept up to 3 currencies',
+      'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till',
+      'Recover abandoned carts', 'Your own web address', 'Email marketing', 'SEO tools', 'Custom redirects',
+      '2,000 marketing emails a month', 'B2B wholesale prices', 'Accept up to 3 currencies',
     ]);
-    expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toBe('e.g. yourshop.com');
+    expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toContain('yourshop.com');
+    expect(planFeatures(basic).find(f => f.title === 'B2B wholesale prices')?.hint).toContain('this plan allows 1');
+  });
+
+  it('every line on every plan card carries an explanation for the ? icon', () => {
+    for (const plan of [basic, grow]) {
+      const prev = plan === basic ? null : basic;
+      for (const f of planFeatures(plan, prev)) expect(`${f.title}: ${f.hint ?? ''}`.length > f.title.length + 5).toBe(true);
+    }
+  });
+
+  it('AI credits are shown only on a plan that has AI SEO suggestions, and the hint says what they are for', () => {
+    expect(titles(basic).some(t => /AI credits/i.test(t))).toBe(false); // credits are spent only by AI SEO suggestions
+    const credits = planFeatures(grow, basic).find(f => /AI credits/i.test(f.title));
+    expect(credits?.title).toBe('500 AI credits a month');
+    expect(credits?.hint).toContain('AI SEO suggestions');
+    expect(credits?.hint).toContain('5 credits');
+  });
+
+  it('never prints banner or promotion lines, even when they are unlimited', () => {
+    const all = [...titles(basic), ...titles(grow, basic), ...titles(advanced, grow)].join(' | ').toLowerCase();
+    expect(all).not.toMatch(/banner|sales running|sale running|sales at once/);
   });
 
   it('lists only what is new or bigger on the next plan', () => {
     expect(titles(grow, basic)).toEqual([
       'Unlimited products', '5 staff logins', '3 shop / warehouse locations', '500 AI credits a month',
-      'Recover abandoned carts', 'Loyalty points', '5 sales running at once · 10 homepage banners', 'Accept up to 5 currencies', 'Priority support',
+      'Loyalty points', 'AI SEO suggestions', '10,000 marketing emails a month', '3 wholesale catalogs',
+      'Sell memberships, license keys & courses', 'Accept up to 5 currencies', 'Priority support',
     ]);
   });
 
+  it('shows premium-only items on the plan that first has them', () => {
+    const t = titles(advanced, grow);
+    expect(t).toEqual(expect.arrayContaining(['Remove Solvexo branding', 'Webhooks & API', 'Live courier rates at checkout', 'Google Search Console connection']));
+    expect(t).not.toContain('Sell memberships, license keys & courses');
+  });
+
   it('never lists a feature the plan does not include', () => {
-    expect(titles(basic)).not.toContain('Recover abandoned carts');
+    expect(titles(basic)).not.toContain('Loyalty points');
+    expect(titles(basic).join(' ')).not.toMatch(/memberships|Webhooks/);
     expect(titles(plan({ limits: { maxStaffAccounts: 0 } }))).toEqual([]);
+  });
+});
+
+describe('pricing page in Arabic', () => {
+  it('writes the feature lines in Arabic with the right noun for each number', () => {
+    expect(titles(basic).length).toBe(planFeatures(basic, null, 'ar').length);
+    expect(planFeatures(basic, null, 'ar')[0].title).toBe('بيع ما يصل إلى 25 منتجًا');
+    expect(planFeatures(grow, basic, 'ar')[0].title).toBe('منتجات غير محدودة');
+    expect([1, 2, 7, 14, 100].map(n => arCount(n, AR_DAYS))).toEqual(['يوم واحد', 'يومين', '7 أيام', '14 يومًا', '100 يوم']);
+  });
+
+  it('names the core plans in Arabic by key and keeps any other plan or reworded description as the API sent it', () => {
+    const core = plan({ key: 'grow', name: 'Grow', description: 'For growing sellers who want more reach, more staff and marketing tools.', badge: 'Most Popular' });
+    expect(planCopy(core, 'ar')).toEqual({ name: 'النمو', description: 'للتجار في مرحلة النمو الذين يريدون وصولًا أوسع وموظفين أكثر وأدوات تسويق.', badge: 'الأكثر طلبًا' });
+    expect(planCopy({ ...core, description: 'Edited by the admin' }, 'ar').description).toBe('Edited by the admin');
+    expect(planCopy(plan({ key: null, name: 'Custom deal' }), 'ar').name).toBe('Custom deal');
+    expect(planCopy(core)).toEqual({ name: 'Grow', description: core.description, badge: 'Most Popular' });
   });
 });
 

@@ -7,7 +7,7 @@ interface ApiResponse<T> { success: boolean; message?: string; data: T }
 /** Must stay in sync with `solvexo-api/src/admin-team/admin-permissions.ts`. */
 export const ADMIN_PERMISSIONS = [
   'analytics.view', 'clients.view', 'clients.manage', 'finance.view', 'finance.payouts', 'billing.manage',
-  'commission.manage', 'seo.manage', 'ai.manage', 'content.manage', 'marketing.manage', 'marketplace.manage',
+  'commission.manage', 'seo.manage', 'content.manage', 'marketing.manage', 'marketplace.manage',
   'themes.manage', 'apps.manage', 'config.manage', 'activity.view', 'audit.view', 'team.manage', 'sales.access', 'sales.manage', 'partner.portal',
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
@@ -21,7 +21,6 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, { label: string; h
   'billing.manage':     { label: 'Billing & plans', hint: 'Platform plans, subscriptions, POS plans' },
   'commission.manage':  { label: 'Commission & FX', hint: 'Commission rules and FX settings' },
   'seo.manage':         { label: 'SEO', hint: 'Platform SEO tools' },
-  'ai.manage':          { label: 'AI Studio', hint: 'Admin AI Studio' },
   'content.manage':     { label: 'Content', hint: 'Announcements, FAQs, testimonials, contact messages, newsletter' },
   'marketing.manage':   { label: 'Marketing', hint: 'Platform coupons, promotions, banners' },
   'marketplace.manage': { label: 'Marketplace', hint: 'Marketplace curation' },
@@ -40,7 +39,7 @@ export const ADMIN_PERMISSION_AREAS: { area: string; keys: AdminPermission[] }[]
   { area: 'Overview', keys: ['analytics.view', 'activity.view', 'audit.view'] },
   { area: 'Clients', keys: ['clients.view', 'clients.manage'] },
   { area: 'Money', keys: ['finance.view', 'finance.payouts', 'billing.manage', 'commission.manage'] },
-  { area: 'Growth & content', keys: ['seo.manage', 'ai.manage', 'content.manage', 'marketing.manage', 'marketplace.manage', 'themes.manage', 'apps.manage'] },
+  { area: 'Growth & content', keys: ['seo.manage', 'content.manage', 'marketing.manage', 'marketplace.manage', 'themes.manage', 'apps.manage'] },
   { area: 'Sales', keys: ['sales.access', 'sales.manage', 'partner.portal'] },
   { area: 'Platform', keys: ['config.manage', 'team.manage'] },
 ];

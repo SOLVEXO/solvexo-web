@@ -3,6 +3,7 @@
 // its content and links to the rest of the site. middleware.ts serves that copy for the page's address, so search
 // engines and link previews see real, page-specific HTML without running JavaScript. The React app still boots from
 // the same file and replaces the plain block on mount (it is hidden at once for visitors with JavaScript).
+import { MANUALS } from '../features/buyer/data/manuals';
 import { ALL_PLATFORM_PRODUCTS } from '../features/buyer/data/platformProducts';
 import { SOLUTIONS } from '../features/buyer/data/solutions';
 import { BLOG_AUTHOR, SORTED_BLOG_POSTS, getBlogPost, type BlogBlock } from '../features/buyer/data/blogPosts';
@@ -73,6 +74,9 @@ function contentFor(page: PublicPageSeo): string {
       ...post.body.map(blockHtml),
       `<p><a href="/blog">More guides on the Solvexo blog</a></p>`,
     ].join('');
+  }
+  if (page.path === '/manuals') {
+    return MANUALS.map(m => `<h2>${esc(m.title)}</h2><p>${esc(m.summary)}</p>${links([m.complete, ...m.chapters].map(c => ({ label: `${c.label} (PDF)`, path: c.file })))}`).join('');
   }
   if (page.path === '/blog') {
     return `<h2>Latest guides</h2>${links(SORTED_BLOG_POSTS.map(p => ({ label: p.title, path: `/blog/${p.slug}` })))}`;

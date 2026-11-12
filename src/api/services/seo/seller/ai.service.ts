@@ -20,6 +20,17 @@ export interface AiSeoSuggestion {
   metaTitle?: string;
   metaDescription?: string;
   keywords?: string[];
+  /** Set by generate: the previewed suggestion's id, used to accept it. */
+  suggestionId?: string;
+  /** False for a preview (nothing written to the product/store yet). */
+  applied?: boolean;
+}
+
+export interface AcceptAiSuggestionData {
+  applied: true;
+  alreadyApplied: boolean;
+  entityType: AiSeoEntityType;
+  entityId: string;
 }
 
 export interface GenerateBulkResultData {
@@ -61,7 +72,12 @@ function qs(query: Record<string, unknown> = {}) {
   return s ? `?${s}` : '';
 }
 
-/** POST .../seo/ai/generate — idempotency-protected server-side; costs AI credits per call. */
+/** POST .../seo/ai/accept — writes a previewed suggestion onto the product/store; no credits, idempotent. */
+export function apiAcceptSeoAiSuggestion(storeId: string, suggestionId: string) {
+  return client.post<never, ApiResponse<AcceptAiSuggestionData>>(ENDPOINTS.SEO.SELLER.AI.ACCEPT(storeId), { suggestionId });
+}
+
+/** POST .../seo/ai/generate — returns a PREVIEW only (apply with accept); costs AI credits per call. */
 export function apiGenerateSeoAiSuggestion(storeId: string, payload: GenerateAiSuggestionPayload) {
   return client.post<never, ApiResponse<AiSeoSuggestion>>(ENDPOINTS.SEO.SELLER.AI.GENERATE(storeId), payload);
 }

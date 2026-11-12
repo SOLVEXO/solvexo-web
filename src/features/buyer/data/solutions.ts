@@ -26,7 +26,7 @@ export const SOLUTIONS: Solution[] = [
     headline: 'Sell fashion the way it actually works.',
     subtext: 'Size and color variants, a themeable storefront that fits your brand, and stock tracking that never mixes up a small and a large.',
     image: 'sneakers',
-    highlights: ['Per-variant stock (size/color)', 'Curated storefront themes', 'AI-assisted product descriptions'],
+    highlights: ['Per-variant stock (size/color)', 'Curated storefront themes', 'Product variants and stock'],
   },
   {
     slug: 'restaurants',
@@ -42,15 +42,15 @@ export const SOLUTIONS: Solution[] = [
     headline: 'A storefront built for beauty and skincare.',
     subtext: 'Product photography-forward storefront themes, plus loyalty tools to turn one-time buyers into repeat customers.',
     image: 'skincare',
-    highlights: ['Image-forward storefront themes', 'Loyalty points & tiers', 'AI-assisted product descriptions'],
+    highlights: ['Image-forward storefront themes', 'Loyalty points & tiers', 'Product variants and stock'],
   },
   {
     slug: 'creators',
     name: 'Creators & Digital Sellers',
     headline: 'Sell digital products without the busywork.',
-    subtext: 'Digital delivery, no inventory counts to manage, and AI Studio for the product copy you don\'t have time to write.',
+    subtext: 'Digital delivery, no inventory counts to manage, and your own branded storefront.',
     image: 'cameraGear',
-    highlights: ['Digital product delivery, no stock tracking needed', 'AI-assisted product descriptions', 'Your own branded storefront'],
+    highlights: ['Digital product delivery, no stock tracking needed', 'Memberships, license keys and courses', 'Your own branded storefront'],
   },
   {
     slug: 'small-business',

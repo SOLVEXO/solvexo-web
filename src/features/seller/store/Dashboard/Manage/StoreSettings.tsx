@@ -14,6 +14,7 @@ import { CustomerAccountsSection } from './CustomerAccountsSection';
 import { DomainsSection } from './DomainsSection';
 import { TaxOverridesEditor } from './TaxOverridesEditor';
 import { StoreTaxIdentity } from './StoreTaxIdentity';
+import { FbrInvoicingCard } from './FbrInvoicingCard';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { SettingsCard, SettingsRow, SettingsSaveBar, SettingsChoice, SettingsGroupLabel } from '@/components/comman/settings';
 
@@ -286,6 +287,8 @@ export function StoreProfileTab() {
             onTaxRegistered={setTaxRegistered}
             onAddRegion={(cc, rate) => setTaxRegions(rs => [...rs, { country: cc, state: null, rate }])}
           />
+
+          {store?.country === 'PK' && storeId && <FbrInvoicingCard key={storeId} storeId={storeId} />}
 
           <Field label="Tax Rate (%)">
             <input type="number" min={0} max={100} step={0.01} value={taxRate} onChange={e => setTaxRate(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} className={inputCls} />

@@ -4,6 +4,7 @@ import { handleOf } from '@/utils/activeStoreText';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
+import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
 import { BackToTop } from '../../navigation/HeaderExtras';
 import { hasSocialTarget } from '../../navigation/socialLinks';
@@ -61,7 +62,7 @@ export function LedupFooter() {
                 {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
                 {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
               </nav>
-              <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>
+              <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}<VerifiedBusinessBadge badges={store.badges} className="ms-2" /></p>
             </div>
           </div>
         </div>

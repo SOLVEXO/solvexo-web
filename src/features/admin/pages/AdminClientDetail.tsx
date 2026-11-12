@@ -9,9 +9,10 @@ import { AdminPageHeader, Button, Modal, StatusBadge, SkeletonBox } from '@/comp
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import {
   ArrowLeft, Ban, CheckCircle2, LayoutDashboard, Store, Users, ShoppingCart,
-  RefreshCw, DollarSign, Activity as ActivityIcon, Shield,
+  RefreshCw, DollarSign, Activity as ActivityIcon, Shield, BadgeCheck,
 } from 'lucide-react';
 import { OverviewTab } from './clients/OverviewTab';
+import { BusinessProfileTab } from './clients/BusinessProfileTab';
 import { StoresTab } from './clients/StoresTab';
 import { CustomersTab } from './clients/CustomersTab';
 import { OrdersTab } from './clients/OrdersTab';
@@ -20,10 +21,11 @@ import { FinanceTab } from './clients/FinanceTab';
 import { ActivityTab } from './clients/ActivityTab';
 import { ModerationTab } from './clients/ModerationTab';
 
-type ClientTab = 'overview' | 'stores' | 'customers' | 'orders' | 'billing' | 'finance' | 'activity' | 'moderation';
+type ClientTab = 'overview' | 'business' | 'stores' | 'customers' | 'orders' | 'billing' | 'finance' | 'activity' | 'moderation';
 
 const BASE_TABS: Tab[] = [
   { id: 'overview',   label: 'Overview',     icon: <LayoutDashboard size={14} /> },
+  { id: 'business',   label: 'Business profile', icon: <BadgeCheck size={14} /> },
   { id: 'stores',     label: 'Stores',       icon: <Store size={14} /> },
   { id: 'customers',  label: 'Customers',    icon: <Users size={14} /> },
   { id: 'orders',     label: 'Orders',       icon: <ShoppingCart size={14} /> },
@@ -136,6 +138,7 @@ export function AdminClientDetail() {
 
       <div className="px-4 sm:px-7 py-6">
         {isVisited('overview')   && <div className={paneClassName('overview')}><OverviewTab overview={overview} onGoToTab={(t) => setActiveTab(t as ClientTab)} /></div>}
+        {isVisited('business')   && <div className={paneClassName('business')}><BusinessProfileTab sellerId={sellerId} /></div>}
         {isVisited('stores')     && <div className={paneClassName('stores')}><StoresTab stores={seller.stores} onChanged={refetch} /></div>}
         {isVisited('customers')  && <div className={paneClassName('customers')}><CustomersTab sellerId={sellerId} stores={seller.stores} /></div>}
         {isVisited('orders')     && <div className={paneClassName('orders')}><OrdersTab sellerId={sellerId} /></div>}

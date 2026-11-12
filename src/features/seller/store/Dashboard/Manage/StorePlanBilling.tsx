@@ -25,6 +25,9 @@ import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd }
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 import { salesMailto } from '@/utils/contact';
+import { openSolvexoInvoice } from '@/utils/solvexoInvoice';
+import { useToast } from '@/contexts/ToastContext';
+import { FeeBillPayment } from './FeeBillPayment';
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
 const INVOICES_PER_PAGE = 10;
@@ -56,6 +59,7 @@ function newAddonIdempotencyKey(storeId: string, addonType: string): string {
 const FEE_BILL_STATUS_STYLE: Record<string, string> = {
   paid: 'bg-success-bg text-success',
   invoiced: 'bg-warning-bg text-warning',
+  awaiting_payment: 'bg-warning-bg text-warning',
   creating: 'bg-warning-bg text-warning',
   payment_failed: 'bg-error-bg text-error',
   failed: 'bg-error-bg text-error',
@@ -70,6 +74,7 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
   const [data, setData] = useState<TransactionFeesOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!storeId) return;
@@ -80,7 +85,7 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load transaction fees.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, reloadKey]);
 
   const accrued = data?.accrued;
   return (
@@ -119,16 +124,19 @@ function TransactionFeesCard({ storeId }: { storeId: string }) {
                 <div key={b._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium text-charcoal">{b.periodKey}</p>
-                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)} · {b.saleCount} sale(s)</p>
+                    <p className="text-[11px] text-slate">${b.amountUSD.toFixed(2)}{(b.taxAmountUSD ?? 0) > 0 ? ` + $${b.taxAmountUSD!.toFixed(2)} tax` : ''} · {b.saleCount} sale(s)</p>
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${FEE_BILL_STATUS_STYLE[b.status] ?? 'bg-bone text-slate'}`}>
-                      {b.status.replace('_', ' ')}
+                      {b.status === 'awaiting_payment' ? 'Payment due' : b.status.replace('_', ' ')}
                     </span>
                     {b.hostedInvoiceUrl && (
                       <a href={b.hostedInvoiceUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-brand-orange hover:underline">View invoice</a>
                     )}
                   </div>
+                  {b.status === 'awaiting_payment' && (
+                    <FeeBillPayment storeId={storeId} bill={b} payTo={data?.payTo ?? null} onReported={() => setReloadKey(k => k + 1)} />
+                  )}
                 </div>
               ))}
             </div>
@@ -164,6 +172,12 @@ function UsageBar({ label, used, max, Icon }: { label: string; used: number; max
 
 export default function StorePlanBilling({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
+  const toast = useToast();
+  const [invoiceOpening, setInvoiceOpening] = useState<string | null>(null);
+  const showInvoice = async (invoiceId: string) => {
+    setInvoiceOpening(invoiceId);
+    try { await openSolvexoInvoice(storeId, invoiceId); } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not open the invoice.'); } finally { setInvoiceOpening(null); }
+  };
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [current, setCurrent] = useState<StorePlatformSubscription | null>(null);
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
@@ -410,7 +424,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     if (isPastDue) {
       return {
         tone: 'error' as const, Icon: AlertTriangle,
-        text: `We couldn't process your last payment (attempt ${current?.failedPaymentAttempts ?? 1}). Update your payment method to avoid losing your plan.`,
+        text: `We couldn't process your last payment. ${current?.lockDate ? `Pay by ${new Date(current.lockDate).toDateString()} or this store will be locked.` : 'Update your payment method to avoid losing your plan.'}`,
         actionLabel: 'Update payment method', onAction: openBillingPortal,
       };
     }
@@ -670,10 +684,16 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                       <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
                         {inv.status.replace('_', ' ')}
                       </span>
+                      {inv.status !== 'failed' && (
+                        <button type="button" onClick={() => showInvoice(inv._id)} disabled={invoiceOpening === inv._id}
+                          className="text-[11px] font-semibold text-brand-orange hover:underline disabled:opacity-60">
+                          {invoiceOpening === inv._id ? 'Opening…' : 'Invoice'}
+                        </button>
+                      )}
                       {(inv.hostedInvoiceUrl || inv.invoicePdfUrl) && (
-                        <a href={inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#'} target="_blank" rel="noreferrer"
+                        <a href={inv.status === 'failed' ? (inv.hostedInvoiceUrl ?? inv.invoicePdfUrl ?? '#') : (inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#')} target="_blank" rel="noreferrer"
                           className="text-[11px] font-semibold text-brand-orange hover:underline">
-                          Download
+                          {inv.status === 'failed' ? 'Pay now' : 'Download'}
                         </a>
                       )}
                     </div>
@@ -823,6 +843,20 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               ))}
               <p className="text-[11px] text-error/80 pl-[19px]">
                 Nothing will be deleted — you just won't be able to add more until you're back under the limit.
+              </p>
+            </div>
+          )}
+
+          {preview && (preview.lostFeatures?.length ?? 0) > 0 && (
+            <div className="mt-3 bg-warning-bg border border-warning/30 rounded-lg p-3 flex flex-col gap-1.5">
+              <p className="text-[12px] font-semibold text-warning flex items-center gap-1.5">
+                <AlertTriangle size={13} className="shrink-0" /> This plan does not include
+              </p>
+              <ul className="list-disc pl-[34px] text-[11.5px] text-warning/90 m-0">
+                {preview.lostFeatures!.map(f => <li key={f}>{f}</li>)}
+              </ul>
+              <p className="text-[11px] text-warning/80 pl-[19px]">
+                Your data stays safe. These tools stop working on this plan, and come back if you upgrade again.
               </p>
             </div>
           )}

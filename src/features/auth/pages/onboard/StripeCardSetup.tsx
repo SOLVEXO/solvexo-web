@@ -5,6 +5,10 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 import { Button } from '@/components/comman/ui/Button';
 import { AlertTriangle, ChevronsUpDown, ShieldCheck } from 'lucide-react';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { countryLabel } from '../authPages.text';
+import { STRIPE_CARD_SETUP_TEXT } from './StripeCardSetup.text';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 
@@ -73,7 +77,7 @@ function FloatBox({ label, floated, focused, bare, className, children }: {
       className,
     )}>
       <span className={clsx(
-        'pointer-events-none absolute left-4 text-slate transition-all duration-150 ease-out',
+        'pointer-events-none absolute start-4 text-slate transition-all duration-150 ease-out',
         floated ? 'top-[6px] text-[11px]' : 'top-1/2 -translate-y-1/2 text-[15px]',
       )}>
         {label}
@@ -109,11 +113,11 @@ function FloatSelect({ label, value, onChange, children }: {
         aria-label={label} value={value} autoComplete="country"
         onChange={e => onChange(e.target.value)}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        className="w-full appearance-none bg-transparent border-0 outline-none text-[15px] text-carbon p-0 pr-7 leading-[1.2] cursor-pointer truncate"
+        className="w-full appearance-none bg-transparent border-0 outline-none text-[15px] text-carbon p-0 pe-7 leading-[1.2] cursor-pointer truncate"
       >
         {children}
       </select>
-      <ChevronsUpDown size={16} className="pointer-events-none absolute right-0 bottom-[2px] text-carbon" />
+      <ChevronsUpDown size={16} className="pointer-events-none absolute end-0 bottom-[2px] text-carbon" />
     </FloatBox>
   );
 }
@@ -143,6 +147,8 @@ type CardKey = 'number' | 'expiry' | 'cvc';
 function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote, intent = 'setup' }: StripeCardSetupProps) {
   const stripe   = useStripe();
   const elements = useElements();
+  const t = useSiteText(STRIPE_CARD_SETUP_TEXT);
+  const { pageLang } = useSiteLang();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -189,7 +195,7 @@ function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote, intent = 
       : await stripe.confirmCardSetup(clientSecret, { payment_method: paymentMethod }).then(r => ({ error: r.error, intentObj: r.setupIntent }));
 
     if (confirmError) {
-      setError(confirmError.message ?? (intent === 'payment' ? 'Payment failed. Please check your details and try again.' : 'Card setup failed. Please check your details and try again.'));
+      setError(confirmError.message ?? (intent === 'payment' ? t.paymentFailed : t.setupFailed));
       setSubmitting(false);
       return;
     }
@@ -197,7 +203,7 @@ function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote, intent = 
       onConfirmed(intentObj.id);
       return;
     }
-    setError(intent === 'payment' ? 'Payment did not complete. Please try again.' : 'Card setup did not complete. Please try again.');
+    setError(intent === 'payment' ? t.paymentIncomplete : t.setupIncomplete);
     setSubmitting(false);
   };
 
@@ -205,16 +211,17 @@ function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote, intent = 
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       {/* One shared border for the whole number / MM-YY / CVV block — it (not the
           individual cells) lights up orange when any of the three is focused. */}
-      <div className={clsx(
+      {/* Left to right in Arabic too, like the Stripe fields inside it. */}
+      <div dir="ltr" className={clsx(
         'rounded-xl border bg-white overflow-hidden transition-[border-color,box-shadow] duration-150',
         focus ? 'border-brand-orange ring-2 ring-brand-orange/15' : 'border-bone',
       )}>
         <div className="relative">
-          <FloatBox bare label="Card number" floated={focus === 'number' || !empty.number} focused={focus === 'number'}>
+          <FloatBox bare label={t.cardNumber} floated={focus === 'number' || !empty.number} focused={focus === 'number'}>
             <div className="w-full">
               <CardNumberElement
                 options={{ style: ELEMENT_STYLE, showIcon: false, placeholder: '' }}
-                onLoadError={ev => setLoadError(ev.error?.message ?? 'The card form could not be loaded.')}
+                onLoadError={ev => setLoadError(ev.error?.message ?? t.loadFailed)}
                 {...cardProps('number')}
               />
             </div>
@@ -223,38 +230,38 @@ function SetupForm({ clientSecret, onConfirmed, submitLabel, footnote, intent = 
         </div>
         <div className={clsx('grid grid-cols-2 border-t transition-colors duration-150', focus ? 'border-brand-orange/40' : 'border-bone')}>
           <div className={clsx('border-r transition-colors duration-150', focus ? 'border-brand-orange/40' : 'border-bone')}>
-            <FloatBox bare label="MM / YY" floated={focus === 'expiry' || !empty.expiry} focused={focus === 'expiry'}>
+            <FloatBox bare label={t.expiry} floated={focus === 'expiry' || !empty.expiry} focused={focus === 'expiry'}>
               <div className="w-full"><CardExpiryElement options={{ style: ELEMENT_STYLE, placeholder: '' }} {...cardProps('expiry')} /></div>
             </FloatBox>
           </div>
-          <FloatBox bare label="CVV" floated={focus === 'cvc' || !empty.cvc} focused={focus === 'cvc'}>
+          <FloatBox bare label={t.cvc} floated={focus === 'cvc' || !empty.cvc} focused={focus === 'cvc'}>
             <div className="w-full"><CardCvcElement options={{ style: ELEMENT_STYLE, placeholder: '' }} {...cardProps('cvc')} /></div>
           </FloatBox>
         </div>
       </div>
 
-      <FloatInput label="Address" autoComplete="address-line1" value={address} onChange={setAddress} />
+      <FloatInput label={t.address} autoComplete="address-line1" value={address} onChange={setAddress} />
       <div className="grid grid-cols-2 gap-3">
-        <FloatInput label="Postal code" autoComplete="postal-code" value={postal} onChange={setPostal} />
-        <FloatSelect label="Country/region" value={country} onChange={setCountry}>
-          {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+        <FloatInput label={t.postalCode} autoComplete="postal-code" value={postal} onChange={setPostal} />
+        <FloatSelect label={t.country} value={country} onChange={setCountry}>
+          {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{countryLabel(c.code, c.name, pageLang)}</option>)}
         </FloatSelect>
       </div>
-      <FloatInput label="City" autoComplete="address-level2" value={city} onChange={setCity} />
+      <FloatInput label={t.city} autoComplete="address-level2" value={city} onChange={setCity} />
 
       {(fieldError || loadError || error) && (
         <div className="flex items-start gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] text-[13px] text-error">
           <AlertTriangle size={14} className="shrink-0 mt-[2px]" />
-          <span>{loadError ? `Card form failed to load: ${loadError}` : error || fieldError}</span>
+          <span>{loadError ? t.loadFailedPrefix(loadError) : error || fieldError}</span>
         </div>
       )}
 
       <Button variant="primary" size="lg" fullWidth type="submit" loading={submitting} disabled={!canSubmit}>
-        {submitLabel ?? 'Save Card & Continue'}
+        {submitLabel ?? t.submit}
       </Button>
 
       <p className="flex items-center justify-center gap-[6px] text-[11px] text-slate">
-        <ShieldCheck size={12} className="text-success shrink-0" /> {footnote ?? "Your card is encrypted and secured by Stripe — you won't be charged today"}
+        <ShieldCheck size={12} className="text-success shrink-0" /> {footnote ?? t.footnote}
       </p>
     </form>
   );

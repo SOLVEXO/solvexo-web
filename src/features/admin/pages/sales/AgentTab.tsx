@@ -47,7 +47,7 @@ export function AgentTab() {
         {!cfg.connected && (
           <div className="flex gap-3 rounded-xl border border-warning/40 bg-warning-bg/50 p-3 text-[12.5px] text-charcoal" role="status">
             <TriangleAlert size={16} className="text-warning shrink-0 mt-0.5" />
-            <p><strong>The AI is not connected yet.</strong> Your developer needs to set <code>AI_PROVIDER=claude</code> and <code>ANTHROPIC_API_KEY</code> on the server (the same setting AI Studio uses). Until then the assistant stays off, so it can never send made-up answers.</p>
+            <p><strong>The AI is not connected yet.</strong> Your developer needs to set <code>AI_PROVIDER=claude</code> and <code>ANTHROPIC_API_KEY</code> on the server (the same settings the AI SEO suggestions use). Until then the assistant stays off, so it can never send made-up answers.</p>
           </div>
         )}
 

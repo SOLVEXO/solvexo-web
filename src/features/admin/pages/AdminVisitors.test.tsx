@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 const api = vi.hoisted(() => ({
   apiSiteSettings: vi.fn(), apiSaveSiteSettings: vi.fn(), apiSiteOverview: vi.fn(), apiSiteAcquisition: vi.fn(),
-  apiSiteContent: vi.fn(), apiSiteRealtime: vi.fn(), apiSiteFunnel: vi.fn(),
+  apiSiteContent: vi.fn(), apiSiteRealtime: vi.fn(), apiSiteFunnel: vi.fn(), apiSiteSetupSteps: vi.fn(), apiStoreJourney: vi.fn(),
 }));
 vi.mock('@/api/services/siteAnalytics', async (orig) => ({ ...(await orig<typeof import('@/api/services/siteAnalytics')>()), ...api }));
 vi.mock('@/hooks/auth/useCan', () => ({ can: () => true }));
@@ -36,6 +36,21 @@ const reports = () => {
     { key: 'sign_up_start', label: 'Started sign-up', users: 80, fromPrevious: 20, fromStart: 6.5 },
     { key: 'sign_up', label: 'Created an account', users: 50, fromPrevious: 62.5, fromStart: 4.1 },
     { key: 'store_created', label: 'Created a store', users: 30, fromPrevious: 60, fromStart: 2.4 },
+  ] } });
+  api.apiSiteSetupSteps.mockResolvedValue({ data: { range: '28d', steps: [
+    { key: 'store_info', label: 'Store details', users: 23, fromPrevious: null, fromStart: null },
+    { key: 'checkout', label: 'Plan or free trial', users: 14, fromPrevious: 60.9, fromStart: 60.9 },
+    { key: 'seller_type', label: 'Seller type', users: 11, fromPrevious: 78.6, fromStart: 47.8 },
+    { key: 'what_you_sell', label: 'What you sell', users: 10, fromPrevious: 90.9, fromStart: 43.5 },
+    { key: 'store_created', label: 'Store created', users: 8, fromPrevious: 80, fromStart: 34.8 },
+  ] } });
+  api.apiStoreJourney.mockResolvedValue({ data: { range: '28d', followUpTotal: 1, steps: [
+    { key: 'store_created', label: 'Created a store', stores: 8, fromPrevious: null, fromStart: null },
+    { key: 'product_added', label: 'Added a product', stores: 7, fromPrevious: 87.5, fromStart: 87.5 },
+    { key: 'plan_chosen', label: 'Chose a plan', stores: 2, fromPrevious: 28.6, fromStart: 25 },
+    { key: 'first_order', label: 'Got a first order', stores: 1, fromPrevious: 50, fromStart: 12.5 },
+  ], followUp: [
+    { storeId: 's9', storeName: 'Hina Boutique', storeUrl: 'https://hina.solvexo.store', createdAt: '2026-11-10T09:00:00Z', ownerName: 'Hina Ali', email: 'hina@example.com', phone: '0300 1234567', planChosen: false },
   ] } });
 };
 const renderPage = () => render(<MemoryRouter><AdminVisitors /></MemoryRouter>);
@@ -98,5 +113,19 @@ describe('AdminVisitors', () => {
     expect(api.apiSiteOverview).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     await waitFor(() => expect(api.apiSiteSettings).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows the store setup steps and which new stores still need help to go live', async () => {
+    api.apiSiteSettings.mockResolvedValue(settings({ measurementId: 'G-ABC12345', measurementIdSource: 'settings', ga4: ga4(true) }));
+    reports();
+    renderPage();
+    expect(await screen.findByText('Store setup steps')).toBeInTheDocument();
+    expect(screen.getByText('2. Plan or free trial')).toBeInTheDocument();
+    expect(await screen.findByText('From new store to live store')).toBeInTheDocument();
+    expect(screen.getByText('4. Got a first order')).toBeInTheDocument();
+    expect(screen.getByText('Hina Boutique')).toHaveAttribute('href', 'https://hina.solvexo.store');
+    // Pakistani numbers become wa.me links with the country code.
+    expect(screen.getByText('0300 1234567')).toHaveAttribute('href', 'https://wa.me/923001234567');
+    expect(screen.getByText(/1 new store has no products yet/)).toBeInTheDocument();
   });
 });

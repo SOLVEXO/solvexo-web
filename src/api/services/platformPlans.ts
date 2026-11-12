@@ -17,6 +17,12 @@ export interface PlatformPlanLimits {
   calculatedShippingRatesAllowed?: boolean;
   /** How many checkout currencies (markets) the store can sell in, base currency included. -1 = unlimited. */
   maxMarkets?: number;
+  /** Courses (Digital hub). Older API versions omit it. */
+  digitalCoursesAllowed?: boolean;
+  /** B2B catalogs the store can publish. -1 = unlimited. */
+  maxB2BCatalogs?: number;
+  /** Marketing emails (campaigns/automations) per month. -1 = unlimited. */
+  monthlyEmailSends?: number;
 }
 
 export interface PlatformPlan {
@@ -78,6 +84,8 @@ export interface StorePlatformSubscription {
   _id: string; storeId: string; platformPlanId: string | null; billingInterval: 'monthly' | 'yearly';
   amountUSD: number; status: string; startedAt: string; trialEndsAt: string | null; currentPeriodEnd: string; nextBillingDate: string;
   cancelAtPeriodEnd: boolean; cancelReason: string | null; failedPaymentAttempts: number;
+  // While status is past_due: when the store will be locked if still unpaid (set by the API).
+  lockDate?: string | null; pastDueSince?: string | null;
   creditBalanceUSD: number; stripeCustomerId: string | null;
   // Pre-trial-model stores only (see backend schema comment) — controls
   // whether a cancellation/dunning-exhaustion/trial-expiry actually lands on
@@ -100,6 +108,8 @@ export interface PlanChangePreview {
   effectiveAt?: string | null;
   /** Only populated for a downgrade — usage that already exceeds the target plan's limit. Nothing is ever deleted; this is purely a heads-up before confirming. */
   usageWarnings: { label: string; used: number; newLimit: number }[];
+  /** Only for a downgrade: features of the current plan that the target plan does not have. Missing on older API versions. */
+  lostFeatures?: string[];
 }
 
 export interface EntitlementsSummary {
@@ -110,6 +120,11 @@ export interface EntitlementsSummary {
   maxPosLocations: { limit: number; used: number; allowed: boolean };
   /** Checkout currencies (markets) the plan allows, base included. -1 = unlimited. */
   maxMarkets?: number;
+  /** B2B catalogs allowed (-1 = unlimited) and marketing emails per month (-1 = unlimited). Older APIs omit them. */
+  maxB2BCatalogs?: number;
+  monthlyEmailSends?: number;
+  /** Boolean features arrive as `{ allowed, requiredPlan }`, e.g. `digitalCoursesAllowed`. */
+  digitalCoursesAllowed?: { allowed: boolean; requiredPlan: string | null };
   aiCredits: { monthlyAllowance: number; balance: number };
   transactionFeeRate: number;
   dedicatedAccountManager: boolean;
@@ -219,7 +234,14 @@ export interface TransactionFeeBill {
   periodKey: string; // 'YYYY-MM'
   amountUSD: number;
   saleCount: number;
-  status: 'creating' | 'invoiced' | 'paid' | 'payment_failed' | 'failed';
+  status: 'creating' | 'invoiced' | 'awaiting_payment' | 'paid' | 'payment_failed' | 'failed';
+  /** 'manual' = no card on file: the bill waits for a bank transfer (or a card added later). */
+  collectionMode?: 'stripe' | 'manual';
+  taxAmountUSD?: number;
+  dueAt?: string | null;
+  /** When the seller pressed "I have paid" for a bank transfer. */
+  sellerReportedPaidAt?: string | null;
+  sellerPaymentNote?: string | null;
   hostedInvoiceUrl: string | null;
   createdAt: string;
   breakdown: Array<{ currency: string; amount: number; amountUSD: number; saleCount: number }>;
@@ -233,9 +255,19 @@ export interface TransactionFeesOverview {
     minimumBillableUSD: number;
   };
   bills: TransactionFeeBill[];
+  /** The company's bank / wallet details to pay a bill that waits for a bank transfer. Null when the admin has set none. */
+  payTo?: FeePayTo | null;
+}
+export interface FeePayTo {
+  bankName: string | null; accountTitle: string | null; accountNumber: string | null; iban: string | null;
+  jazzcashNumber: string | null; easypaisaNumber: string | null; instructions: string | null;
 }
 export function apiGetTransactionFees(storeId: string) {
   return client.get<never, ApiResponse<TransactionFeesOverview>>(`/api/transaction-fees/${storeId}`);
+}
+/** POST /api/transaction-fees/:storeId/bills/:billId/paid-notice — "I sent the bank transfer". The admin closes the bill. */
+export function apiReportFeeBillPaid(storeId: string, billId: string, note?: string) {
+  return client.post<never, ApiResponse<{ alreadyReported: boolean; reportedAt: string }>>(`/api/transaction-fees/${storeId}/bills/${billId}/paid-notice`, note ? { note } : {});
 }
 
 export function apiGetStoreInvoices(storeId: string, query: { page?: number; limit?: number } = {}) {

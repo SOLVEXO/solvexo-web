@@ -5,7 +5,6 @@ import { ENDPOINTS } from '../../endpoints';
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 export interface FeatureFlags {
-  aiStudio: boolean;
   marketplace: boolean;
   digitalUploads: boolean;
   affiliateProgram: boolean;

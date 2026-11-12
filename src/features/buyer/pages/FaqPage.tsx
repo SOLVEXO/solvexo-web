@@ -9,6 +9,9 @@ import type { Faq } from '@/api/services/faq';
 import { Reveal } from '@/components/comman/motion/Reveal';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { FAQ_TEXT } from './FaqPage.text';
 
 function FaqAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -19,9 +22,10 @@ function FaqAccordionItem({ question, answer }: { question: string; answer: stri
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
         aria-controls={id}
-        className="w-full flex items-center justify-between gap-4 py-[18px] text-left bg-transparent border-none cursor-pointer group"
+        className="w-full flex items-center justify-between gap-4 py-[18px] text-start bg-transparent border-none cursor-pointer group"
       >
-        <span className={clsx('text-[14px] font-semibold transition-colors', open ? 'text-brand-orange' : 'text-carbon group-hover:text-brand-orange')}>
+        {/* dir="auto": FAQ text comes from the API as written (English today), so it keeps its own direction on the Arabic page. */}
+        <span dir="auto" className={clsx('text-[14px] font-semibold transition-colors', open ? 'text-brand-orange' : 'text-carbon group-hover:text-brand-orange')}>
           {question}
         </span>
         <span className={clsx(
@@ -35,7 +39,7 @@ function FaqAccordionItem({ question, answer }: { question: string; answer: stri
           conditional mount, and the answer stays in the DOM either way. */}
       <div className={clsx('grid transition-[grid-template-rows] duration-300 ease-out', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
         <div className="overflow-hidden">
-          <p id={id} className="text-[13px] text-slate leading-[1.75] pb-5 pr-9">{answer}</p>
+          <p id={id} dir="auto" className="text-[13px] text-slate leading-[1.75] pb-5 pe-9">{answer}</p>
         </div>
       </div>
     </div>
@@ -56,7 +60,9 @@ function FaqSkeleton() {
 }
 
 export function FaqPage() {
-  usePageTitle('FAQ');
+  const t = useSiteText(FAQ_TEXT);
+  const { pageLang } = useSiteLang();
+  usePageTitle(t.pageTitle);
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -87,8 +93,8 @@ export function FaqPage() {
         </Reveal>
         <SectionHeading
           as="h1"
-          title="Frequently asked questions"
-          subtitle="Find answers about your account, orders, payments and more."
+          title={t.title}
+          subtitle={t.subtitle}
           align="center"
           size="lg"
           className="mb-8"
@@ -98,7 +104,7 @@ export function FaqPage() {
           <div className="flex items-center gap-[6px] border border-bone rounded-lg px-4 bg-white max-w-[440px] mx-auto transition-colors focus-within:border-brand-orange/50 focus-within:ring-2 focus-within:ring-brand-orange/10">
             <Search size={15} className="text-slate shrink-0" />
             <input
-              placeholder="Search for a question…"
+              placeholder={t.searchPlaceholder}
               value={query}
               onChange={e => setQuery(e.target.value)}
               className="border-none outline-none text-[13px] py-[10px] w-full text-charcoal bg-transparent"
@@ -117,7 +123,7 @@ export function FaqPage() {
               category === '' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:border-brand-orange/40',
             )}
           >
-            All
+            {t.all}
           </button>
           {categories.map(c => (
             <button
@@ -141,15 +147,16 @@ export function FaqPage() {
             <FaqSkeleton />
           ) : error ? (
             <div className="flex flex-col items-center gap-3 py-14">
-              <p className="text-[13px] text-error text-center">{error}</p>
-              <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
+              {/* The hook's error is English (server or fallback text); Arabic shows its own message. */}
+              <p className="text-[13px] text-error text-center">{pageLang === 'en' ? error : t.loadFailed}</p>
+              <Button variant="outline" size="sm" onClick={refetch}>{t.tryAgain}</Button>
             </div>
           ) : faqs.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-14">
               <div className="w-12 h-12 rounded-full bg-cream flex items-center justify-center">
                 <HelpCircle size={22} className="text-slate" />
               </div>
-              <p className="text-[13px] text-slate">No FAQs found{query ? ` for "${query}"` : ''}.</p>
+              <p className="text-[13px] text-slate">{t.noResults(query)}</p>
             </div>
           ) : grouped ? (
             <div className="flex flex-col gap-9">
@@ -181,12 +188,12 @@ export function FaqPage() {
                 <LifeBuoy size={16} className="text-brand-orange" />
               </div>
               <div>
-                <p className="text-[14px] font-bold text-carbon">Still need help?</p>
-                <p className="text-[12.5px] text-slate mt-0.5">Can't find what you're looking for? Our support team is here for you.</p>
+                <p className="text-[14px] font-bold text-carbon">{t.stillNeedHelp}</p>
+                <p className="text-[12.5px] text-slate mt-0.5">{t.stillNeedHelpBody}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" icon={<MessageCircle size={13} />} className="shrink-0" onClick={() => navigate('/contact-us')}>
-              Contact Us
+              {t.contactUs}
             </Button>
           </PremiumCard>
         </Reveal>

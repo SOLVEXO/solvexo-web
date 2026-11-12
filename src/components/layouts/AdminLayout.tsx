@@ -6,10 +6,10 @@ import { motion } from 'motion/react';
 import {
   LayoutDashboard, Gauge, Users, DollarSign, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, Image as ImageIcon, RefreshCw,
-  BarChart3, Search, Sparkles, LogOut, Percent, Coins, Activity,
+  BarChart3, Search, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
   Tag, Target, Handshake,
-  MousePointerClick,
+  MousePointerClick, ShieldCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -37,6 +37,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // Moderation is a tab inside this page now (AdminClients.tsx), not its
   // own nav destination — see that file's own comment.
   { id: 'clients',       Icon: Users,           label: 'Clients Manage',  path: '/admin/clients'       },
+  { id: 'seller-trust',  Icon: ShieldCheck,     label: 'Seller trust',    path: '/admin/seller-trust'  },
   { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
   // Subscriptions (seller's own customer billing) and Platform Plans
   // (seller-to-Solvexo SaaS billing) merged into one "Billing" page
@@ -50,11 +51,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // side) and StoreAppRequestsModule (backend) for the full flow. Distinct
   // from Solvexo's own POS app, which needs no admin review at all.
   { id: 'store-app-requests', Icon: Smartphone, label: 'Store App Requests', path: '/admin/store-app-requests' },
+  { id: 'app-platform', Icon: Smartphone, label: 'App Platform', path: '/admin/app-platform' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
-  { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
   // Announcements/FAQs/Testimonials/Contact Messages consolidated into one
   // tabbed page — see ADMIN_MODULES' doc comment below for why.
   { id: 'content',       Icon: ImageIcon,       label: 'Site Content',    path: '/admin/content'       },
@@ -152,11 +153,13 @@ export const ADMIN_MODULES: AdminModule[] = [
   // AdminClients.tsx), so this is a bare top-level link, same as
   // Content/Analytics below, not a group needing its own heading.
   { id: 'clients',   label: 'Clients Manage',        Icon: Users,          ids: ['clients'] },
+  // Business verification: audit, review queue, payout holds, enforcement.
+  { id: 'seller-trust', label: 'Seller trust',       Icon: ShieldCheck,    ids: ['seller-trust'] },
   // Standalone, not under Billing — this is a mobile-app-build request
   // queue (seller white-label branded apps), unrelated to buyer-subscribes-
   // to-seller-plan monitoring or Solvexo's own SaaS plan catalog, which is
   // what Billing actually is.
-  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio', 'newsletter', 'platform-coupons'], collapsible: true },
+  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'newsletter', 'platform-coupons'], collapsible: true },
   // Manual bank-transfer verification moved to each seller's own Store
   // Workspace (money lands directly in the seller's own bank account now,
   // never Solvexo's — see ManualPaymentsService) — just one destination
@@ -164,6 +167,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['content'] },
 
   { id: 'store-app-requests', label: 'Store App Requests', Icon: Smartphone, ids: ['store-app-requests'] },
+  { id: 'app-platform', label: 'App Platform', Icon: Smartphone, ids: ['app-platform'] },
   { id: 'settings',  label: 'Settings',              Icon: UserCog,        ids: ['settings'] },
 ];
 
@@ -201,10 +205,10 @@ const NAV_PERMISSION: Record<string, string | string[]> = {
   sales: ['sales.access', 'sales.manage'],
   // Partners (resellers / agents) and reps see their own commissions; the owner sees it too (it explains how to set it up).
   earnings: ['partner.portal', 'sales.access', 'sales.manage'],
-  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
+  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'seller-trust': 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
-  'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage', 'ai-studio': 'ai.manage',
-  content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage',
+  'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage',
+  content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage', 'app-platform': 'config.manage',
 };
 const navAllowed = (id: string) => !NAV_PERMISSION[id] || can(NAV_PERMISSION[id]);
 const findNav = (id: string) => { const n = ADMIN_NAV.find(x => x.id === id); return n && navAllowed(n.id) ? n : undefined; };

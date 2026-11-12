@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     ADMIN: {
       STATS:     '/api/admin/users/stats',
       LIST:      '/api/admin/users',
+      EXPORT:    '/api/admin/users/export',
       GET_BY_ID: (role: string, id: string) => `/api/admin/users/${role}/${id}`,
       SUSPEND:   (role: string, id: string) => `/api/admin/users/${role}/${id}/suspend`,
       UNSUSPEND: (role: string, id: string) => `/api/admin/users/${role}/${id}/unsuspend`,
@@ -39,6 +40,24 @@ export const ENDPOINTS = {
     HEALTH:        '/api/admin/clients/health',
     HEALTH_EXPORT: '/api/admin/clients/health/export',
     STORE_HEALTH:  (storeId: string) => `/api/admin/clients/health/store/${storeId}`,
+    BUSINESS_PROFILE: (sellerId: string) => `/api/admin/clients/${sellerId}/business-profile`,
+  },
+
+  // ── SELLER TRUST (Admin — business verification audit, review queue,
+  // NTN checks, payout holds, reminders and the enforcement switch) ────────
+  SELLER_TRUST: {
+    SUMMARY:      '/api/admin/seller-trust/summary',
+    STORES:       '/api/admin/seller-trust/stores',
+    EXPORT:       '/api/admin/seller-trust/stores/export',
+    STORE:        (storeId: string) => `/api/admin/seller-trust/stores/${storeId}`,
+    UNDER_REVIEW: (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/under-review`,
+    APPROVE:      (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/approve`,
+    REJECT:       (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/reject`,
+    REQUEST_INFO: (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/request-info`,
+    NTN_CHECK:    (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/ntn-check`,
+    PAYOUT_HOLD:  (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/payout-hold`,
+    REMIND:       '/api/admin/seller-trust/remind',
+    SETTINGS:     '/api/admin/seller-trust/settings',
   },
 
   // ── PLATFORM CONFIG (Admin) ────────────────────────────────────────────────
@@ -639,11 +658,6 @@ export const ENDPOINTS = {
     },
   },
 
-  // ── AI STUDIO (public trial) ───────────────────────────────────────────────
-  AI_STUDIO_PUBLIC: {
-    WORKSHEET_TRY_FREE: '/api/public/worksheet-builder/try-free',
-  },
-
   // ── SEARCH ────────────────────────────────────────────────────────────────
   SEARCH: {
     STORES:   '/api/search/stores',
@@ -1207,6 +1221,12 @@ export const ENDPOINTS = {
     ADMIN_ALL:    '/api/contact/admin/all',
     UPDATE_STATUS:(id: string) => `/api/contact/admin/${id}/status`,
     DELETE:       (id: string) => `/api/contact/admin/${id}`,
+    ADMIN_REPLY:  (id: string) => `/api/contact/admin/${id}/reply`,
+  },
+
+  // ── SUPPORT (help requests from a store dashboard to Solvexo) ─────────────
+  SUPPORT: {
+    REQUESTS: (storeId: string) => `/api/support/${storeId}/requests`,
   },
 
   TESTIMONIALS: {
@@ -1337,36 +1357,6 @@ export const ENDPOINTS = {
     },
   },
 
-  // ── AI STUDIO (seller-only) ───────────────────────────────────────────────
-  AI_STUDIO: {
-    CREDITS:            (storeId: string) => `/api/ai-studio/${storeId}/credits`,
-    GENERATIONS:        (storeId: string) => `/api/ai-studio/${storeId}/generations`,
-    GENERATION_BY_ID:   (storeId: string, id: string) => `/api/ai-studio/${storeId}/generations/${id}`,
-    ACCEPT_GENERATION:  (storeId: string, id: string) => `/api/ai-studio/${storeId}/generations/${id}/accept`,
-    LISTING_WRITER:     (storeId: string) => `/api/ai-studio/${storeId}/listing-writer/generate`,
-    SEO_BOOSTER:        (storeId: string) => `/api/ai-studio/${storeId}/seo-booster/generate`,
-    EMAIL_CAMPAIGNS:    (storeId: string) => `/api/ai-studio/${storeId}/email-campaigns/generate`,
-    WORKSHEET_BUILDER:  (storeId: string) => `/api/ai-studio/${storeId}/worksheet-builder/generate`,
-    PRICE_OPTIMIZER:    (storeId: string) => `/api/ai-studio/${storeId}/price-optimizer/generate`,
-    IMAGE_ENHANCER:     (storeId: string) => `/api/ai-studio/${storeId}/image-enhancer/generate`,
-    IMAGE_ENHANCER_JOB: (storeId: string, jobId: string) => `/api/ai-studio/${storeId}/image-enhancer/jobs/${jobId}`,
-  },
-
-  // ── ADMIN AI STUDIO (oversight + platform-scope generation) ──────────────
-  ADMIN_AI_STUDIO: {
-    OVERVIEW:               '/api/admin/ai-studio/overview',
-    GENERATIONS:            '/api/admin/ai-studio/generations',
-    GENERATION_BY_ID:       (id: string) => `/api/admin/ai-studio/generations/${id}`,
-    WALLETS:                '/api/admin/ai-studio/wallets',
-    WALLET_LEDGER:          (storeId: string) => `/api/admin/ai-studio/wallets/${storeId}/ledger`,
-    ADJUST_WALLET:          (storeId: string) => `/api/admin/ai-studio/wallets/${storeId}/adjust`,
-    TRANSACTIONS:           '/api/admin/ai-studio/transactions',
-    PLATFORM_SEO_BOOSTER:   '/api/admin/ai-studio/platform/seo-booster/generate',
-    PLATFORM_EMAIL:         '/api/admin/ai-studio/platform/email-campaigns/generate',
-    PLATFORM_IMAGE:         '/api/admin/ai-studio/platform/image-enhancer/generate',
-    PLATFORM_IMAGE_JOB:     (jobId: string) => `/api/admin/ai-studio/platform/image-enhancer/jobs/${jobId}`,
-  },
-
   // ── SEO (Admin/Platform + Seller/Store) ──────────────────────────────────
   SEO: {
     // Public, unauthenticated meta-delivery — `SeoMetaController` in
@@ -1475,6 +1465,7 @@ export const ENDPOINTS = {
       AI: {
         GENERATE:      (storeId: string) => `/api/store/${storeId}/seo/ai/generate`,
         GENERATE_BULK: (storeId: string) => `/api/store/${storeId}/seo/ai/generate-bulk`,
+        ACCEPT:        (storeId: string) => `/api/store/${storeId}/seo/ai/accept`,
         SUGGESTIONS:   (storeId: string) => `/api/store/${storeId}/seo/ai/suggestions`,
       },
 

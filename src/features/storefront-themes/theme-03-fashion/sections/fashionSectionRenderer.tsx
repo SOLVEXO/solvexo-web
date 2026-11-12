@@ -5,6 +5,7 @@ import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss 
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { registry } from './sectionRegistry';
 import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
+import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
 
@@ -39,18 +40,21 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
   const { theme } = useStorefront();
   // Visitors in another language see the seller's translations; the editor always shows the source text.
   const textIndex = useStoreTextIndex();
-  const sections = selectable ? authored : localizeSections(authored, textIndex);
+  // A/B tests: the visitor's variant of an experiment section (never in the editor).
+  const sections = useExperimentSections(selectable ? authored : localizeSections(authored, textIndex), !selectable);
   const schemes = theme?.theme?.colorSchemes;
   const dynamic = dynamicSourceValues ?? {};
 
   return (
     <>
       <style>{SECTION_SPACING_CSS}{fashionTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
-      {sections.map((section, i) => {
-        if (section.enabled === false) return null;
-        const render = registry.get(section.type);
+      {sections.map((rawSection, i) => {
+        if (rawSection.enabled === false) return null;
+        const render = registry.get(rawSection.type);
         if (!render) return null;
-        const blocks = (section.blocks ?? []).map((b, index) => (b._id ? b : { ...b, _id: String(index) })).filter(b => b.enabled !== false);
+        // The database drops an empty `settings: {}`, so a section saved with no settings arrives with none at all.
+        const section = rawSection.settings ? rawSection : { ...rawSection, settings: {} };
+        const blocks = (section.blocks ?? []).map((b, index) => ({ ...b, settings: b.settings ?? {}, _id: b._id ?? String(index) })).filter(b => b.enabled !== false);
         const colors = resolveSectionColors(section.colorSchemeId, schemes);
         const spacing = sectionSpacing(section.settings);
         const key = String(section._id ?? i);

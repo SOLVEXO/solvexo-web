@@ -5,12 +5,21 @@ import { SettingsCard, SettingsSaveBar } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { TAX_SUGGESTIONS } from '@/utils/taxSuggestions';
+import { UNVERIFIED_TEMPLATE_LABEL } from '@/utils/complianceWording';
 import {
   apiApplyPlatformTax, apiGetPlatformTax, apiGetPlatformTaxCoverage, apiUpdatePlatformTax,
   type ApplyTaxResult, type PlatformTaxAuthority, type PlatformTaxGap, type PlatformTaxSettings,
 } from '@/api/services/adminPlatformTax';
 
-interface RateRow { key: string; id?: string; country: string; label: string; ratePercent: string; status: 'draft' | 'confirmed'; effectiveFrom: string }
+interface RateRow {
+  key: string; id?: string; country: string; label: string; ratePercent: string; status: 'draft' | 'confirmed'; effectiveFrom: string;
+  /** How the rate was when it was loaded: a confirmed rate that is saved unchanged needs no new verification. */
+  orig: { status: 'draft' | 'confirmed'; ratePercent: string; country: string; label: string } | null;
+  /** Typed in only when this save would newly confirm the rate. */
+  source: string; accountant: string;
+}
+/** A newly Confirmed rate, or a confirmed rate whose country / label / percentage changed, must say where it comes from and who confirmed it. */
+const needsVerification = (r: RateRow) => r.status === 'confirmed' && !(r.orig && r.orig.status === 'confirmed' && r.orig.ratePercent === r.ratePercent && r.orig.country === r.country && r.orig.label === r.label);
 interface Form { legalName: string; authority: PlatformTaxAuthority; ntn: string; strn: string; address: string; rates: RateRow[] }
 
 const AUTHORITIES: { id: PlatformTaxAuthority; label: string }[] = [
@@ -31,6 +40,7 @@ function toForm(s: PlatformTaxSettings): Form {
     rates: (s.rates ?? []).map(r => ({
       key: newKey(), id: r.id, country: r.country, label: r.label, ratePercent: String(r.ratePercent), status: r.status,
       effectiveFrom: r.effectiveFrom ? String(r.effectiveFrom).slice(0, 10) : '',
+      orig: { status: r.status, ratePercent: String(r.ratePercent), country: r.country, label: r.label }, source: '', accountant: '',
     })),
   };
 }
@@ -70,6 +80,7 @@ export function AdminPlatformTax() {
       const pct = Number(r.ratePercent);
       if (!r.country) out.push(`Rate ${n}: choose a country.`);
       if (r.ratePercent.trim() === '' || !Number.isFinite(pct) || pct < 0 || pct > 100) out.push(`Rate ${n}: enter a percentage between 0 and 100.`);
+      if (needsVerification(r) && (!r.source.trim() || !r.accountant.trim())) out.push(`Rate ${n}: to Confirm it, write where the rate comes from and the accountant who confirmed it.`);
       if (r.status === 'confirmed') {
         const k = `${r.country}|${r.effectiveFrom}`;
         if (seen.has(k)) out.push(`Rate ${n}: another confirmed ${r.country} rate starts on the same date.`);
@@ -81,7 +92,7 @@ export function AdminPlatformTax() {
 
   const patch = (p: Partial<Form>) => setForm(f => (f ? { ...f, ...p } : f));
   const patchRow = (key: string, p: Partial<RateRow>) => setForm(f => (f ? { ...f, rates: f.rates.map(r => (r.key === key ? { ...r, ...p } : r)) } : f));
-  const addRow = (country = '', ratePercent = '', label = 'Sales Tax') => setForm(f => (f ? { ...f, rates: [...f.rates, { key: newKey(), country, label, ratePercent, status: 'draft', effectiveFrom: '' }] } : f));
+  const addRow = (country = '', ratePercent = '', label = 'Sales Tax') => setForm(f => (f ? { ...f, rates: [...f.rates, { key: newKey(), country, label, ratePercent, status: 'draft', effectiveFrom: '', orig: null, source: '', accountant: '' }] } : f));
 
   const [gaps, setGaps] = useState<PlatformTaxGap[]>([]);
   useEffect(() => {
@@ -98,7 +109,7 @@ export function AdminPlatformTax() {
     try {
       const res = await apiUpdatePlatformTax({
         legalName: form.legalName.trim(), authority: form.authority, ntn: form.ntn.trim(), strn: form.strn.trim(), address: form.address.trim(),
-        rates: form.rates.map(r => ({ id: r.id, country: r.country, label: r.label.trim() || 'Sales Tax', ratePercent: Number(r.ratePercent), status: r.status, effectiveFrom: r.effectiveFrom || null })),
+        rates: form.rates.map(r => ({ id: r.id, country: r.country, label: r.label.trim() || 'Sales Tax', ratePercent: Number(r.ratePercent), status: r.status, effectiveFrom: r.effectiveFrom || null, ...(needsVerification(r) ? { verification: { source: r.source.trim(), accountantName: r.accountant.trim() } } : {}) })),
       });
       const f = toForm(res.data);
       setForm(f); setSaved(JSON.stringify(strip(f)));
@@ -174,7 +185,7 @@ export function AdminPlatformTax() {
           <div className="mb-4 w-full sm:w-[280px]">
             <Select aria-label="Add a suggested rate as a draft" value="" onChange={e => { const cc = e.target.value; const s = TAX_SUGGESTIONS[cc]; if (s) addRow(cc, String(s.rate), s.label); }}>
               <option value="">Add suggested draft…</option>
-              {unusedSuggestions.map(cc => <option key={cc} value={cc}>{countryName(cc)} ({TAX_SUGGESTIONS[cc].rate}%)</option>)}
+              {unusedSuggestions.map(cc => <option key={cc} value={cc}>{UNVERIFIED_TEMPLATE_LABEL}: {countryName(cc)} ({TAX_SUGGESTIONS[cc].rate}%)</option>)}
             </Select>
           </div>
         )}
@@ -204,6 +215,12 @@ export function AdminPlatformTax() {
                   </Select>
                   <button type="button" aria-label={`Remove rate ${i + 1}`} onClick={() => setForm(f => (f ? { ...f, rates: f.rates.filter(x => x.key !== r.key) } : f))}
                     className="h-9 w-9 inline-flex items-center justify-center rounded-md text-slate hover:text-error hover:bg-fog justify-self-end"><Trash2 size={15} /></button>
+                  {needsVerification(r) && (
+                    <div className="col-span-2 lg:col-span-6 grid gap-3 sm:grid-cols-2 rounded-lg bg-cream px-3 py-2.5">
+                      <Input label="Where does this rate come from? (law / notice)" value={r.source} maxLength={300} onChange={e => patchRow(r.key, { source: e.target.value })} />
+                      <Input label="Accountant who confirmed it" value={r.accountant} maxLength={120} onChange={e => patchRow(r.key, { accountant: e.target.value })} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -246,5 +263,5 @@ export function AdminPlatformTax() {
 
 /** Comparable shape (row keys are local only). */
 function strip(f: Form) {
-  return { ...f, rates: f.rates.map(r => ({ id: r.id, country: r.country, label: r.label, ratePercent: r.ratePercent, status: r.status, effectiveFrom: r.effectiveFrom })) };
+  return { ...f, rates: f.rates.map(r => ({ id: r.id, country: r.country, label: r.label, ratePercent: r.ratePercent, status: r.status, effectiveFrom: r.effectiveFrom, source: r.source, accountant: r.accountant })) };
 }

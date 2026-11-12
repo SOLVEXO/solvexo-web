@@ -25,7 +25,7 @@ import { RequireRole }  from './RequireRole';
 
 // ── Every route below is code-split via React.lazy() — this used to be ~100
 // EAGER imports, meaning literally every seller/admin/buyer/storefront page
-// (analytics charts, the theme builder, AI Studio, POS, every admin screen)
+// (analytics charts, the theme builder, POS, every admin screen)
 // shipped in ONE ~3.2MB JS bundle that had to fully download+parse before
 // the very first pixel could paint, regardless of which single page was
 // actually being visited — the real cause of a long white-screen on load.
@@ -76,6 +76,8 @@ const SolutionPage         = lazy(() => import('@/features/buyer/pages/solutions
 const NotFoundPage   = lazy(() => import('@/features/buyer/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const BlogIndexPage  = lazy(() => import('@/features/buyer/pages/blog/BlogIndexPage').then(m => ({ default: m.BlogIndexPage })));
 const BlogPostPage   = lazy(() => import('@/features/buyer/pages/blog/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
+const ManualsPage    = lazy(() => import('@/features/buyer/pages/ManualsPage').then(m => ({ default: m.ManualsPage })));
+const StartPage      = lazy(() => import('@/features/buyer/pages/StartPage').then(m => ({ default: m.StartPage })));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/features/storefront/StorefrontLayout').then(m => ({ default: m.StorefrontLayout })));
@@ -139,6 +141,11 @@ const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/S
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
 const CheckoutRulesHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/checkoutRules/CheckoutRulesHub'));
+const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/experiments/ExperimentsHub'));
+const ConnectedAppsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/ConnectedAppsHub'));
+const AppAuthorizePage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppAuthorizePage'));
+const AppEmbedPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppEmbedPage'));
+const AdminAppPlatform = lazy(() => import('@/features/admin/pages/AdminAppPlatform').then(m => ({ default: m.AdminAppPlatform })));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
 const StorePaymentProofs = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/PaymentProofs').then(m => ({ default: m.StorePaymentProofs })));
@@ -150,7 +157,6 @@ const ReorderSuggestions = lazy(() => import('@/features/seller/store/Dashboard/
 const StoreReturnList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList').then(m => ({ default: m.StoreReturnList })));
 const DisputesList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DisputesList'));
 const StoreAnalytics = lazy(() => import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics').then(m => ({ default: m.StoreAnalytics })));
-const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio').then(m => ({ default: m.StoreAIStudio })));
 const StoreFaqs = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreFaqs'));
 const AdminPlatformCoupons = lazy(() => import('@/features/admin/pages/AdminPlatformCoupons'));
 const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO').then(m => ({ default: m.StoreSEO })));
@@ -170,6 +176,7 @@ const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/O
 const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
 const ContactMessages = lazy(() => import('@/features/seller/store/Dashboard/Manage/ContactMessages'));
+const StoreHelp = lazy(() => import('@/features/seller/store/Dashboard/Manage/Help'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
 const MetaobjectTypesPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/Metaobjects/MetaobjectTypesPage').then(m => ({ default: m.MetaobjectTypesPage })));
@@ -185,6 +192,8 @@ const SalesLeadDetail = lazy(() => import('@/features/admin/pages/sales/SalesLea
 const AdminSaasMetrics = lazy(() => import('@/features/admin/pages/AdminSaasMetrics').then(m => ({ default: m.AdminSaasMetrics })));
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
+const AdminSellerTrust = lazy(() => import('@/features/admin/pages/AdminSellerTrust').then(m => ({ default: m.AdminSellerTrust })));
+const SellerTrustReview = lazy(() => import('@/features/admin/pages/sellerTrust/SellerTrustReview').then(m => ({ default: m.SellerTrustReview })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
 // AdminPlatformPlans is no longer its own route — it renders inside AdminBilling.
 const AdminBilling = lazy(() => import('@/features/admin/pages/AdminBilling').then(m => ({ default: m.AdminBilling })));
@@ -203,7 +212,6 @@ const AdminConfig = lazy(() => import('@/features/admin/pages/AdminConfig').then
 const AdminFxSettings = lazy(() => import('@/features/admin/pages/AdminFxSettings').then(m => ({ default: m.AdminFxSettings })));
 const AdminSettingsHub = lazy(() => import('@/features/admin/pages/settings/AdminSettingsHub'));
 const AdminSEO = lazy(() => import('@/features/admin/pages/AdminSEO').then(m => ({ default: m.AdminSEO })));
-const AdminAiStudio = lazy(() => import('@/features/admin/pages/AdminAiStudio').then(m => ({ default: m.AdminAiStudio })));
 const AdminStoreAppRequests = lazy(() => import('@/features/admin/pages/AdminStoreAppRequests').then(m => ({ default: m.AdminStoreAppRequests })));
 
 // ── Storefront subdomain router ────────────────────────────────────────────────
@@ -332,6 +340,8 @@ const mainRouter = createBrowserRouter([
               { path: 'solutions/:slug', element: <SolutionPage /> },
               { path: 'blog',            element: <BlogIndexPage /> },
               { path: 'blog/:slug',      element: <BlogPostPage /> },
+              { path: 'manuals',         element: <ManualsPage /> },
+              { path: 'start',           element: <StartPage /> },
               // Unknown public address: a real not-found page (noindex) instead of redirecting to the home page,
               // which search engines report as a "soft 404".
               { path: '*',               element: <NotFoundPage /> },
@@ -411,6 +421,10 @@ const mainRouter = createBrowserRouter([
           { path: 'wholesale',                        element: <WholesaleHub /> },
           { path: 'subscriptions',                    element: <SubscriptionsHub /> },
           { path: 'checkout-rules',                   element: <CheckoutRulesHub /> },
+          { path: 'experiments',                      element: <ExperimentsHub /> },
+          { path: 'app-platform',                     element: <ConnectedAppsHub /> },
+          { path: 'app-platform/authorize',           element: <AppAuthorizePage /> },
+          { path: 'app-platform/:installId',          element: <AppEmbedPage /> },
           { path: 'cod-protection',                   element: <CodProtectionPage /> },
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'khata',                            element: <KhataHub /> },
@@ -449,12 +463,9 @@ const mainRouter = createBrowserRouter([
           { path: 'files',                            element: <FilesLibrary /> },
           { path: 'faqs',                             element: <StoreFaqs /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
-          // Verification's sidebar NAV item and workspace banner were removed
-          // (dashboard-declutter request) while the underlying feature/page/
-          // backend stay intact — this redirect just keeps the old URL from
-          // 404ing for anyone with it bookmarked or linked, matching the
-          // activity/followers/pos-admin pattern below.
-          { path: 'verification',                     element: <Navigate to="../settings" replace /> },
+          // "Verify your business" lives in the Settings hub as its own tab;
+          // this keeps the old URL (notification links, sellerRouting) working.
+          { path: 'verification',                     element: <Navigate to="../settings/verification" replace /> },
           { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
           { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
           // `:themeId` is carried in the URL for a real reason now — it used
@@ -483,6 +494,7 @@ const mainRouter = createBrowserRouter([
           // Edited in Themes → Customize now (Header group / Featured products section).
           { path: 'online-store/announcement-bar',     element: <Navigate to="../online-store/themes" replace /> },
           { path: 'online-store/contact-messages',     element: <ContactMessages /> },
+          { path: 'help',                             element: <StoreHelp /> },
           // Home-page title/description/social image now lives in one place
           // only: SEO → Store SEO (`SeoMetaForm` over the same
           // `apiGetStoreSeo`/`apiUpdateStoreSeo`). The duplicate
@@ -492,7 +504,6 @@ const mainRouter = createBrowserRouter([
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'disputes',                         element: <DisputesList /> },
           { path: 'seo/:tab?',                        element: <StoreSEO /> },
-          { path: 'ai/studio',                        element: <StoreAIStudio /> },
           { path: 'reviews',                          element: <StoreReviews /> },
           { path: 'finance',                          element: <StoreFinance /> },
           { path: 'inventory/:tab?',                  element: <InventoryHub /> },
@@ -586,7 +597,11 @@ const mainRouter = createBrowserRouter([
           // convention as the content-page redirects below.
           { path: 'users',        element: <Navigate to="../clients" replace /> },
           { path: 'clients',      element: <RequireRole role="admin"><AdminClients /></RequireRole> },
+          { path: 'app-platform', element: <RequireRole role="admin"><AdminAppPlatform /></RequireRole> },
           { path: 'clients/:id',  element: <RequireRole role="admin"><AdminClientDetail /></RequireRole> },
+          // Seller trust: business verification audit, review queue and enforcement.
+          { path: 'seller-trust', element: <RequireRole role="admin"><AdminSellerTrust /></RequireRole> },
+          { path: 'seller-trust/:storeId', element: <RequireRole role="admin"><SellerTrustReview /></RequireRole> },
           // Moderation is a tab inside Clients Manage now (AdminClients.tsx
           // renders AdminModeration directly, embedded) — not its own route.
           { path: 'moderation',   element: <Navigate to="../clients" replace /> },
@@ -612,7 +627,6 @@ const mainRouter = createBrowserRouter([
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },
           { path: 'settings',     element: <RequireRole role="admin"><AdminSettingsHub /></RequireRole> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
-          { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
           { path: 'platform-coupons', element: <RequireRole role="admin"><AdminPlatformCoupons /></RequireRole> },
           { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },
           { path: 'store-app-requests', element: <RequireRole role="admin"><AdminStoreAppRequests /></RequireRole> },

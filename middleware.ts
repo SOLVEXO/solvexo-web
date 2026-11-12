@@ -2,7 +2,7 @@ import { next, rewrite } from '@vercel/functions';
 import { prerenderedFile, stripCountryPrefix } from './src/seo/prerender';
 
 // Platform pages that live under a country prefix (`/pk/pricing`). Dashboards (/store, /admin, ...) never get one.
-const COUNTRY_PAGES = new Set(['/', '/login', '/register', '/signup', '/forgot-password', '/new-password', '/verify-otp', '/onboard', '/pricing', '/about', '/contact', '/contact-us', '/faq', '/help', '/terms-of-service', '/privacy-policy', '/cookie-policy', '/mobile-app']);
+const COUNTRY_PAGES = new Set(['/', '/login', '/register', '/signup', '/forgot-password', '/new-password', '/verify-otp', '/onboard', '/pricing', '/about', '/contact', '/contact-us', '/faq', '/help', '/terms-of-service', '/privacy-policy', '/cookie-policy', '/mobile-app', '/start', '/sellers', '/products', '/book-demo', '/security', '/manuals']);
 // Crawlers and link-preview fetchers never get the country redirect: they must see the plain address they asked for.
 // "google" covers Google-InspectionTool (Search Console's URL Inspection / Request indexing) and GoogleOther, whose
 // user agents do not contain "bot"; "inspection" and the named engines are belt and braces.
@@ -54,7 +54,7 @@ function countryRedirect(request: Request, hostname: string | undefined, pathnam
   if (!request.headers.get('accept')?.includes('text/html')) return null;
   if (BOT_UA.test(request.headers.get('user-agent') ?? '')) return null;
   const base = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  if (!(COUNTRY_PAGES.has(base) || base.startsWith('/solutions') || base.startsWith('/onboard/'))) return null;
+  if (!(COUNTRY_PAGES.has(base) || base.startsWith('/solutions') || base.startsWith('/products/') || base.startsWith('/onboard/'))) return null;
   const cookie = /(?:^|;\s*)sx_country=([a-z]{2})(?:;|$)/.exec(request.headers.get('cookie') ?? '')?.[1];
   const ip = request.headers.get('x-vercel-ip-country')?.toLowerCase();
   const code = cookie ?? (ip && /^[a-z]{2}$/.test(ip) ? ip : null);

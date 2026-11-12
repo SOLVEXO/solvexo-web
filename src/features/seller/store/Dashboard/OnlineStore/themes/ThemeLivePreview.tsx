@@ -9,6 +9,7 @@ import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementBar as S
 import type { StoreThemeData } from '@/api/services/storeTheme';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { CartProvider } from '@/contexts/CartContext';
+import { useCurrencyPreferenceOptional } from '@/contexts/CurrencyPreferenceContext';
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { apiListMenus, type Menu } from '@/api/services/menus';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
@@ -219,6 +220,15 @@ export function ThemeLivePreview({
   const [menus, setMenus] = useState<Menu[]>([]);
   const { store: workspaceStore } = useStoreWorkspace();
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // The editor is not a storefront visit: no market / IP detection runs here, so without this the preview fell back to
+  // the platform default (USD) and showed a PKR store's prices converted into dollars. Show the store's own currency.
+  const currencyPref = useCurrencyPreferenceOptional();
+  const setPreviewCurrency = currencyPref?.setCurrencyView; // view only: the editor never saves a currency choice
+  const storeCurrency = workspaceStore?.baseCurrency;
+  useEffect(() => {
+    if (storeCurrency && setPreviewCurrency) setPreviewCurrency(storeCurrency);
+  }, [storeCurrency, setPreviewCurrency]);
 
   // Sidebar → preview: bring the selected section / header / footer into view.
   useEffect(() => {

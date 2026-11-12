@@ -10,22 +10,25 @@ import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { motion } from 'motion/react';
 import { SALES_EMAIL } from '@/utils/contact';
-
-const TOPICS = ['General question', 'Order or delivery', 'Billing & payments', 'Selling on Solvexo', 'Report a problem'];
-
-const CONTACT_CARDS = [
-  { Icon: Mail,     label: 'Email us',        value: SALES_EMAIL },
-  { Icon: LifeBuoy,  label: 'Help Center',     value: 'Browse FAQs & guides' },
-  { Icon: Clock,     label: 'Response time',   value: 'Usually within 24 hours' },
-];
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { CONTACT_TOPICS, CONTACT_US_TEXT, type ContactTopic } from './ContactUsPage.text';
 
 export function ContactUsPage() {
-  usePageTitle('Contact Us');
+  const t = useSiteText(CONTACT_US_TEXT);
+  const { pageLang } = useSiteLang();
+  usePageTitle(t.pageTitle);
   const navigate = useNavigate();
+
+  const contactCards = [
+    { Icon: Mail,     label: t.emailUs,      value: SALES_EMAIL },
+    { Icon: LifeBuoy, label: t.helpCenter,   value: t.helpCenterValue },
+    { Icon: Clock,    label: t.responseTime, value: t.responseTimeValue },
+  ];
 
   const [name, setName]       = useState('');
   const [email, setEmail]     = useState('');
-  const [topic, setTopic]     = useState(TOPICS[0]);
+  const [topic, setTopic]     = useState<ContactTopic>(CONTACT_TOPICS[0]);
   const [message, setMessage] = useState('');
   const [error, setError]     = useState('');
   const [sending, setSending] = useState(false);
@@ -34,7 +37,7 @@ export function ContactUsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
-      setError('Please fill in your name, email, and message.');
+      setError(t.missingFields);
       return;
     }
     setError('');
@@ -43,7 +46,8 @@ export function ContactUsPage() {
       await apiSubmitContact({ name, email, topic, message });
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send your message. Please try again.');
+      // Server messages are English: the Arabic page shows its own text instead.
+      setError(pageLang === 'en' && err instanceof Error ? err.message : t.sendFailed);
     } finally {
       setSending(false);
     }
@@ -53,12 +57,12 @@ export function ContactUsPage() {
     <div className="bg-cream min-h-full">
       {/* ── Hero ── */}
       <div className="px-4 md:px-8 lg:px-12 pt-14 md:pt-20 pb-10 max-w-[720px] mx-auto">
-        <SectionHeading as="h1" title="Get in touch" subtitle="Questions, feedback, or need a hand with an order? We're here to help." align="center" size="lg" />
+        <SectionHeading as="h1" title={t.title} subtitle={t.subtitle} align="center" size="lg" />
       </div>
 
       {/* ── Contact info cards ── */}
       <RevealStagger className="max-w-[840px] mx-auto px-4 md:px-8 lg:px-12 pb-10 grid grid-cols-1 sm:grid-cols-3 gap-3" step={0.06} y={14}>
-        {CONTACT_CARDS.map(({ Icon, label, value }) => (
+        {contactCards.map(({ Icon, label, value }) => (
           <PremiumCard key={label} className="p-5 flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
               <Icon size={16} className="text-brand-orange" />
@@ -86,27 +90,27 @@ export function ContactUsPage() {
               >
                 <Check size={22} className="text-success" />
               </motion.div>
-              <p className="text-[16px] font-bold text-carbon">Message sent</p>
+              <p className="text-[16px] font-bold text-carbon">{t.sentTitle}</p>
               <p className="text-[13px] text-slate max-w-[360px]">
-                Thanks for reaching out — our support team will get back to you at {email}, usually within 24 hours.
+                {t.sentBody(email)}
               </p>
               <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate('/faq')}>
-                Browse the Help Center
+                {t.browseHelpCenter}
               </Button>
             </div>
           ) : (
             <>
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Your name" placeholder="Jane Cooper" value={name} onChange={e => setName(e.target.value)} />
-                  <Input label="Email address" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input label={t.nameLabel} placeholder={t.namePlaceholder} value={name} onChange={e => setName(e.target.value)} />
+                  <Input label={t.emailLabel} type="email" dir="ltr" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
-                <Select label="What's this about?" value={topic} onChange={e => setTopic(e.target.value)}>
-                  {TOPICS.map(t => <option key={t} value={t}>{t}</option>)}
+                <Select label={t.topicLabel} value={topic} onChange={e => setTopic(e.target.value as ContactTopic)}>
+                  {CONTACT_TOPICS.map((value, i) => <option key={value} value={value}>{t.topicLabels[i]}</option>)}
                 </Select>
                 <Textarea
-                  label="Message" rows={5}
-                  placeholder="Tell us a bit about what's going on…"
+                  label={t.messageLabel} rows={5}
+                  placeholder={t.messagePlaceholder}
                   value={message} onChange={e => setMessage(e.target.value)}
                 />
                 {error && (
@@ -116,7 +120,7 @@ export function ContactUsPage() {
                 )}
                 <MagneticButton className="block">
                   <Button type="submit" variant="primary" fullWidth loading={sending} icon={!sending && <Send size={14} />}>
-                    {sending ? 'Sending…' : 'Send Message'}
+                    {sending ? t.sending : t.send}
                   </Button>
                 </MagneticButton>
               </form>
@@ -126,17 +130,17 @@ export function ContactUsPage() {
                   card floating alone in open space. */}
               <PremiumCard onClick={() => navigate('/book-demo')} className="p-5 flex items-center justify-between gap-3 mt-8">
                 <div>
-                  <p className="text-[13px] font-semibold text-carbon">Thinking of selling on Solvexo?</p>
-                  <p className="text-[12px] text-slate mt-0.5">Book a free 30-minute demo and we’ll show you your store, payments and delivery.</p>
+                  <p className="text-[13px] font-semibold text-carbon">{t.demoTitle}</p>
+                  <p className="text-[12px] text-slate mt-0.5">{t.demoBody}</p>
                 </div>
-                <ArrowRight size={16} className="text-slate shrink-0" />
+                <ArrowRight size={16} className="text-slate shrink-0 rtl:-scale-x-100" />
               </PremiumCard>
               <PremiumCard onClick={() => navigate('/faq')} className="p-5 flex items-center justify-between gap-3 mt-3">
                 <div>
-                  <p className="text-[13px] font-semibold text-carbon">Looking for a quick answer?</p>
-                  <p className="text-[12px] text-slate mt-0.5">Check our Frequently Asked Questions first — you might not need to wait for a reply.</p>
+                  <p className="text-[13px] font-semibold text-carbon">{t.faqTitle}</p>
+                  <p className="text-[12px] text-slate mt-0.5">{t.faqBody}</p>
                 </div>
-                <ArrowRight size={16} className="text-slate shrink-0" />
+                <ArrowRight size={16} className="text-slate shrink-0 rtl:-scale-x-100" />
               </PremiumCard>
             </>
           )}

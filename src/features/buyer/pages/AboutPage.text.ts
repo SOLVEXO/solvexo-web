@@ -1,0 +1,73 @@
+import { siteText } from '@/i18n/site/siteText';
+
+export const ABOUT_TEXT = siteText({
+  en: {
+    pageTitle: 'About',
+    chipLabel: 'One data model',
+    chipText: 'Store, POS and analytics read the same real numbers.',
+    kicker: 'About Solvexo',
+    // "\n" breaks the headline into lines.
+    headline: 'Commerce shouldn’t\nneed five different\nlogins.',
+    lede: 'Solvexo exists because running a business online and in person usually means juggling a store builder, a POS system, an inventory tracker and an analytics tool that don\'t talk to each other. We built one platform where they all share the same real data instead.',
+    pillarsKicker: "How it's built",
+    pillarsTitle: 'Four decisions behind every screen.',
+    // Same order as the icons in AboutPage.tsx.
+    pillars: [
+      { title: 'One workspace', desc: 'A store, POS, orders, inventory and analytics that all read from the same real data — not five separate tools stitched together.' },
+      { title: 'Sell anywhere', desc: 'The same catalog and stock, whether a sale happens online or at an in-person counter.' },
+      { title: 'AI where it helps', desc: 'AI can suggest a page title and description for a product. You read it first and nothing changes until you say so.' },
+      { title: 'Numbers you can trust', desc: 'Every figure a seller sees is computed from their actual orders and payments, never a simulated placeholder.' },
+    ],
+    valuesKicker: 'Platform philosophy',
+    valuesTitle: 'What we believe.',
+    // Same order as the icons in AboutPage.tsx; the first one is shown large.
+    values: [
+      { title: 'Access over gatekeeping', desc: 'A seller who sets up payment can start selling immediately — no manual review queue standing between signing up and going live.' },
+      { title: 'Real numbers, always', desc: 'If a dashboard shows a figure, it was computed from an actual order or payment — never a simulated or placeholder value.' },
+      { title: 'One system, not five', desc: 'Every part of the platform is built to share the same underlying data, so a seller never has to reconcile numbers between tools.' },
+    ],
+    approachChip: 'No review queue — a seller with a payment method is live immediately.',
+    approachKicker: 'Our approach',
+    approachTitle: 'Self-serve, from day one.',
+    approachBody: 'A seller who completes onboarding and adds a payment method is live immediately — no manual approval queue standing between signing up and actually selling. We\'d rather earn trust through a working product than gate it behind a review process.',
+    roadmapChip: 'Own payment gateway, custom domains, and a native POS app — all on the roadmap.',
+    roadmapKicker: 'Where we\'re headed',
+    roadmapTitle: 'More independence for every seller.',
+    roadmapBody: 'Sellers\' own payment gateways, custom domains per store, and a native POS app are all real items on our roadmap — the direction is always toward a seller owning more of their own business, not less.',
+    ctaTitle: 'Build your business on Solvexo.',
+    ctaButton: 'Start Selling Free',
+  },
+  ar: {
+    pageTitle: 'من نحن',
+    chipLabel: 'نموذج بيانات واحد',
+    chipText: 'المتجر ونقطة البيع والتحليلات تقرأ الأرقام الحقيقية نفسها.',
+    kicker: 'عن Solvexo',
+    headline: 'التجارة لا تحتاج\nإلى خمسة حسابات\nمختلفة.',
+    lede: 'وُجدت Solvexo لأن إدارة نشاط تجاري عبر الإنترنت وفي المحل تعني عادةً التنقل بين أداة لبناء المتجر ونظام لنقطة البيع وأداة لتتبّع المخزون وأخرى للتحليلات، دون أن تتواصل فيما بينها. لذلك بنينا منصة واحدة تتشارك فيها كل هذه الأدوات البيانات الحقيقية نفسها.',
+    pillarsKicker: 'كيف بنيناها',
+    pillarsTitle: 'أربعة قرارات وراء كل شاشة.',
+    pillars: [
+      { title: 'مساحة عمل واحدة', desc: 'متجر ونقطة بيع وطلبات ومخزون وتحليلات تقرأ جميعها من البيانات الحقيقية نفسها، لا خمس أدوات منفصلة مربوطة ببعضها.' },
+      { title: 'بِع في أي مكان', desc: 'الكتالوج والمخزون نفسهما، سواء تمّت عملية البيع عبر الإنترنت أو عند الكاونتر في المحل.' },
+      { title: 'ذكاء اصطناعي حيث يفيد', desc: 'أدوات ذكاء اصطناعي حقيقية بحصص استخدام محسوبة، لأعمال الكتابة والتحليل التي تستهلك وقت البائع، وليست مجرد شعار.' },
+      { title: 'أرقام يمكنك الوثوق بها', desc: 'كل رقم يراه البائع محسوب من طلباته ومدفوعاته الفعلية، وليس قيمة تجريبية أو افتراضية.' },
+    ],
+    valuesKicker: 'فلسفة المنصة',
+    valuesTitle: 'ما نؤمن به.',
+    values: [
+      { title: 'وصول مفتوح بلا عوائق', desc: 'البائع الذي يُعدّ وسيلة الدفع يمكنه البدء بالبيع فوراً، دون قائمة مراجعة يدوية بين التسجيل وإطلاق المتجر.' },
+      { title: 'أرقام حقيقية دائماً', desc: 'إذا عرضت لوحة التحكم رقماً، فهو محسوب من طلب أو دفعة فعلية، وليس قيمة تجريبية أو افتراضية.' },
+      { title: 'نظام واحد لا خمسة', desc: 'كل جزء من المنصة مبني ليتشارك البيانات الأساسية نفسها، فلا يضطر البائع إلى مطابقة الأرقام بين الأدوات.' },
+    ],
+    approachChip: 'لا قائمة مراجعة: البائع الذي أضاف وسيلة دفع يبدأ البيع فوراً.',
+    approachKicker: 'نهجنا',
+    approachTitle: 'خدمة ذاتية من اليوم الأول.',
+    approachBody: 'البائع الذي يُكمل خطوات الإعداد ويضيف وسيلة دفع يصبح متجره متاحاً فوراً، دون قائمة موافقات يدوية بين التسجيل والبيع الفعلي. نفضّل أن نكسب الثقة بمنتج يعمل، لا أن نحجبها خلف إجراءات مراجعة.',
+    roadmapChip: 'بوابة دفع خاصة ونطاقات مخصصة وتطبيق POS أصلي، جميعها ضمن خطتنا القادمة.',
+    roadmapKicker: 'إلى أين نتجه',
+    roadmapTitle: 'استقلالية أكبر لكل بائع.',
+    roadmapBody: 'بوابات دفع خاصة بالبائعين، ونطاقات مخصصة لكل متجر، وتطبيق POS أصلي، كلها بنود حقيقية في خطتنا القادمة. والاتجاه دائماً نحو أن يملك البائع جزءاً أكبر من نشاطه التجاري، لا أقل.',
+    ctaTitle: 'ابنِ نشاطك التجاري على Solvexo.',
+    ctaButton: 'ابدأ البيع مجاناً',
+  },
+});

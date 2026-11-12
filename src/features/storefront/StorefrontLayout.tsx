@@ -25,6 +25,7 @@ import { useFavicon } from '@/hooks/useFavicon';
 import { apiGetPublicTrackingPixelSettings } from '@/api/services/trackingPixels';
 import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from '@/utils/trackingPixels';
 import { setStorefrontAnalyticsConsent, trackStorefrontPageView } from '@/utils/storefrontAnalytics';
+import { loadExperiments, reportExposure, useExperimentAssignments } from '@/features/storefront-themes/core/experiments/experimentsStore';
 import { CookieConsentBanner } from './CookieConsentBanner';
 import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
@@ -217,6 +218,12 @@ export function StorefrontLayout() {
     trackStorefrontPageView(store.storeId, location.pathname);
   }, [store?.storeId, cookieConsent?.analytics, location.pathname]);
 
+  // A/B tests: fetch what this visitor sees (nothing without analytics consent except an applied winner).
+  useEffect(() => {
+    if (store?.storeId) loadExperiments(store.storeId);
+  }, [store?.storeId, cookieConsent?.analytics]);
+  const experimentItems = useExperimentAssignments();
+
   const decideCookies = (consent: CookieConsentCategories) => {
     if (store?.storeId) {
       try { localStorage.setItem(cookieConsentKey(store.storeId), JSON.stringify(consent)); } catch { /* per-viewer convenience only */ }
@@ -277,7 +284,21 @@ export function StorefrontLayout() {
   // Blog / category fetchers (outside React) read the same language + strings.
   setActiveStoreText(wantsTexts ? language : '', textIndex);
   const localizedStore = useMemo(() => (store ? localizeStoreText(store, textIndex) : store), [store, textIndex]);
-  const localizedTheme = useMemo(() => localizeThemeText(theme, textIndex), [theme, textIndex]);
+  const localizedTheme = useMemo(() => {
+    const base = localizeThemeText(theme, textIndex);
+    // Theme-settings tests: variant B (or an applied winner) overrides the matching `custom.*` settings.
+    const patch: Record<string, string | number | boolean> = {};
+    for (const a of experimentItems) {
+      if (a.kind !== 'theme_settings' || (a.variant !== 'b' && a.variant !== 'winner')) continue;
+      for (const [k, v] of Object.entries(a.overrides)) if (k.startsWith('custom.')) patch[k.slice(7)] = v;
+    }
+    if (!base || !base.theme || Object.keys(patch).length === 0) return base;
+    return { ...base, theme: { ...base.theme, themeSettings: { ...(base.theme.themeSettings ?? {}), ...patch } } };
+  }, [theme, textIndex, experimentItems]);
+  useEffect(() => {
+    if (!store?.storeId) return;
+    for (const a of experimentItems) if (a.kind === 'theme_settings' && a.variant !== 'winner') reportExposure(store.storeId, a.experimentId);
+  }, [experimentItems, store?.storeId]);
 
   const contextValue: StorefrontContextValue | null = useMemo(() => {
     if (!localizedStore) return null;

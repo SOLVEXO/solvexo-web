@@ -55,6 +55,15 @@ export interface SiteFunnel {
   range: SiteRange;
   steps: { key: string; label: string; users: number; fromPrevious: number | null; fromStart: number | null }[];
 }
+/** Store setup wizard steps (/onboard?step=…) — same shape as the sign-up funnel. */
+export type SiteSetupSteps = SiteFunnel;
+/** New stores → product added → plan chosen → first order, from Solvexo's own data. */
+export interface StoreJourney {
+  range: SiteRange;
+  steps: { key: string; label: string; stores: number; fromPrevious: number | null; fromStart: number | null }[];
+  followUp: { storeId: string; storeName: string; storeUrl: string | null; createdAt: string; ownerName: string; email: string; phone: string; planChosen: boolean }[];
+  followUpTotal: number;
+}
 
 const base = '/api/admin/site-analytics';
 export const apiSitePublicConfig = () => client.get<never, ApiResponse<SitePublicConfig>>('/api/site-analytics/config');
@@ -67,3 +76,5 @@ export const apiSiteAcquisition = (range: SiteRange) => client.get<never, ApiRes
 export const apiSiteContent = (range: SiteRange) => client.get<never, ApiResponse<SiteContent>>(`${base}/content`, { params: { range } });
 export const apiSiteRealtime = () => client.get<never, ApiResponse<SiteRealtime>>(`${base}/realtime`);
 export const apiSiteFunnel = (range: SiteRange) => client.get<never, ApiResponse<SiteFunnel>>(`${base}/funnel`, { params: { range } });
+export const apiSiteSetupSteps = (range: SiteRange) => client.get<never, ApiResponse<SiteSetupSteps>>(`${base}/setup-steps`, { params: { range } });
+export const apiStoreJourney = (range: SiteRange) => client.get<never, ApiResponse<StoreJourney>>(`${base}/store-journey`, { params: { range } });
