@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePerPage, PER_PAGE_OPTIONS } from '@/hooks/usePerPage';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
@@ -61,6 +62,7 @@ export function AdminClients() {
   const [verification, setVerification] = useState('');
   const [risk, setRisk] = useState('');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = usePerPage('admin-clients');
   const [exporting, setExporting] = useState(false);
   const toast = useToast();
 
@@ -72,7 +74,7 @@ export function AdminClients() {
     verification: (verification || undefined) as VerificationStatus | undefined,
     risk: (risk || undefined) as RiskLevel | undefined,
   }), [search, statusFilter, country, ntn, verification, risk]);
-  const query = useMemo(() => ({ ...filters, page, limit: 10 }), [filters, page]);
+  const query = useMemo(() => ({ ...filters, page, limit: perPage }), [filters, page, perPage]);
   const setFilter = (set: (v: string) => void) => (v: string) => { set(v); setPage(1); };
 
   async function exportCsv() {
@@ -157,7 +159,7 @@ export function AdminClients() {
                   loading={loading}
                   onRowClick={(u) => navigate(`/admin/clients/${u.id}`)}
                   emptyState={{ icon: <Users2 size={28} className="text-slate/50" />, title: 'No clients match your filters', description: 'Try adjusting your search or clearing filters.' }}
-                  pagination={{ page, total: data?.total ?? 0, perPage: 10, onChange: setPage, label: 'clients' }}
+                  pagination={{ page, total: data?.total ?? 0, perPage, onChange: setPage, label: 'clients', perPageOptions: PER_PAGE_OPTIONS, onPerPageChange: n => { setPerPage(n); setPage(1); } }}
                 />
               )}
             </div>

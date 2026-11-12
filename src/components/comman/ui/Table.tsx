@@ -20,6 +20,9 @@ export interface TablePagination {
   perPage?: number;
   onChange: (page: number) => void;
   label?:   string;
+  /** Shows a "Show N per page" picker in the footer when both are set. */
+  perPageOptions?:  readonly number[];
+  onPerPageChange?: (perPage: number) => void;
 }
 
 export interface TableSort {
@@ -451,9 +454,25 @@ export function Table<T = Record<string, unknown>>({
       {/* Pagination footer */}
       {!loading && data.length > 0 && pagination && pagination.total > 0 && (
         <div className="px-5 py-3 border-t border-bone flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
-          <span className="text-[12px] text-slate whitespace-nowrap">
-            Showing {start}–{end} of {pagination.total.toLocaleString()} {label}
-          </span>
+          <div className="flex items-center gap-4 flex-wrap justify-center">
+            <span className="text-[12px] text-slate whitespace-nowrap">
+              Showing {start}–{end} of {pagination.total.toLocaleString()} {label}
+            </span>
+            {pagination.perPageOptions && pagination.onPerPageChange && (
+              <label className="flex items-center gap-1.5 text-[12px] text-slate whitespace-nowrap">
+                Show
+                <select
+                  value={perPage}
+                  onChange={e => pagination.onPerPageChange?.(Number(e.target.value))}
+                  aria-label={`${label} per page`}
+                  className="h-8 rounded-md border border-bone bg-white px-2 text-[12.5px] text-carbon cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-orange/30"
+                >
+                  {pagination.perPageOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                per page
+              </label>
+            )}
+          </div>
           <Pagination
             page={pagination.page}
             total={pagination.total}

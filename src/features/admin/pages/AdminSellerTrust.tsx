@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePerPage, PER_PAGE_OPTIONS } from '@/hooks/usePerPage';
 import { Bell, Download, Info, ShieldCheck } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
@@ -19,7 +20,6 @@ import {
   BUSINESS_TYPE, COUNTRY_OPTIONS, RISK_OPTIONS, VERIFICATION_OPTIONS, countryName, fmtDate, regulatedList, relativeDays,
 } from './sellerTrust/trust.utils';
 
-const PER_PAGE = 20;
 const errMsg = (e: unknown, fallback: string) => (e instanceof Error && e.message ? e.message : fallback);
 
 const NTN_OPTIONS = [{ value: 'yes', label: 'Has NTN / tax no.' }, { value: 'no', label: 'No NTN / tax no.' }];
@@ -169,6 +169,7 @@ export function AdminSellerTrust() {
   const [limited, setLimited] = useState('');
   const [sort, setSort] = useState<NonNullable<SellerTrustQuery['sort']>>('risk');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = usePerPage('admin-seller-trust');
   const [selected, setSelected] = useState<Set<string | number>>(new Set());
   const [confirmRemindAll, setConfirmRemindAll] = useState(false);
   const [reminding, setReminding] = useState(false);
@@ -189,11 +190,11 @@ export function AdminSellerTrust() {
   const [listLoading, setListLoading] = useState(true);
   const loadList = useCallback(() => {
     setListLoading(true); setListError('');
-    apiListSellerTrustStores({ ...filter, sort: effectiveSort, page, limit: PER_PAGE })
+    apiListSellerTrustStores({ ...filter, sort: effectiveSort, page, limit: perPage })
       .then(r => setList(r.data))
       .catch(e => setListError(errMsg(e, 'Could not load stores.')))
       .finally(() => setListLoading(false));
-  }, [filter, effectiveSort, page]);
+  }, [filter, effectiveSort, page, perPage]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadList(); }, [loadList]);
 
@@ -328,7 +329,7 @@ export function AdminSellerTrust() {
                 title: view === 'queue' ? 'Nothing waiting for review' : 'No stores match',
                 description: view === 'queue' ? 'New submissions appear here, oldest first.' : 'Try another filter or search.',
               }}
-              pagination={{ page, total: list?.total ?? 0, perPage: PER_PAGE, onChange: p => { setPage(p); setSelected(new Set()); }, label: 'stores' }}
+              pagination={{ page, total: list?.total ?? 0, perPage, onChange: p => { setPage(p); setSelected(new Set()); }, label: 'stores', perPageOptions: PER_PAGE_OPTIONS, onPerPageChange: n => { setPerPage(n); setPage(1); setSelected(new Set()); } }}
             />
           )}
         </div>

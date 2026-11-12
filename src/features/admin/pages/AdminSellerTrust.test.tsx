@@ -45,7 +45,16 @@ describe('AdminSellerTrust', () => {
     expect(screen.getAllByText('Missing').length).toBeGreaterThan(0);
     expect(screen.getAllByText('4521873-2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Cosmetics or skin care').length).toBeGreaterThan(0);
-    expect(api.apiListSellerTrustStores).toHaveBeenCalledWith(expect.objectContaining({ sort: 'risk', page: 1, limit: 20 }));
+    expect(api.apiListSellerTrustStores).toHaveBeenCalledWith(expect.objectContaining({ sort: 'risk', page: 1, limit: 25 }));
+  });
+
+  it('changes how many stores show per page (25 / 50 / 100)', async () => {
+    setup();
+    await screen.findAllByText('GlowSkin Store');
+    const picker = screen.getByLabelText('stores per page');
+    expect([...(picker as HTMLSelectElement).options].map(o => o.value)).toEqual(['25', '50', '100']);
+    fireEvent.change(picker, { target: { value: '100' } });
+    await waitFor(() => expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, limit: 100 })));
   });
 
   it('filters, switches to the review queue (oldest submission first) and opens a store', async () => {
