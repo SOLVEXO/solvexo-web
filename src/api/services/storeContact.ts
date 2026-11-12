@@ -93,3 +93,11 @@ export const apiGetSpamProtection = (storeId: string) => client.get<never, ApiRe
 export const apiSaveSpamProtection = (storeId: string, body: { siteKey: string; secretKey: string }) =>
   client.put<never, ApiResponse<SpamProtection>>(`/api/store-contact/${storeId}/spam-protection`, body);
 export const apiClearSpamProtection = (storeId: string) => client.delete<never, ApiResponse<SpamProtection>>(`/api/store-contact/${storeId}/spam-protection`);
+
+export interface SavedForm { _id: string; name: string; settings: Record<string, any> }
+export const apiListSavedForms = (storeId: string) =>
+  client.get<never, { success: boolean; data: SavedForm[] }>(`/api/store-contact/saved-forms/${storeId}`);
+export const apiSaveForm = (storeId: string, name: string, settings: Record<string, any>) =>
+  client.post<never, { success: boolean; data: SavedForm }>(`/api/store-contact/saved-forms/${storeId}`, { name, settings });
+export const apiDeleteSavedForm = (storeId: string, id: string) =>
+  client.delete<never, { success: boolean }>(`/api/store-contact/saved-forms/${storeId}/${id}`);

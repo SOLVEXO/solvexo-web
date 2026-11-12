@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
+import { SavedFormsPanel } from './SavedFormsPanel';
 import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import {
@@ -258,7 +259,7 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
  * Shopify Forms' rules (field types, up to 31 fields, an Email or Phone field must be required) with a WordPress-style editor.
  * A section saved before this existed shows its old fixed form as an editable list.
  */
-export function FormFieldsEditor({ settings, set }: { settings: Record<string, any>; set: (patch: Record<string, any>) => void }) {
+export function FormFieldsEditor({ settings, set, storeId }: { settings: Record<string, any>; set: (patch: Record<string, any>) => void; storeId?: string }) {
   const fields = resolveContactFields(settings);
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -280,6 +281,7 @@ export function FormFieldsEditor({ settings, set }: { settings: Record<string, a
 
   return (
     <div className="flex flex-col gap-2">
+      {storeId && <SavedFormsPanel storeId={storeId} settings={settings} set={set} />}
       {fields.length === 0 && <p className="m-0 rounded-lg border border-dashed border-bone px-3 py-4 text-center text-[12px] text-slate">The form is empty. Add the fields you want to ask for.</p>}
       {fields.map((f, i) => (
         <FieldCard

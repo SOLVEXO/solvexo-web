@@ -420,7 +420,7 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
       return <ShareNetworksField settings={settings} set={set} />;
 
     case 'formFields':
-      return <FormFieldsEditor settings={settings} set={set} />;
+      return <FormFieldsEditor settings={settings} set={set} storeId={storeId} />;
 
     case 'focalPoint': {
       // 3×3 grid: which part of the image must stay visible when it is cropped (becomes CSS object-position).
