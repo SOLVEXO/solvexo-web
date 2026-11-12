@@ -522,7 +522,7 @@ export function StoreOrderList() {
                             Mark as paid{unpaidSelected.length > 0 ? ` (${unpaidSelected.length})` : ''}
                           </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={handleBulkExport} disabled={bulkBusy !== null}>Export CSV</Button>
+                        <Button variant="outline" size="sm" onClick={handleBulkExport} disabled={bulkBusy !== null}>Export selected</Button>
                         {canBookCourier && (
                           <Button variant="outline" size="sm" onClick={() => setShowBulkCourier(true)} disabled={bulkBusy !== null}>
                             {tc('courier.bulkBook')}
