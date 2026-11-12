@@ -1,4 +1,5 @@
 import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Camera, Check, KeyRound, Trash2, LogOut, ShieldCheck, Store, User } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
@@ -57,6 +58,7 @@ function Rule({ ok, text }: { ok: boolean; text: string }) {
 
 function StaffAccountPage() {
   const { storeId } = useStoreWorkspace();
+  const navigate = useNavigate();
   const { profile, loading, error, refetch } = useGetProfile();
   const toast = useToast();
   const logout = useLogout();
@@ -155,6 +157,15 @@ function StaffAccountPage() {
             <Button size="xs" variant="outline" onClick={refetch}>Retry</Button>
           </div>
         )}
+
+        <div className="bg-white rounded-xl border border-bone p-4 flex flex-wrap items-center gap-3">
+          <ShieldCheck size={18} className="text-brand-orange" aria-hidden />
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-[13px] font-semibold text-carbon">Security (2FA)</p>
+            <p className="text-[12px] text-slate">Protect your own login with two-step verification.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate(`/store/${storeId}/security`)}>Open security</Button>
+        </div>
 
         {/* ── Identity header ─────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-bone p-5 flex flex-wrap items-center gap-4">
