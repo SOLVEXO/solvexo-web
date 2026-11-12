@@ -122,7 +122,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
         <label htmlFor={id} className={label}>{f.label}{star}</label>
         {f.type === 'textarea' ? (
           <textarea id={id} required={f.required} rows={6} minLength={f.minLength} maxLength={Math.min(f.maxLength ?? 3000, 3000)} placeholder={f.placeholder} value={text}
-            aria-describedby={helpId} onChange={e => form.setValue(f.id, e.target.value)} style={{ ...style, minHeight: 140, resize: 'vertical' }} />
+            aria-describedby={helpId} onChange={e => form.setValue(f.id, e.target.value)} style={{ ...style, minHeight: 140, resize: 'vertical', borderRadius: Math.min(Number(style.borderRadius) || 0, 24) }} />
         ) : f.type === 'dropdown' ? (
           <select id={id} required={f.required} value={text} aria-describedby={helpId} onChange={e => form.setValue(f.id, e.target.value)} style={style}>
             <option value="">{f.placeholder || tt('sections.contactChoose', 'Choose...')}</option>
