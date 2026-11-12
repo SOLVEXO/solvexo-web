@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
+import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
 import { Button } from '@/components/comman/ui/Button';
@@ -11,7 +11,6 @@ import {
   type ContactMessage, type ContactMessageStatus,
 } from '@/api/services/storeContact';
 import { downloadBlob } from '@/utils/downloadBlob';
-import { SpamProtectionModal } from './SpamProtectionModal';
 
 const FILTERS: { value: ContactMessageStatus | ''; label: string }[] = [
   { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'archived', label: 'Archived' }, { value: 'spam', label: 'Spam' },
@@ -31,7 +30,6 @@ export default function ContactMessages() {
   const [query, setQuery] = useState('');
   const [exporting, setExporting] = useState(false);
   const [spam, setSpam] = useState(0);
-  const [showProtection, setShowProtection] = useState(false);
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<ContactMessage[] | null>(null);
   const [totalPages, setTotalPages] = useState(1);
@@ -149,7 +147,6 @@ export default function ContactMessages() {
             </select>
           )}
           <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting}><Download size={13} className="mr-1" /> Export CSV</Button>
-          <Button size="sm" variant="outline" onClick={() => setShowProtection(true)}><ShieldCheck size={13} className="mr-1" /> Spam protection</Button>
         </div>
 
         {error ? (
@@ -227,7 +224,6 @@ export default function ContactMessages() {
       {pendingDelete && (
         <ConfirmDialog title="Delete message" message={`Delete the message from ${who(pendingDelete)}? This cannot be undone.`} confirmLabel="Delete" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} />
       )}
-      {showProtection && <SpamProtectionModal storeId={storeId} onClose={() => setShowProtection(false)} />}
     </>
   );
 }
