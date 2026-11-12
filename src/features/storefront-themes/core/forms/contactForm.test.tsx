@@ -384,3 +384,40 @@ describe('phase 2: editor', () => {
     expect(screen.queryByLabelText('Accepted files')).toBeNull();
   });
 });
+
+describe('phase 3: multi-step', () => {
+  beforeEach(() => { applyMerchantThemeOverrides(null); submitMock.mockReset().mockResolvedValue({ success: true }); });
+  afterEach(cleanup);
+  const fields: ContactFormField[] = [
+    { id: 'e', type: 'email', label: 'Email', required: true },
+    { id: 's2', type: 'step', label: 'Your project' },
+    { id: 'm', type: 'textarea', label: 'Details', required: true },
+  ];
+  it('shows one page at a time, blocks Next until the page is filled, and sends everything from the last page', async () => {
+    render(<ContactFormSection section={section({ fields })} blocks={[]} colors={colors} />);
+    expect(screen.getByText(/Step 1 of 2/)).toBeTruthy();
+    expect(screen.queryByLabelText(/^Details/)).toBeNull();
+    fireEvent.submit(screen.getByRole('button', { name: 'Next' }).closest('form') as HTMLFormElement);
+    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+    expect(screen.queryByLabelText(/^Details/)).toBeNull();
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'a@b.co' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Next' }).closest('form') as HTMLFormElement);
+    await waitFor(() => expect(screen.getByLabelText(/^Details/)).toBeTruthy());
+    expect(screen.getByText(/Step 2 of 2 · Your project/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect((screen.getByLabelText(/^Email/) as HTMLInputElement).value).toBe('a@b.co');
+    fireEvent.submit(screen.getByRole('button', { name: 'Next' }).closest('form') as HTMLFormElement);
+    await waitFor(() => screen.getByLabelText(/^Details/));
+    fireEvent.change(screen.getByLabelText(/^Details/), { target: { value: 'hello' } });
+    fireEvent.submit(screen.getByRole('button', { name: /send/i }).closest('form') as HTMLFormElement);
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    const answers = (submitMock.mock.calls[0][1] as { answers: { fieldId: string }[] }).answers.map(a => a.fieldId);
+    expect(answers).toEqual(expect.arrayContaining(['e', 'm']));
+    expect(answers).not.toContain('s2');
+  });
+  it('a form without a step field is one page with no step counter', () => {
+    render(<ContactFormSection section={section({ fields: [fields[0]] })} blocks={[]} colors={colors} />);
+    expect(screen.queryByText(/Step 1/)).toBeNull();
+    expect(screen.getByRole('button', { name: /send/i })).toBeTruthy();
+  });
+});

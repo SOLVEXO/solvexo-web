@@ -5,7 +5,7 @@
  */
 export type ContactFieldType =
   | 'name' | 'text' | 'email' | 'phone' | 'textarea' | 'number' | 'date' | 'time' | 'url'
-  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'file';
+  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'step' | 'file';
 
 export type ConditionOp = 'equals' | 'not_equals' | 'contains' | 'filled' | 'empty';
 export interface ContactCondition { fieldId: string; op: ConditionOp; value?: string }
@@ -72,6 +72,7 @@ export const CONTACT_FIELD_TYPES: FieldTypeInfo[] = [
   { value: 'hidden', label: 'Hidden field', hint: 'Not shown to the visitor; saves the page address or a fixed text with every answer', group: 'More' },
   { value: 'heading', label: 'Heading', hint: 'A title inside the form (collects nothing)', group: 'Layout' },
   { value: 'paragraph', label: 'Paragraph of text', hint: 'Some words inside the form (collects nothing)', group: 'Layout' },
+  { value: 'step', label: 'New step (page)', hint: 'Fields after this start a new page of the form; the label is the page title', group: 'Layout' },
 ];
 
 export const CONDITION_OPS: { value: ConditionOp; label: string; needsValue: boolean }[] = [
@@ -91,7 +92,7 @@ export const FIELD_WIDTHS: { value: NonNullable<ContactFormField['width']>; labe
 
 export const hasChoices = (type: ContactFieldType) => type === 'dropdown' || type === 'radio' || type === 'checkbox';
 /** Fields that show text but collect nothing. */
-export const isStaticField = (type: ContactFieldType) => type === 'heading' || type === 'paragraph';
+export const isStaticField = (type: ContactFieldType) => type === 'heading' || type === 'paragraph' || type === 'step';
 export const labelLimit = (type: ContactFieldType) => (type === 'paragraph' ? 500 : type === 'consent' ? 300 : type === 'heading' ? 120 : 60);
 
 /** The old fixed form (Name, Email, optional Phone, Message), rebuilt from a section that has no `fields` yet. */
@@ -124,6 +125,7 @@ export function newContactField(type: ContactFieldType): ContactFormField {
     ...(type === 'dropdown' || type === 'radio' ? { options: ['Option 1', 'Option 2'] } : {}),
     ...(type === 'hidden' ? { label: 'Page address', defaultValue: '{page_url}' } : {}),
     ...(type === 'heading' ? { label: 'A new section' } : {}),
+    ...(type === 'step' ? { label: 'Next step' } : {}),
     ...(type === 'paragraph' ? { label: 'Write some text here.' } : {}),
     ...(type === 'consent' ? { label: 'I agree to the privacy policy.', required: true } : {}),
   };
@@ -159,6 +161,28 @@ export function visibleFields(fields: ContactFormField[], answers: Answers): Con
     if (answers[f.id] !== undefined) live[f.id] = answers[f.id];
   }
   return shown;
+}
+
+export interface FormPage { title: string; fields: ContactFormField[] }
+
+/** Cuts the visible fields into pages at every "New step" field (the step field itself is not part of a page). One page when there is none. */
+export function splitPages(visible: ContactFormField[]): FormPage[] {
+  const pages: FormPage[] = [{ title: '', fields: [] }];
+  for (const f of visible) {
+    if (f.type === 'step') { pages.push({ title: f.label, fields: [] }); continue; }
+    pages[pages.length - 1].fields.push(f);
+  }
+  // A step placed first (or two in a row) must not leave an empty page behind.
+  return pages.filter((p, i) => p.fields.length > 0 || (i === 0 && pages.length === 1));
+}
+
+/** The first required field of one page the visitor has not answered. */
+export function firstMissingOnPage(page: FormPage, values: Answers): ContactFormField | null {
+  return page.fields.find(f => {
+    if (!f.required || isStaticField(f.type) || f.type === 'hidden') return false;
+    const v = values[f.id];
+    return v === undefined || (Array.isArray(v) ? v.length === 0 : !String(v).trim());
+  }) ?? null;
 }
 
 /** What a visitor sees on a first visit: default values filled in (hidden fields are filled when the form is sent). */

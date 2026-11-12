@@ -143,7 +143,7 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
             </select>
           </Labeled>
 
-          <Labeled id={`${uid}-label`} label={type === 'paragraph' ? 'Text' : type === 'heading' ? 'Heading' : type === 'consent' ? 'Sentence next to the tick box' : 'Label'}>
+          <Labeled id={`${uid}-label`} label={type === 'paragraph' ? 'Text' : type === 'heading' ? 'Heading' : type === 'step' ? 'Step title (shown above the fields of this page)' : type === 'consent' ? 'Sentence next to the tick box' : 'Label'}>
             {type === 'paragraph' || type === 'consent'
               ? <textarea id={`${uid}-label`} rows={3} className={`${inp} resize-y`} value={field.label} maxLength={labelLimit(type)} onChange={e => onChange({ label: e.target.value })} />
               : <input id={`${uid}-label`} className={inp} value={field.label} maxLength={labelLimit(type)} onChange={e => onChange({ label: e.target.value })} />}

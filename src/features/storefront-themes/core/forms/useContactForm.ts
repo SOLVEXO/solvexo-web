@@ -3,7 +3,7 @@ import { tt } from '@/utils/tStatic';
 import { apiGetContactFormConfig, apiSubmitContactMessage, apiUploadContactFile } from '@/api/services/storeContact';
 import type { Section } from '@/api/services/storefrontTypes';
 import {
-  MAX_FILE_MB, buildAnswers, fileAccept, firstMissingRequired, initialAnswers, resolveContactFields, successRedirect, visibleFields,
+  MAX_FILE_MB, buildAnswers, fileAccept, firstMissingOnPage, firstMissingRequired, splitPages, initialAnswers, resolveContactFields, successRedirect, visibleFields,
   type AnswerValue, type Answers, type ContactFormField,
 } from './contactFormFields';
 
@@ -37,6 +37,12 @@ export function useContactForm(storeId: string, section: Section) {
 
   /** The fields the visitor sees right now (conditional fields appear and disappear with the answers). */
   const fields = useMemo(() => visibleFields(all, values), [all, values]);
+  /** Multi-step forms: the visible fields cut into pages. One page = a normal form. */
+  const pages = useMemo(() => splitPages(fields), [fields]);
+  const [step, setStep] = useState(0);
+  const stepIndex = Math.min(step, pages.length - 1);
+  const page = pages[stepIndex];
+  const isLast = stepIndex >= pages.length - 1;
 
   const setValue = (id: string, value: AnswerValue) => { setValues(v => ({ ...v, [id]: value })); if (invalidId === id) setInvalidId(null); };
   /** Tick / untick one choice of a multiple-choice field. */
@@ -70,9 +76,30 @@ export function useContactForm(storeId: string, section: Section) {
   const removeFile = (id: string) => { setValue(id, ''); setFiles(f => { const { [id]: _gone, ...rest } = f; return rest; }); };
   const uploading = Object.values(files).some(f => f.uploading);
 
+  /** Next page, after checking the required fields of this one. */
+  function next() {
+    const missing = firstMissingOnPage(page, values);
+    if (missing) {
+      setInvalidId(missing.id);
+      setError(missing.errorMessage?.trim() || tt('sections.contactRequired', 'Please complete the required fields.'));
+      setStatus('error');
+      return false;
+    }
+    if (uploading) {
+      setError(tt('sections.contactWaitFile', 'Please wait until your file has finished uploading.'));
+      setStatus('error');
+      return false;
+    }
+    setError(''); setStatus('idle'); setStep(stepIndex + 1);
+    return true;
+  }
+  const back = () => { setError(''); setStatus('idle'); setInvalidId(null); setStep(Math.max(0, stepIndex - 1)); };
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (status === 'sending') return;
+    // Enter on a page that is not the last one moves on instead of sending.
+    if (!isLast) { next(); return; }
     if (uploading) {
       setError(tt('sections.contactWaitFile', 'Please wait until your file has finished uploading.'));
       setStatus('error');
@@ -80,6 +107,8 @@ export function useContactForm(storeId: string, section: Section) {
     }
     const missing = firstMissingRequired(all, values);
     if (missing) {
+      const at = pages.findIndex(p => p.fields.some(f => f.id === missing.id));
+      if (at >= 0) setStep(at);
       setInvalidId(missing.id);
       setError(missing.errorMessage?.trim() || tt('sections.contactRequired', 'Please complete the required fields.'));
       setStatus('error');
@@ -110,5 +139,5 @@ export function useContactForm(storeId: string, section: Section) {
     }
   }
 
-  return { fields, values, setValue, toggleChoice, website, setWebsite, status, error, invalidId, submit, files, attachFile, removeFile, uploading, captcha, setCaptchaToken, captchaRound };
+  return { fields, pages, page, stepIndex, stepCount: pages.length, isLast, next, back, values, setValue, toggleChoice, website, setWebsite, status, error, invalidId, submit, files, attachFile, removeFile, uploading, captcha, setCaptchaToken, captchaRound };
 }

@@ -35,6 +35,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
     const help = f.helpText ? <p id={helpId} className="m-0 mt-1.5 text-[13px] leading-snug" style={{ color: colors.inkMuted }}>{f.helpText}</p> : null;
     const wrap = (node: ReactNode) => <div key={f.id} className={SPAN[f.width ?? 'full'] ?? SPAN.full}>{node}</div>;
 
+    if (f.type === 'step') return null;
     if (f.type === 'heading') return wrap(<h3 className="m-0 mt-2 text-xl font-medium" style={{ fontFamily: t.fonts.display }}>{f.label}</h3>);
     if (f.type === 'paragraph') return wrap(<p className="m-0 whitespace-pre-line text-[15px] leading-relaxed" style={{ color: colors.inkMuted }}>{f.label}</p>);
 
@@ -158,20 +159,37 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
         ) : (
           <form onSubmit={form.submit} className="flex flex-col gap-4 p-6 md:p-8" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx, color: colors.ink }}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
-              {form.fields.map(renderField)}
+              {form.page.fields.map(renderField)}
             </div>
-            {form.captcha && <TurnstileBox key={form.captchaRound} siteKey={form.captcha.siteKey} onToken={form.setCaptchaToken} />}
+            {form.stepCount > 1 && (
+              <div className="flex flex-col gap-2" aria-live="polite">
+                <p className="m-0 text-sm font-medium" style={{ color: colors.inkMuted }}>
+                  {tt('sections.contactStepOf', 'Step {{n}} of {{total}}', { n: form.stepIndex + 1, total: form.stepCount })}{form.page.title ? ` · ${form.page.title}` : ''}
+                </p>
+                <div className="h-1.5 w-full overflow-hidden" style={{ background: t.colors.border, borderRadius: 999 }}>
+                  <div style={{ width: `${((form.stepIndex + 1) / form.stepCount) * 100}%`, height: '100%', background: t.colors.accent, transition: 'width .25s' }} />
+                </div>
+              </div>
+            )}
+            {form.isLast && form.captcha && <TurnstileBox key={form.captchaRound} siteKey={form.captcha.siteKey} onToken={form.setCaptchaToken} />}
             {/* Bot trap: invisible to people, so only automated fills reach it. */}
             <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
               <label htmlFor={`${uid}-website`}>{ts('pg.website', 'Website')}</label>
               <input id={`${uid}-website`} tabIndex={-1} autoComplete="off" value={form.website} onChange={e => form.setWebsite(e.target.value)} />
             </div>
             {form.status === 'error' && <p role="alert" className="m-0 text-sm" style={{ color: t.colors.danger }}>{form.error}</p>}
-            <button type="submit" disabled={form.status === 'sending'} aria-busy={form.status === 'sending' || undefined} className="lb-pill self-center"
-              style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx, minWidth: 180 }}>
-              {form.status === 'sending' && <Loader2 size={16} className="animate-spin" aria-hidden />}
-              {form.status === 'sending' ? tt('sections.sending', 'Sending...') : (s.buttonLabel || tt('sections.sendMessage', 'Send message'))}
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {form.stepIndex > 0 && <button type="button" onClick={form.back} className="lb-pill" style={{ background: 'transparent', color: colors.ink, border: `1px solid ${t.colors.border}`, borderRadius: t.buttonRadiusPx, minWidth: 120 }}>{tt('sections.contactBack', 'Back')}</button>}
+              {form.isLast ? (
+              <button type="submit" disabled={form.status === 'sending'} aria-busy={form.status === 'sending' || undefined} className="lb-pill"
+                style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx, minWidth: 180 }}>
+                {form.status === 'sending' && <Loader2 size={16} className="animate-spin" aria-hidden />}
+                {form.status === 'sending' ? tt('sections.sending', 'Sending...') : (s.buttonLabel || tt('sections.sendMessage', 'Send message'))}
+              </button>
+              ) : (
+              <button type="submit" className="lb-pill" style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx, minWidth: 140 }}>{tt('sections.contactNext', 'Next')}</button>
+              )}
+            </div>
           </form>
         )}
       </div>
