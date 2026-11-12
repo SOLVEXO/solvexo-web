@@ -1,9 +1,10 @@
 import { useId, type ReactNode } from 'react';
-import { CheckCircle2, Loader2, Star } from 'lucide-react';
+import { CheckCircle2, Loader2, Paperclip, Star, X } from 'lucide-react';
 import { ts, tt } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useContactForm } from '../../../core/forms/useContactForm';
-import { successRedirect, type ContactFormField } from '../../../core/forms/contactFormFields';
+import { TurnstileBox } from '../../../core/forms/TurnstileBox';
+import { fileAccept, successRedirect, type ContactFormField } from '../../../core/forms/contactFormFields';
 import { localizedCountryOptions } from '../../../core/countryOptions';
 import { fashionTheme as t } from '../../theme.config';
 import { controlStyle } from '../../ui/controlStyle';
@@ -73,6 +74,28 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
         </>,
       );
     }
+    if (f.type === 'file') {
+      const file = form.files[f.id];
+      return wrap(
+        <>
+          <label htmlFor={id} className={label}>{f.label}{star}</label>
+          {file && !file.error ? (
+            <div className="flex items-center gap-2 px-4 py-3" style={{ ...style, minHeight: 48 }}>
+              <Paperclip size={16} aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-sm">{file.name}</span>
+              {file.uploading
+                ? <Loader2 size={16} className="animate-spin" aria-label={tt('sections.contactUploading', 'Uploading...')} />
+                : <button type="button" onClick={() => form.removeFile(f.id)} aria-label={tt('sections.contactRemoveFile', 'Remove {{name}}', { name: file.name })} className="cursor-pointer border-0 bg-transparent p-0.5"><X size={16} aria-hidden /></button>}
+            </div>
+          ) : (
+            <input id={id} type="file" accept={fileAccept(f)} aria-describedby={helpId}
+              onChange={e => { const chosen = e.target.files?.[0]; if (chosen) void form.attachFile(f, chosen); e.target.value = ''; }} style={{ ...style, padding: '10px 14px' }} />
+          )}
+          {file?.error && <p role="alert" className="m-0 mt-1.5 text-sm" style={{ color: t.colors.danger }}>{file.error}</p>}
+          {help}
+        </>,
+      );
+    }
     if (f.type === 'rating') {
       const current = Number(text) || 0;
       return wrap(
@@ -137,6 +160,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
               {form.fields.map(renderField)}
             </div>
+            {form.captcha && <TurnstileBox key={form.captchaRound} siteKey={form.captcha.siteKey} onToken={form.setCaptchaToken} />}
             {/* Bot trap: invisible to people, so only automated fills reach it. */}
             <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
               <label htmlFor={`${uid}-website`}>{ts('pg.website', 'Website')}</label>

@@ -2,7 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import {
-  CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, MAX_CHOICES, MAX_CONTACT_FIELDS, conditionSources, contactFormProblem, hasChoices, isStaticField,
+  CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, FILE_KIND_OPTIONS, MAX_CHOICES, MAX_CONTACT_FIELDS, MAX_FILE_MB, conditionSources, contactFormProblem, hasChoices, isStaticField,
   labelLimit, newContactField, newFieldId, resolveContactFields,
   type ContactFieldType, type ContactFormField,
 } from '@/features/storefront-themes/core/forms/contactFormFields';
@@ -133,6 +133,8 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
                   min: next === 'number' ? field.min : undefined, max: next === 'number' ? field.max : undefined,
                   minLength: next === 'text' || next === 'textarea' ? field.minLength : undefined, maxLength: next === 'text' || next === 'textarea' ? field.maxLength : undefined,
                   defaultValue: undefined,
+                  fileKinds: next === 'file' ? field.fileKinds : undefined, maxSizeMb: next === 'file' ? field.maxSizeMb : undefined,
+                  subscribes: next === 'consent' ? field.subscribes : undefined,
                   ...(isStaticField(next) ? { required: false, helpText: undefined, placeholder: undefined, errorMessage: undefined, showIf: undefined } : {}),
                   ...(next === 'hidden' ? { required: false, defaultValue: '{page_url}' } : {}),
                 });
@@ -208,6 +210,24 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
             </div>
           )}
 
+          {type === 'file' && (
+            <div className="grid grid-cols-2 gap-2">
+              <Labeled id={`${uid}-kinds`} label="Accepted files" hint={FILE_KIND_OPTIONS.find(o => o.value === (field.fileKinds ?? 'both'))?.hint}>
+                <select id={`${uid}-kinds`} className={inp} value={field.fileKinds ?? 'both'} onChange={e => onChange({ fileKinds: e.target.value as ContactFormField['fileKinds'] })}>
+                  {FILE_KIND_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </Labeled>
+              <Labeled id={`${uid}-mb`} label="Largest file (MB)" hint={`Up to ${MAX_FILE_MB} MB.`}>
+                <input id={`${uid}-mb`} type="number" min={1} max={MAX_FILE_MB} className={inp} value={field.maxSizeMb ?? MAX_FILE_MB} onChange={e => onChange({ maxSizeMb: Math.min(MAX_FILE_MB, Math.max(1, Math.round(Number(e.target.value) || MAX_FILE_MB))) })} />
+              </Labeled>
+            </div>
+          )}
+          {type === 'consent' && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12px] text-charcoal">Also sign the visitor up for my email marketing when ticked<span className="block text-[11px] text-slate">Needs an Email field. People who unsubscribed before are never added again.</span></span>
+              <Toggle checked={!!field.subscribes} onChange={v => onChange({ subscribes: v || undefined })} />
+            </div>
+          )}
           {collects && (
             <Labeled id={`${uid}-err`} label="Your own error message" hint="Shown when this field is missing or wrong. Leave empty for the standard message.">
               <input id={`${uid}-err`} className={inp} value={field.errorMessage ?? ''} maxLength={120} onChange={e => onChange({ errorMessage: e.target.value || undefined })} />

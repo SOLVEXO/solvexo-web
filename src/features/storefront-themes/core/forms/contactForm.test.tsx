@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { applyMerchantThemeOverrides } from '../../theme-03-fashion/theme.config';
 import { ContactFormSection } from '../../theme-03-fashion/sections/shared/ContactFormSection';
 import { FormFieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/builder/FormFieldsEditor';
@@ -9,7 +9,13 @@ import {
 } from './contactFormFields';
 
 const submitMock = vi.fn();
-vi.mock('@/api/services/storeContact', () => ({ apiSubmitContactMessage: (...a: unknown[]) => submitMock(...a) }));
+const uploadMock = vi.fn();
+const configMock = vi.fn();
+vi.mock('@/api/services/storeContact', () => ({
+  apiSubmitContactMessage: (...a: unknown[]) => submitMock(...a),
+  apiUploadContactFile: (...a: unknown[]) => uploadMock(...a),
+  apiGetContactFormConfig: (...a: unknown[]) => configMock(...a),
+}));
 vi.mock('@/features/storefront/StorefrontContext', () => ({ useStorefront: () => ({ store: { storeId: 's1' } }) }));
 
 const colors = { bg: '#fff', bgAlt: '#f5f5f5', ink: '#111', inkMuted: '#666', border: '#ddd', accent: '#a33', accentInk: '#fff' } as never;
@@ -269,5 +275,112 @@ describe('phase 1: editor', () => {
     const after = set.mock.calls.at(-1)![0].fields as ContactFormField[];
     expect(after.map(f => f.id)).toEqual(['e', 'o']);
     expect(after[1].showIf).toBeUndefined();
+  });
+});
+
+describe('phase 2: files, CAPTCHA, spam protection', () => {
+  beforeEach(() => {
+    applyMerchantThemeOverrides(null);
+    submitMock.mockReset().mockResolvedValue({ success: true });
+    uploadMock.mockReset().mockResolvedValue({ data: { uploadId: 'a'.repeat(24), name: 'receipt.pdf', size: 2048 } });
+    configMock.mockReset().mockResolvedValue({ data: { captcha: null } });
+    delete (window as unknown as { turnstile?: unknown }).turnstile;
+  });
+  afterEach(cleanup);
+  const send = () => fireEvent.submit(screen.getByRole('button', { name: /send/i }).closest('form') as HTMLFormElement);
+  const fileFields: ContactFormField[] = [
+    { id: 'e', type: 'email', label: 'Email', required: true },
+    { id: 'f', type: 'file', label: 'Receipt', required: true, fileKinds: 'documents', maxSizeMb: 2 },
+  ];
+
+  it('uploads the chosen file at once and sends its id with the form', async () => {
+    render(<ContactFormSection section={section({ fields: fileFields })} blocks={[]} colors={colors} />);
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'a@b.co' } });
+    const input = screen.getByLabelText(/^Receipt/) as HTMLInputElement;
+    expect(input.accept).toContain('.pdf');
+    expect(input.accept).not.toContain('.png');
+    const file = new File(['%PDF-1.4'], 'receipt.pdf', { type: 'application/pdf' });
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByText('receipt.pdf')).toBeTruthy());
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect((uploadMock.mock.calls[0][1] as { fieldId: string; sectionId: string }).fieldId).toBe('f');
+    send();
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    const answers = (submitMock.mock.calls[0][1] as { answers: { fieldId: string; value: string }[] }).answers;
+    expect(answers.find(a => a.fieldId === 'f')?.value).toBe('a'.repeat(24));
+  });
+
+  it('refuses a wrong type or a too big file before uploading, and blocks the send until a required file is attached', async () => {
+    render(<ContactFormSection section={section({ fields: fileFields })} blocks={[]} colors={colors} />);
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText(/^Receipt/), { target: { files: [new File(['x'], 'photo.png', { type: 'image/png' })] } });
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/not accepted/i));
+    expect(uploadMock).not.toHaveBeenCalled();
+    const big = new File([new Uint8Array(3 * 1024 * 1024)], 'big.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByLabelText(/^Receipt/), { target: { files: [big] } });
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/2 MB/));
+    expect(uploadMock).not.toHaveBeenCalled();
+    send();
+    await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
+    expect(submitMock).not.toHaveBeenCalled();
+  });
+
+  it('shows the server\'s message when an upload fails and lets the visitor remove an attached file', async () => {
+    uploadMock.mockRejectedValueOnce(new Error('Too many files are waiting'));
+    render(<ContactFormSection section={section({ fields: fileFields })} blocks={[]} colors={colors} />);
+    fireEvent.change(screen.getByLabelText(/^Receipt/), { target: { files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] } });
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Too many files'));
+    fireEvent.change(screen.getByLabelText(/^Receipt/), { target: { files: [new File(['x'], 'b.pdf', { type: 'application/pdf' })] } });
+    await waitFor(() => expect(screen.getByText('receipt.pdf')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: /Remove receipt.pdf/ }));
+    expect(screen.queryByText('receipt.pdf')).toBeNull();
+  });
+
+  it('asks the CAPTCHA only when the form switched it on and the store has keys, and sends the token', async () => {
+    // no keys saved: the form works without it
+    render(<ContactFormSection section={section({ fields: [{ id: 'e', type: 'email', label: 'Email', required: true }], captcha: true })} blocks={[]} colors={colors} />);
+    await waitFor(() => expect(configMock).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId('turnstile')).toBeNull();
+    cleanup();
+
+    let onToken: ((t: string) => void) | null = null;
+    (window as unknown as { turnstile: unknown }).turnstile = { render: (_el: HTMLElement, o: { callback: (t: string) => void }) => { onToken = o.callback; return 'w1'; }, remove: vi.fn() };
+    const scriptWait = vi.spyOn(document.head, 'appendChild');
+    configMock.mockResolvedValue({ data: { captcha: { provider: 'turnstile', siteKey: '0x4AAAA' } } });
+    render(<ContactFormSection section={section({ fields: [{ id: 'e', type: 'email', label: 'Email', required: true }], captcha: true })} blocks={[]} colors={colors} />);
+    await waitFor(() => expect(screen.getByTestId('turnstile')).toBeTruthy());
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'a@b.co' } });
+    send();
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/robot/i));
+    expect(submitMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(onToken).not.toBeNull());
+    await act(async () => { onToken!('good-token'); });
+    send();
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    expect((submitMock.mock.calls[0][1] as { captchaToken: string }).captchaToken).toBe('good-token');
+    scriptWait.mockRestore();
+  });
+});
+
+describe('phase 2: editor', () => {
+  afterEach(cleanup);
+  it('shows file options and the marketing signup only on the types that use them', () => {
+    const set = vi.fn();
+    const fields: ContactFormField[] = [
+      { id: 'e', type: 'email', label: 'Email', required: true },
+      { id: 'f', type: 'file', label: 'Receipt' },
+      { id: 'k', type: 'consent', label: 'Send me offers' },
+    ];
+    render(<FormFieldsEditor settings={{ fields }} set={set} />);
+    fireEvent.click(screen.getByText('Receipt'));
+    fireEvent.change(screen.getByLabelText('Accepted files'), { target: { value: 'images' } });
+    expect((set.mock.calls.at(-1)![0].fields as ContactFormField[])[1].fileKinds).toBe('images');
+    fireEvent.change(screen.getByLabelText('Largest file (MB)'), { target: { value: '99' } });
+    expect((set.mock.calls.at(-1)![0].fields as ContactFormField[])[1].maxSizeMb).toBe(10);
+    cleanup();
+    render(<FormFieldsEditor settings={{ fields }} set={set} />);
+    fireEvent.click(screen.getByText('Send me offers'));
+    expect(screen.getByText(/sign the visitor up for my email marketing/i)).toBeTruthy();
+    expect(screen.queryByLabelText('Accepted files')).toBeNull();
   });
 });

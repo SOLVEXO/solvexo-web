@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Archive, Download, Inbox, Mail, Search, Trash2 } from 'lucide-react';
+import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
 import { Button } from '@/components/comman/ui/Button';
@@ -7,13 +7,14 @@ import { SkeletonBox } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  apiListContactMessages, apiSetContactMessageStatus, apiDeleteContactMessage, apiReplyContactMessage, apiListContactForms, apiExportContactMessages,
+  apiListContactMessages, apiSetContactMessageStatus, apiDeleteContactMessage, apiReplyContactMessage, apiListContactForms, apiExportContactMessages, apiContactFileLink,
   type ContactMessage, type ContactMessageStatus,
 } from '@/api/services/storeContact';
 import { downloadBlob } from '@/utils/downloadBlob';
+import { SpamProtectionModal } from './SpamProtectionModal';
 
 const FILTERS: { value: ContactMessageStatus | ''; label: string }[] = [
-  { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'archived', label: 'Archived' },
+  { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'archived', label: 'Archived' }, { value: 'spam', label: 'Spam' },
 ];
 
 /** Who sent it: the form may have no Name field, so fall back to the email, the phone or a plain word. */
@@ -29,6 +30,8 @@ export default function ContactMessages() {
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [spam, setSpam] = useState(0);
+  const [showProtection, setShowProtection] = useState(false);
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<ContactMessage[] | null>(null);
   const [totalPages, setTotalPages] = useState(1);
@@ -45,7 +48,7 @@ export default function ContactMessages() {
     setError('');
     setRows(null);
     apiListContactMessages(storeId, { page, status: filter, form, q: query })
-      .then(res => { setRows(res.data); setTotalPages(res.pagination.totalPages); setUnread(res.unread); })
+      .then(res => { setRows(res.data); setTotalPages(res.pagination.totalPages); setUnread(res.unread); setSpam(res.spam ?? 0); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load messages.'));
     // The forms that have messages: the filter only appears when there is more than one kind.
     apiListContactForms(storeId).then(res => setForms(res.data)).catch(() => undefined);
@@ -57,6 +60,16 @@ export default function ContactMessages() {
     const t = setTimeout(() => { setQuery(search); setPage(1); }, 350);
     return () => clearTimeout(t);
   }, [search]);
+
+  /** Attached files are private: ask for a 2-minute link and open it. */
+  async function openFile(m: ContactMessage, fileId: string) {
+    try {
+      const res = await apiContactFileLink(storeId, m._id, fileId);
+      window.open(res.data.url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not open the file.');
+    }
+  }
 
   async function exportCsv() {
     setExporting(true);
@@ -117,7 +130,7 @@ export default function ContactMessages() {
             <button key={f.value || 'all'} type="button" role="tab" aria-selected={filter === f.value}
               onClick={() => { setFilter(f.value); setPage(1); }}
               className={`px-3 py-1.5 rounded-full text-[12px] font-semibold border cursor-pointer ${filter === f.value ? 'bg-charcoal text-white border-charcoal' : 'bg-white text-charcoal border-bone'}`}>
-              {f.label}
+              {f.label}{f.value === 'spam' && spam > 0 ? ` (${spam})` : ''}
             </button>
           ))}
         </div>
@@ -136,6 +149,7 @@ export default function ContactMessages() {
             </select>
           )}
           <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting}><Download size={13} className="mr-1" /> Export CSV</Button>
+          <Button size="sm" variant="outline" onClick={() => setShowProtection(true)}><ShieldCheck size={13} className="mr-1" /> Spam protection</Button>
         </div>
 
         {error ? (
@@ -151,12 +165,16 @@ export default function ContactMessages() {
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <p className="text-[13.5px] font-semibold text-charcoal m-0">{who(m)}{m.status === 'new' && <span className="ml-2 text-[10px] font-bold uppercase text-brand-orange">New</span>}</p>
+                    {m.status === 'spam' && <p className="m-0 text-[11px] font-semibold uppercase text-error">Spam: {m.spamReason === 'links' ? 'too many links' : m.spamReason === 'honeypot' ? 'a robot filled the hidden field' : 'looks like spam'}</p>}
                     <p className="text-[12px] text-slate m-0">{[m.formName, m.email, m.phone, new Date(m.createdAt).toLocaleString()].filter(Boolean).join(' · ')}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     {m.email ? <button type="button" onClick={() => startReply(m)} aria-expanded={replyingId === m._id} className="px-2.5 py-1.5 rounded-md text-[12px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center gap-1"><Mail size={12} /> Reply</button> : <span className="px-2 text-[11px] text-slate">No email: contact by phone</span>}
-                    {m.status !== 'read' && <button type="button" onClick={() => setStatus(m, 'read')} className="px-2.5 py-1.5 rounded-md text-[12px] text-slate bg-transparent border border-bone cursor-pointer">Mark read</button>}
-                    {m.status !== 'archived' && <button type="button" onClick={() => setStatus(m, 'archived')} aria-label="Archive" title="Archive" className="p-1.5 text-slate bg-transparent border-0 cursor-pointer"><Archive size={14} /></button>}
+                    {m.status === 'spam'
+                      ? <button type="button" onClick={() => setStatus(m, 'read')} className="px-2.5 py-1.5 rounded-md text-[12px] font-medium text-charcoal bg-cream border border-bone cursor-pointer">Not spam</button>
+                      : <button type="button" onClick={() => setStatus(m, 'spam')} aria-label="Mark as spam" title="Mark as spam" className="p-1.5 text-slate bg-transparent border-0 cursor-pointer"><ShieldAlert size={14} /></button>}
+                    {m.status !== 'read' && m.status !== 'spam' && <button type="button" onClick={() => setStatus(m, 'read')} className="px-2.5 py-1.5 rounded-md text-[12px] text-slate bg-transparent border border-bone cursor-pointer">Mark read</button>}
+                    {m.status !== 'archived' && m.status !== 'spam' && <button type="button" onClick={() => setStatus(m, 'archived')} aria-label="Archive" title="Archive" className="p-1.5 text-slate bg-transparent border-0 cursor-pointer"><Archive size={14} /></button>}
                     <button type="button" onClick={() => setPendingDelete(m)} aria-label="Delete" title="Delete" className="p-1.5 text-error bg-transparent border-0 cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>
@@ -166,7 +184,9 @@ export default function ContactMessages() {
                     {(m.fields ?? []).filter(f => !['name', 'email', 'phone'].includes(f.type) && f.value !== m.message).map(f => (
                       <div key={f.id} className="contents">
                         <dt className="text-[12px] font-medium text-slate">{f.label}</dt>
-                        <dd className="m-0 whitespace-pre-line break-words text-[13px] text-charcoal">{f.value}</dd>
+                        <dd className="m-0 whitespace-pre-line break-words text-[13px] text-charcoal">{f.fileId
+                          ? <button type="button" onClick={() => void openFile(m, f.fileId as string)} className="inline-flex items-center gap-1.5 rounded-md border border-bone bg-white px-2 py-1 text-[12px] text-charcoal cursor-pointer"><Paperclip size={12} /> {f.value}</button>
+                          : f.value}</dd>
                       </div>
                     ))}
                   </dl>
@@ -207,6 +227,7 @@ export default function ContactMessages() {
       {pendingDelete && (
         <ConfirmDialog title="Delete message" message={`Delete the message from ${who(pendingDelete)}? This cannot be undone.`} confirmLabel="Delete" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} />
       )}
+      {showProtection && <SpamProtectionModal storeId={storeId} onClose={() => setShowProtection(false)} />}
     </>
   );
 }

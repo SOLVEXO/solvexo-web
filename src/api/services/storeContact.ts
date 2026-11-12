@@ -2,7 +2,7 @@ import client from '../client';
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
-export type ContactMessageStatus = 'new' | 'read' | 'archived';
+export type ContactMessageStatus = 'new' | 'read' | 'archived' | 'spam';
 
 export interface ContactMessage {
   _id: string;
@@ -11,7 +11,9 @@ export interface ContactMessage {
   phone: string | null;
   message: string;
   /** Every answer of the seller-built form, in the order of the form. */
-  fields?: { id: string; label: string; type: string; value: string }[];
+  fields?: { id: string; label: string; type: string; value: string; /** A file the visitor attached (open it with apiContactFileLink). */ fileId?: string }[];
+  /** Why a message is in the Spam tab. */
+  spamReason?: string | null;
   /** Which form it came from ('' for an unnamed one). */
   formName?: string;
   status: ContactMessageStatus;
@@ -26,6 +28,8 @@ export interface ContactMessagePage {
   pagination: { page: number; limit: number; total: number; totalPages: number };
   /** Messages nobody has opened yet (across all pages). */
   unread: number;
+  /** Messages in the Spam tab. */
+  spam?: number;
 }
 
 export interface ContactMessageFilters { status?: ContactMessageStatus | ''; /** A form name, or '__unnamed' for messages of forms without a name. */ form?: string; q?: string }
@@ -47,7 +51,7 @@ export const apiDeleteContactMessage = (storeId: string, id: string) =>
   client.delete<never, ApiResponse<null>>(`/api/store-contact/${storeId}/${id}`);
 
 /** A visitor sends a message to the store (public). `website` is the bot-trap field and must stay empty. */
-export const apiSubmitContactMessage = (storeId: string, body: { sectionId?: string; answers: { fieldId: string; value: string | string[] }[]; website?: string }) =>
+export const apiSubmitContactMessage = (storeId: string, body: { sectionId?: string; answers: { fieldId: string; value: string | string[] }[]; website?: string; captchaToken?: string }) =>
   client.post<never, ApiResponse<null>>(`/api/public/store-contact/${storeId}`, body);
 
 export const apiReplyContactMessage = (storeId: string, id: string, message: string) =>
@@ -66,3 +70,26 @@ export const apiExportContactMessages = (storeId: string, params: ContactMessage
   const qs = q.toString();
   return client.get<never, Blob>(`/api/store-contact/${storeId}/export${qs ? `?${qs}` : ''}`, { responseType: 'blob' });
 };
+
+/** A visitor attaches a file to a form field (private storage). The answer sent with the form is the returned `uploadId`. */
+export const apiUploadContactFile = (storeId: string, body: { sectionId: string; fieldId: string; file: File }) => {
+  const fd = new FormData();
+  fd.append('sectionId', body.sectionId);
+  fd.append('fieldId', body.fieldId);
+  fd.append('file', body.file);
+  return client.post<never, ApiResponse<{ uploadId: string; name: string; size: number }>>(`/api/public/store-contact/${storeId}/upload`, fd, { timeout: 60_000 });
+};
+
+/** Which CAPTCHA the store's forms use: only the public site key. */
+export const apiGetContactFormConfig = (storeId: string) =>
+  client.get<never, ApiResponse<{ captcha: { provider: 'turnstile'; siteKey: string } | null }>>(`/api/public/store-contact/${storeId}/config`);
+
+/** A 2-minute link to one file a visitor attached (seller inbox). */
+export const apiContactFileLink = (storeId: string, messageId: string, fileId: string) =>
+  client.get<never, ApiResponse<{ url: string; fileName: string }>>(`/api/store-contact/${storeId}/${messageId}/file/${fileId}`);
+
+export interface SpamProtection { turnstile: { configured: boolean; siteKey: string } }
+export const apiGetSpamProtection = (storeId: string) => client.get<never, ApiResponse<SpamProtection>>(`/api/store-contact/${storeId}/spam-protection`);
+export const apiSaveSpamProtection = (storeId: string, body: { siteKey: string; secretKey: string }) =>
+  client.put<never, ApiResponse<SpamProtection>>(`/api/store-contact/${storeId}/spam-protection`, body);
+export const apiClearSpamProtection = (storeId: string) => client.delete<never, ApiResponse<SpamProtection>>(`/api/store-contact/${storeId}/spam-protection`);

@@ -5,7 +5,7 @@
  */
 export type ContactFieldType =
   | 'name' | 'text' | 'email' | 'phone' | 'textarea' | 'number' | 'date' | 'time' | 'url'
-  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph';
+  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'file';
 
 export type ConditionOp = 'equals' | 'not_equals' | 'contains' | 'filled' | 'empty';
 export interface ContactCondition { fieldId: string; op: ConditionOp; value?: string }
@@ -31,7 +31,21 @@ export interface ContactFormField {
   errorMessage?: string;
   /** Show this field only when an EARLIER field's answer matches. */
   showIf?: ContactCondition;
+  /** file: the kinds of file accepted and the size limit in MB (at most 10). */
+  fileKinds?: 'images' | 'documents' | 'both';
+  maxSizeMb?: number;
+  /** consent: when ticked and the visitor gave an email, add them to the store's email marketing list. */
+  subscribes?: boolean;
 }
+
+/** What a file field accepts (kept in step with the API: no svg, html or programs). */
+export const FILE_KIND_OPTIONS: { value: NonNullable<ContactFormField['fileKinds']>; label: string; accept: string; hint: string }[] = [
+  { value: 'both', label: 'Images and documents', accept: '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv', hint: 'JPG, PNG, WebP, GIF, PDF, Word, Excel, TXT, CSV' },
+  { value: 'images', label: 'Images only', accept: '.jpg,.jpeg,.png,.webp,.gif', hint: 'JPG, PNG, WebP, GIF' },
+  { value: 'documents', label: 'Documents only', accept: '.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv', hint: 'PDF, Word, Excel, TXT, CSV' },
+];
+export const MAX_FILE_MB = 10;
+export const fileAccept = (f: Pick<ContactFormField, 'fileKinds'>) => (FILE_KIND_OPTIONS.find(o => o.value === (f.fileKinds ?? 'both')) ?? FILE_KIND_OPTIONS[0]).accept;
 
 export const MAX_CONTACT_FIELDS = 31;
 export const MAX_CHOICES = 20;
@@ -54,6 +68,7 @@ export const CONTACT_FIELD_TYPES: FieldTypeInfo[] = [
   { value: 'consent', label: 'Consent tick box', hint: 'A sentence the visitor agrees to (e.g. the privacy policy)', group: 'Choices' },
   { value: 'rating', label: 'Rating (1 to 5 stars)', hint: 'Stars the visitor taps', group: 'More' },
   { value: 'country', label: 'Country', hint: 'A list of countries', group: 'More' },
+  { value: 'file', label: 'File upload', hint: 'The visitor attaches a photo or a document (kept private, only you can open it)', group: 'More' },
   { value: 'hidden', label: 'Hidden field', hint: 'Not shown to the visitor; saves the page address or a fixed text with every answer', group: 'More' },
   { value: 'heading', label: 'Heading', hint: 'A title inside the form (collects nothing)', group: 'Layout' },
   { value: 'paragraph', label: 'Paragraph of text', hint: 'Some words inside the form (collects nothing)', group: 'Layout' },
@@ -150,7 +165,7 @@ export function visibleFields(fields: ContactFormField[], answers: Answers): Con
 export function initialAnswers(fields: ContactFormField[]): Answers {
   const out: Answers = {};
   for (const f of fields) {
-    if (f.type === 'hidden' || isStaticField(f.type) || !f.defaultValue) continue;
+    if (f.type === 'hidden' || f.type === 'file' || isStaticField(f.type) || !f.defaultValue) continue;
     if (f.type === 'checkbox' && f.options?.length) out[f.id] = f.defaultValue.split(',').map(s => s.trim()).filter(o => f.options!.includes(o));
     else out[f.id] = f.defaultValue;
   }
