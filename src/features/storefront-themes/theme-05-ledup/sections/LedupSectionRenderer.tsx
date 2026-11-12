@@ -69,11 +69,13 @@ export function LedupSectionRenderer({
   return (
     <>
       <style>{SECTION_SPACING_CSS}{baseTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
-      {sections.map((section, i) => {
-        if (section.enabled === false) return null;
-        const render = resolveLedupSection(section.type);
+      {sections.map((rawSection, i) => {
+        if (rawSection.enabled === false) return null;
+        const render = resolveLedupSection(rawSection.type);
         if (!render) return null;
-        const blocks = (section.blocks ?? []).map((b, index) => (b._id ? b : { ...b, _id: String(index) })).filter(b => b.enabled !== false);
+        // The database drops an empty `settings: {}`, so a section saved with no settings arrives with none at all.
+        const section = rawSection.settings ? rawSection : { ...rawSection, settings: {} };
+        const blocks = (section.blocks ?? []).map((b, index) => ({ ...b, settings: b.settings ?? {}, _id: b._id ?? String(index) })).filter(b => b.enabled !== false);
         const colors = resolveSectionColors(section.colorSchemeId, schemes);
         const spacing = sectionSpacing(section.settings);
         const key = String(section._id ?? i);
