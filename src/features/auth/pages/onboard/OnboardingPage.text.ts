@@ -28,6 +28,9 @@ export const ONBOARDING_TEXT = siteText({
     countryHelp: 'Where your business is based. It decides which payment providers you can connect (for example Stripe or local gateways). Disconnect your payment providers before changing it later.',
     currencyLabel: 'Store Currency',
     currencyHelp: 'All your product prices will be set in this currency. It\'s locked once your store has its first product.',
+    currencyFromCountry: 'Set from your country.',
+    currencyUnavailable: 'We can\'t set a currency from this country yet. Please pick one of the available currencies.',
+    currencyPick: 'Select a currency',
 
     // Step 3 — Seller type (same order as SELLER_TYPES in OnboardingPage.tsx)
     sellerTypeTitle: 'What kind of seller are you?',
@@ -56,10 +59,8 @@ export const ONBOARDING_TEXT = siteText({
     tools: {
       inventory: 'Inventory Manager',
       digitalDelivery: 'Digital Delivery',
-      worksheetBuilder: 'AI Worksheet Builder',
       posRegister: 'POS Register',
       bookings: 'Bookings',
-      aiStudio: 'AI Studio',
       marketplace: 'Marketplace',
     },
     alreadyOnPlan: (plan: string) => `Your store goes live immediately — no waiting on review. You're already on the ${plan} plan.`,
@@ -98,6 +99,9 @@ export const ONBOARDING_TEXT = siteText({
     countryHelp: 'الدولة التي يقع فيها نشاطك التجاري. تحدد مزوّدي الدفع الذين يمكنك ربطهم (مثل Stripe أو بوابات الدفع المحلية). افصل مزوّدي الدفع قبل تغييرها لاحقًا.',
     currencyLabel: 'عملة المتجر',
     currencyHelp: 'ستُحدَّد جميع أسعار منتجاتك بهذه العملة. لا يمكن تغييرها بعد إضافة أول منتج إلى متجرك.',
+    currencyFromCountry: 'تُحدَّد من دولتك.',
+    currencyUnavailable: 'لا يمكننا تحديد العملة من هذه الدولة حاليًا. يرجى اختيار إحدى العملات المتاحة.',
+    currencyPick: 'اختر عملة',
 
     sellerTypeTitle: 'ما نوع نشاطك في البيع؟',
     sellerTypeSubtitle: 'سنخصّص لوحة التحكم والأدوات بناءً على إجابتك.',
@@ -124,10 +128,8 @@ export const ONBOARDING_TEXT = siteText({
     tools: {
       inventory: 'إدارة المخزون',
       digitalDelivery: 'التسليم الرقمي',
-      worksheetBuilder: 'منشئ أوراق العمل بالذكاء الاصطناعي',
       posRegister: 'نقطة البيع',
       bookings: 'الحجوزات',
-      aiStudio: 'استوديو الذكاء الاصطناعي',
       marketplace: 'السوق',
     },
     alreadyOnPlan: (plan: string) => `يصبح متجرك متاحًا فورًا — دون انتظار أي مراجعة. أنت مشترك بالفعل في باقة ${plan}.`,

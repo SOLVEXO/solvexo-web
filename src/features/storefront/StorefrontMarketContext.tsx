@@ -109,9 +109,9 @@ export function StorefrontMarketProvider({ storeId, allowedCurrencies, baseCurre
     if (market && allowed(market.currency)) { setCurrencyAuto(market.currency); return; }
     let hasSaved = false;
     try { hasSaved = !!localStorage.getItem(CURRENCY_STORAGE_KEY); } catch { /* ignore */ }
-    const suggested = detected?.suggestedCurrency;
-    if (!hasSaved && suggested && allowed(suggested)) { setCurrencyAuto(suggested); return; }
-    // Nothing else decided: a first-time visitor sees the store's own currency, never a platform-wide guess.
+    // Shopify: a visitor's country only picks a currency through a Market. With no market the store's own currency is
+    // shown, never a converted guess from the IP.
+    // A first-time visitor sees the store's own currency, never a platform-wide guess.
     if (!hasSaved && baseCurrency && allowed(baseCurrency)) setCurrencyAuto(baseCurrency);
   }, [loaded, locationDone, market, detected, baseCurrency, enabledCurrencies, allowedCurrencies, hasExplicitCurrency, accountHasCurrency, setCurrencyAuto]);
 

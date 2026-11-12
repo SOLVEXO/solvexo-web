@@ -60,6 +60,8 @@ interface CurrencyPreferenceContextValue {
   setCurrency: (value: SupportedCurrency) => void;
   /** Automatic default (market / IP): persisted for checkout but not an explicit choice. */
   setCurrencyAuto: (value: SupportedCurrency) => void;
+  /** Shows a currency for this page view only: nothing is saved (the seller's theme editor shows the store's own currency). */
+  setCurrencyView: (value: SupportedCurrency) => void;
   /** True once the buyer chose a currency themselves. */
   hasExplicitCurrency: () => boolean;
   /** Storefront sets the active market's pricing rule; null = plain FX. */
@@ -142,6 +144,8 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
     try { localStorage.setItem(STORAGE_KEY, value); } catch { /* per-viewer convenience */ }
   }, []);
 
+  const setCurrencyView = useCallback((value: SupportedCurrency) => setCurrencyState(value), []);
+
   const hasExplicitCurrency = useCallback(() => {
     try { return localStorage.getItem(CURRENCY_EXPLICIT_KEY) === '1'; } catch { return false; }
   }, []);
@@ -202,8 +206,8 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   }, [currency, rates, ratesLoaded]);
 
   const value = useMemo<CurrencyPreferenceContextValue>(
-    () => ({ currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, setFixedPrices, convert, convertTo, fixedPriceFor, ratesLoaded, canConvert, enabledCurrencies }),
-    [currency, setCurrency, setCurrencyAuto, hasExplicitCurrency, setMarketPricing, setFixedPrices, convert, convertTo, fixedPriceFor, ratesLoaded, canConvert, enabledCurrencies],
+    () => ({ currency, setCurrency, setCurrencyAuto, setCurrencyView, hasExplicitCurrency, setMarketPricing, setFixedPrices, convert, convertTo, fixedPriceFor, ratesLoaded, canConvert, enabledCurrencies }),
+    [currency, setCurrency, setCurrencyAuto, setCurrencyView, hasExplicitCurrency, setMarketPricing, setFixedPrices, convert, convertTo, fixedPriceFor, ratesLoaded, canConvert, enabledCurrencies],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

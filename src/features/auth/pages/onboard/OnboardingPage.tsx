@@ -28,6 +28,7 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { AnimatePresence } from 'motion/react';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { currencyForCountry } from '@/utils/countryCurrency';
 import { FEATURES } from '@/constants/features';
 import { useSiteText } from '@/i18n/site/useSiteText';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
@@ -35,11 +36,6 @@ import { ONBOARDING_TEXT } from './OnboardingPage.text';
 import { AUTH_SHARED_TEXT, countryLabel } from '../authPages.text';
 import { planDisplayName } from './onboardingPlans';
 
-const ONBOARDING_HIGHLIGHTS = [
-  { Icon: Store,     text: 'A store built around how you sell' },
-  { Icon: Sparkles,  text: 'Analytics from day one' },
-  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
-];
 // Text: AUTH_SHARED_TEXT.sellerHighlights (one per icon, same order).
 const ONBOARDING_HIGHLIGHT_ICONS = [Store, Sparkles, ShieldCheck];
 
@@ -220,7 +216,6 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   const t = useSiteText(ONBOARDING_TEXT);
   const { pageLang } = useSiteLang();
   const [preview, setPreview] = useState('');
-  const canProceed = form.storeName.trim().length > 0 && !!form.country;
   const [countryTouched, setCountryTouched] = useState(false);
   const countryOptions = pageLang === 'en'
     ? COUNTRY_OPTIONS
@@ -231,6 +226,11 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   // the IP-detected suggestion below is only ever applied as a pre-fill, and
   // must stop overwriting the field the instant a real choice is made.
   const [currencyTouched, setCurrencyTouched] = useState(false);
+  // Shopify-style: the store currency follows the country. Only a country whose currency the platform does not sell in
+  // (or that has none on file) asks the seller to pick one, and that pick is required, never a silent default.
+  const naturalCurrency = form.country ? currencyForCountry(form.country) : null;
+  const currencyFollowsCountry = !!naturalCurrency && (currencyOptions.length === 0 || currencyOptions.includes(naturalCurrency));
+  const canProceed = form.storeName.trim().length > 0 && !!form.country && (currencyFollowsCountry || currencyTouched);
   // Mirrors the latest `form`/`currencyTouched` for the async fetches below —
   // both fire once on mount and may resolve after the seller has already
   // started typing other fields, so they must never merge against a stale
@@ -239,6 +239,12 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   latestRef.current.form = form;
   latestRef.current.currencyTouched = currencyTouched;
   latestRef.current.countryTouched = countryTouched;
+
+  useEffect(() => {
+    if (!naturalCurrency || !currencyFollowsCountry || latestRef.current.form.baseCurrency === naturalCurrency) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the currency is derived from the country the seller picked
+    setForm({ ...latestRef.current.form, baseCurrency: naturalCurrency });
+  }, [naturalCurrency, currencyFollowsCountry]);
 
   useEffect(() => {
     apiGetEnabledCurrencies()
@@ -338,7 +344,7 @@ function Step1StoreInfo({ form, setForm, onNext }: {
         <div className="mb-6">
           <label htmlFor="onboard-country" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.countryLabel} <span className="text-brand-orange">*</span></label>
           <select id="onboard-country" value={form.country ?? ''}
-            onChange={e => { setCountryTouched(true); setForm({ ...form, country: e.target.value }); }}
+            onChange={e => { setCountryTouched(true); setCurrencyTouched(false); setForm({ ...form, country: e.target.value }); }}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
             <option value="">{t.countryPlaceholder}</option>
             {countryOptions.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
@@ -348,20 +354,27 @@ function Step1StoreInfo({ form, setForm, onNext }: {
           </p>
         </div>
 
-        <div className="mb-6">
-          <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.currencyLabel} <span className="text-brand-orange">*</span></label>
-          <select id="onboard-currency" value={form.baseCurrency}
-            onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-            {!currencyOptions.includes(form.baseCurrency) && (
-              <option value={form.baseCurrency}>{form.baseCurrency}</option>
+        {form.country && (
+          <div className="mb-6">
+            <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.currencyLabel}</label>
+            {currencyFollowsCountry ? (
+              <>
+                <div id="onboard-currency" className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] font-medium text-charcoal bg-white">{naturalCurrency}</div>
+                <p className="text-[11px] text-slate mt-[5px]">{t.currencyFromCountry} {t.currencyHelp}</p>
+              </>
+            ) : (
+              <>
+                <select id="onboard-currency" value={currencyTouched ? form.baseCurrency : ''}
+                  onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }}
+                  className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+                  <option value="">{t.currencyPick}</option>
+                  {currencyOptions.map(code => <option key={code} value={code}>{code}</option>)}
+                </select>
+                <p className="text-[11px] text-slate mt-[5px]">{t.currencyUnavailable} {t.currencyHelp}</p>
+              </>
             )}
-            {currencyOptions.map(code => <option key={code} value={code}>{code}</option>)}
-          </select>
-          <p className="text-[11px] text-slate mt-[5px]">
-            {t.currencyHelp}
-          </p>
-        </div>
+          </div>
+        )}
 
         <Button variant="primary" size="lg" fullWidth onClick={() => canProceed && onNext()} disabled={!canProceed}>
           {t.continue} <ArrowRight size={14} className="inline align-middle ms-1 rtl:-scale-x-100" />
@@ -482,10 +495,8 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Marketplace</span>
               {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.inventory}</span>}
               {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.digitalDelivery}</span>}
-              {form.productTypes.includes('educational_resources') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.worksheetBuilder}</span>}
               {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.posRegister}</span>}
               {FEATURES.bookings && form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.bookings}</span>}
-              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.aiStudio}</span>
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.marketplace}</span>
             </div>
           </div>
