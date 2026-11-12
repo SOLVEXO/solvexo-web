@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { CheckCircle2, Loader2, Paperclip, Star, X } from 'lucide-react';
 import { ts, tt } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -8,6 +8,7 @@ import { fileAccept, successRedirect, type ContactFormField } from '../../../cor
 import { localizedCountryOptions } from '../../../core/countryOptions';
 import { baseTheme as t } from '../../theme.base';
 import { controlStyle } from '../../ui/controlStyle';
+import { TechDialog } from '../../ui/techDialog';
 import { SectionShell } from '../SectionShell';
 import type { SharedSectionProps } from './types';
 
@@ -19,6 +20,8 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
   const uid = useId();
   const s = section.settings;
   const form = useContactForm(store.storeId, section);
+  const [open, setOpen] = useState(false);
+  const popup = s.display === 'popup';
   const label = 'mb-1.5 block text-sm font-medium';
 
   /** One field of the seller's form, drawn in this theme's look. */
@@ -145,10 +148,8 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
     );
   }
 
-  return (
-    <SectionShell colors={colors} heading={s.heading} align="center">
-      <div className="mx-auto max-w-[680px]" style={{ fontFamily: t.fonts.body }}>
-        {s.intro && <p className="m-0 mb-8 text-center text-base leading-relaxed" style={{ color: colors.inkMuted }}>{s.intro}</p>}
+  const formBlock = (
+    <>
         {form.status === 'done' ? (
           <div role="status" className="flex flex-col items-center gap-3 px-6 py-12 text-center" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx }}>
             <CheckCircle2 size={32} style={{ color: t.colors.success }} aria-hidden />
@@ -192,6 +193,28 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
             </div>
           </form>
         )}
+    </>
+  );
+
+  if (popup) {
+    const label = s.popupButtonLabel || s.formName || tt('sections.sendMessage', 'Send message');
+    return (
+      <SectionShell colors={colors} heading={s.heading} align="center">
+        <div className="mx-auto flex max-w-[680px] flex-col items-center gap-6" style={{ fontFamily: t.fonts.body }}>
+          {s.intro && <p className="m-0 text-center text-base leading-relaxed" style={{ color: colors.inkMuted }}>{s.intro}</p>}
+          <button type="button" onClick={() => setOpen(true)} className="tx-pill" aria-haspopup="dialog"
+            style={{ background: t.colors.accent, color: t.colors.accentInk, border: 'none', borderRadius: t.buttonRadiusPx, minWidth: 180 }}>{label}</button>
+        </div>
+        {open && <TechDialog title={s.formName || s.heading || label} onClose={() => setOpen(false)} size={680}>{formBlock}</TechDialog>}
+      </SectionShell>
+    );
+  }
+
+  return (
+    <SectionShell colors={colors} heading={s.heading} align="center">
+      <div className="mx-auto max-w-[680px]" style={{ fontFamily: t.fonts.body }}>
+        {s.intro && <p className="m-0 mb-8 text-center text-base leading-relaxed" style={{ color: colors.inkMuted }}>{s.intro}</p>}
+        {formBlock}
       </div>
     </SectionShell>
   );

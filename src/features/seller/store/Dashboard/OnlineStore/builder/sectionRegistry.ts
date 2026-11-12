@@ -435,6 +435,8 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
       { key: 'fields', kind: 'formFields', label: 'Form fields', hint: 'Choose what visitors fill in. Add any field you need (name, phone, order number, a dropdown...). Answers arrive in Contact Messages.' },
       { key: 'formName', kind: 'text', label: 'Form name', maxLength: 60, placeholder: 'e.g. Wholesale request', hint: 'Shown in your Contact Messages so answers of different forms can be told apart.' },
+      { key: 'display', kind: 'select', label: 'Show the form', options: [{ value: 'inline', label: 'On the page' }, { value: 'popup', label: 'In a pop-up opened by a button' }], hint: 'Pop-up: only a button shows on the page and the form opens above it.' },
+      { key: 'popupButtonLabel', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'e.g. Request a quote', showIf: s => s.display === 'popup' },
       { key: 'successAction', kind: 'select', label: 'After sending', options: [{ value: 'message', label: 'Show the thank-you message' }, { value: 'redirect', label: 'Send the visitor to another page' }] },
       { key: 'redirectUrl', kind: 'text', label: 'Send the visitor to', maxLength: 300, placeholder: 'https://… or /pages/thank-you', hint: 'An https:// link or a page on your store, starting with /.', showIf: s => s.successAction === 'redirect' },
       { key: 'notifyEmails', kind: 'text', label: 'Email every answer to', maxLength: 600, placeholder: 'you@shop.com, team@shop.com', hint: 'Up to 5 addresses, separated by commas. Every new message is also in Contact Messages.' },

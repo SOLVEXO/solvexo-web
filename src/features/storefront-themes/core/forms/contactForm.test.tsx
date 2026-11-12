@@ -421,3 +421,17 @@ describe('phase 3: multi-step', () => {
     expect(screen.getByRole('button', { name: /send/i })).toBeTruthy();
   });
 });
+
+describe('phase 3: pop-up display', () => {
+  beforeEach(() => { applyMerchantThemeOverrides(null); submitMock.mockReset().mockResolvedValue({ success: true }); });
+  afterEach(cleanup);
+  it('shows only a button until it is pressed, then the form opens in a dialog and can be closed', async () => {
+    render(<ContactFormSection section={section({ display: 'popup', popupButtonLabel: 'Request a quote', fields: [{ id: 'em', type: 'email', label: 'Email', required: true }] })} blocks={[]} colors={colors} />);
+    expect(screen.queryByLabelText(/^Email/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Request a quote' }));
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy());
+    expect(screen.getByLabelText(/^Email/)).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
