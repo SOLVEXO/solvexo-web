@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import type { Variants } from 'motion/react';
 import {
   Store, ChevronDown, ArrowRight, Plus, Building2, ShieldCheck,
-  MonitorSmartphone, PackageCheck, Users, ArrowUpRight, BookOpen,
+  MonitorSmartphone, PackageCheck, Users, ArrowUpRight, BookOpen, FileText,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
@@ -16,6 +16,11 @@ import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useCompactOnScroll } from './BuyerNavbar';
 import { PLATFORM_PRODUCTS, ALL_PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
 import { PRODUCT_ICONS } from '@/components/comman/mockups/ProductMockups';
+import { localizeProduct } from '@/features/buyer/data/localizedData';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { LanguageSwitch } from '@/i18n/site/LanguageSwitch';
+import { PUBLIC_NAV_TEXT } from './PublicMegaNavbar.text';
 
 const NAV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -31,6 +36,12 @@ const PRODUCT_JOURNEY = [
   { stage: 'Marketing & analytics', slugs: ['analytics', 'discounts', 'loyalty'] },
   { stage: 'Run your business',  slugs: ['orders-customers', 'inventory', 'shipping'] },
   { stage: 'Get paid',           slugs: ['payments', 'checkout'] },
+  // `stage` indexes PUBLIC_NAV_TEXT.stages (the group label in the visitor's language).
+  { stage: 0, slugs: ['store-builder', 'domains', 'customer-accounts'] },
+  { stage: 1, slugs: ['pos', 'markets'] },
+  { stage: 2, slugs: ['analytics', 'discounts', 'ai-commerce', 'loyalty'] },
+  { stage: 3, slugs: ['orders-customers', 'inventory', 'shipping'] },
+  { stage: 4, slugs: ['payments', 'checkout'] },
 ] as const;
 
 // Shopify stacks several labeled groups into one column rather than giving
@@ -55,20 +66,21 @@ const WHY_SOLVEXO = [
   'Theme editor and your own domain on every plan',
   'Direct-to-you payouts via your own Stripe account',
 ] as const;
+// to pull a genuine "updates" list from). The lines themselves live in
+// PUBLIC_NAV_TEXT.whySolvexo.
 
 // Bottom strip, same shape as Shopify's "CUSTOMIZE & EXTEND SHOPIFY" row —
 // real, already-existing pages only (no app marketplace/dev platform exists
 // here to link to, so this isn't a literal copy of Shopify's 3 items).
-const EXPLORE_LINKS = [
-  { label: 'For Sellers', desc: 'Grow your business with Solvexo', path: '/sellers' },
-  { label: 'Pricing', desc: 'Plans that fit your store', path: '/pricing' },
-  { label: 'Security', desc: 'How we protect your account and data', path: '/security' },
-] as const;
+// Labels/descriptions: PUBLIC_NAV_TEXT.explore, same order.
+const EXPLORE_PATHS = ['/sellers', '/pricing', '/security'] as const;
 
+// Labels/descriptions: PUBLIC_NAV_TEXT.companyLinks, same order.
 const COMPANY_LINKS = [
-  { Icon: Building2,   label: 'About Solvexo', desc: 'Why we built one connected commerce platform', path: '/about' },
-  { Icon: ShieldCheck, label: 'Security', desc: 'How we protect your account, data and payments', path: '/security' },
-  { Icon: BookOpen,    label: 'Blog', desc: 'Guides for selling online and in person', path: '/blog' },
+  { Icon: Building2,   path: '/about' },
+  { Icon: ShieldCheck, path: '/security' },
+  { Icon: BookOpen,    path: '/blog' },
+  { Icon: FileText,    path: '/manuals' },
 ];
 
 type MenuKey = 'products' | 'company' | null;
@@ -113,7 +125,7 @@ function DesktopMenuButton({ label, active, light, onClick }: {
         <span
           aria-hidden
           className={clsx(
-            'pointer-events-none absolute left-3 right-7 -bottom-[1px] h-[2px] origin-left scale-x-0 rounded-full transition-transform duration-500 ease-out group-hover:scale-x-100',
+            'pointer-events-none absolute start-3 end-7 -bottom-[1px] h-[2px] origin-left rtl:origin-right scale-x-0 rounded-full transition-transform duration-500 ease-out group-hover:scale-x-100',
             light ? 'bg-white' : 'bg-brand-orange',
           )}
         />
@@ -124,7 +136,7 @@ function DesktopMenuButton({ label, active, light, onClick }: {
       {active && (
         <motion.span
           layoutId="nav-active-underline"
-          className="absolute left-3 right-7 -bottom-[1px] h-[2px] rounded-full bg-brand-orange"
+          className="absolute start-3 end-7 -bottom-[1px] h-[2px] rounded-full bg-brand-orange"
           transition={{ duration: 0.25, ease: NAV_EASE }}
         />
       )}
@@ -149,7 +161,7 @@ function DesktopNavLink({ to, label, light }: {
       <span
         aria-hidden
         className={clsx(
-          'pointer-events-none absolute left-3 right-3 -bottom-[1px] h-[2px] origin-left scale-x-0 rounded-full transition-transform duration-500 ease-out group-hover:scale-x-100',
+          'pointer-events-none absolute start-3 end-3 -bottom-[1px] h-[2px] origin-left rtl:origin-right scale-x-0 rounded-full transition-transform duration-500 ease-out group-hover:scale-x-100',
           light ? 'bg-white' : 'bg-brand-orange',
         )}
       />
@@ -163,14 +175,15 @@ function DesktopNavLink({ to, label, light }: {
 function MobileMenuButton({ open, light, onClick }: { open: boolean; light: boolean; onClick: () => void }) {
   const reduceMotion = useReducedMotion();
   const transition = { duration: reduceMotion ? 0 : 0.32, ease: NAV_EASE };
+  const t = useSiteText(PUBLIC_NAV_TEXT);
   const barClass = clsx('absolute w-[19px] h-[1.5px] rounded-full transition-colors duration-300', light ? 'bg-white' : 'bg-carbon');
   return (
     <button
       onClick={onClick}
-      aria-label={open ? 'Close menu' : 'Open menu'}
+      aria-label={open ? t.closeMenu : t.openMenu}
       aria-expanded={open}
       aria-controls="mobile-nav-panel"
-      className="lg:hidden relative flex items-center justify-center w-11 h-11 -mr-1 bg-transparent border-none cursor-pointer"
+      className="lg:hidden relative flex items-center justify-center w-11 h-11 -me-1 bg-transparent border-none cursor-pointer"
     >
       <motion.span
         className={barClass}
@@ -245,11 +258,12 @@ const maskRevealVariants: Variants = {
 // too tall for a typical viewport AND visually busy at this small size — a
 // purpose-built, fixed h-[96px] graphic solves both at once.
 function ConnectedPlatformGlyph() {
+  const t = useSiteText(PUBLIC_NAV_TEXT);
   const items = [
-    { Icon: Store, label: 'Storefront' },
-    { Icon: MonitorSmartphone, label: 'POS' },
-    { Icon: PackageCheck, label: 'Inventory' },
-    { Icon: Users, label: 'Orders' },
+    { Icon: Store, label: t.glyph[0] },
+    { Icon: MonitorSmartphone, label: t.glyph[1] },
+    { Icon: PackageCheck, label: t.glyph[2] },
+    { Icon: Users, label: t.glyph[3] },
   ];
   return (
     <div className="relative h-[96px] rounded-xl bg-gradient-to-br from-brand-orange/25 via-accent-violet/10 to-transparent border border-white/10 overflow-hidden flex items-center justify-center gap-3">
@@ -258,7 +272,7 @@ function ConnectedPlatformGlyph() {
           <span className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
             <Icon size={16} className="text-white" />
           </span>
-          <span className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.04em]">{label}</span>
+          <span className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.04em] rtl:tracking-normal">{label}</span>
         </div>
       ))}
     </div>
@@ -268,6 +282,8 @@ function ConnectedPlatformGlyph() {
 export function PublicMegaNavbar() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
+  const t = useSiteText(PUBLIC_NAV_TEXT);
+  const { pageLang } = useSiteLang();
   const { scrolled } = useCompactOnScroll();
   // The header is always the light bar (cream, thin rule, dark text), also over the home page's dark hero.
   // `overHero` stays as the switch for the old transparent-over-hero look, now never on.
@@ -369,7 +385,7 @@ export function PublicMegaNavbar() {
           // feeling pinned to the very top edge.
           'h-[72px]',
         )}>
-          <Link to="/" className="shrink-0" aria-label="Solvexo home">
+          <Link to="/" className="shrink-0" aria-label={t.homeAria}>
             <SolvexoLogo size={36} variant={overHero ? 'light' : 'dark'} textWordmark />
           </Link>
 
@@ -381,26 +397,27 @@ export function PublicMegaNavbar() {
           <nav className="hidden lg:flex items-center gap-1">
             <div onMouseEnter={() => openNow('products')}>
               <DesktopMenuButton
-                label="Products" active={openMenu === 'products'} light={overHero}
+                label={t.products} active={openMenu === 'products'} light={overHero}
                 onClick={() => openNow(openMenu === 'products' ? null : 'products')}
               />
             </div>
             <div onMouseEnter={() => openNow('company')}>
               <DesktopMenuButton
-                label="Company" active={openMenu === 'company'} light={overHero}
+                label={t.company} active={openMenu === 'company'} light={overHero}
                 onClick={() => openNow(openMenu === 'company' ? null : 'company')}
               />
             </div>
             <div onMouseEnter={() => openNow(null)}>
-              <DesktopNavLink to="/pricing" label="Pricing" light={overHero} />
+              <DesktopNavLink to="/pricing" label={t.pricing} light={overHero} />
             </div>
             <div onMouseEnter={() => openNow(null)}>
-              <DesktopNavLink to="/sellers" label="For Sellers" light={overHero} />
+              <DesktopNavLink to="/sellers" label={t.forSellers} light={overHero} />
             </div>
           </nav>
 
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <LanguageSwitch className="text-charcoal" />
             {loggedIn ? (
               <ProfileAvatar />
             ) : (
@@ -412,7 +429,7 @@ export function PublicMegaNavbar() {
                     overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
                   )}
                 >
-                  Log in
+                  {t.logIn}
                 </Link>
                 <Link
                   to="/book-demo"
@@ -421,16 +438,16 @@ export function PublicMegaNavbar() {
                     overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
                   )}
                 >
-                  Book a demo
+                  {t.bookDemo}
                 </Link>
                 <MagneticButton>
                   <button
                     onClick={sellEntry.go}
                     disabled={sellEntry.loading}
-                    className="inline-flex items-center gap-5 text-[13px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] pl-[18px] pr-4 py-[11px] border-none cursor-pointer disabled:opacity-60"
+                    className="inline-flex items-center gap-5 text-[13px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] ps-[18px] pe-4 py-[11px] border-none cursor-pointer disabled:opacity-60"
                   >
-                    Start Selling
-                    <ArrowUpRight size={16} strokeWidth={2.4} aria-hidden />
+                    {t.startSelling}
+                    <ArrowUpRight size={16} strokeWidth={2.4} className="rtl:-scale-x-100" aria-hidden />
                   </button>
                 </MagneticButton>
               </>
@@ -452,14 +469,14 @@ export function PublicMegaNavbar() {
                     overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
                   )}
                 >
-                  Log in
+                  {t.logIn}
                 </Link>
                 <button
                   onClick={sellEntry.go}
                   disabled={sellEntry.loading}
                   className="hidden sm:inline-flex items-center gap-2 text-[12.5px] font-semibold text-white bg-[#1c1d1b] hover:bg-black transition-colors rounded-[7px] px-3.5 py-[8px] border-none cursor-pointer disabled:opacity-60"
                 >
-                  Start Selling
+                  {t.startSelling}
                 </button>
               </>
             )}
@@ -486,9 +503,9 @@ export function PublicMegaNavbar() {
               // bg-carbon — the app's own near-black brand token (#141413,
               // already used a few lines down for the Solutions detail
               // panel), not a fresh "black" invented for this one spot.
-              className="hidden lg:block absolute left-0 right-0 top-full bg-carbon border-b border-white/10 shadow-2xl overflow-hidden"
+              className="hidden lg:block absolute inset-x-0 top-full bg-carbon border-b border-white/10 shadow-2xl overflow-hidden"
               role="menu"
-              aria-label={`${openMenu} menu`}
+              aria-label={t.menuAria(openMenu)}
             >
               <motion.div variants={panelContentVariants} initial="hidden" animate="show" className="relative max-w-[1280px] mx-auto px-8 py-7">
                 {openMenu === 'products' && (() => {
@@ -519,11 +536,12 @@ export function PublicMegaNavbar() {
                           <motion.div key={colIdx} variants={panelItemVariants} className="flex flex-col gap-5">
                             {column.map(stage => (
                               <div key={stage.stage}>
-                                <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-1.5 px-3">{stage.stage}</p>
+                                <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] rtl:tracking-normal mb-1.5 px-3">{t.stages[stage.stage]}</p>
                                 <div className="flex flex-col gap-0.5">
                                   {stage.slugs.map(slug => {
-                                    const p = ALL_PLATFORM_PRODUCTS.find(pp => pp.slug === slug);
-                                    if (!p) return null;
+                                    const found = ALL_PLATFORM_PRODUCTS.find(pp => pp.slug === slug);
+                                    if (!found) return null;
+                                    const p = localizeProduct(found, pageLang);
                                     const Icon = PRODUCT_ICONS[slug] ?? Store;
                                     const active = hoveredProduct === slug;
                                     return (
@@ -541,7 +559,7 @@ export function PublicMegaNavbar() {
                                           <motion.span
                                             layoutId="products-accent-bar"
                                             transition={{ duration: 0.25, ease: NAV_EASE }}
-                                            className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-brand-orange"
+                                            className="absolute start-0 top-1 bottom-1 w-[3px] rounded-full bg-brand-orange"
                                           />
                                         )}
                                         <Icon size={15} className={clsx('shrink-0 transition-colors duration-200', active ? 'text-brand-orange' : 'text-white/40')} />
@@ -572,20 +590,20 @@ export function PublicMegaNavbar() {
                            pull a genuine updates list from). */}
                         <motion.div variants={panelItemVariants} className="flex flex-col gap-4 self-start">
                           <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 overflow-hidden">
-                            <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-2">One connected platform</p>
+                            <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] rtl:tracking-normal mb-2">{t.oneConnectedPlatform}</p>
                             <div className="mb-3">
                               <ConnectedPlatformGlyph />
                             </div>
-                            <p className="text-[13.5px] font-bold text-white leading-snug">Every tool, one login</p>
+                            <p className="text-[13.5px] font-bold text-white leading-snug">{t.everyToolOneLogin}</p>
                             <p className="text-[11.5px] text-white/50 leading-snug mt-1">
-                              Storefront, POS, inventory and orders all share the same real data underneath.
+                              {t.everyToolDesc}
                             </p>
                           </div>
 
                           <div>
-                            <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] mb-1.5 px-1">Why sellers choose Solvexo</p>
+                            <p className="text-[10px] font-bold text-white/35 uppercase tracking-[0.08em] rtl:tracking-normal mb-1.5 px-1">{t.whySellersChoose}</p>
                             <div className="flex flex-col gap-1.5">
-                              {WHY_SOLVEXO.map(item => (
+                              {t.whySolvexo.map(item => (
                                 <div key={item} className="flex items-start gap-2 px-1">
                                   <span className="size-1 rounded-full bg-brand-orange mt-[6px] shrink-0" />
                                   <span className="text-[12px] text-white/60 leading-snug">{item}</span>
@@ -601,12 +619,12 @@ export function PublicMegaNavbar() {
                          real destinations, filling the panel's full width
                          instead of ending abruptly after the grid above. */}
                       <motion.div variants={panelItemVariants} className="flex flex-wrap items-center gap-x-10 gap-y-3 pt-5 mt-1 border-t border-white/10">
-                        <p className="text-[10px] font-bold text-brand-orange uppercase tracking-[0.08em] shrink-0">Explore Solvexo</p>
+                        <p className="text-[10px] font-bold text-brand-orange uppercase tracking-[0.08em] rtl:tracking-normal shrink-0">{t.exploreSolvexo}</p>
                         <Link to="/products" onClick={() => setOpenMenu(null)} className="group">
-                          <span className="block text-[13px] font-semibold text-white group-hover:text-brand-orange transition-colors">All Products</span>
-                          <span className="block text-[11px] text-white/45">{ALL_PLATFORM_PRODUCTS.length} products · one commerce system</span>
+                          <span className="block text-[13px] font-semibold text-white group-hover:text-brand-orange transition-colors">{t.allProducts}</span>
+                          <span className="block text-[11px] text-white/45">{t.productsCount(ALL_PLATFORM_PRODUCTS.length)}</span>
                         </Link>
-                        {EXPLORE_LINKS.map(l => (
+                        {EXPLORE_PATHS.map((path, i) => ({ path, ...t.explore[i] })).map(l => (
                           <Link key={l.path} to={l.path} onClick={() => setOpenMenu(null)} className="group">
                             <span className="block text-[13px] font-semibold text-white group-hover:text-brand-orange transition-colors">{l.label}</span>
                             <span className="block text-[11px] text-white/45">{l.desc}</span>
@@ -628,23 +646,23 @@ export function PublicMegaNavbar() {
                       <motion.p
                         variants={maskRevealVariants}
                         className="text-[26px] font-bold text-white leading-[1.25]"
-                        style={{ fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ fontFamily: "'Lora', 'IBM Plex Sans Arabic', Georgia, serif" }}
                       >
-                        One connected platform, not five separate logins.
+                        {t.companyStatement}
                       </motion.p>
                     </motion.div>
 
                     <motion.div variants={panelItemVariants}>
                       <p className="text-[13px] text-white/55 leading-[1.7] mb-5">
-                        That's the whole reason Solvexo exists — see how we think about it.
+                        {t.companyIntro}
                       </p>
                       {/* Plain minimal link list — no icon chips, the one
                          panel that deliberately doesn't look product-shaped.
                          Each row nudges right on hover (whileHover), the
                          one motion touch this deliberately-plain panel gets. */}
                       <div className="flex flex-col border-t border-white/10">
-                        {COMPANY_LINKS.map(c => (
-                          <motion.div key={c.path} whileHover={{ x: 4 }} transition={{ duration: 0.2, ease: NAV_EASE }}>
+                        {COMPANY_LINKS.map((c, i) => ({ ...c, ...t.companyLinks[i] })).map(c => (
+                          <motion.div key={c.path} whileHover={{ x: pageLang === 'ar' ? -4 : 4 }} transition={{ duration: 0.2, ease: NAV_EASE }}>
                             <Link
                               to={c.path}
                               onClick={() => setOpenMenu(null)}
@@ -654,7 +672,7 @@ export function PublicMegaNavbar() {
                                 <span className="block text-[14px] font-semibold text-white group-hover:text-brand-orange transition-colors">{c.label}</span>
                                 <span className="block text-[11px] text-white/40 mt-0.5">{c.desc}</span>
                               </span>
-                              <ArrowRight size={14} className="text-white/25 shrink-0 transition-colors duration-200 group-hover:text-brand-orange" />
+                              <ArrowRight size={14} className="text-white/25 shrink-0 rtl:-scale-x-100 transition-colors duration-200 group-hover:text-brand-orange" />
                             </Link>
                           </motion.div>
                         ))}
@@ -679,7 +697,7 @@ export function PublicMegaNavbar() {
           <motion.div
             id="mobile-nav-panel"
             role="navigation"
-            aria-label="Mobile navigation"
+            aria-label={t.mobileNavAria}
             initial={{ clipPath: 'inset(0% 0% 100% 0%)' }}
             animate={{ clipPath: 'inset(0% 0% 0% 0%)', transition: { duration: 0.55, ease: NAV_EASE } }}
             // Exit runs at ~65% of the enter duration ("exit faster than
@@ -687,7 +705,7 @@ export function PublicMegaNavbar() {
             // taking the same unhurried beat as opening it.
             exit={{ clipPath: 'inset(0% 0% 100% 0%)', transition: { duration: 0.36, ease: NAV_EASE } }}
             className={clsx(
-              'lg:hidden fixed left-0 right-0 bottom-0 z-[55] bg-cream',
+              'lg:hidden fixed inset-x-0 bottom-0 z-[55] bg-cream',
               // Must always match the header's own live height above
               // (`scrolled ? 'h-[72px]' : 'h-[64px]'`) — a mismatch here
               // gaps/overlaps the overlay against the actual header bar.
@@ -705,11 +723,11 @@ export function PublicMegaNavbar() {
               <div className="flex-1 flex flex-col">
                 <MobileAccordionRow
                   index="01"
-                  title="Products"
+                  title={t.products}
                   isOpen={expanded === 'products'}
                   onToggle={() => setExpanded(e => (e === 'products' ? null : 'products'))}
                 >
-                  {ALL_PLATFORM_PRODUCTS.map(p => {
+                  {ALL_PLATFORM_PRODUCTS.map(found => localizeProduct(found, pageLang)).map(p => {
                     const Icon = PRODUCT_ICONS[p.slug] ?? Store;
                     return (
                       <MobileNavRow
@@ -723,17 +741,17 @@ export function PublicMegaNavbar() {
                     );
                   })}
                   <Link to="/products" onClick={closeMenu} className="flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-orange py-2.5 px-2">
-                    View all products <ArrowRight size={12} />
+                    {t.viewAllProducts} <ArrowRight size={12} className="rtl:-scale-x-100" />
                   </Link>
                 </MobileAccordionRow>
 
                 <MobileAccordionRow
                   index="02"
-                  title="Company"
+                  title={t.company}
                   isOpen={expanded === 'company'}
                   onToggle={() => setExpanded(e => (e === 'company' ? null : 'company'))}
                 >
-                  {COMPANY_LINKS.map(c => (
+                  {COMPANY_LINKS.map((c, i) => ({ ...c, ...t.companyLinks[i] })).map(c => (
                     <MobileNavRow
                       key={c.path}
                       to={c.path}
@@ -748,8 +766,8 @@ export function PublicMegaNavbar() {
                 <div className="overflow-hidden">
                   <motion.div variants={navRowVariants}>
                     <Link to="/pricing" onClick={closeMenu} className="group flex items-center justify-between py-[18px] border-b border-carbon/10">
-                      <span className="text-[26px] sm:text-[30px] font-extrabold text-carbon tracking-tight">Pricing</span>
-                      <ArrowRight size={20} className="text-slate transition-transform duration-200 group-active:translate-x-1 group-active:text-brand-orange" />
+                      <span className="text-[26px] sm:text-[30px] font-extrabold text-carbon tracking-tight">{t.pricing}</span>
+                      <ArrowRight size={20} className="text-slate rtl:-scale-x-100 transition-transform duration-200 group-active:translate-x-1 rtl:group-active:-translate-x-1 group-active:text-brand-orange" />
                     </Link>
                   </motion.div>
                 </div>
@@ -762,20 +780,21 @@ export function PublicMegaNavbar() {
                       className="group flex items-center justify-between gap-3 rounded-2xl border border-brand-orange/20 bg-brand-pale-orange px-4 py-4"
                     >
                       <span>
-                        <span className="block text-[19px] font-extrabold text-carbon">For Sellers</span>
-                        <span className="block text-[12px] text-slate mt-0.5">Grow your business with Solvexo.</span>
+                        <span className="block text-[19px] font-extrabold text-carbon">{t.forSellers}</span>
+                        <span className="block text-[12px] text-slate mt-0.5">{t.forSellersDesc}</span>
                       </span>
-                      <ArrowRight size={18} className="text-brand-orange shrink-0 transition-transform duration-200 group-active:translate-x-1" />
+                      <ArrowRight size={18} className="text-brand-orange shrink-0 rtl:-scale-x-100 transition-transform duration-200 group-active:translate-x-1 rtl:group-active:-translate-x-1" />
                     </Link>
                   </motion.div>
                 </div>
               </div>
 
               <motion.div variants={navFadeVariants} className="flex flex-col gap-2.5 pt-6 mt-6 pb-6 border-t border-carbon/10">
+                <LanguageSwitch className="self-start text-charcoal" />
                 {loggedIn ? (
                   <div className="flex items-center gap-3 py-1">
                     <ProfileAvatar />
-                    <span className="text-[12px] text-slate">Signed in</span>
+                    <span className="text-[12px] text-slate">{t.signedIn}</span>
                   </div>
                 ) : (
                   <>
@@ -786,7 +805,7 @@ export function PublicMegaNavbar() {
                           disabled={sellEntry.loading}
                           className="w-full text-[14.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange rounded-xl py-[14px] border-none cursor-pointer disabled:opacity-60"
                         >
-                          Start Selling Free
+                          {t.startSellingFree}
                         </button>
                       </motion.div>
                     </MagneticButton>
@@ -795,7 +814,7 @@ export function PublicMegaNavbar() {
                         onClick={() => { closeMenu(); navigate('/book-demo'); }}
                         className="w-full text-[13.5px] font-semibold text-brand-deep-orange bg-brand-pale-orange border-none rounded-xl py-3 cursor-pointer"
                       >
-                        Book a free demo
+                        {t.bookFreeDemo}
                       </button>
                     </motion.div>
                     <motion.div whileTap={{ scale: 0.97 }}>
@@ -803,14 +822,14 @@ export function PublicMegaNavbar() {
                         onClick={() => { closeMenu(); navigate('/products'); }}
                         className="w-full text-[13.5px] font-medium text-charcoal bg-transparent border border-bone rounded-xl py-3 cursor-pointer"
                       >
-                        Explore the Platform
+                        {t.explorePlatform}
                       </button>
                     </motion.div>
                     <button
                       onClick={() => { closeMenu(); navigate('/login'); }}
                       className="text-[12.5px] font-medium text-slate bg-transparent border-none cursor-pointer py-1.5"
                     >
-                      Already selling? <span className="text-brand-orange font-semibold">Log in</span>
+                      {t.alreadySelling} <span className="text-brand-orange font-semibold">{t.logIn}</span>
                     </button>
                   </>
                 )}
@@ -842,7 +861,7 @@ function MobileAccordionRow({ index, title, isOpen, onToggle, children }: {
         <button
           onClick={onToggle}
           aria-expanded={isOpen}
-          className="w-full flex items-center justify-between py-[18px] bg-transparent border-none cursor-pointer text-left"
+          className="w-full flex items-center justify-between py-[18px] bg-transparent border-none cursor-pointer text-start"
         >
           <span className="flex items-baseline gap-3">
             <span className="text-[11px] font-bold text-brand-orange/60 tabular-nums">{index}</span>
@@ -899,7 +918,7 @@ function MobileNavRow({ to, title, desc, icon, thumbnail, onNavigate }: {
         <span className="block text-[14px] font-semibold text-carbon">{title}</span>
         {desc && <span className="block text-[12px] text-slate leading-snug mt-0.5 truncate">{desc}</span>}
       </span>
-      <ArrowRight size={13} className="text-bone shrink-0 transition-all duration-200 group-active:text-brand-orange group-active:translate-x-0.5" />
+      <ArrowRight size={13} className="text-bone shrink-0 rtl:-scale-x-100 transition-all duration-200 group-active:text-brand-orange group-active:translate-x-0.5 rtl:group-active:-translate-x-0.5" />
     </Link>
   );
 }

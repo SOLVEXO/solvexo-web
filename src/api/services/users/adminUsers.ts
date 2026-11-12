@@ -1,5 +1,6 @@
 import client from '../../client';
 import { ENDPOINTS } from '../../endpoints';
+import type { ClientTrustColumns, ClientTrustFilters } from '../admin/adminSellerTrust';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -12,7 +13,7 @@ export interface AdminUsersStats {
   suspended: number;
 }
 
-export interface AdminUsersQuery {
+export interface AdminUsersQuery extends ClientTrustFilters {
   status?: string;
   search?: string;
   page?: number;
@@ -21,7 +22,7 @@ export interface AdminUsersQuery {
 
 // This page lists SELLER accounts only — a buyer has no store of their own
 // (see StoreCustomer below for how buyers are actually managed, per-store).
-export interface SellerRow {
+export interface SellerRow extends ClientTrustColumns {
   id: string;
   name: string;
   email: string;

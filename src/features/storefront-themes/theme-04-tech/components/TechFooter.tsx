@@ -4,6 +4,7 @@ import { handleOf } from '@/utils/activeStoreText';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
+import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
 import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from './nav/FooterColumns';
 import { PaymentBadges } from './nav/FooterParts';
@@ -38,7 +39,7 @@ export function TechFooter() {
   const socialsNode = bottomSocials.length > 0 && <div className="[&>div]:mt-0"><SocialRow socials={bottomSocials} k={{ fg, muted }} look={opts.socialStyle} color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} /></div>;
   const paymentNode = paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />;
   const legalLinks = legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>);
-  const copyrightNode = <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>;
+  const copyrightNode = <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}<VerifiedBusinessBadge badges={store.badges} className="ms-2" /></p>;
 
   const tokens: FooterColumnTokens = {
     fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted,

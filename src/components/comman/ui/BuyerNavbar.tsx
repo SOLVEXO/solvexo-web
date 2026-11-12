@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye, Loader2, Globe } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye, Loader2, Globe, ShieldCheck } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetRecentSearches, apiSearchStores } from '@/api/services/search';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
@@ -244,6 +244,9 @@ function StoreMatchRow({ store, query, onClick }: { store: PublicStoreListItem; 
           <HighlightMatch text={store.name} query={query} />
         </p>
         <p className="text-[10.5px] text-slate truncate mt-[3px]">
+          {store.badges?.includes('verified') && (
+            <span className="inline-flex items-center gap-[3px] text-success font-semibold mr-1.5"><ShieldCheck size={10} aria-hidden /> Verified business ·</span>
+          )}
           {store.followersCount > 0 ? `${store.followersCount.toLocaleString()} followers` : 'Store'}
         </p>
       </div>

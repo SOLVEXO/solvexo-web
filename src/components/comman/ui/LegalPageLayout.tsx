@@ -7,6 +7,8 @@ import { scrollRootRef } from '@/utils/scrollRoot';
 import { Reveal } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { LEGAL_LAYOUT_TEXT } from './LegalPageLayout.text';
 
 const SERIF = "'Lora', Georgia, serif";
 const WORDS_PER_MINUTE = 200;
@@ -88,6 +90,7 @@ function useRevealOnScroll<T extends HTMLElement>(id: string, revealed: Set<stri
  *  content array. */
 export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relatedPages = [] }: LegalPageLayoutProps) {
   const navigate = useNavigate();
+  const t = useSiteText(LEGAL_LAYOUT_TEXT);
   const [activeId, setActiveId] = useState(sections[0]?.id ?? '');
   const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -156,21 +159,21 @@ export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relate
         </Reveal>
         <Reveal delay={0.14}>
           <div className="flex items-center gap-3 flex-wrap text-[12.5px] text-slate">
-            <span>Last updated {lastUpdated}</span>
+            <span>{t.lastUpdated(lastUpdated)}</span>
             <span className="text-bone">•</span>
-            <span>{readingMinutes} min read</span>
-            <div className="print:hidden flex items-center gap-2 sm:ml-auto">
+            <span>{t.minRead(readingMinutes)}</span>
+            <div className="print:hidden flex items-center gap-2 sm:ms-auto">
               <button
                 onClick={() => window.print()}
                 className="flex items-center gap-1.5 px-3 py-[6px] rounded-md border border-bone text-[12px] font-medium text-charcoal bg-white hover:bg-cream transition-colors cursor-pointer"
               >
-                <Printer size={13} /> Print
+                <Printer size={13} /> {t.print}
               </button>
               <button
                 onClick={handleCopyLink}
                 className="flex items-center gap-1.5 px-3 py-[6px] rounded-md border border-bone text-[12px] font-medium text-charcoal bg-white hover:bg-cream transition-colors cursor-pointer"
               >
-                {copied ? <><Check size={13} className="text-success" /> Copied</> : <><Link2 size={13} /> Copy Link</>}
+                {copied ? <><Check size={13} className="text-success" /> {t.copied}</> : <><Link2 size={13} /> {t.copyLink}</>}
               </button>
             </div>
           </div>
@@ -181,15 +184,15 @@ export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relate
       <div className="max-w-[1100px] mx-auto px-4 md:px-6 py-12 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-12 items-start">
 
         {/* Table of contents — desktop only, sticky */}
-        <nav aria-label="Table of contents" className="print:hidden hidden lg:block sticky top-16">
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.08em] mb-3">On this page</p>
-          <ul className="flex flex-col gap-[2px] border-l border-bone">
+        <nav aria-label={t.tocLabel} className="print:hidden hidden lg:block sticky top-16">
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.08em] rtl:tracking-normal mb-3">{t.onThisPage}</p>
+          <ul className="flex flex-col gap-[2px] border-s border-bone">
             {sections.map((s, i) => (
               <li key={s.id}>
                 <button
                   onClick={() => scrollTo(s.id)}
                   className={clsx(
-                    'w-full text-left pl-4 pr-2 py-[7px] -ml-px border-l-2 text-[12.5px] transition-colors cursor-pointer bg-transparent',
+                    'w-full text-start ps-4 pe-2 py-[7px] -ms-px border-s-2 text-[12.5px] transition-colors cursor-pointer bg-transparent',
                     activeId === s.id
                       ? 'border-brand-orange text-brand-orange font-semibold'
                       : 'border-transparent text-slate hover:text-carbon',
@@ -224,13 +227,13 @@ export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relate
                   <LifeBuoy size={16} className="text-brand-orange" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-bold text-carbon">Still have questions?</p>
-                  <p className="text-[12.5px] text-slate mt-0.5">Our support team can help clarify anything in this document.</p>
+                  <p className="text-[14px] font-bold text-carbon">{t.stillQuestions}</p>
+                  <p className="text-[12.5px] text-slate mt-0.5">{t.supportHelp}</p>
                 </div>
               </div>
               <MagneticButton className="shrink-0">
                 <Button variant="outline" size="sm" onClick={() => navigate('/faq')}>
-                  Contact Support
+                  {t.contactSupport}
                 </Button>
               </MagneticButton>
             </PremiumCard>
@@ -247,7 +250,7 @@ export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relate
                 >
                   <p className="text-[13px] font-semibold text-carbon flex items-center justify-between gap-2">
                     {p.title}
-                    <ArrowRight size={14} className="text-slate shrink-0" />
+                    <ArrowRight size={14} className="text-slate shrink-0 rtl:-scale-x-100" />
                   </p>
                   <p className="text-[12px] text-slate mt-1 leading-[1.5]">{p.description}</p>
                 </PremiumCard>

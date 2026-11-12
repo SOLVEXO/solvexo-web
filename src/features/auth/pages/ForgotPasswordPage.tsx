@@ -9,18 +9,22 @@ import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/valid
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { FORGOT_PASSWORD_TEXT } from './ForgotPasswordPage.text';
+import { AUTH_SHARED_TEXT, formError } from './authPages.text';
 
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
-const HIGHLIGHTS = [
-  { Icon: KeyRound,    text: 'Get a secure reset code by email' },
-  { Icon: Clock,       text: 'Codes expire quickly for your safety' },
-  { Icon: ShieldCheck, text: 'Your account stays protected throughout' },
-];
+// Text: FORGOT_PASSWORD_TEXT.highlights (one per icon, same order).
+const HIGHLIGHT_ICONS = [KeyRound, Clock, ShieldCheck];
 
 export function ForgotPasswordPage() {
   const navigate       = useNavigate();
-  usePageTitle('Forgot Password');
+  const { pageLang } = useSiteLang();
+  const t = useSiteText(FORGOT_PASSWORD_TEXT);
+  const s = useSiteText(AUTH_SHARED_TEXT);
+  usePageTitle(t.pageTitle);
   const forgotPassword = useForgotPassword();
 
   const { values, errors, set, blur, handleSubmit } = useForm(
@@ -45,31 +49,32 @@ export function ForgotPasswordPage() {
     // auth-visual-region.const.ts) instead of borrowing from Register/Login.
     <AuthSplitLayout
       pageContext="forgot_password"
-      heading="Forgot your way in? No problem."
-      subtext="We'll email you a secure code to get you straight back into your account."
-      highlights={HIGHLIGHTS}
+      heading={t.heading}
+      subtext={t.subtext}
+      highlights={t.highlights.map((text, i) => ({ Icon: HIGHLIGHT_ICONS[i], text }))}
     >
-      <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">
-        Forgot your password?
+      <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-start">
+        {t.title}
       </h1>
-      <p className="text-[13px] text-slate mb-6 leading-[1.6] text-center lg:text-left">
-        Enter your email and we'll send you a reset code.
+      <p className="text-[13px] text-slate mb-6 leading-[1.6] text-center lg:text-start">
+        {t.intro}
       </p>
 
       <div className="mb-5">
         <Input
           id="forgot-email"
-          label="Email Address"
-          type="email" placeholder="Enter Your Email Address" autoComplete="email"
+          label={s.emailLabel}
+          type="email" placeholder={s.emailPlaceholder} autoComplete="email"
+          dir="ltr" className={pageLang === 'ar' ? 'placeholder-shown:text-right' : undefined}
           value={values.email} onChange={set('email')} onBlur={blur('email')}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          error={errors.email}
+          error={formError(errors.email, pageLang)}
         />
       </div>
 
       <MagneticButton className="block">
         <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={forgotPassword.loading}>
-          Send Reset Code
+          {t.sendCode}
         </Button>
       </MagneticButton>
 
@@ -84,11 +89,11 @@ export function ForgotPasswordPage() {
         variant="ghost"
         size="sm"
         fullWidth
-        icon={<ArrowLeft size={13} />}
+        icon={<ArrowLeft size={13} className="rtl:-scale-x-100" />}
         onClick={() => navigate('/login')}
         className="mt-6 text-slate!"
       >
-        Back to Sign In
+        {t.backToSignIn}
       </Button>
     </AuthSplitLayout>
   );

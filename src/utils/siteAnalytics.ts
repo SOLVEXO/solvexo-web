@@ -7,9 +7,9 @@
 const TRACKED_EXACT = new Set([
   '/', '/pricing', '/sellers', '/faq', '/privacy-policy', '/terms-of-service', '/cookie-policy', '/contact-us',
   '/book-demo', '/about', '/security', '/products', '/solutions',
-  '/register', '/signup', '/verify-otp', '/onboard', '/login',
+  '/register', '/signup', '/verify-otp', '/onboard', '/login', '/start', '/manuals', '/blog',
 ]);
-const TRACKED_PREFIXES = ['/products/', '/solutions/', '/onboard/'];
+const TRACKED_PREFIXES = ['/products/', '/solutions/', '/onboard/', '/blog/'];
 
 export function isTrackedPath(pathname: string): boolean {
   const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;

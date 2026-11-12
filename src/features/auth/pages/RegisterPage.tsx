@@ -18,6 +18,10 @@ import { getSellerAcquisitionFields } from '@/utils/sellerAcquisitionAttribution
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
+import { useSiteText } from '@/i18n/site/useSiteText';
+import { useSiteLang } from '@/i18n/site/siteLangContext';
+import { REGISTER_TEXT } from './RegisterPage.text';
+import { AUTH_SHARED_TEXT, formError } from './authPages.text';
 
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
@@ -40,6 +44,8 @@ const HIGHLIGHTS = [
   { Icon: Sparkles,    text: 'Analytics from day one' },
   { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
+// The text lives in AUTH_SHARED_TEXT.sellerHighlights (one per icon, same order).
+const HIGHLIGHT_ICONS = [Store, Sparkles, ShieldCheck];
 
 // One screen, not three — the account type is decided by HOW someone got
 // here, never asked twice: a "Sell on Solvexo" CTA arrives as
@@ -76,7 +82,13 @@ const SELLER_ONLY_REGISTER = true;
 export function RegisterPage() {
   const navigate  = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  usePageTitle('Register');
+  const { pageLang } = useSiteLang();
+  const t = useSiteText(REGISTER_TEXT);
+  const s = useSiteText(AUTH_SHARED_TEXT);
+  const HIGHLIGHTS = s.sellerHighlights.map((text, i) => ({ Icon: HIGHLIGHT_ICONS[i], text }));
+  // Email/password/phone stay left-to-right inside the Arabic page; the placeholder sits on the right until typing starts.
+  const ltrPlaceholder = pageLang === 'ar' ? 'placeholder-shown:text-right' : undefined;
+  usePageTitle(t.pageTitle);
   const register  = useRegister();
   const [showPass, setShowPass] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -162,21 +174,21 @@ export function RegisterPage() {
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
       pageContext="register"
       heading={isSeller
-        ? <>Launch your <span className="text-brand-orange">store</span> today</>
-        : <>Start <span className="text-brand-orange">selling</span> or shopping today</>}
-      subtext="Create your free Solvexo account and launch a store built around how you sell."
+        ? <>{t.sellerHeroBefore}<span className="text-brand-orange">{t.sellerHeroAccent}</span>{t.sellerHeroAfter}</>
+        : <>{t.buyerHeroBefore}<span className="text-brand-orange">{t.buyerHeroAccent}</span>{t.buyerHeroAfter}</>}
+      subtext={t.subtext}
       highlights={HIGHLIGHTS}
       maxWidth="max-w-[520px]"
     >
-      <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
+      <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-start">
         {showChooser
-          ? <>Welcome <span className="text-brand-orange">back</span></>
+          ? <>{t.welcomeBefore}<span className="text-brand-orange">{t.welcomeAccent}</span>{t.welcomeAfter}</>
           : isSeller
-            ? <>Create your <span className="text-brand-orange">seller</span> account</>
-            : <>Create your <span className="text-brand-orange">account</span></>}
+            ? <>{t.createSellerBefore}<span className="text-brand-orange">{t.createSellerAccent}</span>{t.createSellerAfter}</>
+            : <>{t.createBefore}<span className="text-brand-orange">{t.createAccent}</span>{t.createAfter}</>}
       </h1>
-      <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
-        {showChooser ? 'Looks like you\'ve used Solvexo on this device before' : 'Sign up with email, or continue with a social account'}
+      <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-start">
+        {showChooser ? t.usedBefore : t.signUpWith}
       </p>
 
       {showChooser && remembered ? (
@@ -187,14 +199,14 @@ export function RegisterPage() {
           <button
             type="button"
             onClick={() => navigate(isSeller ? '/login?role=seller' : '/login')}
-            className="w-full flex items-center gap-3 p-3 rounded-xl border border-bone bg-white cursor-pointer text-left hover:border-brand-orange hover:bg-brand-pale-orange/20 transition-colors mb-3"
+            className="w-full flex items-center gap-3 p-3 rounded-xl border border-bone bg-white cursor-pointer text-start hover:border-brand-orange hover:bg-brand-pale-orange/20 transition-colors mb-3"
           >
             <Avatar name={remembered.name} size={40} />
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold text-carbon truncate">{remembered.name}</p>
               <p className="text-[12px] text-slate truncate">{remembered.email}</p>
             </div>
-            <ArrowRight size={16} className="text-slate shrink-0" />
+            <ArrowRight size={16} className="text-slate shrink-0 rtl:-scale-x-100" />
           </button>
 
           <Button
@@ -202,7 +214,7 @@ export function RegisterPage() {
             onClick={addNewAccount}
             className="mb-3 lg:mb-4"
           >
-            Add new account
+            {s.addNewAccount}
           </Button>
         </>
       ) : (
@@ -219,23 +231,24 @@ export function RegisterPage() {
           {social.error && (
             <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info" {...fadeSlide}>
               <Info size={14} className="shrink-0" />
-              <span>{social.error}</span>
+              <span>{formError(social.error, pageLang)}</span>
             </motion.div>
           )}
 
           <div className="flex items-center gap-3 mb-3 lg:mb-4">
             <div className="flex-1 h-px bg-bone" />
-            <span className="text-[11px] text-slate">or continue with email</span>
+            <span className="text-[11px] text-slate">{s.orContinueWithEmail}</span>
             <div className="flex-1 h-px bg-bone" />
           </div>
         </>
       )}
 
       <Input
-        label="Email Address" type="email" placeholder="Enter Your Email Address" autoComplete="email"
+        label={s.emailLabel} type="email" placeholder={s.emailPlaceholder} autoComplete="email"
+        dir="ltr" className={ltrPlaceholder}
         value={values.email} onChange={set('email')} onBlur={blur('email')}
         onKeyDown={e => e.key === 'Enter' && nameRef.current?.focus()}
-        error={errors.email}
+        error={formError(errors.email, pageLang)}
         autoFocus
       />
 
@@ -246,28 +259,32 @@ export function RegisterPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-3 mt-3">
             <Input
               ref={nameRef}
-              label="Full Name" placeholder="Enter Your Name" autoComplete="name"
+              label={t.nameLabel} placeholder={t.namePlaceholder} autoComplete="name"
               value={values.name} onChange={set('name')} onBlur={blur('name')}
-              error={errors.name}
+              error={formError(errors.name, pageLang)}
             />
-            <PhoneInput
-              label="Phone Number" placeholder="Enter Your Phone Number"
-              value={values.phone} onChange={v => setValue('phone', v)} onBlur={blur('phone')}
-              error={errors.phone} defaultCountry={detectedCountry}
-            />
+            {/* Flag/dial code + number stay left-to-right in Arabic too (the label still follows the page). */}
+            <div className={pageLang === 'ar' ? '[&_.PhoneInput]:[direction:ltr] [&_input]:placeholder-shown:text-right' : undefined}>
+              <PhoneInput
+                label={t.phoneLabel} placeholder={t.phonePlaceholder}
+                value={values.phone} onChange={v => setValue('phone', v)} onBlur={blur('phone')}
+                error={formError(errors.phone, pageLang)} defaultCountry={detectedCountry}
+              />
+            </div>
             <Input
-              label="Address" placeholder="Enter Your Address" autoComplete="street-address"
+              label={t.addressLabel} placeholder={t.addressPlaceholder} autoComplete="street-address"
               value={values.address} onChange={set('address')} onBlur={blur('address')}
-              error={errors.address}
+              error={formError(errors.address, pageLang)}
             />
             <Input
-              label="Password" type={showPass ? 'text' : 'password'} placeholder="Create a Password" autoComplete="new-password"
+              label={s.passwordLabel} type={showPass ? 'text' : 'password'} placeholder={t.passwordPlaceholder} autoComplete="new-password"
+              dir="ltr" className={ltrPlaceholder}
               value={values.password} onChange={set('password')} onBlur={blur('password')}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              error={errors.password}
+              error={formError(errors.password, pageLang)}
               rightIcon={
                 <button type="button" onClick={() => setShowPass(s => !s)}
-                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                  aria-label={showPass ? s.hidePassword : s.showPassword}
                   className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -280,9 +297,9 @@ export function RegisterPage() {
               variant="primary" size="md" fullWidth
               onClick={handleSubmit}
               loading={register.loading}
-              iconRight={!register.loading && <ArrowRight size={14} />}
+              iconRight={!register.loading && <ArrowRight size={14} className="rtl:-scale-x-100" />}
             >
-              {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
+              {isSeller ? t.createSeller : t.createBuyer}
             </Button>
           </MagneticButton>
         </motion.div>
@@ -297,7 +314,7 @@ export function RegisterPage() {
       {!register.error && social.error && emailEntered && (
         <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info" {...fadeSlide}>
           <Info size={14} className="shrink-0" />
-          <span>{social.error}</span>
+          <span>{formError(social.error, pageLang)}</span>
         </motion.div>
       )}
 
@@ -305,7 +322,7 @@ export function RegisterPage() {
         <motion.div {...fadeSlide}>
           <div className="flex items-center gap-3 my-2.5 lg:my-4">
             <div className="flex-1 h-px bg-bone" />
-            <span className="text-[11px] text-slate">or continue with</span>
+            <span className="text-[11px] text-slate">{s.orContinueWith}</span>
             <div className="flex-1 h-px bg-bone" />
           </div>
 
@@ -320,17 +337,17 @@ export function RegisterPage() {
       )}
 
       <p className="text-center text-[12px] text-slate mt-3">
-        Already have an account?{' '}
+        {t.haveAccount}{' '}
         <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
-          Sign In
+          {s.signIn}
         </Button>
       </p>
       {/* Covers email and Google sign-up alike. Opens in a new tab so the half-filled form isn't lost. */}
       <p className="text-center text-[11px] text-slate mt-2 leading-[1.5]">
-        By creating an account, you agree to Solvexo's{' '}
-        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">Terms of Service</a>
-        {' '}and{' '}
-        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">Privacy Policy</a>.
+        {t.termsBefore}{' '}
+        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">{t.terms}</a>
+        {t.andJoin}
+        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-charcoal">{t.privacy}</a>{t.termsAfter}
       </p>
     </AuthSplitLayout>
   );

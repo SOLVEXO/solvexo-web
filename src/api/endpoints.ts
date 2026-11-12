@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     ADMIN: {
       STATS:     '/api/admin/users/stats',
       LIST:      '/api/admin/users',
+      EXPORT:    '/api/admin/users/export',
       GET_BY_ID: (role: string, id: string) => `/api/admin/users/${role}/${id}`,
       SUSPEND:   (role: string, id: string) => `/api/admin/users/${role}/${id}/suspend`,
       UNSUSPEND: (role: string, id: string) => `/api/admin/users/${role}/${id}/unsuspend`,
@@ -39,6 +40,24 @@ export const ENDPOINTS = {
     HEALTH:        '/api/admin/clients/health',
     HEALTH_EXPORT: '/api/admin/clients/health/export',
     STORE_HEALTH:  (storeId: string) => `/api/admin/clients/health/store/${storeId}`,
+    BUSINESS_PROFILE: (sellerId: string) => `/api/admin/clients/${sellerId}/business-profile`,
+  },
+
+  // ── SELLER TRUST (Admin — business verification audit, review queue,
+  // NTN checks, payout holds, reminders and the enforcement switch) ────────
+  SELLER_TRUST: {
+    SUMMARY:      '/api/admin/seller-trust/summary',
+    STORES:       '/api/admin/seller-trust/stores',
+    EXPORT:       '/api/admin/seller-trust/stores/export',
+    STORE:        (storeId: string) => `/api/admin/seller-trust/stores/${storeId}`,
+    UNDER_REVIEW: (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/under-review`,
+    APPROVE:      (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/approve`,
+    REJECT:       (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/reject`,
+    REQUEST_INFO: (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/request-info`,
+    NTN_CHECK:    (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/ntn-check`,
+    PAYOUT_HOLD:  (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/payout-hold`,
+    REMIND:       '/api/admin/seller-trust/remind',
+    SETTINGS:     '/api/admin/seller-trust/settings',
   },
 
   // ── PLATFORM CONFIG (Admin) ────────────────────────────────────────────────

@@ -41,10 +41,18 @@ export function useLocalCurrency(): LocalCurrency | null {
   return typeof window !== 'undefined' ? pickLocalCurrency(window.location.pathname, rates) : null;
 }
 
-/** "Rs 8,020": a US$ amount in the local currency, rounded to a friendly figure (nearest 10 above 100). */
-export function formatLocal(usd: number, local: LocalCurrency): string {
+/** Currency names the Arabic site uses (GCC). */
+const ARABIC_SYMBOL: Record<string, string> = { AED: 'د.إ', SAR: 'ر.س', QAR: 'ر.ق', KWD: 'د.ك', BHD: 'د.ب', OMR: 'ر.ع', USD: 'دولار' };
+
+/**
+ * "Rs 8,020" / "AED 107" (Arabic site: "107 د.إ"): a US$ amount in the local currency, rounded to a friendly figure
+ * (nearest 10 above 100; whole units below).
+ */
+export function formatLocal(usd: number, local: LocalCurrency, lang: 'en' | 'ar' = 'en'): string {
   const raw = usd * local.ratePerUSD;
   const rounded = raw >= 100 ? Math.round(raw / 10) * 10 : Math.round(raw);
+  const n = rounded.toLocaleString('en-US');
+  if (lang === 'ar') return `${n} ${ARABIC_SYMBOL[local.code] ?? local.code}`;
   const label = local.code === 'PKR' ? 'Rs' : local.code;
-  return `${label} ${rounded.toLocaleString('en-US')}`;
+  return `${label} ${n}`;
 }

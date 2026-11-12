@@ -76,6 +76,8 @@ const SolutionPage         = lazy(() => import('@/features/buyer/pages/solutions
 const NotFoundPage   = lazy(() => import('@/features/buyer/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const BlogIndexPage  = lazy(() => import('@/features/buyer/pages/blog/BlogIndexPage').then(m => ({ default: m.BlogIndexPage })));
 const BlogPostPage   = lazy(() => import('@/features/buyer/pages/blog/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
+const ManualsPage    = lazy(() => import('@/features/buyer/pages/ManualsPage').then(m => ({ default: m.ManualsPage })));
+const StartPage      = lazy(() => import('@/features/buyer/pages/StartPage').then(m => ({ default: m.StartPage })));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/features/storefront/StorefrontLayout').then(m => ({ default: m.StorefrontLayout })));
@@ -190,6 +192,8 @@ const SalesLeadDetail = lazy(() => import('@/features/admin/pages/sales/SalesLea
 const AdminSaasMetrics = lazy(() => import('@/features/admin/pages/AdminSaasMetrics').then(m => ({ default: m.AdminSaasMetrics })));
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
+const AdminSellerTrust = lazy(() => import('@/features/admin/pages/AdminSellerTrust').then(m => ({ default: m.AdminSellerTrust })));
+const SellerTrustReview = lazy(() => import('@/features/admin/pages/sellerTrust/SellerTrustReview').then(m => ({ default: m.SellerTrustReview })));
 const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
 // AdminPlatformPlans is no longer its own route — it renders inside AdminBilling.
 const AdminBilling = lazy(() => import('@/features/admin/pages/AdminBilling').then(m => ({ default: m.AdminBilling })));
@@ -336,6 +340,8 @@ const mainRouter = createBrowserRouter([
               { path: 'solutions/:slug', element: <SolutionPage /> },
               { path: 'blog',            element: <BlogIndexPage /> },
               { path: 'blog/:slug',      element: <BlogPostPage /> },
+              { path: 'manuals',         element: <ManualsPage /> },
+              { path: 'start',           element: <StartPage /> },
               // Unknown public address: a real not-found page (noindex) instead of redirecting to the home page,
               // which search engines report as a "soft 404".
               { path: '*',               element: <NotFoundPage /> },
@@ -457,12 +463,9 @@ const mainRouter = createBrowserRouter([
           { path: 'files',                            element: <FilesLibrary /> },
           { path: 'faqs',                             element: <StoreFaqs /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
-          // Verification's sidebar NAV item and workspace banner were removed
-          // (dashboard-declutter request) while the underlying feature/page/
-          // backend stay intact — this redirect just keeps the old URL from
-          // 404ing for anyone with it bookmarked or linked, matching the
-          // activity/followers/pos-admin pattern below.
-          { path: 'verification',                     element: <Navigate to="../settings" replace /> },
+          // "Verify your business" lives in the Settings hub as its own tab;
+          // this keeps the old URL (notification links, sellerRouting) working.
+          { path: 'verification',                     element: <Navigate to="../settings/verification" replace /> },
           { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
           { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
           // `:themeId` is carried in the URL for a real reason now — it used
@@ -596,6 +599,9 @@ const mainRouter = createBrowserRouter([
           { path: 'clients',      element: <RequireRole role="admin"><AdminClients /></RequireRole> },
           { path: 'app-platform', element: <RequireRole role="admin"><AdminAppPlatform /></RequireRole> },
           { path: 'clients/:id',  element: <RequireRole role="admin"><AdminClientDetail /></RequireRole> },
+          // Seller trust: business verification audit, review queue and enforcement.
+          { path: 'seller-trust', element: <RequireRole role="admin"><AdminSellerTrust /></RequireRole> },
+          { path: 'seller-trust/:storeId', element: <RequireRole role="admin"><SellerTrustReview /></RequireRole> },
           // Moderation is a tab inside Clients Manage now (AdminClients.tsx
           // renders AdminModeration directly, embedded) — not its own route.
           { path: 'moderation',   element: <Navigate to="../clients" replace /> },

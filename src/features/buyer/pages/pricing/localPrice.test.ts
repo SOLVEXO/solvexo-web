@@ -19,3 +19,11 @@ describe('pricing page local currency', () => {
     expect(formatLocal(0.2, pk)).toBe('Rs 55');
   });
 });
+
+describe('Arabic site currency labels', () => {
+  it('writes the amount first with the Arabic currency name', () => {
+    expect(formatLocal(29, { code: 'AED', ratePerUSD: 3.6725 }, 'ar')).toBe('110 د.إ');
+    expect(formatLocal(6, { code: 'SAR', ratePerUSD: 3.75 }, 'ar')).toBe('23 ر.س');
+    expect(formatLocal(29, { code: 'AED', ratePerUSD: 3.6725 })).toBe('AED 110');
+  });
+});

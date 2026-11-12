@@ -4,6 +4,7 @@ import { ts, tsNodes } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
+import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
 import { hasSocialTarget } from '../../navigation/socialLinks';
 import { fashionTheme as t } from '../theme.config';
@@ -52,7 +53,7 @@ export function FashionFooter() {
   const padX = 'clamp(24px, 4vw, 56px)';
   const stacked = opts.bottomLayout === 'stacked';
   const wordmarkSrc = opts.wordmarkSource === 'store' ? store.logo : opts.wordmarkSource === 'custom' ? opts.wordmarkUrl : null;
-  const copyrightNode = <p className="m-0">{copyright && copyrightBlock?._id && editing ? <EditableText value={copyright} settingKey="text" blockId={copyrightBlock._id} /> : copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}</p>;
+  const copyrightNode = <p className="m-0">{copyright && copyrightBlock?._id && editing ? <EditableText value={copyright} settingKey="text" blockId={copyrightBlock._id} /> : copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}<VerifiedBusinessBadge badges={store.badges} className="ms-2" /></p>;
   const socialsNode = bottomSocials.length > 0 && <div className="[&>div]:mt-0"><SocialRow socials={bottomSocials} k={{ fg, muted }} look={opts.socialStyle} center color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} /></div>;
   const paymentNode = paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />;
   const legalLinks = legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>);

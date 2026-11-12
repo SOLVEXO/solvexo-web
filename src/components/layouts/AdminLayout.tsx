@@ -9,7 +9,7 @@ import {
   BarChart3, Search, LogOut, Percent, Coins, Activity,
   TrendingUp, ChevronRight, ChevronDown, Palette, Smartphone, Mail,
   Tag, Target, Handshake,
-  MousePointerClick,
+  MousePointerClick, ShieldCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -37,6 +37,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   // Moderation is a tab inside this page now (AdminClients.tsx), not its
   // own nav destination — see that file's own comment.
   { id: 'clients',       Icon: Users,           label: 'Clients Manage',  path: '/admin/clients'       },
+  { id: 'seller-trust',  Icon: ShieldCheck,     label: 'Seller trust',    path: '/admin/seller-trust'  },
   { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
   // Subscriptions (seller's own customer billing) and Platform Plans
   // (seller-to-Solvexo SaaS billing) merged into one "Billing" page
@@ -152,6 +153,8 @@ export const ADMIN_MODULES: AdminModule[] = [
   // AdminClients.tsx), so this is a bare top-level link, same as
   // Content/Analytics below, not a group needing its own heading.
   { id: 'clients',   label: 'Clients Manage',        Icon: Users,          ids: ['clients'] },
+  // Business verification: audit, review queue, payout holds, enforcement.
+  { id: 'seller-trust', label: 'Seller trust',       Icon: ShieldCheck,    ids: ['seller-trust'] },
   // Standalone, not under Billing — this is a mobile-app-build request
   // queue (seller white-label branded apps), unrelated to buyer-subscribes-
   // to-seller-plan monitoring or Solvexo's own SaaS plan catalog, which is
@@ -202,7 +205,7 @@ const NAV_PERMISSION: Record<string, string | string[]> = {
   sales: ['sales.access', 'sales.manage'],
   // Partners (resellers / agents) and reps see their own commissions; the owner sees it too (it explains how to set it up).
   earnings: ['partner.portal', 'sales.access', 'sales.manage'],
-  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'activity-log': 'activity.view',
+  overview: 'analytics.view', analytics: 'analytics.view', 'saas-metrics': 'analytics.view', visitors: 'analytics.view', clients: 'clients.view', 'seller-trust': 'clients.view', 'activity-log': 'activity.view',
   billing: 'billing.manage', 'theme-catalog': 'themes.manage', 'store-app-requests': 'apps.manage', finance: 'finance.view',
   'commission-rules': 'commission.manage', 'fx-settings': 'commission.manage', seo: 'seo.manage',
   content: 'content.manage', newsletter: 'content.manage', 'platform-coupons': 'marketing.manage', config: 'config.manage', 'app-platform': 'config.manage',
