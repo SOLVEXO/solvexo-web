@@ -434,6 +434,13 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30 },
       { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
       { key: 'fields', kind: 'formFields', label: 'Form fields', hint: 'Choose what visitors fill in. Add any field you need (name, phone, order number, a dropdown...). Answers arrive in Contact Messages.' },
+      { key: 'formName', kind: 'text', label: 'Form name', maxLength: 60, placeholder: 'e.g. Wholesale request', hint: 'Shown in your Contact Messages so answers of different forms can be told apart.' },
+      { key: 'successAction', kind: 'select', label: 'After sending', options: [{ value: 'message', label: 'Show the thank-you message' }, { value: 'redirect', label: 'Send the visitor to another page' }] },
+      { key: 'redirectUrl', kind: 'text', label: 'Send the visitor to', maxLength: 300, placeholder: 'https://… or /pages/thank-you', hint: 'An https:// link or a page on your store, starting with /.', showIf: s => s.successAction === 'redirect' },
+      { key: 'notifyEmails', kind: 'text', label: 'Email every answer to', maxLength: 600, placeholder: 'you@shop.com, team@shop.com', hint: 'Up to 5 addresses, separated by commas. Every new message is also in Contact Messages.' },
+      { key: 'autoReplyEnabled', kind: 'checkbox', label: 'Send the visitor an automatic reply', defaultOff: true },
+      { key: 'autoReplySubject', kind: 'text', label: 'Reply subject', maxLength: 120, placeholder: 'We got your message', showIf: s => s.autoReplyEnabled === true },
+      { key: 'autoReplyBody', kind: 'textarea', label: 'Reply text', rows: 5, maxLength: 2000, placeholder: 'Hi {{name}},\n\nThanks for contacting {{store}}. We received your message and will get back to you soon.', hint: 'Plain text. You can use {{name}}, {{store}} and {{form}}. Needs an Email field. Each address gets at most one automatic reply a day.', showIf: s => s.autoReplyEnabled === true },
     ]),
   },
   {
