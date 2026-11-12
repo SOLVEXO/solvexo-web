@@ -15,6 +15,9 @@ const FILTERS: { value: ContactMessageStatus | ''; label: string }[] = [
   { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'archived', label: 'Archived' },
 ];
 
+/** Who sent it: the form may have no Name field, so fall back to the email, the phone or a plain word. */
+const who = (m: ContactMessage) => m.name || m.email || m.phone || 'Visitor';
+
 /** Online Store → Contact Messages: what visitors sent through the storefront contact form. */
 export default function ContactMessages() {
   const { storeId, store } = useStoreWorkspace();
@@ -105,17 +108,27 @@ export default function ContactMessages() {
               <li key={m._id} className={`bg-white border rounded-[10px] p-4 flex flex-col gap-2 ${m.status === 'new' ? 'border-brand-orange/50' : 'border-bone'}`}>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
-                    <p className="text-[13.5px] font-semibold text-charcoal m-0">{m.name}{m.status === 'new' && <span className="ml-2 text-[10px] font-bold uppercase text-brand-orange">New</span>}</p>
-                    <p className="text-[12px] text-slate m-0">{m.email}{m.phone ? ` · ${m.phone}` : ''} · {new Date(m.createdAt).toLocaleString()}</p>
+                    <p className="text-[13.5px] font-semibold text-charcoal m-0">{who(m)}{m.status === 'new' && <span className="ml-2 text-[10px] font-bold uppercase text-brand-orange">New</span>}</p>
+                    <p className="text-[12px] text-slate m-0">{[m.email, m.phone, new Date(m.createdAt).toLocaleString()].filter(Boolean).join(' · ')}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => startReply(m)} aria-expanded={replyingId === m._id} className="px-2.5 py-1.5 rounded-md text-[12px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center gap-1"><Mail size={12} /> Reply</button>
+                    {m.email ? <button type="button" onClick={() => startReply(m)} aria-expanded={replyingId === m._id} className="px-2.5 py-1.5 rounded-md text-[12px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center gap-1"><Mail size={12} /> Reply</button> : <span className="px-2 text-[11px] text-slate">No email: contact by phone</span>}
                     {m.status !== 'read' && <button type="button" onClick={() => setStatus(m, 'read')} className="px-2.5 py-1.5 rounded-md text-[12px] text-slate bg-transparent border border-bone cursor-pointer">Mark read</button>}
                     {m.status !== 'archived' && <button type="button" onClick={() => setStatus(m, 'archived')} aria-label="Archive" title="Archive" className="p-1.5 text-slate bg-transparent border-0 cursor-pointer"><Archive size={14} /></button>}
                     <button type="button" onClick={() => setPendingDelete(m)} aria-label="Delete" title="Delete" className="p-1.5 text-error bg-transparent border-0 cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>
-                <p className="text-[13px] text-charcoal m-0 whitespace-pre-line">{m.message}</p>
+                {m.message && <p className="text-[13px] text-charcoal m-0 whitespace-pre-line">{m.message}</p>}
+                {(m.fields ?? []).some(f => !['name', 'email', 'phone'].includes(f.type) && f.value !== m.message) && (
+                  <dl className="m-0 grid grid-cols-1 gap-x-4 gap-y-1.5 rounded-lg bg-cream px-3 py-2.5 sm:grid-cols-[minmax(120px,auto)_1fr]">
+                    {(m.fields ?? []).filter(f => !['name', 'email', 'phone'].includes(f.type) && f.value !== m.message).map(f => (
+                      <div key={f.id} className="contents">
+                        <dt className="text-[12px] font-medium text-slate">{f.label}</dt>
+                        <dd className="m-0 whitespace-pre-line break-words text-[13px] text-charcoal">{f.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
                 {(m.replies ?? []).map((r, i) => (
                   <div key={i} className="ml-4 pl-3 border-l-2 border-brand-orange/50">
                     <p className="text-[11px] text-slate m-0">You replied · {new Date(r.sentAt).toLocaleString()}{r.sentBy ? ` · ${r.sentBy}` : ''}</p>
@@ -124,8 +137,8 @@ export default function ContactMessages() {
                 ))}
                 {replyingId === m._id && (
                   <div className="flex flex-col gap-2 border-t border-bone pt-3">
-                    {noContactEmail && <p role="alert" className="m-0 text-[12px] text-error">Your store has no contact email, so {m.name} cannot reply to this mail. Add one in Settings → Basic information.</p>}
-                    <label htmlFor={`reply-${m._id}`} className="text-[12px] font-medium text-charcoal">Reply to {m.name} ({m.email})</label>
+                    {noContactEmail && <p role="alert" className="m-0 text-[12px] text-error">Your store has no contact email, so {who(m)} cannot reply to this mail. Add one in Settings → Basic information.</p>}
+                    <label htmlFor={`reply-${m._id}`} className="text-[12px] font-medium text-charcoal">Reply to {who(m)} ({m.email})</label>
                     <textarea id={`reply-${m._id}`} value={replyText} onChange={e => setReplyText(e.target.value)} rows={5} maxLength={5000}
                       className="w-full border border-bone rounded-lg px-3 py-2 text-[16px] sm:text-[13px] outline-none focus:border-brand-orange" />
                     {replyError && <p role="alert" className="m-0 text-[12px] text-error">{replyError}</p>}
@@ -150,7 +163,7 @@ export default function ContactMessages() {
         )}
       </div>
       {pendingDelete && (
-        <ConfirmDialog title="Delete message" message={`Delete the message from ${pendingDelete.name}? This cannot be undone.`} confirmLabel="Delete" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} />
+        <ConfirmDialog title="Delete message" message={`Delete the message from ${who(pendingDelete)}? This cannot be undone.`} confirmLabel="Delete" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} />
       )}
     </>
   );

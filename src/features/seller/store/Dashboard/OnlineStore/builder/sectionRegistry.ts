@@ -2,6 +2,7 @@
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 import { FEATURE_ICON_OPTIONS } from '@/features/storefront-themes/featureIcons';
+import { legacyContactFields } from '@/features/storefront-themes/core/forms/contactFormFields';
 
 export interface SectionMeta {
   type:               SectionType;
@@ -421,18 +422,18 @@ export const SECTION_META: SectionMeta[] = [
   {
     type: 'contact_form', label: 'Contact Form', description: 'A form visitors use to message you. Messages arrive under Online Store → Contact Messages (and by email).',
     Icon: MailIcon, color: '#0D9488',
-    defaultSettings: { heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.', showPhone: true },
+    defaultSettings: {
+      heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.',
+      // The seller edits this list (add, remove, reorder, required...); it starts as the classic Name / Email / Phone / Message form.
+      fields: legacyContactFields({}),
+    },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'intro', kind: 'textarea', label: 'Text above the form', rows: 2, maxLength: 300 },
       { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30 },
       { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
-      { key: 'showPhone', kind: 'checkbox', label: 'Ask for a phone number' },
-      { key: 'nameLabel', kind: 'text', label: 'Name field label', maxLength: 40, placeholder: 'Name', half: true },
-      { key: 'emailLabel', kind: 'text', label: 'Email field label', maxLength: 40, placeholder: 'Email', half: true },
-      { key: 'phoneLabel', kind: 'text', label: 'Phone field label', maxLength: 40, placeholder: 'Phone (optional)', half: true, showIf: s => s.showPhone !== false },
-      { key: 'messageLabel', kind: 'text', label: 'Message field label', maxLength: 40, placeholder: 'Message', half: true },
+      { key: 'fields', kind: 'formFields', label: 'Form fields', hint: 'Choose what visitors fill in. Add any field you need (name, phone, order number, a dropdown...). Answers arrive in Contact Messages.' },
     ]),
   },
   {

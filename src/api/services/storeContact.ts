@@ -10,6 +10,8 @@ export interface ContactMessage {
   email: string;
   phone: string | null;
   message: string;
+  /** Every answer of the seller-built form, in the order of the form. */
+  fields?: { id: string; label: string; type: string; value: string }[];
   status: ContactMessageStatus;
   /** What the store answered from the inbox (oldest first). */
   replies?: { message: string; sentAt: string; sentBy: string }[];
@@ -39,7 +41,7 @@ export const apiDeleteContactMessage = (storeId: string, id: string) =>
   client.delete<never, ApiResponse<null>>(`/api/store-contact/${storeId}/${id}`);
 
 /** A visitor sends a message to the store (public). `website` is the bot-trap field and must stay empty. */
-export const apiSubmitContactMessage = (storeId: string, body: { name: string; email: string; phone?: string; message: string; website?: string }) =>
+export const apiSubmitContactMessage = (storeId: string, body: { sectionId?: string; answers: { fieldId: string; value: string | string[] }[]; website?: string }) =>
   client.post<never, ApiResponse<null>>(`/api/public/store-contact/${storeId}`, body);
 
 export const apiReplyContactMessage = (storeId: string, id: string, message: string) =>

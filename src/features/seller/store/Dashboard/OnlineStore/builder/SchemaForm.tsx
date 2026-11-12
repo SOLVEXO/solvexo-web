@@ -12,6 +12,7 @@ import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } fr
 import { apiListMetafieldDefinitions, type MetafieldDefinition, type MetafieldOwnerResource } from '@/api/services/metafields';
 import { FOCAL_POINTS } from '@/features/storefront-themes/imageFit';
 import { ProductRichEditor } from '@/features/seller/store/Dashboard/StoreSection/products/ProductContentFields';
+import { FormFieldsEditor } from './FormFieldsEditor';
 
 const MediaLibraryPickerModal = lazy(() => import('./MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })));
 
@@ -44,7 +45,7 @@ export type FieldKind =
   | 'image' | 'video' | 'url' | 'link' | 'datetime' | 'color' | 'focalPoint'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
   | 'metaobjectTypePicker' | 'metafieldKeyPicker'
-  | 'itemList' | 'shareNetworks';
+  | 'itemList' | 'shareNetworks' | 'formFields';
 
 export interface FieldOption { value: string; label: string }
 
@@ -417,6 +418,9 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'shareNetworks':
       return <ShareNetworksField settings={settings} set={set} />;
+
+    case 'formFields':
+      return <FormFieldsEditor settings={settings} set={set} />;
 
     case 'focalPoint': {
       // 3×3 grid: which part of the image must stay visible when it is cropped (becomes CSS object-position).
