@@ -52,7 +52,7 @@ export function useStoreWorkspace(): StoreWorkspaceValue {
 
 // ── Sidebar Nav ───────────────────────────────────────────────────────────────
 export { NAV, hasNavPermission, hasNavEntitlement, hiddenNavIds, visibleNavForUser, type NavItem } from './navConfig';
-import { NAV, hasNavPermission, visibleNavForUser, hiddenNavIds, type NavItem } from './navConfig';
+import { ACCOUNT_NAV, NAV, hasNavPermission, visibleNavForUser, hiddenNavIds, type NavItem } from './navConfig';
 
 
 const isStaffSession = () => TokenStorage.getUser<{ role?: AppRole }>()?.role === 'staff';
@@ -283,6 +283,10 @@ function buildPaletteItems(
         onSelect: () => navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`),
       });
     });
+  });
+  // Personal pages (not in the sidebar) stay reachable from Ctrl+K.
+  ACCOUNT_NAV.forEach(item => {
+    result.push({ id: item.id, label: item.label, group: 'Account', icon: item.Icon, onSelect: () => navigate(`/store/${storeId}/${item.path}`) });
   });
   return result;
 }
