@@ -11,6 +11,7 @@ import {
   type ContactMessage, type ContactMessageStatus,
 } from '@/api/services/storeContact';
 import { downloadBlob } from '@/utils/downloadBlob';
+import { FormReportModal } from './FormReportModal';
 
 const FILTERS: { value: ContactMessageStatus | ''; label: string }[] = [
   { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'archived', label: 'Archived' }, { value: 'spam', label: 'Spam' },
@@ -25,6 +26,8 @@ export default function ContactMessages() {
   const toast = useToast();
   const [filter, setFilter] = useState<ContactMessageStatus | ''>('');
   const [form, setForm] = useState('');
+  const [source, setSource] = useState('');
+  const [showReport, setShowReport] = useState(false);
   const [forms, setForms] = useState<{ name: string; total: number; unread: number }[]>([]);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -45,12 +48,12 @@ export default function ContactMessages() {
   const load = useCallback(() => {
     setError('');
     setRows(null);
-    apiListContactMessages(storeId, { page, status: filter, form, q: query })
+    apiListContactMessages(storeId, { page, status: filter, form, q: query, source })
       .then(res => { setRows(res.data); setTotalPages(res.pagination.totalPages); setUnread(res.unread); setSpam(res.spam ?? 0); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load messages.'));
     // The forms that have messages: the filter only appears when there is more than one kind.
     apiListContactForms(storeId).then(res => setForms(res.data)).catch(() => undefined);
-  }, [storeId, page, filter, form, query]);
+  }, [storeId, page, filter, form, query, source]);
   useEffect(() => { load(); }, [load]);
 
   // Search as the seller types, without a request per key.
@@ -72,7 +75,7 @@ export default function ContactMessages() {
   async function exportCsv() {
     setExporting(true);
     try {
-      const blob = await apiExportContactMessages(storeId, { status: filter, form, q: query });
+      const blob = await apiExportContactMessages(storeId, { status: filter, form, q: query, source });
       downloadBlob(blob, 'contact-messages.csv');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not export the messages.');
@@ -146,6 +149,12 @@ export default function ContactMessages() {
               {forms.map(f => <option key={f.name || '__unnamed'} value={f.name || '__unnamed'}>{f.name || 'Unnamed form'} ({f.total})</option>)}
             </select>
           )}
+          <select aria-label="Filter by source" value={source} onChange={e => { setSource(e.target.value); setPage(1); }}
+            className="rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange">
+            <option value="">All sources</option>
+            {['direct', 'search', 'social', 'email', 'paid', 'referral'].map(k => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}
+          </select>
+          <Button size="sm" variant="outline" onClick={() => setShowReport(true)}>Form report</Button>
           <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting}><Download size={13} className="mr-1" /> Export CSV</Button>
         </div>
 
@@ -232,6 +241,7 @@ export default function ContactMessages() {
       {pendingDelete && (
         <ConfirmDialog title="Delete message" message={`Delete the message from ${who(pendingDelete)}? This cannot be undone.`} confirmLabel="Delete" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} />
       )}
+      {showReport && <FormReportModal storeId={storeId} onClose={() => setShowReport(false)} />}
     </>
   );
 }

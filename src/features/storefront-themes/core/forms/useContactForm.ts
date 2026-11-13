@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { tt } from '@/utils/tStatic';
-import { analyticsSessionFields } from '@/utils/storefrontAnalytics';
-import { apiGetContactFormConfig, apiSubmitContactMessage, apiUploadContactFile } from '@/api/services/storeContact';
+import { analyticsSessionFields, storefrontAnalyticsAllowed } from '@/utils/storefrontAnalytics';
+import { apiGetContactFormConfig, apiSubmitContactMessage, apiTrackFormEvent, apiUploadContactFile } from '@/api/services/storeContact';
 import type { Section } from '@/api/services/storefrontTypes';
 import {
   MAX_FILE_MB, buildAnswers, fileAccept, firstMissingOnPage, firstMissingRequired, splitPages, initialAnswers, resolveContactFields, successRedirect, visibleFields,
@@ -45,7 +45,21 @@ export function useContactForm(storeId: string, section: Section) {
   const page = pages[stepIndex];
   const isLast = stepIndex >= pages.length - 1;
 
-  const setValue = (id: string, value: AnswerValue) => { setValues(v => ({ ...v, [id]: value })); if (invalidId === id) setInvalidId(null); };
+  // Anonymous counters for the seller's report: once per tab for "seen" and for "started" (only with analytics consent, never in the editor preview).
+  const sectionId = section._id;
+  const markOnce = (kind: 'view' | 'start') => {
+    if (!sectionId || !storefrontAnalyticsAllowed()) return;
+    try {
+      const key = `sx_form_${kind}_${sectionId}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch { /* storage blocked: count at most once per mount below */ }
+    void apiTrackFormEvent(storeId, sectionId, kind);
+  };
+  useEffect(() => { markOnce('view'); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionId, storeId]);
+
+  const setValue = (id: string, value: AnswerValue) => { markOnce('start'); setValues(v => ({ ...v, [id]: value })); if (invalidId === id) setInvalidId(null); };
   /** Tick / untick one choice of a multiple-choice field. */
   const toggleChoice = (id: string, choice: string, on: boolean) => {
     const current = Array.isArray(values[id]) ? (values[id] as string[]) : [];
