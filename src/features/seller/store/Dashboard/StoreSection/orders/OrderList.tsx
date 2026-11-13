@@ -4,7 +4,7 @@ import { BulkCourierModal } from '@/features/seller/store/Dashboard/courier/Bulk
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
-  DollarSign, Clock, TrendingUp, CheckCheck, Truck, Printer,
+  DollarSign, Clock, TrendingUp, Printer,
 } from 'lucide-react';
 import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
@@ -15,7 +15,6 @@ import {
   Card,
   Avatar,
   SearchInput,
-  ActionMenu,
   Modal,
   Field,
   Input,
@@ -65,13 +64,12 @@ export function StoreOrderList() {
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
   const [preorderOnly, setPreorderOnly] = useState(false);
+  const [view, setView] = useState('');
   const [localOnly, setLocalOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
   const [refreshKey,    setRefreshKey]    = useState(0);
-  const [markingPaidId,    setMarkingPaidId]    = useState<string | null>(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   // Shipping an order requires a tracking number server-side — this modal is what
   // actually collects it before the status update is sent, instead of firing the
@@ -87,12 +85,13 @@ export function StoreOrderList() {
 
   // Bulk selection (current page only) - cleared whenever the list reloads.
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkBusy, setBulkBusy] = useState<null | 'print' | 'processing'>(null);
+  const [bulkBusy, setBulkBusy] = useState<null | 'print' | 'processing' | 'paid'>(null);
   const [bulkProgress, setBulkProgress] = useState('');
   const [bulkResult, setBulkResult] = useState<{ tone: 'success' | 'error'; message: string; failures: string[] } | null>(null);
   const staffUser = TokenStorage.getUser<{ role?: string; permissions?: string[] }>() as Parameters<typeof hasNavPermission>[0];
   const canPrint = hasNavPermission(staffUser, 'orders.view');
   const canFulfill = hasNavPermission(staffUser, 'orders.fulfill');
+  const canRecordPayment = hasNavPermission(staffUser, 'orders.record_payment');
   const canBookCourier = hasNavPermission(staffUser, 'orders.buy_shipping_label');
   const { t: tc } = useTranslation();
   const [showBulkCourier, setShowBulkCourier] = useState(false);
@@ -111,6 +110,7 @@ export function StoreOrderList() {
       status: statusF || undefined,
       type: typeF || undefined,
       preorder: preorderOnly || undefined,
+      view: view || undefined,
       localDelivery: localOnly || undefined,
       q: debouncedSearch.trim() || undefined,
     })
@@ -127,7 +127,7 @@ export function StoreOrderList() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF, preorderOnly, localOnly]);
+  }, [storeId, page, refreshKey, debouncedSearch, statusF, typeF, preorderOnly, localOnly, view]);
 
   const handlePageChange = (p: number) => {
     setSelected(new Set());
@@ -138,7 +138,7 @@ export function StoreOrderList() {
   };
 
   // A new search / filter always starts from page 1.
-  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF, preorderOnly, localOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, statusF, typeF, preorderOnly, localOnly, view]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -263,6 +263,50 @@ export function StoreOrderList() {
     }
   };
 
+  const unpaidSelected = selectedOrders.filter(o => !o.isPaid && o.status !== 'cancelled' && o.status !== 'refunded');
+
+  const handleBulkPaid = async () => {
+    if (bulkBusy || unpaidSelected.length === 0) return;
+    setBulkBusy('paid');
+    setBulkResult(null);
+    const targets = [...unpaidSelected];
+    const failures: string[] = [];
+    const done = new Set<string>();
+    for (let i = 0; i < targets.length; i++) {
+      setBulkProgress(`Updating ${i + 1} of ${targets.length}...`);
+      try {
+        await apiMarkOrderPaid(storeId, targets[i].orderId);
+        done.add(targets[i].orderId);
+      } catch (err: unknown) {
+        failures.push(`${targets[i].orderNumber}: ${err instanceof Error ? err.message : 'failed'}`);
+      }
+    }
+    setOrders(prev => prev.map(x => (done.has(x.orderId) ? { ...x, isPaid: true } : x)));
+    setBulkBusy(null);
+    setBulkProgress('');
+    const skipped = selectedOrders.length - targets.length;
+    setBulkResult({
+      tone: failures.length > 0 ? 'error' : 'success',
+      message: `${done.size} order${done.size !== 1 ? 's' : ''} marked as paid${failures.length ? `, ${failures.length} failed` : ''}${skipped ? `, ${skipped} skipped (already paid or closed)` : ''}.`,
+      failures,
+    });
+  };
+
+  // CSV of the selected rows (current page). Cells starting with = + - @ are prefixed so a spreadsheet never runs them as a formula.
+  const handleBulkExport = () => {
+    const cell = (v: unknown) => {
+      let s = String(v ?? '');
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
+    const rows = selectedOrders.map(o => [o.orderNumber, o.date, o.customer?.name, o.customer?.email, o.status, o.isPaid ? 'paid' : 'unpaid', o.paymentType, o.amount, o.currency ?? store?.baseCurrency ?? ''].map(cell).join(','));
+    const csv = ['Order,Date,Customer,Email,Status,Payment status,Payment type,Amount,Currency', ...rows].join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orders.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleBulkProcessing = async () => {
     if (bulkBusy || pendingSelected.length === 0) return;
     setBulkBusy('processing');
@@ -381,73 +425,6 @@ export function StoreOrderList() {
       key: 'status', header: 'Status',
       render: o => <StatusBadge status={o.status} />,
     },
-    {
-      key: 'actions', header: '', align: 'center', width: '60px',
-      render: o => {
-        const busy = markingPaidId === o.orderId || updatingStatusId === o.orderId;
-
-        const changeStatus = (status: 'processing' | 'completed' | 'cancelled') => {
-          if (busy) return;
-          setUpdatingStatusId(o.orderId);
-          apiUpdateOrderStatus({ orderId: o.orderId, storeId, status })
-            .then(() => {
-              setOrders(prev =>
-                prev.map(x => x.orderId === o.orderId ? { ...x, status } : x)
-              );
-            })
-            .catch((err: unknown) => {
-              setError(err instanceof Error ? err.message : 'Failed to update status.');
-            })
-            .finally(() => setUpdatingStatusId(null));
-        };
-
-        return (
-          <ActionMenu
-            align="right"
-            items={[
-              ...(!o.isPaid ? [{
-                label: markingPaidId === o.orderId ? 'Marking…' : 'Mark as Paid',
-                icon: <CheckCheck size={13} />,
-                onClick: () => {
-                  if (busy) return;
-                  setMarkingPaidId(o.orderId);
-                  apiMarkOrderPaid(storeId, o.orderId)
-                    .then(() => setOrders(prev =>
-                      prev.map(x => x.orderId === o.orderId ? { ...x, isPaid: true } : x)
-                    ))
-                    .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
-                    .finally(() => setMarkingPaidId(null));
-                },
-              }] : []),
-              ...(o.status === 'pending' ? [{
-                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Processing',
-                icon: <RefreshCw size={13} />,
-                onClick: () => changeStatus('processing'),
-              }] : []),
-              // Forward-only (mirrors the backend's isAllowedSellerOrderTransition): a
-              // delivered/completed/cancelled/refunded order can't be shipped again, and
-              // only an order that hasn't been closed out can be completed.
-              ...(['pending', 'processing', 'shipped'].includes(o.status) ? [{
-                label: 'Mark Shipped',
-                icon: <Truck size={13} />,
-                onClick: () => {
-                  if (busy) return;
-                  setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' });
-                  setTrackingErrors({});
-                  setSelectedCarrierId('');
-                  setShippingOrder(o);
-                },
-              }] : []),
-              ...(['pending', 'processing', 'shipped', 'delivered'].includes(o.status) ? [{
-                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Completed',
-                icon: <CheckCheck size={13} />,
-                onClick: () => changeStatus('completed'),
-              }] : []),
-            ]}
-          />
-        );
-      },
-    },
   ];
 
   return (
@@ -540,6 +517,12 @@ export function StoreOrderList() {
                           </Button>
                           </>
                         )}
+                        {canRecordPayment && (
+                          <Button variant="outline" size="sm" onClick={() => void handleBulkPaid()} loading={bulkBusy === 'paid'} disabled={bulkBusy !== null || unpaidSelected.length === 0}>
+                            Mark as paid{unpaidSelected.length > 0 ? ` (${unpaidSelected.length})` : ''}
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={handleBulkExport} disabled={bulkBusy !== null}>Export selected</Button>
                         {canBookCourier && (
                           <Button variant="outline" size="sm" onClick={() => setShowBulkCourier(true)} disabled={bulkBusy !== null}>
                             {tc('courier.bulkBook')}
@@ -590,9 +573,6 @@ export function StoreOrderList() {
                   ))}
                 </select>
                 <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
-                  <input type="checkbox" className="accent-brand-orange" checked={preorderOnly} onChange={e => setPreorderOnly(e.target.checked)} /> Pre-orders
-                </label>
-                <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
                   <input type="checkbox" className="accent-brand-orange" checked={localOnly} onChange={e => setLocalOnly(e.target.checked)} /> Local delivery
                 </label>
                 <select
@@ -605,6 +585,19 @@ export function StoreOrderList() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div role="tablist" aria-label="Order views" className="flex gap-1.5 overflow-x-auto px-4 sm:px-5 pt-3">
+              {([['', 'All'], ['unfulfilled', 'Unfulfilled'], ['unpaid', 'Unpaid'], ['open', 'Open'], ['preorders', 'Pre-orders'], ['cod_awaiting', 'COD awaiting confirmation']] as const).map(([id, label]) => {
+                const active = id === 'preorders' ? preorderOnly : (!preorderOnly && view === id);
+                return (
+                  <button
+                    key={id || 'all'} type="button" role="tab" aria-selected={active}
+                    onClick={() => { if (id === 'preorders') { setView(''); setPreorderOnly(true); } else { setPreorderOnly(false); setView(id); } }}
+                    className={'shrink-0 px-3 py-1.5 rounded-full text-[12.5px] font-semibold border cursor-pointer transition-colors ' + (active ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:bg-cream')}
+                  >{label}</button>
+                );
+              })}
             </div>
 
             {bulkResult && (
@@ -656,7 +649,7 @@ export function StoreOrderList() {
           title="Filters"
           onClose={() => setFiltersOpen(false)}
           footer={<>
-            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setPreorderOnly(false); setLocalOnly(false); setFiltersOpen(false); }}>Reset</Button>
+            <Button variant="outline" size="sm" onClick={() => { setStatusF(''); setTypeF(''); setView(''); setPreorderOnly(false); setLocalOnly(false); setFiltersOpen(false); }}>Reset</Button>
             <Button size="sm" onClick={() => setFiltersOpen(false)}>Done</Button>
           </>}
         >
