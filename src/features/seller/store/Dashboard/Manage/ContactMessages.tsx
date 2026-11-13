@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
@@ -186,7 +187,7 @@ export default function ContactMessages() {
                 </div>
                 {(m.customerId || m.source || m.pageUrl) && (
                   <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate">
-                    {m.customerId && <span className="rounded-full bg-success-bg px-2 py-0.5 font-semibold text-success">Existing customer · {m.customerOrders ?? 0} order{m.customerOrders === 1 ? '' : 's'}</span>}
+                    {m.customerId && <Link to={`/store/${storeId}/customer/list?search=${encodeURIComponent(m.email)}`} className="rounded-full bg-success-bg px-2 py-0.5 font-semibold text-success no-underline">Existing customer · {m.customerOrders ?? 0} order{m.customerOrders === 1 ? '' : 's'} · View</Link>}
                     {m.source?.trafficSource && <span>From: {m.source.trafficSource}{m.source.referrerHost ? ` (${m.source.referrerHost})` : ''}{m.source.utmCampaign ? ` · campaign ${m.source.utmCampaign}` : ''}</span>}
                     {m.source?.deviceType && <span>{m.source.deviceType}{m.source.country ? ` · ${m.source.country}` : ''}</span>}
                     {m.pageUrl && <a href={m.pageUrl} target="_blank" rel="noopener noreferrer" className="max-w-[260px] truncate underline">{m.pageUrl.replace(/^https?:\/\//, '')}</a>}
