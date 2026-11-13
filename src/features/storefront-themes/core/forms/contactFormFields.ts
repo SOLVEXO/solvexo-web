@@ -47,8 +47,8 @@ export const FILE_KIND_OPTIONS: { value: NonNullable<ContactFormField['fileKinds
 export const MAX_FILE_MB = 10;
 export const fileAccept = (f: Pick<ContactFormField, 'fileKinds'>) => (FILE_KIND_OPTIONS.find(o => o.value === (f.fileKinds ?? 'both')) ?? FILE_KIND_OPTIONS[0]).accept;
 
-export const MAX_CONTACT_FIELDS = 31;
-export const MAX_CHOICES = 20;
+export const MAX_CONTACT_FIELDS = 100;
+export const MAX_CHOICES = 200;
 
 export interface FieldTypeInfo { value: ContactFieldType; label: string; hint: string; group: 'Text' | 'Choices' | 'More' | 'Layout' }
 
@@ -93,7 +93,7 @@ export const FIELD_WIDTHS: { value: NonNullable<ContactFormField['width']>; labe
 export const hasChoices = (type: ContactFieldType) => type === 'dropdown' || type === 'radio' || type === 'checkbox';
 /** Fields that show text but collect nothing. */
 export const isStaticField = (type: ContactFieldType) => type === 'heading' || type === 'paragraph' || type === 'step';
-export const labelLimit = (type: ContactFieldType) => (type === 'paragraph' ? 500 : type === 'consent' ? 300 : type === 'heading' ? 120 : 60);
+export const labelLimit = (type: ContactFieldType) => (type === 'paragraph' ? 500 : type === 'consent' ? 300 : type === 'heading' ? 120 : 120);
 
 /** The old fixed form (Name, Email, optional Phone, Message), rebuilt from a section that has no `fields` yet. */
 export function legacyContactFields(settings: Record<string, any> | undefined): ContactFormField[] {
@@ -199,9 +199,6 @@ export function initialAnswers(fields: ContactFormField[]): Answers {
 /** What stops a form from being saved/used: a way to reach the visitor is required (Shopify Forms rule). */
 export function contactFormProblem(fields: ContactFormField[]): string | null {
   if (fields.length > MAX_CONTACT_FIELDS) return `A form can have at most ${MAX_CONTACT_FIELDS} fields.`;
-  if (!fields.some(f => (f.type === 'email' || f.type === 'phone') && f.required && !f.showIf)) {
-    return 'Add an Email or Phone field, make it required and always shown, so you can answer your visitors.';
-  }
   for (const f of fields) {
     if (!f.label.trim()) return 'Every field needs a label.';
     if ((f.type === 'dropdown' || f.type === 'radio') && !(f.options?.length)) return `"${f.label}" needs at least one choice.`;

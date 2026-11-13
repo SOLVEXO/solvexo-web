@@ -28,9 +28,9 @@ describe('contact form fields (logic)', () => {
     expect(legacyContactFields({ showPhone: false, nameLabel: 'Full name' }).map(f => f.label)).toEqual(['Full name', 'Email', 'Message']);
   });
 
-  it('asks for a required Email or Phone field (Shopify rule) and choices for dropdowns', () => {
+  it('needs no Email or Phone field, but dropdowns need choices', () => {
     const base: ContactFormField[] = [{ id: 'a', type: 'text', label: 'Name', required: true }];
-    expect(contactFormProblem(base)).toMatch(/Email or Phone/);
+    expect(contactFormProblem(base)).toBeNull();
     expect(contactFormProblem([...base, { id: 'b', type: 'phone', label: 'Phone', required: true }])).toBeNull();
     expect(contactFormProblem([{ id: 'b', type: 'phone', label: 'Phone', required: true }, { id: 'c', type: 'dropdown', label: 'Topic', options: [] }])).toMatch(/choice/);
   });
@@ -121,10 +121,10 @@ describe('contact form editor', () => {
     expect(next.map(f => f.id)).toEqual(['name', 'email', 'message']);
   });
 
-  it('adds a field of the chosen type and warns when no required Email or Phone is left', () => {
+  it('adds a field of the chosen type and shows no warning for a form without Email', () => {
     const set = vi.fn();
     const { rerender } = render(<FormFieldsEditor settings={{ fields: [{ id: 'a1', type: 'text', label: 'Name', required: true }] }} set={set} />);
-    expect(screen.getByRole('alert').textContent).toMatch(/Email or Phone/);
+    expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.change(screen.getByLabelText('Add a field'), { target: { value: 'dropdown' } });
     const next = set.mock.calls[0][0].fields as ContactFormField[];
     expect(next).toHaveLength(2);
@@ -230,7 +230,6 @@ describe('phase 1: conditions, new field types and form settings', () => {
     expect(visibleFields(conditionalFields, { q: 'Order' }).map(f => f.id)).toEqual(['e', 'q', 'o']);
     expect(conditionHolds({ fieldId: 'q', op: 'contains', value: 'ord' }, { q: 'Order' })).toBe(true);
     expect(conditionHolds({ fieldId: 'q', op: 'empty' }, {})).toBe(true);
-    expect(contactFormProblem([{ id: 'e', type: 'email', label: 'Email', required: true, showIf: { fieldId: 'x', op: 'filled' } }])).toMatch(/always shown/);
   });
 });
 
