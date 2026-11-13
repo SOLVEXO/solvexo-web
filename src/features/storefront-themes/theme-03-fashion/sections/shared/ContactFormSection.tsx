@@ -159,8 +159,8 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
             </div>
           ))}
           {!full && (
-            <input id={id} type="file" accept={fileAccept(f)} aria-describedby={helpId}
-              onChange={e => { const chosen = e.target.files?.[0]; if (chosen) void form.attachFile(f, chosen); e.target.value = ''; }} style={{ ...style, padding: '10px 14px' }} />
+            <input id={id} type="file" multiple={!!f.multiple} accept={fileAccept(f)} aria-describedby={helpId}
+              onChange={e => { Array.from(e.target.files ?? []).slice(0, f.multiple ? Math.max(1, MAX_FILES - attached.length) : 1).forEach(chosen => { void form.attachFile(f, chosen); }); e.target.value = ''; }} style={{ ...style, padding: '10px 14px' }} />
           )}
           {error?.error && <p role="alert" className="m-0 mt-1.5 text-sm" style={{ color: t.colors.danger }}>{error.error}</p>}
           {help}
