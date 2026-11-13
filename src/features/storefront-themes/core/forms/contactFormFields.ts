@@ -5,7 +5,7 @@
  */
 export type ContactFieldType =
   | 'name' | 'text' | 'email' | 'phone' | 'textarea' | 'number' | 'date' | 'time' | 'url'
-  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'step' | 'file' | 'slider' | 'signature';
+  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'step' | 'file' | 'slider' | 'signature' | 'total';
 
 export type ConditionOp = 'equals' | 'not_equals' | 'contains' | 'filled' | 'empty';
 export interface ContactCondition { fieldId: string; op: ConditionOp; value?: string }
@@ -36,6 +36,12 @@ export interface ContactFormField {
   maxSizeMb?: number;
   /** A file field that takes several files (up to MAX_FILES). */
   multiple?: boolean;
+  /** Price of each choice (same order as options) for a Total field. */
+  optionPrices?: number[];
+  /** Price per unit of a number field. */
+  unitPrice?: number;
+  /** Text before a Total ("Rs", "$"). */
+  currencyLabel?: string;
   /** Slider step. */
   step?: number;
   /** consent: when ticked and the visitor gave an email, add them to the store's email marketing list. */
@@ -75,6 +81,7 @@ export const CONTACT_FIELD_TYPES: FieldTypeInfo[] = [
   { value: 'country', label: 'Country', hint: 'A list of countries', group: 'More' },
   { value: 'file', label: 'File upload', hint: 'The visitor attaches a photo or a document (kept private, only you can open it)', group: 'More' },
   { value: 'slider', label: 'Slider', hint: 'The visitor drags to pick a number between your minimum and maximum', group: 'More' },
+  { value: 'total', label: 'Total price', hint: 'Adds up the prices of the choices and quantities above it and shows the total (set prices on those fields)', group: 'More' },
   { value: 'signature', label: 'Signature', hint: 'The visitor draws their signature with a finger or mouse (saved as a private picture)', group: 'More' },
   { value: 'hidden', label: 'Hidden field', hint: 'Not shown to the visitor; saves the page address or a fixed text with every answer', group: 'More' },
   { value: 'heading', label: 'Heading', hint: 'A title inside the form (collects nothing)', group: 'Layout' },
@@ -99,7 +106,7 @@ export const FIELD_WIDTHS: { value: NonNullable<ContactFormField['width']>; labe
 
 export const hasChoices = (type: ContactFieldType) => type === 'dropdown' || type === 'radio' || type === 'checkbox';
 /** Fields that show text but collect nothing. */
-export const isStaticField = (type: ContactFieldType) => type === 'heading' || type === 'paragraph' || type === 'step';
+export const isStaticField = (type: ContactFieldType) => type === 'heading' || type === 'paragraph' || type === 'step' || type === 'total';
 export const labelLimit = (type: ContactFieldType) => (type === 'paragraph' ? 500 : type === 'consent' ? 300 : type === 'heading' ? 120 : 120);
 
 /** The old fixed form (Name, Email, optional Phone, Message), rebuilt from a section that has no `fields` yet. */
@@ -133,6 +140,7 @@ export function newContactField(type: ContactFieldType): ContactFormField {
     ...(type === 'hidden' ? { label: 'Page address', defaultValue: '{page_url}' } : {}),
     ...(type === 'heading' ? { label: 'A new section' } : {}),
     ...(type === 'step' ? { label: 'Next step' } : {}),
+    ...(type === 'total' ? { label: 'Total' } : {}),
     ...(type === 'slider' ? { min: 0, max: 100, step: 1 } : {}),
     ...(type === 'signature' ? { label: 'Signature', fileKinds: 'images' as const } : {}),
     ...(type === 'paragraph' ? { label: 'Write some text here.' } : {}),
@@ -226,6 +234,25 @@ export function conditionSources(fields: ContactFormField[], index: number): Con
 }
 
 /** The visitor's answers as the API expects them (one entry per visible field that has a value). Hidden fields get their tokens filled. */
+/** The total of what is picked so far (the server works it out again and never trusts this number). */
+export function computeTotal(fields: ContactFormField[], values: Answers): number {
+  let sum = 0;
+  for (const f of visibleFields(fields, values)) {
+    const v = values[f.id];
+    if (v === undefined || v === '') continue;
+    if (f.type === 'number' && f.unitPrice) sum += (Number(v) || 0) * f.unitPrice;
+    else if ((f.type === 'dropdown' || f.type === 'radio' || f.type === 'checkbox') && f.options && f.optionPrices) {
+      for (const o of Array.isArray(v) ? v : [v]) {
+        const i = f.options.indexOf(String(o));
+        if (i >= 0) sum += f.optionPrices[i] ?? 0;
+      }
+    }
+  }
+  return Math.round(sum * 100) / 100;
+}
+export const formatTotal = (f: Pick<ContactFormField, 'currencyLabel'>, n: number) =>
+  `${f.currencyLabel ? f.currencyLabel + ' ' : ''}${Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export function buildAnswers(
   fields: ContactFormField[], values: Answers, page: { url?: string; title?: string } = {},
 ): { fieldId: string; value: AnswerValue }[] {

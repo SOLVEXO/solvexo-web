@@ -5,7 +5,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useContactForm } from '../../../core/forms/useContactForm';
 import { useSignaturePad } from '../../../core/forms/useSignaturePad';
 import { TurnstileBox } from '../../../core/forms/TurnstileBox';
-import { MAX_FILES, fileAccept, successRedirect, type ContactFormField } from '../../../core/forms/contactFormFields';
+import { MAX_FILES, computeTotal, fileAccept, formatTotal, successRedirect, type ContactFormField } from '../../../core/forms/contactFormFields';
 import { localizedCountryOptions } from '../../../core/countryOptions';
 import { baseTheme as t } from '../../theme.base';
 import { controlStyle } from '../../ui/controlStyle';
@@ -113,6 +113,14 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
           </label>
           {help}
         </>,
+      );
+    }
+    if (f.type === 'total') {
+      return wrap(
+        <div className="flex items-baseline justify-between gap-3 px-4 py-3" style={{ ...style, minHeight: 48 }}>
+          <span className="text-sm font-medium">{f.label}</span>
+          <output dir="ltr" aria-live="polite" className="text-lg font-semibold">{formatTotal(f, computeTotal(form.fields, form.values))}</output>
+        </div>,
       );
     }
     if (f.type === 'signature') {

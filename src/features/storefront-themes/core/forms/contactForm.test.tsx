@@ -470,3 +470,20 @@ describe('batch: slider and several files', () => {
     expect(v.split(',')).toHaveLength(1);
   });
 });
+
+describe('batch: total price', () => {
+  beforeEach(() => { applyMerchantThemeOverrides(null); submitMock.mockReset().mockResolvedValue({ success: true }); });
+  afterEach(cleanup);
+  it('shows a live total from choice prices and quantity x unit price', () => {
+    const fields: ContactFormField[] = [
+      { id: 'svc', type: 'dropdown', label: 'Service', options: ['Logo', 'Site'], optionPrices: [5000, 20000] },
+      { id: 'qty', type: 'number', label: 'Pages', unitPrice: 100 },
+      { id: 'tot', type: 'total', label: 'Total', currencyLabel: 'Rs' },
+    ];
+    render(<ContactFormSection section={section({ fields })} blocks={[]} colors={colors} />);
+    expect(screen.getByText('Rs 0')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^Service/), { target: { value: 'Site' } });
+    fireEvent.change(screen.getByLabelText(/^Pages/), { target: { value: '3' } });
+    expect(screen.getByText('Rs 20,300')).toBeTruthy();
+  });
+});
