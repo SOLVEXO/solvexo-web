@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { tt } from '@/utils/tStatic';
+import { analyticsSessionFields } from '@/utils/storefrontAnalytics';
 import { apiGetContactFormConfig, apiSubmitContactMessage, apiUploadContactFile } from '@/api/services/storeContact';
 import type { Section } from '@/api/services/storefrontTypes';
 import {
@@ -126,6 +127,8 @@ export function useContactForm(storeId: string, section: Section) {
         sectionId: section._id,
         answers: buildAnswers(all, values, { url: window.location.href, title: document.title }),
         website,
+        pageUrl: window.location.href,
+        ...analyticsSessionFields(storeId),
         ...(captcha ? { captchaToken } : {}),
       });
       setStatus('done');

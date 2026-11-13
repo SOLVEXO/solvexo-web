@@ -175,6 +175,14 @@ export default function ContactMessages() {
                     <button type="button" onClick={() => setPendingDelete(m)} aria-label="Delete" title="Delete" className="p-1.5 text-error bg-transparent border-0 cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>
+                {(m.customerId || m.source || m.pageUrl) && (
+                  <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate">
+                    {m.customerId && <span className="rounded-full bg-success-bg px-2 py-0.5 font-semibold text-success">Existing customer · {m.customerOrders ?? 0} order{m.customerOrders === 1 ? '' : 's'}</span>}
+                    {m.source?.trafficSource && <span>From: {m.source.trafficSource}{m.source.referrerHost ? ` (${m.source.referrerHost})` : ''}{m.source.utmCampaign ? ` · campaign ${m.source.utmCampaign}` : ''}</span>}
+                    {m.source?.deviceType && <span>{m.source.deviceType}{m.source.country ? ` · ${m.source.country}` : ''}</span>}
+                    {m.pageUrl && <a href={m.pageUrl} target="_blank" rel="noopener noreferrer" className="max-w-[260px] truncate underline">{m.pageUrl.replace(/^https?:\/\//, '')}</a>}
+                  </p>
+                )}
                 {m.message && <p className="text-[13px] text-charcoal m-0 whitespace-pre-line">{m.message}</p>}
                 {(m.fields ?? []).some(f => !['name', 'email', 'phone'].includes(f.type) && f.value !== m.message) && (
                   <dl className="m-0 grid grid-cols-1 gap-x-4 gap-y-1.5 rounded-lg bg-cream px-3 py-2.5 sm:grid-cols-[minmax(120px,auto)_1fr]">

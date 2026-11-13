@@ -12,6 +12,11 @@ export interface ContactMessage {
   message: string;
   /** Every answer of the seller-built form, in the order of the form. */
   fields?: { id: string; label: string; type: string; value: string; /** A file the visitor attached (open it with apiContactFileLink). */ fileId?: string }[];
+  /** The page the form was sent from, where the visitor came from, and the store's customer account (when the email matches one). */
+  pageUrl?: string | null;
+  source?: { trafficSource?: string | null; referrerHost?: string | null; landingPath?: string | null; utmSource?: string | null; utmMedium?: string | null; utmCampaign?: string | null; deviceType?: string | null; country?: string | null } | null;
+  customerId?: string | null;
+  customerOrders?: number;
   /** Why a message is in the Spam tab. */
   spamReason?: string | null;
   /** Which form it came from ('' for an unnamed one). */
@@ -51,7 +56,7 @@ export const apiDeleteContactMessage = (storeId: string, id: string) =>
   client.delete<never, ApiResponse<null>>(`/api/store-contact/${storeId}/${id}`);
 
 /** A visitor sends a message to the store (public). `website` is the bot-trap field and must stay empty. */
-export const apiSubmitContactMessage = (storeId: string, body: { sectionId?: string; answers: { fieldId: string; value: string | string[] }[]; website?: string; captchaToken?: string }) =>
+export const apiSubmitContactMessage = (storeId: string, body: { sectionId?: string; answers: { fieldId: string; value: string | string[] }[]; website?: string; captchaToken?: string; analyticsSessionId?: string; pageUrl?: string }) =>
   client.post<never, ApiResponse<null>>(`/api/public/store-contact/${storeId}`, body);
 
 export const apiReplyContactMessage = (storeId: string, id: string, message: string) =>
