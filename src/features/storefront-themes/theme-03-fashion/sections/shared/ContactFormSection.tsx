@@ -1,10 +1,11 @@
 import { useId, useState, type ReactNode } from 'react';
-import { CheckCircle2, Loader2, Paperclip, Star, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Paperclip, PenLine, Star, X } from 'lucide-react';
 import { ts, tt } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useContactForm } from '../../../core/forms/useContactForm';
+import { useSignaturePad } from '../../../core/forms/useSignaturePad';
 import { TurnstileBox } from '../../../core/forms/TurnstileBox';
-import { fileAccept, successRedirect, type ContactFormField } from '../../../core/forms/contactFormFields';
+import { MAX_FILES, fileAccept, successRedirect, type ContactFormField } from '../../../core/forms/contactFormFields';
 import { localizedCountryOptions } from '../../../core/countryOptions';
 import { fashionTheme as t } from '../../theme.config';
 import { controlStyle } from '../../ui/controlStyle';
@@ -14,6 +15,42 @@ import type { SharedSectionProps } from './types';
 
 const AUTOCOMPLETE: Record<string, string> = { name: 'name', email: 'email', phone: 'tel', url: 'url' };
 const SPAN: Record<string, string> = { full: 'sm:col-span-12', half: 'sm:col-span-6', third: 'sm:col-span-4', quarter: 'sm:col-span-3' };
+
+type FormApi = ReturnType<typeof useContactForm>;
+
+/** A signature box: draw, then "Use this signature" turns it into a private PNG attached like any file. */
+function SignatureField({ field, form, labelClass, star, help, style, inkColor, mutedColor }: {
+  field: ContactFormField; form: FormApi; labelClass: string; star: ReactNode; help: ReactNode; style: React.CSSProperties; inkColor: string; mutedColor: string;
+}) {
+  const entries = form.filesOf(field.id);
+  const done = entries.find(([, e]) => !e.error);
+  const err = entries.find(([, e]) => e.error)?.[1];
+  const pad = useSignaturePad({ color: inkColor, onDone: file => { void form.attachFile(field, file); } });
+  return (
+    <>
+      <p className={labelClass}>{field.label}{star}</p>
+      {done ? (
+        <div className="flex items-center gap-2 px-4 py-3" style={{ ...style, minHeight: 48 }}>
+          <PenLine size={16} aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-sm">{done[1].uploading ? tt('sections.contactUploading', 'Uploading...') : tt('sections.contactSigned', 'Signature added')}</span>
+          {!done[1].uploading && <button type="button" onClick={() => form.removeFile(done[0])} aria-label={tt('sections.contactRemoveFile', 'Remove {{name}}', { name: field.label })} className="cursor-pointer border-0 bg-transparent p-0.5"><X size={16} aria-hidden /></button>}
+        </div>
+      ) : (
+        <div>
+          <canvas ref={pad.canvasRef} width={600} height={180} aria-label={field.label} {...pad.handlers}
+            style={{ ...style, padding: 0, height: 140, touchAction: 'none', cursor: 'crosshair', borderRadius: Math.min(Number(style.borderRadius) || 0, 24) }} />
+          <div className="mt-2 flex items-center gap-3 text-sm">
+            <span style={{ color: mutedColor }}>{pad.hasInk ? '' : tt('sections.contactSignHere', 'Sign here with your finger or mouse')}</span>
+            <button type="button" onClick={pad.clear} disabled={!pad.hasInk} className="ms-auto cursor-pointer border-0 bg-transparent p-0 underline disabled:opacity-40">{tt('sections.contactClear', 'Clear')}</button>
+            <button type="button" onClick={pad.save} disabled={!pad.hasInk} className="cursor-pointer border-0 bg-transparent p-0 font-semibold underline disabled:opacity-40">{tt('sections.contactUseSignature', 'Use this signature')}</button>
+          </div>
+        </div>
+      )}
+      {err?.error && <p role="alert" className="m-0 mt-1.5 text-sm" style={{ color: t.colors.danger }}>{err.error}</p>}
+      {help}
+    </>
+  );
+}
 
 export function ContactFormSection({ section, colors }: SharedSectionProps) {
   const { store } = useStorefront();
@@ -78,24 +115,46 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
         </>,
       );
     }
-    if (f.type === 'file') {
-      const file = form.files[f.id];
+    if (f.type === 'signature') {
+      return wrap(<SignatureField field={f} form={form} labelClass={label} star={star} help={help} style={style} inkColor={t.colors.ink} mutedColor={colors.inkMuted} />);
+    }
+    if (f.type === 'slider') {
+      const lo = f.min ?? 0; const hi = f.max ?? 100; const st = f.step ?? 1;
+      const picked = text !== '' ? Number(text) : null;
       return wrap(
         <>
           <label htmlFor={id} className={label}>{f.label}{star}</label>
-          {file && !file.error ? (
-            <div className="flex items-center gap-2 px-4 py-3" style={{ ...style, minHeight: 48 }}>
+          <div className="flex items-center gap-3">
+            <input id={id} type="range" min={lo} max={hi} step={st} value={picked ?? Math.round((lo + hi) / 2)} aria-describedby={helpId}
+              onChange={e => form.setValue(f.id, e.target.value)} style={{ accentColor: t.colors.accent, width: '100%' }} />
+            <output htmlFor={id} dir="ltr" className="min-w-[3ch] text-sm font-medium" style={{ color: picked === null ? colors.inkMuted : colors.ink }}>{picked ?? '—'}</output>
+          </div>
+          {help}
+        </>,
+      );
+    }
+    if (f.type === 'file') {
+      const entries = form.filesOf(f.id);
+      const attached = entries.filter(([, e]) => !e.error);
+      const error = entries.find(([, e]) => e.error)?.[1];
+      const full = attached.length >= (f.multiple ? MAX_FILES : 1);
+      return wrap(
+        <>
+          <label htmlFor={id} className={label}>{f.label}{star}</label>
+          {attached.map(([key, file]) => (
+            <div key={key} className="mb-2 flex items-center gap-2 px-4 py-3" style={{ ...style, minHeight: 48 }}>
               <Paperclip size={16} aria-hidden />
               <span className="min-w-0 flex-1 truncate text-sm">{file.name}</span>
               {file.uploading
                 ? <Loader2 size={16} className="animate-spin" aria-label={tt('sections.contactUploading', 'Uploading...')} />
-                : <button type="button" onClick={() => form.removeFile(f.id)} aria-label={tt('sections.contactRemoveFile', 'Remove {{name}}', { name: file.name })} className="cursor-pointer border-0 bg-transparent p-0.5"><X size={16} aria-hidden /></button>}
+                : <button type="button" onClick={() => form.removeFile(key)} aria-label={tt('sections.contactRemoveFile', 'Remove {{name}}', { name: file.name })} className="cursor-pointer border-0 bg-transparent p-0.5"><X size={16} aria-hidden /></button>}
             </div>
-          ) : (
+          ))}
+          {!full && (
             <input id={id} type="file" accept={fileAccept(f)} aria-describedby={helpId}
               onChange={e => { const chosen = e.target.files?.[0]; if (chosen) void form.attachFile(f, chosen); e.target.value = ''; }} style={{ ...style, padding: '10px 14px' }} />
           )}
-          {file?.error && <p role="alert" className="m-0 mt-1.5 text-sm" style={{ color: t.colors.danger }}>{file.error}</p>}
+          {error?.error && <p role="alert" className="m-0 mt-1.5 text-sm" style={{ color: t.colors.danger }}>{error.error}</p>}
           {help}
         </>,
       );

@@ -3,7 +3,7 @@ import { SavedFormsPanel } from './SavedFormsPanel';
 import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import {
-  CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, FILE_KIND_OPTIONS, MAX_CHOICES, MAX_CONTACT_FIELDS, MAX_FILE_MB, conditionSources, contactFormProblem, hasChoices, isStaticField,
+  CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, FILE_KIND_OPTIONS, MAX_CHOICES, MAX_CONTACT_FIELDS, MAX_FILES, MAX_FILE_MB, conditionSources, contactFormProblem, hasChoices, isStaticField,
   labelLimit, newContactField, newFieldId, resolveContactFields,
   type ContactFieldType, type ContactFormField,
 } from '@/features/storefront-themes/core/forms/contactFormFields';
@@ -131,7 +131,7 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
                   type: next,
                   // what no longer applies to the new type is dropped, so nothing odd stays hidden in the saved form
                   options: hasChoices(next) ? (next === 'checkbox' ? field.options : (field.options?.length ? field.options : ['Option 1', 'Option 2'])) : undefined,
-                  min: next === 'number' ? field.min : undefined, max: next === 'number' ? field.max : undefined,
+                  min: next === 'number' || next === 'slider' ? field.min : undefined, max: next === 'number' || next === 'slider' ? field.max : undefined, step: next === 'slider' ? field.step : undefined, multiple: next === 'file' ? field.multiple : undefined,
                   minLength: next === 'text' || next === 'textarea' ? field.minLength : undefined, maxLength: next === 'text' || next === 'textarea' ? field.maxLength : undefined,
                   defaultValue: undefined,
                   fileKinds: next === 'file' ? field.fileKinds : undefined, maxSizeMb: next === 'file' ? field.maxSizeMb : undefined,
@@ -198,12 +198,14 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
             </>
           )}
 
-          {type === 'number' && (
-            <div className="grid grid-cols-2 gap-2">
+          {(type === 'number' || type === 'slider') && (
+            <div className={type === 'slider' ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
               <Labeled id={`${uid}-min`} label="Minimum"><input id={`${uid}-min`} type="number" className={inp} value={field.min ?? ''} onChange={e => onChange({ min: num(e.target.value) })} /></Labeled>
               <Labeled id={`${uid}-max`} label="Maximum"><input id={`${uid}-max`} type="number" className={inp} value={field.max ?? ''} onChange={e => onChange({ max: num(e.target.value) })} /></Labeled>
+              {type === 'slider' && <Labeled id={`${uid}-step`} label="Step"><input id={`${uid}-step`} type="number" min={0.01} className={inp} value={field.step ?? 1} onChange={e => onChange({ step: Math.max(0.01, Number(e.target.value) || 1) })} /></Labeled>}
             </div>
           )}
+          {type === 'slider' && null}
           {(type === 'text' || type === 'textarea') && (
             <div className="grid grid-cols-2 gap-2">
               <Labeled id={`${uid}-minl`} label="Minimum length"><input id={`${uid}-minl`} type="number" min={0} max={3000} className={inp} value={field.minLength ?? ''} onChange={e => onChange({ minLength: num(e.target.value) })} /></Labeled>
@@ -221,6 +223,12 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
               <Labeled id={`${uid}-mb`} label="Largest file (MB)" hint={`Up to ${MAX_FILE_MB} MB.`}>
                 <input id={`${uid}-mb`} type="number" min={1} max={MAX_FILE_MB} className={inp} value={field.maxSizeMb ?? MAX_FILE_MB} onChange={e => onChange({ maxSizeMb: Math.min(MAX_FILE_MB, Math.max(1, Math.round(Number(e.target.value) || MAX_FILE_MB))) })} />
               </Labeled>
+            </div>
+          )}
+          {type === 'file' && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12px] text-charcoal">Let the visitor attach several files<span className="block text-[11px] text-slate">Up to {MAX_FILES} files, each one checked separately.</span></span>
+              <Toggle checked={!!field.multiple} onChange={v => onChange({ multiple: v || undefined })} />
             </div>
           )}
           {type === 'consent' && (

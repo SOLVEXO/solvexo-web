@@ -434,3 +434,39 @@ describe('phase 3: pop-up display', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });
+
+describe('batch: slider and several files', () => {
+  beforeEach(() => {
+    applyMerchantThemeOverrides(null);
+    submitMock.mockReset().mockResolvedValue({ success: true });
+    let n = 0;
+    uploadMock.mockReset().mockImplementation(async (_s: string, o: { file: File }) => ({ data: { uploadId: String(++n).padStart(24, 'a'), name: o.file.name, size: 10 } }));
+  });
+  afterEach(cleanup);
+  const send = () => fireEvent.submit(screen.getByRole('button', { name: /send/i }).closest('form') as HTMLFormElement);
+
+  it('a slider sends the number the visitor picked', async () => {
+    render(<ContactFormSection section={section({ fields: [{ id: 'sl', type: 'slider', label: 'Budget', min: 10, max: 50, step: 5 }] })} blocks={[]} colors={colors} />);
+    const range = screen.getByLabelText(/^Budget/) as HTMLInputElement;
+    expect(range.min).toBe('10'); expect(range.max).toBe('50'); expect(range.step).toBe('5');
+    fireEvent.change(range, { target: { value: '35' } });
+    send();
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    expect((submitMock.mock.calls[0][1] as { answers: { fieldId: string; value: string }[] }).answers.find(a => a.fieldId === 'sl')?.value).toBe('35');
+  });
+
+  it('a multi-file field keeps several files, sends their ids together and lets one be removed', async () => {
+    render(<ContactFormSection section={section({ fields: [{ id: 'ph', type: 'file', label: 'Photos', multiple: true, fileKinds: 'images' }] })} blocks={[]} colors={colors} />);
+    for (const name of ['a.png', 'b.png']) {
+      fireEvent.change(screen.getByLabelText(/^Photos/), { target: { files: [new File(['x'], name, { type: 'image/png' })] } });
+      await waitFor(() => expect(screen.getByText(name)).toBeTruthy());
+    }
+    fireEvent.click(screen.getByRole('button', { name: /Remove a.png/ }));
+    expect(screen.queryByText('a.png')).toBeNull();
+    expect(screen.getByText('b.png')).toBeTruthy();
+    send();
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    const v = (submitMock.mock.calls[0][1] as { answers: { fieldId: string; value: string }[] }).answers.find(a => a.fieldId === 'ph')?.value ?? '';
+    expect(v.split(',')).toHaveLength(1);
+  });
+});

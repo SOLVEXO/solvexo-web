@@ -109,9 +109,9 @@ export const apiSaveForm = (storeId: string, name: string, settings: Record<stri
 export const apiDeleteSavedForm = (storeId: string, id: string) =>
   client.delete<never, { success: boolean }>(`/api/store-contact/saved-forms/${storeId}/${id}`);
 
-export interface FormReportRow { sectionId: string; name: string; views: number; starts: number; sent: number; spam: number; sources: Record<string, number> }
+export interface FormReportRow { sectionId: string; name: string; views: number; starts: number; sent: number; spam: number; sources: Record<string, number>; fieldTouches?: Record<string, number> }
 export const apiContactFormReport = (storeId: string, days: number) =>
-  client.get<never, { success: boolean; data: { days: number; forms: FormReportRow[] } }>(`/api/store-contact/${storeId}/report?days=${days}`);
+  client.get<never, { success: boolean; data: { days: number; forms: FormReportRow[]; daily?: { day: string; views: number; sent: number }[] } }>(`/api/store-contact/${storeId}/report?days=${days}`);
 /** Anonymous counters for the seller's form report; a failure is never shown to the visitor. */
-export const apiTrackFormEvent = (storeId: string, sectionId: string, kind: 'view' | 'start') =>
-  client.post<never, unknown>(`/api/public/store-contact/${storeId}/event`, { sectionId, kind }).catch(() => undefined);
+export const apiTrackFormEvent = (storeId: string, sectionId: string, kind: 'view' | 'start' | 'field', fieldId?: string) =>
+  client.post<never, unknown>(`/api/public/store-contact/${storeId}/event`, { sectionId, kind, fieldId }).catch(() => undefined);

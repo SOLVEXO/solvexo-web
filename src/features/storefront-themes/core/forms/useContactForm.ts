@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { tt } from '@/utils/tStatic';
 import { analyticsSessionFields, storefrontAnalyticsAllowed } from '@/utils/storefrontAnalytics';
 import { apiGetContactFormConfig, apiSubmitContactMessage, apiTrackFormEvent, apiUploadContactFile } from '@/api/services/storeContact';
 import type { Section } from '@/api/services/storefrontTypes';
 import {
-  MAX_FILE_MB, buildAnswers, fileAccept, firstMissingOnPage, firstMissingRequired, splitPages, initialAnswers, resolveContactFields, successRedirect, visibleFields,
+  MAX_FILES, MAX_FILE_MB, buildAnswers, fileAccept, firstMissingOnPage, firstMissingRequired, splitPages, initialAnswers, resolveContactFields, successRedirect, visibleFields,
   type AnswerValue, type Answers, type ContactFormField,
 } from './contactFormFields';
 
-export interface AttachedFile { name: string; size: number; uploading?: boolean; error?: string }
+export interface AttachedFile { name: string; size: number; uploading?: boolean; error?: string; uploadId?: string }
 
 /**
  * Headless logic of the storefront contact form: the field list (with conditional logic), the visitor's answers,
@@ -22,6 +22,7 @@ export function useContactForm(storeId: string, section: Section) {
   const [error, setError] = useState('');
   const [invalidId, setInvalidId] = useState<string | null>(null);
   const [files, setFiles] = useState<Record<string, AttachedFile>>({});
+  const filesRef = useRef<Record<string, AttachedFile>>({});
   const [captcha, setCaptcha] = useState<{ siteKey: string } | null>(null);
   const [captchaToken, setCaptchaToken] = useState('');
   /** Changes when the CAPTCHA must be shown again (a token works once). */
@@ -59,36 +60,58 @@ export function useContactForm(storeId: string, section: Section) {
   useEffect(() => { markOnce('view'); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId, storeId]);
 
-  const setValue = (id: string, value: AnswerValue) => { markOnce('start'); setValues(v => ({ ...v, [id]: value })); if (invalidId === id) setInvalidId(null); };
+  const touched = useRef(new Set<string>());
+  const markField = (id: string) => {
+    if (!sectionId || !storefrontAnalyticsAllowed() || touched.current.has(id)) return;
+    touched.current.add(id);
+    try { const k = `sx_form_f_${sectionId}_${id}`; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch { /* ignore */ }
+    void apiTrackFormEvent(storeId, sectionId, 'field', id);
+  };
+  const setValue = (id: string, value: AnswerValue) => { markOnce('start'); markField(id); setValues(v => ({ ...v, [id]: value })); if (invalidId === id) setInvalidId(null); };
   /** Tick / untick one choice of a multiple-choice field. */
   const toggleChoice = (id: string, choice: string, on: boolean) => {
     const current = Array.isArray(values[id]) ? (values[id] as string[]) : [];
     setValue(id, on ? [...current.filter(c => c !== choice), choice] : current.filter(c => c !== choice));
   };
 
-  /** Uploads the chosen file at once; the answer becomes the id the server hands back. */
+  const putFiles = (fn: (f: Record<string, AttachedFile>) => Record<string, AttachedFile>) => {
+    const next = fn(filesRef.current);
+    filesRef.current = next;
+    setFiles(next);
+    return next;
+  };
+  const inField = (fieldId: string, k: string) => k === fieldId || k.startsWith(fieldId + '#');
+  const idsOf = (fieldId: string, map: Record<string, AttachedFile>) => Object.entries(map).filter(([k, v]) => inField(fieldId, k) && v.uploadId).map(([, v]) => v.uploadId as string);
+  /** The files (and the last error) of one field, in the order they were added. */
+  const filesOf = (fieldId: string): [string, AttachedFile][] => Object.entries(files).filter(([k]) => inField(fieldId, k));
+
+  /** Uploads the chosen file at once; the answer becomes the id the server hands back (a list of ids for a multi-file field). */
   async function attachFile(field: ContactFormField, file: File) {
+    const multi = !!field.multiple && field.type === 'file';
+    const errKey = multi ? `${field.id}#err` : field.id;
+    const fail = (message: string) => { putFiles(f => ({ ...f, [errKey]: { name: file.name, size: file.size, error: message } })); };
     const maxMb = Math.min(field.maxSizeMb ?? MAX_FILE_MB, MAX_FILE_MB);
     const ext = `.${(file.name.split('.').pop() ?? '').toLowerCase()}`;
-    if (!fileAccept(field).split(',').includes(ext)) {
-      setFiles(f => ({ ...f, [field.id]: { name: file.name, size: file.size, error: tt('sections.contactFileType', 'This type of file is not accepted.') } }));
-      return;
-    }
-    if (file.size > maxMb * 1024 * 1024) {
-      setFiles(f => ({ ...f, [field.id]: { name: file.name, size: file.size, error: tt('sections.contactFileSize', 'The file is larger than {{mb}} MB.', { mb: maxMb }) } }));
-      return;
-    }
-    setValue(field.id, '');
-    setFiles(f => ({ ...f, [field.id]: { name: file.name, size: file.size, uploading: true } }));
+    if (!fileAccept(field).split(',').includes(ext)) return fail(tt('sections.contactFileType', 'This type of file is not accepted.'));
+    if (file.size > maxMb * 1024 * 1024) return fail(tt('sections.contactFileSize', 'The file is larger than {{mb}} MB.', { mb: maxMb }));
+    if (multi && idsOf(field.id, filesRef.current).length >= MAX_FILES) return fail(tt('sections.contactTooManyFiles', 'You can attach up to {{n}} files.', { n: MAX_FILES }));
+    const key = multi ? `${field.id}#${Math.random().toString(36).slice(2, 10)}` : field.id;
+    if (!multi) setValue(field.id, '');
+    putFiles(f => { const { [errKey]: _old, ...rest } = f; return { ...rest, [key]: { name: file.name, size: file.size, uploading: true } }; });
     try {
       const res = await apiUploadContactFile(storeId, { sectionId: section._id ?? '', fieldId: field.id, file });
-      setValue(field.id, res.data.uploadId);
-      setFiles(f => ({ ...f, [field.id]: { name: res.data.name, size: res.data.size } }));
+      const next = putFiles(f => ({ ...f, [key]: { name: res.data.name, size: res.data.size, uploadId: res.data.uploadId } }));
+      setValue(field.id, multi ? idsOf(field.id, next).join(',') : res.data.uploadId);
     } catch (err) {
-      setFiles(f => ({ ...f, [field.id]: { name: file.name, size: file.size, error: err instanceof Error ? err.message : tt('sections.contactFileFailed', 'The file could not be uploaded.') } }));
+      putFiles(f => { const { [key]: _gone, ...rest } = f; return { ...rest, [errKey]: { name: file.name, size: file.size, error: err instanceof Error ? err.message : tt('sections.contactFileFailed', 'The file could not be uploaded.') } }; });
     }
   }
-  const removeFile = (id: string) => { setValue(id, ''); setFiles(f => { const { [id]: _gone, ...rest } = f; return rest; }); };
+  /** Removes one attached file (the key comes from filesOf). */
+  const removeFile = (key: string) => {
+    const fieldId = key.split('#')[0];
+    const next = putFiles(f => { const { [key]: _gone, ...rest } = f; return rest; });
+    setValue(fieldId, key.includes('#') ? idsOf(fieldId, next).join(',') : '');
+  };
   const uploading = Object.values(files).some(f => f.uploading);
 
   /** Next page, after checking the required fields of this one. */
@@ -156,5 +179,5 @@ export function useContactForm(storeId: string, section: Section) {
     }
   }
 
-  return { fields, pages, page, stepIndex, stepCount: pages.length, isLast, next, back, values, setValue, toggleChoice, website, setWebsite, status, error, invalidId, submit, files, attachFile, removeFile, uploading, captcha, setCaptchaToken, captchaRound };
+  return { fields, pages, page, stepIndex, stepCount: pages.length, isLast, next, back, values, setValue, toggleChoice, website, setWebsite, status, error, invalidId, submit, files, attachFile, removeFile, uploading, filesOf, captcha, setCaptchaToken, captchaRound };
 }

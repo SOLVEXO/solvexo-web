@@ -5,7 +5,7 @@
  */
 export type ContactFieldType =
   | 'name' | 'text' | 'email' | 'phone' | 'textarea' | 'number' | 'date' | 'time' | 'url'
-  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'step' | 'file';
+  | 'dropdown' | 'radio' | 'checkbox' | 'consent' | 'rating' | 'country' | 'hidden' | 'heading' | 'paragraph' | 'step' | 'file' | 'slider' | 'signature';
 
 export type ConditionOp = 'equals' | 'not_equals' | 'contains' | 'filled' | 'empty';
 export interface ContactCondition { fieldId: string; op: ConditionOp; value?: string }
@@ -34,6 +34,10 @@ export interface ContactFormField {
   /** file: the kinds of file accepted and the size limit in MB (at most 10). */
   fileKinds?: 'images' | 'documents' | 'both';
   maxSizeMb?: number;
+  /** A file field that takes several files (up to MAX_FILES). */
+  multiple?: boolean;
+  /** Slider step. */
+  step?: number;
   /** consent: when ticked and the visitor gave an email, add them to the store's email marketing list. */
   subscribes?: boolean;
 }
@@ -49,6 +53,7 @@ export const fileAccept = (f: Pick<ContactFormField, 'fileKinds'>) => (FILE_KIND
 
 export const MAX_CONTACT_FIELDS = 100;
 export const MAX_CHOICES = 200;
+export const MAX_FILES = 5;
 
 export interface FieldTypeInfo { value: ContactFieldType; label: string; hint: string; group: 'Text' | 'Choices' | 'More' | 'Layout' }
 
@@ -69,6 +74,8 @@ export const CONTACT_FIELD_TYPES: FieldTypeInfo[] = [
   { value: 'rating', label: 'Rating (1 to 5 stars)', hint: 'Stars the visitor taps', group: 'More' },
   { value: 'country', label: 'Country', hint: 'A list of countries', group: 'More' },
   { value: 'file', label: 'File upload', hint: 'The visitor attaches a photo or a document (kept private, only you can open it)', group: 'More' },
+  { value: 'slider', label: 'Slider', hint: 'The visitor drags to pick a number between your minimum and maximum', group: 'More' },
+  { value: 'signature', label: 'Signature', hint: 'The visitor draws their signature with a finger or mouse (saved as a private picture)', group: 'More' },
   { value: 'hidden', label: 'Hidden field', hint: 'Not shown to the visitor; saves the page address or a fixed text with every answer', group: 'More' },
   { value: 'heading', label: 'Heading', hint: 'A title inside the form (collects nothing)', group: 'Layout' },
   { value: 'paragraph', label: 'Paragraph of text', hint: 'Some words inside the form (collects nothing)', group: 'Layout' },
@@ -126,6 +133,8 @@ export function newContactField(type: ContactFieldType): ContactFormField {
     ...(type === 'hidden' ? { label: 'Page address', defaultValue: '{page_url}' } : {}),
     ...(type === 'heading' ? { label: 'A new section' } : {}),
     ...(type === 'step' ? { label: 'Next step' } : {}),
+    ...(type === 'slider' ? { min: 0, max: 100, step: 1 } : {}),
+    ...(type === 'signature' ? { label: 'Signature', fileKinds: 'images' as const } : {}),
     ...(type === 'paragraph' ? { label: 'Write some text here.' } : {}),
     ...(type === 'consent' ? { label: 'I agree to the privacy policy.', required: true } : {}),
   };
