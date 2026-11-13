@@ -7,7 +7,7 @@ import { useLogout } from '@/hooks/auth/useLogout';
 import { getCurrentStorefrontStoreId } from '@/utils/currentStorefront';
 
 /** Header account popover: sign in without leaving the page, or jump to the account when already signed in. */
-export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function LedupAuthPopover({ isOpen, onClose, inline = false }: { isOpen: boolean; onClose: () => void; /** Drawn in the flow (mobile menu) instead of floating under the header. */ inline?: boolean }) {
   const logout = useLogout();
   const [signedIn, setSignedIn] = useState(() => TokenStorage.isLoggedIn());
   const [email, setEmail] = useState('');
@@ -22,6 +22,7 @@ export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose
     // eslint-disable-next-line react-hooks/set-state-in-effect -- re-read the session each time the popover opens
     setSignedIn(TokenStorage.isLoggedIn());
     const onDown = (e: MouseEvent) => {
+      if (inline) return;
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) onClose();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -31,7 +32,7 @@ export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, inline]);
 
   if (!isOpen) return null;
 
@@ -64,10 +65,10 @@ export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose
   };
 
   const row = 'flex items-center justify-between rounded-lg px-2 py-2 text-sm text-stone-700 no-underline transition hover:bg-stone-50 hover:text-stone-900';
-  const input = 'w-full rounded-xl border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-400 focus:bg-white focus:outline-none';
+  const input = 'h-10 w-full rounded-[10px] border border-[#e6e3e0] bg-white px-3 text-[13px] text-[#4b423b] placeholder:text-stone-400 focus:border-[#9b8b80] focus:outline-none';
 
   return (
-    <div ref={popoverRef} className="ld-pop absolute end-0 top-full z-50 mt-3 w-80 rounded-2xl bg-white p-6 text-stone-900 shadow-2xl ring-1 ring-black/5">
+    <div ref={popoverRef} className={inline ? 'ld-pop mt-3 w-full text-[#4b423b]' : 'ld-pop absolute end-0 top-full z-50 mt-3 w-[250px] rounded-2xl bg-white p-3 text-[#4b423b] shadow-[0_8px_30px_rgba(75,66,59,.14)]'}>
       {signedIn ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-3">
@@ -84,7 +85,7 @@ export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose
           </button>
         </div>
       ) : (
-        <form onSubmit={handleLogin} className="flex flex-col gap-4 text-start">
+        <form onSubmit={handleLogin} className="flex flex-col gap-3 text-start">
           {error && <div role="alert" className="rounded-lg bg-red-50 p-2.5 text-xs text-red-600">{error}</div>}
           <div>
             <label htmlFor="ld-pop-email" className="mb-1 block text-xs font-medium text-stone-600">{ts('auth.email', 'Email')}</label>
@@ -99,12 +100,12 @@ export function LedupAuthPopover({ isOpen, onClose }: { isOpen: boolean; onClose
               </button>
             </div>
           </div>
-          <button type="submit" disabled={loading} className="mt-1 flex h-11 w-full items-center justify-center rounded-full bg-[var(--ld-accent)] text-sm font-medium text-white shadow-sm transition hover:bg-[var(--ld-accent-hover)] disabled:opacity-50">
+          <button type="submit" disabled={loading} className="flex h-9 w-full cursor-pointer items-center justify-center rounded-full border-0 bg-[#9b8b80] text-sm font-medium text-white transition hover:bg-[#4b423b] disabled:opacity-50">
             {loading ? ts('auth.signingIn', 'Signing in…') : ts('auth.signIn', 'Sign in')}
           </button>
-          <div className="flex items-center justify-between pt-1 text-xs text-stone-500">
-            <Link to="/forgot-password" onClick={onClose} className="hover:text-stone-800 hover:underline">{ts('auth.forgotPassword', 'Forgot your password?')}</Link>
-            <Link to="/register" onClick={onClose} className="font-medium text-[var(--ld-accent)] hover:underline">{ts('auth.createAccount', 'Create account')}</Link>
+          <div className="flex flex-col items-center gap-1 text-xs text-[#8c847e]">
+            <Link to="/forgot-password" onClick={onClose} className="underline hover:text-[#4b423b]">{ts('auth.forgotPassword', 'Forgot your password?')}</Link>
+            <Link to="/register" onClick={onClose} className="underline hover:text-[#4b423b]">{ts('auth.createAccount', 'Create account')}</Link>
           </div>
         </form>
       )}

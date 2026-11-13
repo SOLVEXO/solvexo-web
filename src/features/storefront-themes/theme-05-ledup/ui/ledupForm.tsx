@@ -22,9 +22,9 @@ export function Page({ children, narrow, wide, padY = true }: { children: ReactN
 export function PageTitle({ children, subtitle, actions }: { children: ReactNode; accent?: string; subtitle?: ReactNode; actions?: ReactNode }) {
   // Ledup look: every customer page opens with the bronze banner, white title on it.
   return (
-    <header className="ld-copper-gradient mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[28px] px-6 py-7 text-white shadow-sm sm:px-10 sm:py-9">
+    <header className="ld-copper-gradient mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[28px] px-6 py-8 text-white sm:rounded-[50px] sm:px-12 sm:py-12">
       <div className="min-w-0">
-        <h1 className="m-0 text-[clamp(24px,3.4vw,38px)] font-bold leading-tight tracking-tight text-white" style={{ fontFamily: t.fonts.display }}>{typeof children === 'string' ? children.replace(/\*/g, '') : children}</h1>
+        <h1 className="m-0 text-[clamp(26px,4vw,48px)] font-light leading-tight tracking-normal text-white" style={{ fontFamily: t.fonts.display }}>{typeof children === 'string' ? children.replace(/\*/g, '') : children}</h1>
         {subtitle && <p className="m-0 mt-2 max-w-[620px] text-sm text-white/85">{subtitle}</p>}
       </div>
       {actions}
@@ -34,7 +34,7 @@ export function PageTitle({ children, subtitle, actions }: { children: ReactNode
 
 /** Bordered surface; `tone="soft"` uses the soft blue panel colour instead of a border. */
 export function Card({ children, tone = 'line', pad = true, style, className = '' }: { children: ReactNode; tone?: 'line' | 'soft'; pad?: boolean; style?: CSSProperties; className?: string }) {
-  return <div className={className} style={{ borderRadius: t.cardRadiusPx, padding: pad ? 'clamp(16px, 2vw, 24px)' : 0, background: tone === 'soft' ? t.colors.bgAlt : t.colors.bg, border: tone === 'soft' ? 'none' : `1px solid ${t.colors.border}`, ...style }}>{children}</div>;
+  return <div className={className} style={{ borderRadius: 24, padding: pad ? 'clamp(18px, 2.2vw, 28px)' : 0, background: tone === 'soft' ? '#f4f3f2' : '#fff', border: 'none', boxShadow: tone === 'soft' ? 'none' : '0 8px 40px rgba(75,66,59,.06)', ...style }}>{children}</div>;
 }
 
 interface FieldProps { label: string; hint?: ReactNode; error?: string | null; required?: boolean; children: (props: { id: string; 'aria-invalid': boolean; 'aria-describedby'?: string }) => ReactNode }
@@ -75,9 +75,9 @@ export function Notice({ tone = 'info', children, action }: { tone?: 'info' | 's
 
 export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; title: string; text?: string; action?: ReactNode }) {
   return (
-    <div className="grid place-items-center gap-3 px-6 py-14 text-center" style={{ background: t.colors.bgAlt }}>
+    <div className="grid place-items-center gap-3 px-6 py-14 text-center" style={{ background: '#f7f6f5', borderRadius: 24 }}>
       {icon && <span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.bg }}>{icon}</span>}
-      <p className="m-0 text-lg font-semibold">{title}</p>
+      <p className="m-0 text-lg font-medium">{title}</p>
       {text && <p className="m-0 max-w-[420px] text-sm" style={{ color: t.colors.inkMuted }}>{text}</p>}
       {action}
     </div>
@@ -101,14 +101,14 @@ export function SkeletonBlock({ h = 96, rows = 1 }: { h?: number; rows?: number 
 export function PillButton({ children, variant = 'primary', loading, full, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'outline' | 'ghost'; loading?: boolean; full?: boolean }) {
   const style: CSSProperties = variant === 'ghost' ? { background: 'transparent', color: t.colors.ink, borderColor: 'transparent' } : ledupButtonStyle(variant === 'outline' ? 'outline' : 'primary');
   return (
-    <button type="button" {...rest} disabled={rest.disabled || loading} aria-busy={loading || undefined} className={`lb-btn ${full ? 'lb-btn-block' : ''} ${rest.className ?? ''}`.trim()} style={{ ...style, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...rest.style }}>
+    <button type="button" {...rest} data-variant={variant === 'outline' ? 'outline' : variant === 'ghost' ? 'ghost' : 'primary'} disabled={rest.disabled || loading} aria-busy={loading || undefined} className={`lb-btn ${full ? 'lb-btn-block' : ''} ${rest.className ?? ''}`.trim()} style={{ ...style, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...rest.style }}>
       {loading && <Loader2 size={16} className="animate-spin" aria-hidden />}{children}
     </button>
   );
 }
 
 export function SectionHeading({ children, action }: { children: ReactNode; action?: ReactNode }) {
-  return <div className="mb-4 flex items-center justify-between gap-3 pb-3" style={{ borderBottom: `1px solid ${t.colors.border}` }}><h2 className="m-0 text-lg font-semibold" style={{ fontFamily: t.fonts.display }}>{children}</h2>{action}</div>;
+  return <div className="mb-4 flex items-center justify-between gap-3 pb-3" style={{ borderBottom: '1px solid #4b423b33' }}><h2 className="m-0 text-[22px] font-medium" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{children}</h2>{action}</div>;
 }
 
 export function Spinner({ label = ts('pg.loading', 'Loading') }: { label?: string }) {

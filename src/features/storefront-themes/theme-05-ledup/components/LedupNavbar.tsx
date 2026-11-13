@@ -26,6 +26,7 @@ export function LedupNavbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileAuth, setMobileAuth] = useState(false);
 
   const header = theme?.header;
   const o = readHeaderOptions(header, ts('blog.label', 'Blog'));
@@ -53,7 +54,7 @@ export function LedupNavbar() {
   // A page change or Esc closes every panel.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- close the open panels when the route changes
-    setMegaId(null); setSearchOpen(false); setMobileOpen(false); setAuthOpen(false);
+    setMegaId(null); setSearchOpen(false); setMobileOpen(false); setAuthOpen(false); setMobileAuth(false);
   }, [pathname]);
   useEffect(() => {
     if (!panelOpen) return;
@@ -97,10 +98,10 @@ export function LedupNavbar() {
             {cta && (
               <Link to={cta.link} className="ld-ctabtn ld-cta-desktop">{cta.label} <ArrowUpRight size={13} aria-hidden /></Link>
             )}
-            <button type="button" className="ld-iconbtn" aria-expanded={searchOpen} aria-label={ts('nav.search', 'Search')} onClick={() => { setMegaId(null); setSearchOpen(v => !v); }}>
+            <button type="button" className="ld-iconbtn ld-hide-md" aria-expanded={searchOpen} aria-label={ts('nav.search', 'Search')} onClick={() => { setMegaId(null); setSearchOpen(v => !v); }}>
               {searchOpen ? <X size={16} aria-hidden /> : <Search size={16} aria-hidden />}
             </button>
-            <div className="relative">
+            <div className="relative ld-hide-md">
               <button type="button" className="ld-iconbtn" aria-expanded={authOpen} aria-label={ts('nav.account', 'Account')} onClick={() => setAuthOpen(v => !v)}><User size={16} aria-hidden /></button>
               <LedupAuthPopover isOpen={authOpen} onClose={() => setAuthOpen(false)} />
             </div>
@@ -137,10 +138,17 @@ export function LedupNavbar() {
             <div className="mt-4 flex items-center gap-3 border-t border-[#efeded] pt-5">
               {store.contactPhone && <a href={`tel:${store.contactPhone}`} className="ld-iconbtn" style={{ width: '2.9rem', height: '2.9rem' }} aria-label={ts('ld.callUs', 'Call us')}><Phone size={18} aria-hidden /></a>}
               <button type="button" className="ld-iconbtn" style={{ width: '2.9rem', height: '2.9rem' }} aria-label={ts('nav.search', 'Search')} onClick={() => { setMobileOpen(false); setSearchOpen(true); }}><Search size={18} aria-hidden /></button>
-              <Link to={TokenStorage.isLoggedIn() ? '/account' : '/login'} onClick={closeAll} className="flex h-[2.9rem] flex-1 items-center justify-between rounded-full px-6 text-base text-white no-underline" style={{ background: 'var(--ld-accent)' }}>
-                {TokenStorage.isLoggedIn() ? ts('nav.account', 'Account') : ts('auth.signInBtn', 'Sign In')}<User size={18} aria-hidden />
-              </Link>
+              {TokenStorage.isLoggedIn() ? (
+                <Link to="/account" onClick={closeAll} className="flex h-[2.9rem] flex-1 items-center justify-between rounded-full px-6 text-base text-white no-underline" style={{ background: 'var(--ld-accent)' }}>
+                  {ts('nav.account', 'Account')}<User size={18} aria-hidden />
+                </Link>
+              ) : (
+                <button type="button" aria-expanded={mobileAuth} onClick={() => setMobileAuth(v => !v)} className="flex h-[2.9rem] flex-1 cursor-pointer items-center justify-between rounded-full border-0 px-6 text-base text-white" style={{ background: 'var(--ld-accent)' }}>
+                  {ts('auth.signInBtn', 'Sign In')}<User size={18} aria-hidden />
+                </button>
+              )}
             </div>
+            {!TokenStorage.isLoggedIn() && mobileAuth && <div ref={el => { el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }}><LedupAuthPopover isOpen inline onClose={() => setMobileAuth(false)} /></div>}
             {cta && <Link to={cta.link} onClick={closeAll} className="ld-ctabtn mt-4 w-full justify-center">{cta.label} <ArrowUpRight size={14} aria-hidden /></Link>}
           </div>
         )}

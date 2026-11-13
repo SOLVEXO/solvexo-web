@@ -18,7 +18,7 @@ export function SectionShell({ colors, eyebrow, heading, action, align = 'left',
           <header className={`mb-8 flex gap-4 md:mb-10 ${align === 'center' ? 'flex-col items-center text-center' : 'flex-wrap items-end justify-between'}`}>
             <div>
               {eyebrow && <p className="m-0 mb-2 text-sm font-medium" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{eyebrow}</p>}
-              {heading && <h2 className="m-0 text-[clamp(26px,3.2vw,40px)] font-semibold leading-[1.15] tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}><EditableText value={heading} settingKey="heading" /></h2>}
+              {heading && <h2 className="m-0 text-[clamp(26px,3.4vw,44px)] font-light leading-[1.15]" style={{ fontFamily: t.fonts.display, color: colors.ink }}><EditableText value={heading} settingKey="heading" /></h2>}
             </div>
             {action}
           </header>

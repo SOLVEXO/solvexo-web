@@ -9,7 +9,7 @@ type Variant = 'primary' | 'outline' | 'dark';
 
 export function LedupButton({ variant = 'primary', small, block, loading, style, className = '', children, type = 'button', disabled, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; small?: boolean; block?: boolean; loading?: boolean; style?: CSSProperties; children?: ReactNode }) {
   return (
-    <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest}
+    <button type={type} disabled={disabled || loading} aria-busy={loading || undefined} {...rest} data-variant={variant}
       className={`lb-btn ${small ? 'lb-btn-sm' : ''} ${block ? 'lb-btn-block' : ''} ${className}`.trim()}
       style={{ ...ledupButtonStyle(variant), borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...style }}>
       {children}
@@ -19,7 +19,7 @@ export function LedupButton({ variant = 'primary', small, block, loading, style,
 
 export function LedupLinkButton({ to, variant = 'primary', small, block, children, style }: { to: string; variant?: Variant; small?: boolean; block?: boolean; children: ReactNode; style?: CSSProperties }) {
   return (
-    <Link to={to} className={`lb-btn ${small ? 'lb-btn-sm' : ''} ${block ? 'lb-btn-block' : ''}`.trim()} style={{ ...ledupButtonStyle(variant), borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...style }}>{children}</Link>
+    <Link to={to} data-variant={variant} className={`lb-btn ${small ? 'lb-btn-sm' : ''} ${block ? 'lb-btn-block' : ''}`.trim()} style={{ ...ledupButtonStyle(variant), borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body, ...style }}>{children}</Link>
   );
 }
 

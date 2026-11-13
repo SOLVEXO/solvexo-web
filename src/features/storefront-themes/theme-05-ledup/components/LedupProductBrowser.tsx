@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, Search, SlidersHorizontal } from 'lucide-react';
 import { columnCount, responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { ts } from '@/utils/tStatic';
 import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
@@ -34,7 +34,13 @@ function PriceFilter({ symbol, lowest, highest, minPrice, maxPrice, onApply }: {
 /** Product list for a collection, category or search: real filters from the store's own products (stock, price, type, options, tags), sort, count and a "Load more" button. */
 export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl = true, emptyText, heading, defaultSort, showFilters = true, columns, onProducts }: { categoryId?: string; collectionId?: string; search?: string; syncUrl?: boolean; emptyText?: string; heading?: ReactNode; defaultSort?: BrowseSort; showFilters?: boolean; columns?: number; onProducts?: (products: { slug: string; name: string; images?: string[] }[]) => void }) {
   const pageSize = clampPageSize(ledupTheme.pagination.productsPerPage);
-  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search, syncUrl, pageSize, accumulate: true, defaultSort });
+  // In-list search (the round button next to Sort): filters this list; a page opened with ?q= keeps its own term.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [typed, setTyped] = useState('');
+  useEffect(() => { const id = window.setTimeout(() => setTyped(draft.trim()), 350); return () => window.clearTimeout(id); }, [draft]);
+  const effectiveSearch = search || typed || undefined;
+  const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search: effectiveSearch, syncUrl, pageSize, accumulate: true, defaultSort });
   useEffect(() => { if (products && onProducts) onProducts(products.map(p => ({ slug: p.slug, name: p.name, images: p.images }))); }, [products, onProducts]);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -80,8 +86,8 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
   return (
     <div>
       {heading}
-      <div className="mb-8 flex items-center justify-between border-b border-stone-200 pb-4">
-        <p className="m-0 text-xs font-medium text-stone-500" aria-live="polite">
+      <div className="mb-8 flex items-center justify-end gap-6 pb-2">
+        <p className="m-0 text-[13px] font-normal text-black" aria-live="polite">
           {ts('browse.showingCount', 'Showing {{shown}} of {{total}} products', { shown, total })}
         </p>
         <div className="flex items-center gap-3">
@@ -98,14 +104,18 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
               </div>
             )}
           </div>
-          <button type="button" aria-expanded={mobileFilters} aria-label={ts('browse.filters', 'Filters')} onClick={() => setMobileFilters(v => !v)} className="ld-iconbtn md:hidden">
+          <button type="button" aria-expanded={mobileFilters} aria-label={ts('browse.filters', 'Filters')} onClick={() => setMobileFilters(v => !v)} className="ld-iconbtn lg:hidden">
             <SlidersHorizontal size={16} aria-hidden />
           </button>
+          {searchOpen && (
+            <input type="search" autoFocus value={draft} onChange={e => setDraft(e.target.value)} aria-label={ts('nav.search', 'Search')} placeholder={ts('nav.search', 'Search')} className="h-10 w-44 rounded-full border border-[#ebe8e5] bg-[#f7f6f5] px-4 text-sm outline-none sm:w-56" />
+          )}
+          <button type="button" aria-expanded={searchOpen} aria-label={ts('nav.search', 'Search')} onClick={() => { setSearchOpen(v => { if (v) { setDraft(''); setTyped(''); } return !v; }); }} className="ld-iconbtn"><Search size={16} aria-hidden /></button>
         </div>
       </div>
 
-      <div className="flex flex-col items-start gap-10 md:flex-row">
-        {showFilters && <div className={`${mobileFilters ? 'block' : 'hidden'} w-full md:block md:w-auto`}>{filters}</div>}
+      <div className="flex flex-col items-start gap-10 lg:flex-row">
+        {showFilters && <div className={`${mobileFilters ? 'block' : 'hidden'} w-full lg:block lg:w-auto`}>{filters}</div>}
 
         <div className="min-w-0 flex-1">
           {error ? (
@@ -121,7 +131,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
               </div>
               {canMore && (
                 <div className="mt-12 flex justify-center">
-                  <button type="button" disabled={loading} onClick={loadMore} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-stone-300 bg-white px-8 py-3 text-xs font-semibold tracking-wider text-stone-800 shadow-sm transition hover:border-stone-900 hover:bg-stone-50 disabled:opacity-60">
+                  <button type="button" disabled={loading} onClick={loadMore} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#4b423b] bg-transparent px-[35px] py-3 text-base font-normal text-[#4b423b] transition hover:bg-[#4b423b] hover:text-white disabled:opacity-60">
                     {loading ? ts('browse.loadingMore', 'Loading…') : ts('browse.loadMore', 'Load more')}
                   </button>
                 </div>

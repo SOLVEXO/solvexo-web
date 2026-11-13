@@ -189,6 +189,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     ] }) },
 
   // ── Forms (a ready form the seller can edit field by field) ──
+  { id: 'form-blank', type: 'contact_form', category: 'forms', name: 'Blank form', description: 'Start from nothing and add only the fields you want', mock: 'form',
+    build: only({ intro: '', formName: 'My form', buttonLabel: 'Submit', successMessage: 'Thank you! We received your answers.', fields: [] }) },
   { id: 'form-contact', type: 'contact_form', category: 'forms', name: 'Contact form', description: 'Name, email and message', mock: 'form',
     build: only({ intro: '', formName: 'Contact form', buttonLabel: 'Send message', successMessage: 'Thanks! We will get back to you soon.', fields: [
       { id: 'name', type: 'name', label: 'Name', required: true, width: 'half' },
