@@ -66,7 +66,7 @@ const isStaffSession = () => TokenStorage.getUser<{ role?: AppRole }>()?.role ==
 // should never require a click to reveal). A group the seller is currently
 // standing inside still shows its items regardless (see `groupHasActiveItem`
 // below) — closed-by-default only affects a group with nothing active in it.
-const DEFAULT_COLLAPSED_GROUPS = ['Orders', 'Products', 'Customers', 'Marketing', 'Sales channels'];
+const DEFAULT_COLLAPSED_GROUPS = ['Orders', 'Products', 'Customers', 'Marketing', 'Online Store', 'Sales channels'];
 const SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:sidebar:collapsed-groups';
 
 function loadCollapsedGroups(): Set<string> {

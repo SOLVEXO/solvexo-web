@@ -3,16 +3,20 @@ import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
   Package, Wallet, Globe, ShieldCheck, Bell, Languages, FileText, Scale, BadgeCheck,
+  Truck, ListChecks, ShieldAlert, Webhook, Landmark, Palette, MapPin, Gift, Lock, UserCheck,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { SettingsShell, type SettingsNavGroup } from '@/components/comman/settings';
+import { SettingsShell, SettingsCard, type SettingsNavGroup } from '@/components/comman/settings';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiSellerAnalyticsOverview } from '@/api/services/analytics/analytics';
 import { formatMoneyCompact } from '@/utils/currency';
 
-import { StoreProfileTab, ProductTypesTab, PaymentMethodsTab, DomainSettingsTab, PrivacyTab } from './StoreSettings';
+import { StoreProfileTab, ProductTypesTab, PaymentMethodsTab, DomainSettingsTab, PrivacyTab, TaxesTab, BrandTab, CustomerAccountsTab } from './StoreSettings';
+import { GiftCardSettingsCard } from './StoreGiftCards';
+import { LocationsPanel } from '../Operations/inventory/LocationsPanel';
+import SecurityPage from '../StoreSection/security/SecurityPage';
 import StorePlanBilling from './StorePlanBilling';
 import StaffPage from './Staff';
 import { MetafieldDefinitionsPage } from './MetafieldDefinitionsPage';
@@ -24,6 +28,12 @@ import { PoliciesSettings } from './policies/PoliciesSettings';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 import { MarketsSettings } from '../Operations/MarketsSettings';
 import { VerifyBusinessPage } from '../verification/VerifyBusinessPage';
+import { SellerShipping } from '../../../dashboard/SellerShipping';
+import CheckoutRulesHub from '../StoreSection/checkoutRules/CheckoutRulesHub';
+import CodProtectionPage from '../StoreSection/orders/CodProtectionPage';
+import DevelopersPage from '../StoreSection/developers/DevelopersPage';
+import { planGateFor } from '@/components/layouts/planGate';
+import { PlanUpgradeNeeded } from '@/components/layouts/PlanUpgradeNeeded';
 
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
 const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
@@ -35,7 +45,9 @@ const NAV_GROUPS: SettingsNavGroup[] = [
   {
     label: 'Store',
     items: [
-      { id: 'profile',       label: 'Store Profile',  icon: <Store size={13} />,       hint: 'Name, logo, currency, tax' },
+      { id: 'profile',       label: 'Store Profile',  icon: <Store size={13} />,       hint: 'Name, contact, country, language' },
+      { id: 'brand',         label: 'Brand',          icon: <Palette size={13} />,     hint: 'Logo, favicon, Solvexo badge' },
+      { id: 'locations',     label: 'Locations',      icon: <MapPin size={13} />,      hint: 'Branches, warehouses, bins' },
       { id: 'product-types', label: 'Product Types',  icon: <Package size={13} />,     hint: 'What this store can sell' },
       { id: 'privacy',       label: 'Privacy',        icon: <ShieldCheck size={13} />, hint: 'Visibility, consent, data requests' },
       { id: 'verification',  label: 'Verify your business', icon: <BadgeCheck size={13} />, hint: 'Verified badge, marketplace, payouts' },
@@ -45,7 +57,18 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     label: 'Payments & billing',
     items: [
       { id: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={13} />,     hint: 'Gateways, cash on delivery, payouts' },
-      { id: 'billing',         label: 'Billing',         icon: <CreditCard size={13} />, hint: 'Plan, invoices, usage' },
+      { id: 'taxes',           label: 'Taxes',           icon: <Landmark size={13} />,   hint: 'Tax rates, regions, tax number' },
+      { id: 'gift-cards',      label: 'Gift cards',      icon: <Gift size={13} />,       hint: 'Sales, amounts and expiry' },
+      { id: 'billing',        label: 'Billing',         icon: <CreditCard size={13} />, hint: 'Plan, invoices, usage' },
+    ],
+  },
+  {
+    label: 'Checkout & delivery',
+    items: [
+      { id: 'shipping',       label: 'Shipping',       icon: <Truck size={13} />,       hint: 'Zones, local delivery, pickup, carriers' },
+      { id: 'checkout',       label: 'Checkout rules', icon: <ListChecks size={13} />,  hint: 'Discounts, payment and delivery rules' },
+      { id: 'customer-accounts', label: 'Customer accounts', icon: <UserCheck size={13} />, hint: 'Guest checkout, Google and Facebook login' },
+      { id: 'cod-protection', label: 'COD protection', icon: <ShieldAlert size={13} />, hint: 'Fake and undeliverable COD orders' },
     ],
   },
   {
@@ -75,6 +98,8 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     label: 'System',
     items: [
       { id: 'integrations', label: 'Integrations', icon: <Plug size={13} />,    hint: 'Shipping, payments, apps' },
+      { id: 'developers',   label: 'Webhooks & API', icon: <Webhook size={13} />, hint: 'Webhooks and API tokens' },
+      { id: 'security',     label: 'Security',     icon: <Lock size={13} />,    hint: 'Your two-factor sign-in' },
       { id: 'activity-log', label: 'Activity Log', icon: <History size={13} />, hint: 'Who changed what, and when' },
     ],
   },
@@ -180,6 +205,10 @@ const TAB_PERMS: Record<string, string[]> = {
   'content-types': ['content.menus.manage', 'content.metaobjects.manage'], 'activity-log': ['settings.general.manage'],
   // Store owner only: the verification endpoints are seller-only, so no staff permission unlocks this tab.
   verification: [],
+  shipping: ['settings.shipping.manage'], checkout: ['checkout_rules.view', 'checkout_rules.manage'],
+  'cod-protection': ['settings.payments.manage'], developers: ['settings.general.manage'],
+  taxes: ['settings.taxes.manage'], brand: ['settings.general.manage'], 'customer-accounts': ['settings.general.manage'],
+  locations: ['settings.locations.manage'], 'gift-cards': ['giftcards.view', 'giftcards.manage'],
 };
 
 /** Single tabbed "Settings" hub — same Inventory-Hub-style consolidation
@@ -212,8 +241,9 @@ const TAB_PERMS: Record<string, string[]> = {
  *  here — excluding `'settings'` itself, same as before, since a mobile
  *  visitor is already looking at Settings' own tabs directly above it. */
 export default function SettingsHub() {
-  const { store, storeId } = useStoreWorkspace();
+  const { store, storeId, entitlements } = useStoreWorkspace();
   const user = TokenStorage.getUser<{ role?: AppRole; permissions?: string[] }>();
+  const apiGate = planGateFor(entitlements, 'apiWebhooksAllowed');
   const GROUPS = NAV_GROUPS
     .map(g => ({ ...g, items: g.items.filter(t => !TAB_PERMS[t.id] || hasNavPermission(user, TAB_PERMS[t.id])) }))
     .filter(g => g.items.length > 0);
@@ -299,7 +329,33 @@ export default function SettingsHub() {
             <OrderDocumentsSettings key={storeId} storeId={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />
           </div>
         )}
-        {isVisited('billing')       && <div className={paneClassName('billing')}><StorePlanBilling embedded /></div>}
+        {isVisited('shipping')         && <div className={paneClassName('shipping')}><SellerShipping embedded /></div>}
+        {isVisited('checkout')         && <div className={paneClassName('checkout')}><CheckoutRulesHub embedded /></div>}
+        {isVisited('brand')            && <div className={paneClassName('brand')}><BrandTab /></div>}
+        {isVisited('taxes')            && <div className={paneClassName('taxes')}><TaxesTab /></div>}
+        {isVisited('customer-accounts') && <div className={paneClassName('customer-accounts')}><CustomerAccountsTab /></div>}
+        {isVisited('locations') && (
+          <div className={paneClassName('locations') + ' px-4 lg:px-7 py-6'}>
+            <SettingsCard title="Locations" icon={<MapPin size={14} />} description="Where your stock is kept and where orders ship from.">
+              <LocationsPanel key={storeId} storeId={storeId} />
+            </SettingsCard>
+          </div>
+        )}
+        {isVisited('gift-cards') && (
+          <div className={paneClassName('gift-cards') + ' px-4 lg:px-7 py-6'}>
+            <GiftCardSettingsCard key={storeId} storeId={storeId} storeCurrency={store?.baseCurrency ?? 'USD'} />
+          </div>
+        )}
+        {isVisited('security')         && <div className={paneClassName('security')}><SecurityPage embedded /></div>}
+        {isVisited('cod-protection')   &&<div className={paneClassName('cod-protection')}><CodProtectionPage embedded /></div>}
+        {isVisited('developers') && (
+          <div className={paneClassName('developers')}>
+            {apiGate.blocked
+              ? <PlanUpgradeNeeded storeId={storeId} requiredPlan={apiGate.requiredPlan} canUpgrade={user?.role !== 'staff'} />
+              : <DevelopersPage embedded />}
+          </div>
+        )}
+        {isVisited('billing')       &&<div className={paneClassName('billing')}><StorePlanBilling embedded /></div>}
         {isVisited('integrations')  && <div className={paneClassName('integrations')}><StoreIntegrations embedded /></div>}
         {isVisited('staff')         && <div className={paneClassName('staff')}><StaffPage embedded /></div>}
         {isVisited('custom-fields') && <div className={paneClassName('custom-fields') + ' px-4 lg:px-7 py-6'}><MetafieldDefinitionsPage embedded /></div>}

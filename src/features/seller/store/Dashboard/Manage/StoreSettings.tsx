@@ -93,18 +93,8 @@ export function StoreProfileTab() {
   const [tagline,      setTagline]      = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [logo,         setLogo]         = useState('');
-  const [faviconUrl,   setFaviconUrl]   = useState('');
   const [reviewModerationEnabled, setReviewModerationEnabled] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
-  const [taxRate, setTaxRate] = useState(0);
-  const [taxRegions, setTaxRegions] = useState<TaxRegion[]>([]);
-  const [taxShipping, setTaxShipping] = useState(false);
-  const [taxId, setTaxId] = useState('');
-  const [taxRegistered, setTaxRegistered] = useState(true);
-  const [taxPricesIncludeTax, setTaxPricesIncludeTax] = useState(false);
-  const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
-  const [showDutiesNotice, setShowDutiesNotice] = useState(true);
   const [timezone, setTimezone] = useState('');
   const [country, setCountry] = useState('');
   const [currencyDisplay, setCurrencyDisplay] = useState<CurrencyDisplay>('symbol');
@@ -119,18 +109,8 @@ export function StoreProfileTab() {
     setTagline(store.tagline ?? '');
     setContactEmail(store.contactEmail ?? '');
     setContactPhone(store.contactPhone ?? '');
-    setLogo(store.logo ?? '');
-    setFaviconUrl(store.faviconUrl ?? '');
     setReviewModerationEnabled(!!store.reviewModerationEnabled);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
-    setTaxRate(store.taxRate ?? 0);
-    setTaxRegions(store.taxRegions ?? []);
-    setTaxShipping(!!store.taxShipping);
-    setTaxId(store.taxId ?? '');
-    setTaxRegistered(store.taxRegistered !== false);
-    setTaxPricesIncludeTax(!!store.taxPricesIncludeTax);
-    setTaxOverrides(store.taxOverrides ?? []);
-    setShowDutiesNotice(store.showDutiesNotice !== false);
     setTimezone(store.timezone ?? '');
     setCountry(store.country ?? '');
     setCurrencyDisplay(store.currencyDisplay ?? 'symbol');
@@ -142,7 +122,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, logo, faviconUrl: faviconUrl || null, reviewModerationEnabled, lowStockThreshold, taxRate, taxShipping, taxId, taxRegistered, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, reviewModerationEnabled, lowStockThreshold });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -163,18 +143,8 @@ export function StoreProfileTab() {
       country !== (store.country ?? '') ||
       currencyDisplay !== (store.currencyDisplay ?? 'symbol') ||
       defaultLanguage !== (store.defaultLanguage ?? 'en') ||
-      logo !== (store.logo ?? '') ||
-      faviconUrl !== (store.faviconUrl ?? '') ||
       reviewModerationEnabled !== !!store.reviewModerationEnabled ||
-      lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
-      taxRate !== (store.taxRate ?? 0) ||
-      taxShipping !== !!store.taxShipping ||
-      taxId !== (store.taxId ?? '') ||
-      taxRegistered !== (store.taxRegistered !== false) ||
-      taxPricesIncludeTax !== !!store.taxPricesIncludeTax ||
-      JSON.stringify(taxOverrides) !== JSON.stringify(store.taxOverrides ?? []) ||
-      showDutiesNotice !== (store.showDutiesNotice !== false) ||
-      JSON.stringify(taxRegions) !== JSON.stringify(store.taxRegions ?? []));
+      lowStockThreshold !== (store.lowStockThreshold ?? 10));
 
   if (loading) return null;
 
@@ -189,22 +159,6 @@ export function StoreProfileTab() {
           icon={<Store size={14} />}
           description="What customers see first — your mark, your name, and the line beside it."
         >
-          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
-              <p className="text-[13px] font-semibold text-charcoal">Store logo</p>
-              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Header, emails &amp; invoices</p>
-              <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-              <p className="mt-3 text-[11px] leading-snug text-slate">PNG, JPG or WebP. A transparent background looks best.</p>
-            </div>
-
-            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
-              <p className="text-[13px] font-semibold text-charcoal">Favicon</p>
-              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Browser tab icon</p>
-              <ImageUpload value={faviconUrl ? [faviconUrl] : []} onChange={urls => setFaviconUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-              <p className="mt-3 text-[11px] leading-snug text-slate">Square image, at least 32 × 32 px. Without one, your store's tab shows no icon.</p>
-            </div>
-          </div>
-
           <Field label="Store Name *">
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Your store name" className={inputCls} />
           </Field>
@@ -272,6 +226,112 @@ export function StoreProfileTab() {
           </Field>
         </SettingsCard>
 
+        {/* ── Inventory & reviews ── */}
+        <SettingsCard
+          title="Inventory &amp; reviews"
+          icon={<Boxes size={14} />}
+          description="When a product counts as running low, and whether a review publishes on its own."
+        >
+          <Field label="Low stock threshold">
+            <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={`${inputCls} max-w-[140px]`} />
+            <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
+          </Field>
+
+          <SettingsRow
+            label="Require review approval"
+            description="New reviews stay hidden until you approve them. Off by default — reviews publish instantly."
+            className="border-t border-fog"
+          >
+            <Toggle checked={reviewModerationEnabled} onChange={setReviewModerationEnabled} ariaLabel="Require review approval" />
+          </SettingsRow>
+        </SettingsCard>
+
+        {/* ── Read-only identity (was a pile of disabled inputs) ── */}
+        <SettingsCard
+          title="Plan &amp; status"
+          icon={<Info size={14} />}
+          divided
+          description="Set by your subscription and store review — change them from Billing."
+        >
+          <div className="-my-1 divide-y divide-fog">
+            {([
+              { label: 'Store URL',   value: store?.slug ? `/${store.slug}` : '—', hint: 'The URL slug cannot be changed.' },
+              { label: 'Plan',        value: store?.plan ?? '—',                   hint: 'Upgrade or switch it under Billing.' },
+              { label: 'Status',      value: store?.status ?? '—' },
+              { label: 'Seller type', value: store?.sellerType ?? '—' },
+              { label: 'AI credits',  value: String(store?.aiCredits ?? 0) },
+            ] as { label: string; value: string; hint?: string }[]).map(r => (
+              <SettingsRow key={r.label} label={r.label} description={r.hint}>
+                <span className="text-[12.5px] font-semibold text-charcoal">{r.value}</span>
+              </SettingsRow>
+            ))}
+          </div>
+        </SettingsCard>
+      </div>
+
+      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
+    </div>
+  );
+}
+
+// ── Taxes — what is added on top of a price, and where (own Settings tab) ──
+export function TaxesTab() {
+  const { store, storeId, loading, refetch } = useStoreWorkspace();
+  const [taxRate, setTaxRate] = useState(0);
+  const [taxRegions, setTaxRegions] = useState<TaxRegion[]>([]);
+  const [taxShipping, setTaxShipping] = useState(false);
+  const [taxId, setTaxId] = useState('');
+  const [taxRegistered, setTaxRegistered] = useState(true);
+  const [taxPricesIncludeTax, setTaxPricesIncludeTax] = useState(false);
+  const [taxOverrides, setTaxOverrides] = useState<TaxOverride[]>([]);
+  const [showDutiesNotice, setShowDutiesNotice] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const country = store?.country ?? '';
+
+  useEffect(() => {
+    if (!store) return;
+    setTaxRate(store.taxRate ?? 0);
+    setTaxRegions(store.taxRegions ?? []);
+    setTaxShipping(!!store.taxShipping);
+    setTaxId(store.taxId ?? '');
+    setTaxRegistered(store.taxRegistered !== false);
+    setTaxPricesIncludeTax(!!store.taxPricesIncludeTax);
+    setTaxOverrides(store.taxOverrides ?? []);
+    setShowDutiesNotice(store.showDutiesNotice !== false);
+  }, [store]);
+
+  const handleSave = async () => {
+    if (!storeId || saving) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await apiUpdateStore({ storeId, taxRate, taxShipping, taxId, taxRegistered, taxPricesIncludeTax, taxOverrides: taxOverrides.filter(o => o.collectionIds.length + o.categoryIds.length > 0), showDutiesNotice, taxRegions: taxRegions.filter(r => r.country.trim()) });
+      refetch();
+      setSaveMsg({ ok: true, text: 'Tax settings updated successfully.' });
+    } catch (err) {
+      setSaveMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update tax settings.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isDirty =
+    !!store &&
+    (taxRate !== (store.taxRate ?? 0) ||
+      taxShipping !== !!store.taxShipping ||
+      taxId !== (store.taxId ?? '') ||
+      taxRegistered !== (store.taxRegistered !== false) ||
+      taxPricesIncludeTax !== !!store.taxPricesIncludeTax ||
+      JSON.stringify(taxOverrides) !== JSON.stringify(store.taxOverrides ?? []) ||
+      showDutiesNotice !== (store.showDutiesNotice !== false) ||
+      JSON.stringify(taxRegions) !== JSON.stringify(store.taxRegions ?? []));
+
+  if (loading) return null;
+
+  return (
+    <div className="px-4 lg:px-7 py-6">
+      <div className="flex flex-col gap-5">
         {/* ── Tax ── */}
         <SettingsCard
           title="Tax &amp; duties"
@@ -384,54 +444,123 @@ export function StoreProfileTab() {
 
           <TaxOverridesEditor storeId={storeId} value={taxOverrides} onChange={setTaxOverrides} />
         </SettingsCard>
-
-        {/* ── Inventory & reviews ── */}
-        <SettingsCard
-          title="Inventory &amp; reviews"
-          icon={<Boxes size={14} />}
-          description="When a product counts as running low, and whether a review publishes on its own."
-        >
-          <Field label="Low stock threshold">
-            <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={`${inputCls} max-w-[140px]`} />
-            <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
-          </Field>
-
-          <SettingsRow
-            label="Require review approval"
-            description="New reviews stay hidden until you approve them. Off by default — reviews publish instantly."
-            className="border-t border-fog"
-          >
-            <Toggle checked={reviewModerationEnabled} onChange={setReviewModerationEnabled} ariaLabel="Require review approval" />
-          </SettingsRow>
-        </SettingsCard>
-
-        {/* ── Read-only identity (was a pile of disabled inputs) ── */}
-        <SettingsCard
-          title="Plan &amp; status"
-          icon={<Info size={14} />}
-          divided
-          description="Set by your subscription and store review — change them from Billing."
-        >
-          <div className="-my-1 divide-y divide-fog">
-            {([
-              { label: 'Store URL',   value: store?.slug ? `/${store.slug}` : '—', hint: 'The URL slug cannot be changed.' },
-              { label: 'Plan',        value: store?.plan ?? '—',                   hint: 'Upgrade or switch it under Billing.' },
-              { label: 'Status',      value: store?.status ?? '—' },
-              { label: 'Seller type', value: store?.sellerType ?? '—' },
-              { label: 'AI credits',  value: String(store?.aiCredits ?? 0) },
-            ] as { label: string; value: string; hint?: string }[]).map(r => (
-              <SettingsRow key={r.label} label={r.label} description={r.hint}>
-                <span className="text-[12.5px] font-semibold text-charcoal">{r.value}</span>
-              </SettingsRow>
-            ))}
-          </div>
-        </SettingsCard>
       </div>
 
       <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
     </div>
   );
 }
+
+// ── Brand — logo, favicon and the "Powered by" badge (own Settings tab) ──
+export function BrandTab() {
+  const { store, storeId, loading, refetch } = useStoreWorkspace();
+  const [logo, setLogo] = useState('');
+  const [faviconUrl, setFaviconUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!store) return;
+    setLogo(store.logo ?? '');
+    setFaviconUrl(store.faviconUrl ?? '');
+  }, [store]);
+
+  const handleSave = async () => {
+    if (!storeId || saving) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await apiUpdateStore({ storeId, logo, faviconUrl: faviconUrl || null });
+      refetch();
+      setSaveMsg({ ok: true, text: 'Brand updated successfully.' });
+    } catch (err) {
+      setSaveMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update brand.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isDirty = !!store && (logo !== (store.logo ?? '') || faviconUrl !== (store.faviconUrl ?? ''));
+
+  if (loading) return null;
+
+  return (
+    <div className="px-4 lg:px-7 py-6">
+      <div className="flex flex-col gap-5">
+        <SettingsCard
+          title="Logo & favicon"
+          icon={<Store size={14} />}
+          description="Your mark on the storefront header, emails, invoices and the browser tab."
+        >
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
+              <p className="text-[13px] font-semibold text-charcoal">Store logo</p>
+              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Header, emails &amp; invoices</p>
+              <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+              <p className="mt-3 text-[11px] leading-snug text-slate">PNG, JPG or WebP. A transparent background looks best.</p>
+            </div>
+
+            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
+              <p className="text-[13px] font-semibold text-charcoal">Favicon</p>
+              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Browser tab icon</p>
+              <ImageUpload value={faviconUrl ? [faviconUrl] : []} onChange={urls => setFaviconUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+              <p className="mt-3 text-[11px] leading-snug text-slate">Square image, at least 32 × 32 px. Without one, your store's tab shows no icon.</p>
+            </div>
+          </div>
+        </SettingsCard>
+
+        {storeId && (
+          <RemoveBrandingCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
+        )}
+      </div>
+
+      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
+    </div>
+  );
+}
+
+// ── Customer accounts — optional or required at checkout (own Settings tab) ──
+export function CustomerAccountsTab() {
+  const { store, storeId, loading, refetch } = useStoreWorkspace();
+  const [customerAccounts, setCustomerAccounts] = useState<'optional' | 'required'>('optional');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!store) return;
+    setCustomerAccounts(store.customerAccounts === 'required' ? 'required' : 'optional');
+  }, [store]);
+
+  const handleSave = async () => {
+    if (!storeId || saving) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await apiUpdateStore({ storeId, customerAccounts });
+      refetch();
+      setSaveMsg({ ok: true, text: 'Customer accounts updated successfully.' });
+    } catch (err) {
+      setSaveMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update customer accounts.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isDirty = !!store && customerAccounts !== (store.customerAccounts === 'required' ? 'required' : 'optional');
+
+  if (loading) return null;
+
+  return (
+    <div className="px-4 lg:px-7 py-6">
+      <div className="flex flex-col gap-5">
+        {storeId && <CustomerAccountsSection storeId={storeId} mode={customerAccounts} onMode={setCustomerAccounts} />}
+      </div>
+
+      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
+    </div>
+  );
+}
+
 
 // ── Product Types ────────────────────────────────────────────────────────────
 export function ProductTypesTab() {
@@ -510,7 +639,6 @@ export function PaymentMethodsTab() {
   // currency is accepted" (the schema default) — never collapsed into an
   // array like `[baseCurrency]` just because nothing is set yet.
   const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[] | null>(null);
-  const [customerAccounts, setCustomerAccounts] = useState<'optional' | 'required'>('optional');
   const [platformCurrencies, setPlatformCurrencies] = useState<string[]>([]);
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -523,7 +651,6 @@ export function PaymentMethodsTab() {
     if (!store) return;
     setPaymentCaptureMethod(store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic');
     setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : null);
-    setCustomerAccounts(store.customerAccounts === 'required' ? 'required' : 'optional');
   }, [store]);
 
   const handleSave = async () => {
@@ -531,7 +658,7 @@ export function PaymentMethodsTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, paymentCaptureMethod, enabledCurrencies, customerAccounts });
+      await apiUpdateStore({ storeId, paymentCaptureMethod, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Payment methods updated successfully.' });
     } catch (err) {
@@ -544,7 +671,6 @@ export function PaymentMethodsTab() {
   const isDirty =
     !!store &&
     (paymentCaptureMethod !== (store.paymentCaptureMethod === 'manual' ? 'manual' : 'automatic') ||
-      customerAccounts !== (store.customerAccounts === 'required' ? 'required' : 'optional') ||
       JSON.stringify(enabledCurrencies ? enabledCurrencies.slice().sort() : null) !==
         JSON.stringify(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies.slice().sort() : null));
 
@@ -647,14 +773,6 @@ export function PaymentMethodsTab() {
             </div>
           )}
         </SettingsCard>
-
-        {storeId && (
-          <CustomerAccountsSection storeId={storeId} mode={customerAccounts} onMode={setCustomerAccounts} />
-        )}
-
-        {storeId && (
-          <RemoveBrandingCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
-        )}
 
         <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
       </div>

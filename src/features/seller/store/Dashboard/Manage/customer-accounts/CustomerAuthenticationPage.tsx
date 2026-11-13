@@ -36,8 +36,8 @@ export function CustomerAuthenticationPage() {
 
   return (
     <div className="w-full px-4 lg:px-7 pt-5 pb-10">
-      <Link to={`/store/${storeId}/settings`} className="inline-flex items-center gap-1.5 text-[12px] text-slate no-underline hover:text-charcoal mb-3">
-        <ArrowLeft size={13} /> Settings
+      <Link to={`/store/${storeId}/settings/customer-accounts`} className="inline-flex items-center gap-1.5 text-[12px] text-slate no-underline hover:text-charcoal mb-3">
+        <ArrowLeft size={13} /> Customer accounts
       </Link>
       <PageHeader
         title="Authentication"
