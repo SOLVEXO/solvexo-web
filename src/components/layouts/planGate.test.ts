@@ -8,7 +8,7 @@ const ent = (over: Record<string, unknown>) => ({ currentPlanName: 'Basic', ...o
 
 describe('entitlementForPath', () => {
   it('maps gated pages to their plan feature, including sub-URLs', () => {
-    expect(entitlementForPath('developers')).toBe('apiWebhooksAllowed');
+    expect(entitlementForPath('app-platform')).toBe('apiWebhooksAllowed');
     expect(entitlementForPath('wholesale')).toBe('b2bWholesaleAllowed');
     expect(entitlementForPath('wholesale/catalogs/abc')).toBe('b2bWholesaleAllowed');
     expect(entitlementForPath('loyalty')).toBe('loyaltyProgramAllowed');

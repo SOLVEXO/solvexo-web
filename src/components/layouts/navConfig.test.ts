@@ -30,7 +30,9 @@ describe('navConfig', () => {
     expect(ACCOUNT_NAV.map(i => i.id)).toEqual(['security']);
     const inGroup = (id: string) => NAV.find(g => g.items.some(i => i.id === id))?.group;
     expect(inGroup('discounts')).toBe('Discounts');
-    expect(inGroup('shipping')).toBe('Settings');
+    expect(inGroup('settings')).toBe('Settings');
+    // Shipping, Checkout rules, COD protection and Webhooks & API are Settings tabs, not sidebar items.
+    for (const id of ['shipping', 'checkout-rules', 'cod-protection', 'developers']) expect(inGroup(id)).toBeUndefined();
     expect(inGroup('draft-orders')).toBe('Orders');
     expect(inGroup('khata')).toBe('Customers');
   });

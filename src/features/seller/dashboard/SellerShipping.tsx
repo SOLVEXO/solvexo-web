@@ -550,7 +550,7 @@ function CarriersTab({ storeId }: { storeId: string }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export function SellerShipping() {
+export function SellerShipping({ embedded = false }: { embedded?: boolean } = {}) {
   usePageTitle('Shipping');
   const { storeId } = useStoreWorkspace();
   const { activeTab, setActiveTab, isVisited, paneClassName } = useKeepAliveTabs('zones');
@@ -567,10 +567,12 @@ export function SellerShipping() {
 
   return (
     <>
-      <StorePageHeader
-        title="Shipping"
-        subtitle="Your own shipping zones, local delivery, and carriers — used at your store's checkout."
-      />
+      {!embedded && (
+        <StorePageHeader
+          title="Shipping"
+          subtitle="Your own shipping zones, local delivery, and carriers — used at your store's checkout."
+        />
+      )}
 
       <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
 

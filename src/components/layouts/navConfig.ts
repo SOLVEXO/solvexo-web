@@ -4,7 +4,7 @@ import {
   Settings, ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2, AlertTriangle, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree,
-  Store, TrendingUp, Landmark, LifeBuoy, Languages,
+  Store, TrendingUp, Landmark, LifeBuoy, Languages, Share2,
 } from 'lucide-react';
 import type { AppRole } from '@/api/services/auth';
 import type { EntitlementsSummary } from '@/api/services/platformPlans';
@@ -219,6 +219,8 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
           'settings.billing.manage', 'settings.billing.view',
           'settings.payments.manage', 'finance.payments.manage',
           'staff.manage', 'content.metaobjects.manage', 'activity_log.view',
+          'settings.shipping.manage', 'checkout_rules.view', 'checkout_rules.manage',
+          'settings.locations.manage', 'giftcards.view', 'giftcards.manage',
         ],
       },
       // Send a request to the Solvexo team; the API route needs `home.view` for staff.
@@ -290,10 +292,13 @@ const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?:
   { group: 'Customers', collapsible: true, groupIcon: Users, ids: ['customers', 'wholesale', 'khata', 'reviews', 'messages', 'online-store-contact', 'loyalty'] },
   { group: 'Marketing', collapsible: true, groupIcon: Megaphone, ids: ['marketing', 'messaging', 'creatives', 'seo'] },
   { group: 'Discounts', ids: ['discounts'] },
-  { group: 'Sales channels', collapsible: true, groupIcon: Store, ids: ['online-store-themes', 'online-store-pages', 'online-store-menus', 'online-store-blog', 'online-store-files', 'online-store-translations', 'search-settings', 'experiments', 'sales-channels', 'mobile-app'] },
+  // Online Store = everything that builds and tunes the storefront; Sales channels = other places the products are sold (feeds, app).
+  { group: 'Online Store', collapsible: true, groupIcon: Store, ids: ['online-store-themes', 'online-store-pages', 'online-store-menus', 'online-store-blog', 'online-store-files', 'online-store-translations', 'search-settings', 'experiments'] },
+  { group: 'Sales channels', collapsible: true, groupIcon: Share2, ids: ['sales-channels', 'mobile-app'] },
   { group: 'Apps', ids: ['connected-apps'] },
   { group: 'Finance', ids: ['finance'] },
-  { group: 'Settings', ids: ['settings', 'shipping', 'checkout-rules', 'cod-protection', 'developers', 'help'] },
+  // Shipping, Checkout rules, COD protection and Webhooks & API are tabs of the Settings hub now (Shopify keeps them under Settings).
+  { group: 'Settings', ids: ['settings', 'help'] },
 ];
 
 /** Personal (account-level) pages: reached from the avatar/Account page and the command palette, not the store sidebar. */
