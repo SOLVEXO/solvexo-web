@@ -17,12 +17,12 @@ interface Delivery { _id: string; event: string; status: string; attempts: numbe
 interface Tok { _id: string; name: string; prefix: string; scopes: string[]; revokedAt: string | null; lastUsedAt: string | null }
 
 /** Webhooks and API tokens for connecting your store to other software. Secrets and tokens are shown once. */
-export default function DevelopersPage() {
+export default function DevelopersPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const [tab, setTab] = useState('webhooks');
   return (
     <>
-      <StorePageHeader title="Webhooks & API" subtitle="Connect your store to other software" />
+      {!embedded && <StorePageHeader title="Webhooks & API" subtitle="Connect your store to other software" />}
       <div className="flex w-full flex-col gap-4 px-4 pb-8 pt-5 lg:px-7">
         {can('settings.general.manage' as StaffPermission) ? (
           <>

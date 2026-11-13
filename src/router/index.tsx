@@ -113,7 +113,6 @@ const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/On
 const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeSharePreviewPage').then(m => ({ default: m.ThemeSharePreviewPage })));
 const CustomerAuthenticationPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerAuthenticationPage').then(m => ({ default: m.CustomerAuthenticationPage })));
 const CustomerSocialProviderPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/customer-accounts/CustomerSocialProviderPage').then(m => ({ default: m.CustomerSocialProviderPage })));
-const SellerShipping = lazy(() => import('@/features/seller/dashboard/SellerShipping').then(m => ({ default: m.SellerShipping })));
 const SellerMessages = lazy(() => import('@/features/seller/dashboard/SellerMessages').then(m => ({ default: m.SellerMessages })));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
@@ -133,15 +132,12 @@ const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Ma
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
 const MemberSecurityPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/security/SecurityPage'));
 const SearchSettingsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/searchSettings/SearchSettingsPage'));
-const DevelopersPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/developers/DevelopersPage'));
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
 const CustomersHubLayout = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomersHubLayout'));
 const KhataHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/khata/KhataHub'));
 const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
-const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/CodProtectionPage'));
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
-const CheckoutRulesHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/checkoutRules/CheckoutRulesHub'));
 const SocialCreatives = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/creatives/SocialCreatives'));
 const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/experiments/ExperimentsHub'));
 const ConnectedAppsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/ConnectedAppsHub'));
@@ -421,16 +417,16 @@ const mainRouter = createBrowserRouter([
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'digital',                          element: <DigitalHub /> },
           { path: 'subscriptions',                    element: <SubscriptionsHub /> },
-          { path: 'checkout-rules',                   element: <CheckoutRulesHub /> },
+          { path: 'checkout-rules',                   element: <Navigate to="../settings/checkout" replace /> },
           { path: 'experiments',                      element: <ExperimentsHub /> },
           { path: 'creatives',                        element: <SocialCreatives /> },
           { path: 'app-platform',                     element: <ConnectedAppsHub /> },
           { path: 'app-platform/authorize',           element: <AppAuthorizePage /> },
           { path: 'app-platform/:installId',          element: <AppEmbedPage /> },
-          { path: 'cod-protection',                   element: <CodProtectionPage /> },
+          { path: 'cod-protection',                   element: <Navigate to="../settings/cod-protection" replace /> },
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'sales-channels',                   element: <SalesChannelsPage /> },
-          { path: 'developers',                       element: <DevelopersPage /> },
+          { path: 'developers',                       element: <Navigate to="../settings/developers" replace /> },
           { path: 'search-settings',                  element: <SearchSettingsPage /> },
           { path: 'security',                         element: <MemberSecurityPage /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
@@ -527,7 +523,7 @@ const mainRouter = createBrowserRouter([
           { path: 'activity',                         element: <Navigate to="../settings" replace /> },
           { path: 'followers',                        element: <Navigate to="../customer/list" replace /> },
           { path: 'pos-admin',                        element: <Navigate to="../dashboard" replace /> },
-          { path: 'shipping',                         element: <SellerShipping /> },
+          { path: 'shipping',                         element: <Navigate to="../settings/shipping" replace /> },
           { path: 'messages',                         element: <SellerMessages /> },
           { path: '*',                                element: <StoreNotFound /> },
         ],

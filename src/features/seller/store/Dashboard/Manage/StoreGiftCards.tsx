@@ -1,6 +1,7 @@
 import { can } from '@/hooks/auth/useCan';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
+import { Link } from 'react-router-dom';
 import { Plus, Gift, Ban, SlidersHorizontal, Mail } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { useToast } from '@/contexts/ToastContext';
@@ -29,7 +30,7 @@ function statusColor(status: GiftCard['status']): 'green' | 'gray' | 'red' {
 }
 
 // ── Storefront settings card ──────────────────────────────────────────────────
-function GiftCardSettingsCard({ storeId, storeCurrency }: { storeId: string; storeCurrency: string }) {
+export function GiftCardSettingsCard({ storeId, storeCurrency }: { storeId: string; storeCurrency: string }) {
   const canManage = can('giftcards.manage'); // view-only roles see the settings but cannot change them
   const [settings, setSettings] = useState<GiftCardSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -413,7 +414,10 @@ export default function StoreGiftCards() {
       />
 
       <div className="p-4 md:p-7">
-        <GiftCardSettingsCard storeId={storeId} storeCurrency={storeCurrency} />
+        <p className="mb-3 text-[12.5px] text-slate">
+          Gift card sales, amounts and expiry are in{' '}
+          <Link to={`/store/${storeId}/settings/gift-cards`} className="font-semibold text-brand-orange hover:underline">Settings → Gift cards</Link>.
+        </p>
 
         <div className="flex flex-col sm:flex-row gap-2 mb-3">
           <SearchInput value={code} onChange={setCode} placeholder="Search by code…" className="flex-1" />
