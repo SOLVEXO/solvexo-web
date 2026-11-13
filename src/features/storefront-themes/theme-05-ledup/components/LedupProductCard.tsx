@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
-import { ShoppingBag, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
@@ -22,10 +22,12 @@ const WATT = /\b\d+(?:[.,]\d+)?\s*W\b/i;
 const CCT = /\b\d?CCT\b|\b\d{4}\s*K\b/i;
 
 /** Spec pills come only from what the seller typed (name or tags): nothing is invented. */
-function ledupSpecPills(name: string, tags: string[] = []): string[] {
+function ledupSpecPills(name: string, tags: string[] = [], variants: { options?: { name: string; value: string }[] }[] = []): string[] {
   const hay = [name, ...tags];
   const pick = (re: RegExp) => hay.map(h => h.match(re)?.[0]).find(Boolean);
-  return [pick(WATT), pick(CCT)].filter((x): x is string => !!x);
+  // Variant options the seller named like a spec (Power / Watt, CCT / Colour temperature / Kelvin): first value of each.
+  const opt = (re: RegExp) => variants.flatMap(v => v.options ?? []).find(o => re.test(o.name))?.value;
+  return [pick(WATT) ?? opt(/power|watt|potenc/i), pick(CCT) ?? opt(/cct|kelvin|temperature|temperatura/i)].filter((x): x is string => !!x);
 }
 
 export function LedupProductCard({ product, currency, className = '' }: LedupProductCardProps) {
@@ -42,7 +44,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
   const image = product.images?.[0];
   const price = product.defaultVariantPrice;
   const hasPrice = typeof price === 'number' && price > 0;
-  const pills = ledupSpecPills(p.name, product.tags);
+  const pills = ledupSpecPills(p.name, product.tags, product.variants);
   const inStock = product.inStock !== false;
 
   const quickAdd = async (e: MouseEvent) => {
@@ -55,45 +57,37 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
 
   return (
     <article className={`ld-product-card group relative flex flex-col p-4 sm:p-5 ${className}`}>
-      <Link to={to} className="relative mb-4 block aspect-square w-full overflow-hidden rounded-2xl bg-white p-2">
+      <Link to={to} className="relative mx-auto mb-4 block aspect-square w-full max-w-[150px] overflow-hidden">
         {image ? (
           <img
             src={image}
             alt={p.name}
             loading="lazy"
-            className="h-full w-full object-contain transition duration-500 ease-out group-hover:scale-105"
+            className="h-full w-full object-contain transition-transform duration-[350ms] ease-out group-hover:scale-[1.03]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-stone-300">
             <span className="text-xs">{ts('ld.noImage', 'No image')}</span>
           </div>
         )}
-        <span aria-hidden className="absolute end-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-stone-700 opacity-0 shadow-md backdrop-blur transition-all duration-200 group-hover:opacity-100">
-          <ArrowUpRight size={16} />
-        </span>
       </Link>
 
       <div className="flex flex-1 flex-col justify-between">
         <div>
-          <h3 className="m-0 line-clamp-2 text-sm font-semibold leading-snug text-stone-900">
+          <h3 className="m-0 truncate text-[17px] font-medium leading-snug text-[#4b423b]">
             <Link to={to} className="text-inherit no-underline">{p.name}</Link>
           </h3>
-          {product.vendor && <p className="mt-1 text-[11px] uppercase tracking-wider text-stone-400"><VendorLink name={product.vendor} plain /></p>}
+          {product.vendor && <p className="mt-1 truncate text-[11px] text-[#a1948c]"><VendorLink name={product.vendor} plain /></p>}
+          {pills.length > 0 && (
+            <ul className="m-0 mt-2 flex list-none flex-wrap gap-1.5 p-0">
+              {pills.map(x => <li key={x} className="rounded-full bg-[#f1ede9] px-2.5 py-0.5 text-[11px] text-[#4b423b]"><bdi>{x}</bdi></li>)}
+            </ul>
+          )}
         </div>
 
-        {pills.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-1">
-            {pills.map(s => (
-              <span key={s} className="ld-chip max-w-[190px] truncate">
-                <bdi>{s}</bdi>
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3">
+        <div className="mt-3 flex items-center justify-between">
           {hasPrice ? (
-            <span className="text-sm font-bold text-stone-900">
+            <span className="text-sm font-medium text-[#4b423b]">
               {displayMoney({ currency: shown, convert, canConvert }, price, base, { productId: product._id, variantId: product.variantId })}
             </span>
           ) : (

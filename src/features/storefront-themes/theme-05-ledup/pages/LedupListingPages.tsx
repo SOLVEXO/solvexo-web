@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { LedupSectionRenderer } from '../sections';
 import { splitAround, useLoad, useTemplateSections } from '../../core/pageHooks';
@@ -14,19 +13,10 @@ import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { breadcrumbJsonLd, collectionJsonLd, pageUrlBuilder } from '../../core/seo/jsonLd';
 import { LedupProductBrowser } from '../components/LedupProductBrowser';
 import { LedupHeroCategoryBanner } from '../components/LedupHeroCategoryBanner';
-import { LedupBox, LedupBreadcrumbs, LedupSkeleton, LedupError } from '../ui/ledupUi';
+import { LedupBox, LedupSkeleton, LedupError } from '../ui/ledupUi';
 import { LedupNotFoundPage } from './LedupContentPages';
 
 const flat = (nodes: CategoryNode[]): CategoryNode[] => nodes.flatMap(n => [n, ...flat(n.children ?? [])]);
-
-function Title({ children, note }: { children: ReactNode; note?: ReactNode }) {
-  return (
-    <header className="mb-6">
-      <h1 className="m-0 text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">{children}</h1>
-      {note && <div className="mt-2 max-w-[720px] text-sm leading-relaxed text-stone-500">{note}</div>}
-    </header>
-  );
-}
 
 /** `/collections/:slugOrId`. */
 export function LedupCollectionPage() {
@@ -52,8 +42,8 @@ export function LedupCollectionPage() {
     <div className="w-full pb-20">
       <LedupHeroCategoryBanner />
       <LedupBox padY={false} className="mt-8">
-        <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: collection.name }]} />
-        <Title note={collection.description ? renderRichText(collection.description) : undefined}>{collection.name}</Title>
+        <h1 className="sr-only">{collection.name}</h1>
+        {collection.description && <div className="mx-auto mb-8 max-w-[720px] text-center text-sm leading-relaxed text-[#8c847e]">{renderRichText(collection.description)}</div>}
         <LedupProductBrowser collectionId={data._id} syncUrl />
       </LedupBox>
     </div>
@@ -78,12 +68,12 @@ export function LedupCategoryPage() {
       <LedupHeroCategoryBanner activeCategory={category._id} />
       {before.length > 0 && <LedupSectionRenderer sections={before} />}
       <LedupBox padY={false} className="mt-8">
-        <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: category.name }]} />
-        <Title note={category.description}>{category.name}</Title>
+        <h1 className="sr-only">{category.name}</h1>
         {category.children?.length > 0 && (
-          <ul className="m-0 mb-8 flex list-none flex-wrap gap-3 p-0">
+          <ul className="m-0 mb-10 flex list-none flex-wrap justify-center gap-4 p-0">
+            <li><span aria-current="page" className="inline-block rounded-full border border-[#8c7b70] bg-[#8c7b70] px-6 py-3 text-[16px] font-normal text-white">{category.name}</span></li>
             {category.children.map(c => (
-              <li key={c._id}><a href={`/category/${c.slug || c._id}`} className="inline-block rounded-full border border-stone-300 bg-white px-6 py-2.5 text-xs font-semibold tracking-wide text-stone-700 no-underline transition hover:border-stone-500">{c.name}</a></li>
+              <li key={c._id}><a href={`/category/${c.slug || c._id}`} className="inline-block rounded-full border border-[#a69d98] bg-transparent px-6 py-3 text-[16px] font-normal text-[#a69d98] no-underline transition hover:border-[#4b423b] hover:text-[#4b423b] md:px-7 md:py-[18px] md:text-[18px]">{c.name}</a></li>
             ))}
           </ul>
         )}
@@ -100,11 +90,11 @@ export function LedupSearchPage() {
   const q = (params.get('q') ?? '').trim();
   useStorefrontSeo({ title: q ? ts('pg.search_q', 'Search: {{q}}', { q }) : ts('nav.allProducts', 'All products'), noindex: !!q });
   return (
-    <div className="py-10">
-      <LedupBox>
-        <div className="mb-8 border-b border-stone-200 pb-6">
-          <p className="m-0 text-xs uppercase tracking-wider text-stone-400">{ts('nav.search', 'Search')}</p>
-          <h1 className="mt-1 text-2xl font-bold text-stone-900 md:text-3xl">
+    <div className="w-full pb-20">
+      <LedupHeroCategoryBanner />
+      <LedupBox padY={false} className="mt-10">
+        <div className="mb-8">
+          <h1 className={q ? 'mt-1 text-[28px] font-medium text-[#4b423b] md:text-[36px]' : 'sr-only'}>
             {q ? tsNodes('h.results_for', 'Results for {{query}}', { query: <span className="text-[var(--ld-accent)]">“{q}”</span> }) : ts('nav.allProducts', 'All products')}
           </h1>
         </div>
