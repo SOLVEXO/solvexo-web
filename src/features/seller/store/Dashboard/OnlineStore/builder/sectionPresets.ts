@@ -1,9 +1,9 @@
 import type { SectionType } from '@/api/services/storefrontTypes';
 
-export type PresetCategory = 'banners' | 'products' | 'collections' | 'trust' | 'story' | 'reviews' | 'marketing';
+export type PresetCategory = 'banners' | 'products' | 'collections' | 'trust' | 'story' | 'reviews' | 'marketing' | 'forms';
 export type PresetMock =
   | 'banner' | 'banner-left' | 'strip' | 'slides' | 'countdown' | 'products' | 'products-3' | 'spotlight' | 'tiles'
-  | 'badges' | 'columns' | 'steps' | 'rows' | 'text' | 'quotes' | 'gallery' | 'newsletter' | 'marquee' | 'faq' | 'blog' | 'video';
+  | 'badges' | 'columns' | 'steps' | 'rows' | 'text' | 'quotes' | 'gallery' | 'newsletter' | 'marquee' | 'faq' | 'blog' | 'video' | 'form';
 
 export interface SectionPreset {
   id: string;
@@ -24,6 +24,7 @@ export const PRESET_CATEGORIES: { id: PresetCategory; label: string }[] = [
   { id: 'story', label: 'Brand story' },
   { id: 'reviews', label: 'Reviews & social' },
   { id: 'marketing', label: 'Marketing' },
+  { id: 'forms', label: 'Forms' },
 ];
 
 const shopLink = { linkType: 'home' };
@@ -185,5 +186,67 @@ export const SECTION_PRESETS: SectionPreset[] = [
       { type: 'faq_item', settings: { question: 'How long does delivery take?', answer: 'Most orders arrive in 2–5 working days.' } },
       { type: 'faq_item', settings: { question: 'Can I pay cash on delivery?', answer: 'Yes, cash on delivery is available across the country.' } },
       { type: 'faq_item', settings: { question: 'What is your return policy?', answer: 'You can return unused items within 7 days of delivery.' } },
+    ] }) },
+
+  // ── Forms (a ready form the seller can edit field by field) ──
+  { id: 'form-contact', type: 'contact_form', category: 'forms', name: 'Contact form', description: 'Name, email and message', mock: 'form',
+    build: only({ intro: '', formName: 'Contact form', buttonLabel: 'Send message', successMessage: 'Thanks! We will get back to you soon.', fields: [
+      { id: 'name', type: 'name', label: 'Name', required: true, width: 'half' },
+      { id: 'email', type: 'email', label: 'Email', required: true, width: 'half' },
+      { id: 'phone', type: 'phone', label: 'Phone', width: 'half' },
+      { id: 'message', type: 'textarea', label: 'Message', required: true },
+    ] }) },
+  { id: 'form-wholesale', type: 'contact_form', category: 'forms', name: 'Wholesale request', description: 'Business details and what you want to buy', mock: 'form',
+    build: only({ intro: '', formName: 'Wholesale request', buttonLabel: 'Send request', successMessage: 'Thanks! Our team will contact you about wholesale pricing.', fields: [
+      { id: 'name', type: 'name', label: 'Contact name', required: true, width: 'half' },
+      { id: 'email', type: 'email', label: 'Business email', required: true, width: 'half' },
+      { id: 'company', type: 'text', label: 'Company name', required: true, width: 'half' },
+      { id: 'phone', type: 'phone', label: 'Phone', width: 'half' },
+      { id: 'qty', type: 'dropdown', label: 'Expected order size', options: ['Under 50 pieces', '50 to 200 pieces', '200 to 1,000 pieces', 'Over 1,000 pieces'] },
+      { id: 'message', type: 'textarea', label: 'What are you looking for?', required: true },
+    ] }) },
+  { id: 'form-quote', type: 'contact_form', category: 'forms', name: 'Quote request', description: 'Ask for a price on a custom order', mock: 'form',
+    build: only({ intro: '', formName: 'Quote request', buttonLabel: 'Request a quote', successMessage: 'Thanks! We will send your quote shortly.', fields: [
+      { id: 'name', type: 'name', label: 'Name', required: true, width: 'half' },
+      { id: 'email', type: 'email', label: 'Email', required: true, width: 'half' },
+      { id: 'what', type: 'text', label: 'What do you need?', required: true },
+      { id: 'budget', type: 'number', label: 'Budget (optional)', width: 'half' },
+      { id: 'date', type: 'date', label: 'Needed by', width: 'half' },
+      { id: 'files', type: 'file', label: 'Reference photo or file', fileKinds: 'both', maxSizeMb: 10 },
+      { id: 'details', type: 'textarea', label: 'Details' },
+    ] }) },
+  { id: 'form-support', type: 'contact_form', category: 'forms', name: 'Support request', description: 'Order number, topic and the problem', mock: 'form',
+    build: only({ intro: '', formName: 'Support request', buttonLabel: 'Submit request', successMessage: 'Thanks! Our support team will reply by email.', fields: [
+      { id: 'name', type: 'name', label: 'Name', required: true, width: 'half' },
+      { id: 'email', type: 'email', label: 'Email', required: true, width: 'half' },
+      { id: 'order', type: 'text', label: 'Order number', width: 'half' },
+      { id: 'topic', type: 'dropdown', label: 'Topic', required: true, width: 'half', options: ['Order status', 'Return or refund', 'Product question', 'Payment', 'Other'] },
+      { id: 'problem', type: 'textarea', label: 'How can we help?', required: true },
+      { id: 'shot', type: 'file', label: 'Screenshot or photo', fileKinds: 'images', maxSizeMb: 5 },
+    ] }) },
+  { id: 'form-feedback', type: 'contact_form', category: 'forms', name: 'Feedback form', description: 'A star rating and a few words', mock: 'form',
+    build: only({ intro: '', formName: 'Feedback', buttonLabel: 'Send feedback', successMessage: 'Thank you for your feedback!', fields: [
+      { id: 'rating', type: 'rating', label: 'How was your experience?', required: true },
+      { id: 'liked', type: 'radio', label: 'What did you like most?', options: ['Products', 'Delivery', 'Price', 'Customer service'] },
+      { id: 'comment', type: 'textarea', label: 'Tell us more' },
+      { id: 'email', type: 'email', label: 'Email (optional)' },
+    ] }) },
+  { id: 'form-event', type: 'contact_form', category: 'forms', name: 'Event registration', description: 'Sign people up for an event or workshop', mock: 'form',
+    build: only({ intro: '', formName: 'Event registration', buttonLabel: 'Register', successMessage: 'You are registered! We will email the details.', fields: [
+      { id: 'name', type: 'name', label: 'Full name', required: true, width: 'half' },
+      { id: 'email', type: 'email', label: 'Email', required: true, width: 'half' },
+      { id: 'phone', type: 'phone', label: 'Phone', width: 'half' },
+      { id: 'guests', type: 'number', label: 'Number of guests', width: 'half', min: 1, max: 10 },
+      { id: 'diet', type: 'checkbox', label: 'Needs', options: ['Vegetarian meal', 'Wheelchair access', 'Child seat'] },
+      { id: 'agree', type: 'consent', label: 'I agree to be contacted about this event.', required: true },
+    ] }) },
+  { id: 'form-job', type: 'contact_form', category: 'forms', name: 'Job application', description: 'Applicant details with a CV upload', mock: 'form',
+    build: only({ intro: '', formName: 'Job application', buttonLabel: 'Apply now', successMessage: 'Thanks for applying! We will review your application.', fields: [
+      { id: 'name', type: 'name', label: 'Full name', required: true, width: 'half' },
+      { id: 'email', type: 'email', label: 'Email', required: true, width: 'half' },
+      { id: 'phone', type: 'phone', label: 'Phone', width: 'half' },
+      { id: 'role', type: 'text', label: 'Position you are applying for', required: true, width: 'half' },
+      { id: 'cv', type: 'file', label: 'CV / resume', required: true, fileKinds: 'documents', maxSizeMb: 5 },
+      { id: 'letter', type: 'textarea', label: 'Why should we hire you?' },
     ] }) },
 ];

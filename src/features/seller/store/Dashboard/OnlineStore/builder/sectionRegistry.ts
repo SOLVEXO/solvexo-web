@@ -2,6 +2,7 @@
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 import { FEATURE_ICON_OPTIONS } from '@/features/storefront-themes/featureIcons';
+import { legacyContactFields } from '@/features/storefront-themes/core/forms/contactFormFields';
 
 export interface SectionMeta {
   type:               SectionType;
@@ -421,18 +422,27 @@ export const SECTION_META: SectionMeta[] = [
   {
     type: 'contact_form', label: 'Contact Form', description: 'A form visitors use to message you. Messages arrive under Online Store → Contact Messages (and by email).',
     Icon: MailIcon, color: '#0D9488',
-    defaultSettings: { heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.', showPhone: true },
+    defaultSettings: {
+      heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.',
+      // The seller edits this list (add, remove, reorder, required...); it starts as the classic Name / Email / Phone / Message form.
+      fields: legacyContactFields({}),
+    },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'intro', kind: 'textarea', label: 'Text above the form', rows: 2, maxLength: 300 },
       { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30 },
       { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
-      { key: 'showPhone', kind: 'checkbox', label: 'Ask for a phone number' },
-      { key: 'nameLabel', kind: 'text', label: 'Name field label', maxLength: 40, placeholder: 'Name', half: true },
-      { key: 'emailLabel', kind: 'text', label: 'Email field label', maxLength: 40, placeholder: 'Email', half: true },
-      { key: 'phoneLabel', kind: 'text', label: 'Phone field label', maxLength: 40, placeholder: 'Phone (optional)', half: true, showIf: s => s.showPhone !== false },
-      { key: 'messageLabel', kind: 'text', label: 'Message field label', maxLength: 40, placeholder: 'Message', half: true },
+      { key: 'fields', kind: 'formFields', label: 'Form fields', hint: 'Choose what visitors fill in. Add any field you need (name, phone, order number, a dropdown...). Answers arrive in Contact Messages.' },
+      { key: 'formName', kind: 'text', label: 'Form name', maxLength: 60, placeholder: 'e.g. Wholesale request', hint: 'Shown in your Contact Messages so answers of different forms can be told apart.' },
+      { key: 'display', kind: 'select', label: 'Show the form', options: [{ value: 'inline', label: 'On the page' }, { value: 'popup', label: 'In a pop-up opened by a button' }], hint: 'Pop-up: only a button shows on the page and the form opens above it.' },
+      { key: 'popupButtonLabel', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'e.g. Request a quote', showIf: s => s.display === 'popup' },
+      { key: 'successAction', kind: 'select', label: 'After sending', options: [{ value: 'message', label: 'Show the thank-you message' }, { value: 'redirect', label: 'Send the visitor to another page' }] },
+      { key: 'redirectUrl', kind: 'text', label: 'Send the visitor to', maxLength: 300, placeholder: 'https://… or /pages/thank-you', hint: 'An https:// link or a page on your store, starting with /.', showIf: s => s.successAction === 'redirect' },
+      { key: 'notifyEmails', kind: 'text', label: 'Email every answer to', maxLength: 600, placeholder: 'you@shop.com, team@shop.com', hint: 'Up to 5 addresses, separated by commas. Every new message is also in Contact Messages.' },
+      { key: 'autoReplyEnabled', kind: 'checkbox', label: 'Send the visitor an automatic reply', defaultOff: true },
+      { key: 'autoReplySubject', kind: 'text', label: 'Reply subject', maxLength: 120, placeholder: 'We got your message', showIf: s => s.autoReplyEnabled === true },
+      { key: 'autoReplyBody', kind: 'textarea', label: 'Reply text', rows: 5, maxLength: 2000, placeholder: 'Hi {{name}},\n\nThanks for contacting {{store}}. We received your message and will get back to you soon.', hint: 'Plain text. You can use {{name}}, {{store}} and {{form}}. Needs an Email field. Each address gets at most one automatic reply a day.', showIf: s => s.autoReplyEnabled === true },
     ]),
   },
   {

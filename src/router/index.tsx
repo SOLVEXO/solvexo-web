@@ -135,12 +135,14 @@ const MemberSecurityPage = lazy(() => import('@/features/seller/store/Dashboard/
 const SearchSettingsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/searchSettings/SearchSettingsPage'));
 const DevelopersPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/developers/DevelopersPage'));
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
+const CustomersHubLayout = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomersHubLayout'));
 const KhataHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/khata/KhataHub'));
 const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
 const CodProtectionPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/CodProtectionPage'));
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
 const CheckoutRulesHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/checkoutRules/CheckoutRulesHub'));
+const SocialCreatives = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/creatives/SocialCreatives'));
 const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/experiments/ExperimentsHub'));
 const ConnectedAppsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/ConnectedAppsHub'));
 const AppAuthorizePage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppAuthorizePage'));
@@ -418,16 +420,15 @@ const mainRouter = createBrowserRouter([
           { path: 'dashboard',                        element: <StoreDashboard /> },
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'digital',                          element: <DigitalHub /> },
-          { path: 'wholesale',                        element: <WholesaleHub /> },
           { path: 'subscriptions',                    element: <SubscriptionsHub /> },
           { path: 'checkout-rules',                   element: <CheckoutRulesHub /> },
           { path: 'experiments',                      element: <ExperimentsHub /> },
+          { path: 'creatives',                        element: <SocialCreatives /> },
           { path: 'app-platform',                     element: <ConnectedAppsHub /> },
           { path: 'app-platform/authorize',           element: <AppAuthorizePage /> },
           { path: 'app-platform/:installId',          element: <AppEmbedPage /> },
           { path: 'cod-protection',                   element: <CodProtectionPage /> },
           { path: 'messaging',                        element: <MessagingHub /> },
-          { path: 'khata',                            element: <KhataHub /> },
           { path: 'sales-channels',                   element: <SalesChannelsPage /> },
           { path: 'developers',                       element: <DevelopersPage /> },
           { path: 'search-settings',                  element: <SearchSettingsPage /> },
@@ -443,8 +444,12 @@ const mainRouter = createBrowserRouter([
           { path: 'products/add',                     element: <StoreAddProduct /> },
           { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
           { path: 'products/detail/:productId',       element: <StoreProductDetail /> },
-          { path: 'customer/list',                    element: <StoreCustomerList /> },
           // Shopify has no separate subscribers screen: it is the Customers list filtered by email-marketing status.
+          { element: <CustomersHubLayout />, children: [
+            { path: 'customer/list',                    element: <StoreCustomerList /> },
+            { path: 'wholesale',                        element: <WholesaleHub /> },
+            { path: 'khata',                            element: <KhataHub /> },
+          ] },
           { path: 'customer/subscribers',             element: <Navigate to="../customer/list?marketing=subscribed" replace /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
           // Settings hub — one tabbed page (General/Billing/Integrations/Staff/
