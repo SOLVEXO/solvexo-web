@@ -140,8 +140,8 @@ function Inner({ slug }: { slug: string }) {
     if (ok && drawerMounted) openDrawer(); else if (ok) navigate('/cart');
   };
 
-  const rowCls = 'grid grid-cols-[minmax(0,1fr)_2.2fr] items-center gap-4 border-b border-[#e2dedb] py-5 last:border-b-0';
-  const labelCls = 'font-medium text-stone-600';
+  const rowCls = 'grid grid-cols-[minmax(0,1fr)_2.2fr] items-center gap-4 border-b border-[#e2dedb] py-6 last:border-b-0';
+  const labelCls = 'text-[16px] font-normal text-[#4b423b]';
 
   return (
     <div className="ld-split-bg py-8">
@@ -150,17 +150,17 @@ function Inner({ slug }: { slug: string }) {
 
         <div className="mt-6 grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
           <div className="flex flex-col gap-4 lg:col-span-6">
-            <div className="relative flex aspect-square w-full items-center justify-center rounded-3xl bg-white p-8 sm:p-12">
+            <div className="relative flex aspect-[5/5.9] w-full items-center justify-center rounded-3xl bg-white p-8 sm:p-12 lg:max-w-[508px]">
               {mainImage
                 ? <img src={mainImage} alt={product.name} className="max-h-full max-w-full object-contain transition duration-300" />
                 : <div className="text-sm text-stone-300">{ts('ld.noImage', 'No image')}</div>}
             </div>
             {images.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:max-w-[508px] lg:justify-center">
                 {images.map((img, i) => (
                   <button key={img + i} type="button" aria-label={ts('product.showImage', 'Show image {{n}}', { n: i + 1 })} aria-current={imageIndex === i}
                     onClick={() => setGallery({ vid: variant._id, i })}
-                    className={`relative aspect-square h-20 w-20 shrink-0 rounded-2xl border bg-white p-2 transition ${imageIndex === i ? 'border-[var(--ld-accent)] ring-2 ring-[var(--ld-accent)]/20' : 'border-stone-200 hover:border-stone-400'}`}>
+                    className={`relative h-[100px] w-[80px] shrink-0 rounded-xl border-0 bg-white p-2 shadow-md transition ${imageIndex === i ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
                     <img src={img} alt="" className="h-full w-full object-contain" />
                   </button>
                 ))}
@@ -170,8 +170,9 @@ function Inner({ slug }: { slug: string }) {
 
           <div className="flex flex-col lg:col-span-6">
             {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase tracking-wider text-stone-400"><VendorLink name={detail.product.vendor} /></p>}
-            <h1 className="m-0 text-[clamp(32px,4vw,48px)] font-bold uppercase leading-tight tracking-tight" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{product.name}</h1>
-            {short && <p className="mt-2 text-sm font-normal leading-relaxed text-stone-500">{short}</p>}
+            <h1 className="m-0 text-[clamp(28px,3.4vw,40px)] font-medium uppercase leading-tight tracking-normal" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{product.name}</h1>
+            {short && <p className="mt-2 text-base font-normal leading-relaxed text-[#4b423b]">{short}</p>}
+            {description && <div className="prose prose-sm mt-6 max-w-none text-[16px] leading-relaxed text-[#6b625b]" dangerouslySetInnerHTML={{ __html: description }} />}
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3">
               {!wholesale.locked && <span className="text-2xl font-bold" style={{ color: sale.onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>}
@@ -179,10 +180,10 @@ function Inner({ slug }: { slug: string }) {
             </div>
 
             <div className="mt-8 border-t border-stone-200/80 pt-6">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-stone-900">{ts('ld.technicalSpecs', 'Technical characteristics')}</h2>
+              <h2 className="mb-4 text-[24px] font-semibold normal-case tracking-normal text-[#4b423b]">{ts('ld.technicalSpecs', 'Technical characteristics')}</h2>
               <div className="flex flex-col text-xs sm:text-sm">
                 {variant.sku && (
-                  <div className={rowCls}><span className={labelCls}>{ts('ld.reference', 'Reference')}</span><span className="ld-spec-pill ld-spec-pill-active"><bdi>{variant.sku}</bdi></span></div>
+                  <div className={rowCls}><span className={labelCls}>{ts('ld.reference', 'Reference')}</span><span className="ld-spec-pill ld-spec-pill-active w-fit justify-self-start"><bdi>{variant.sku}</bdi></span></div>
                 )}
                 {optionNames.map(name => {
                   const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
@@ -242,12 +243,6 @@ function Inner({ slug }: { slug: string }) {
               </LedupButton>
             </div>}
 
-            {description && (
-              <div className="mt-10 border-t border-stone-200/80 pt-6">
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-900">{ts('product.description', 'Description')}</h2>
-                <div className="prose prose-sm max-w-none text-stone-600" dangerouslySetInnerHTML={{ __html: description }} />
-              </div>
-            )}
           </div>
         </div>
 

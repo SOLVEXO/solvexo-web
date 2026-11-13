@@ -36,8 +36,8 @@ function HeroSlider({ section, blocks }: { section: Section; blocks: Block[] }) 
     <section aria-roledescription="carousel" aria-label={text(section.settings.heading) || ts('pg.featured', 'Featured')} style={{ background: t.colors.dark, color: t.colors.darkInk, fontFamily: t.fonts.body }}>
       <div className="relative mx-auto grid items-center gap-8 md:grid-cols-2" style={{ maxWidth: t.layout.maxWidth, minHeight, padding: `clamp(28px,4vw,56px) ${t.layout.containerPadX}` }}>
         <div aria-live={autoplay ? 'off' : 'polite'}>
-          {text(s.eyebrow) && <p className="m-0 mb-3 text-xs font-semibold uppercase" style={{ color: t.colors.accent, letterSpacing: '.1em' }}>{text(s.eyebrow)}</p>}
-          <h2 className="m-0 text-[clamp(28px,4vw,48px)] font-semibold leading-[1.1]" style={{ fontFamily: t.fonts.display }}>{text(s.heading)}</h2>
+          {text(s.eyebrow) && <p className="m-0 mb-3 text-[13px] font-medium" style={{ color: t.colors.accent }}>{text(s.eyebrow)}</p>}
+          <h2 className="m-0 text-[clamp(28px,4vw,48px)] font-light leading-[1.1]" style={{ fontFamily: t.fonts.display }}>{text(s.heading)}</h2>
           {text(s.text) && <p className="m-0 mt-4 max-w-[460px] text-base leading-relaxed opacity-80">{text(s.text)}</p>}
           {text(s.buttonLabel) && s.link && <div className="mt-7"><DealButton label={text(s.buttonLabel)} link={s.link} /></div>}
         </div>

@@ -11,6 +11,7 @@ import { ledupCssVars } from '../ui/ledupStyle';
 import '../ledup.css';
 import { ledupCssVars as txCssVars } from '../ui/ledupStylePort';
 import '../ledup-base.css';
+import '../ledup-signature.css';
 
 export function LedupLayout({ children }: { children: ReactNode }) {
   const { theme } = useStorefront();

@@ -419,7 +419,11 @@
     "subtotalItems_many": "المجموع الفرعي ({{count}} عنصرًا)",
     "subtotalItems_other": "المجموع الفرعي ({{count}} عنصر)",
     "storeCreditAppliedAmount": "تم تطبيق رصيد المتجر {{amount}}",
-    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}."
+    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}.",
+    "stepCart": "السلة",
+    "stepDetails": "التفاصيل",
+    "stepPayment": "الدفع",
+    "stepsAria": "خطوات الدفع"
   },
   "collection": {
     "notFound": "المجموعة غير موجودة",

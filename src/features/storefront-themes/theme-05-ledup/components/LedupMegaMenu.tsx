@@ -31,14 +31,13 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
                 {it.label}
               </button>
             ))}
-            {(current.link.to || current.link.href) && (
-              <NavAnchor link={current.link} onClick={onClose} className="ld-pillbtn" tabIndex={visible ? 0 : -1}>
-                {ts('ld.viewAll', 'View all')} <ArrowUpRight size={14} aria-hidden />
-              </NavAnchor>
-            )}
+            <a href="/search" onClick={onClose} className="ld-pillbtn mt-auto" tabIndex={visible ? 0 : -1} style={{ color: '#a69d98' }}>
+              {ts('ld.allCategories', 'All categories')} <ArrowUpRight size={14} aria-hidden />
+            </a>
           </div>
 
-          <div className={`grid gap-x-10 gap-y-8 ps-10 ${current.imageUrl ? 'w-3/5' : 'flex-1'} grid-cols-2 xl:grid-cols-3 content-start`}>
+          <div className={`flex flex-col ps-10 ${current.imageUrl ? 'w-3/5' : 'flex-1'}`}>
+          <div className="grid grid-cols-2 content-start gap-x-10 gap-y-8 xl:grid-cols-3">
             {columns.map(col => (
               <div key={col.id} className="flex flex-col gap-2">
                 <NavAnchor link={col.link} onClick={onClose} className="ld-childtitle" tabIndex={visible ? 0 : -1}>{col.title}</NavAnchor>
@@ -53,6 +52,12 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
                 </ul>
               </div>
             ))}
+          </div>
+          {(current.link.to || current.link.href) && (
+            <NavAnchor link={current.link} onClick={onClose} className="ld-pillbtn mt-10" tabIndex={visible ? 0 : -1}>
+              {ts('ld.viewAllIn', 'View all in {{name}}', { name: current.label })} <ArrowUpRight size={14} aria-hidden />
+            </NavAnchor>
+          )}
           </div>
 
           {current.imageUrl && (

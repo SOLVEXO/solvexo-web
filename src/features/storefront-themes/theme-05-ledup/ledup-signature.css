@@ -1,0 +1,297 @@
+/* ledup.pt signature sections: measured from the live site (1440 / 820 / 390 px). Colours: ink #4B423B, muted #8C847E, page #FAFAFA. */
+.lds { --lds-ink: #4b423b; --lds-muted: #8c847e; --lds-soft: #a69d98; font-family: 'Poppins', system-ui, sans-serif; color: var(--lds-ink); }
+.lds-wrap { max-width: 1440px; margin: 0 auto; padding: 0 80px; }
+@media (max-width: 1023px) { .lds-wrap { padding: 0 40px; } }
+@media (max-width: 640px) { .lds-wrap { padding: 0 20px; } }
+.lds-eyebrow { margin: 0 0 6px; font-size: 14px; font-weight: 400; color: var(--lds-muted); }
+.lds-h2 { margin: 0; font-size: clamp(28px, 3.2vw, 40px); font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; color: var(--lds-ink); }
+.lds-p { margin: 0; font-size: 15px; line-height: 22px; font-weight: 400; color: var(--lds-ink); }
+.lds-head { text-align: center; max-width: 780px; margin: 0 auto 64px; }
+.lds-head .lds-p { margin: 20px auto 0; max-width: 620px; }
+
+/* circle arrow button (photo tiles, documents, stats) */
+.lds-circ { display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; flex-shrink: 0; border: 1px solid rgba(255,255,255,.75); border-radius: 50%; color: #fff; background: transparent; transition: background-color .35s ease, color .35s ease, transform .35s ease; }
+.lds-circ svg { transition: transform .35s ease; }
+a:hover > .lds-circ, .lds-circ:hover { background: #fff; color: var(--lds-ink); }
+a:hover > .lds-circ svg, .lds-circ:hover svg { transform: rotate(45deg); }
+.lds-circ--dark { border-color: var(--lds-ink); color: var(--lds-ink); }
+a:hover > .lds-circ--dark, .lds-circ--dark:hover { background: var(--lds-ink); color: #fff; }
+
+/* outlined pill ("Saber Mais ↗") */
+.lds-pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; border: 1px solid var(--lds-ink); border-radius: 100px; font-size: 14px; font-weight: 400; color: var(--lds-ink); text-decoration: none; background: transparent; cursor: pointer; transition: background-color .3s ease, color .3s ease; }
+.lds-pill:hover { background: var(--lds-ink); color: #fff; }
+.lds-pill--light { border-color: #fff; color: #fff; }
+.lds-pill--light:hover { background: #fff; color: var(--lds-ink); }
+.lds-pill--solid { background: #9b8b80; border-color: #9b8b80; color: #fff; }
+.lds-pill--solid:hover { background: var(--lds-ink); border-color: var(--lds-ink); }
+
+/* ───── Bento ("Destaques"): 12 columns, 28px gap, tiles hang from the bottom ───── */
+.lds-bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 28px; align-items: end; }
+.lds-tile { position: relative; display: block; overflow: hidden; border-radius: 24px; text-decoration: none; color: inherit; min-width: 0; grid-column: span 3; }
+.lds-tile.s-small { grid-column: span 2; }
+.lds-tile.s-medium { grid-column: span 4; }
+.lds-tile.s-wide { grid-column: span 6; }
+.lds-tile.s-full { grid-column: span 12; }
+.lds-tile--photo { background: #5b524b; color: #fff; }
+.lds-tile--photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s ease; }
+.lds-tile--photo:hover img { transform: scale(1.04); }
+.lds-tile--photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(60,50,44,0) 35%, rgba(40,32,26,.78) 100%); }
+.lds-tile--photo .lds-tile-foot { position: absolute; left: 20px; right: 16px; bottom: 16px; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.lds-tile-title { font-size: 20px; font-weight: 600; line-height: 1.2; }
+.lds-tile--light { background: #fff; box-shadow: 0 8px 40px rgba(75,66,59,.06); display: flex; flex-direction: column; }
+.lds-tile--light .lds-tile-img { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 40px 44px 0; }
+.lds-tile--light img { max-width: 78%; max-height: 74%; object-fit: contain; transition: transform .6s ease; }
+.lds-tile--light:hover img { transform: scale(1.05); }
+.lds-tile--light .lds-tile-title { padding: 0 20px 26px; font-size: 16px; font-weight: 500; color: var(--lds-ink); }
+.lds-tile--stat { color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px; background: linear-gradient(135deg, #a8683a 0%, #e0a56f 48%, #b8794a 100%); }
+.lds-tile--stat strong { font-size: 28px; font-weight: 300; line-height: 1.1; }
+.lds-tile--stat span { margin-top: 6px; font-size: 11px; font-weight: 500; line-height: 1.3; }
+@media (max-width: 1023px) {
+  .lds-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .lds-tile, .lds-tile.s-small, .lds-tile.s-medium { grid-column: span 1; }
+  .lds-tile.s-wide, .lds-tile.s-full { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  .lds-bento { grid-template-columns: 1fr; }
+  .lds-tile, .lds-tile.s-small, .lds-tile.s-medium, .lds-tile.s-wide, .lds-tile.s-full { grid-column: span 1; }
+}
+
+/* ───── Projects: white panel, drag carousel, rotating badge ───── */
+.lds-projects { background: #fff; border-radius: 50px; padding: 150px 0 110px; margin: 40px 0 0; overflow: hidden; }
+.lds-projects-grid { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 0; align-items: stretch; padding-left: 100px; }
+.lds-projects-text { display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 8px; position: relative; z-index: 2; }
+.lds-projects-text .lds-h2 { max-width: 480px; }
+.lds-projects-text .lds-p { margin-top: 24px; max-width: 560px; }
+.lds-badge { position: absolute; top: 0; right: -40px; width: 150px; height: 150px; z-index: 3; pointer-events: none; }
+.lds-badge svg { width: 100%; height: 100%; }
+.lds-badge .lds-badge-spin { transform-origin: 50% 50%; animation: lds-spin 22s linear infinite; }
+@keyframes lds-spin { to { transform: rotate(360deg); } }
+.lds-track { display: flex; gap: 60px; overflow-x: auto; scrollbar-width: none; cursor: grab; padding: 0 100px 0 80px; user-select: none; -webkit-user-select: none; }
+.lds-track::-webkit-scrollbar { display: none; }
+.lds-track.is-drag { cursor: grabbing; }
+.lds-shot { position: relative; flex: 0 0 480px; height: 360px; border-radius: 20px; overflow: hidden; background: #e8e4e0; }
+.lds-shot img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.lds-dot { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 8px rgba(75,66,59,.85); }
+.lds-shot-cap { position: absolute; left: 20px; bottom: 16px; color: #fff; font-size: 13px; font-weight: 500; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+@media (max-width: 1023px) {
+  .lds-projects { padding: 80px 0 70px; border-radius: 40px; }
+  .lds-projects-grid { grid-template-columns: 1fr; padding-left: 40px; gap: 40px; }
+  .lds-badge { position: relative; right: auto; margin-bottom: 24px; width: 120px; height: 120px; }
+  .lds-track { padding: 0 40px 0 0; gap: 24px; }
+  .lds-shot { flex-basis: min(78vw, 480px); height: min(58vw, 360px); }
+  .lds-projects-text { gap: 0; }
+}
+@media (max-width: 640px) { .lds-projects-grid { padding-left: 20px; } .lds-track { padding-right: 20px; } }
+
+/* ───── Statement ───── */
+.lds-statement { text-align: center; padding: 130px 0 0; }
+.lds-statement .lds-h2 { margin-top: 4px; }
+.lds-statement .lds-p { max-width: 600px; margin: 22px auto 24px; }
+.lds-statement-img { display: block; width: calc(100% - 178px); max-width: 1262px; margin: 120px auto 0; height: clamp(320px, 41vw, 592px); object-fit: cover; border-radius: 20px 20px 0 0; }
+@media (max-width: 1023px) { .lds-statement { padding-top: 90px; } .lds-statement-img { width: calc(100% - 40px); margin-top: 70px; } }
+
+/* ───── Lighting simulation ("Interruptores") ───── */
+.lds-sim { padding: 0 0 80px; }
+.lds-sim-frame { background: #e0dedc; border-radius: 0 0 50px 50px; overflow: hidden; padding: 0 0 36px; }
+.lds-sim-scene { position: relative; margin: 0 auto; overflow: hidden; background: #5b524b; will-change: width, border-radius; aspect-ratio: 1000 / 420; }
+.lds-sim-scene img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.lds-sim-scene .lds-layer { transition: opacity .8s ease; }
+.lds-sim-glow { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; background: radial-gradient(55% 70% at var(--gx, 50%) 80%, rgba(255,205,130,.6), transparent 70%); mix-blend-mode: screen; pointer-events: none; }
+.lds-sim-glow.is-on { opacity: 1; }
+.lds-sim-label { margin: 28px 0 14px; text-align: center; font-size: 14px; color: var(--lds-muted); }
+.lds-sim-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; }
+.lds-sim-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.lds-switch { position: relative; width: 70px; height: 34px; padding: 0; border: 0; border-radius: 34px; background: #8d8079; cursor: pointer; transition: background-color .4s ease; box-shadow: inset 0 1px 3px rgba(0,0,0,.25); }
+.lds-switch i { position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%; background: #5f5750; display: flex; align-items: center; justify-content: center; color: #fff; transition: transform .4s cubic-bezier(.22,.61,.36,1), background-color .4s ease; }
+.lds-switch[aria-pressed="true"] { background: #4b423b; }
+.lds-switch[aria-pressed="true"] i { transform: translateX(36px); background: #f6d9a4; color: #4b423b; }
+[dir="rtl"] .lds-switch i { left: auto; right: 3px; }
+[dir="rtl"] .lds-switch[aria-pressed="true"] i { transform: translateX(-36px); }
+.lds-sim-name { font-size: 14px; text-transform: uppercase; color: var(--lds-muted); letter-spacing: .01em; }
+@media (max-width: 640px) { .lds-sim-row { gap: 14px; } .lds-switch { width: 58px; height: 30px; } .lds-switch i { width: 24px; height: 24px; } .lds-switch[aria-pressed="true"] i { transform: translateX(28px); } .lds-sim-frame { border-radius: 0 0 32px 32px; } }
+
+/* ───── Stacked values card ───── */
+.lds-stack { width: min(1182px, calc(100% - 40px)); margin: 0 auto; border-radius: 50px; overflow: hidden; color: #fff; background: #4b423b; }
+.lds-stack-item { position: relative; border-radius: 0 0 50px 50px; margin-top: -50px; padding-top: 50px; }
+.lds-stack-item:first-child { margin-top: 0; padding-top: 0; border-radius: 50px; }
+.lds-stack-bar { width: 100%; display: flex; align-items: center; gap: 20px; padding: 0 116px; height: 56px; border: 0; background: transparent; color: #fff; font: 500 15px/1 'Poppins', sans-serif; text-align: left; cursor: pointer; position: relative; }
+.lds-stack-bar b { font-weight: 500; }
+.lds-stack-body { display: grid; grid-template-columns: minmax(0, 1fr) 560px; gap: 0; padding: 0 116px; overflow: hidden; transition: max-height .6s cubic-bezier(.22,.61,.36,1), opacity .4s ease; }
+.lds-stack-copy { padding: 140px 0 20px; max-width: 520px; }
+.lds-stack-copy h2 { margin: 0 0 12px; font-size: clamp(28px, 3vw, 36px); font-weight: 500; line-height: 1.15; color: #fff; }
+.lds-stack-copy p { margin: 0; font-size: 15px; line-height: 22px; font-weight: 500; color: #fff; }
+.lds-stack-imgs { position: relative; }
+.lds-stack-imgs img { position: absolute; width: 270px; height: 320px; object-fit: cover; border-radius: 24px; }
+.lds-stack-imgs img:nth-child(1) { left: 0; top: 40px; }
+.lds-stack-imgs img:nth-child(2) { left: 299px; top: 120px; }
+@media (max-width: 1023px) {
+  .lds-stack-bar, .lds-stack-body { padding-left: 40px; padding-right: 40px; }
+  .lds-stack-body { grid-template-columns: 1fr; }
+  .lds-stack-copy { padding-top: 90px; max-width: none; }
+  .lds-stack-imgs { height: 280px; margin-bottom: 24px; }
+  .lds-stack-imgs img { width: 46%; height: 240px; }
+  .lds-stack-imgs img:nth-child(1) { left: 0; top: 0; }
+  .lds-stack-imgs img:nth-child(2) { left: auto; right: 0; top: 40px; }
+}
+@media (max-width: 640px) { .lds-stack-bar, .lds-stack-body { padding-left: 24px; padding-right: 24px; } .lds-stack { border-radius: 32px; } }
+
+/* ───── About: scroll collage hero ───── */
+.lds-collage { position: relative; height: 240vh; }
+.lds-collage-stick { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.lds-collage h1 { margin: 0; text-align: center; font-weight: 500; line-height: 1.12; color: #7a706a; padding: 0 20px; will-change: font-size; position: relative; z-index: 2; }
+.lds-collage-img { position: absolute; width: 17.4vw; aspect-ratio: 1 / 1; border-radius: 20px; object-fit: cover; box-shadow: 0 10px 40px rgba(75,66,59,.14); will-change: transform, opacity; z-index: 1; }
+@media (max-width: 640px) { .lds-collage-img { width: 34vw; } }
+
+/* ───── About: mission / vision / values around a tilted oval ───── */
+.lds-mission { position: relative; background: #fff; border-radius: 50px; margin: 40px 0 0; padding: 120px 0; }
+.lds-mission-stage { position: relative; max-width: 1280px; margin: 0 auto; min-height: 980px; padding: 0 40px; }
+.lds-oval { position: absolute; left: 50%; top: 50%; width: min(860px, 80%); aspect-ratio: 1.46 / 1; transform: translate(-50%, -50%) rotate(-33deg); border-radius: 50%; overflow: hidden; background: #e8e4e0; }
+.lds-oval img { position: absolute; left: 50%; top: 50%; width: 140%; height: 140%; object-fit: cover; transform: translate(-50%, -50%) rotate(33deg); }
+.lds-glass { position: absolute; width: 340px; padding: 32px; border-radius: 24px; background: rgba(247,245,243,.82); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); z-index: 2; }
+.lds-glass--0 { right: 0; top: 2%; }
+.lds-glass--1 { left: 0; top: 8%; }
+.lds-glass--2 { right: 0; top: 46%; }
+.lds-glass-ico { display: flex; align-items: center; justify-content: center; width: 68px; height: 68px; margin-bottom: 36px; border-radius: 50%; background: #fff; color: var(--lds-ink); }
+.lds-glass small { display: block; font-size: 14px; color: var(--lds-soft); }
+.lds-glass h3 { margin: 6px 0 16px; font-size: 24px; font-weight: 500; line-height: 1.35; color: var(--lds-ink); }
+.lds-glass p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--lds-ink); }
+@media (max-width: 1023px) {
+  .lds-mission { padding: 80px 0; border-radius: 40px; }
+  .lds-mission-stage { min-height: 0; display: flex; flex-direction: column; gap: 20px; }
+  .lds-oval { position: relative; left: auto; top: auto; transform: none; width: 100%; aspect-ratio: 16 / 10; border-radius: 28px; }
+  .lds-oval img { width: 100%; height: 100%; transform: translate(-50%, -50%); }
+  .lds-glass, .lds-glass--0, .lds-glass--1, .lds-glass--2 { position: relative; inset: auto; width: auto; }
+}
+
+/* ───── About: timeline carousel ───── */
+.lds-time { position: relative; margin: 0 17px; min-height: 560px; border-radius: 50px; overflow: hidden; color: #fff; background: linear-gradient(115deg, #a2653f 0%, #d99a68 38%, #ecc794 62%, #b57a50 100%); }
+.lds-time-mark { position: absolute; right: 8%; top: 4%; font-size: clamp(220px, 32vw, 480px); font-weight: 500; line-height: 1; color: rgba(255,255,255,.2); pointer-events: none; user-select: none; }
+.lds-time-inner { position: relative; padding: 120px 156px 80px; }
+.lds-time-line { position: relative; height: 30px; margin-bottom: 70px; }
+.lds-time-line::before { content: ''; position: absolute; left: 0; right: 0; top: 14px; height: 2px; background: rgba(255,255,255,.9); }
+.lds-time-dot { position: absolute; top: 0; width: 30px; height: 30px; border-radius: 50%; background: #fff; }
+.lds-time-dot--end { right: 0; box-shadow: 0 0 0 12px rgba(255,255,255,.25); }
+.lds-time-year { position: absolute; top: -66px; left: 0; padding: 8px 18px; border-radius: 40px; background: #fff; color: #5a5048; font-size: 20px; line-height: 1.2; }
+.lds-time-body { max-width: 640px; min-height: 160px; }
+.lds-time-body h3 { margin: 0 0 24px; font-size: clamp(26px, 3vw, 36px); font-weight: 500; }
+.lds-time-body p { margin: 0; font-size: 15px; line-height: 22px; font-weight: 500; }
+.lds-time-nav { position: absolute; right: 150px; top: 50%; transform: translateY(-20%); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.lds-time-nav button { width: 56px; height: 56px; border: 1px solid #fff; border-radius: 50%; background: transparent; color: #fff; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color .3s ease, color .3s ease; }
+.lds-time-nav button:hover:not(:disabled) { background: #fff; color: #5a5048; }
+.lds-time-nav button:disabled { opacity: .45; cursor: default; }
+.lds-time-nav span { font-size: 14px; font-weight: 600; }
+@media (max-width: 1023px) { .lds-time-inner { padding: 110px 40px 80px; } .lds-time-nav { right: 40px; top: auto; bottom: 30px; transform: none; flex-direction: row; } .lds-time { border-radius: 36px; } }
+
+/* ───── Resellers: district carousel ───── */
+.lds-find { background: #fff; border-radius: 50px 50px 0 0; padding: 72px 40px 80px; }
+.lds-search { position: relative; display: flex; align-items: center; height: 44px; border-radius: 44px; background: #e0dedc; padding: 0 18px 0 12px; }
+.lds-search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: 0; font: 400 14px 'Poppins', sans-serif; color: var(--lds-ink); }
+.lds-search input::placeholder { color: #8c847e; }
+.lds-count { margin: 18px 0 0; text-align: center; font-size: 12px; text-transform: uppercase; color: #000; }
+.lds-dist { position: relative; display: flex; align-items: center; justify-content: center; height: 150px; overflow: hidden; }
+.lds-dist-row { display: flex; align-items: center; justify-content: center; gap: 120px; white-space: nowrap; }
+.lds-dist-row button { border: 0; background: transparent; cursor: pointer; font: 300 clamp(44px, 5vw, 64px)/1 'Poppins', sans-serif; color: #c9c3be; transition: color .4s ease; padding: 0; }
+.lds-dist-row button[aria-pressed="true"] { color: var(--lds-ink); }
+.lds-arrow { position: absolute; top: 50%; width: 91px; height: 91px; transform: translateY(-50%); border: 1px solid var(--lds-ink); border-radius: 50%; background: #fff; color: var(--lds-ink); font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color .3s ease, color .3s ease; z-index: 2; }
+.lds-arrow:hover { background: var(--lds-ink); color: #fff; }
+.lds-arrow--l { left: 0; } .lds-arrow--r { right: 0; }
+.lds-sub { margin: 28px 0 14px; text-align: center; font-size: 12px; text-transform: uppercase; color: #000; }
+.lds-towns { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 32px; }
+.lds-towns button { border: 0; background: transparent; cursor: pointer; padding: 0; font: 400 20px/1.4 'Poppins', sans-serif; color: #b3aca7; transition: color .3s ease; }
+.lds-towns button[aria-pressed="true"] { color: var(--lds-ink); }
+.lds-shop { max-width: 420px; margin: 48px auto 0; padding: 28px 30px; border-radius: 24px; background: #f4f4f4; }
+.lds-shop h3 { margin: 0 0 12px; font-size: 20px; font-weight: 600; text-align: center; }
+.lds-shop p { margin: 0 0 14px; font-size: 14px; line-height: 1.5; }
+.lds-shop-acts { display: flex; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 1023px) { .lds-find { padding: 48px 20px 60px; border-radius: 36px 36px 0 0; } .lds-dist-row { gap: 60px; } .lds-arrow { width: 60px; height: 60px; font-size: 20px; } .lds-towns button { font-size: 16px; } }
+
+/* ───── Contact: words that light up while you scroll, glass form ───── */
+.lds-reveal { position: relative; min-height: 100vh; display: flex; align-items: center; background: radial-gradient(90% 90% at 25% 15%, #55473b 0%, #3d3128 55%, #241c15 100%); color: #fff; overflow: hidden; }
+.lds-reveal .lds-wrap { padding-left: 156px; padding-right: 80px; width: 100%; }
+.lds-reveal small { display: block; margin-bottom: 18px; font-size: 14px; color: rgba(255,255,255,.35); }
+.lds-reveal h1 { margin: 0; font-size: clamp(36px, 5.4vw, 80px); font-weight: 500; line-height: 1.17; letter-spacing: -0.01em; }
+.lds-reveal .w { transition: opacity .25s linear, color .25s linear; opacity: .28; }
+.lds-reveal .w.on { opacity: 1; }
+.lds-reveal .lds-p { margin: 34px 0 44px; max-width: 1000px; color: #fff; font-size: 18px; line-height: 1.4; }
+.lds-modal { position: fixed; inset: 0; z-index: 9000; display: flex; justify-content: flex-end; align-items: stretch; background: rgba(20,14,9,.55); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); padding: 22px; animation: lds-fade .35s ease both; }
+@keyframes lds-fade { from { opacity: 0; } to { opacity: 1; } }
+.lds-modal-card { position: relative; width: min(785px, 100%); overflow-y: auto; border-radius: 50px; padding: 60px 100px 60px; background: rgba(110,98,88,.88); color: #fff; font-family: 'Poppins', sans-serif; }
+.lds-modal-card h2 { margin: 0 0 54px; font-size: 24px; font-weight: 500; }
+.lds-modal-card h4 { margin: 0 0 20px; font-size: 12px; font-weight: 500; text-transform: uppercase; }
+.lds-modal-card .lds-close { position: absolute; top: 40px; right: 40px; width: 32px; height: 32px; border: 0; background: transparent; color: #fff; cursor: pointer; }
+.lds-reasons { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 52px; }
+.lds-reasons button { padding: 9px 16px; border: 1px solid #fff; border-radius: 40px; background: transparent; color: #fff; font: 500 12px/1.3 'Poppins', sans-serif; cursor: pointer; transition: background-color .3s ease, color .3s ease; }
+.lds-reasons button[aria-pressed="true"], .lds-reasons button:hover { background: #fff; color: var(--lds-ink); }
+.lds-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 24px; margin-bottom: 52px; }
+.lds-fields label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 8px; }
+.lds-fields input, .lds-fields textarea { width: 100%; border: 0; border-bottom: 1px solid rgba(255,255,255,.85); background: transparent; color: #fff; padding: 6px 0 8px; font: 400 14px 'Poppins', sans-serif; outline: 0; resize: vertical; }
+.lds-fields input::placeholder, .lds-fields textarea::placeholder { color: rgba(255,255,255,.5); }
+.lds-fields .full { grid-column: 1 / -1; }
+.lds-agree { display: flex; align-items: center; gap: 10px; margin: 8px 0 36px; font-size: 12px; font-weight: 500; }
+.lds-agree input { width: 16px; height: 16px; accent-color: #fff; }
+.lds-send { width: 70px; height: 70px; border: 1px solid rgba(255,255,255,.7); border-radius: 50%; background: transparent; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color .3s ease, color .3s ease; }
+.lds-send:hover:not(:disabled) { background: #fff; color: var(--lds-ink); }
+.lds-send:disabled { opacity: .4; cursor: default; }
+@media (max-width: 1023px) { .lds-reveal .lds-wrap { padding: 0 24px; } .lds-modal { padding: 0; } .lds-modal-card { border-radius: 0; padding: 70px 24px 40px; } .lds-fields { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) { .lds-badge .lds-badge-spin { animation: none; } .lds-reveal .w { opacity: 1; transition: none; } }
+
+/* ───── Hero copy: bottom-left like ledup.pt, dark brown on the light photo ───── */
+.ld-hero-copy { padding: 40px 72px 190px; }
+.ld-root .ld-hero h1 { font-weight: 500 !important; letter-spacing: 0 !important; }
+@media (max-width: 1023px) { .ld-hero-copy { padding: 24px 20px 130px; } }
+
+/* ───── Header values measured on ledup.pt: pill links 14px/400 ink, CTA 36px, side padding 75px ───── */
+.ld-root .ld-navlink { font-size: 14px; font-weight: 400; color: #4b423b; padding: .5rem 1.25rem; }
+.ld-root .ld-ctabtn { height: 36px; padding: 0 20px; font-size: 14px; font-weight: 400; background: rgba(95,73,58,.64); -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px); }
+.ld-root .ld-ctabtn:hover { background: #5f493a; }
+.ld-root .ld-iconbtn { width: 36px; height: 36px; }
+@media (min-width: 1024px) { .ld-root .ld-header { padding: 40px 75px 0; } }
+
+@media (max-width: 640px) { .lds-tile--light { height: 270px !important; } .lds-tile--photo { height: 240px !important; } .lds-tile--stat { height: 110px !important; } .lds-head { margin-bottom: 40px; } .lds-time-mark { right: 2%; top: auto; bottom: 0; font-size: 200px; } }
+
+/* ───── Cart drawer, mega menu, mobile menu: values measured on ledup.pt ───── */
+.ld-drawer { animation: ld-drawer-in .38s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes ld-drawer-in { from { transform: translateX(100%); } to { transform: none; } }
+[dir="rtl"] .ld-drawer { animation-name: ld-drawer-in-rtl; }
+@keyframes ld-drawer-in-rtl { from { transform: translateX(-100%); } to { transform: none; } }
+.ld-root .ld-parent { font-size: 1.25rem; line-height: 1.5; }
+.ld-root .ld-childtitle { font-size: .75rem; letter-spacing: .01em; }
+.ld-root .ld-grand { font-size: 1.0625rem; color: #4b423b; }
+.ld-root .ld-mega-feature { border-radius: 1.5rem; box-shadow: 0 8px 30px rgba(75,66,59,.08); }
+.ld-root .ld-mobile-item { font-size: 1.25rem; font-weight: 300; padding: .6rem 1rem; }
+.ld-root .ld-mobile-panel { border-radius: 0 0 1.5rem 1.5rem; padding: 1.25rem 1.25rem 1.75rem; }
+@media (max-width: 1023px) { .ld-root .ld-burger { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; color: #4b423b; } .ld-root .ld-burger:hover { background: rgba(75,66,59,.08); } }
+@media (prefers-reduced-motion: reduce) { .ld-drawer { animation: none; } }
+
+/* the signature variables must also exist outside .lds sections (cart drawer, popovers) */
+:root, .ld-root { --lds-ink: #4b423b; --lds-muted: #8c847e; --lds-soft: #a69d98; }
+
+/* phones: only the burger (and the cart) stay in the header, like ledup.pt; search + account live in the menu panel */
+@media (max-width: 1023px) { .ld-root .ld-hide-md, .ld-root .ld-iconbtn.ld-hide-md { display: none; } }
+
+.lds-map { display: block; width: 100%; height: 480px; border: 0; background: #ece8e4; }
+
+/* a panel inside the centred auth card is just its content */
+.ld-flat > section { background: transparent !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+
+.lds-projects-copy { margin-top: auto; padding-top: 220px; }
+@media (max-width: 1023px) { .lds-projects-copy { padding-top: 24px; } .lds-badge { margin-bottom: 0; } }
+
+
+
+/* ledup.pt footer: a soft diagonal light band across the brown */
+.ld-root .ld-footer-wrapper { background-image: linear-gradient(105deg, rgba(255,255,255,0) 28%, rgba(255,255,255,.13) 46%, rgba(255,255,255,0) 64%), linear-gradient(180deg, color-mix(in srgb, var(--ld-footer, #54453a) 82%, #000) 0%, var(--ld-footer, #54453a) 100%); }
+
+/* ledup.pt banner: dark copper top-left, warm middle, light tan lower-right (still follows the seller banner colour) */
+.ld-root .ld-copper-gradient { background: linear-gradient(115deg, color-mix(in srgb, var(--ld-banner, #c49466) 74%, #5e2e12) 0%, color-mix(in srgb, var(--ld-banner, #c49466) 88%, #7a4020) 24%, var(--ld-banner, #c49466) 52%, color-mix(in srgb, var(--ld-banner, #c49466) 70%, #fff) 82%, color-mix(in srgb, var(--ld-banner, #c49466) 84%, #fff) 100%); }
+
+/* ---- ledup.pt motion + hover values, read from the live stylesheet (Button_*, ProductCard_*, Footer_*) ---- */
+.ld-root .ld-product-card.ld-product-card, .ld-drawer .ld-product-card.ld-product-card { box-shadow: 0 .1px 20px 0 #efefef; border-radius: 1.25rem; transition: transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s ease; }
+.ld-root .ld-product-card.ld-product-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0,0,0,.1), 0 2px 8px rgba(0,0,0,.05); }
+.lb-btn { transition: color .12s ease-in-out, background-color .1s ease-in-out, border-color .1s ease-in-out; }
+.lb-btn:hover:not([disabled]) { opacity: 1; }
+.lb-btn[data-variant="primary"]:hover:not([disabled]), .lb-btn[data-variant="dark"]:hover:not([disabled]) { background-color: rgba(68,60,54,.8) !important; }
+.lb-btn[data-variant="outline"]:hover:not([disabled]) { background-color: rgba(95,73,58,.64) !important; border-color: rgba(95,73,58,.64) !important; color: #fff !important; }
+.ld-footer-wrapper a { transition: color .18s ease; }
+.ld-footer-wrapper a:hover { color: #fff; }
