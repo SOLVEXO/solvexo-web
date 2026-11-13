@@ -77,9 +77,9 @@ function PasswordForm({ onDone }: { onDone: () => void }) {
 }
 
 function OrdersTable({ orders }: { orders: OrderSummary[] }) {
-  const th = 'px-3 py-3 text-start text-xs font-semibold uppercase';
+  const th = 'whitespace-nowrap px-3 py-3 text-start text-[13px] font-medium';
   return (
-    <div className="overflow-x-auto" style={{ border: `1px solid ${t.colors.border}` }}>
+    <div className="overflow-x-auto" style={{ border: '1px solid #ebe8e5', borderRadius: 16 }}>
       <table className="w-full border-collapse text-sm">
         <caption className="sr-only">{ts('account.orders', 'My orders')}</caption>
         <thead style={{ background: t.colors.bgAlt, color: t.colors.inkMuted }}>
@@ -88,11 +88,11 @@ function OrdersTable({ orders }: { orders: OrderSummary[] }) {
         <tbody>
           {orders.map(o => (
             <tr key={o.orderId} style={{ borderTop: `1px solid ${t.colors.border}` }}>
-              <td className="px-3 py-3"><Link to={`/orders/${o.orderId}`} className="font-semibold no-underline hover:underline" style={{ color: t.colors.accent }}>#<bdi>{o.orderNumber}</bdi></Link></td>
-              <td className="px-3 py-3" style={{ color: t.colors.inkMuted }}>{formatOrderDate(o.createdAt)}</td>
-              <td className="px-3 py-3"><LedupOrderChip badge={derivePaymentBadge(o)} /></td>
-              <td className="px-3 py-3"><LedupOrderChip badge={deriveFulfillmentBadge(o)} /></td>
-              <td className="px-3 py-3 text-end font-semibold">{nativeMoney(o.totalAmount, o.currency)}</td>
+              <td className="whitespace-nowrap px-3 py-3"><Link to={`/orders/${o.orderId}`} className="font-semibold no-underline hover:underline" style={{ color: t.colors.accent }}>#<bdi>{o.orderNumber}</bdi></Link></td>
+              <td className="whitespace-nowrap px-3 py-3" style={{ color: t.colors.inkMuted }}>{formatOrderDate(o.createdAt)}</td>
+              <td className="whitespace-nowrap px-3 py-3"><LedupOrderChip badge={derivePaymentBadge(o)} /></td>
+              <td className="whitespace-nowrap px-3 py-3"><LedupOrderChip badge={deriveFulfillmentBadge(o)} /></td>
+              <td className="whitespace-nowrap px-3 py-3 text-end font-semibold">{nativeMoney(o.totalAmount, o.currency)}</td>
             </tr>
           ))}
         </tbody>

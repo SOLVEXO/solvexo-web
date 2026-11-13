@@ -105,10 +105,10 @@ registerLedupSection('testimonials', (section, blocks, colors) => {
           return (
             <li key={bid(b, i)}>
               <PreviewBlock blockId={bid(b, i)}>
-                <figure className="m-0 flex h-full flex-col gap-5 p-8" style={{ background: colors.bgAlt }}>
+                <figure className="m-0 flex h-full flex-col gap-5 p-8" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 8px 40px rgba(75,66,59,.06)' }}>
                   {rating > 0 && <div className="flex gap-0.5" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: rating })}>{Array.from({ length: 5 }).map((_, k) => <Star key={k} size={15} fill={k < rating ? colors.ink : 'none'} stroke={colors.ink} />)}</div>}
-                  <blockquote className="m-0 flex-1 text-[19px] leading-[1.5]" style={{ fontFamily: t.fonts.display }}>“{s.quote}”</blockquote>
-                  <figcaption className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.inkMuted }}>
+                  <blockquote className="m-0 flex-1 text-[18px] font-light leading-[1.6]" style={{ fontFamily: t.fonts.display }}>“{s.quote}”</blockquote>
+                  <figcaption className="flex items-center gap-3 text-[13px] font-medium" style={{ color: colors.inkMuted }}>
                     {s.avatarUrl && <img src={s.avatarUrl} alt="" loading="lazy" className="h-9 w-9 shrink-0 rounded-full object-cover" />}
                     <span>{s.authorName}{(s.authorRole || s.role) ? ` · ${s.authorRole || s.role}` : ''}</span>
                   </figcaption>
@@ -135,7 +135,7 @@ registerLedupSection('trust_badges', (_section, blocks, colors) => {
           const Icon = ICONS[String(b.settings.icon)] ?? Check;
           return (
             <li key={bid(b, i)}><PreviewBlock blockId={bid(b, i)}>
-              <div className="flex items-center justify-center gap-3 text-[12px] font-semibold uppercase tracking-[0.12em] md:justify-start"><Icon size={20} strokeWidth={1.5} />{b.settings.text}</div>
+              <div className="flex items-center justify-center gap-3 text-[14px] font-normal md:justify-start"><Icon size={20} strokeWidth={1.5} />{b.settings.text}</div>
             </PreviewBlock></li>
           );
         })}
@@ -163,16 +163,16 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
   return (
     <section style={{ background: colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto max-w-[620px] text-center">
-        {showEyebrow(s) && <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: colors.inkMuted }}>{copyText(s, 'eyebrow', 'Private notes')}</p>}
+        {showEyebrow(s) && <p className="m-0 mb-3 text-[13px] font-medium" style={{ color: colors.inkMuted }}>{copyText(s, 'eyebrow', 'Private notes')}</p>}
         <h2 className="m-0 mb-4 text-[clamp(28px,3.6vw,44px)] leading-[1.1]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{s.heading || ts('pg.stay_in_the_loop', 'Stay in the loop')}</h2>
         {s.subtext && <p className="m-0 mb-8 text-[15px] leading-[1.7]" style={{ color: colors.inkMuted }}>{s.subtext}</p>}
         {state === 'done' ? <p role="status" className="m-0 text-[15px]" style={{ color: t.colors.success }}>{message}</p> : (
           <form onSubmit={submit} className="mt-8 flex flex-col gap-3 sm:flex-row">
             <label htmlFor="lb-nl" className="sr-only">{ts('auth.email', 'Email')}</label>
             <input id="lb-nl" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={copyText(s, 'placeholder', 'Your email')}
-              className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm outline-none" style={{ border: `1px solid ${colors.ink}`, color: colors.ink, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }} />
-            <button type="submit" disabled={state === 'loading'} className="cursor-pointer px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] disabled:opacity-60"
-              style={{ background: colors.accent, color: colors.accentInk, border: `1px solid ${colors.accent}`, borderRadius: t.buttonRadiusPx, fontFamily: t.fonts.body }}>
+              className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm outline-none" style={{ border: '1px solid #ebe8e5', background: '#f7f6f5', color: colors.ink, borderRadius: 9999, fontFamily: t.fonts.body }} />
+            <button type="submit" disabled={state === 'loading'} className="cursor-pointer px-8 py-3.5 text-[13px] font-medium disabled:opacity-60"
+              style={{ background: colors.accent, color: colors.accentInk, border: `1px solid ${colors.accent}`, borderRadius: 9999, fontFamily: t.fonts.body }}>
               {state === 'loading' ? ts('pg.word_subscribing', 'Subscribing…') : copyText(s, 'buttonLabel', 'Subscribe')}
             </button>
           </form>

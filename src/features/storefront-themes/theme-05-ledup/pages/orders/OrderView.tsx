@@ -76,7 +76,7 @@ export function OrderView({ order, mode, actions }: { order: OrderDetail; mode: 
                   const hasExtras = account && (returned || !!item.exchangeOrderId || isDigitalItem(item));
                   return (
                     <tr key={item.itemId ?? item._id ?? i}>
-                      <td style={ledupTd()}>
+                      <td style={{ ...ledupTd(), whiteSpace: 'normal' }}>
                         <div className="flex gap-3">
                           <div className="grid size-16 shrink-0 place-items-center overflow-hidden" style={{ background: t.colors.bgAlt, borderRadius: t.fieldRadiusPx }}>
                             {item.image ? <img src={item.image} alt="" className="size-full object-contain p-1" /> : <Package size={20} style={muted} aria-hidden />}

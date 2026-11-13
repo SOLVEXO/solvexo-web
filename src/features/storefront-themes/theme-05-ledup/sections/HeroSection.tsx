@@ -13,15 +13,7 @@ import { registerLedupSection } from './ledupSectionRegistry';
 import { LinkButton } from './SectionShell';
 import { EditableText, useInlineEditActive } from '../../inlineEdit';
 
-const HEIGHT: Record<Exclude<HeightPreset, 'adapt' | 'custom'>, string> = { small: 'clamp(320px, 46vh, 460px)', medium: 'clamp(420px, 68vh, 680px)', large: 'clamp(520px, 88vh, 900px)' };
-
-/** Last word of the headline set in the serif italic accent face. */
-function AccentHeading({ text }: { text: string }) {
-  const words = String(text).trim().split(/\s+/);
-  if (words.length < 2) return <>{text}</>;
-  const last = words.pop();
-  return <>{words.join(' ')} <span className="ld-serif" style={{ fontSize: '1.08em' }}>{last}</span></>;
-}
+const HEIGHT: Record<Exclude<HeightPreset, 'adapt' | 'custom'>, string> = { small: 'clamp(320px, 46vh, 460px)', medium: 'clamp(420px, 68vh, 680px)', large: 'max(560px, 100svh)' };
 
 /** The slide's heading / text / button. Used over the image, and again under it on phones when the seller picks "Below image". */
 function SlideText({ block, color, onImage }: { block: Block; color: string; onImage: boolean }) {
@@ -29,8 +21,8 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
   const editing = useInlineEditActive();
   return (
     <div className={`${onImage ? 'ld-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
-      {s.heading && <h1 className="ld-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
-      {s.subheading && <p className="ld-up ld-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
+      {s.heading && <h1 className="ld-up m-0 mb-5 text-[clamp(30px,4vw,57.6px)] font-medium leading-[1.2] tracking-normal" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : s.heading}</h1>}
+      {s.subheading && <p className="ld-up ld-up-1 m-0 mb-8 max-w-[820px] text-[15px] leading-[1.5] md:text-[18px]" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
       <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} />
     </div>
   );
@@ -52,12 +44,12 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
             style={adapt || whole ? undefined : { objectPosition: focalOf(s.focalPoint) }} />
         </>
       )}
-      <div className="absolute inset-0" style={{ background: typeof s.overlayOpacity === 'number' ? `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` : 'linear-gradient(90deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 100%)' }} />
+      {typeof s.overlayOpacity === 'number' && s.overlayOpacity > 0 && <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` }} />}
       {hasText(block) && (
         // "Below image" on phones: no text over the picture there (it appears under it instead, see Hero).
-        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end md:items-center`}>
-          <div className="mx-auto w-full" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX} 72px`, textAlign: s.contentAlign === 'center' || s.contentAlign === 'right' ? s.contentAlign : 'left' }}>
-            <SlideText block={block} onImage color={typeof s.textColor === 'string' && s.textColor ? s.textColor : '#fff'} />
+        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end`}>
+          <div className="ld-hero-copy w-full" style={{ textAlign: s.contentAlign === 'center' || s.contentAlign === 'right' ? s.contentAlign : 'left' }}>
+            <SlideText block={block} onImage color={typeof s.textColor === 'string' && s.textColor ? s.textColor : '#4b423b'} />
           </div>
         </div>
       )}
@@ -88,7 +80,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   }, [auto, n, seconds]);
 
   if (n === 0) return null;
-  const desk = (settings.heightPreset ?? 'medium') as HeightPreset;
+  const desk = (settings.heightPreset ?? 'large') as HeightPreset;
   const mob = mobileHeightOf(desk, settings.mobileHeightPreset);
   // Small / Medium / Large, or the seller's own height in px ("Custom"); the phone height falls back to the desktop one.
   const heightOf = (p: HeightPreset | undefined, custom: unknown) => {
@@ -148,7 +140,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
       )}
 
       {n > 1 && pagination !== 'none' && (
-        <div className="absolute inset-x-0 bottom-8 flex items-center justify-start gap-3 ps-6 md:ps-14">
+        <div className="absolute inset-x-0 bottom-[76px] flex items-center justify-start gap-3 ps-5 md:bottom-[62px] md:ps-10">
           {pagination === 'counter'
             ? <span className="text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
             : slides.map((_, k) => (

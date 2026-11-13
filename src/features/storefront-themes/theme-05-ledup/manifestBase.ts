@@ -1,4 +1,5 @@
 import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
+import { FEATURE_ICON_OPTIONS } from '../featureIcons';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const DEFAULTS: Partial<StorefrontColors> = {
@@ -128,8 +129,9 @@ export const baseManifest: ThemeManifest = {
           { key: 'title', kind: 'text', label: 'Title', maxLength: 80 },
           { key: 'caption', kind: 'text', label: 'Small text (big-number style)', maxLength: 60 },
           { key: 'link', kind: 'link', label: 'Link (optional)' },
-          { key: 'size', kind: 'select', label: 'Size', options: [{ value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' }, { value: 'tall', label: 'Tall' }, { value: 'small', label: 'Small' }] },
-          { key: 'tone', kind: 'select', label: 'Style', options: [{ value: 'photo', label: 'Photo with dark fade' }, { value: 'light', label: 'White card' }, { value: 'stat', label: 'Big number (copper)' }] },
+          { key: 'size', kind: 'select', label: 'Width', options: [{ value: 'small', label: 'Small (2 of 12 columns)' }, { value: 'normal', label: 'Normal (3 of 12)' }, { value: 'medium', label: 'Medium (4 of 12)' }, { value: 'wide', label: 'Wide (6 of 12)' }, { value: 'full', label: 'Full row' }] },
+          { key: 'height', kind: 'select', label: 'Height', options: [{ value: 'auto', label: 'Automatic' }, { value: 'compact', label: 'Compact (125 px)' }, { value: 'short', label: 'Short (218 px)' }, { value: 'medium', label: 'Medium (260 px)' }, { value: 'standard', label: 'Standard (297 px)' }, { value: 'tall', label: 'Tall (340 px)' }] },
+          { key: 'tone', kind: 'select', label: 'Style', options: [{ value: 'photo', label: 'Photo with dark fade' }, { value: 'light', label: 'White card (product)' }, { value: 'stat', label: 'Big number (copper)' }] },
         ],
       },
       initialBlocks: 4,
@@ -141,9 +143,14 @@ export const baseManifest: ThemeManifest = {
         { key: 'eyebrow', kind: 'text', label: 'Small label', maxLength: 60 },
         { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
         { key: 'text', kind: 'textarea', label: 'Text', rows: 3, maxLength: 400 },
+        { key: 'dragText', kind: 'text', label: 'Text around the round drag badge', maxLength: 60 },
       ],
-      defaults: { eyebrow: 'Projects', heading: 'Ideas that light the way.' },
-      block: { key: 'photo', label: 'Photo', fields: [{ key: 'imageUrl', kind: 'image', label: 'Photo' }, { key: 'title', kind: 'text', label: 'Caption (optional)', maxLength: 80 }] },
+      defaults: { eyebrow: 'Projects', heading: 'Ideas that light the way.', dragText: 'Drag to see more amazing projects' },
+      block: { key: 'photo', label: 'Photo', fields: [
+        { key: 'imageUrl', kind: 'image', label: 'Photo' },
+        { key: 'title', kind: 'text', label: 'Caption (optional)', maxLength: 80 },
+        { key: 'hotspots', kind: 'text', label: 'Light dots on the photo (optional): x,y;x,y in % e.g. 20,35;60,50', maxLength: 120 },
+      ] },
       initialBlocks: 3,
     },
     {
@@ -157,14 +164,20 @@ export const baseManifest: ThemeManifest = {
     },
     {
       key: 'ledup.stacked', label: 'Dark stacked card', color: '#4b423b',
-      description: 'A dark rounded card: heading and text, a numbered list shown as stacked layers, and up to two photos on the right.',
+      description: 'A dark rounded card with numbered layers (01, 02 ...). Click a layer to open its heading, text and two photos.',
       fields: [
-        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
-        { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 500 },
+        { key: 'heading', kind: 'text', label: 'Heading of the first layer (used when a layer has none)', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Text of the first layer', rows: 4, maxLength: 500 },
+        { key: 'imageUrl', kind: 'image', label: 'Photo 1 of the first layer' },
+        { key: 'imageUrl2', kind: 'image', label: 'Photo 2 of the first layer' },
+      ],
+      block: { key: 'point', label: 'Layer', fields: [
+        { key: 'title', kind: 'text', label: 'Bar label (e.g. INNOVATION)', maxLength: 60 },
+        { key: 'heading', kind: 'text', label: 'Heading when open', maxLength: 120 },
+        { key: 'text', kind: 'textarea', label: 'Text when open', rows: 4, maxLength: 500 },
         { key: 'imageUrl', kind: 'image', label: 'Photo 1' },
         { key: 'imageUrl2', kind: 'image', label: 'Photo 2' },
-      ],
-      block: { key: 'point', label: 'List item', fields: [{ key: 'title', kind: 'text', label: 'Text', maxLength: 60 }] },
+      ] },
       initialBlocks: 4,
     },
     {
@@ -172,6 +185,7 @@ export const baseManifest: ThemeManifest = {
       description: 'A scene with switches ("Zone 1-5"): each switch turns its light layer on and off.',
       fields: [
         { key: 'baseImage', kind: 'image', label: 'Scene photo (lights off)' },
+        { key: 'onImage', kind: 'image', label: 'Same scene with all lights on (fades in as zones are switched on)' },
         { key: 'label', kind: 'text', label: 'Label above the switches', maxLength: 40 },
       ],
       defaults: { label: 'Switches' },
@@ -198,23 +212,90 @@ export const baseManifest: ThemeManifest = {
     },
     {
       key: 'ledup.documents', label: 'Documents list', color: '#4b423b',
-      description: 'Catalogues, datasheets and brochures: one row each with a download button.',
-      fields: [{ key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 }],
+      description: 'Catalogues and datasheets. Documents with a cover photo become big brochure cards; the others become rows of a searchable table with a Download button.',
+      fields: [
+        { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
+        { key: 'searchPlaceholder', kind: 'text', label: 'Search box text', maxLength: 80 },
+        { key: 'nameLabel', kind: 'text', label: 'Name column title', maxLength: 30 },
+        { key: 'refLabel', kind: 'text', label: 'Reference column title', maxLength: 30 },
+      ],
       defaults: { heading: 'Catalogues' },
       block: { key: 'doc', label: 'Document', fields: [
         { key: 'title', kind: 'text', label: 'Name', maxLength: 80 },
-        { key: 'kind', kind: 'text', label: 'Type (PDF, brochure...)', maxLength: 30 },
+        { key: 'imageUrl', kind: 'image', label: 'Cover photo (makes it a big card)' },
+        { key: 'kind', kind: 'text', label: 'Reference / type (shown in the table)', maxLength: 30 },
         { key: 'link', kind: 'link', label: 'File link' },
       ] },
       initialBlocks: 3,
     },
     {
       key: 'ledup.statement', label: 'Statement', color: '#4b423b',
-      description: 'A large centred statement with a short text.',
+      description: 'A large centred statement with a short text, an outlined button and a wide photo below.',
       fields: [
+        { key: 'eyebrow', kind: 'text', label: 'Small label above', maxLength: 60 },
         { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
         { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 600 },
+        { key: 'ctaText', kind: 'text', label: 'Button text', maxLength: 40 },
+        { key: 'ctaLink', kind: 'link', label: 'Button link' },
+        { key: 'imageUrl', kind: 'image', label: 'Wide photo under the text' },
       ],
+    },
+    {
+      key: 'ledup.collage', label: 'Scroll collage hero', color: '#4b423b',
+      description: 'About-page opening: photos around a big headline. While the page scrolls the photos drift away and the headline grows. Add up to 6 photos.',
+      fields: [{ key: 'heading', kind: 'text', label: 'Headline', maxLength: 120 }],
+      defaults: { heading: 'The future of lighting goes through us.' },
+      block: { key: 'photo', label: 'Photo', fields: [{ key: 'imageUrl', kind: 'image', label: 'Photo' }] },
+      initialBlocks: 6,
+    },
+    {
+      key: 'ledup.mission', label: 'Mission, vision, values', color: '#4b423b',
+      description: 'A tilted oval photo with up to three frosted cards around it (icon, small label, title, text).',
+      fields: [{ key: 'imageUrl', kind: 'image', label: 'Oval photo' }],
+      block: { key: 'card', label: 'Card', fields: [
+        { key: 'icon', kind: 'select', label: 'Icon', options: FEATURE_ICON_OPTIONS },
+        { key: 'eyebrow', kind: 'text', label: 'Small label (Mission, Vision ...)', maxLength: 40 },
+        { key: 'title', kind: 'text', label: 'Title', maxLength: 100 },
+        { key: 'text', kind: 'textarea', label: 'Text', rows: 4, maxLength: 500 },
+      ] },
+      initialBlocks: 3,
+    },
+    {
+      key: 'ledup.districts', label: 'Reseller finder', color: '#4b423b',
+      description: 'Districts in a big sliding row, towns below, and the matching shop card. Each shop is one item; shops with the same district are grouped.',
+      fields: [
+        { key: 'searchPlaceholder', kind: 'text', label: 'Search box text', maxLength: 60 },
+        { key: 'townsLabel', kind: 'text', label: 'Label above the towns', maxLength: 30 },
+        { key: 'websiteLabel', kind: 'text', label: 'Website button text', maxLength: 30 },
+        { key: 'emailLabel', kind: 'text', label: 'Email button text', maxLength: 30 },
+      ],
+      block: { key: 'shop', label: 'Shop', fields: [
+        { key: 'district', kind: 'text', label: 'District', maxLength: 60 },
+        { key: 'town', kind: 'text', label: 'Town', maxLength: 60 },
+        { key: 'title', kind: 'text', label: 'Shop name', maxLength: 100 },
+        { key: 'phone', kind: 'text', label: 'Phone', maxLength: 60 },
+        { key: 'email', kind: 'text', label: 'Email', maxLength: 100 },
+        { key: 'address', kind: 'textarea', label: 'Address', rows: 2, maxLength: 200 },
+        { key: 'website', kind: 'text', label: 'Website', maxLength: 150 },
+        { key: 'lat', kind: 'text', label: 'Map latitude (optional, e.g. 40.8582)', maxLength: 12 },
+        { key: 'lng', kind: 'text', label: 'Map longitude (optional, e.g. -8.6246)', maxLength: 12 },
+      ] },
+      initialBlocks: 3,
+    },
+    {
+      key: 'ledup.contact', label: 'Contact hero + form', color: '#4b423b',
+      description: 'A dark full-screen intro with a light that follows the pointer over the text, and a button that opens a frosted form (reason, details, terms). Messages arrive in your Contact inbox.',
+      fields: [
+        { key: 'eyebrow', kind: 'text', label: 'Small label above', maxLength: 60 },
+        { key: 'heading', kind: 'text', label: 'Headline', maxLength: 160 },
+        { key: 'text', kind: 'textarea', label: 'Text', rows: 3, maxLength: 400 },
+        { key: 'ctaText', kind: 'text', label: 'Button text', maxLength: 40 },
+        { key: 'formTitle', kind: 'text', label: 'Form title', maxLength: 60 },
+        { key: 'reasons', kind: 'text', label: 'Contact reasons, separated by commas', maxLength: 240 },
+        { key: 'agreeText', kind: 'text', label: 'Agreement line', maxLength: 200 },
+        { key: 'successMessage', kind: 'text', label: 'Thank-you message', maxLength: 200 },
+      ],
+      defaults: { eyebrow: 'Talk to us', heading: 'Tell us what you need and we light the way.', ctaText: 'Fill in the form', formTitle: 'Talk to us', reasons: 'Product question, Datasheet, General information, Become a reseller' },
     },
   ],
 

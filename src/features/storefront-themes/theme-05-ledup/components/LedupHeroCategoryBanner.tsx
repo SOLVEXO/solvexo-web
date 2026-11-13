@@ -44,7 +44,7 @@ export function LedupHeroCategoryBanner({ activeCategory }: { activeCategory?: s
               const on = tab.keys.some(k => k === activeCategory || pathname.endsWith(`/${k}`));
               return (
                 <Link key={tab.id} to={tab.href} aria-current={on ? 'page' : undefined}
-                  className={`relative z-10 whitespace-nowrap px-6 py-3.5 text-xs font-medium uppercase tracking-wider no-underline transition-colors ${on ? 'ld-tab-active shadow-sm' : 'rounded-t-xl text-white/85 hover:bg-white/10 hover:text-white'}`}>
+                  className={`relative z-10 whitespace-nowrap px-4 py-4 text-[14px] font-normal uppercase tracking-[0.15em] no-underline md:px-[15px] transition-colors ${on ? 'ld-tab-active shadow-sm' : 'rounded-t-xl text-white/85 hover:bg-white/10 hover:text-white'}`}>
                   {tab.name}
                 </Link>
               );

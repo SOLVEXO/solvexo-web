@@ -420,7 +420,7 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
-    type: 'contact_form', label: 'Contact Form', description: 'A form visitors use to message you. Messages arrive under Online Store → Contact Messages (and by email).',
+    type: 'contact_form', label: 'Form', description: 'Any form you design: contact, quote, sign-up, survey, application. Answers arrive under Online Store → Contact Messages (and by email).',
     Icon: MailIcon, color: '#0D9488',
     defaultSettings: {
       heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.',

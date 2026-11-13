@@ -3,7 +3,7 @@ import { SavedFormsPanel } from './SavedFormsPanel';
 import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react';
 import { Toggle } from '@/components/comman/ui';
 import {
-  CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, FILE_KIND_OPTIONS, MAX_CHOICES, MAX_CONTACT_FIELDS, MAX_FILE_MB, conditionSources, contactFormProblem, hasChoices, isStaticField,
+  CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, FILE_KIND_OPTIONS, MAX_CHOICES, MAX_CONTACT_FIELDS, MAX_FILES, MAX_FILE_MB, conditionSources, contactFormProblem, hasChoices, isStaticField,
   labelLimit, newContactField, newFieldId, resolveContactFields,
   type ContactFieldType, type ContactFormField,
 } from '@/features/storefront-themes/core/forms/contactFormFields';
@@ -40,16 +40,26 @@ function Labeled({ id, label, children, hint }: { id: string; label: string; chi
 }
 
 /** The choices of a dropdown / radio / checkbox field, one per line (kept as typed, empty lines dropped when saved). */
-function ChoicesInput({ id, options, onChange, hint }: { id: string; options: string[]; onChange: (next: string[]) => void; hint: string }) {
-  const [raw, setRaw] = useState(options.join('\n'));
+function ChoicesInput({ id, options, prices, onChange, hint }: { id: string; options: string[]; prices?: number[]; onChange: (next: string[], prices: number[] | undefined) => void; hint: string }) {
+  const [raw, setRaw] = useState(options.map((o, i) => (prices?.[i] ? `${o} | ${prices[i]}` : o)).join('\n'));
   return (
-    <Labeled id={id} label="Choices" hint={`${hint} Up to ${MAX_CHOICES} choices.`}>
+    <Labeled id={id} label="Choices" hint={`${hint} Up to ${MAX_CHOICES} choices. To give a choice a price for a Total field, write it after a bar: Logo design | 5000`}>
       <textarea
-        id={id} rows={4} className={`${inp} resize-y`} value={raw} placeholder={'One choice per line\nOption 1\nOption 2'}
+        id={id} rows={4} className={`${inp} resize-y`} value={raw} placeholder={'One choice per line\nOption 1\nOption 2 | 500'}
         onChange={e => {
           setRaw(e.target.value);
-          const list = e.target.value.split('\n').map(l => l.trim().slice(0, 60)).filter(Boolean);
-          onChange(Array.from(new Set(list)).slice(0, MAX_CHOICES));
+          const seen = new Set<string>();
+          const list: { label: string; price: number }[] = [];
+          for (const line of e.target.value.split('\n')) {
+            const cut = line.lastIndexOf('|');
+            const priced = cut >= 0 && Number.isFinite(Number(line.slice(cut + 1).trim())) && line.slice(cut + 1).trim() !== '';
+            const label = (priced ? line.slice(0, cut) : line).trim().slice(0, 60);
+            if (!label || seen.has(label)) continue;
+            seen.add(label);
+            list.push({ label, price: priced ? Math.min(1e9, Math.max(0, Number(line.slice(cut + 1).trim()))) : 0 });
+          }
+          const kept = list.slice(0, MAX_CHOICES);
+          onChange(kept.map(x => x.label), kept.some(x => x.price > 0) ? kept.map(x => x.price) : undefined);
         }}
       />
     </Labeled>
@@ -131,7 +141,8 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
                   type: next,
                   // what no longer applies to the new type is dropped, so nothing odd stays hidden in the saved form
                   options: hasChoices(next) ? (next === 'checkbox' ? field.options : (field.options?.length ? field.options : ['Option 1', 'Option 2'])) : undefined,
-                  min: next === 'number' ? field.min : undefined, max: next === 'number' ? field.max : undefined,
+                  min: next === 'number' || next === 'slider' ? field.min : undefined, max: next === 'number' || next === 'slider' ? field.max : undefined, step: next === 'slider' ? field.step : undefined, multiple: next === 'file' ? field.multiple : undefined,
+                  optionPrices: hasChoices(next) ? field.optionPrices : undefined, unitPrice: next === 'number' ? field.unitPrice : undefined, currencyLabel: next === 'total' ? field.currencyLabel : undefined,
                   minLength: next === 'text' || next === 'textarea' ? field.minLength : undefined, maxLength: next === 'text' || next === 'textarea' ? field.maxLength : undefined,
                   defaultValue: undefined,
                   fileKinds: next === 'file' ? field.fileKinds : undefined, maxSizeMb: next === 'file' ? field.maxSizeMb : undefined,
@@ -163,7 +174,7 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
 
           {hasChoices(type) && (
             <ChoicesInput
-              key={field.id + type} id={`${uid}-choices`} options={field.options ?? []} onChange={options => onChange({ options })}
+              key={field.id + type} id={`${uid}-choices`} options={field.options ?? []} prices={field.optionPrices} onChange={(options, optionPrices) => onChange({ options, optionPrices })}
               hint={type === 'checkbox' ? 'Leave empty for one single tick box (the label is its text).' : 'Visitors can pick one.'}
             />
           )}
@@ -198,11 +209,22 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
             </>
           )}
 
-          {type === 'number' && (
-            <div className="grid grid-cols-2 gap-2">
+          {(type === 'number' || type === 'slider') && (
+            <div className={type === 'slider' ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
               <Labeled id={`${uid}-min`} label="Minimum"><input id={`${uid}-min`} type="number" className={inp} value={field.min ?? ''} onChange={e => onChange({ min: num(e.target.value) })} /></Labeled>
               <Labeled id={`${uid}-max`} label="Maximum"><input id={`${uid}-max`} type="number" className={inp} value={field.max ?? ''} onChange={e => onChange({ max: num(e.target.value) })} /></Labeled>
+              {type === 'slider' && <Labeled id={`${uid}-step`} label="Step"><input id={`${uid}-step`} type="number" min={0.01} className={inp} value={field.step ?? 1} onChange={e => onChange({ step: Math.max(0.01, Number(e.target.value) || 1) })} /></Labeled>}
             </div>
+          )}
+          {type === 'number' && (
+            <Labeled id={`${uid}-unit`} label="Price per unit (for a Total field)" hint="Optional. Quantity x this price is added to a Total field below.">
+              <input id={`${uid}-unit`} type="number" min={0} className={inp} value={field.unitPrice ?? ''} onChange={e => onChange({ unitPrice: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value) || 0) })} />
+            </Labeled>
+          )}
+          {type === 'total' && (
+            <Labeled id={`${uid}-cur`} label="Currency text" hint="Shown before the amount, e.g. Rs or $. Set prices on the choices and number fields above this one.">
+              <input id={`${uid}-cur`} className={inp} maxLength={8} value={field.currencyLabel ?? ''} onChange={e => onChange({ currencyLabel: e.target.value.slice(0, 8) || undefined })} />
+            </Labeled>
           )}
           {(type === 'text' || type === 'textarea') && (
             <div className="grid grid-cols-2 gap-2">
@@ -221,6 +243,12 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
               <Labeled id={`${uid}-mb`} label="Largest file (MB)" hint={`Up to ${MAX_FILE_MB} MB.`}>
                 <input id={`${uid}-mb`} type="number" min={1} max={MAX_FILE_MB} className={inp} value={field.maxSizeMb ?? MAX_FILE_MB} onChange={e => onChange({ maxSizeMb: Math.min(MAX_FILE_MB, Math.max(1, Math.round(Number(e.target.value) || MAX_FILE_MB))) })} />
               </Labeled>
+            </div>
+          )}
+          {type === 'file' && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12px] text-charcoal">Let the visitor attach several files<span className="block text-[11px] text-slate">Up to {MAX_FILES} files, each one checked separately.</span></span>
+              <Toggle checked={!!field.multiple} onChange={v => onChange({ multiple: v || undefined })} />
             </div>
           )}
           {type === 'consent' && (
