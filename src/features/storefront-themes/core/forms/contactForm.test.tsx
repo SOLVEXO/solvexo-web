@@ -28,9 +28,9 @@ describe('contact form fields (logic)', () => {
     expect(legacyContactFields({ showPhone: false, nameLabel: 'Full name' }).map(f => f.label)).toEqual(['Full name', 'Email', 'Message']);
   });
 
-  it('asks for a required Email or Phone field (Shopify rule) and choices for dropdowns', () => {
+  it('needs no Email or Phone field, but dropdowns need choices', () => {
     const base: ContactFormField[] = [{ id: 'a', type: 'text', label: 'Name', required: true }];
-    expect(contactFormProblem(base)).toMatch(/Email or Phone/);
+    expect(contactFormProblem(base)).toBeNull();
     expect(contactFormProblem([...base, { id: 'b', type: 'phone', label: 'Phone', required: true }])).toBeNull();
     expect(contactFormProblem([{ id: 'b', type: 'phone', label: 'Phone', required: true }, { id: 'c', type: 'dropdown', label: 'Topic', options: [] }])).toMatch(/choice/);
   });
@@ -121,10 +121,10 @@ describe('contact form editor', () => {
     expect(next.map(f => f.id)).toEqual(['name', 'email', 'message']);
   });
 
-  it('adds a field of the chosen type and warns when no required Email or Phone is left', () => {
+  it('adds a field of the chosen type and shows no warning for a form without Email', () => {
     const set = vi.fn();
     const { rerender } = render(<FormFieldsEditor settings={{ fields: [{ id: 'a1', type: 'text', label: 'Name', required: true }] }} set={set} />);
-    expect(screen.getByRole('alert').textContent).toMatch(/Email or Phone/);
+    expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.change(screen.getByLabelText('Add a field'), { target: { value: 'dropdown' } });
     const next = set.mock.calls[0][0].fields as ContactFormField[];
     expect(next).toHaveLength(2);
@@ -230,7 +230,6 @@ describe('phase 1: conditions, new field types and form settings', () => {
     expect(visibleFields(conditionalFields, { q: 'Order' }).map(f => f.id)).toEqual(['e', 'q', 'o']);
     expect(conditionHolds({ fieldId: 'q', op: 'contains', value: 'ord' }, { q: 'Order' })).toBe(true);
     expect(conditionHolds({ fieldId: 'q', op: 'empty' }, {})).toBe(true);
-    expect(contactFormProblem([{ id: 'e', type: 'email', label: 'Email', required: true, showIf: { fieldId: 'x', op: 'filled' } }])).toMatch(/always shown/);
   });
 });
 
@@ -433,5 +432,58 @@ describe('phase 3: pop-up display', () => {
     expect(screen.getByLabelText(/^Email/)).toBeTruthy();
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
+
+describe('batch: slider and several files', () => {
+  beforeEach(() => {
+    applyMerchantThemeOverrides(null);
+    submitMock.mockReset().mockResolvedValue({ success: true });
+    let n = 0;
+    uploadMock.mockReset().mockImplementation(async (_s: string, o: { file: File }) => ({ data: { uploadId: String(++n).padStart(24, 'a'), name: o.file.name, size: 10 } }));
+  });
+  afterEach(cleanup);
+  const send = () => fireEvent.submit(screen.getByRole('button', { name: /send/i }).closest('form') as HTMLFormElement);
+
+  it('a slider sends the number the visitor picked', async () => {
+    render(<ContactFormSection section={section({ fields: [{ id: 'sl', type: 'slider', label: 'Budget', min: 10, max: 50, step: 5 }] })} blocks={[]} colors={colors} />);
+    const range = screen.getByLabelText(/^Budget/) as HTMLInputElement;
+    expect(range.min).toBe('10'); expect(range.max).toBe('50'); expect(range.step).toBe('5');
+    fireEvent.change(range, { target: { value: '35' } });
+    send();
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    expect((submitMock.mock.calls[0][1] as { answers: { fieldId: string; value: string }[] }).answers.find(a => a.fieldId === 'sl')?.value).toBe('35');
+  });
+
+  it('a multi-file field keeps several files, sends their ids together and lets one be removed', async () => {
+    render(<ContactFormSection section={section({ fields: [{ id: 'ph', type: 'file', label: 'Photos', multiple: true, fileKinds: 'images' }] })} blocks={[]} colors={colors} />);
+    for (const name of ['a.png', 'b.png']) {
+      fireEvent.change(screen.getByLabelText(/^Photos/), { target: { files: [new File(['x'], name, { type: 'image/png' })] } });
+      await waitFor(() => expect(screen.getByText(name)).toBeTruthy());
+    }
+    fireEvent.click(screen.getByRole('button', { name: /Remove a.png/ }));
+    expect(screen.queryByText('a.png')).toBeNull();
+    expect(screen.getByText('b.png')).toBeTruthy();
+    send();
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(1));
+    const v = (submitMock.mock.calls[0][1] as { answers: { fieldId: string; value: string }[] }).answers.find(a => a.fieldId === 'ph')?.value ?? '';
+    expect(v.split(',')).toHaveLength(1);
+  });
+});
+
+describe('batch: total price', () => {
+  beforeEach(() => { applyMerchantThemeOverrides(null); submitMock.mockReset().mockResolvedValue({ success: true }); });
+  afterEach(cleanup);
+  it('shows a live total from choice prices and quantity x unit price', () => {
+    const fields: ContactFormField[] = [
+      { id: 'svc', type: 'dropdown', label: 'Service', options: ['Logo', 'Site'], optionPrices: [5000, 20000] },
+      { id: 'qty', type: 'number', label: 'Pages', unitPrice: 100 },
+      { id: 'tot', type: 'total', label: 'Total', currencyLabel: 'Rs' },
+    ];
+    render(<ContactFormSection section={section({ fields })} blocks={[]} colors={colors} />);
+    expect(screen.getByText('Rs 0')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^Service/), { target: { value: 'Site' } });
+    fireEvent.change(screen.getByLabelText(/^Pages/), { target: { value: '3' } });
+    expect(screen.getByText('Rs 20,300')).toBeTruthy();
   });
 });

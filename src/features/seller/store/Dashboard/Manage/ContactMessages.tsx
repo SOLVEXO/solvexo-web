@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
@@ -11,6 +12,7 @@ import {
   type ContactMessage, type ContactMessageStatus,
 } from '@/api/services/storeContact';
 import { downloadBlob } from '@/utils/downloadBlob';
+import { FormReportModal } from './FormReportModal';
 
 const FILTERS: { value: ContactMessageStatus | ''; label: string }[] = [
   { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'archived', label: 'Archived' }, { value: 'spam', label: 'Spam' },
@@ -25,6 +27,8 @@ export default function ContactMessages() {
   const toast = useToast();
   const [filter, setFilter] = useState<ContactMessageStatus | ''>('');
   const [form, setForm] = useState('');
+  const [source, setSource] = useState('');
+  const [showReport, setShowReport] = useState(false);
   const [forms, setForms] = useState<{ name: string; total: number; unread: number }[]>([]);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -45,12 +49,12 @@ export default function ContactMessages() {
   const load = useCallback(() => {
     setError('');
     setRows(null);
-    apiListContactMessages(storeId, { page, status: filter, form, q: query })
+    apiListContactMessages(storeId, { page, status: filter, form, q: query, source })
       .then(res => { setRows(res.data); setTotalPages(res.pagination.totalPages); setUnread(res.unread); setSpam(res.spam ?? 0); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load messages.'));
     // The forms that have messages: the filter only appears when there is more than one kind.
     apiListContactForms(storeId).then(res => setForms(res.data)).catch(() => undefined);
-  }, [storeId, page, filter, form, query]);
+  }, [storeId, page, filter, form, query, source]);
   useEffect(() => { load(); }, [load]);
 
   // Search as the seller types, without a request per key.
@@ -72,7 +76,7 @@ export default function ContactMessages() {
   async function exportCsv() {
     setExporting(true);
     try {
-      const blob = await apiExportContactMessages(storeId, { status: filter, form, q: query });
+      const blob = await apiExportContactMessages(storeId, { status: filter, form, q: query, source });
       downloadBlob(blob, 'contact-messages.csv');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not export the messages.');
@@ -146,6 +150,12 @@ export default function ContactMessages() {
               {forms.map(f => <option key={f.name || '__unnamed'} value={f.name || '__unnamed'}>{f.name || 'Unnamed form'} ({f.total})</option>)}
             </select>
           )}
+          <select aria-label="Filter by source" value={source} onChange={e => { setSource(e.target.value); setPage(1); }}
+            className="rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange">
+            <option value="">All sources</option>
+            {['direct', 'search', 'social', 'email', 'paid', 'referral'].map(k => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}
+          </select>
+          <Button size="sm" variant="outline" onClick={() => setShowReport(true)}>Form report</Button>
           <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting}><Download size={13} className="mr-1" /> Export CSV</Button>
         </div>
 
@@ -175,6 +185,14 @@ export default function ContactMessages() {
                     <button type="button" onClick={() => setPendingDelete(m)} aria-label="Delete" title="Delete" className="p-1.5 text-error bg-transparent border-0 cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>
+                {(m.customerId || m.source || m.pageUrl) && (
+                  <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate">
+                    {m.customerId && <Link to={`/store/${storeId}/customer/list?search=${encodeURIComponent(m.email)}`} className="rounded-full bg-success-bg px-2 py-0.5 font-semibold text-success no-underline">Existing customer · {m.customerOrders ?? 0} order{m.customerOrders === 1 ? '' : 's'} · View</Link>}
+                    {m.source?.trafficSource && <span>From: {m.source.trafficSource}{m.source.referrerHost ? ` (${m.source.referrerHost})` : ''}{m.source.utmCampaign ? ` · campaign ${m.source.utmCampaign}` : ''}</span>}
+                    {m.source?.deviceType && <span>{m.source.deviceType}{m.source.country ? ` · ${m.source.country}` : ''}</span>}
+                    {m.pageUrl && <a href={m.pageUrl} target="_blank" rel="noopener noreferrer" className="max-w-[260px] truncate underline">{m.pageUrl.replace(/^https?:\/\//, '')}</a>}
+                  </p>
+                )}
                 {m.message && <p className="text-[13px] text-charcoal m-0 whitespace-pre-line">{m.message}</p>}
                 {(m.fields ?? []).some(f => !['name', 'email', 'phone'].includes(f.type) && f.value !== m.message) && (
                   <dl className="m-0 grid grid-cols-1 gap-x-4 gap-y-1.5 rounded-lg bg-cream px-3 py-2.5 sm:grid-cols-[minmax(120px,auto)_1fr]">
@@ -224,6 +242,7 @@ export default function ContactMessages() {
       {pendingDelete && (
         <ConfirmDialog title="Delete message" message={`Delete the message from ${who(pendingDelete)}? This cannot be undone.`} confirmLabel="Delete" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} />
       )}
+      {showReport && <FormReportModal storeId={storeId} onClose={() => setShowReport(false)} />}
     </>
   );
 }

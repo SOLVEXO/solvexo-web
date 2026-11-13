@@ -42,7 +42,7 @@ const STATIC_DEFAULTS = {
     tagInk: '#FFFFFF',
     selected: '#594C40',
     selectedInk: '#FFFFFF',
-    dark: '#2A241F',
+    dark: '#4B423B',
     darkInk: '#FFFFFF',
     star: '#EAB308',
     starOff: '#D4D4D8',

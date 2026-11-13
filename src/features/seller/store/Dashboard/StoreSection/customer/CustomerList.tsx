@@ -77,12 +77,13 @@ export default function StoreCustomerList() {
   const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // `?search=name@shop.com` opens the list already searched (used by links from Contact Messages).
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => (searchParams.get('search') ?? '').slice(0, 80));
+  const [debouncedSearch, setDebouncedSearch] = useState(() => (searchParams.get('search') ?? '').slice(0, 80));
   const [segment, setSegment] = useState('');
   const [segmentId, setSegmentId] = useState<string | null>(null);
   // `?marketing=subscribed` deep-links the old Subscribers screen (now a filter, like Shopify).
-  const [searchParams] = useSearchParams();
   const [marketing, setMarketing] = useState<string>(() => {
     const q = searchParams.get('marketing');
     return isMarketingFilter(q) ? q : '';

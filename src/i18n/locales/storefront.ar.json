@@ -419,7 +419,11 @@
     "subtotalItems_many": "المجموع الفرعي ({{count}} عنصرًا)",
     "subtotalItems_other": "المجموع الفرعي ({{count}} عنصر)",
     "storeCreditAppliedAmount": "تم تطبيق رصيد المتجر {{amount}}",
-    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}."
+    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}.",
+    "stepCart": "السلة",
+    "stepDetails": "التفاصيل",
+    "stepPayment": "الدفع",
+    "stepsAria": "خطوات الدفع"
   },
   "collection": {
     "notFound": "المجموعة غير موجودة",
@@ -1590,6 +1594,12 @@
     "contactFileSize": "الملف أكبر من {{mb}} MB.",
     "contactFileType": "نوع الملف هذا غير مقبول.",
     "contactNext": "التالي",
+    "contactTooManyFiles": "يمكنك إرفاق {{n}} ملفات كحد أقصى.",
+    "contactCaptcha": "يرجى تأكيد أنك لست روبوتًا.",
+    "contactSigned": "تمت إضافة التوقيع",
+    "contactSignHere": "وقّع هنا بإصبعك أو بالفأرة",
+    "contactClear": "مسح",
+    "contactUseSignature": "استخدم هذا التوقيع",
     "contactRedirecting": "شكرًا لك! جارٍ تحويلك...",
     "contactRemoveFile": "إزالة {{name}}",
     "contactRequired": "يرجى إكمال الحقول المطلوبة.",

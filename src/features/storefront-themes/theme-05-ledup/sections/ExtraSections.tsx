@@ -61,7 +61,7 @@ function BlogPostsSection({ section, colors }: { section: Section; colors: BaseC
             )}
             <div className="pt-4">
               {post.publishedAt && <p className="m-0 mb-1 text-xs" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{formatPostDate(post.publishedAt)}</p>}
-              <p className="m-0 text-lg font-semibold leading-snug" style={{ fontFamily: t.fonts.display }}>{post.title}</p>
+              <p className="m-0 text-[17px] font-medium leading-snug" style={{ fontFamily: t.fonts.display }}>{post.title}</p>
               {post.excerpt && <p className="m-0 mt-2 line-clamp-2 text-sm leading-relaxed" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{post.excerpt}</p>}
             </div>
           </Link>
@@ -100,7 +100,7 @@ function MetaobjectListSection({ section, colors }: { section: Section; colors: 
                 <dl className="m-0 flex flex-col gap-1.5">
                   {entry.fields.map(f => (
                     <div key={f.key} className="flex items-baseline gap-2">
-                      <dt className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: colors.inkMuted }}>{f.key}</dt>
+                      <dt className="text-[12px] font-medium" style={{ color: colors.inkMuted }}>{f.key}</dt>
                       <dd className="m-0 break-words text-[13px]">{f.value}</dd>
                     </div>
                   ))}
@@ -141,16 +141,16 @@ function DropCountdownSection({ section }: { section: Section }) {
   return (
     <section style={{ background: t.colors.accent, color: t.colors.accentInk, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto flex max-w-[680px] flex-col items-center gap-6 text-center">
-        {s.heading && <h2 className="m-0 text-[clamp(26px,3.5vw,42px)] font-semibold leading-tight tracking-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
-        {s.subheading && <p className="m-0 text-sm font-medium uppercase tracking-widest opacity-70" style={{ fontFamily: t.fonts.body }}>{s.subheading}</p>}
+        {s.heading && <h2 className="m-0 text-[clamp(26px,3.5vw,42px)] font-light leading-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
+        {s.subheading && <p className="m-0 text-sm font-medium opacity-70" style={{ fontFamily: t.fonts.body }}>{s.subheading}</p>}
         {now.done ? (
           <p className="m-0 text-2xl" style={{ fontFamily: t.fonts.display }}>{copyText(s, 'endedText', 'Dropped!')}</p>
         ) : (
           <div className="flex items-center gap-6 sm:gap-10" role="timer" aria-label={s.heading || ts('pg.word_countdown', 'Countdown')}>
             {units.map(([value, label]) => (
               <div key={label} className="flex flex-col items-center gap-1">
-                <span className="text-[clamp(30px,5vw,52px)] font-semibold leading-none" style={{ fontFamily: t.fonts.display, fontVariantNumeric: 'tabular-nums' }}>{String(value).padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase tracking-[0.14em] opacity-70" style={{ fontFamily: t.fonts.body }}>{label}</span>
+                <span className="text-[clamp(30px,5vw,52px)] font-light leading-none" style={{ fontFamily: t.fonts.display, fontVariantNumeric: 'tabular-nums' }}>{String(value).padStart(2, '0')}</span>
+                <span className="text-[13px] opacity-70" style={{ fontFamily: t.fonts.body }}>{label}</span>
               </div>
             ))}
           </div>

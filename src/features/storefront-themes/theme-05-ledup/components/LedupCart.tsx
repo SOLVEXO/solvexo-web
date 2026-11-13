@@ -92,22 +92,27 @@ function MiniCart({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60]">
-      <button type="button" aria-label={ts('cart.close', 'Close cart')} onClick={onClose} className="absolute inset-0 border-0" style={{ background: 'rgba(2,2,3,.35)' }} />
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={ts('cart.myCart', 'My cart')} className="lb-pop absolute end-3 top-3 flex max-h-[calc(100dvh-24px)] w-[min(94vw,360px)] flex-col sm:end-6 sm:top-20"
-        style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, border: `1px solid ${t.colors.border}`, boxShadow: '0 16px 40px -12px rgba(2,2,3,.35)' }}>
-        <div className="flex items-start justify-between gap-3 p-4 text-center">
-          <div className="flex-1">
-            <p className="m-0 text-base font-semibold">{ts('cart.myCart', 'My cart')}</p>
-            <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{count === 1 ? ts('cart.itemInCart', '1 item in cart') : ts('cart.itemsInCart', '{{count}} items in cart', { count })}</p>
+    <div className="fixed inset-0 z-[200]">
+      <button type="button" aria-label={ts('cart.close', 'Close cart')} onClick={onClose} className="absolute inset-0 border-0" style={{ background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }} />
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={ts('cart.myCart', 'My cart')} className="ld-drawer absolute inset-y-0 end-0 z-[2] flex w-[min(100vw,420px)] flex-col rounded-s-[20px]"
+        style={{ background: '#fff', color: '#4b423b', fontFamily: t.fonts.body, boxShadow: '-12px 0 40px -16px rgba(0,0,0,.3)' }}>
+        <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
+          <div>
+            <h2 className="m-0 text-[18px] font-semibold">{ts('cart.myCart', 'My cart')}</h2>
+            {count > 0 && <p className="m-0 mt-0.5 text-xs" style={{ color: '#8c847e' }}>{count === 1 ? ts('cart.itemInCart', '1 item in cart') : ts('cart.itemsInCart', '{{count}} items in cart', { count })}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label={ts('cart.close', 'Close cart')} className="grid size-8 cursor-pointer place-items-center border-0 bg-transparent" style={{ color: t.colors.ink }}><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label={ts('cart.close', 'Close cart')} className="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent transition hover:bg-[#f1efed]" style={{ color: '#4b423b' }}><X size={20} strokeWidth={1.4} /></button>
         </div>
-        <div className="px-4 pb-3"><LedupButton variant="outline" block onClick={() => go('/cart')}>{ts('cart.viewEdit', 'View or edit your cart')}</LedupButton></div>
+        {items.length > 0 && <div className="px-6 pb-3"><LedupButton variant="outline" block onClick={() => go('/cart')}>{ts('cart.viewEdit', 'View or edit your cart')}</LedupButton></div>}
         {error && <p role="alert" className="m-0 px-4 pb-2 text-xs" style={{ color: t.colors.danger }}>{error}</p>}
-        <ul className="m-0 flex-1 list-none overflow-y-auto p-0" style={{ borderTop: `1px solid ${t.colors.border}` }}>
+        <ul className="m-0 flex-1 list-none overflow-y-auto p-0" style={{ borderTop: items.length ? `1px solid ${t.colors.border}` : 'none' }}>
           {loading && !cart && <li className="p-4 text-sm" style={{ color: t.colors.inkMuted }}>{ts('pg.loading', 'Loading')}</li>}
-          {!loading && items.length === 0 && <li className="p-6 text-center text-sm" style={{ color: t.colors.inkMuted }}>{ts('cart.cartEmpty', 'Your cart is empty')}</li>}
+          {!loading && items.length === 0 && (
+            <li className="flex flex-col items-start gap-5 px-6 py-4">
+              <span className="text-[15px]" style={{ color: '#4b423b' }}>{ts('cart.cartEmpty', 'Your cart is empty')}</span>
+              <button type="button" onClick={() => go('/search')} className="lds-pill cursor-pointer">{ts('ld.exploreProducts', 'Explore products')}</button>
+            </li>
+          )}
           {items.map(i => {
             const img = i.image?.[0] ?? i.images?.[0];
             return (
@@ -129,10 +134,10 @@ function MiniCart({ onClose }: { onClose: () => void }) {
           })}
         </ul>
         {t.cartUpsell && items.length > 0 && <MiniCartUpsell inCart={items.map(i => i.productId)} onAdded={() => undefined} />}
-        <div className="flex flex-col gap-3 p-4" style={{ borderTop: `1px solid ${t.colors.border}` }}>
+        {items.length > 0 && <div className="flex flex-col gap-3 p-6" style={{ borderTop: `1px solid ${t.colors.border}` }}>
           <p className="m-0 text-center text-sm"><span style={{ color: t.colors.inkMuted }}>{ts('cart.subtotal', 'Subtotal')}: </span><b className="text-lg">{displayMoneySum(conv, lines)}</b></p>
           <LedupButton block disabled={items.length === 0 || items.some(i => i.unavailable)} onClick={() => go('/checkout')}>{ts('cart.goToCheckout', 'Go to checkout')}</LedupButton>
-        </div>
+        </div>}
       </div>
     </div>
   );
