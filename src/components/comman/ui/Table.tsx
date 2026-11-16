@@ -350,9 +350,8 @@ export function Table<T = Record<string, unknown>>({
   const renderDetail = renderDetailProp ?? (rowPanel ? autoDetail : undefined);
   const openRow = (row: T) => { onRowClick?.(row); if (renderDetail) setDetailRow(row); };
 
-  // ── Wide table: edge hints, sticky edge columns and a floating scrollbar ──
+  // ── Wide table: edge hints, sticky edge columns and arrow buttons ──
   const scrollRef = useRef<HTMLDivElement>(null);
-  const proxyRef = useRef<HTMLDivElement>(null);
   const [m, setM] = useState({ overflow: false, left: false, right: false, sw: 0, lw: 0, rw: 0 });
   const measure = useCallback(() => {
     const el = scrollRef.current;
@@ -373,15 +372,7 @@ export function Table<T = Record<string, unknown>>({
     if (table) ro.observe(table);
     return () => ro.disconnect();
   }, [measure, showEmptyStateFlag(loading, data.length, emptyState)]);
-  const onScrollMain = () => {
-    const el = scrollRef.current, p = proxyRef.current;
-    if (el && p && p.scrollLeft !== el.scrollLeft) p.scrollLeft = el.scrollLeft;
-    measure();
-  };
-  const onScrollProxy = () => {
-    const el = scrollRef.current, p = proxyRef.current;
-    if (el && p && el.scrollLeft !== p.scrollLeft) el.scrollLeft = p.scrollLeft;
-  };
+  const onScrollMain = () => { measure(); };
   const nudge = (dir: 1 | -1) => {
     const el = scrollRef.current;
     if (el) el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.6), behavior: 'smooth' });
@@ -480,7 +471,7 @@ export function Table<T = Record<string, unknown>>({
           {/* ── Desktop / tablet — full table ── */}
           <div className="sx-tbl hidden sm:block" data-overflow={m.overflow ? '1' : '0'} data-left={m.left ? '1' : '0'} data-right={m.right ? '1' : '0'}>
           <div className="relative">
-          <div ref={scrollRef} onScroll={onScrollMain} className={clsx('overflow-x-auto max-h-[75dvh]', m.overflow && 'sx-hide-hbar')}>
+          <div ref={scrollRef} onScroll={onScrollMain} className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead className="sticky top-0 z-[1]">
                 <tr className="border-y border-bone bg-cream">
@@ -622,11 +613,6 @@ export function Table<T = Record<string, unknown>>({
             </>
           )}
           </div>
-          {m.overflow && (
-            <div ref={proxyRef} onScroll={onScrollProxy} aria-hidden className="sx-tbl-proxy sticky bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[5] overflow-x-auto bg-white/95">
-              <div style={{ width: m.sw, height: 1 }} />
-            </div>
-          )}
           </div>
 
           {/* ── Mobile — one card per row, columns stacked as label/value ── */}
