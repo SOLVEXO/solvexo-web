@@ -617,6 +617,12 @@
     "none": "No questions have been added yet.",
     "title": "Frequently asked questions"
   },
+  "fc": {
+    "aria": "Contact us",
+    "call": "Call us",
+    "email": "Email us",
+    "whatsapp": "Chat on WhatsApp"
+  },
   "footer": {
     "accountHeading": "Account",
     "allProducts": "All Products",
@@ -1501,6 +1507,7 @@
     "soldOutLower": "sold out",
     "soldOutOrUnavailable": "{{val}} — sold out or unavailable",
     "specifications": "Specifications",
+    "additionalInfo": "Additional information",
     "stepQty": "sold in multiples of {{count}}",
     "tags": "Tags",
     "unavailable": "This product isn't available.",

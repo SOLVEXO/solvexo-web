@@ -616,6 +616,12 @@
     "none": "Belum ada pertanyaan yang ditambahkan.",
     "title": "Pertanyaan yang sering diajukan"
   },
+  "fc": {
+    "aria": "Hubungi kami",
+    "call": "Hubungi kami",
+    "email": "Kirim email",
+    "whatsapp": "Chat di WhatsApp"
+  },
   "footer": {
     "accountHeading": "Akun",
     "allProducts": "Semua produk",
@@ -1489,6 +1495,7 @@
     "soldOutLower": "habis terjual",
     "soldOutOrUnavailable": "{{val}} — habis terjual atau tidak tersedia",
     "specifications": "Spesifikasi",
+    "additionalInfo": "Informasi tambahan",
     "stepQty": "dijual dalam kelipatan {{count}}",
     "tags": "Tag",
     "unavailable": "Produk ini tidak tersedia.",

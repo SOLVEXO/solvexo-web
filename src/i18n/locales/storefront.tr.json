@@ -619,6 +619,12 @@
     "none": "Henüz hiç soru eklenmedi.",
     "title": "Sık sorulan sorular"
   },
+  "fc": {
+    "aria": "Bize ulaşın",
+    "call": "Bizi arayın",
+    "email": "Bize e-posta gönderin",
+    "whatsapp": "WhatsApp'ta yazın"
+  },
   "footer": {
     "accountHeading": "Hesap",
     "allProducts": "Tüm ürünler",
@@ -1501,6 +1507,7 @@
     "soldOutLower": "tükendi",
     "soldOutOrUnavailable": "{{val}} — tükendi veya mevcut değil",
     "specifications": "Özellikler",
+    "additionalInfo": "Ek bilgiler",
     "stepQty": "{{count}} ve katları olarak satılır",
     "tags": "Etiketler",
     "unavailable": "Bu ürün mevcut değil.",

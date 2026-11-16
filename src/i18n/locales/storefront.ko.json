@@ -616,6 +616,12 @@
     "none": "아직 추가된 질문이 없습니다.",
     "title": "자주 묻는 질문"
   },
+  "fc": {
+    "aria": "문의하기",
+    "call": "전화하기",
+    "email": "이메일 보내기",
+    "whatsapp": "WhatsApp으로 채팅"
+  },
   "footer": {
     "accountHeading": "계정",
     "allProducts": "모든 상품",
@@ -1489,6 +1495,7 @@
     "soldOutLower": "품절",
     "soldOutOrUnavailable": "{{val}} — 품절 또는 이용 불가",
     "specifications": "사양",
+    "additionalInfo": "추가 정보",
     "stepQty": "{{count}}개 단위로 판매",
     "tags": "태그",
     "unavailable": "이 상품은 이용할 수 없습니다.",

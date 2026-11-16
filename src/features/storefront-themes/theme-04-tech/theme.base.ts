@@ -8,6 +8,8 @@
 import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
 import { setVendorPrefix } from '../core/VendorLink';
 import { readProductsPerPage } from '../themeManifest';
+import { DEFAULT_SPECS_LOOK, readSpecsLook, type SpecsLook } from '../specsLook';
+import { DEFAULT_PAGE_BG, DEFAULT_CARD_BORDER, readPageBg, readCardBorder, type PageBg, type CardBorder } from '../pageBackground';
 
 const STATIC_DEFAULTS = {
   id: 'theme-04-tech',
@@ -65,6 +67,9 @@ const STATIC_DEFAULTS = {
   soldOutBadge: true,
   cardStyle: 'theme' as 'theme' | 'flat' | 'outlined' | 'elevated',
   /** Pop-up messages ("Added to bag"); seller settings `custom.toast*`. `color` null = the accent. */
+  pageBg: { ...DEFAULT_PAGE_BG } as PageBg,
+  specs: { ...DEFAULT_SPECS_LOOK } as SpecsLook,
+  cardBorder: { ...DEFAULT_CARD_BORDER } as CardBorder,
   toast: {
     style: 'dark' as 'dark' | 'light',
     color: null as string | null,
@@ -225,6 +230,9 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
   baseTheme.toast.position = ts?.toastPosition === 'bottom-center' || ts?.toastPosition === 'top-right' || ts?.toastPosition === 'top-center' ? ts.toastPosition : 'bottom-right';
   baseTheme.toast.progress = ts?.toastProgress !== 'hide';
   const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : fallback);
+  baseTheme.pageBg = readPageBg(ts);
+  baseTheme.specs = readSpecsLook(ts);
+  baseTheme.cardBorder = readCardBorder(ts);
   baseTheme.authGate.title = typeof ts?.authTitle === 'string' ? ts.authTitle.trim().slice(0, 60) : '';
   baseTheme.authGate.button = typeof ts?.authButton === 'string' ? ts.authButton.trim().slice(0, 30) : '';
   baseTheme.authGate.size = oneOf(ts?.authSize, ['compact', 'standard', 'large'] as const, 'standard');

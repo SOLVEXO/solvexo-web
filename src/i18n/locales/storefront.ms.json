@@ -616,6 +616,12 @@
     "none": "Belum ada soalan ditambah.",
     "title": "Soalan lazim"
   },
+  "fc": {
+    "aria": "Hubungi kami",
+    "call": "Hubungi kami",
+    "email": "E-mel kami",
+    "whatsapp": "Sembang di WhatsApp"
+  },
   "footer": {
     "accountHeading": "Akaun",
     "allProducts": "Semua produk",
@@ -1489,6 +1495,7 @@
     "soldOutLower": "habis dijual",
     "soldOutOrUnavailable": "{{val}} — habis dijual atau tidak tersedia",
     "specifications": "Spesifikasi",
+    "additionalInfo": "Maklumat tambahan",
     "stepQty": "dijual dalam gandaan {{count}}",
     "tags": "Teg",
     "unavailable": "Produk ini tidak tersedia.",

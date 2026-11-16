@@ -3,7 +3,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
 import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
-import { resolveSectionColors, baseTypographyCss } from '../theme.base';
+import { resolveSectionColors, baseTypographyCss, baseTheme } from '../theme.base';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
@@ -58,7 +58,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
         const spacing = sectionSpacing(section.settings);
         const key = String(section._id ?? i);
         const scoped = sectionScopedCss(section.settings, key);
-        const common = { id: sectionAnchorId(section.settings), 'data-sx': key, style: { backgroundColor: colors.bg, color: colors.ink, ...spacing.style } };
+        const common = { id: sectionAnchorId(section.settings), 'data-sx': key, style: { backgroundColor: baseTheme.pageBg.image && colors === baseTheme.colors ? 'transparent' : colors.bg, color: colors.ink, ...spacing.style } };
 
         if (!selectable) {
           return (

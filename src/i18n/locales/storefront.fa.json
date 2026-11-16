@@ -619,6 +619,12 @@
     "none": "هنوز پرسشی اضافه نشده است.",
     "title": "پرسش‌های متداول"
   },
+  "fc": {
+    "aria": "تماس با ما",
+    "call": "با ما تماس بگیرید",
+    "email": "به ما ایمیل بزنید",
+    "whatsapp": "گفتگو در واتس‌اپ"
+  },
   "footer": {
     "accountHeading": "حساب کاربری",
     "allProducts": "همه محصولات",
@@ -1501,6 +1507,7 @@
     "soldOutLower": "فروخته شد",
     "soldOutOrUnavailable": "{{val}} — فروخته شده یا ناموجود",
     "specifications": "مشخصات",
+    "additionalInfo": "اطلاعات تکمیلی",
     "stepQty": "به‌صورت مضرب‌های {{count}} فروخته می‌شود",
     "tags": "برچسب‌ها",
     "unavailable": "این محصول موجود نیست.",

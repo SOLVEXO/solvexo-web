@@ -616,6 +616,12 @@
     "none": "まだ質問が追加されていません。",
     "title": "よくある質問"
   },
+  "fc": {
+    "aria": "お問い合わせ",
+    "call": "お電話ください",
+    "email": "メールでお問い合わせ",
+    "whatsapp": "WhatsAppでチャット"
+  },
   "footer": {
     "accountHeading": "アカウント",
     "allProducts": "すべての商品",
@@ -1489,6 +1495,7 @@
     "soldOutLower": "売り切れ",
     "soldOutOrUnavailable": "{{val}} — 売り切れ、または利用不可",
     "specifications": "仕様",
+    "additionalInfo": "追加情報",
     "stepQty": "{{count}} 点単位で販売",
     "tags": "タグ",
     "unavailable": "この商品は利用できません。",

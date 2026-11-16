@@ -1,4 +1,5 @@
 import '@/features/storefront-themes/editorThemes';
+import { FloatingContactSettings } from '../../Manage/FloatingContactSettings';
 import { Loader2, RotateCcw, Undo2, Redo2, History, Search, ChevronDown } from 'lucide-react';
 import { useEffect } from 'react';
 import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';
@@ -16,6 +17,7 @@ import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUn
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
+import { ImageUpload } from '@/components/comman/ui';
 import { getThemeManifest, readThemeSetting, themeSettingPatch, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { BrandKitCard } from './BrandKitCard';
@@ -107,19 +109,41 @@ const GROUP_GRID: Record<number, string> = {
  *  can be — a theme's manifest can list its fields in any order; they
  *  always render grouped into these sections, in this order, and a group
  *  with zero fields for the active theme is simply skipped. */
-const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Product page', 'Effects', 'Cart', 'Pop-up messages', 'Login popup', 'Share popup', 'Mega menu', 'Pagination'];
+const GROUP_ORDER: ThemeSettingsFieldDef['group'][] = ['Colors', 'Page background', 'Typography', 'Buttons', 'Layout & Spacing', 'Images', 'Product cards', 'Product page', 'Effects', 'Cart', 'Specifications table', 'Pop-up messages', 'Login popup', 'Share popup', 'Mega menu', 'Pagination'];
 
 /** Renders one manifest-declared field against the theme's live working
  *  copy — a `color` control becomes a `ColorField`, a `select` control
  *  becomes a labeled dropdown built from the manifest's own `options`. This
  *  is what makes Theme Settings generic: a new theme's manifest adds
  *  fields here with zero new JSX anywhere in this file. */
-function ThemeSettingsField({ field, colors, onChange }: {
+function ThemeSettingsField({ field, colors, onChange, storeId }: {
   field: ThemeSettingsFieldDef;
   colors: StorefrontColors;
   onChange: (patch: Partial<StorefrontColors>) => void;
+  storeId: string;
 }) {
   const value = String(readThemeSetting(colors, field) ?? '');
+  const [changing, setChanging] = useState(false);
+  if (field.control.kind === 'image') {
+    const clear = () => { onChange(themeSettingPatch(colors, field, null)); setChanging(false); };
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Field heading={field.label}>
+          {value && !changing ? (
+            <div className="flex items-center gap-3">
+              <img src={value} alt="" className="size-14 rounded-lg border border-bone object-cover bg-cream" />
+              <div className="flex min-w-0 flex-col items-start gap-1.5">
+                <button type="button" onClick={() => setChanging(true)} className="text-[12px] font-semibold text-charcoal bg-transparent border border-bone rounded-lg px-3 py-1.5 cursor-pointer hover:bg-cream">Change</button>
+                <button type="button" onClick={clear} className="text-[12px] font-semibold text-slate bg-transparent border-none cursor-pointer p-0 hover:text-charcoal">Remove</button>
+              </div>
+            </div>
+          ) : (
+            <ImageUpload value={[]} onChange={urls => { if (urls[0]) { onChange(themeSettingPatch(colors, field, urls[0])); setChanging(false); } }} maxFiles={1} storeId={storeId} />
+          )}
+        </Field>
+      </div>
+    );
+  }
   if (field.control.kind === 'color' && field.control.optional) {
     return <div className="flex flex-col gap-1.5"><OptionalColorField label={field.label} value={readThemeSetting(colors, field) as string | null | undefined} fallback={field.control.optional.fallback} onChange={v => onChange(themeSettingPatch(colors, field, v))} />{field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}</div>;
   }
@@ -401,6 +425,8 @@ function SettingsTransfer({ manifest, current, onImport, onError }: {
             ? (v === null && !!f.control.defaultLabel) || (typeof v === 'string' && findCatalogFont(v) !== undefined)
             : f.control.kind === 'number'
             ? v === null || (typeof v === 'string' && /^\d{1,4}$/.test(v))
+            : f.control.kind === 'image'
+            ? v === null || (typeof v === 'string' && /^https:\/\//i.test(v) && v.length <= 500)
             : f.control.kind === 'text'
             ? v === null || (typeof v === 'string' && v.length <= (f.control.maxLength ?? 500))
             : v === null || (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v));
@@ -459,6 +485,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
   // Click a part of the live preview → scroll to and flash the color field that controls it.
   const [flashKey, setFlashKey] = useState<string | null>(null);
   // Groups are closed cards (Colors starts open); a search shows every matching group open.
+  const [floatingOpen, setFloatingOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(['Colors']));
   const toggleGroup = (group: string) => setOpenGroups(prev => { const next = new Set(prev); if (next.has(group)) next.delete(group); else next.add(group); return next; });
   useEffect(() => {
@@ -687,14 +714,14 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
 
       {GROUP_ORDER.map(group => {
         const q = query.trim().toLowerCase();
-        const fields = manifest.themeSettingsFields.filter(f => f.group === group && (!q || `${f.label} ${f.helpText ?? ''} ${group}`.toLowerCase().includes(q)));
+        const fields = manifest.themeSettingsFields.filter(f => f.group === group && (!f.showIf || f.showIf(c.themeSettings ?? {})) && (!q || `${f.label} ${f.helpText ?? ''} ${group}`.toLowerCase().includes(q)));
         if (fields.length === 0) return null;
         return (
           <Collapsible key={group} title={group} hint={`${fields.length} ${fields.length === 1 ? 'setting' : 'settings'}`} open={!!q || openGroups.has(group)} onToggle={() => toggleGroup(group)}>
             <div className={GROUP_GRID[Math.min(fields.length, 2)]}>
               {fields.map(field => {
                 const role = group === 'Colors' ? COLOR_KEY_ROLE[field.key] : undefined;
-                if (!role) return <ThemeSettingsField key={field.key} field={field} colors={c} onChange={set} />;
+                if (!role) return <ThemeSettingsField key={field.key} field={field} colors={c} onChange={set} storeId={storeId} />;
                 return (
                   <div
                     key={field.key}
@@ -706,7 +733,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
                     className="rounded-xl transition-shadow"
                     style={flashKey === field.key ? { boxShadow: `0 0 0 3px ${ADMIN_ACCENT}`, padding: 6, margin: -6 } : undefined}
                   >
-                    <ThemeSettingsField field={field} colors={c} onChange={set} />
+                    <ThemeSettingsField field={field} colors={c} onChange={set} storeId={storeId} />
                   </div>
                 );
               })}
@@ -714,6 +741,12 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
           </Collapsible>
         );
       })}
+
+      {(!query.trim() || 'floating contact bar call whatsapp social icons'.includes(query.trim().toLowerCase())) && (
+        <Collapsible title="Floating contact bar" hint="Call, WhatsApp and social icons on the side of every page" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
+          <FloatingContactSettings canManage compact />
+        </Collapsible>
+      )}
 
       {!query.trim() && (
       <SavedPalettes

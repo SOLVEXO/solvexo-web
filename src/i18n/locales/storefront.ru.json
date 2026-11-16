@@ -625,6 +625,12 @@
     "none": "Вопросы пока не добавлены.",
     "title": "Часто задаваемые вопросы"
   },
+  "fc": {
+    "aria": "Связаться с нами",
+    "call": "Позвоните нам",
+    "email": "Написать на почту",
+    "whatsapp": "Написать в WhatsApp"
+  },
   "footer": {
     "accountHeading": "Аккаунт",
     "allProducts": "Все товары",
@@ -1525,6 +1531,7 @@
     "soldOutLower": "распродано",
     "soldOutOrUnavailable": "{{val}} — распродано или недоступно",
     "specifications": "Характеристики",
+    "additionalInfo": "Дополнительная информация",
     "stepQty": "продаётся кратно {{count}}",
     "tags": "Теги",
     "unavailable": "Этот товар недоступен.",

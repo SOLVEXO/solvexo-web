@@ -1,6 +1,8 @@
 // The shared settings field list, template scopes and defaults of the Tech theme (copied from the Maison manifest, now independent).
 // `theme.manifest.ts` filters and extends it; nothing here is registered by itself.
 import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
+import { CARD_BORDER_FIELDS, PAGE_BG_FIELDS } from '../pageBackground';
+import { SPECS_FIELDS } from '../specsLook';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const RADIUS = [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }];
@@ -136,6 +138,9 @@ export const baseManifest: ThemeManifest = {
     { key: 'custom.authSize', label: 'Width', group: 'Login popup', control: { kind: 'select', options: [{ value: 'compact', label: 'Compact' }, { value: 'standard', label: 'Standard' }, { value: 'large', label: 'Large' }] }, helpText: 'How wide the sign-in pop-up opens.' },
     { key: 'custom.authSocial', label: 'Social sign-in buttons', group: 'Login popup', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Google / Facebook buttons, when you have connected them.' },
     { key: 'custom.quickViewSize', label: 'Quick view size', group: 'Product cards', control: { kind: 'select', options: [{ value: 'compact', label: 'Compact' }, { value: 'standard', label: 'Standard' }, { value: 'large', label: 'Large' }] }, helpText: 'How wide the quick view pop-up opens (when Quick view is on).' },
+    ...PAGE_BG_FIELDS,
+    ...SPECS_FIELDS,
+    ...CARD_BORDER_FIELDS,
     { key: 'custom.productsPerPage', label: 'Products per page', group: 'Pagination', control: { kind: 'number', min: 4, max: 100, placeholder: '12' }, helpText: 'How many products show at once on collection, category and search pages: any number from 4 to 100. Default 12.' },
     { key: 'custom.vendorPrefix', label: 'Text before the vendor name', group: 'Product page', control: { kind: 'text', maxLength: 30, placeholder: 'e.g. By' }, helpText: 'Optional. Written before the vendor / brand / author name on the product page, e.g. "By" gives "By George Orwell". Leave empty to show just the name.' },
     { key: 'custom.productShowAll', label: 'Show all products', group: 'Pagination', control: { kind: 'select', options: [{ value: 'no', label: 'No, use the number above' }, { value: 'yes', label: 'Yes, keep loading as shoppers scroll' }] }, helpText: 'Loads every product in batches of 100 while shoppers scroll, so big stores stay fast.' },

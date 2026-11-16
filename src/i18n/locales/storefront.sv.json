@@ -619,6 +619,12 @@
     "none": "Inga frågor har lagts till än.",
     "title": "Vanliga frågor"
   },
+  "fc": {
+    "aria": "Kontakta oss",
+    "call": "Ring oss",
+    "email": "Mejla oss",
+    "whatsapp": "Chatta på WhatsApp"
+  },
   "footer": {
     "accountHeading": "Konto",
     "allProducts": "Alla produkter",
@@ -1501,6 +1507,7 @@
     "soldOutLower": "slutsåld",
     "soldOutOrUnavailable": "{{val}} — slutsåld eller inte tillgänglig",
     "specifications": "Specifikationer",
+    "additionalInfo": "Ytterligare information",
     "stepQty": "säljs i multiplar av {{count}}",
     "tags": "Taggar",
     "unavailable": "Den här produkten är inte tillgänglig.",

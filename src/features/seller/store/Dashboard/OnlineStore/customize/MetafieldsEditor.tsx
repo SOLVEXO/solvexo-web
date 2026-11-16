@@ -8,7 +8,7 @@ import {
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[70px]`;
 
-function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEntry; value: string; onChange: (v: string) => void }) {
+export function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEntry; value: string; onChange: (v: string) => void }) {
   switch (entry.type) {
     case 'multi_line_text_field':
       return <textarea className={ta} value={value} onChange={e => onChange(e.target.value)} />;

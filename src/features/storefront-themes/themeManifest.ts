@@ -52,8 +52,10 @@ export interface ThemeSettingsFieldDef {
   /** A shared `StorefrontColors` key, or `custom.<name>` for a setting only THIS theme defines: it is stored in `StorefrontColors.themeSettings` (no backend change needed) and read in the theme with `customThemeSetting`. */
   key: keyof StorefrontColors | `custom.${string}`;
   label: string;
-  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart' | 'Pop-up messages' | 'Login popup' | 'Share popup' | 'Mega menu' | 'Pagination';
+  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart' | 'Pop-up messages' | 'Login popup' | 'Share popup' | 'Mega menu' | 'Pagination' | 'Page background' | 'Specifications table';
   control:
+    /** A picture the seller uploads or picks from the media library; stored as its https URL text. */
+    | { kind: 'image' }
     | { kind: 'color'; /** Optional override: shows an "Auto (theme)" state with a Reset, and saves null when reset. */ optional?: { fallback: string } }
     | { kind: 'select'; options: { value: string; label: string }[] }
     | { kind: 'text'; maxLength?: number; placeholder?: string }
@@ -61,6 +63,8 @@ export interface ThemeSettingsFieldDef {
     | { kind: 'number'; min: number; max: number; placeholder?: string }
     /** Google Fonts picker (searchable, each font shown in its own face). `defaultLabel` adds a "theme default" row that stores nothing. */
     | { kind: 'font'; defaultLabel?: string };
+  /** Optional: show the field only while this is true for the current theme settings (e.g. pattern size only for the "Pattern" style). */
+  showIf?: (settings: Record<string, unknown>) => boolean;
   /** Shown under the field — e.g. Maison's fixed headline typeface note. */
   helpText?: string;
 }

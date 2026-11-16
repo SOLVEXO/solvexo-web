@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { SupplierField } from './SupplierField';
+import { ProductSpecsEditor } from './ProductSpecsEditor';
+import { saveProductSpecs } from './productSpecs';
 import { ProductRichEditor, ProductTabsEditor, type ProductTabInput } from './ProductContentFields';
 import { Link, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
@@ -140,6 +142,7 @@ export default function StoreAddProduct() {
   const [saving,            setSaving]            = useState(false);
   const toast = useToast();
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [specValues, setSpecValues] = useState<Record<string, string>>({});
   const [error,             setError]             = useState('');
   const [nameError,         setNameError]         = useState('');
   const [phys,              setPhys]              = useState<PhysForm>(initPhys);
@@ -261,6 +264,9 @@ export default function StoreAddProduct() {
         try { await apiSetProductCollections(storeId, newProductId, collectionIds); }
         catch { toast.error('The product was saved, but it could not be added to the chosen collections. Open it to retry.'); }
       }
+      if (newProductId && !(await saveProductSpecs(storeId, newProductId, specValues))) {
+        toast.error('The product was saved, but its specifications could not be saved. Open the product to add them again.');
+      }
       invalidateMyStoresCache();
       navigate(`/store/${storeId}/products`);
     } catch (err) {
@@ -354,6 +360,8 @@ export default function StoreAddProduct() {
               </F>
             </div>
           </Card>
+
+          <ProductSpecsEditor storeId={storeId} onValuesChange={setSpecValues} />
 
           {/* Category */}
           <Card title="Category">

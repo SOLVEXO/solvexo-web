@@ -616,6 +616,12 @@
     "none": "尚未添加任何问题。",
     "title": "常见问题"
   },
+  "fc": {
+    "aria": "联系我们",
+    "call": "致电我们",
+    "email": "给我们发邮件",
+    "whatsapp": "通过 WhatsApp 聊天"
+  },
   "footer": {
     "accountHeading": "账户",
     "allProducts": "所有商品",
@@ -1489,6 +1495,7 @@
     "soldOutLower": "已售罄",
     "soldOutOrUnavailable": "{{val}}——已售罄或不可用",
     "specifications": "规格",
+    "additionalInfo": "附加信息",
     "stepQty": "按 {{count}} 的倍数销售",
     "tags": "标签",
     "unavailable": "此商品暂不可用。",

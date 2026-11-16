@@ -6,6 +6,8 @@
 import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
 import { setVendorPrefix } from '../core/VendorLink';
 import { readProductsPerPage } from '../themeManifest';
+import { DEFAULT_SPECS_LOOK, readSpecsLook, type SpecsLook } from '../specsLook';
+import { readCardBorder, readPageBg, pageBackgroundCss, DEFAULT_PAGE_BG, type PageBg } from '../pageBackground';
 
 const STATIC_DEFAULTS = {
   id: 'theme-03-fashion',
@@ -69,6 +71,10 @@ const STATIC_DEFAULTS = {
     position: 'bottom-right' as 'bottom-right' | 'bottom-center' | 'top-right' | 'top-center',
     progress: true,
   },
+  /** Picture behind every page; seller settings `custom.pageBg*`. `image` null = none. `strength` 5-100 (% of the picture shown over the page colour). */
+  cardBorder: { width: null as number | null, color: null as string | null },
+  pageBg: { ...DEFAULT_PAGE_BG } as PageBg,
+  specs: { ...DEFAULT_SPECS_LOOK } as SpecsLook,
   /** Sign-in pop-up; seller settings `custom.auth*`. Empty text = the default wording. */
   authGate: { title: '', button: '', size: 'standard' as 'compact' | 'standard' | 'large', social: true },
   /** Quick view pop-up width; seller setting `custom.quickViewSize`. */
@@ -223,6 +229,9 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.toast.position = ts?.toastPosition === 'bottom-center' || ts?.toastPosition === 'top-right' || ts?.toastPosition === 'top-center' ? ts.toastPosition : 'bottom-right';
   fashionTheme.toast.progress = ts?.toastProgress !== 'hide';
   const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : fallback);
+  fashionTheme.cardBorder = readCardBorder(ts);
+  fashionTheme.pageBg = readPageBg(ts);
+  fashionTheme.specs = readSpecsLook(ts);
   fashionTheme.authGate.title = typeof ts?.authTitle === 'string' ? ts.authTitle.trim().slice(0, 60) : '';
   fashionTheme.authGate.button = typeof ts?.authButton === 'string' ? ts.authButton.trim().slice(0, 30) : '';
   fashionTheme.authGate.size = oneOf(ts?.authSize, ['compact', 'standard', 'large'] as const, 'standard');
@@ -306,6 +315,11 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
 }
 
 /** A section can point at one of the store's saved color schemes; this resolves its palette. */
+/** Inline style for the page's own background: the page colour plus the seller's picture, if any (faded into the page colour by `strength`). */
+export function pageBackgroundStyle(): Record<string, string> {
+  return pageBackgroundCss(fashionTheme.colors.bg, fashionTheme.pageBg);
+}
+
 export function resolveSectionColors(
   colorSchemeId: string | null | undefined,
   schemes: { id: string; bgColor: string; textColor: string; primaryColor: string; mutedColor?: string | null; borderColor?: string | null; saleColor?: string | null }[] | undefined,

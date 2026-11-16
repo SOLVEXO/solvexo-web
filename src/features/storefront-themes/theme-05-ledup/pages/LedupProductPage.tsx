@@ -9,6 +9,11 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
+import { useLoad } from '../../core/pageHooks';
+import { SpecsTable } from '../../ProductPageParts';
+import { specRows } from '../../specsLook';
+import { baseTheme } from '../theme.base';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useLocalize } from '@/hooks/useLocalize';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
@@ -43,6 +48,9 @@ function Inner({ slug }: { slug: string }) {
   const { currency, convert, canConvert, fixedPriceFor } = useCurrencyPreference();
   const localize = useLocalize();
   const { detail, loading, error, refetch } = useProductById(slug);
+  // The seller's own specs (Brand, Capacity ...) join the technical characteristics list.
+  const specProductId = detail?.product._id;
+  const { data: specEntries } = useLoad(() => (specProductId ? apiGetPublicMetafieldValues(store.storeId, 'product', specProductId).then(r => r.data ?? []) : Promise.resolve([])), [specProductId, store.storeId]);
   const product = detail ? localize.product(detail.product) : null;
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
@@ -144,7 +152,8 @@ function Inner({ slug }: { slug: string }) {
   const labelCls = 'text-[16px] font-normal text-[#4b423b]';
 
   return (
-    <div className="ld-split-bg py-8">
+    <div>
+    <div className="ld-split-bg pb-14 pt-8">
       <LedupBox padY={false}>
         <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: product.name }]} />
 
@@ -201,6 +210,9 @@ function Inner({ slug }: { slug: string }) {
                     </div>
                   );
                 })}
+                {specRows(specEntries ?? []).length > 0 && (
+                  <div className="mt-2"><SpecsTable rows={specRows(specEntries ?? [])} look={baseTheme.specs} tokens={{ fonts: { body: baseTheme.fonts.body, display: baseTheme.fonts.display }, colors: { ink: '#4b423b', inkMuted: '#6b625b', border: '#e2dedb', accent: baseTheme.colors.accent, bgAlt: '#f7f6f5' }, buttonRadius: '9999px' }} /></div>
+                )}
                 {(detail.product.tags ?? []).length > 0 && (
                   <div className={rowCls}>
                     <span className={labelCls}>{ts('ld.tags', 'Tags')}</span>
@@ -245,9 +257,12 @@ function Inner({ slug }: { slug: string }) {
 
           </div>
         </div>
+      </LedupBox>
+    </div>
 
         {related.length > 0 && (
-          <div className="mt-24 border-t border-stone-200 pt-12">
+      <LedupBox padY={false}>
+          <div className="py-16">
             <div className="mb-8 inline-block">
               <span className="inline-flex rounded-full bg-[var(--ld-accent)] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white">{ts('ld.relatedProducts', 'Related products')}</span>
             </div>
@@ -255,8 +270,8 @@ function Inner({ slug }: { slug: string }) {
               {related.map(p => <LedupProductCard key={p._id} product={p} currency={currency} />)}
             </div>
           </div>
-        )}
       </LedupBox>
+        )}
     </div>
   );
 }

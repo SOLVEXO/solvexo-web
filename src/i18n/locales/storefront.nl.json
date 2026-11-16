@@ -619,6 +619,12 @@
     "none": "Er zijn nog geen vragen toegevoegd.",
     "title": "Veelgestelde vragen"
   },
+  "fc": {
+    "aria": "Contact",
+    "call": "Bel ons",
+    "email": "Mail ons",
+    "whatsapp": "Chat via WhatsApp"
+  },
   "footer": {
     "accountHeading": "Account",
     "allProducts": "Alle producten",
@@ -1501,6 +1507,7 @@
     "soldOutLower": "uitverkocht",
     "soldOutOrUnavailable": "{{val}} — uitverkocht of niet beschikbaar",
     "specifications": "Specificaties",
+    "additionalInfo": "Aanvullende informatie",
     "stepQty": "verkocht in veelvouden van {{count}}",
     "tags": "Tags",
     "unavailable": "Dit product is niet beschikbaar.",

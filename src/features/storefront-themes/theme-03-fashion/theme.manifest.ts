@@ -1,4 +1,6 @@
 import { registerThemeManifest, type ThemeManifest, type ThemeStylePreset } from '../themeManifest';
+import { CARD_BORDER_FIELDS, PAGE_BG_FIELDS } from '../pageBackground';
+import { SPECS_FIELDS } from '../specsLook';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const RADIUS = [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }];
@@ -183,6 +185,9 @@ export const fashionThemeManifest: ThemeManifest = {
     { key: 'custom.productShowAll', label: 'Show all products', group: 'Pagination', control: { kind: 'select', options: [{ value: 'no', label: 'No, use the number above' }, { value: 'yes', label: 'Yes, keep loading as shoppers scroll' }] }, helpText: 'Loads every product in batches of 100 while shoppers scroll, so big stores stay fast.' },
     { key: 'custom.productPagination', label: 'Next products', group: 'Pagination', control: { kind: 'select', options: [{ value: 'pages', label: 'Page numbers' }, { value: 'more', label: '"Load more" button' }, { value: 'infinite', label: 'Load automatically while scrolling' }] }, helpText: 'How shoppers get to the next products.' },
     { key: 'custom.postsPerPage', label: 'Blog posts per page', group: 'Pagination', control: { kind: 'select', options: ['6', '9', '12', '18', '24'].map(v => ({ value: v, label: v })) }, helpText: 'How many blog posts load at first; the rest come with "Load more". Default 12.' },
+    ...CARD_BORDER_FIELDS,
+    ...PAGE_BG_FIELDS,
+    ...SPECS_FIELDS,
     { key: 'custom.reviewsPerPage', label: 'Reviews shown', group: 'Pagination', control: { kind: 'select', options: ['5', '10', '20'].map(v => ({ value: v, label: v })) }, helpText: 'How many reviews a product page shows. Default 5.' },
     { key: 'custom.shareFacebook', label: 'Facebook', group: 'Share popup', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Choose which networks the product Share popup offers. Copy link is always there.' },
     { key: 'custom.shareX', label: 'X (Twitter)', group: 'Share popup', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show this network in the Share popup.' },

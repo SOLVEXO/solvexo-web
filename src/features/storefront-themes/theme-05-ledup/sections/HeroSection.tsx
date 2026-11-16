@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { imgProps } from '../components/imgProps';
 import { HERO_SRCSET_WIDTHS } from '@/utils/cloudinaryImage';
 import { ts } from '@/utils/tStatic';
@@ -11,6 +11,8 @@ import { focalOf, mobileHeightOf, type HeightPreset } from '../../imageFit';
 import { baseTheme as t } from '../theme.base';
 import { registerLedupSection } from './ledupSectionRegistry';
 import { LinkButton } from './SectionShell';
+import { HeroSlideLink } from '../../HeroSlideLink';
+import { heroNavLook, useHeroDrag } from '../../heroSlider';
 import { EditableText, useInlineEditActive } from '../../inlineEdit';
 
 const HEIGHT: Record<Exclude<HeightPreset, 'adapt' | 'custom'>, string> = { small: 'clamp(320px, 46vh, 460px)', medium: 'clamp(420px, 68vh, 680px)', large: 'max(560px, 100svh)' };
@@ -23,7 +25,7 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
     <div className={`${onImage ? 'ld-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
       {s.heading && <h1 className="ld-up m-0 mb-5 text-[clamp(30px,4vw,57.6px)] font-medium leading-[1.2] tracking-normal" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : s.heading}</h1>}
       {s.subheading && <p className="ld-up ld-up-1 m-0 mb-8 max-w-[820px] text-[15px] leading-[1.5] md:text-[18px]" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
-      <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} />
+      <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} style={{ position: 'relative', zIndex: 2 }} />
     </div>
   );
 }
@@ -53,6 +55,7 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
           </div>
         </div>
       )}
+      <HeroSlideLink settings={s} label={s.heading} focusable={active} />
     </div>
   );
 }
@@ -67,7 +70,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const seconds = Math.min(10, Math.max(3, Number(settings.autoplaySeconds) || 5));
   const fade = settings.transition === 'fade';
   const cur = n ? i % n : 0;
-  // Fade: the slide that is leaving stays fully visible UNDER the incoming one until it has finished fading in — two half-transparent slides at once showed as a ghosted double image.
+  // Fade: the slide that is leaving stays fully visible UNDER the incoming one until it has finished fading in â€” two half-transparent slides at once showed as a ghosted double image.
   const [shown, setShown] = useState({ cur, prev: cur });
   if (shown.cur !== cur) setShown({ cur, prev: shown.cur });
   const touch = useRef<number | null>(null);
@@ -78,6 +81,10 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
     const id = window.setInterval(() => setI(v => (v + 1) % n), seconds * 1000);
     return () => window.clearInterval(id);
   }, [auto, n, seconds]);
+
+  const go = (d: number) => setI(v => (v + d + n) % n);
+  const nav = heroNavLook(settings, 'right');
+  const drag = useHeroDrag(go, dx => swipeStep(dx, rtl), n > 1);
 
   if (n === 0) return null;
   const desk = (settings.heightPreset ?? 'large') as HeightPreset;
@@ -92,7 +99,6 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const hm = heightOf(mob, settings.mobileCustomHeight ?? settings.customHeight);
   const whole = settings.imageFit === 'whole';
   const maxW = typeof settings.maxWidth === 'number' && settings.maxWidth >= 320 ? Math.min(2400, settings.maxWidth) : null;
-  const go = (d: number) => setI(v => (v + d + n) % n);
   const pagination = settings.pagination ?? 'dots';
   const below = settings.mobileTextLayout === 'below';
   // One slide = the image box + (phones, "Below image" only) its text underneath.
@@ -108,7 +114,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   );
 
   return (
-    <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: 0 }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+    <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: 0 }} {...drag} onMouseEnter={() => settings.pauseOnHover !== false && setHover(true)} onMouseLeave={() => setHover(false)}
       onTouchStart={e => { touch.current = e.touches[0].clientX; }}
       onTouchEnd={e => { if (touch.current != null) { const d = e.changedTouches[0].clientX - touch.current; const s = swipeStep(d, rtl); if (s) go(s); touch.current = null; } }}>
       <style>{`.ld-herobox{--h:${hm ?? 'auto'}}@media(min-width:768px){.ld-herobox{--h:${hd ?? 'auto'}}}.ld-herobox .ld-h{height:var(--h)!important}`}</style>
@@ -134,15 +140,15 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
 
       {n > 1 && settings.showArrows === true && (
         <>
-          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className="absolute start-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronLeft size={20} className="lb-flip-rtl" /></button>
-          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className="absolute end-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronRight size={20} className="lb-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className={`absolute start-8 top-1/2 ${nav.arrowShow} size-11 -translate-y-1/2 cursor-pointer items-center justify-center border-0 ${nav.arrowShape}`}><ChevronLeft size={20} className="lb-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className={`absolute end-8 top-1/2 ${nav.arrowShow} size-11 -translate-y-1/2 cursor-pointer items-center justify-center border-0 ${nav.arrowShape}`}><ChevronRight size={20} className="lb-flip-rtl" /></button>
         </>
       )}
 
       {n > 1 && pagination !== 'none' && (
-        <div className="absolute inset-x-0 bottom-[76px] flex items-center justify-start gap-3 ps-5 md:bottom-[62px] md:ps-10">
+        <div className={`absolute inset-x-0 bottom-[76px] flex items-center gap-3 md:bottom-[62px] ${nav.paginationPos}`}>
           {pagination === 'counter'
-            ? <span className="text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
+            ? <span className="rounded-full bg-black/45 px-3 py-1 text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
             : slides.map((_, k) => (
               <button key={k} type="button" aria-label={ts('sections.goToSlide', 'Go to slide {{n}}', { n: k + 1 })} aria-current={k === cur} onClick={() => setI(k)} className="ld-hero-count">{String(k + 1).padStart(2, '0')}</button>
             ))}

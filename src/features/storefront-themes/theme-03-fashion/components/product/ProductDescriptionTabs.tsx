@@ -4,7 +4,7 @@ import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { fashionTheme as t } from '../../theme.config';
 
-export interface DescriptionTab { key: string; title: string; content: string; html: boolean }
+export interface DescriptionTab { key: string; title: string; content: string; html: boolean; node?: ReactNode }
 
 const HAS_HTML = /<\/?[a-z][\s\S]*>/i;
 
@@ -19,7 +19,8 @@ const RICH_CSS = `
 `;
 
 /** Seller-written text: HTML from the rich editor is cleaned first; older plain text keeps its line breaks. */
-function Body({ content, html }: { content: string; html: boolean }): ReactNode {
+function Body({ content, html, node }: { content: string; html: boolean; node?: ReactNode }): ReactNode {
+  if (node) return <>{node}</>;
   if (html && HAS_HTML.test(content)) return <div className="fx-rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />;
   if (html) return <div className="fx-rich">{renderRichText(content)}</div>;
   return <div className="fx-rich" style={{ whiteSpace: 'pre-line' }}>{content}</div>;
@@ -39,7 +40,7 @@ export function ProductDescriptionTabs({ tabs, heading }: { tabs: DescriptionTab
       <div style={{ fontFamily: t.fonts.body, ...color }}>
         <style>{RICH_CSS}</style>
         {heading?.trim() && <h2 className="m-0 mb-3 text-lg font-semibold" style={{ color: t.colors.ink }}>{heading}</h2>}
-        <Body content={current.content} html={current.html} />
+        <Body content={current.content} html={current.html} node={current.node} />
       </div>
     );
   }
@@ -70,7 +71,7 @@ export function ProductDescriptionTabs({ tabs, heading }: { tabs: DescriptionTab
         })}
       </div>
       <div id={`${base}-panel`} role="tabpanel" aria-labelledby={`${base}-${current.key}`} style={color}>
-        <Body content={current.content} html={current.html} />
+        <Body content={current.content} html={current.html} node={current.node} />
       </div>
     </div>
   );

@@ -28,6 +28,19 @@ const COMMON_SECTION_SCHEMA: FieldSchema[] = [
   { key: 'fullWidth', kind: 'checkbox', label: 'Full width', hint: 'Content spans the whole screen instead of the centred page width.', defaultOff: true },
   { key: 'backgroundImageUrl', kind: 'image', label: 'Background image', hint: 'Shown behind this section. Wide images (1920px+) work best.' },
   { key: 'backgroundOverlay', kind: 'number', label: 'Image overlay darkness (%)', min: 0, max: 80, step: 5, showIf: s => !!s.backgroundImageUrl, hint: 'Darkens the image so text stays readable.' },
+  { key: 'sectionBgColor', kind: 'color', label: 'Background colour', hint: 'Gives this section its own colour. Empty keeps the theme colour.' },
+  { key: 'borderWidth', kind: 'number', label: 'Border thickness (px)', min: 0, max: 8, step: 1, half: true },
+  { key: 'borderColor', kind: 'color', label: 'Border colour', showIf: s => Number(s.borderWidth) > 0, hint: 'Empty uses the text colour.' },
+  { key: 'borderRadius', kind: 'number', label: 'Rounded corners (px)', min: 0, max: 80, step: 4, half: true },
+  {
+    key: 'shadow', kind: 'select', label: 'Shadow', half: true,
+    options: [
+      { value: 'none', label: 'None' },
+      { value: 'soft', label: 'Soft' },
+      { value: 'medium', label: 'Medium' },
+      { value: 'strong', label: 'Strong' },
+    ],
+  },
   { key: 'anchorId', kind: 'text', label: 'Section ID', maxLength: 40, placeholder: 'e.g. our-story', hint: 'Link straight to this section with #our-story. Letters, numbers, - and _ only.' },
   { key: 'customCss', kind: 'textarea', label: 'Custom CSS', rows: 4, maxLength: 5000, placeholder: 'h2 { letter-spacing: 0.02em; }', hint: 'Applies to this section only. Plain properties style the section itself. Theme colours are set on each element, so add !important to override them (e.g. h2 { color: red !important; }).' },
 ];
@@ -47,7 +60,7 @@ export function SectionFields({ type, settings, onChange, storeId, pageOptions, 
   const meta = type === 'theme_section' ? resolveSectionMeta({ type, settings }) : SECTION_META_BY_TYPE[type];
   const schema = meta?.settingsSchema ?? [];
   const isLocked = meta?.locked;
-  const hasDesign = ['visibility', 'fullWidth', 'backgroundImageUrl', 'anchorId', 'customCss'].some(k => settings?.[k]);
+  const hasDesign = ['visibility', 'fullWidth', 'backgroundImageUrl', 'sectionBgColor', 'borderWidth', 'borderRadius', 'shadow', 'anchorId', 'customCss'].some(k => settings?.[k]);
   const [designOpen, setDesignOpen] = useState(hasDesign);
   return (
     <div className="flex flex-col gap-3">

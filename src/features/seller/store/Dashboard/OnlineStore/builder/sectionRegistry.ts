@@ -87,9 +87,17 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'autoplaySeconds', kind: 'number', label: 'Change slides every (seconds)', min: 3, max: 10, step: 1, showIf: s => s.autoplay !== false },
       { key: 'showArrows', kind: 'checkbox', label: 'Show navigation arrows', defaultOff: true },
       { key: 'showPauseButton', kind: 'checkbox', label: 'Show pause / play button', defaultOff: true, showIf: s => s.autoplay !== false },
+      { key: 'arrowStyle', kind: 'select', label: 'Arrow style', showIf: s => s.showArrows === true, options: [
+        { value: 'circle', label: 'Round' }, { value: 'square', label: 'Square' }, { value: 'plain', label: 'Plain (no background)' },
+      ] },
+      { key: 'arrowsOnPhone', kind: 'checkbox', label: 'Show arrows on phones', defaultOff: true, showIf: s => s.showArrows === true },
       { key: 'pagination', kind: 'select', label: 'Pagination', options: [
         { value: 'dots', label: 'Dots' }, { value: 'counter', label: 'Counter (1 / 3)' }, { value: 'none', label: 'None' },
       ] },
+      { key: 'paginationPosition', kind: 'select', label: 'Pagination position', showIf: s => s.pagination !== 'none', options: [
+        { value: 'auto', label: 'Theme default' }, { value: 'left', label: 'Left' }, { value: 'center', label: 'Centre' }, { value: 'right', label: 'Right' },
+      ] },
+      { key: 'pauseOnHover', kind: 'checkbox', label: 'Pause when the mouse is over it', showIf: s => s.autoplay !== false },
     ],
   },
   {
@@ -528,7 +536,9 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped.' },
       { key: 'heading', kind: 'text', label: 'Heading' },
       { key: 'subheading', kind: 'text', label: 'Text' },
-      { key: 'ctaText', kind: 'text', label: 'Button text' },
+      { key: 'slideLinkOn', kind: 'checkbox', label: 'Make the whole slide a link', defaultOff: true },
+    { key: 'slideLink', kind: 'link', label: 'Slide link', showIf: s => s.slideLinkOn === true },
+    { key: 'ctaText', kind: 'text', label: 'Button text', hint: 'Leave empty for no button.' },
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
       { key: 'heightPreset', kind: 'select', label: 'Banner height', options: [
         { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
@@ -649,6 +659,10 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   product_buy_now: [
     { key: 'label', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'Buy it now', hint: 'Adds the item and goes straight to checkout. Shown only when Buy buttons are on.' },
+  ],
+  product_specs: [
+    { key: 'showAsTab', kind: 'checkbox', label: 'Show as a tab next to Description', defaultOff: true },
+    { key: 'title', kind: 'text', label: 'Tab name', maxLength: 40, placeholder: 'Additional information', showIf: s => s.showAsTab === true },
   ],
   product_collapsible_tab: [
     { key: 'title', kind: 'text', label: 'Heading', required: true, maxLength: 80, placeholder: 'Materials & care' },

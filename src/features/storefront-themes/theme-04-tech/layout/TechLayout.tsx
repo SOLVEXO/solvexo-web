@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { baseTypographyCss } from '../theme.base';
+import { baseTypographyCss, baseTheme } from '../theme.base';
+import { pageBackgroundCss, cardBorderCss } from '../../pageBackground';
+import { PageBgLayer } from '../../PageBgLayer';
 import { TechToaster } from '../components/TechToaster';
 import { TechAnnouncementBar } from '../components/TechAnnouncementBar';
 import { TechCartProvider } from '../components/TechCart';
@@ -21,8 +23,9 @@ export function TechLayout({ children }: { children: ReactNode }) {
   const announcement = bar?.message ? <TechAnnouncementBar {...bar} storeId={store.storeId} /> : null;
   return (
     <TechCartProvider>
-      <div className="tx-root flex min-h-screen flex-col" style={{ ...techCssVars(), background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>
-        <style>{baseTypographyCss('main')}</style>
+      <div className="tx-root flex min-h-screen flex-col" style={{ ...techCssVars(), ...pageBackgroundCss(t.colors.bg, baseTheme.pageBg), color: t.colors.ink, fontFamily: t.fonts.body }}>
+        <PageBgLayer bg={t.colors.bg} p={baseTheme.pageBg} />
+        <style>{baseTypographyCss('main')}{cardBorderCss('.tx-card', baseTheme.cardBorder, t.colors.border)}</style>
         {above && announcement}
         <TechNavbar />
         {!above && announcement}

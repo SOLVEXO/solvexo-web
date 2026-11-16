@@ -619,6 +619,12 @@
     "none": "ابھی کوئی سوال شامل نہیں کیا گیا۔",
     "title": "اکثر پوچھے جانے والے سوالات"
   },
+  "fc": {
+    "aria": "ہم سے رابطہ کریں",
+    "call": "ہمیں کال کریں",
+    "email": "ہمیں ای میل کریں",
+    "whatsapp": "واٹس ایپ پر بات کریں"
+  },
   "footer": {
     "accountHeading": "اکاؤنٹ",
     "allProducts": "تمام مصنوعات",
@@ -1503,6 +1509,7 @@
     "soldOutLower": "ختم ہو گیا",
     "soldOutOrUnavailable": "{{val}} — ختم یا دستیاب نہیں",
     "specifications": "تفصیلات",
+    "additionalInfo": "اضافی معلومات",
     "stepQty": "{{count}} کے گنا میں فروخت",
     "tags": "ٹیگز",
     "unavailable": "یہ پروڈکٹ دستیاب نہیں ہے۔",

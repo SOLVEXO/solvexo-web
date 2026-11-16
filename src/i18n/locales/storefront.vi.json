@@ -616,6 +616,12 @@
     "none": "Chưa có câu hỏi nào được thêm.",
     "title": "Câu hỏi thường gặp"
   },
+  "fc": {
+    "aria": "Liên hệ chúng tôi",
+    "call": "Gọi cho chúng tôi",
+    "email": "Gửi email cho chúng tôi",
+    "whatsapp": "Trò chuyện qua WhatsApp"
+  },
   "footer": {
     "accountHeading": "Tài khoản",
     "allProducts": "Tất cả sản phẩm",
@@ -1489,6 +1495,7 @@
     "soldOutLower": "đã bán hết",
     "soldOutOrUnavailable": "{{val}} — đã bán hết hoặc không có sẵn",
     "specifications": "Thông số kỹ thuật",
+    "additionalInfo": "Thông tin bổ sung",
     "stepQty": "bán theo bội số của {{count}}",
     "tags": "Thẻ",
     "unavailable": "Sản phẩm này không khả dụng.",

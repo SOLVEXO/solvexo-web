@@ -499,8 +499,8 @@ export function StoreOrderList() {
         {/* Table */}
         {!error && (
           <Card padding="none">
-            <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col gap-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
                 {(canPrint || canFulfill || canBookCourier) && orders.length > 0 && (
                   <div className="flex flex-wrap items-center justify-end gap-2">
@@ -546,14 +546,10 @@ export function StoreOrderList() {
                         </button>
                       </>
                     )}
-                    <label className="flex items-center gap-2 text-[12.5px] text-charcoal cursor-pointer">
-                      <input type="checkbox" className="accent-brand-orange cursor-pointer" checked={allSelected} onChange={toggleAll} disabled={bulkBusy !== null} />
-                      {selectedOrders.length > 0 ? `${selectedOrders.length} selected` : 'Select all'}
-                    </label>
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
+              <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end sm:ml-auto">
                 <SearchInput
                   value={search}
                   onChange={setSearch}
@@ -563,6 +559,16 @@ export function StoreOrderList() {
                 <button type="button" onClick={() => setFiltersOpen(true)} className="sm:hidden shrink-0 px-3 py-2 rounded-lg border border-bone bg-white text-[13px] text-charcoal cursor-pointer">
                   Filters{(statusF ? 1 : 0) + (typeF ? 1 : 0) > 0 ? ` (${(statusF ? 1 : 0) + (typeF ? 1 : 0)})` : ''}
                 </button>
+                <select
+                  aria-label="Order views"
+                  value={preorderOnly ? 'preorders' : view}
+                  onChange={e => { const id = e.target.value; if (id === 'preorders') { setView(''); setPreorderOnly(true); } else { setPreorderOnly(false); setView(id); } }}
+                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
+                >
+                  {([['', 'All'], ['unfulfilled', 'Unfulfilled'], ['unpaid', 'Unpaid'], ['open', 'Open'], ['preorders', 'Pre-orders'], ['cod_awaiting', 'COD awaiting confirmation']] as const).map(([id, label]) => (
+                    <option key={id || 'all'} value={id}>{label}</option>
+                  ))}
+                </select>
                 <select
                   value={statusF || 'All Status'}
                   onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
@@ -584,20 +590,13 @@ export function StoreOrderList() {
                     <option key={o} value={o}>{o === 'All Types' ? 'All Types' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
                   ))}
                 </select>
+                {(canPrint || canFulfill || canBookCourier) && orders.length > 0 && (
+                  <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0 whitespace-nowrap">
+                    <input type="checkbox" className="accent-brand-orange cursor-pointer" checked={allSelected} onChange={toggleAll} disabled={bulkBusy !== null} />
+                    {selectedOrders.length > 0 ? `${selectedOrders.length} selected` : 'Select all'}
+                  </label>
+                )}
               </div>
-            </div>
-
-            <div role="tablist" aria-label="Order views" className="flex gap-1.5 overflow-x-auto px-4 sm:px-5 pt-3">
-              {([['', 'All'], ['unfulfilled', 'Unfulfilled'], ['unpaid', 'Unpaid'], ['open', 'Open'], ['preorders', 'Pre-orders'], ['cod_awaiting', 'COD awaiting confirmation']] as const).map(([id, label]) => {
-                const active = id === 'preorders' ? preorderOnly : (!preorderOnly && view === id);
-                return (
-                  <button
-                    key={id || 'all'} type="button" role="tab" aria-selected={active}
-                    onClick={() => { if (id === 'preorders') { setView(''); setPreorderOnly(true); } else { setPreorderOnly(false); setView(id); } }}
-                    className={'shrink-0 px-3 py-1.5 rounded-full text-[12.5px] font-semibold border cursor-pointer transition-colors ' + (active ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:bg-cream')}
-                  >{label}</button>
-                );
-              })}
             </div>
 
             {bulkResult && (

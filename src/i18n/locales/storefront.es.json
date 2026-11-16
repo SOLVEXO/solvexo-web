@@ -622,6 +622,12 @@
     "none": "Todavía no se han añadido preguntas.",
     "title": "Preguntas frecuentes"
   },
+  "fc": {
+    "aria": "Contáctanos",
+    "call": "Llámanos",
+    "email": "Escríbenos",
+    "whatsapp": "Chatea por WhatsApp"
+  },
   "footer": {
     "accountHeading": "Cuenta",
     "allProducts": "Todos los productos",
@@ -1513,6 +1519,7 @@
     "soldOutLower": "agotado",
     "soldOutOrUnavailable": "{{val}} — agotado o no disponible",
     "specifications": "Especificaciones",
+    "additionalInfo": "Información adicional",
     "stepQty": "se vende en múltiplos de {{count}}",
     "tags": "Etiquetas",
     "unavailable": "Este producto no está disponible.",
