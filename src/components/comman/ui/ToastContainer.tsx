@@ -90,7 +90,7 @@ export function ToastContainer() {
             className={clsx(
               t.onClick && 'cursor-pointer',
               t.leaving ? 'toast-leave-right' : 'toast-enter-right',
-              'pointer-events-auto relative ml-4 mt-3 flex items-center gap-3 w-[380px] max-w-[calc(100vw-3.5rem)] min-h-[76px] rounded-2xl pl-8 pr-3 py-5 text-white',
+              t.onClick ? 'pointer-events-auto' : 'pointer-events-none', 'relative ml-4 mt-3 flex items-center gap-3 w-[380px] max-w-[calc(100vw-3.5rem)] min-h-[76px] rounded-2xl pl-8 pr-3 py-5 text-white',
               style.accent,
             )}
           >
@@ -105,7 +105,7 @@ export function ToastContainer() {
             <button
               onClick={e => { e.stopPropagation(); dismiss(t.id); }}
               aria-label="Dismiss"
-              className="text-white/85 hover:text-white hover:bg-white/15 bg-transparent border-0 cursor-pointer p-1 rounded-md shrink-0 transition-colors"
+              className="pointer-events-auto text-white/85 hover:text-white hover:bg-white/15 bg-transparent border-0 cursor-pointer p-1 rounded-md shrink-0 transition-colors"
             >
               <X size={14} />
             </button>
