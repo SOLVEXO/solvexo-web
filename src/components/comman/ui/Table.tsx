@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent as ReactTouchEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent as ReactTouchEvent } from 'react';
 import { clsx } from 'clsx';
-import { ChevronUp, ChevronDown, ArrowUpDown, Inbox } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, Inbox, SlidersHorizontal, X } from 'lucide-react';
+import { DialogShell, useDialogClose } from './DialogShell';
 import { Pagination } from './Pagination';
 import { SkeletonBox } from './SkeletonBox';
 import { EmptyState } from './EmptyState';
@@ -12,6 +13,10 @@ export interface TableColumn<T = Record<string, unknown>> {
   align?:    'left' | 'center' | 'right';
   width?:    string;
   sortable?: boolean;
+  /** Needs `columnsKey` on the table: starts hidden until the user turns it on in "Columns". */
+  defaultHidden?: boolean;
+  /** Needs `columnsKey`: cannot be hidden in "Columns". (The first column and the actions column never can.) */
+  essential?: boolean;
 }
 
 export interface TablePagination {
@@ -59,11 +64,58 @@ interface TableProps<T = Record<string, unknown>> {
    * Pass `false` to opt out and render a bare empty table instead.
    */
   emptyState?:       EmptyStateConfig | false;
+  /**
+   * Adds a "Columns" button so each user chooses which columns to show; the choice is remembered in this browser under
+   * this key (use a stable id such as "seller-returns").
+   */
+  columnsKey?:       string;
+  /** Row click opens this content in a side panel (bottom sheet on phones), so the table can stay short. */
+  renderDetail?:     (row: T, close: () => void) => ReactNode;
+  detailTitle?:      (row: T) => string;
+  /**
+   * Row click opens a side panel built from the table's own columns (every column, hidden ones included, then the
+   * actions). No per-page code; use `renderDetail` instead when a page needs its own content.
+   */
+  rowPanel?:         boolean;
 }
 
 const TH =
   'text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] ' +
-  'px-5 py-[12px] whitespace-nowrap';
+  'px-5 py-[12px] whitespace-nowrap bg-cream';
+
+const COL_STORAGE = 'sx-table-cols:v1:';
+const CHECK_COL_W = 56;
+const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], [role="menuitem"]';
+
+function readHidden(key: string | undefined): string[] | null {
+  if (!key) return null;
+  try {
+    const raw = localStorage.getItem(COL_STORAGE + key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : null;
+  } catch { return null; }
+}
+
+function DetailPanel({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <DialogShell onClose={onClose} align="right" ariaLabel={title}>
+      <DetailHeader title={title} onClose={onClose} />
+      <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+    </DialogShell>
+  );
+}
+
+function DetailHeader({ title, onClose }: { title: string; onClose: () => void }) {
+  const close = useDialogClose(onClose);
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-bone px-5 py-3.5">
+      <h2 className="m-0 min-w-0 truncate text-[16px] font-semibold text-carbon">{title}</h2>
+      <button type="button" onClick={close} aria-label="Close" className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-slate hover:bg-cream">
+        <X size={18} />
+      </button>
+    </div>
+  );
+}
 
 // ── Mobile row ────────────────────────────────────────────────────────────────
 // On desktop these same columns get their own `<td>` and are always visible.
@@ -227,14 +279,113 @@ function MobileRow<T>({
   );
 }
 
+function showEmptyStateFlag(loading: boolean, count: number, emptyState: unknown): boolean {
+  return !loading && count === 0 && emptyState !== false;
+}
+
 export function Table<T = Record<string, unknown>>({
-  columns, data, keyExtractor, onRowClick, pagination, className,
+  columns: allColumns, data, keyExtractor, onRowClick, pagination, className,
   sort, onSortChange, selectable, selectedKeys, onSelectionChange, bulkActions,
-  loading = false, loadingRows = 5, emptyState,
+  loading = false, loadingRows = 5, emptyState, columnsKey, renderDetail: renderDetailProp, detailTitle, rowPanel,
 }: TableProps<T>) {
   // Only one mobile row is left swiped-open at a time, the way a native list
   // behaves — otherwise two rows could both hold their actions out.
   const [swipedKey, setSwipedKey] = useState<string | number | null>(null);
+
+  // ── Which columns are shown (opt-in "Columns" picker) ──
+  const [hiddenKeys, setHiddenKeys] = useState<string[] | null>(() => readHidden(columnsKey));
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const isActionColumn = (c: TableColumn<T>) => !c.header || /^actions?$/i.test(c.header.trim());
+  const isCounter = (c: TableColumn<T>) => c.header.trim() === '#';
+  const firstDataOf = (cols: TableColumn<T>[]) => cols.findIndex(c => !isActionColumn(c) && !isCounter(c));
+  const firstDataKey = allColumns[firstDataOf(allColumns)]?.key;
+  const isLocked = (c: TableColumn<T>) => c.key === firstDataKey || c.essential || isActionColumn(c) || isCounter(c);
+  const hiddenSet = new Set(columnsKey ? (hiddenKeys ?? allColumns.filter(c => c.defaultHidden).map(c => c.key)) : []);
+  const columns = columnsKey ? allColumns.filter(c => isLocked(c) || !hiddenSet.has(c.key)) : allColumns;
+  const firstData = firstDataOf(columns);
+  const toggleColumn = (key: string) => {
+    const next = new Set(hiddenSet);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    const arr = [...next];
+    setHiddenKeys(arr);
+    try { if (columnsKey) localStorage.setItem(COL_STORAGE + columnsKey, JSON.stringify(arr)); } catch { /* storage blocked: choice lasts for this visit */ }
+  };
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDown = (e: MouseEvent) => { if (!pickerRef.current?.contains(e.target as Node)) setPickerOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPickerOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [pickerOpen]);
+
+  // ── Side panel for a clicked row ──
+  const [detailRow, setDetailRow] = useState<T | null>(null);
+  const autoDetail = (row: T, close: () => void) => {
+    const rowIdx = data.indexOf(row);
+    const cell = (c: TableColumn<T>) => (c.render ? c.render(row, rowIdx) : String((row as Record<string, unknown>)[c.key] ?? ''));
+    const actions = allColumns.filter(isActionColumn);
+    return (
+      <div className="flex flex-col gap-4">
+        <dl className="m-0 flex flex-col gap-3">
+          {allColumns.filter(c => !isActionColumn(c) && !isCounter(c)).map(c => (
+            <div key={c.key} className="flex items-start justify-between gap-4 border-b border-[#f0eee6] pb-2.5 text-[13.5px]">
+              <dt className="shrink-0 text-slate">{c.header}</dt>
+              <dd className="m-0 min-w-0 break-words text-right font-medium text-carbon [&_*]:max-w-none [&_*]:whitespace-normal">{cell(c)}</dd>
+            </div>
+          ))}
+        </dl>
+        {actions.length > 0 && (
+          <div
+            className="flex flex-wrap items-center gap-2"
+            onClick={e => { const el = e.target as HTMLElement; if (el.closest('button, a') && !el.closest('[aria-haspopup], [aria-expanded]')) close(); }}
+          >
+            {actions.map(c => <span key={c.key}>{cell(c)}</span>)}
+          </div>
+        )}
+      </div>
+    );
+  };
+  const renderDetail = renderDetailProp ?? (rowPanel ? autoDetail : undefined);
+  const openRow = (row: T) => { onRowClick?.(row); if (renderDetail) setDetailRow(row); };
+
+  // ── Wide table: edge hints, sticky edge columns and a floating scrollbar ──
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const proxyRef = useRef<HTMLDivElement>(null);
+  const [m, setM] = useState({ overflow: false, left: false, right: false, sw: 0, lw: 0, rw: 0 });
+  const measure = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const overflow = el.scrollWidth > el.clientWidth + 1;
+    const lw = Array.from(el.querySelectorAll<HTMLElement>('thead .sx-sticky-l')).reduce((n, c) => n + c.offsetWidth, 0);
+    const rw = el.querySelector<HTMLElement>('thead .sx-sticky-r')?.offsetWidth ?? 0;
+    const next = { overflow, left: el.scrollLeft > 1, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1, sw: el.scrollWidth, lw, rw };
+    setM(p => (p.overflow === next.overflow && p.left === next.left && p.right === next.right && p.sw === next.sw && p.lw === next.lw && p.rw === next.rw ? p : next));
+  }, []);
+  useLayoutEffect(() => { measure(); }, [measure, data, loading, hiddenKeys, allColumns.length]);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    const table = el.querySelector('table');
+    if (table) ro.observe(table);
+    return () => ro.disconnect();
+  }, [measure, showEmptyStateFlag(loading, data.length, emptyState)]);
+  const onScrollMain = () => {
+    const el = scrollRef.current, p = proxyRef.current;
+    if (el && p && p.scrollLeft !== el.scrollLeft) p.scrollLeft = el.scrollLeft;
+    measure();
+  };
+  const onScrollProxy = () => {
+    const el = scrollRef.current, p = proxyRef.current;
+    if (el && p && el.scrollLeft !== p.scrollLeft) el.scrollLeft = p.scrollLeft;
+  };
+  const nudge = (dir: 1 | -1) => {
+    const el = scrollRef.current;
+    if (el) el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.6), behavior: 'smooth' });
+  };
 
   const perPage    = pagination?.perPage ?? 10;
   const start      = pagination ? (pagination.page - 1) * perPage + 1 : 1;
@@ -298,13 +449,43 @@ export function Table<T = Record<string, unknown>>({
         />
       ) : (
         <>
+          {columnsKey && (
+            <div ref={pickerRef} className="relative hidden justify-end px-4 pb-2 pt-1 sm:flex">
+              <button
+                type="button"
+                onClick={() => setPickerOpen(o => !o)}
+                aria-expanded={pickerOpen}
+                aria-haspopup="true"
+                className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-bone bg-white px-3 text-[12.5px] font-medium text-carbon hover:bg-cream"
+              >
+                <SlidersHorizontal size={14} aria-hidden /> Columns
+              </button>
+              {pickerOpen && (
+                <div role="group" aria-label="Show columns" className="absolute right-4 top-full z-20 mt-1 w-[220px] rounded-xl border border-bone bg-white p-2 shadow-raised">
+                  {allColumns.map(c => {
+                    if (isActionColumn(c) || isCounter(c)) return null;
+                    const locked = isLocked(c);
+                    return (
+                      <label key={c.key} className={clsx('flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-carbon', locked ? 'opacity-60' : 'cursor-pointer hover:bg-cream')}>
+                        <input type="checkbox" className="accent-brand-orange" checked={locked || !hiddenSet.has(c.key)} disabled={locked} onChange={() => toggleColumn(c.key)} />
+                        {c.header}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Desktop / tablet — full table ── */}
-          <div className="hidden sm:block overflow-x-auto">
+          <div className="sx-tbl hidden sm:block" data-overflow={m.overflow ? '1' : '0'} data-left={m.left ? '1' : '0'} data-right={m.right ? '1' : '0'}>
+          <div className="relative">
+          <div ref={scrollRef} onScroll={onScrollMain} className={clsx('overflow-x-auto max-h-[75dvh]', m.overflow && 'sx-hide-hbar')}>
             <table className="w-full border-collapse text-[13px]">
               <thead className="sticky top-0 z-[1]">
                 <tr className="border-y border-bone bg-cream">
                   {selectable && (
-                    <th className={clsx(TH, 'w-[40px]')}>
+                    <th className={clsx(TH, 'sx-sticky-l')} style={{ left: 0, width: CHECK_COL_W, minWidth: CHECK_COL_W }}>
                       <input
                         type="checkbox"
                         className="accent-brand-orange cursor-pointer"
@@ -315,15 +496,17 @@ export function Table<T = Record<string, unknown>>({
                       />
                     </th>
                   )}
-                  {columns.map(col => {
+                  {columns.map((col, ci) => {
+                    const stickyL = ci === firstData;
+                    const stickyR = isActionColumn(col) && ci === columns.length - 1;
                     const isSorted   = sort?.key === col.key;
                     const ariaSort: 'ascending' | 'descending' | 'none' =
                       isSorted ? (sort!.direction === 'asc' ? 'ascending' : 'descending') : 'none';
                     return (
                       <th
                         key={col.key}
-                        className={clsx(TH, col.align === 'right' && 'text-right', col.align === 'center' && 'text-center')}
-                        style={col.width ? { width: col.width } : undefined}
+                        className={clsx(TH, col.align === 'right' && 'text-right', col.align === 'center' && 'text-center', stickyL && 'sx-sticky-l sx-sticky-l-last', stickyR && 'sx-sticky-r')}
+                        style={{ ...(col.width ? { width: col.width } : {}), ...(stickyL ? { left: selectable ? CHECK_COL_W : 0 } : {}), ...(stickyR ? { right: 0 } : {}) }}
                         aria-sort={col.sortable ? ariaSort : undefined}
                       >
                         {col.sortable ? (
@@ -372,7 +555,7 @@ export function Table<T = Record<string, unknown>>({
                       key={rowKey}
                       className={clsx(
                         i < data.length - 1 && 'border-b border-[#f0eee6]',
-                        onRowClick && 'cursor-pointer',
+                        (onRowClick || renderDetail) && 'cursor-pointer',
                         // A thin inset left accent (box-shadow, not a real
                         // border — no layout shift) instead of a flat
                         // background tint is the row-level version of the
@@ -381,10 +564,10 @@ export function Table<T = Record<string, unknown>>({
                         'transition-[background-color,box-shadow] duration-fast ease-out hover:bg-brand-pale-orange/[0.16] hover:shadow-[inset_2px_0_0_0_var(--color-brand-orange)]',
                         selectable && keys.has(rowKey) && 'bg-brand-pale-orange/[0.10]',
                       )}
-                      onClick={() => onRowClick?.(row)}
+                      onClick={e => { if (renderDetail && (e.target as HTMLElement).closest(INTERACTIVE)) return; openRow(row); }}
                     >
                       {selectable && (
-                        <td className="px-5 py-[14px]" onClick={e => e.stopPropagation()}>
+                        <td className="sx-sticky-l px-5 py-[14px]" style={{ left: 0, width: CHECK_COL_W, minWidth: CHECK_COL_W }} onClick={e => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="accent-brand-orange cursor-pointer"
@@ -394,26 +577,56 @@ export function Table<T = Record<string, unknown>>({
                           />
                         </td>
                       )}
-                      {columns.map(col => (
+                      {columns.map((col, ci) => {
+                        const stickyL = ci === firstData;
+                        const stickyR = isActionColumn(col) && ci === columns.length - 1;
+                        return (
                         <td
                           key={col.key}
                           className={clsx(
                             'px-5 py-[14px] text-carbon',
                             col.align === 'right'  && 'text-right',
                             col.align === 'center' && 'text-center',
+                            stickyL && 'sx-sticky-l sx-sticky-l-last',
+                            stickyR && 'sx-sticky-r',
                           )}
+                          style={{ ...(stickyL ? { left: selectable ? CHECK_COL_W : 0 } : {}), ...(stickyR ? { right: 0 } : {}) }}
                         >
                           {col.render
                             ? col.render(row, i)
                             : String((row as Record<string, unknown>)[col.key] ?? '')}
                         </td>
-                      ))}
+                        );
+                      })}
                     </tr>
                   );
                 })
                 )}
               </tbody>
             </table>
+          </div>
+          {m.overflow && m.right && (
+            <>
+              <div aria-hidden className="pointer-events-none absolute bottom-0 top-0 w-10 bg-gradient-to-l from-black/[0.07] to-transparent" style={{ right: m.rw }} />
+              <button type="button" onClick={() => nudge(1)} aria-label="Scroll table right" className="absolute top-1.5 z-[4] flex size-8 cursor-pointer items-center justify-center rounded-full border border-bone bg-white text-carbon shadow-md hover:bg-cream" style={{ right: m.rw + 8 }}>
+                <ChevronRight size={16} />
+              </button>
+            </>
+          )}
+          {m.overflow && m.left && (
+            <>
+              <div aria-hidden className="pointer-events-none absolute bottom-0 top-0 w-10 bg-gradient-to-r from-black/[0.07] to-transparent" style={{ left: m.lw }} />
+              <button type="button" onClick={() => nudge(-1)} aria-label="Scroll table left" className="absolute top-1.5 z-[4] flex size-8 cursor-pointer items-center justify-center rounded-full border border-bone bg-white text-carbon shadow-md hover:bg-cream" style={{ left: m.lw + 8 }}>
+                <ChevronLeft size={16} />
+              </button>
+            </>
+          )}
+          </div>
+          {m.overflow && (
+            <div ref={proxyRef} onScroll={onScrollProxy} aria-hidden className="sx-tbl-proxy sticky bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] z-[5] overflow-x-auto bg-white/95">
+              <div style={{ width: m.sw, height: 1 }} />
+            </div>
+          )}
           </div>
 
           {/* ── Mobile — one card per row, columns stacked as label/value ── */}
@@ -436,7 +649,7 @@ export function Table<T = Record<string, unknown>>({
                     rowKey={rowKey}
                     labeledColumns={labeledColumns}
                     actionColumns={unlabeledColumns}
-                    onRowClick={onRowClick}
+                    onRowClick={renderDetail || onRowClick ? openRow : undefined}
                     selectable={selectable}
                     selected={keys.has(rowKey)}
                     onToggleSelect={toggleRow}
@@ -449,6 +662,12 @@ export function Table<T = Record<string, unknown>>({
             )}
           </div>
         </>
+      )}
+
+      {renderDetail && detailRow && (
+        <DetailPanel title={detailTitle ? detailTitle(detailRow) : String(((detailRow as Record<string, unknown>)[allColumns[firstData]?.key ?? ''] ?? 'Details') as string)} onClose={() => setDetailRow(null)}>
+          {renderDetail(detailRow, () => setDetailRow(null))}
+        </DetailPanel>
       )}
 
       {/* Pagination footer */}

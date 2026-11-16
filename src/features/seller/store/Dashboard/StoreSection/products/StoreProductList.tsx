@@ -455,6 +455,8 @@ export default function StoreProductList() {
                 columns={columns}
                 data={sorted}
                 keyExtractor={p => p.productId}
+                columnsKey="seller-products"
+                rowPanel
                 sort={sort ?? undefined}
                 onSortChange={handleSortChange}
                 selectable={canEdit || canDelete}

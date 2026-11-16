@@ -575,6 +575,7 @@ export default function StoreCustomerList() {
                 columns={columns}
                 data={customers}
                 keyExtractor={c => c._id}
+                columnsKey="seller-customers"
                 onRowClick={select}
                 loading={loading}
                 sort={{ key: sortBy, direction: sortDir }}

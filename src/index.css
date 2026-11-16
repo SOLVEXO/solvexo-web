@@ -1020,3 +1020,18 @@
   background-position: left bottom;
   background-size: 100% 10px;
 }
+
+
+/* Shared Table (components/comman/ui/Table.tsx): sticky edge columns, scroll hints and the floating scrollbar appear only while the table is wider than its box. */
+@keyframes drawer-leave-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@media (min-width: 640px) {
+  .sheet-panel-enter.drawer-sm-right { animation: drawer-enter-right 240ms var(--ease-out); }
+  .is-closing.sheet-panel-enter.drawer-sm-right { animation: drawer-leave-right 190ms var(--ease-in) forwards; }
+}
+.sx-hide-hbar::-webkit-scrollbar:horizontal { display: none; }
+.sx-tbl[data-overflow="1"] .sx-sticky-l, .sx-tbl[data-overflow="1"] .sx-sticky-r { position: sticky; z-index: 2; background: #fff; }
+.sx-tbl[data-overflow="1"] thead .sx-sticky-l, .sx-tbl[data-overflow="1"] thead .sx-sticky-r { z-index: 3; background: var(--color-cream, #faf8f3); }
+.sx-tbl[data-overflow="1"] tbody tr:hover .sx-sticky-l, .sx-tbl[data-overflow="1"] tbody tr:hover .sx-sticky-r { background: color-mix(in srgb, var(--color-brand-orange, #d97757) 6%, #fff); }
+.sx-tbl[data-overflow="1"][data-right="1"] .sx-sticky-r { box-shadow: -10px 0 10px -10px rgba(20, 15, 10, 0.2); }
+.sx-tbl[data-overflow="1"][data-left="1"] .sx-sticky-l-last { box-shadow: 10px 0 10px -10px rgba(20, 15, 10, 0.2); }
+@media print { .sx-tbl-proxy { display: none; } }

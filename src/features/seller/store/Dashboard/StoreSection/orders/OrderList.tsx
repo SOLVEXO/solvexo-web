@@ -620,6 +620,7 @@ export function StoreOrderList() {
               columns={columns}
               data={filtered}
               keyExtractor={o => o.orderId}
+              columnsKey="seller-orders"
               onRowClick={o => navigate(`/store/${storeId}/orders/detail/${o.orderId}`)}
               loading={loading}
               emptyState={{
