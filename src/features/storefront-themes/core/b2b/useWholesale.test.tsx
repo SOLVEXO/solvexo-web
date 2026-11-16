@@ -5,8 +5,9 @@ const standing = vi.fn();
 const prices = vi.fn();
 let token: string | null = 'tok';
 let wholesaleOnly = true;
+let role = 'user';
 vi.mock('@/api/services/b2bStorefront', () => ({ apiGetWholesaleStanding: (...a: unknown[]) => standing(...a), apiGetB2BPrices: (...a: unknown[]) => prices(...a) }));
-vi.mock('@/api/services/auth', () => ({ TokenStorage: { getToken: () => token } }));
+vi.mock('@/api/services/auth', () => ({ TokenStorage: { getToken: () => token, getUser: () => ({ role }) } }));
 vi.mock('@/features/storefront/StorefrontContext', () => ({ useStorefront: () => ({ store: { storeId: 's1', wholesaleOnly } }) }));
 
 import { resetWholesaleStanding, useWholesaleGate, useWholesalePrice } from './useWholesale';
@@ -18,7 +19,7 @@ function Probe({ variantId, qty }: { variantId?: string; qty: number }) {
 }
 const read = () => JSON.parse(screen.getByTestId('out').textContent ?? '{}');
 
-beforeEach(() => { standing.mockReset(); prices.mockReset(); resetWholesaleStanding(); token = 'tok'; wholesaleOnly = true; });
+beforeEach(() => { standing.mockReset(); prices.mockReset(); resetWholesaleStanding(); token = 'tok'; wholesaleOnly = true; role = 'user'; });
 afterEach(cleanup);
 
 describe('useWholesaleGate / useWholesalePrice', () => {
@@ -27,6 +28,13 @@ describe('useWholesaleGate / useWholesalePrice', () => {
     render(<Probe qty={1} />);
     await waitFor(() => expect(read().loading).toBe(false));
     expect(read()).toMatchObject({ locked: true, approved: false, signedIn: true });
+  });
+
+  it('a seller or staff session (e.g. the Customize preview) makes no standing request', async () => {
+    role = 'seller';
+    render(<Probe qty={1} />);
+    await waitFor(() => expect(read().loading).toBe(false));
+    expect(standing).not.toHaveBeenCalled();
   });
 
   it('a visitor is locked without any request', async () => {

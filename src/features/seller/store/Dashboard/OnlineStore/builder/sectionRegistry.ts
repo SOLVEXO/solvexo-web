@@ -536,9 +536,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped.' },
       { key: 'heading', kind: 'text', label: 'Heading' },
       { key: 'subheading', kind: 'text', label: 'Text' },
-      { key: 'slideLinkOn', kind: 'checkbox', label: 'Make the whole slide a link', defaultOff: true },
-    { key: 'slideLink', kind: 'link', label: 'Slide link', showIf: s => s.slideLinkOn === true },
-    { key: 'ctaText', kind: 'text', label: 'Button text', hint: 'Leave empty for no button.' },
+      { key: 'ctaText', kind: 'text', label: 'Button text' },
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
       { key: 'heightPreset', kind: 'select', label: 'Banner height', options: [
         { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
@@ -733,7 +731,9 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped (small screens, fixed heights).' },
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'subheading', kind: 'text', label: 'Subheading' },
-    { key: 'ctaText', kind: 'text', label: 'Button text' },
+    { key: 'slideLinkOn', kind: 'checkbox', label: 'Make the whole slide a link', defaultOff: true },
+    { key: 'slideLink', kind: 'link', label: 'Slide link', showIf: s => s.slideLinkOn === true },
+    { key: 'ctaText', kind: 'text', label: 'Button text', hint: 'Leave empty for no button.' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
     // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (another theme); Maison's split layout ignores it.
     { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [

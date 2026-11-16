@@ -32,7 +32,9 @@ export interface WholesaleGate {
 export function useWholesaleGate(): WholesaleGate {
   const { store } = useStorefront();
   const token = TokenStorage.getToken() ?? '';
-  const q = useLoad<WholesaleStanding | null>(() => (token ? standingFor(store.storeId, token) : Promise.resolve(null)), [store.storeId, token]);
+  // Only a buyer account has a wholesale standing: a seller/staff session (the Customize preview) would just get a 403.
+  const isBuyer = TokenStorage.getUser()?.role === 'user';
+  const q = useLoad<WholesaleStanding | null>(() => (token && isBuyer ? standingFor(store.storeId, token) : Promise.resolve(null)), [store.storeId, token, isBuyer]);
   const approved = q.data?.status === 'approved';
   const wholesaleOnly = !!(store as { wholesaleOnly?: boolean }).wholesaleOnly;
   return { signedIn: !!token, approved, loading: q.loading, standing: q.data, locked: wholesaleOnly && !approved };
