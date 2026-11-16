@@ -27,6 +27,7 @@ import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from 
 import { setStorefrontAnalyticsConsent, trackStorefrontPageView } from '@/utils/storefrontAnalytics';
 import { loadExperiments, reportExposure, useExperimentAssignments } from '@/features/storefront-themes/core/experiments/experimentsStore';
 import { CookieConsentBanner } from './CookieConsentBanner';
+import { FloatingContactBar } from './FloatingContactBar';
 import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
 import { setCurrentStorefrontStoreId, setStorefrontGuestCheckout, getStorefrontToken, setStorefrontToken } from '@/utils/currentStorefront';
@@ -388,6 +389,9 @@ export function StorefrontLayout() {
             // A theme loaded on demand (Tech) has a lazy Layout: keep the screen blank-but-tall while its chunk arrives.
             : <Suspense fallback={<div style={{ minHeight: '100vh' }} aria-busy="true" />}><Layout><Outlet /></Layout></Suspense>}
           {impl.AuthGateModal && <ThemedAuthGateHost Gate={impl.AuthGateModal} />}
+          {store.floatingContact?.enabled && (
+            <FloatingContactBar config={store.floatingContact} brandColor={cfg.primaryColor} font={cfg.font} radius={cfg.buttonRadiusPx} />
+          )}
           {store.cookieBannerEnabled && !cookieConsent && (
             <CookieBanner
               message={store.cookieBannerMessage}
