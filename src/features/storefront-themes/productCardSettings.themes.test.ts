@@ -28,6 +28,13 @@ describe.each(THEMES)('$name: product card settings', ({ manifest, apply, tokens
     }
   });
 
+  it('has a free colour control for the product badge (any colour, set per theme)', () => {
+    const f = manifest.themeSettingsFields.find(x => x.key === 'custom.cardBadgeColor');
+    expect(f).toBeTruthy();
+    expect(f!.group).toBe('Product cards');
+    expect(f!.control.kind).toBe('color');
+  });
+
   it('lists exactly the values the card code understands', () => {
     expect(optionValues(manifest, 'cardInfoLine')).toEqual([...CARD_INFO_LINES]);
     expect(optionValues(manifest, 'cardBadgePosition')).toEqual([...CARD_BADGE_POSITIONS]);
@@ -40,9 +47,17 @@ describe.each(THEMES)('$name: product card settings', ({ manifest, apply, tokens
     expect(tokens.badgeStyle).toBe('square');
   });
 
+  it('applies the theme badge colour, ignoring anything that is not #RRGGBB', () => {
+    apply({ themeSettings: { cardBadgeColor: '#12AB9F' } });
+    expect(tokens.cardBadgeColor).toBe('#12AB9F');
+    apply({ themeSettings: { cardBadgeColor: 'red' } });
+    expect(tokens.cardBadgeColor).toBeNull();
+  });
+
   it('falls back to the old behaviour (vendor line, top-left) when nothing is set', () => {
     apply({});
     expect(tokens.cardInfoLine).toBe('vendor');
     expect(tokens.cardBadgePosition).toBe('top-left');
+    expect(tokens.cardBadgeColor).toBeNull();
   });
 });

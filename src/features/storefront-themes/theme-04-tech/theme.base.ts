@@ -11,6 +11,7 @@ import { readProductsPerPage } from '../themeManifest';
 import { DEFAULT_SPECS_LOOK, readSpecsLook, type SpecsLook } from '../specsLook';
 import { DEFAULT_PAGE_BG, DEFAULT_CARD_BORDER, readPageBg, readCardBorder, type PageBg, type CardBorder } from '../pageBackground';
 import { asCardBadgePosition, asCardInfoLine } from '../productCardExtras';
+import { badgeThemeColor } from '../cardBadgeTheme';
 
 const STATIC_DEFAULTS = {
   id: 'theme-04-tech',
@@ -42,6 +43,7 @@ const STATIC_DEFAULTS = {
   cardTag: true,
   cardInfoLine: 'vendor' as 'vendor' | 'category' | 'subcategory' | 'subcategory_category' | 'category_subcategory',
   cardBadgePosition: 'top-left' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
+  cardBadgeColor: null as string | null,
   cardButton: true,
   cardHover: 'shadow' as 'shadow' | 'lift' | 'none',
   cardTextAlign: 'left' as 'left' | 'center',
@@ -279,6 +281,7 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
   baseTheme.cardTag = c?.cardTag !== 'hide';
   baseTheme.cardInfoLine = asCardInfoLine(c?.cardInfoLine);
   baseTheme.cardBadgePosition = asCardBadgePosition(c?.cardBadgePosition);
+  baseTheme.cardBadgeColor = badgeThemeColor(c?.themeSettings?.cardBadgeColor);
   baseTheme.cardButton = c?.cardButton !== 'hide';
   baseTheme.cardHover = c?.cardHover ?? 'shadow';
   baseTheme.cardTextAlign = c?.cardTextAlign ?? 'left';

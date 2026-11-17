@@ -1,6 +1,7 @@
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
+import { badgeAccent } from '../../cardBadgeTheme';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
@@ -57,7 +58,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
   const chip = { padding: '3px 10px', fontSize: 11, fontWeight: 600, color: '#fff', borderRadius: b.badgeStyle === 'square' ? 6 : 999 } as const;
 
   const infoText = cardInfoText(product, b.cardInfoLine);
-  const ownBadge = cardBadgeOf(product, { bg: t.colors.accent, ink: '#FFFFFF' });
+  const ownBadge = cardBadgeOf(product, badgeAccent(b.cardBadgeColor, { bg: t.colors.accent, ink: '#FFFFFF' }));
   const badgeOnPhoto = b.cardBadgePosition.startsWith('bottom');
 
   const wished = product.variantId ? isWishlisted(product._id, product.variantId) : false;

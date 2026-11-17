@@ -1,6 +1,7 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
 import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
+import { badgeAccent } from '../../cardBadgeTheme';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Link } from 'react-router-dom';
 import { BarChart3, Eye, Heart, ShoppingCart } from 'lucide-react';
@@ -84,7 +85,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   const pct = product.compareAtPrice && price && product.compareAtPrice > price ? Math.round((1 - price / product.compareAtPrice) * 100) : 0;
   const badgeBase = { position: 'absolute', top: 8, left: 8, padding: '3px 8px', fontSize: 11, fontWeight: 700, lineHeight: 1.3, borderRadius: b.badgeStyle === 'square' ? t.badgeRadiusPx : '9999px' } as const;
   const infoText = cardInfoText(product, b.cardInfoLine);
-  const ownBadge = cardBadgeOf(product, { bg: t.colors.accent, ink: t.colors.accentInk ?? '#fff' });
+  const ownBadge = cardBadgeOf(product, badgeAccent(b.cardBadgeColor, { bg: t.colors.accent, ink: t.colors.accentInk ?? '#fff' }));
   const hasChip = (!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0);
   const badges = (
     <>
