@@ -1,4 +1,4 @@
-import { forwardRef, useId, type InputHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useId, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -24,10 +24,31 @@ const BASE =
   'placeholder:text-slate focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 ' +
   'disabled:opacity-50 disabled:bg-cream';
 
+/** Gap between the prefix text and what the user types; the prefix itself sits 12px from the field's start edge. */
+const ADDON_GAP = 8;
+const ADDON_INSET = 12;
+
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, leftAddon, leftIcon, rightIcon, className, id, type, inputMode, ...props }, ref) => {
+  ({ label, error, leftAddon, leftIcon, rightIcon, className, id, type, inputMode, style, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    // The prefix ("Rs", "PKR", "CHF", "د.إ", "₨" …) is any width in any language, so the typed text is pushed past
+    // its MEASURED width instead of a fixed padding (a fixed one made "Rs" overlap the first digit).
+    const addonRef = useRef<HTMLSpanElement>(null);
+    const [addonWidth, setAddonWidth] = useState(0);
+    useLayoutEffect(() => {
+      const el = addonRef.current;
+      if (!el) { setAddonWidth(0); return; }
+      const measure = () => setAddonWidth(Math.ceil(el.getBoundingClientRect().width));
+      measure();
+      if (typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver(measure); // web fonts finishing loading change the width
+      ro.observe(el);
+      return () => ro.disconnect();
+    }, [leftAddon]);
+    const inputStyle: CSSProperties | undefined = leftAddon
+      ? { paddingInlineStart: ADDON_INSET + Math.max(addonWidth, 12) + ADDON_GAP, ...style }
+      : style;
     return (
       <div className="w-full">
         {label && (
@@ -37,12 +58,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftAddon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 select-none text-[16px] sm:text-[13px] text-slate pointer-events-none">
+            <span ref={addonRef} className="absolute start-3 top-1/2 -translate-y-1/2 select-none whitespace-nowrap text-[16px] sm:text-[13px] text-slate pointer-events-none">
               {leftAddon}
             </span>
           )}
           {leftIcon && (
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-carbon pointer-events-none flex">
+            <span className="absolute start-3.5 top-1/2 -translate-y-1/2 text-carbon pointer-events-none flex">
               {leftIcon}
             </span>
           )}
@@ -58,16 +79,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={!!error}
             className={clsx(
               BASE,
-              leftAddon  && 'pl-6',
-              leftIcon   && 'pl-11',
-              rightIcon  && 'pr-9',
+              leftIcon   && 'ps-11',
+              rightIcon  && 'pe-9',
               error      && 'border-error! focus:ring-error/10!',
               className,
             )}
+            style={inputStyle}
             {...props}
           />
           {rightIcon && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate">
+            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-slate">
               {rightIcon}
             </span>
           )}
