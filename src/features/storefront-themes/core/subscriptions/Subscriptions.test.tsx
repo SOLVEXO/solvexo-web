@@ -72,6 +72,24 @@ describe('DefaultSubscriptionsPage', () => {
     await waitFor(() => expect(action).toHaveBeenCalledWith('s1', 'c1', 'skip'));
   });
 
+  it('shows which products the subscription is for: photo, name linking to the product, variant, quantity and price', async () => {
+    mine.mockResolvedValue([{
+      ...contract, currency: 'USD', estimatedTotal: 19.8,
+      lines: [
+        { productId: 'p1', variantId: 'v1', quantity: 2, name: 'Dark Roast Beans', slug: 'dark-roast', image: 'https://img/p1.png', variantLabel: '1 kg', sku: null, available: true, listPrice: 10, unitPrice: 9, lineTotal: 18 },
+        { productId: 'p2', variantId: 'v2', quantity: 1, name: 'Old Mug', slug: null, image: null, variantLabel: null, sku: null, available: false, listPrice: null, unitPrice: null, lineTotal: null },
+      ],
+    }]);
+    render(<MemoryRouter><DefaultSubscriptionsPage /></MemoryRouter>);
+    const link = await screen.findByRole('link', { name: 'Dark Roast Beans' });
+    expect(link.getAttribute('href')).toBe('/product/dark-roast');
+    expect(screen.getByText(/1 kg · Qty 2/)).toBeTruthy();
+    expect(screen.getByText('Old Mug')).toBeTruthy(); // a removed product is named, not linked
+    expect(screen.queryByRole('link', { name: 'Old Mug' })).toBeNull();
+    expect(screen.getByText('No longer available')).toBeTruthy();
+    expect(screen.getByText(/Each order:/)).toBeTruthy();
+  });
+
   it('cancelling needs a second confirming click', async () => {
     mine.mockResolvedValue([contract]); action.mockResolvedValue({});
     render(<MemoryRouter><DefaultSubscriptionsPage /></MemoryRouter>);

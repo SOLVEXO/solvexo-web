@@ -7,6 +7,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { activeLocale } from './core/locale';
 import { useLoad } from './core/pageHooks';
 import { ts } from '@/utils/tStatic';
+import { formatMoney } from '@/utils/currency';
 
 const btnCls = 'rounded-lg border border-current/40 px-3 py-1.5 text-sm font-medium disabled:opacity-50';
 
@@ -44,6 +45,30 @@ export function DefaultSubscriptionsPage() {
         {(q.data ?? []).map((c) => (
           <li key={c._id} className="rounded-xl border border-current/20 p-4 text-sm">
             <p className="m-0 font-medium">{c.terms.name} <span className="font-normal opacity-70">· {every(c.terms)}</span></p>
+            {(c.lines ?? []).length > 0 && (
+              <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0" aria-label={ts('sub.products', 'Products in this subscription')}>
+                {(c.lines ?? []).map((l) => (
+                  <li key={l.variantId} className="flex items-center gap-3">
+                    <span className="size-14 shrink-0 overflow-hidden rounded-lg border border-current/15 bg-current/5">
+                      {l.image && <img src={l.image} alt="" loading="lazy" className="size-full object-cover" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      {l.slug && l.available
+                        ? <Link to={`/product/${l.slug}`} className="font-medium hover:underline">{l.name}</Link>
+                        : <span className="font-medium">{l.name}</span>}
+                      <span className="block text-xs opacity-70">
+                        {l.variantLabel ? `${l.variantLabel} · ` : ''}{ts('sub.qty', 'Qty {{n}}', { n: l.quantity })}{l.unitPrice != null ? ` × ${formatMoney(Math.round(l.unitPrice * 100) / 100, c.currency)}` : ''}
+                      </span>
+                      {!l.available && <span className="block text-xs text-red-600">{ts('sub.unavailable', 'No longer available')}</span>}
+                    </span>
+                    {l.lineTotal != null && <span className="shrink-0 font-medium tabular-nums">{formatMoney(Math.round(l.lineTotal * 100) / 100, c.currency)}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {c.estimatedTotal != null && (c.status === 'active' || c.status === 'paused') && (
+              <p className="m-0 mt-2 text-xs opacity-70">{ts('sub.each_order', 'Each order: {{amount}} (incl. shipping and tax, at today\'s prices)', { amount: formatMoney(Math.round(c.estimatedTotal * 100) / 100, c.currency) })}</p>
+            )}
             <p className="m-0 mt-1 opacity-80">
               {c.status === 'active' ? ts('sub.next', 'Next order: {{d}}', { d: date(c.nextBillingAt) })
                 : c.status === 'paused' ? ts('sub.paused', 'Paused') : c.status === 'completed' ? ts('sub.completed', 'Completed') : ts('sub.cancelled', 'Cancelled')}

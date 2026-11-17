@@ -20,6 +20,8 @@ interface MetricCardProps {
 }
 
 export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, color, sparkline }: MetricCardProps) {
+  // Hooks first: `loading` flips while data arrives, and a hook after the early return below changes the hook order (React then crashes).
+  const { display, ref: valueRef } = useCountUp<HTMLParagraphElement>(value);
   if (loading) {
     return (
       <Card className="flex-1 min-w-[140px]">
@@ -36,7 +38,6 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, c
   // previous value (not from zero every re-render) the first time it
   // scrolls into view, so "value → importance → change" reads as one
   // designed moment instead of three static lines of text.
-  const { display, ref: valueRef } = useCountUp<HTMLParagraphElement>(value);
 
   return (
     <Card className="metric-card-enter flex-1 min-w-[140px] min-h-[172px] group" padding="none" hover>

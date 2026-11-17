@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Plus, Repeat } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, EmptyState, Badge, Input } from '@/components/comman/ui';
+import { SkeletonBox, EmptyState, Badge, Input, MetricCard, Select } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
@@ -9,16 +9,13 @@ import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore
 import { useToast } from '@/contexts/ToastContext';
 import { TokenStorage } from '@/api/services/auth';
 import { formatMoney } from '@/utils/currency';
-import type { BadgeColor } from '@/types';
 import {
   apiContractAction, apiCreatePlanGroup, apiListContracts, apiListPlanGroups, apiPlanReport, apiUpcomingRenewals, apiUpdatePlanGroup,
-  type ContractRow, type ContractStatus, type PlanGroup, type PlanReport, type PlanUnit,
+  type ContractRow, type PlanGroup, type PlanReport, type PlanUnit,
 } from '@/api/services/sellingPlans';
+import { ContractCard, ContractDetailModal, PauseModal, every, type CardActions } from './SubscriptionParts';
 
 const TABS: Tab[] = [{ id: 'subscriptions', label: 'Subscriptions' }, { id: 'upcoming', label: 'Upcoming' }, { id: 'plans', label: 'Plans' }];
-const STATUS_COLOR: Record<ContractStatus, BadgeColor> = { active: 'green', paused: 'yellow', cancelled: 'gray', completed: 'blue' };
-const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—');
-const every = (t: { unit: PlanUnit; count: number }) => `Every ${t.count === 1 ? '' : `${t.count} `}${t.unit}${t.count === 1 ? '' : 's'}`;
 const errText = (e: unknown, f: string) => (e instanceof Error && e.message ? e.message : f);
 
 type OptRow = { unit: PlanUnit; count: string; discountPercent: string };
@@ -47,6 +44,8 @@ export default function SubscriptionsHub() {
   const [saving, setSaving] = useState(false);
   const [picking, setPicking] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState<ContractRow | null>(null);
+  const [pausing, setPausing] = useState<ContractRow | null>(null);
+  const [details, setDetails] = useState<ContractRow | null>(null);
   const [busy, setBusy] = useState('');
 
   const load = useCallback(() => {
@@ -81,25 +80,17 @@ export default function SubscriptionsHub() {
   };
   const setOpt = (i: number, patch: Partial<OptRow>) => setForm((f) => ({ ...f, options: f.options.map((o, k) => (k === i ? { ...o, ...patch } : o)) }));
 
+  const actions: CardActions = {
+    canManage, busy,
+    onPause: (c) => setPausing(c),
+    onResume: (c) => void run(`r${c._id}`, () => apiContractAction(storeId, c._id, 'resume'), 'Resumed'),
+    onSkip: (c) => void run(`s${c._id}`, () => apiContractAction(storeId, c._id, 'skip'), 'Skipped - the next renewal moved one cycle on'),
+    onCancel: (c) => setConfirmCancel(c),
+    onDetails: (c) => setDetails(c),
+  };
   const contractList = (list: ContractRow[]) => (
-    <ul className="flex flex-col gap-2 list-none p-0 m-0">
-      {list.map((c) => (
-        <li key={c._id} className="rounded-xl border border-border-soft bg-white p-3 flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-[13.5px] text-charcoal">{c.customerName || 'Customer'}</span>
-            <Badge color={STATUS_COLOR[c.status]} size="sm">{c.status[0].toUpperCase() + c.status.slice(1)}</Badge>
-            <span className="text-[12px] text-slate">{c.terms.name} · {every(c.terms)} · {c.terms.discountPercent}% off</span>
-          </div>
-          <p className="text-[12.5px] text-slate m-0">{c.items.reduce((n, i) => n + i.quantity, 0)} item(s) · {c.cyclesDone} order(s) so far · next {c.status === 'active' ? when(c.nextBillingAt) : '—'}{c.pausedReason ? ` · ${c.pausedReason}` : ''}</p>
-          {canManage && (c.status === 'active' || c.status === 'paused') && (
-            <div className="flex gap-2 pt-0.5">
-              {c.status === 'active' && <Button size="sm" variant="secondary" loading={busy === `p${c._id}`} onClick={() => void run(`p${c._id}`, () => apiContractAction(storeId, c._id, 'pause'), 'Paused')}>Pause</Button>}
-              {c.status === 'paused' && <Button size="sm" variant="secondary" loading={busy === `r${c._id}`} onClick={() => void run(`r${c._id}`, () => apiContractAction(storeId, c._id, 'resume'), 'Resumed')}>Resume</Button>}
-              <Button size="sm" variant="outline" onClick={() => setConfirmCancel(c)}>Cancel subscription</Button>
-            </div>
-          )}
-        </li>
-      ))}
+    <ul className="flex flex-col gap-3 list-none p-0 m-0">
+      {list.map((c) => <li key={c._id}><ContractCard c={c} currency={currency} a={actions} /></li>)}
     </ul>
   );
 
@@ -111,19 +102,19 @@ export default function SubscriptionsHub() {
         {error ? <EmptyState icon={<Repeat size={22} />} title="Could not load" description={error} action={{ label: 'Retry', onClick: load }} /> : (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {[['Active', report?.active], ['Paused', report?.paused], ['Cancelled (30 days)', report?.cancelledLast30Days], ['Monthly recurring (est.)', report ? formatMoney(report.monthlyRecurring, report.currency || currency) : undefined]].map(([label, value]) => (
-                <div key={String(label)} className="rounded-2xl border border-border-soft bg-white p-4">
-                  <p className="text-[12px] text-slate m-0">{label}</p>
-                  <p className="text-[22px] font-semibold text-charcoal m-0">{value === undefined ? <SkeletonBox className="h-6 w-16" /> : value}</p>
-                </div>
-              ))}
+              <MetricCard label="Active" value={report?.active ?? 0} loading={!report} />
+              <MetricCard label="Paused" value={report?.paused ?? 0} loading={!report} />
+              <MetricCard label="Cancelled (30 days)" value={report?.cancelledLast30Days ?? 0} loading={!report} />
+              <MetricCard label="Monthly recurring (est.)" value={report ? formatMoney(report.monthlyRecurring, report.currency || currency) : 0} loading={!report} />
             </div>
             <TabBar tabs={TABS} active={tab} onChange={setTab} />
             {tab === 'subscriptions' && (
               <section aria-label="Subscriptions" className="flex flex-col gap-3">
-                <select aria-label="Filter by status" className="h-9 w-fit rounded-lg border border-border-soft px-2 text-[13px]" value={status} onChange={(e) => setStatus(e.target.value)}>
-                  <option value="">All statuses</option><option value="active">Active</option><option value="paused">Paused</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option>
-                </select>
+                <div className="w-full max-w-[220px]">
+                  <Select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                    <option value="">All statuses</option><option value="active">Active</option><option value="paused">Paused</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option>
+                  </Select>
+                </div>
                 {loading && !rows.length ? <SkeletonBox className="h-24 w-full" /> : rows.length === 0 ? <EmptyState icon={<Repeat size={22} />} title="No subscriptions yet" description="Create a plan and add products to it. Customers then see Subscribe & save on the product page." /> : contractList(rows)}
               </section>
             )}
@@ -186,6 +177,14 @@ export default function SubscriptionsHub() {
         </Modal>
       )}
       <EntityPickerModal open={picking} onClose={() => setPicking(false)} mode="products" storeId={storeId} multiple initialSelectedIds={form.productIds} onConfirm={(ids) => { setForm((f) => ({ ...f, productIds: ids })); setPicking(false); }} title="Products on this plan" />
+      {pausing && (
+        <PauseModal c={pausing} busy={busy === `p${pausing._id}`} onClose={() => setPausing(null)}
+          onConfirm={(reason) => { const c = pausing; void run(`p${c._id}`, () => apiContractAction(storeId, c._id, 'pause', { reason }), 'Paused').finally(() => { setPausing(null); setDetails(null); }); }} />
+      )}
+      {details && !pausing && (
+        <ContractDetailModal storeId={storeId} contract={details} currency={currency} onClose={() => setDetails(null)}
+          a={{ ...actions, onResume: (c) => { setDetails(null); actions.onResume(c); }, onSkip: (c) => { setDetails(null); actions.onSkip(c); }, onCancel: (c) => { setDetails(null); setConfirmCancel(c); } }} />
+      )}
       {confirmCancel && (
         <Modal title="Cancel this subscription?" onClose={() => setConfirmCancel(null)} width={440} mobileSheet
           footer={<div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setConfirmCancel(null)}>Keep</Button><Button onClick={() => { const c = confirmCancel; setConfirmCancel(null); void run(`c${c._id}`, () => apiContractAction(storeId, c._id, 'cancel'), 'Subscription cancelled'); }}>Cancel subscription</Button></div>}>

@@ -12,6 +12,7 @@
   --color-graphite: #4A4945;
   --color-slate:    #8C8A82;
   --color-bone:     #E8E6DC;
+  --color-border-soft: #E8E6DC; /* same as bone: used by several admin pages (Subscriptions, Connected apps, Experiments …) that had no colour for it and drew black borders */
   --color-cream:    #FAF9F5;
 
   /* Card/panel surfaces are deliberately NOT pure white — a warm "paper" resting
