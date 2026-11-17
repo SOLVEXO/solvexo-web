@@ -5,7 +5,7 @@ import { DEFAULT_LOCALE } from '@/i18n/localeConfig';
 import { applyHreflangLinks, buildHreflangLinks } from '@/utils/storefrontSeoLinks';
 
 /** Shopify-style tab title ("Page – Store", home = the store's own title) plus description / social tags / noindex. */
-export function useStorefrontSeo({ title, description, image, noindex }: { title?: string; description?: string | null; image?: string | null; noindex?: boolean }) {
+export function useStorefrontSeo({ title, description, image, noindex, disabled }: { title?: string; description?: string | null; image?: string | null; noindex?: boolean; /** Draw nothing into the document head (editor preview). */ disabled?: boolean }) {
   const { store } = useStorefront();
   const market = useStorefrontMarketOptional();
   const languagesKey = (market?.languages ?? []).join(',');
@@ -15,6 +15,7 @@ export function useStorefrontSeo({ title, description, image, noindex }: { title
   const fallbackDescription = store.description ?? store.tagline ?? '';
 
   useEffect(() => {
+    if (disabled) return;
     const previousTitle = document.title;
     const full = title ? (title === storeName ? title : `${title} – ${storeName}`) : storeName;
     document.title = full;
@@ -54,5 +55,5 @@ export function useStorefrontSeo({ title, description, image, noindex }: { title
     }
     meta('property', 'og:locale', contentLanguage);
     return () => { document.title = previousTitle; restore.forEach(fn => fn()); };
-  }, [title, description, image, noindex, storeName, fallbackDescription, store.logo, languagesKey, contentLanguage, sourceLanguage]);
+  }, [disabled, title, description, image, noindex, storeName, fallbackDescription, store.logo, languagesKey, contentLanguage, sourceLanguage]);
 }

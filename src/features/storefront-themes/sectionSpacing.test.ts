@@ -15,8 +15,12 @@ describe('sectionSpacing', () => {
     expect(r.style).not.toHaveProperty('paddingTop');
   });
 
-  it('space above/below may be negative (a margin that pulls the section closer)', () => {
+  it('space above/below may be negative (a margin that pulls the section closer); inner padding never is', () => {
     expect(sectionSpacing({ spacingTop: -40, spacingBottom: -8 }).style).toMatchObject({ marginTop: -40, marginBottom: -8 });
+    const phone = sectionSpacing({ spacingTopMobile: -24, spacingBottomMobile: -200 });
+    expect(phone.className.split(' ').sort()).toEqual(['sx-mb-m', 'sx-mt-m']);
+    expect(phone.style).toMatchObject({ '--sx-mtm': '-24px', '--sx-mbm': '-160px' }); // clamped to the -160 limit
+    expect(sectionSpacing({ paddingTopMobile: -10, paddingBottomMobile: -10 }).className).toBe(''); // a negative padding is ignored
   });
 
   it('inner padding replaces the own padding of the section through CSS variables', () => {

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
+import { useBrowseConfig } from '@/features/storefront/browse/useBrowseConfig';
 
 /** One collapsible filter group (accordion). */
 export function LedupFilterGroup({ title, children, defaultOpen = true }: { title: string; children: ReactNode; defaultOpen?: boolean }) {
@@ -18,11 +19,12 @@ export function LedupFilterGroup({ title, children, defaultOpen = true }: { titl
 
 /** A checkbox row with the number of matching products. */
 export function LedupFilterCheck({ label, count, checked, onToggle }: { label: string; count?: number; checked: boolean; onToggle: () => void }) {
+  const { showCounts } = useBrowseConfig();
   return (
     <label className="flex cursor-pointer items-center gap-2.5 text-[14px] text-[#8c847e]">
       <input type="checkbox" checked={checked} onChange={onToggle} className="h-4 w-4 rounded accent-[var(--ld-accent)]" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {count != null && <span className="text-[13px] text-[#8c847e]">({count})</span>}
+      {showCounts && count != null && <span className="text-[13px] text-[#8c847e]">({count})</span>}
     </label>
   );
 }

@@ -8,6 +8,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicStoreProducts, type PublicStoreProductsParams } from '@/api/services/store';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLoad } from '../../core/pageHooks';
+import { featuredProductsQuery, featuredViewAllPath } from '../../core/sectionProductQuery';
 import { copyText } from '../../sectionCopy';
 import { EditableText } from '../../inlineEdit';
 import type { BaseColors } from '../theme.base';
@@ -37,18 +38,8 @@ export function LedupSectionShell({ colors, heading, link, children, padY = true
 }
 
 // ── Product row (replaces the shared featured_products renderer) ────────────────────────────────────────
-function queryFor(s: Record<string, any>): PublicStoreProductsParams {
-  const limit = Math.min(24, Math.max(1, Number(s.limit) || 10));
-  switch (s.source) {
-    case 'bestsellers': return { limit, sort: 'best_selling' };
-    case 'trending': return { limit, sort: 'trending' };
-    case 'onSale': return { limit, onSale: true, sort: 'newest' };
-    case 'category': return { limit, categoryId: s.categoryId, sort: 'newest' };
-    case 'collection': return { limit, collectionId: s.collectionId, sort: 'newest' };
-    case 'manual': case 'pinned': return Array.isArray(s.productIds) && s.productIds.length ? { ids: s.productIds as string[], limit } : { limit, sort: 'newest' };
-    default: return { limit, sort: 'newest' };
-  }
-}
+/** The products query of a Featured products section: one shared implementation (sources + rules), see core/sectionProductQuery.ts. */
+const queryFor = (s: Record<string, unknown>): PublicStoreProductsParams => featuredProductsQuery(s, 10);
 
 function ProductRow({ settings: s, colors }: { settings: Record<string, any>; colors: BaseColors }) {
   const { store } = useStorefront();
@@ -58,7 +49,7 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
   const { data: items, error, retry } = useLoad(() => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []), [store.storeId, key]);
   if (items && items.length === 0) return null;
   const nudge = (dir: 1 | -1) => scroller.current?.scrollBy({ left: dir * (scroller.current.clientWidth * 0.8) * (document.dir === 'rtl' ? -1 : 1), behavior: 'smooth' });
-  const to = s.source === 'collection' && s.collectionId ? `/collections/${s.collectionId}` : '/search';
+  const to = featuredViewAllPath(s);
   const arrow = 'absolute top-1/2 z-10 hidden size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 md:grid';
   return (
     <LedupSectionShell colors={colors} heading={s.heading} link={{ to, label: text(s.linkLabel) || ts('pg.see_all', 'See all') }}>

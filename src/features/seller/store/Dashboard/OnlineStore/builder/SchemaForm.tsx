@@ -4,6 +4,7 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
+import { RulesPreviewField, ValueListField } from './RulesFields';
 import { apiGetCategoryById } from '@/api/services/categories';
 import { apiGetCollection } from '@/api/services/collections';
 import { apiGetMyProductById } from '@/api/services/product';
@@ -45,9 +46,20 @@ export type FieldKind =
   | 'image' | 'video' | 'url' | 'link' | 'datetime' | 'color' | 'focalPoint'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
   | 'metaobjectTypePicker' | 'metafieldKeyPicker'
-  | 'itemList' | 'shareNetworks' | 'formFields';
+  | 'itemList' | 'shareNetworks' | 'formFields'
+  /** A short list of tags / vendors as chips (`listSource`), and a live "N products match" line for a section's product rules. */
+  | 'valueList' | 'productRulesPreview';
 
 export interface FieldOption { value: string; label: string }
+
+/** The saved moment (ISO, UTC) shown on the seller's own clock: a datetime-local input has no zone, so showing the UTC digits moved every time by the seller's UTC offset. */
+function isoToLocalInput(value: unknown): string {
+  if (!value) return '';
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 export interface FieldSchema {
   /** The key this field reads/writes on the settings object — `settings.ctaLink`, `product.categoryId`, etc. */
@@ -59,6 +71,7 @@ export interface FieldSchema {
   /** Applied once, the first time this field is ever rendered for a fresh settings object — NOT re-applied on every render (see `sectionRegistry.ts`'s `defaultSettings`/`defaultBlockSettings`, which is what actually seeds a new section/block; this is just what an empty input shows). */
   placeholder?: string;
   options?: FieldOption[]; // 'select'
+  listSource?: 'tags' | 'vendors'; // 'valueList'
   min?: number; max?: number; step?: number; // 'number'
   maxLength?: number; // 'text' | 'textarea'
   rows?: number; // 'textarea'
@@ -476,7 +489,7 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
       return (
         <input
           type="datetime-local" className={inp}
-          value={value ? new Date(value).toISOString().slice(0, 16) : ''}
+          value={isoToLocalInput(value)}
           onChange={e => set({ [field.key]: e.target.value ? new Date(e.target.value).toISOString() : '' })}
         />
       );
@@ -489,6 +502,12 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'categoryMultiPicker':
       return <EntityPickerField mode="categories" multiple value={value} storeId={storeId} label="Choose categories" onPick={ids => set({ [field.key]: ids.slice(0, 12) })} />;
+
+    case 'valueList':
+      return <ValueListField value={value} source={field.listSource ?? 'tags'} storeId={storeId} onChange={next => set({ [field.key]: next })} />;
+
+    case 'productRulesPreview':
+      return <RulesPreviewField settings={settings} storeId={storeId} />;
 
     case 'productMultiPicker':
       return <EntityPickerField mode="products" multiple value={value} storeId={storeId} label="Choose products" onPick={ids => set({ [field.key]: ids })} />;

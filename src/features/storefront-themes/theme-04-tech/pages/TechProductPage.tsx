@@ -22,7 +22,14 @@ import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
 import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
 import { Link as WholesaleLink } from 'react-router-dom';
 import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
-import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
+import { stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
+import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
+import { buildOptionValues } from '../../core/product/variantOptions';
+import { ProductTrustBadges } from '../../core/product/trustBadges';
+import type { Section } from '@/api/services/storefrontTypes';
+import { ProductQuestions } from '../../core/product/ProductQuestions';
+import { FrequentlyBought } from '../../core/product/FrequentlyBought';
+import { PhotoStack } from '../../core/product/PhotoStack';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
@@ -54,7 +61,13 @@ export function TechProductPage() {
   return <Inner key={slug} slug={slug} />;
 }
 
-function Inner({ slug }: { slug: string }) {
+/** The Customize editor's preview of the Main Product card: the REAL product page body for the picked product, drawn from the seller's draft
+ *  `product_main` section. Nothing is recorded, nothing is added to a cart and the tab title / meta tags are left alone. */
+export function TechProductMainPreview({ slug, section }: { slug: string; section?: Section }) {
+  return <Inner key={slug} slug={slug} embedded draftMain={section} />;
+}
+
+function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?: boolean; draftMain?: Section }) {
   const { store } = useStorefront();
   const navigate = useNavigate();
   const { addToCart, adding } = useCartContext();
@@ -65,13 +78,15 @@ function Inner({ slug }: { slug: string }) {
   const product = detail ? localize.product(detail.product) : null;
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
-  useRecordProductView(detail?.product._id);
+  useRecordProductView(embedded ? undefined : detail?.product._id);
   const viewedId = detail?.product._id;
-  useEffect(() => { if (viewedId) recordRecentlyViewed(store.storeId, viewedId); }, [store.storeId, viewedId]);
+  useEffect(() => { if (viewedId && !embedded) recordRecentlyViewed(store.storeId, viewedId); }, [store.storeId, viewedId, embedded]);
 
-  const sections = useTemplateSections(store.storeId, 'product', detail?.product.templateKey || 'default');
+  const fetchedSections = useTemplateSections(embedded ? undefined : store.storeId, 'product', detail?.product.templateKey || 'default');
+  const sections = useMemo(() => (embedded ? (draftMain ? [draftMain] : []) : fetchedSections), [embedded, draftMain, fetchedSections]);
   const { before, after } = splitProductTemplateSections(sections);
   const layout = useMemo(() => resolveProductMainLayout(sections.find(s => s.type === 'product_main')), [sections]);
+  const galleryLeft = layout.media.layout ? layout.media.layout === 'thumbs_left' : t.gallery === 'left';
 
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [qty, setQty] = useState(1);
@@ -120,15 +135,15 @@ function Inner({ slug }: { slug: string }) {
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
   const setImageIndex = (i: number) => setGallery({ vid: variant?._id ?? '', i });
 
-  useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
+  useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
   const { origin, pathname } = window.location;
   const pageUrl = `${origin}${pathname}`;
-  useJsonLd('product', product && variant ? productJsonLd({
+  useJsonLd('product', !embedded && product && variant ? productJsonLd({
     name: product.name, description: product.description, images, sku: variant.sku, vendor: detail?.product.vendor,
     price: variant.price, currency: String(variant.currency ?? store.baseCurrency ?? ''), inStock: variantCanBuy(variant, isDigital),
     url: pageUrl, origin, rating: reviews ? { value: reviews.stats.averageRating, count: reviews.stats.totalReviews } : null,
   }) : null);
-  useJsonLd('breadcrumb', product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
+  useJsonLd('breadcrumb', !embedded && product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
 
   // "Additional information": the product's specs as a table tab, when the seller turned "Show as a tab" on for the Specifications block.
   const specsItem = layout.infoItems.find(i => i.type === 'product_specs');
@@ -172,6 +187,7 @@ function Inner({ slug }: { slug: string }) {
   const addLabel = !canBuy ? ts('product.soldOut', 'Sold out') : pre ? ts('product.preorder', 'Pre-order') : busy ? ts('product.adding', 'Adding…') : ts('product.addToCart', 'Add to cart');
 
   const add = async (goCheckout = false) => {
+    if (embedded) return; // the editor preview never touches a real cart
     const ok = await addToCart(detail.product._id, variant._id, isDigital ? 'digital' : 'physical', safeQty);
     if (!ok) return;
     if (goCheckout) navigate('/checkout'); else if (drawerMounted) openDrawer();
@@ -207,27 +223,15 @@ function Inner({ slug }: { slug: string }) {
       </>
     ),
     product_description: s => descriptionTabs.length > 0 ? <ProductDescriptionTabs tabs={descriptionTabs} heading={typeof s.heading === 'string' ? s.heading : undefined} /> : null,
-    product_variant_picker: () => optionNames.length === 0 ? null : (
+    product_variant_picker: s => optionNames.length === 0 ? null : (
       <div className="flex flex-col gap-4">
-        {optionNames.map(name => {
-          const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
-          const current = variant.options?.find(o => o.name === name)?.value;
-          return (
-            <fieldset key={name} className="m-0 border-0 p-0">
-              <legend className="mb-2 p-0 text-sm font-semibold">{name}: <span className="font-normal" style={{ color: t.colors.inkMuted }}>{current}</span></legend>
-              <div className="flex flex-wrap gap-2">
-                {values.map(v => {
-                  const on = current === v;
-                  const ok = optionValueAvailable(variants, variant, name, v, isDigital);
-                  return (
-                    <button key={v} type="button" aria-pressed={on} onClick={() => setPicked(p => ({ ...p, [name]: v }))} className="min-w-12 cursor-pointer px-4 py-2 text-sm font-medium"
-                      style={{ borderRadius: t.fieldRadiusPx, border: `1.5px solid ${on ? t.colors.accent : t.colors.border}`, background: t.colors.bg, color: on ? t.colors.accent : t.colors.ink, opacity: ok ? 1 : 0.45, textDecoration: ok ? undefined : 'line-through' }}>{v}</button>
-                  );
-                })}
-              </div>
-            </fieldset>
-          );
-        })}
+        {optionNames.map(name => (
+          <VariantOptionPicker key={name} name={name} current={variant.options?.find(o => o.name === name)?.value}
+            values={buildOptionValues(variants, variant, name, isDigital)} style={s.pickerStyle}
+            shape={s.swatchShape === 'square' ? 'square' : 'circle'} size={s.swatchSize === 'sm' || s.swatchSize === 'lg' ? s.swatchSize : 'md'}
+            tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, selected: t.colors.accent, selectedInk: t.colors.accentInk, bg: t.colors.bg, radius: t.fieldRadiusPx, buttonLook: 'outlined', borderWidth: 1.5, legendWeight: 600 }}
+            soldOutLabel={ts('product.soldOut', 'Sold out')} onPick={v => setPicked(p => ({ ...p, [name]: v }))} />
+        ))}
       </div>
     ),
     product_quantity: () => wholesale.locked ? null : (
@@ -274,6 +278,9 @@ function Inner({ slug }: { slug: string }) {
     product_specs: () => specsAsTab ? null : <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
     product_collapsible_tab: s => s.showAsTab === true ? null : <ProductCollapsibleTab settings={s} />,
     product_size_chart: s => <ProductSizeChart settings={s} />,
+    product_questions: s => <ProductQuestions preview={embedded} storeId={store.storeId} productId={detail.product._id} settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: t.fieldRadiusPx, accent: t.colors.accent, accentInk: t.colors.accentInk, fontBody: t.fonts.body }} />,
+    product_frequently_bought: s => <FrequentlyBought preview={embedded} storeId={store.storeId} settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: t.fieldRadiusPx, accent: t.colors.accent, accentInk: t.colors.accentInk, fontBody: t.fonts.body }} main={{ productId: detail.product._id, variantId: variant._id, type: isDigital ? 'digital' : 'physical', name: product.name, image: images[0] ?? null, price: variant.price, currency: base, canBuy }} />,
+    product_trust_badges: s => <ProductTrustBadges settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: t.fieldRadiusPx, fontBody: t.fonts.body }} />,
     product_pickup: s => <ProductPickup storeId={store.storeId} storeName={store.name} settings={s} available={canBuy && !isDigital} />,
     product_text: s => typeof s.text === 'string' && s.text.trim() ? <ProductTextBlock settings={s} /> : null,
   };
@@ -305,14 +312,17 @@ function Inner({ slug }: { slug: string }) {
             </div>
             {layout.mediaOn && (
               <div className="lg:sticky lg:top-24">
-                {images.length === 0 ? <div style={{ aspectRatio: '1 / 1', background: t.colors.bg }} /> : (
-                  <div className={t.gallery === 'left' ? 'lg:flex lg:flex-row-reverse lg:items-start lg:gap-3' : ''}>
-                    <button type="button" onClick={() => setZoom(true)} aria-label={ts('product.zoomImage', 'Zoom image')} className="group relative block w-full cursor-zoom-in overflow-hidden border-0 p-4" style={{ aspectRatio: '1 / 1', background: t.colors.bg }}>
+                {(layout.media.layout === 'grid' || layout.media.layout === 'stacked') && images.length > 0 ? (
+                  <PhotoStack images={images} columns={layout.media.layout === 'grid' ? 2 : 1} aspect={layout.media.aspect ?? '1 / 1'} radius={0} background={t.colors.bg} alt={product.name}
+                    imgAttrs={(src, i) => imgProps(src, [480, 768, 1024], i === 0 ? '(min-width: 1024px) 50vw, 100vw' : '(min-width: 1024px) 25vw, 50vw')} onZoom={layout.media.zoom ? i => { setImageIndex(i); setZoom(true); } : undefined} />
+                ) : images.length === 0 ? <div style={{ aspectRatio: layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '1 / 1'), background: t.colors.bg }} /> : (
+                  <div className={galleryLeft ? 'lg:flex lg:flex-row-reverse lg:items-start lg:gap-3' : ''}>
+                    <button type="button" onClick={layout.media.zoom ? () => setZoom(true) : undefined} aria-label={layout.media.zoom ? ts('product.zoomImage', 'Zoom image') : product.name} className={`group relative block w-full overflow-hidden border-0 p-4 ${layout.media.zoom ? 'cursor-zoom-in' : 'cursor-default'}`} style={{ aspectRatio: layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '1 / 1'), background: t.colors.bg }}>
                       <img key={images[imageIndex]} {...imgProps(images[imageIndex], [480, 768, 1024], '(min-width: 1024px) 50vw, 100vw')} alt={product.name} className="size-full object-contain" fetchPriority="high" />
                       <span className="absolute bottom-3 end-3 grid size-9 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bgAlt }}><ZoomIn size={16} /></span>
                     </button>
                     {images.length > 1 && (
-                      <div className={`tx-hide-scroll mt-3 flex gap-2 overflow-x-auto ${t.gallery === 'left' ? 'lg:mt-0 lg:max-h-[560px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden' : ''}`}>
+                      <div className={`tx-hide-scroll mt-3 flex gap-2 overflow-x-auto ${galleryLeft ? 'lg:mt-0 lg:max-h-[560px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden' : ''}`}>
                         {images.map((src, i) => (
                           <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={ts('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex} className={thumb} style={{ background: t.colors.bg, border: `2px solid ${i === imageIndex ? t.colors.accent : 'transparent'}` }}>
                             <img {...imgProps(src, [96, 160], '64px')} alt="" loading="lazy" className="size-full object-contain" />
@@ -330,7 +340,7 @@ function Inner({ slug }: { slug: string }) {
 
       {after.length > 0 && <TechSectionRenderer sections={after} />}
 
-      {b.showReviews && <section id="tx-reviews" style={{ fontFamily: t.fonts.body, color: t.colors.ink }}>
+      {b.showReviews && !embedded && <section id="tx-reviews" style={{ fontFamily: t.fonts.body, color: t.colors.ink }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="m-0 text-xl font-semibold" style={{ fontFamily: t.fonts.display }}>{ts('reviews.title', 'Customer reviews')}</h2>
@@ -367,7 +377,7 @@ function Inner({ slug }: { slug: string }) {
         </div>
       </section>}
 
-      {b.stickyBuyBar && <StickyBuyBar targetId="tx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={addLabel} />}
+      {b.stickyBuyBar && !embedded && <StickyBuyBar targetId="tx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={addLabel} />}
       {writingReview && (
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
           onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />

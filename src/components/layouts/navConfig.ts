@@ -4,7 +4,7 @@ import {
   Settings, ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2, AlertTriangle, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree,
-  Store, TrendingUp, Landmark, LifeBuoy, Languages, Share2,
+  Store, TrendingUp, Landmark, LifeBuoy, Languages, Share2, Boxes,
 } from 'lucide-react';
 import type { AppRole } from '@/api/services/auth';
 import type { EntitlementsSummary } from '@/api/services/platformPlans';
@@ -125,6 +125,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
       // path to the list that create/edit actually happens from.
       { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list', requiredPermission: ['customers.view', 'customers.edit'] },
       { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews',        requiredPermission: ['customers.view', 'reviews.manage'] },
+      { id: 'product-questions', Icon: MessageSquare, label: 'Product questions', path: 'product-questions', requiredPermission: 'products.view' },
       { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages',       requiredPermission: ['messaging.view', 'messaging.manage'] },
       // Storefront contact-form inbox (Shopify sends these to the store's inbox, not Online Store).
       { id: 'online-store-contact', Icon: Inbox,    label: 'Contact Messages', path: 'online-store/contact-messages', requiredPermission: 'onlinestore.content.manage' },
@@ -138,6 +139,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
       { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes',    requiredPermission: 'onlinestore.themes.manage' },
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages',     requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-menus',     Icon: ListTree,   label: 'Navigation', path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
+      { id: 'online-store-section-builder', Icon: Boxes, label: 'Section builder', path: 'online-store/section-builder', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog',      requiredPermission: 'onlinestore.content.manage' },
       // { id: 'online-store-apps',      Icon: Blocks,     label: 'Apps',      path: 'online-store/apps',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
@@ -289,7 +291,7 @@ const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?:
   { group: 'Overview', ids: ['dashboard', 'analytics'] },
   { group: 'Orders', collapsible: true, groupIcon: Package, ids: ['orders', 'draft-orders', 'returns', 'disputes', 'payment-proofs'] },
   { group: 'Products', collapsible: true, groupIcon: ShoppingBag, ids: ['products', 'collections', 'categories', 'inventory', 'gift-cards', 'subscriptions', 'digital'] },
-  { group: 'Customers', collapsible: true, groupIcon: Users, ids: ['customers', 'wholesale', 'khata', 'reviews', 'messages', 'online-store-contact', 'loyalty'] },
+  { group: 'Customers', collapsible: true, groupIcon: Users, ids: ['customers', 'wholesale', 'khata', 'reviews', 'product-questions', 'messages', 'online-store-contact', 'loyalty'] },
   { group: 'Marketing', collapsible: true, groupIcon: Megaphone, ids: ['marketing', 'messaging', 'creatives', 'seo'] },
   { group: 'Discounts', ids: ['discounts'] },
   // Online Store = everything that builds and tunes the storefront; Sales channels = other places the products are sold (feeds, app).

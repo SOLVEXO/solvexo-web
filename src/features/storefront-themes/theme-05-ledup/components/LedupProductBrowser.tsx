@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, Search, SlidersHorizontal } from 'lucide-react';
 import { columnCount, responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { ts } from '@/utils/tStatic';
+import { ArrangedFilters, FilterSlot } from '@/features/storefront/browse/ArrangedFilters';
+import { visibleSorts } from '@/features/storefront/browse/filterConfig';
+import { useBrowseConfig } from '@/features/storefront/browse/useBrowseConfig';
 import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
 import { PRODUCT_TYPE_LABEL, SORT_OPTIONS, clearFilters, hasActiveFilters, toggleIn, toggleOption, type BrowseSort, type BrowseState } from '@/features/storefront/browse/browseState';
 import { moneyText } from '../../core/money';
@@ -40,6 +43,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
   const [typed, setTyped] = useState('');
   useEffect(() => { const id = window.setTimeout(() => setTyped(draft.trim()), 350); return () => window.clearTimeout(id); }, [draft]);
   const effectiveSearch = search || typed || undefined;
+  const browseCfg = useBrowseConfig();
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry, currency } = useProductBrowse({ categoryId, collectionId, search: effectiveSearch, syncUrl, pageSize, accumulate: true, defaultSort });
   useEffect(() => { if (products && onProducts) onProducts(products.map(p => ({ slug: p.slug, name: p.name, images: p.images }))); }, [products, onProducts]);
   const [mobileFilters, setMobileFilters] = useState(false);
@@ -52,32 +56,34 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
 
   const filters = facets && (
     <LedupFilterShell canClear={hasActiveFilters(state)} onClear={() => change(clearFilters)}>
+    <ArrangedFilters>
       {(facets.availability.in_stock + facets.availability.out_of_stock > 0) && (
-        <LedupFilterGroup title={ts('browse.availability', 'Availability')}>
+        <FilterSlot id="availability" count={state.availability ? 1 : 0}><LedupFilterGroup title={ts('browse.availability', 'Availability')}>
           <LedupFilterCheck label={ts('browse.inStock', 'In stock')} count={facets.availability.in_stock} checked={state.availability === 'in_stock'} onToggle={() => change(s => ({ ...s, availability: s.availability === 'in_stock' ? undefined : 'in_stock' }))} />
           <LedupFilterCheck label={ts('browse.outOfStock', 'Out of stock')} count={facets.availability.out_of_stock} checked={state.availability === 'out_of_stock'} onToggle={() => change(s => ({ ...s, availability: s.availability === 'out_of_stock' ? undefined : 'out_of_stock' }))} />
-        </LedupFilterGroup>
+        </LedupFilterGroup></FilterSlot>
       )}
       {(priceRange.min != null || state.minPrice != null || state.maxPrice != null) && (
-        <LedupFilterGroup title={ts('browse.price', 'Price')}>
+        <FilterSlot id="price" count={state.minPrice != null || state.maxPrice != null ? 1 : 0}><LedupFilterGroup title={ts('browse.price', 'Price')}>
           <PriceFilter key={`${state.minPrice ?? ''}-${state.maxPrice ?? ''}`} symbol={symbol} lowest={priceRange.min} highest={priceRange.max} minPrice={state.minPrice} maxPrice={state.maxPrice} onApply={(lo, hi) => change(s => ({ ...s, minPrice: lo, maxPrice: hi }))} />
-        </LedupFilterGroup>
+        </LedupFilterGroup></FilterSlot>
       )}
       {(facets.productTypes.length > 1 || state.productTypes.length > 0) && (
-        <LedupFilterGroup title={ts('browse.productType', 'Product type')}>
+        <FilterSlot id="type" count={state.productTypes.length}><LedupFilterGroup title={ts('browse.productType', 'Product type')}>
           {facets.productTypes.map(o => <LedupFilterCheck key={o.value} label={PRODUCT_TYPE_LABEL[o.value] ?? o.value} count={o.count} checked={state.productTypes.includes(o.value)} onToggle={() => change(s => ({ ...s, productTypes: toggleIn(s.productTypes, o.value) }))} />)}
-        </LedupFilterGroup>
+        </LedupFilterGroup></FilterSlot>
       )}
       {facets.options.map(opt => (
-        <LedupFilterGroup key={opt.name} title={opt.name}>
+        <FilterSlot key={opt.name} id={`opt:${opt.name}`} count={state.options[opt.name]?.length ?? 0}><LedupFilterGroup title={opt.name}>
           {opt.values.map(o => <LedupFilterCheck key={o.value} label={o.value} count={o.count} checked={!!state.options[opt.name]?.includes(o.value)} onToggle={() => change(s => ({ ...s, options: toggleOption(s.options, opt.name, o.value) }))} />)}
-        </LedupFilterGroup>
+        </LedupFilterGroup></FilterSlot>
       ))}
       {(facets.tags.length > 0 || state.tags.length > 0) && (
-        <LedupFilterGroup title={ts('browse.tags', 'Tags')} defaultOpen={false}>
+        <FilterSlot id="tag" count={state.tags.length}><LedupFilterGroup title={ts('browse.tags', 'Tags')} defaultOpen={false}>
           {facets.tags.map(o => <LedupFilterCheck key={o.value} label={o.value} count={o.count} checked={state.tags.includes(o.value)} onToggle={() => change(s => ({ ...s, tags: toggleIn(s.tags, o.value) }))} />)}
-        </LedupFilterGroup>
+        </LedupFilterGroup></FilterSlot>
       )}
+    </ArrangedFilters>
     </LedupFilterShell>
   );
 
@@ -98,7 +104,7 @@ export function LedupProductBrowser({ categoryId, collectionId, search, syncUrl 
             </button>
             {sortOpen && (
               <div className="ld-sortpop ld-pop" role="listbox" aria-label={ts('browse.sortBy', 'Sort by:')}>
-                {SORT_OPTIONS.map(o => (
+                {visibleSorts(SORT_OPTIONS, browseCfg.sorts, state.sort).map(o => (
                   <button key={o.value} type="button" role="option" aria-selected={state.sort === o.value} onClick={() => { change(s => ({ ...s, sort: o.value as BrowseSort })); setSortOpen(false); }}>{o.label}</button>
                 ))}
               </div>

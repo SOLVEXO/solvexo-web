@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { ts } from '@/utils/tStatic';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
-import { useContext } from 'react';
+import { lazy, Suspense, useContext } from 'react';
 import { FashionProductBrowser } from '../components/browse/FashionProductBrowser';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { fashionTheme as t } from '../theme.config';
 import { FashionProductCard } from '../components/FashionProductCard';
 import { registerFashionSection } from './sectionRegistry';
+import type { Section } from '@/api/services/storefrontTypes';
 import { SectionShell } from './SectionShell';
 import { CollectionScopeContext } from './collectionScope';
 
@@ -50,8 +51,16 @@ function Placeholder({ title, note, colors }: { title: string; note: string; col
   );
 }
 
-registerFashionSection('product_main', (_s, _b, colors, _d, ctx) => {
+
+/** Loaded on demand: the real product page is big, and importing it here would make the page and its section renderer import each other. */
+const FashionProductMainPreview = lazy(() => import('../pages/FashionProductPage').then(m => ({ default: m.FashionProductMainPreview })));
+function MainPreview({ slug, section }: { slug: string; section: Section }) {
+  return <Suspense fallback={<div style={{ minHeight: 320 }} aria-busy="true" />}><FashionProductMainPreview slug={slug} section={section} /></Suspense>;
+}
+
+registerFashionSection('product_main', (section, _b, colors, _d, ctx) => {
   const p = ctx?.product;
+  if (p?.slug) return <MainPreview slug={p.slug} section={section} />;
   return (
     <SectionShell colors={colors}>
       <div className="grid gap-8 lg:grid-cols-12">

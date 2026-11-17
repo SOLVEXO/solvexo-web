@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, X } from 'lucide-react';
 import { moneyText } from '../../../core/money';
 import type { PublicStoreFacets } from '@/api/services/store';
+import { useBrowseConfig } from '@/features/storefront/browse/useBrowseConfig';
 import { SORT_OPTIONS, type BrowseState } from '@/features/storefront/browse/browseState';
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { fashionTheme as t } from '../../theme.config';
@@ -35,11 +36,12 @@ export function BrowseButton({ onClick, children, solid }: { onClick: () => void
 
 export function CheckRow({ label, count, checked, onToggle }: { label: string; count: number; checked: boolean; onToggle: () => void }) {
   const dim = count === 0 && !checked;
+  const { showCounts } = useBrowseConfig();
   return (
     <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ opacity: dim ? 0.45 : 1 }}>
       <input type="checkbox" checked={checked} onChange={onToggle} disabled={dim} className="size-4" style={{ accentColor: t.colors.accent }} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      <span className="text-xs" style={{ color: t.colors.inkMuted }}>{count}</span>
+      {showCounts && <span className="text-xs" style={{ color: t.colors.inkMuted }}>{count}</span>}
     </label>
   );
 }
@@ -100,7 +102,8 @@ export function PriceFields({ symbol, currency, highest, lowest, minPrice, maxPr
   );
 }
 
-export function FilterDrawer({ onClose, total, active, onClear, groups, sort, onSort, facets }: {
+export function FilterDrawer({ onClose, total, active, onClear, groups, sort, onSort, facets, sortOptions }: {
+  sortOptions?: { value: string; label: string }[];
   onClose: () => void; total: number; active: boolean; onClear: () => void; groups: FacetGroup[];
   sort: BrowseState['sort']; onSort: (s: BrowseState['sort']) => void; facets: PublicStoreFacets | null;
 }) {
@@ -125,7 +128,7 @@ export function FilterDrawer({ onClose, total, active, onClear, groups, sort, on
             <label htmlFor={`${titleId}-sort`} className="mb-1.5 block text-[13px] font-medium" style={{ color: t.colors.inkMuted }}>{tr('browse.sortByLabel', 'Sort by')}</label>
             <select id={`${titleId}-sort`} value={sort} onChange={e => onSort(e.target.value as BrowseState['sort'])} className="w-full rounded-full border-0 px-4 py-3 text-sm outline-none"
               style={{ background: t.colors.bg, color: t.colors.ink, border: `1px solid ${t.colors.border}` }}>
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {(sortOptions ?? SORT_OPTIONS).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           {!facets && <p className="m-0 px-2 py-4 text-[13px]" style={{ color: t.colors.inkMuted }}>{tr('browse.loadingFilters', 'Loading filters…')}</p>}

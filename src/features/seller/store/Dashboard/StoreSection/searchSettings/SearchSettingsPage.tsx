@@ -11,9 +11,10 @@ import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
 import { shortDate, useApi } from '../wholesale/wholesaleUtils';
 
-interface Config { synonyms: { terms: string[] }[]; pinned: { query: string; productIds: string[] }[]; filters: { key: string; enabled: boolean }[] }
+interface Config { synonyms: { terms: string[] }[]; pinned: { query: string; productIds: string[] }[]; filters: { key: string; enabled: boolean }[]; sorts: { key: string; enabled: boolean }[]; showCounts: boolean }
 interface Miss { _id: string; query: string; count: number; lastAt: string }
 interface Prod { _id: string; name: string }
+const SORT_LABEL: Record<string, string> = { newest: 'Featured', best_selling: 'Best selling', trending: 'Trending', best_rated: 'Best rated', price_asc: 'Price, low to high', price_desc: 'Price, high to low', title_asc: 'Alphabetically, A-Z', title_desc: 'Alphabetically, Z-A', oldest: 'Date, old to new' };
 const FILTER_LABEL: Record<string, string> = { availability: 'Availability', price: 'Price', vendor: 'Brand', tags: 'Tags', options: 'Options (size, colour…)' };
 
 /** How shoppers find things: words that mean the same, products to show first, which filters appear, and searches that found nothing. */
@@ -42,6 +43,8 @@ function Editor({ storeId, tab }: { storeId: string; tab: string }) {
   const [syn, setSyn] = useState<string | null>(null);
   const [pins, setPins] = useState<{ query: string; products: Prod[] }[] | null>(null);
   const [filters, setFilters] = useState<Config['filters'] | null>(null);
+  const [sorts, setSorts] = useState<Config['sorts'] | null>(null);
+  const [showCounts, setShowCounts] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [find, setFind] = useState({ idx: -1, q: '', results: [] as Prod[] });
 
@@ -50,6 +53,8 @@ function Editor({ storeId, tab }: { storeId: string; tab: string }) {
     /* eslint-disable react-hooks/set-state-in-effect */
     setSyn((v) => v ?? c.synonyms.map((g) => g.terms.join(', ')).join('\n'));
     setFilters((v) => v ?? c.filters);
+    setSorts((v) => v ?? c.sorts ?? []);
+    setShowCounts((v) => v ?? c.showCounts !== false);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [cfg.data]);
   useEffect(() => {
@@ -77,21 +82,42 @@ function Editor({ storeId, tab }: { storeId: string; tab: string }) {
       <div className="mt-3"><Button loading={busy} onClick={() => void save({ synonyms: (syn ?? '').split('\n').map((l) => ({ terms: l.split(',') })) })}>Save synonyms</Button></div>
     </Card>
   );
-  if (tab === 'filters') return (
-    <Card padding="md">
-      <p className="mt-0 text-[13px] text-slate">Choose which filters shoppers see and in what order.</p>
-      <ul className="m-0 flex list-none flex-col gap-2 p-0">
-        {(filters ?? []).map((f, i) => (
-          <li key={f.key} className="flex items-center gap-3 text-[13px]">
-            <label className="flex flex-1 items-center gap-2"><input type="checkbox" checked={f.enabled} onChange={(e) => setFilters((filters ?? []).map((x) => (x.key === f.key ? { ...x, enabled: e.target.checked } : x)))} />{FILTER_LABEL[f.key] ?? f.key}</label>
-            <Button size="xs" variant="outline" disabled={i === 0} onClick={() => { const a = [...(filters ?? [])]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; setFilters(a); }}>Up</Button>
-            <Button size="xs" variant="outline" disabled={i === (filters ?? []).length - 1} onClick={() => { const a = [...(filters ?? [])]; [a[i + 1], a[i]] = [a[i], a[i + 1]]; setFilters(a); }}>Down</Button>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-3"><Button loading={busy} onClick={() => void save({ filters: filters ?? [] })}>Save filters</Button></div>
-    </Card>
-  );
+  if (tab === 'filters') {
+    const list = filters ?? []; const sl = sorts ?? [];
+    const move = <T,>(arr: T[], i: number, d: number, set: (v: T[]) => void) => { const a = [...arr]; [a[i + d], a[i]] = [a[i], a[i + d]]; set(a); };
+    return (
+      <div className="flex flex-col gap-4">
+        <Card padding="md">
+          <h3 className="m-0 text-[14px] font-semibold">Filters</h3>
+          <p className="mt-1 text-[13px] text-slate">Choose which filters shoppers see on collection and search pages, and in what order.</p>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {list.map((f, i) => (
+              <li key={f.key} className="flex items-center gap-3 text-[13px]">
+                <label className="flex flex-1 items-center gap-2"><input type="checkbox" checked={f.enabled} onChange={(e) => setFilters(list.map((x) => (x.key === f.key ? { ...x, enabled: e.target.checked } : x)))} />{FILTER_LABEL[f.key] ?? f.key}</label>
+                <Button size="xs" variant="outline" aria-label={`Move ${FILTER_LABEL[f.key] ?? f.key} up`} disabled={i === 0} onClick={() => move(list, i, -1, setFilters)}>Up</Button>
+                <Button size="xs" variant="outline" aria-label={`Move ${FILTER_LABEL[f.key] ?? f.key} down`} disabled={i === list.length - 1} onClick={() => move(list, i, 1, setFilters)}>Down</Button>
+              </li>
+            ))}
+          </ul>
+          <label className="mt-3 flex items-center gap-2 text-[13px]"><input type="checkbox" checked={showCounts !== false} onChange={(e) => setShowCounts(e.target.checked)} />Show how many products match next to each filter value, e.g. (12)</label>
+        </Card>
+        <Card padding="md">
+          <h3 className="m-0 text-[14px] font-semibold">Sort menu</h3>
+          <p className="mt-1 text-[13px] text-slate">Choose the sort choices shoppers can pick from, and their order. "Featured" is how the list opens, so it always stays.</p>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {sl.map((f, i) => (
+              <li key={f.key} className="flex items-center gap-3 text-[13px]">
+                <label className="flex flex-1 items-center gap-2"><input type="checkbox" checked={f.enabled} disabled={f.key === 'newest'} onChange={(e) => setSorts(sl.map((x) => (x.key === f.key ? { ...x, enabled: e.target.checked } : x)))} />{SORT_LABEL[f.key] ?? f.key}</label>
+                <Button size="xs" variant="outline" aria-label={`Move ${SORT_LABEL[f.key] ?? f.key} up`} disabled={i === 0} onClick={() => move(sl, i, -1, setSorts)}>Up</Button>
+                <Button size="xs" variant="outline" aria-label={`Move ${SORT_LABEL[f.key] ?? f.key} down`} disabled={i === sl.length - 1} onClick={() => move(sl, i, 1, setSorts)}>Down</Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <div><Button loading={busy} onClick={() => void save({ filters: list, sorts: sl, showCounts: showCounts !== false })}>Save filters and sorting</Button></div>
+      </div>
+    );
+  }
   return (
     <Card padding="md">
       <p className="mt-0 text-[13px] text-slate">For an exact search word, these products are shown first (when the shopper has not picked another sort).</p>

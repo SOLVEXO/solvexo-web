@@ -8,6 +8,9 @@ import type { PublicStoreProduct } from '@/api/services/store';
 import {
   PRODUCT_TYPE_LABEL, SORT_OPTIONS, clearFilters, hasActiveFilters, toggleIn, toggleOption, type BrowseState,
 } from '@/features/storefront/browse/browseState';
+import { ArrangedFilters, FilterSlot } from '@/features/storefront/browse/ArrangedFilters';
+import { visibleSorts } from '@/features/storefront/browse/filterConfig';
+import { useBrowseConfig } from '@/features/storefront/browse/useBrowseConfig';
 import { clampPageSize, useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
 import { useDialogFocus } from '../../core/hooks/useDialogFocus';
 import { moneyText } from '../../core/money';
@@ -48,11 +51,12 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
 
 function Check({ label, count, checked, onToggle }: { label: string; count: number; checked: boolean; onToggle: () => void }) {
   const dim = count === 0 && !checked;
+  const { showCounts } = useBrowseConfig();
   return (
     <label className="flex cursor-pointer items-center gap-2.5 py-1 text-[13px]" style={{ opacity: dim ? 0.45 : 1 }}>
       <input type="checkbox" checked={checked} onChange={onToggle} disabled={dim} className="size-4" style={{ accentColor: t.colors.accent }} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      <span className="text-xs" style={{ color: t.colors.inkMuted }}>{count}</span>
+      {showCounts && <span className="text-xs" style={{ color: t.colors.inkMuted }}>{count}</span>}
     </label>
   );
 }
@@ -104,6 +108,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
   const { currency } = useCurrencyPreference();
   const pageSize = clampPageSize(t.pagination.productsPerPage);
   const mode = t.pagination.mode;
+  const browseCfg = useBrowseConfig();
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort, pageSize, accumulate: mode !== 'pages' });
   const [view, setView] = useState<View>('grid');
   const [drawer, setDrawer] = useState(false);
@@ -142,30 +147,30 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
   state.tags.forEach(v => chips.push({ key: `g:${v}`, label: v, remove: () => change(s => ({ ...s, tags: s.tags.filter(x => x !== v) })) }));
 
   const filters = facets && showFilters ? (
-    <>
-      <FilterGroup title={ts('browse.availability', 'Availability')}>
+    <ArrangedFilters>
+      <FilterSlot id="availability" count={state.availability ? 1 : 0}><FilterGroup title={ts('browse.availability', 'Availability')}>
         <Check label={ts('browse.inStock', 'In stock')} count={facets.availability.in_stock} checked={state.availability === 'in_stock'} onToggle={() => change(s => ({ ...s, availability: s.availability === 'in_stock' ? undefined : 'in_stock' }))} />
         <Check label={ts('browse.outOfStock', 'Out of stock')} count={facets.availability.out_of_stock} checked={state.availability === 'out_of_stock'} onToggle={() => change(s => ({ ...s, availability: s.availability === 'out_of_stock' ? undefined : 'out_of_stock' }))} />
-      </FilterGroup>
-      <FilterGroup title={ts('browse.price', 'Price')}>
+      </FilterGroup></FilterSlot>
+      <FilterSlot id="price" count={state.minPrice != null || state.maxPrice != null ? 1 : 0}><FilterGroup title={ts('browse.price', 'Price')}>
         <PriceFilter key={`${state.minPrice ?? ''}-${state.maxPrice ?? ''}`} symbol={symbol} lowest={priceRange.min} highest={priceRange.max} minPrice={state.minPrice} maxPrice={state.maxPrice} onApply={(lo, hi) => change(s => ({ ...s, minPrice: lo, maxPrice: hi }))} />
-      </FilterGroup>
+      </FilterGroup></FilterSlot>
       {(facets.productTypes.length > 1 || state.productTypes.length > 0) && (
-        <FilterGroup title={ts('browse.productType', 'Product type')}>
+        <FilterSlot id="type" count={state.productTypes.length}><FilterGroup title={ts('browse.productType', 'Product type')}>
           {facets.productTypes.map(o => <Check key={o.value} label={PRODUCT_TYPE_LABEL[o.value] ?? o.value} count={o.count} checked={state.productTypes.includes(o.value)} onToggle={() => change(s => ({ ...s, productTypes: toggleIn(s.productTypes, o.value) }))} />)}
-        </FilterGroup>
+        </FilterGroup></FilterSlot>
       )}
       {facets.options.map(opt => (
-        <FilterGroup key={opt.name} title={opt.name}>
+        <FilterSlot key={opt.name} id={`opt:${opt.name}`} count={state.options[opt.name]?.length ?? 0}><FilterGroup title={opt.name}>
           {opt.values.map(o => <Check key={o.value} label={o.value} count={o.count} checked={!!state.options[opt.name]?.includes(o.value)} onToggle={() => change(s => ({ ...s, options: toggleOption(s.options, opt.name, o.value) }))} />)}
-        </FilterGroup>
+        </FilterGroup></FilterSlot>
       ))}
       {(facets.tags.length > 0 || state.tags.length > 0) && (
-        <FilterGroup title={ts('browse.tags', 'Tags')}>
+        <FilterSlot id="tag" count={state.tags.length}><FilterGroup title={ts('browse.tags', 'Tags')}>
           {facets.tags.map(o => <Check key={o.value} label={o.value} count={o.count} checked={state.tags.includes(o.value)} onToggle={() => change(s => ({ ...s, tags: toggleIn(s.tags, o.value) }))} />)}
-        </FilterGroup>
+        </FilterGroup></FilterSlot>
       )}
-    </>
+    </ArrangedFilters>
   ) : null;
 
   const from = total === 0 ? 0 : mode === 'pages' ? (state.page - 1) * pageSize + 1 : 1;
@@ -201,7 +206,7 @@ export function TechProductBrowser({ heading, categoryId, collectionId, search, 
               <label className="flex items-center gap-2 text-xs" style={{ color: t.colors.inkMuted }}>
                 {ts('browse.sortBy', 'Sort by:')}
                 <select value={state.sort} onChange={e => change(s => ({ ...s, sort: e.target.value as BrowseState['sort'] }))} className="px-2 py-2 text-[13px] font-medium" style={{ border: `1px solid ${t.colors.border}`, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, borderRadius: t.fieldRadiusPx }}>
-                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {visibleSorts(SORT_OPTIONS, browseCfg.sorts, state.sort).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </label>
               <span className="hidden sm:inline-flex">

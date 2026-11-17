@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { lazy, Suspense } from 'react';
 import { ts } from '@/utils/tStatic';
+import type { Section } from '@/api/services/storefrontTypes';
 import { baseTheme as t } from '../theme.base';
 import { registerTechSection } from './techSectionRegistry';
 import { SectionShell } from './SectionShell';
@@ -18,8 +20,16 @@ function Placeholder({ title, note, colors }: { title: string; note: string; col
   );
 }
 
-registerTechSection('product_main', (_s, _b, colors, _d, ctx) => {
+
+/** Loaded on demand: the real product page is big, and importing it here would make the page and its section renderer import each other. */
+const TechProductMainPreview = lazy(() => import('../pages/TechProductPage').then(m => ({ default: m.TechProductMainPreview })));
+function MainPreview({ slug, section }: { slug: string; section: Section }) {
+  return <Suspense fallback={<div style={{ minHeight: 320 }} aria-busy="true" />}><TechProductMainPreview slug={slug} section={section} /></Suspense>;
+}
+
+registerTechSection('product_main', (section, _b, colors, _d, ctx) => {
   const p = ctx?.product;
+  if (p?.slug) return <MainPreview slug={p.slug} section={section} />;
   return (
     <SectionShell colors={colors}>
       <div className="grid gap-8 lg:grid-cols-12">

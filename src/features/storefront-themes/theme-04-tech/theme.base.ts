@@ -10,7 +10,7 @@ import { setVendorPrefix } from '../core/VendorLink';
 import { readProductsPerPage } from '../themeManifest';
 import { DEFAULT_SPECS_LOOK, readSpecsLook, type SpecsLook } from '../specsLook';
 import { DEFAULT_PAGE_BG, DEFAULT_CARD_BORDER, readPageBg, readCardBorder, type PageBg, type CardBorder } from '../pageBackground';
-import { asCardBadgePosition, asCardInfoLine } from '../productCardExtras';
+import { asCardBadgePosition, asCardInfoLine, setAutoCardBadges } from '../productCardExtras';
 import { badgeThemeColor } from '../cardBadgeTheme';
 
 const STATIC_DEFAULTS = {
@@ -282,6 +282,7 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
   baseTheme.cardInfoLine = asCardInfoLine(c?.cardInfoLine);
   baseTheme.cardBadgePosition = asCardBadgePosition(c?.cardBadgePosition);
   baseTheme.cardBadgeColor = badgeThemeColor(c?.themeSettings?.cardBadgeColor);
+  setAutoCardBadges(c as Record<string, unknown> | undefined);
   baseTheme.cardButton = c?.cardButton !== 'hide';
   baseTheme.cardHover = c?.cardHover ?? 'shadow';
   baseTheme.cardTextAlign = c?.cardTextAlign ?? 'left';

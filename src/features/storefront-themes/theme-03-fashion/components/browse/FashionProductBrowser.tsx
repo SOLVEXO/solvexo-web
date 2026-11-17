@@ -10,6 +10,8 @@ import {
   type BrowseState,
 } from '@/features/storefront/browse/browseState';
 import { useProductBrowse } from '@/features/storefront/browse/useProductBrowse';
+import { arrangeFilterGroups, visibleSorts } from '@/features/storefront/browse/filterConfig';
+import { useBrowseConfig } from '@/features/storefront/browse/useBrowseConfig';
 import { responsiveGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 import { fashionTheme as t } from '../../theme.config';
 import { BrowseButton, BrowsePagination, BrowseSkeleton, CheckRow, FilterDrawer, PriceFields, type FacetGroup } from './FashionFilterParts';
@@ -38,6 +40,7 @@ interface Props {
 export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId, collectionId, search, syncUrl = false, defaultSort, columns, showFilters = true, emptyText, onProducts }: Props) {
   const { t: tr } = useTranslation('storefront');
   const { currency } = useCurrencyPreference();
+  const browseCfg = useBrowseConfig();
   const { state, update, products, total, totalPages, facets, priceRange, loading, error, retry } = useProductBrowse({ categoryId, collectionId, search, syncUrl, defaultSort, pageSize: t.pagination.productsPerPage, accumulate: t.pagination.mode !== 'pages' });
   const [open, setOpen] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
@@ -79,11 +82,11 @@ export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId
   const priceMax = priceRange.max;
 
   // Facet group model shared by the desktop popovers and the phone drawer.
-  const groups: FacetGroup[] = [];
+  const allGroups: FacetGroup[] = [];
   const row = (key: string, label: string, count: number, checked: boolean, onToggle: () => void) => <CheckRow key={key} label={label} count={count} checked={checked} onToggle={onToggle} />;
 
   if (facets) {
-    groups.push({
+    allGroups.push({
       id: 'availability', label: tr('browse.availability', 'Availability'), count: state.availability ? 1 : 0,
       body: (
         <>
@@ -92,7 +95,7 @@ export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId
         </>
       ),
     });
-    groups.push({
+    allGroups.push({
       id: 'price', label: tr('browse.price', 'Price'), count: state.minPrice != null || state.maxPrice != null ? 1 : 0,
       body: (
         <PriceFields key={`${state.minPrice ?? ''}-${state.maxPrice ?? ''}`} symbol={symbol} currency={currency} highest={priceMax} lowest={priceMin}
@@ -100,24 +103,27 @@ export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId
       ),
     });
     if (facets.productTypes.length > 1 || state.productTypes.length) {
-      groups.push({
+      allGroups.push({
         id: 'type', label: tr('browse.productType', 'Product type'), count: state.productTypes.length,
         body: facets.productTypes.map(o => row(o.value, PRODUCT_TYPE_LABEL[o.value] ?? o.value, o.count, state.productTypes.includes(o.value), () => change(s => ({ ...s, productTypes: toggleIn(s.productTypes, o.value) })))),
       });
     }
     for (const opt of facets.options) {
-      groups.push({
+      allGroups.push({
         id: `opt:${opt.name}`, label: opt.name, count: state.options[opt.name]?.length ?? 0,
         body: opt.values.map(o => row(o.value, o.value, o.count, !!state.options[opt.name]?.includes(o.value), () => change(s => ({ ...s, options: toggleOption(s.options, opt.name, o.value) })))),
       });
     }
     if (facets.tags.length || state.tags.length) {
-      groups.push({
+      allGroups.push({
         id: 'tag', label: tr('browse.tags', 'Tags'), count: state.tags.length,
         body: facets.tags.map(o => row(o.value, o.value, o.count, state.tags.includes(o.value), () => change(s => ({ ...s, tags: toggleIn(s.tags, o.value) })))),
       });
     }
   }
+
+  const groups = arrangeFilterGroups(allGroups, browseCfg.filters);
+  const sortChoices = visibleSorts(SORT_OPTIONS, browseCfg.sorts, state.sort);
 
   // Active filter chips.
   const chips: { key: string; label: string; remove: () => void }[] = [];
@@ -176,7 +182,7 @@ export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId
             </button>
             {open === 'sort' && (
               <div role="listbox" aria-label={tr('browse.sortByAria', 'Sort by')} className={`${popover} right-0 min-w-[240px]`} style={popoverStyle}>
-                {SORT_OPTIONS.map(o => (
+                {sortChoices.map(o => (
                   <button key={o.value} type="button" role="option" aria-selected={o.value === state.sort} onClick={() => { change(s => ({ ...s, sort: o.value })); setOpen(null); }}
                     className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ fontWeight: o.value === state.sort ? 600 : 400, color: t.colors.ink }}>
                     {o.label}
@@ -234,7 +240,7 @@ export function FashionProductBrowser({ renderCard, heading, eyebrow, categoryId
 
       {showFilters && drawer && (
         <FilterDrawer onClose={() => setDrawer(false)} total={total} active={active} onClear={() => change(clearFilters)}
-          groups={groups} sort={state.sort} onSort={v => change(s => ({ ...s, sort: v }))} facets={facets} />
+          groups={groups} sortOptions={sortChoices} sort={state.sort} onSort={v => change(s => ({ ...s, sort: v }))} facets={facets} />
       )}
     </div>
   );

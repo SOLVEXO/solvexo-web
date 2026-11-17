@@ -1,10 +1,11 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 import type { LinkTarget } from '@/features/seller/store/Dashboard/OnlineStore/builder/LinkTargetFields';
+import type { NavExtrasValue } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtras';
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
-export interface MenuItemChild extends LinkTarget {
+export interface MenuItemChild extends LinkTarget, Omit<NavExtrasValue, 'megaColumns' | 'megaPromos'> {
   id: string;
   label: string;
   highlight?: boolean;
@@ -15,7 +16,7 @@ export interface MenuItemChild extends LinkTarget {
 
 export type MenuStyle = 'dropdown' | 'mega';
 
-export interface MenuItem extends LinkTarget {
+export interface MenuItem extends LinkTarget, NavExtrasValue {
   id: string;
   label: string;
   highlight?: boolean;

@@ -275,6 +275,7 @@ export function ThemeCustomizePage() {
         const fmt = (n?: number | null) => (n == null ? undefined : `${currencySymbol(v?.currency)} ${fmt2(n)}`);
         const optionValues = Array.from(new Set((variants ?? []).flatMap(x => (x.options ?? []).map(o => String(o.value))))).slice(0, 8);
         setPreviewProduct({
+          slug: product.slug,
           name: product.name,
           price: fmt(v?.price),
           compareAtPrice: v?.compareAtPrice && v.price != null && v.compareAtPrice > v.price ? fmt(v.compareAtPrice) : undefined,

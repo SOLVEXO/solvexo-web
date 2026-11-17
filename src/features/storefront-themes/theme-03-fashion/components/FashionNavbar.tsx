@@ -10,7 +10,10 @@ import { TokenStorage } from '@/api/services/auth';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { useCartDrawer } from '../../cartDrawerContext';
-import { buildNavImageLookup, isMegaItem, normalizeNavItems } from '../../navigation/megaNav';
+import { buildNavImageLookup, isMegaItem, navHasSchedule, normalizeNavItems } from '../../navigation/megaNav';
+import { NavBadge } from '../../navigation/NavBadge';
+import { MegaPromoCards } from '../../navigation/MegaPromoCards';
+import { useNavRuleContext } from '../../navigation/useNavRuleContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { useHeaderScroll } from '../../navigation/useHeaderScroll';
 import { headerNavCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
@@ -19,7 +22,7 @@ import { FashionPredictiveSearch } from './browse/FashionPredictiveSearch';
 import { FashionLocaleControls } from './FashionLocaleControls';
 import { FashionMobileNav } from './nav/MobileNavPanel';
 import { FashionSectionRenderer } from '../sections';
-import { EditableText } from '../../inlineEdit';
+import { EditableText, useInlineEditActive } from '../../inlineEdit';
 import { HeaderCta, HeaderTopBar } from './nav/HeaderExtras';
 
 /** Fashion header: centered wordmark between the menu (left) and the icons (right), thin rule, calm hover states. */
@@ -88,11 +91,14 @@ export function FashionNavbar() {
     return () => { off = true; };
   }, [store.storeId]);
 
+  // Menu items can carry show-when rules (signed-in state, country, language, schedule). The editor always shows every item.
+  const editing = useInlineEditActive();
+  const ruleCtx = useNavRuleContext(!!header?.blocks?.some(b => b.type === 'nav_link' && navHasSchedule([b.settings as StorefrontNavItemSettings])));
   const items: ResolvedStorefrontNavItem[] = useMemo(() => {
     const lookup = buildNavImageLookup([], collections);
     const authored = (header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
     if (authored.length > 0) {
-      return normalizeNavItems(authored.map(b => b.settings as StorefrontNavItemSettings), resolveLink, lookup, 'nav', locale);
+      return normalizeNavItems(authored.map(b => b.settings as StorefrontNavItemSettings), resolveLink, lookup, 'nav', locale, editing ? undefined : ruleCtx);
     }
     const auto: StorefrontNavItemSettings[] = [];
     if (o.showShopMenu) {
@@ -104,7 +110,7 @@ export function FashionNavbar() {
     if (o.includePagesInNav) pages.filter(p => p.showInNav).forEach(p => auto.push({ label: p.title, linkType: 'page', pageSlug: p.slug }));
     if (o.showDefaultBlogLink) auto.push({ label: o.blogLabel, linkType: 'blog' });
     return normalizeNavItems(auto, resolveLink, lookup, 'auto', locale);
-  }, [header?.blocks, resolveLink, locale, o.showShopMenu, o.shopLabel, o.includePagesInNav, o.showDefaultBlogLink, o.blogLabel, collections, pages]);
+  }, [header?.blocks, resolveLink, locale, editing, ruleCtx, o.showShopMenu, o.shopLabel, o.includePagesInNav, o.showDefaultBlogLink, o.blogLabel, collections, pages]);
 
   const bg = o.bgColor ?? t.colors.bg;
   const fg = transparent && scroll.clear ? o.transparentTextColor : o.textColor ?? t.colors.ink;
@@ -160,7 +166,7 @@ export function FashionNavbar() {
                 <div key={item.id} className="group relative" data-open={openMenu === item.id} data-dismissed={dismissedMenu === item.id} data-nav-group={item.id}
                   onMouseEnter={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }} onFocus={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }}>
                   <div className={`inline-flex items-center rounded-full transition-colors ${o.navHoverStyle !== 'underline' ? 'group-hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[open=true]:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[dismissed=true]:bg-transparent!' : ''}`}>
-                  <NavAnchor link={item.link} className={`inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`} style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}</NavAnchor>
+                  <NavAnchor link={item.link} className={`inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`} style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                   {item.children.length > 0 && (
                     <button type="button" aria-expanded={openMenu === item.id} aria-label={openMenu === item.id ? ts('pg.close_label_menu', 'Close {{label}} menu', { label: item.label }) : ts('pg.open_label_menu', 'Open {{label}} menu', { label: item.label })} onPointerDown={e => { lastPointer.current = e.pointerType; }} onClick={e => toggleMenu(item.id, e.currentTarget)}
                       className="mr-2 inline-grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 align-middle" style={{ color: fg }}>
@@ -176,27 +182,28 @@ export function FashionNavbar() {
                       <MegaPanel className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
                           <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
-                            <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${t.mega.columns}, minmax(150px, max-content))` : `repeat(${t.mega.columns}, minmax(0, 1fr))` }}>
+                            <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${item.megaColumns || t.mega.columns}, minmax(150px, max-content))` : `repeat(${item.megaColumns || t.mega.columns}, minmax(0, 1fr))` }}>
                               {plain.length > 0 && (
                                 <div>
-                                  <MegaHeading label={item.label} />
+                                  <MegaHeading label={item.label} badge={item.badge} />
                                   {plain.map(c => (
-                                    <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                                    <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                                   ))}
                                 </div>
                               )}
                               {columns.map(c => (
                                 <div key={c.id}>
-                                  <MegaHeading label={c.label} link={c.link} imageUrl={c.imageUrl} />
+                                  <MegaHeading label={c.label} link={c.link} imageUrl={c.imageUrl} badge={c.badge} />
                                   {c.children.map(g => (
                                     <NavAnchor key={g.id} link={g.link} className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>
                                       {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: { square: 28, landscape: 36, portrait: 24 }[t.mega.photo], height: { square: 28, landscape: 26, portrait: 34 }[t.mega.photo], borderRadius: 8, background: t.colors.bgAlt }} />}
-                                      <span>{g.label}</span>
+                                      <span>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>
                                     </NavAnchor>
                                   ))}
                                 </div>
                               ))}
                             </div>
+                            <MegaPromoCards promos={item.promos} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, bg: t.colors.bg, bgAlt: t.colors.bgAlt, accent: t.colors.accent, accentInk: t.colors.accentInk, radius: 16, fontDisplay: t.fonts.display }} />
                             {item.imageUrl && t.mega.featured && (
                               <NavAnchor link={item.link} className="relative hidden shrink-0 self-stretch overflow-hidden no-underline lg:block" style={{ width: 300, minHeight: 240, borderRadius: 16, background: t.colors.bgAlt }}>
                                 <img src={item.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
@@ -216,9 +223,9 @@ export function FashionNavbar() {
                       <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
                         {item.children.map(c => (
                           <li key={c.id}>
-                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}</NavAnchor>
+                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                             {c.children.map(g => (
-                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}</NavAnchor>
+                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                             ))}
                           </li>
                         ))}
@@ -283,10 +290,10 @@ export function FashionNavbar() {
 
 /** Mega panel shell: sits under its menu item but is stretched (left/width measured against the header) to span the full header, like a real mega menu. */
 /** Column heading of the mega menu; a column's photo shows as a small picture beside it, so rows always line up. */
-function MegaHeading({ label, link, imageUrl }: { label: string; link?: ResolvedStorefrontNavItem['link']; imageUrl?: string | null }) {
+function MegaHeading({ label, link, imageUrl, badge }: { label: string; link?: ResolvedStorefrontNavItem['link']; imageUrl?: string | null; badge?: ResolvedStorefrontNavItem['badge'] }) {
   const size = { square: [40, 40], landscape: [52, 38], portrait: [36, 48] }[t.mega.photo];
   const upper = t.mega.heading === 'upper';
-  const text = <span className={upper ? 'text-[12px] font-semibold uppercase' : 'text-sm font-semibold'} style={{ color: t.colors.ink, letterSpacing: upper ? '.08em' : undefined }}>{label}</span>;
+  const text = <span className={upper ? 'text-[12px] font-semibold uppercase' : 'text-sm font-semibold'} style={{ color: t.colors.ink, letterSpacing: upper ? '.08em' : undefined }}>{label}<NavBadge badge={badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>;
   return (
     <div className="mb-2 flex items-center gap-3 px-3" style={{ minHeight: 48 }}>
       {imageUrl && <img src={imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: size[0], height: size[1], borderRadius: 10, background: t.colors.bgAlt }} />}

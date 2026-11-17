@@ -7,6 +7,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
+import { NavBadge } from '../../navigation/NavBadge';
 import { logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { LedupMegaMenu } from './LedupMegaMenu';
 import { LedupSearchPanel } from './LedupSearchPanel';
@@ -81,13 +82,13 @@ export function LedupNavbar() {
             {items.map(it => {
               const hasKids = it.children.length > 0;
               if (!hasKids) {
-                return <NavAnchor key={it.id} link={it.link} className="ld-navlink" onMouseEnter={() => setMegaId(null)}>{it.label}</NavAnchor>;
+                return <NavAnchor key={it.id} link={it.link} className="ld-navlink" onMouseEnter={() => setMegaId(null)}>{it.label}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>;
               }
               const open = megaId === it.id;
               return (
                 <button key={it.id} type="button" className="ld-navlink inline-flex items-center gap-1" aria-expanded={open} aria-haspopup="true"
                   onClick={() => { setSearchOpen(false); setMegaId(open ? null : it.id); }} onMouseEnter={() => { setSearchOpen(false); setMegaId(it.id); }}>
-                  {it.label}
+                  {it.label}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" />
                   <ChevronDown size={13} className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`} aria-hidden />
                 </button>
               );
@@ -126,10 +127,10 @@ export function LedupNavbar() {
             <ul className="m-0 mt-4 flex list-none flex-col gap-1 p-0">
               {items.map(it => (
                 <li key={it.id}>
-                  <NavAnchor link={it.link} onClick={closeAll} className="ld-mobile-item">{it.label}</NavAnchor>
+                  <NavAnchor link={it.link} onClick={closeAll} className="ld-mobile-item">{it.label}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>
                   {it.children.length > 0 && (
                     <div className="mb-2 ps-3">
-                      {it.children.map(c => <NavAnchor key={c.id} link={c.link} onClick={closeAll} className="ld-mobile-sub">{c.label}</NavAnchor>)}
+                      {it.children.map(c => <NavAnchor key={c.id} link={c.link} onClick={closeAll} className="ld-mobile-sub">{c.label}<NavBadge badge={c.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>)}
                     </div>
                   )}
                 </li>

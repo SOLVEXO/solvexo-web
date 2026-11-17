@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { LinkTargetFields, type LinkTarget } from '@/features/seller/store/Dashboard/OnlineStore/builder/LinkTargetFields';
 import { SortableList } from '@/features/seller/store/Dashboard/OnlineStore/builder/Sortable';
 import { MenuStyleField, MenuImageField } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtraFields';
+import { MegaExtrasField, NavBadgeField, NavRulesField } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtras';
 import { apiListStorePages } from '@/api/services/storePages';
 import {
   apiListMenus, apiCreateMenu, apiUpdateMenu, apiDeleteMenu,
@@ -71,6 +72,11 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
         {depth > 1 && mega && (
           <MenuImageField value={item.imageUrl} onChange={imageUrl => onChange({ ...item, imageUrl })} storeId={storeId} />
         )}
+        <NavBadgeField value={item} onChange={patch => onChange({ ...item, ...patch })} />
+        {depth === 1 && item.menuStyle === 'mega' && children.length > 0 && (
+          <MegaExtrasField value={item} onChange={patch => onChange({ ...item, ...patch })} storeId={storeId} pageOptions={pageOptions} />
+        )}
+        <NavRulesField value={item} onChange={patch => onChange({ ...item, ...patch })} />
       </div>
 
       <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-bone">

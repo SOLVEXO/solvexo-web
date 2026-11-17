@@ -1,3 +1,6 @@
+import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
+import { buildOptionValues, resolveOptionStyle } from '../../core/product/variantOptions';
+import { useProductPickerSettings } from '../../core/product/pickerSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
@@ -42,7 +45,12 @@ export function LedupProductPage() {
   return <Inner key={slug} slug={slug} />;
 }
 
-function Inner({ slug }: { slug: string }) {
+/** The Customize editor's preview of the Main Product card: the real product page body for the picked product. Nothing is recorded, nothing is added to a cart, the tab title is left alone. */
+export function LedupProductMainPreview({ slug }: { slug: string; section?: unknown }) {
+  return <Inner key={slug} slug={slug} embedded />;
+}
+
+function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean }) {
   const { store } = useStorefront();
   const navigate = useNavigate();
   const { addToCart, adding } = useCartContext();
@@ -61,9 +69,10 @@ function Inner({ slug }: { slug: string }) {
   const product = detail ? localize.product(detail.product) : null;
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
-  useRecordProductView(detail?.product._id);
+  useRecordProductView(embedded ? undefined : detail?.product._id);
 
   const [picked, setPicked] = useState<Record<string, string>>({});
+  const picker = useProductPickerSettings(store.storeId, detail?.product.templateKey);
   const [qty, setQty] = useState(1);
   const [gallery, setGallery] = useState<{ vid: string; i: number }>({ vid: '', i: 0 });
   const [related, setRelated] = useState<PublicStoreProduct[]>([]);
@@ -111,13 +120,13 @@ function Inner({ slug }: { slug: string }) {
 
   const { origin, pathname } = window.location;
   const pageUrl = `${origin}${pathname}`;
-  useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160), image: images[0] });
-  useJsonLd('product', product && variant ? productJsonLd({
+  useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160), image: images[0] });
+  useJsonLd('product', !embedded && product && variant ? productJsonLd({
     name: product.name, description: product.description, images, sku: variant.sku, vendor: detail?.product.vendor,
     price: variant.price, currency: String(variant.currency ?? store.baseCurrency ?? ''), inStock: variantCanBuy(variant, isDigital),
     url: pageUrl, origin,
   }) : null);
-  useJsonLd('breadcrumb', product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
+  useJsonLd('breadcrumb', !embedded && product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
 
   if (loading) {
     return (
@@ -151,6 +160,7 @@ function Inner({ slug }: { slug: string }) {
   const short = product.shortDescription?.trim();
 
   const add = async () => {
+    if (embedded) return; // the editor preview never touches a real cart
     const ok = await addToCart(detail.product._id, variant._id, isDigital ? 'digital' : 'physical', safeQty);
     if (ok && drawerMounted) openDrawer(); else if (ok) navigate('/cart');
   };
@@ -204,6 +214,18 @@ function Inner({ slug }: { slug: string }) {
                 {optionNames.map(name => {
                   const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
                   const current = variant.options?.find(o => o.name === name)?.value;
+                  const optionValues = buildOptionValues(variants, variant, name, isDigital);
+                  // colour options draw as swatches unless the seller picked another look; everything else keeps the pills
+                  const lookWanted = picker.pickerStyle ?? 'swatches';
+                  if (resolveOptionStyle(lookWanted, name, optionValues) !== 'pills') {
+                    return (
+                      <div key={name} className={rowCls}>
+                        <VariantOptionPicker name={name} current={current} values={optionValues} style={lookWanted} shape={picker.shape} size={picker.size}
+                          tokens={{ ink: '#4b423b', inkMuted: '#6b625b', border: '#d9d1ca', selected: '#4b423b', selectedInk: '#ffffff', bg: '#ffffff', radius: 9999, buttonLook: 'filled' }}
+                          soldOutLabel={ts('product.soldOut', 'Sold out')} onPick={v => setPicked(p => ({ ...p, [name]: v }))} />
+                      </div>
+                    );
+                  }
                   return (
                     <div key={name} className={rowCls} role="group" aria-label={name}>
                       <span className={labelCls}>{name}</span>

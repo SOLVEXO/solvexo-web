@@ -4,7 +4,9 @@ import { useStorefront, type ResolvedStorefrontNavItem, type StorefrontNavItemSe
 import { useContentLocale } from '@/features/storefront/storefrontMarket';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
-import { buildNavImageLookup, normalizeNavItems } from '../../navigation/megaNav';
+import { buildNavImageLookup, navHasSchedule, normalizeNavItems } from '../../navigation/megaNav';
+import { useNavRuleContext } from '../../navigation/useNavRuleContext';
+import { useInlineEditActive } from '../../inlineEdit';
 import { readHeaderOptions } from '../../navigation/headerOptions';
 
 /** The header menu: the seller's own "nav_link" blocks; without any, a Shop menu built from the collections plus the pages marked for the menu. */
@@ -24,16 +26,19 @@ export function useLedupNav(): { items: ResolvedStorefrontNavItem[]; pages: Publ
   const header = theme?.header;
   const o = readHeaderOptions(header, ts('blog.label', 'Blog'));
 
+  // Menu items can carry show-when rules (signed-in state, country, language, schedule). The editor always shows every item.
+  const editing = useInlineEditActive();
+  const ruleCtx = useNavRuleContext(!!header?.blocks?.some(b => b.type === 'nav_link' && navHasSchedule([b.settings as StorefrontNavItemSettings])));
   const items = useMemo(() => {
     const lookup = buildNavImageLookup([], collections);
     const authored = (header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
-    if (authored.length > 0) return normalizeNavItems(authored.map(b => b.settings as StorefrontNavItemSettings), resolveLink, lookup, 'nav', locale);
+    if (authored.length > 0) return normalizeNavItems(authored.map(b => b.settings as StorefrontNavItemSettings), resolveLink, lookup, 'nav', locale, editing ? undefined : ruleCtx);
     const auto: StorefrontNavItemSettings[] = [];
     if (o.showShopMenu) auto.push({ label: o.shopLabel, linkType: 'search', menuStyle: 'mega', children: collections.slice(0, 12).map(c => ({ label: c.name, linkType: 'collection', collectionId: c.slug || c._id })) });
     if (o.includePagesInNav) pages.filter(p => p.showInNav).forEach(p => auto.push({ label: p.title, linkType: 'page', pageSlug: p.slug }));
     if (o.showDefaultBlogLink) auto.push({ label: o.blogLabel, linkType: 'blog' });
     return normalizeNavItems(auto, resolveLink, lookup, 'auto', locale);
-  }, [header?.blocks, resolveLink, locale, o.showShopMenu, o.shopLabel, o.includePagesInNav, o.showDefaultBlogLink, o.blogLabel, collections, pages]);
+  }, [header?.blocks, resolveLink, locale, editing, ruleCtx, o.showShopMenu, o.shopLabel, o.includePagesInNav, o.showDefaultBlogLink, o.blogLabel, collections, pages]);
 
   return { items, pages };
 }

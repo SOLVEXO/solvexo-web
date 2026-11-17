@@ -1,6 +1,13 @@
 import '@/features/storefront-themes/editorThemes';
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye, EyeOff, Copy, Lock, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye, EyeOff, Copy, Lock, Info, MoreHorizontal, ClipboardPaste, Bookmark } from 'lucide-react';
+import { useToast } from '@/contexts/ToastContext';
+import type { SavedSectionEntry } from '@/api/services/savedSections';
+import { useSavedSectionLibrary, type SavedSectionLibrary } from './useSavedSectionLibrary';
+import { useStoreSectionDefs } from '@/features/storefront-themes/storeSections/useStoreSectionDefs';
+import { useParams } from 'react-router-dom';
+import { SaveToLibraryDialog, SavedSectionBody } from './SavedSectionParts';
+import { copySectionToClipboard, readSectionClipboard, pasteBlockedReason, cleanSectionCopy } from './sectionClipboard';
 import { ActionMenu } from '@/components/comman/ui';
 import type { Section, Block, SectionType } from '@/api/services/storefrontTypes';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
@@ -14,6 +21,7 @@ import { AddSectionModal } from './AddSectionModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { buildAppBlockType, findInstalledAppBlock, type AppCatalogEntry } from '@/api/services/apps';
 import type { MetafieldOwnerResource } from '@/api/services/metafields';
+import { DEFAULT_TRUST_ITEMS } from '@/features/storefront-themes/core/product/trustBadgeData';
 
 /** Strips `_id` so a duplicated block/section is persisted as a genuinely
  *  new document rather than colliding with the original's id. */
@@ -29,14 +37,20 @@ const ADDABLE_BLOCK_LABELS: Record<string, string> = {
   product_size_chart: 'Size chart',
   product_text: 'Text',
   product_pickup: 'Pickup availability',
+  product_trust_badges: 'Trust badges',
+  product_questions: 'Questions & answers',
+  product_frequently_bought: 'Frequently bought together',
 };
-const ADD_ONCE_BLOCKS = new Set(['product_buy_now', 'product_pickup']);
+const ADD_ONCE_BLOCKS = new Set(['product_buy_now', 'product_pickup', 'product_trust_badges', 'product_questions', 'product_frequently_bought']);
 const ADDABLE_BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
   product_buy_now: { label: 'Buy it now' },
   product_collapsible_tab: { title: 'Materials & care', content: '' },
   product_size_chart: { label: 'Size chart' },
   product_text: { text: '', size: 'medium' },
   product_pickup: { heading: '' },
+  product_trust_badges: { layout: 'row', style: 'plain', items: DEFAULT_TRUST_ITEMS.map(i => ({ ...i })) },
+  product_questions: { heading: '', showForm: true },
+  product_frequently_bought: { heading: '', maxItems: 2, buttonLabel: '' },
 };
 
 function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {
@@ -71,7 +85,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   // "show block name" requirement for a freshly-added, not-yet-configured
   // app block.
   const appBlockDef = installedApps ? findInstalledAppBlock(installedApps, block.type)?.block : undefined;
-  const label = block.settings.label || (block.type === 'product_text' ? (block.settings.text ? String(block.settings.text).slice(0, 40) : 'Text') : undefined) || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || (block.type === 'theme_block' ? findCustomBlockDef(block.settings.blockKey)?.label : undefined) || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
+  const label = block.settings.label || (block.type === 'product_text' ? (block.settings.text ? String(block.settings.text).slice(0, 40) : 'Text') : undefined) || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || (block.type === 'theme_block' ? findCustomBlockDef(block.settings.blockKey)?.label : undefined) || (sectionType === 'product_main' ? ADDABLE_BLOCK_LABELS[block.type] : undefined) || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
   const hidden = block.enabled === false;
 
   useEffect(() => {
@@ -121,7 +135,17 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   );
 }
 
-function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelectSection, onSelectBlock, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource }: {
+function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelectSection, onSelectBlock, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource, savedEntry, library, embedded, canPaste, onCopy, onPasteBelow, onSaveToLibrary, onDetach }: {
+  /** Saved (global) sections: the library entry this card points at, and the library itself. */
+  savedEntry?: SavedSectionEntry;
+  library: SavedSectionLibrary;
+  /** The card edits a library entry's content inside a saved-section card: no move / hide / copy / lock actions of its own. */
+  embedded?: boolean;
+  canPaste?: boolean;
+  onCopy?: () => void;
+  onPasteBelow?: () => void;
+  onSaveToLibrary?: () => void;
+  onDetach?: (entry: SavedSectionEntry) => void;
   section: Section;
   /** Same id shape `FashionSectionRenderer` computes (`section._id ?? index`,
    *  stringified) — lets a click in the live preview and a card here refer
@@ -156,12 +180,16 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
 
 }) {
   // Closed by default: the seller opens only the section they want to edit.
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!embedded);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const meta = resolveSectionMeta(section);
   const cardRef = useRef<HTMLDivElement>(null);
   const hidden = section.enabled === false;
   const locked = !!meta?.locked;
+  // The seller's own lock (not the fixed core parts): no remove / move / hide / edit until unlocked.
+  const userLocked = !!section.locked && !embedded;
+  const isSaved = section.type === 'saved_section';
+  const title = isSaved ? (savedEntry?.name ?? 'Saved section') : (meta?.label ?? section.type);
   // Phase 8 — this section's own real, installed app blocks (empty for
   // every section type that isn't in the backend's
   // `APP_BLOCK_CAPABLE_SECTION_TYPES` allow-list, since no real app ever
@@ -190,8 +218,8 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
           {meta ? <meta.Icon size={16} style={{ color: meta.color }} /> : <LayoutTemplate size={16} className="text-slate" />}
         </div>
         <button type="button" onClick={() => { setOpen(o => !o); onSelectSection?.(sectionId); }} className="flex-1 min-w-0 flex flex-col items-start bg-transparent border-none cursor-pointer text-left p-0">
-          <span className="text-[13.5px] font-bold text-charcoal truncate">{meta?.label ?? section.type}</span>
-          {section.settings?.heading && <span className="text-[11.5px] text-slate truncate">{section.settings.heading}</span>}
+          <span className="text-[13.5px] font-bold text-charcoal truncate">{title}</span>
+          {isSaved ? <span className="text-[11.5px] text-slate truncate">Saved section{(savedEntry?.usedOn ?? 0) > 1 ? ` · used on ${savedEntry?.usedOn} pages` : ''}</span> : section.settings?.heading && <span className="text-[11.5px] text-slate truncate">{section.settings.heading}</span>}
         </button>
         <button type="button" onClick={() => setOpen(o => !o)} aria-label={open ? 'Collapse' : 'Expand'}
           className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
@@ -201,31 +229,78 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
           <span title="Core content — always shown, can't be removed" className="w-7 h-7 flex items-center justify-center text-slate shrink-0">
             <Lock size={13} />
           </span>
-        ) : (
+        ) : embedded ? null : (
           <>
-            <button type="button" onClick={() => onChange({ ...section, enabled: !hidden ? false : true })} aria-label={hidden ? 'Show section' : 'Hide section'} title={hidden ? 'Show section' : 'Hide section'}
-              className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
+            {userLocked && (
+              <button type="button" onClick={() => onChange({ ...section, locked: false })} aria-label="Unlock section" title="Locked: click to unlock"
+                className="w-7 h-7 flex items-center justify-center text-brand-orange rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
+                <Lock size={14} />
+              </button>
+            )}
+            <button type="button" onClick={() => onChange({ ...section, enabled: !hidden ? false : true })} disabled={userLocked} aria-label={hidden ? 'Show section' : 'Hide section'} title={userLocked ? 'Unlock the section to hide it' : hidden ? 'Show section' : 'Hide section'}
+              className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
               {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
-            <button type="button" onClick={onDuplicate} aria-label="Duplicate section" title="Duplicate section"
-              className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
-              <Copy size={14} />
-            </button>
-            <button type="button" onClick={() => setConfirmingRemove(true)} aria-label="Remove section"
-              className="w-7 h-7 flex items-center justify-center text-error/70 rounded-md hover:bg-error-bg hover:text-error bg-transparent border-none cursor-pointer shrink-0 transition-colors"><Trash2 size={14} /></button>
+            <ActionMenu
+              align="right"
+              trigger={<span aria-label="More section actions" title="More" className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream cursor-pointer"><MoreHorizontal size={15} /></span>}
+              triggerClassName="bg-transparent border-none cursor-pointer p-0 shrink-0"
+              items={[
+                { label: 'Copy section', icon: <Copy size={13} />, onClick: () => onCopy?.() },
+                ...(canPaste ? [{ label: 'Paste below', icon: <ClipboardPaste size={13} />, onClick: () => onPasteBelow?.() }] : []),
+                ...(isSaved
+                  ? (savedEntry ? [{ label: 'Detach (make a copy here)', icon: <Bookmark size={13} />, disabled: userLocked, onClick: () => onDetach?.(savedEntry) }] : [])
+                  : [{ label: 'Save to library…', icon: <Bookmark size={13} />, onClick: () => onSaveToLibrary?.() }]),
+                { label: userLocked ? 'Unlock section' : 'Lock section', icon: <Lock size={13} />, onClick: () => onChange({ ...section, locked: !userLocked }) },
+                { label: 'Duplicate section', icon: <Copy size={13} />, disabled: false, onClick: onDuplicate },
+                { label: 'Remove section', icon: <Trash2 size={13} />, danger: true, disabled: userLocked, title: userLocked ? 'Unlock the section to remove it' : undefined, onClick: () => setConfirmingRemove(true) },
+              ]}
+            />
           </>
         )}
       </div>
       {confirmingRemove && (
         <ConfirmDialog
           title="Remove section"
-          message={`Remove the "${meta?.label ?? section.type}" section and everything in it? This cannot be undone.`}
+          message={`Remove the "${title}" section and everything in it? This cannot be undone.`}
           confirmLabel="Remove Section"
           onCancel={() => setConfirmingRemove(false)}
           onConfirm={() => { setConfirmingRemove(false); onRemove(); }}
         />
       )}
-      {open && (
+      {open && userLocked && (
+        <div className="px-4 pb-4 flex items-center justify-between gap-3 border-t border-bone pt-3.5">
+          <p className="text-[12.5px] text-slate flex items-center gap-2"><Lock size={13} className="shrink-0" /> This section is locked, so it can not be moved, hidden, edited or removed.</p>
+          <button type="button" onClick={() => onChange({ ...section, locked: false })} className="text-[12px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer shrink-0 hover:underline">Unlock</button>
+        </div>
+      )}
+      {open && !userLocked && isSaved && (
+        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
+          <SavedSectionBody
+            entry={savedEntry}
+            library={library}
+            onDetach={entry => onDetach?.(entry)}
+            renderEditor={(draft, setDraft) => (
+              <SectionCard
+                embedded
+                section={draft}
+                sectionId={`saved-${savedEntry?._id ?? 'entry'}`}
+                onChange={setDraft}
+                onRemove={() => {}}
+                onDuplicate={() => {}}
+                onPersistBlockRemove={setDraft}
+                pageOptions={pageOptions}
+                storeId={storeId}
+                colorSchemes={colorSchemes}
+                installedApps={installedApps}
+                ownerResource={ownerResource}
+                library={library}
+              />
+            )}
+          />
+        </div>
+      )}
+      {open && !userLocked && !isSaved && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
           <SectionFields type={section.type} settings={section.settings ?? {}} onChange={settings => onChange({ ...section, settings })} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />
 
@@ -400,6 +475,51 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
   const [showAdd, setShowAdd] = useState(false);
   const [insertAt, setInsertAt] = useState(sections.length);
   const sectionsFull = sections.length >= MAX_SECTIONS_PER_PAGE;
+  const toast = useToast();
+  const library = useSavedSectionLibrary(storeId);
+  // the seller's own (Section builder) sections: loaded here so their cards and forms resolve, and offered in "Add section"
+  const storeSections = useStoreSectionDefs(storeId);
+  const routeStoreId = useParams().storeId;
+  const [saveTarget, setSaveTarget] = useState<number | null>(null);
+  // A copied section waits in the browser; re-read on every render is cheap (one small localStorage key).
+  const clip = readSectionClipboard();
+  const pasteProblem = pasteBlockedReason(clip, {
+    supportedTypes: supportedSectionTypes,
+    isCoreType: type => !!SECTION_META_BY_TYPE[type as SectionType]?.locked,
+    themeSectionKnown: s => !!resolveSectionMeta({ type: s.type, settings: s.settings }),
+    savedSectionKnown: id => library.items.some(e => e._id === id),
+    count: sections.length,
+    max: MAX_SECTIONS_PER_PAGE,
+  });
+  const canPaste = !!clip && !pasteProblem;
+
+  const copySection = (section: Section) => {
+    if (copySectionToClipboard(section)) toast.success('Section copied. Use "Paste" on any page.');
+    else toast.error('Could not copy: your browser blocked storage.');
+  };
+  const pasteAt = (index: number) => {
+    if (!clip || pasteProblem) { toast.error(pasteProblem ?? 'Nothing to paste'); return; }
+    const copy = { ...clip.section } as Section;
+    const next = [...sections];
+    next.splice(Math.min(index, sections.length), 0, copy);
+    onChange(next);
+    toast.success('Section pasted');
+  };
+  const detach = (index: number, entry: SavedSectionEntry) => {
+    const copy = cleanSectionCopy({ type: entry.type, settings: entry.settings, blocks: entry.blocks, colorSchemeId: entry.colorSchemeId, enabled: true });
+    onChange(sections.map((s, j) => (j === index ? { ...(copy as unknown as Section), _id: s._id, enabled: s.enabled, locked: s.locked } : s)));
+    toast.success('Detached: this page now has its own copy');
+  };
+  const saveToLibrary = async (index: number, name: string, replaceHere: boolean) => {
+    const section = sections[index];
+    if (!section) return;
+    const copy = cleanSectionCopy(section);
+    const entry = await library.create({ name, type: copy.type, settings: copy.settings, blocks: copy.blocks, colorSchemeId: copy.colorSchemeId });
+    if (replaceHere) {
+      onChange(sections.map((s, j) => (j === index ? { _id: s._id, type: 'saved_section', settings: { savedSectionId: entry._id }, blocks: [], enabled: s.enabled, locked: s.locked } as Section : s)));
+    }
+    toast.success(replaceHere ? 'Saved to your library and used here' : 'Saved to your library');
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -433,7 +553,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
             items={sections}
             keyFor={(s, i) => s._id ?? `new-${i}`}
             onReorder={onChange}
-            isLocked={s => !!SECTION_META_BY_TYPE[s.type]?.locked}
+            isLocked={s => !!SECTION_META_BY_TYPE[s.type]?.locked || !!s.locked}
             renderInsertion={index => index < sections.length && !sectionsFull ? (
               <button
                 type="button"
@@ -479,12 +599,20 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   colorSchemes={colorSchemes}
                   installedApps={installedApps}
                   ownerResource={ownerResource}
+                  library={library}
+                  savedEntry={section.type === 'saved_section' ? library.items.find(e => e._id === section.settings?.savedSectionId) : undefined}
+                  canPaste={canPaste}
+                  onCopy={() => copySection(section)}
+                  onPasteBelow={() => pasteAt(i + 1)}
+                  onSaveToLibrary={() => setSaveTarget(i)}
+                  onDetach={entry => detach(i, entry)}
                 />
                 </div>
               );
             }}
           </SortableList>
 
+          <div className="flex gap-2">
           <button
             onClick={() => { setInsertAt(sections.length); setShowAdd(true); }}
             disabled={sectionsFull}
@@ -492,6 +620,11 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
           >
             <Plus size={14} /> Add Section
           </button>
+          <button type="button" onClick={() => pasteAt(sections.length)} disabled={!canPaste} title={canPaste ? 'Paste the copied section at the end' : (pasteProblem ?? undefined)}
+            className="flex items-center justify-center gap-1.5 px-4 py-[10px] text-[13px] font-semibold rounded-[9px] border-2 border-dashed border-bone bg-transparent text-slate hover:border-brand-orange/40 hover:text-brand-orange cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-bone disabled:hover:text-slate">
+            <ClipboardPaste size={14} /> Paste
+          </button>
+          </div>
           {sectionsFull && <p className="text-[11.5px] text-slate text-center -mt-1">Limit reached: {MAX_SECTIONS_PER_PAGE} sections</p>}
         </>
       )}
@@ -502,11 +635,26 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
           supportedTypes={supportedSectionTypes}
           layoutThemeId={layoutThemeId}
           layoutScope={layoutScope}
+          library={library}
+          storeSections={storeSections}
+          builderPath={routeStoreId ? `/store/${routeStoreId}/online-store/section-builder` : undefined}
+          onPickSaved={entry => {
+            const next = [...sections];
+            next.splice(Math.min(insertAt, sections.length), 0, { type: 'saved_section', settings: { savedSectionId: entry._id }, blocks: [] } as Section);
+            onChange(next);
+          }}
           onPick={picked => {
             const next = [...sections];
             next.splice(Math.min(insertAt, sections.length), 0, ...picked.map(p => ({ type: p.type, settings: p.settings, blocks: p.blocks }) as Section));
             onChange(next);
           }}
+        />
+      )}
+      {saveTarget !== null && sections[saveTarget] && (
+        <SaveToLibraryDialog
+          defaultName={String(sections[saveTarget].settings?.heading || SECTION_META_BY_TYPE[sections[saveTarget].type]?.label || 'My section').slice(0, 60)}
+          onSave={(name, replaceHere) => saveToLibrary(saveTarget, name, replaceHere)}
+          onClose={() => setSaveTarget(null)}
         />
       )}
     </div>

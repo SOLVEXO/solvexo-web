@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type RefObject } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { StorefrontLinkSettings, StorefrontNavItemSettings, ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
+import type { StorefrontLinkSettings, StorefrontNavItemSettings, ResolvedStorefrontNavItem, ResolvedMegaPromo } from '@/features/storefront/StorefrontContext';
+import { sectionAllowed, type SectionRuleContext } from '../sectionRules';
 import type { CategoryNode } from '@/api/services/categories';
 import type { PublicCollectionSummary } from '@/api/services/collections';
 import { localizeMenuItemLabel } from '@/utils/localize';
@@ -39,25 +40,56 @@ const EMPTY_LOOKUP: NavImageLookup = { category: new Map(), collection: new Map(
  *  open-state ids never collide on duplicate labels. */
 export function normalizeNavItems(
   items: StorefrontNavItemSettings[],
-  resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string },
+  resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string; newTab?: boolean },
   lookup: NavImageLookup = EMPTY_LOOKUP,
   idPrefix = 'nav',
   locale = 'en',
+  /** The visitor (signed in?, country, language, time): items whose show-when rules say no are left out, with their sub-items. Absent = show everything (the editor). */
+  rules?: SectionRuleContext,
 ): ResolvedStorefrontNavItem[] {
-  return items.map((item, index) => {
+  const out: ResolvedStorefrontNavItem[] = [];
+  items.forEach((item, index) => {
+    if (rules && !sectionAllowed(item as unknown as Record<string, unknown>, rules)) return;
     const id = item.id || `${idPrefix}-${index}`;
     const linkedImage = item.linkType === 'category' && item.categoryId ? lookup.category.get(item.categoryId)
       : item.linkType === 'collection' && item.collectionId ? lookup.collection.get(item.collectionId)
       : undefined;
-    return {
+    out.push({
       id,
       label: localizeMenuItemLabel(item, locale),
       link: resolveLink(item),
       menuStyle: item.menuStyle === 'mega' ? 'mega' : 'dropdown',
       imageUrl: item.imageUrl || linkedImage || null,
-      children: normalizeNavItems(item.children ?? [], resolveLink, lookup, id, locale),
-    };
+      badge: normalizeBadge(item),
+      megaColumns: typeof item.megaColumns === 'number' && item.megaColumns >= 2 && item.megaColumns <= 6 ? Math.round(item.megaColumns) : 0,
+      promos: normalizePromos(item, resolveLink),
+      children: normalizeNavItems(item.children ?? [], resolveLink, lookup, id, locale, rules),
+    });
   });
+  return out;
+}
+
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+export function normalizeBadge(item: StorefrontNavItemSettings): ResolvedStorefrontNavItem['badge'] {
+  const text = typeof item.badge === 'string' ? item.badge.trim().slice(0, 12) : '';
+  if (!text) return null;
+  return { text, color: typeof item.badgeColor === 'string' && HEX6.test(item.badgeColor) ? item.badgeColor : null };
+}
+
+function normalizePromos(item: StorefrontNavItemSettings, resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string; newTab?: boolean }): ResolvedMegaPromo[] {
+  const https = (v: unknown) => (typeof v === 'string' && /^https:\/\//i.test(v.trim()) ? v.trim() : null);
+  return (Array.isArray(item.megaPromos) ? item.megaPromos : []).slice(0, 2).flatMap(p => {
+    const imageUrl = https(p?.imageUrl);
+    const title = typeof p?.title === 'string' ? p.title.trim() : '';
+    if (!imageUrl && !title) return [];
+    return [{ imageUrl, title, text: typeof p?.text === 'string' ? p.text.trim() : '', buttonLabel: typeof p?.buttonLabel === 'string' ? p.buttonLabel.trim() : '', link: p?.link ? resolveLink(p.link) : {} }];
+  });
+}
+
+/** Does any item (at any level) have a schedule? Then the navbar re-checks the clock once a minute. */
+export function navHasSchedule(items: StorefrontNavItemSettings[]): boolean {
+  return items.some(i => !!i.showFrom || !!i.showUntil || navHasSchedule(i.children ?? []));
 }
 
 /** A top-level item renders as a mega panel only when the seller chose it AND

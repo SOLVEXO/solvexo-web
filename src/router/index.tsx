@@ -102,6 +102,7 @@ const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePag
 // disk, not deleted, in case anything else still needs them.
 const SellerAreaRedirect = lazy(() => import('@/features/seller/SellerAreaRedirect').then(m => ({ default: m.SellerAreaRedirect })));
 const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
+const SectionBuilderPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/sectionBuilder/SectionBuilderPage').then(m => ({ default: m.SectionBuilderPage })));
 const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MenuManagerPage').then(m => ({ default: m.MenuManagerPage })));
 const TranslationsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/translations/TranslationsPage').then(m => ({ default: m.TranslationsPage })));
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
@@ -131,6 +132,7 @@ const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
 const MemberSecurityPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/security/SecurityPage'));
+const ProductQuestionsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/productQuestions/ProductQuestionsPage'));
 const SearchSettingsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/searchSettings/SearchSettingsPage'));
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
 const CustomersHubLayout = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomersHubLayout'));
@@ -428,6 +430,7 @@ const mainRouter = createBrowserRouter([
           { path: 'sales-channels',                   element: <SalesChannelsPage /> },
           { path: 'developers',                       element: <Navigate to="../settings/developers" replace /> },
           { path: 'search-settings',                  element: <SearchSettingsPage /> },
+          { path: 'product-questions',                element: <ProductQuestionsPage /> },
           { path: 'security',                         element: <MemberSecurityPage /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'payment-proofs',                   element: <StorePaymentProofs /> },
@@ -489,6 +492,7 @@ const mainRouter = createBrowserRouter([
           // reason). See that route block's own comment.
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/menus',                element: <MenuManagerPage /> },
+          { path: 'online-store/section-builder',      element: <SectionBuilderPage /> },
           { path: 'online-store/translations',         element: <TranslationsPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'online-store/apps',                 element: <AppsPage /> },

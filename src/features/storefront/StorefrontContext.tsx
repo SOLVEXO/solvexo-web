@@ -179,7 +179,29 @@ export interface StorefrontNavItemSettings extends StorefrontLinkSettings {
   menuStyle?: 'dropdown' | 'mega';
   /** Optional mega-panel tile image. */
   imageUrl?: string | null;
+  /** Small tag next to the label ("New", "Sale") and its colour (empty = the theme's accent). */
+  badge?: string | null;
+  badgeColor?: string | null;
+  /** Show-when rules (see storefront-themes/sectionRules.ts): who sees the item and when. */
+  showTo?: string | null;
+  showFrom?: string | null;
+  showUntil?: string | null;
+  showCountries?: string | null;
+  hideCountries?: string | null;
+  showLanguages?: string | null;
+  /** Top level, mega only: columns (0 / absent = the theme's own setting) and up to 2 promo cards beside them. */
+  megaColumns?: number | null;
+  megaPromos?: StorefrontMegaPromo[] | null;
   children?: StorefrontNavItemSettings[];
+}
+
+/** A promo card in a mega panel: picture, title, short text and a button. */
+export interface StorefrontMegaPromo {
+  imageUrl?: string | null;
+  title?: string | null;
+  text?: string | null;
+  buttonLabel?: string | null;
+  link?: StorefrontLinkSettings | null;
 }
 
 export interface ResolvedStorefrontNavItem {
@@ -189,7 +211,21 @@ export interface ResolvedStorefrontNavItem {
   menuStyle?: 'dropdown' | 'mega';
   /** Seller-set image, else the linked category/collection image, else null. */
   imageUrl?: string | null;
+  /** The item's tag, when it has one. `color` null = the theme's accent. */
+  badge?: { text: string; color: string | null } | null;
+  /** Mega panel columns chosen for THIS item (0 / absent = the theme's own setting). */
+  megaColumns?: number;
+  /** Mega promo cards (already resolved to real links). */
+  promos?: ResolvedMegaPromo[];
   children: ResolvedStorefrontNavItem[];
+}
+
+export interface ResolvedMegaPromo {
+  imageUrl: string | null;
+  title: string;
+  text: string;
+  buttonLabel: string;
+  link: { to?: string; href?: string; newTab?: boolean };
 }
 
 /** Resolves a nav_link/footer-link/CTA block's link settings into a real

@@ -13,6 +13,8 @@ import { LedupBox } from '../ui/ledupUi';
 import { baseTheme as t } from '../theme.base';
 import { registerLedupSection } from './ledupSectionRegistry';
 import { Bento, LinkOrDiv, Projects, Simulation, Stacked, Statement } from './ledupSignature';
+import { LedupSectionShell } from './ledupSectionsPort';
+import { renderStoreSection } from '../../storeSections/renderStoreSection';
 import { Collage, ContactReveal, Districts, Mission, TimelineCarousel } from './ledupSignature2';
 
 const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : '');
@@ -219,8 +221,9 @@ registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {
   if (key === 'ledup.mission') return <Mission settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.districts') return <Districts settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.contact') return <ContactReveal section={sec} />;
-  void col; void dynamic;
-  return null;
+  void dynamic;
+  // not one of the theme's own: a section the seller built in the Section builder (`my.*`) is drawn from its layout
+  return renderStoreSection(sec, blocks, col, LedupSectionShell);
 });
 
 // kept for sections that still render rich text through this module

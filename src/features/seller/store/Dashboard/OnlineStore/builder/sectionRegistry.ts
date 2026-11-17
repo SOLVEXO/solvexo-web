@@ -1,4 +1,4 @@
-﻿import { ListChecks, Users, Hash, Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
+﻿import { Bookmark, ListChecks, Users, Hash, Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, ShoppingBag, Search, ShoppingCart, Receipt, Newspaper, FileText, Columns3, Images, ArrowLeftRight, Code, MapPin, Mail as MailIcon, Minus, Rows3, LayoutDashboard, Package, PanelTop, History, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 import { FEATURE_ICON_OPTIONS } from '@/features/storefront-themes/featureIcons';
@@ -133,14 +133,29 @@ export const SECTION_META: SectionMeta[] = [
         { value: 'newArrivals', label: 'New Arrivals' }, { value: 'trending', label: 'Trending' },
         { value: 'onSale', label: 'On Sale' }, { value: 'category', label: 'A specific category' },
         { value: 'collection', label: 'A collection' }, { value: 'manual', label: 'Hand-picked products' },
+        { value: 'rules', label: 'Products that match rules' },
       ] },
-      { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: s => s.source === 'category' },
-      { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' },
+      { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: s => s.source === 'category' || s.source === 'rules', hint: 'With rules: only products of this category.' },
+      { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' || s.source === 'rules', hint: 'With rules: only products of this collection.' },
+      { key: 'ruleTags', kind: 'valueList', listSource: 'tags', label: 'Tags', showIf: s => s.source === 'rules' },
+      { key: 'ruleVendors', kind: 'valueList', listSource: 'vendors', label: 'Brand / vendor', showIf: s => s.source === 'rules' },
+      { key: 'rulePriceMin', kind: 'number', label: 'Lowest price', min: 0, max: 1000000000, step: 1, half: true, showIf: s => s.source === 'rules', hint: 'In your store currency.' },
+      { key: 'rulePriceMax', kind: 'number', label: 'Highest price', min: 0, max: 1000000000, step: 1, half: true, showIf: s => s.source === 'rules' },
+      { key: 'ruleType', kind: 'select', label: 'Kind of product', half: true, showIf: s => s.source === 'rules', options: [{ value: 'all', label: 'All' }, { value: 'physical', label: 'Physical only' }, { value: 'digital', label: 'Digital only' }] },
+      { key: 'ruleStock', kind: 'select', label: 'Stock', half: true, showIf: s => s.source === 'rules', options: [{ value: 'any', label: 'Any' }, { value: 'in_stock', label: 'In stock only' }] },
+      { key: 'ruleOnSale', kind: 'checkbox', label: 'Only products on sale', defaultOff: true, showIf: s => s.source === 'rules' },
+      { key: 'ruleSort', kind: 'select', label: 'Order', showIf: s => s.source === 'rules', options: [
+        { value: 'newest', label: 'Newest first' }, { value: 'oldest', label: 'Oldest first' }, { value: 'best_selling', label: 'Best selling' }, { value: 'trending', label: 'Trending' },
+        { value: 'best_rated', label: 'Best rated' }, { value: 'price_asc', label: 'Price: low to high' }, { value: 'price_desc', label: 'Price: high to low' },
+        { value: 'title_asc', label: 'Name: A to Z' }, { value: 'title_desc', label: 'Name: Z to A' },
+      ] },
+      { key: 'rulesPreview', kind: 'productRulesPreview', label: 'Matching products', showIf: s => s.source === 'rules' },
       // Real product picker, not a raw comma-separated ID paste field — the
       // last surviving one of those in the whole builder, closed here.
       { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual' || s.source === 'pinned',
         hint: 'Shown in this order. With none picked, your older store pin list is used.' },
       { key: 'limit', kind: 'number', label: 'How many to show', min: 1, max: 24 },
+      { key: 'hideSoldOut', kind: 'checkbox', label: 'Hide sold-out products', defaultOff: true, hint: 'Leaves out products that can not be bought right now.', showIf: s => s.source !== 'rules' },
       { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       ...eyebrowFields('Blank keeps the theme\'s label (e.g. "The considered edit").'),
     ]),
@@ -563,7 +578,7 @@ export const SECTION_META: SectionMeta[] = [
     Icon: ShoppingBag, color: '#D97757',
     defaultSettings: {}, allowedBlockTypes: ['product_media', 'product_title', 'product_price', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description'], blockLabel: 'Item',
     defaultBlockSettings: {}, hidden: true, locked: true,
-    addableBlockTypes: ['product_buy_now', 'product_collapsible_tab', 'product_size_chart', 'product_text', 'product_pickup'],
+    addableBlockTypes: ['product_buy_now', 'product_collapsible_tab', 'product_size_chart', 'product_text', 'product_pickup', 'product_trust_badges', 'product_questions', 'product_frequently_bought'],
     settingsSchema: [],
   },
   {
@@ -599,6 +614,13 @@ export const SECTION_META: SectionMeta[] = [
     Icon: FileText, color: '#4F46E5',
     defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {}, hidden: true, locked: true,
+    settingsSchema: [],
+  },
+  {
+    type: 'saved_section', label: 'Saved section', description: 'A section you built once and reuse. Changing it changes every page that uses it.',
+    Icon: Bookmark, color: '#0D9488',
+    defaultSettings: {}, allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {}, hidden: true,
     settingsSchema: [],
   },
   {
@@ -657,7 +679,10 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   product_variant_picker: [
     { key: 'pickerStyle', kind: 'select', label: 'Style', options: [
       { value: 'pills', label: 'Buttons (pills)' }, { value: 'dropdown', label: 'Dropdown' },
-    ] },
+      { value: 'swatches', label: 'Colour swatches' }, { value: 'images', label: 'Picture tiles' },
+    ], hint: 'Swatches suit colour options (Red, Navy Blue, #ff0000...); picture tiles need every value to have a variant photo. Other options, such as Size, keep buttons.' },
+    { key: 'swatchShape', kind: 'select', label: 'Swatch shape', half: true, showIf: s => s.pickerStyle === 'swatches' || s.pickerStyle === 'images', options: [{ value: 'circle', label: 'Round' }, { value: 'square', label: 'Rounded square' }] },
+    { key: 'swatchSize', kind: 'select', label: 'Swatch size', half: true, showIf: s => s.pickerStyle === 'swatches' || s.pickerStyle === 'images', options: [{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }] },
   ],
   product_buy_now: [
     { key: 'label', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'Buy it now', hint: 'Adds the item and goes straight to checkout. Shown only when Buy buttons are on.' },
@@ -874,7 +899,26 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   // product_main's 7 fixed blocks — no settings, purely enable/disable +
   // reorder of an already-real, already-rendered piece of the product page.
-  product_media: [],
+  product_media: [
+    { key: 'layout', kind: 'select', label: 'Photo layout', options: [
+      { value: 'thumbs_left', label: 'Big photo, thumbnails beside it (default)' }, { value: 'thumbs_bottom', label: 'Big photo, thumbnails below' },
+      { value: 'grid', label: 'All photos in a grid (2 columns)' }, { value: 'stacked', label: 'All photos stacked, one under another' },
+    ], hint: 'Grid and stacked show every photo big. A product with a video keeps the big-photo layout so the video is not lost.' },
+    { key: 'aspect', kind: 'select', label: 'Photo shape', options: [
+      { value: 'portrait', label: 'Portrait (4:5)' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape (4:3)' }, { value: 'natural', label: 'Natural (as uploaded)' },
+    ] },
+    { key: 'zoom', kind: 'checkbox', label: 'Click a photo to zoom', hint: 'On by default.' },
+  ],
+  product_trust_badges: [],
+  product_questions: [
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Questions & answers' },
+    { key: 'showForm', kind: 'checkbox', label: 'Let shoppers ask questions', hint: 'A new question waits in Customers > Product questions until you answer it. Only answered questions show on the page.' },
+  ],
+  product_frequently_bought: [
+    { key: 'heading', kind: 'text', label: 'Heading', maxLength: 60, placeholder: 'Frequently bought together' },
+    { key: 'maxItems', kind: 'number', label: 'Items next to this product', min: 1, max: 3, hint: 'Taken from the "Complete the look" / related products you set on the product, then automatic picks.' },
+    { key: 'buttonLabel', kind: 'text', label: 'Button text', maxLength: 30, placeholder: 'Add selected to cart' },
+  ],
   product_title: [],
   product_price: [],
   product_quantity: [],

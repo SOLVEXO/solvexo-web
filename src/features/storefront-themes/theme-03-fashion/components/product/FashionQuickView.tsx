@@ -6,6 +6,10 @@ import { Link } from 'react-router-dom';
 import { Minus, Plus } from 'lucide-react';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { VariantOptionPicker } from '../../../core/product/VariantOptionPicker';
+import { buildOptionValues } from '../../../core/product/variantOptions';
+import { useProductPickerSettings } from '../../../core/product/pickerSettings';
+
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
@@ -13,7 +17,7 @@ import { useLocalize } from '@/hooks/useLocalize';
 import { displayMoney, saleInfo } from '../../../core/money';
 import { useCartDrawer } from '../../../cartDrawerContext';
 import { clampQty, qtyRuleHint, resolveQtyRules } from '../../../sellingRules';
-import { optionValueAvailable, stockState, variantCanBuy, variantMaxQty } from '../../../variantAvailability';
+import { stockState, variantCanBuy, variantMaxQty } from '../../../variantAvailability';
 import { fashionTheme as t } from '../../theme.config';
 import { Dialog } from '../../ui/Dialog';
 import { Notice, PillButton } from '../../ui/primitives';
@@ -27,6 +31,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
   const localize = useLocalize();
   const { detail, loading, error, refetch } = useProductById(slug);
   const [picked, setPicked] = useState<Record<string, string>>({});
+  const picker = useProductPickerSettings(store.storeId, detail?.product.templateKey);
   const [qty, setQty] = useState(1);
 
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
@@ -77,25 +82,12 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
             <span className="text-2xl font-semibold" style={{ color: onSale ? t.colors.danger : t.colors.ink }}>{show(variant.price)}</span>
             {onSale && <span className="text-lg line-through opacity-50">{show(sale.compareAmount, true)}</span>}
           </p>
-          {optionNames.map(name => {
-            const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
-            const current = variant.options?.find(o => o.name === name)?.value;
-            return (
-              <fieldset key={name} className="m-0 border-0 p-0">
-                <legend className="mb-2 p-0 text-sm font-medium">{name}: <span style={{ color: t.colors.inkMuted }}>{current}</span></legend>
-                <div className="flex flex-wrap gap-2">
-                  {values.map(v => {
-                    const active = current === v;
-                    const available = optionValueAvailable(variants, variant, name, v, isDigital);
-                    return (
-                      <button key={v} type="button" aria-pressed={active} onClick={() => { setPicked(p => ({ ...p, [name]: v })); setQty(1); }}
-                        className="cursor-pointer px-4 py-2 text-sm" style={{ borderRadius: t.buttonRadiusPx, border: `1px solid ${active ? t.colors.selected : t.colors.border}`, background: active ? t.colors.selected : 'transparent', color: active ? t.colors.selectedInk : t.colors.ink, opacity: available ? 1 : 0.45, textDecoration: available ? 'none' : 'line-through' }}>{v}</button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            );
-          })}
+          {optionNames.map(name => (
+            <VariantOptionPicker key={name} name={name} current={variant.options?.find(o => o.name === name)?.value}
+              values={buildOptionValues(variants, variant, name, isDigital)} style={picker.pickerStyle} shape={picker.shape} size={picker.size}
+              tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, selected: t.colors.selected, selectedInk: t.colors.selectedInk, bg: t.colors.bg, radius: 9999, buttonLook: 'filled' }}
+              soldOutLabel={ts('product.soldOut', 'Sold out')} onPick={v => { setPicked(p => ({ ...p, [name]: v })); setQty(1); }} />
+          ))}
           <p className="m-0 text-sm" style={{ color: state === 'in_stock' || state === 'backorder' ? t.colors.success : t.colors.danger }}>
             {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('pg.low_stock', 'Low stock') : state === 'backorder' ? ts('product.backorder', 'Available on backorder') : ts('browse.inStock', 'In stock')}
           </p>

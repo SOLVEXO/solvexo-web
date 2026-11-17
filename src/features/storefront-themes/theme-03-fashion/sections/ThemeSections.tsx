@@ -8,6 +8,7 @@ import { imageFit } from '../../imageFit';
 import { fashionTheme as t, type FashionColors } from '../theme.config';
 import { registerFashionSection } from './sectionRegistry';
 import { SectionShell } from './SectionShell';
+import { renderStoreSection } from '../../storeSections/renderStoreSection';
 import { ts } from '@/utils/tStatic';
 
 /**
@@ -17,7 +18,8 @@ import { ts } from '@/utils/tStatic';
 type CustomRenderer = (section: Section, blocks: Block[], colors: FashionColors) => ReactNode;
 const custom = new Map<string, CustomRenderer>();
 
-registerFashionSection('theme_section', (section, blocks, colors) => custom.get(String(section.settings.sectionKey))?.(section, blocks, colors) ?? null);
+// a key without code here is a section the seller built in the Section builder (`my.*`): drawn from its layout
+registerFashionSection('theme_section', (section, blocks, colors) => custom.get(String(section.settings.sectionKey))?.(section, blocks, colors) ?? renderStoreSection(section, blocks, colors, SectionShell));
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
 

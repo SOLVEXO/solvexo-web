@@ -8,6 +8,7 @@ import { FashionProductBrowser } from '../components/browse/FashionProductBrowse
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicStoreProducts, type PublicStoreProductsParams } from '@/api/services/store';
 import { useLoad } from '../../core/pageHooks';
+import { featuredProductsQuery, featuredViewAllPath } from '../../core/sectionProductQuery';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import type { CategoryNode } from '@/api/services/categories';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
@@ -20,18 +21,8 @@ import { SectionShell, TextLink } from './SectionShell';
 
 const cols = (n: unknown) => sectionGridColumnsClass(columnCount(n, 4));
 
-function queryFor(s: Record<string, any>): PublicStoreProductsParams {
-  const limit = Math.min(24, Math.max(1, Number(s.limit) || 8));
-  switch (s.source) {
-    case 'bestsellers': return { limit, sort: 'best_selling' };
-    case 'trending': return { limit, sort: 'trending' };
-    case 'onSale': return { limit, onSale: true, sort: 'newest' };
-    case 'category': return { limit, categoryId: s.categoryId, sort: 'newest' };
-    case 'collection': return { limit, collectionId: s.collectionId, sort: 'newest' };
-    case 'manual': case 'pinned': return Array.isArray(s.productIds) && s.productIds.length ? { ids: s.productIds as string[], limit } : { limit, sort: 'newest' };
-    default: return { limit, sort: 'newest' };
-  }
-}
+/** The products query of a Featured products section: one shared implementation (sources + rules), see core/sectionProductQuery.ts. */
+const queryFor = (s: Record<string, unknown>): PublicStoreProductsParams => featuredProductsQuery(s, 8);
 
 function Skeleton({ n, columns }: { n: number; columns: unknown }) {
   return (
@@ -54,7 +45,7 @@ function FeaturedProducts({ settings: s, colors }: { settings: Record<string, an
   if (items && items.length === 0) return null;
   return (
     <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'The edit') : undefined}
-      action={<TextLink to={s.source === 'collection' && s.collectionId ? `/collections/${s.collectionId}` : '/search'} colors={colors}>{ts('pg.view_all', 'View all')}</TextLink>}>
+      action={<TextLink to={featuredViewAllPath(s)} colors={colors}>{ts('pg.view_all', 'View all')}</TextLink>}>
       {failed ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', 'We couldn\'t load these products.')} <button type="button" onClick={load} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : items === null ? <Skeleton n={columnCount(s.columns, 4)} columns={s.columns} /> : (

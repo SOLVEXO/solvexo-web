@@ -51,6 +51,9 @@ export interface StorefrontColors {
   cardInfoLine?:    'vendor' | 'category' | 'subcategory' | 'subcategory_category' | 'category_subcategory';
   /** Where the seller's own product badge sits on the card photo. */
   cardBadgePosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  /** Automatic card badges: "New" for products added in the last N days; "Best seller" after N sales. 'off' = none. */
+  autoBadgeNew?:    'off' | '7' | '14' | '30';
+  autoBadgeBest?:   'off' | '10' | '25' | '50' | '100';
   cardButton?:      'show' | 'hide';
   headingScale?: 'small' | 'medium' | 'large' | 'xlarge';
   bodyScale?: 'small' | 'medium' | 'large';

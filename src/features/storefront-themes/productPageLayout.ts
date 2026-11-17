@@ -16,7 +16,7 @@ export const PRODUCT_OPTIONAL_BLOCKS = ['product_rating', 'product_sku', 'produc
 
 /** Blocks a seller ADDS to the main product (Shopify Dawn): "Buy it now" once,
  *  collapsible tabs and size charts as many times as needed. They carry settings. */
-export const PRODUCT_EXTRA_BLOCKS = ['product_buy_now', 'product_collapsible_tab', 'product_size_chart', 'product_text', 'product_pickup'] as const;
+export const PRODUCT_EXTRA_BLOCKS = ['product_buy_now', 'product_collapsible_tab', 'product_size_chart', 'product_text', 'product_pickup', 'product_trust_badges', 'product_questions', 'product_frequently_bought'] as const;
 export type ProductExtraBlock = (typeof PRODUCT_EXTRA_BLOCKS)[number];
 const REPEATABLE = new Set<string>(['product_collapsible_tab', 'product_size_chart', 'product_text']);
 
@@ -45,7 +45,16 @@ interface BlockLike { type: string; enabled?: boolean; settings?: Record<string,
  * page before blocks could be reordered. Optional blocks that are absent stay
  * off, except the rating, which always showed under the title and so keeps doing so.
  */
-export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null): { mediaOn: boolean; infoOrder: ProductInfoBlock[]; infoItems: ProductInfoItem[] } {
+/** The seller's choices for the photo area. `layout` is undefined until chosen, so the theme's own default stays. */
+export interface MediaLook { layout?: 'thumbs_left' | 'thumbs_bottom' | 'grid' | 'stacked'; aspect?: string; zoom: boolean }
+const MEDIA_ASPECT: Record<string, string> = { portrait: '4 / 5', square: '1 / 1', landscape: '4 / 3', natural: 'auto' };
+export function resolveMediaLook(settings?: Record<string, unknown> | null): MediaLook {
+  const s = settings ?? {};
+  const layout = s.layout === 'thumbs_left' || s.layout === 'thumbs_bottom' || s.layout === 'grid' || s.layout === 'stacked' ? s.layout : undefined;
+  return { layout, aspect: typeof s.aspect === 'string' ? MEDIA_ASPECT[s.aspect] : undefined, zoom: s.zoom !== false };
+}
+
+export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null): { mediaOn: boolean; media: MediaLook; infoOrder: ProductInfoBlock[]; infoItems: ProductInfoItem[] } {
   const seen = new Set<string>();
   const ordered: { type: ProductMainBlock | ProductExtraBlock; on: boolean; settings: Record<string, unknown>; key: string }[] = [];
   (main?.blocks ?? []).forEach((b, i) => {
@@ -63,6 +72,7 @@ export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null)
   const visible = ordered.filter(o => o.on && o.type !== 'product_media');
   return {
     mediaOn: ordered.find(o => o.type === 'product_media')?.on ?? true,
+    media: resolveMediaLook(ordered.find(o => o.type === 'product_media')?.settings),
     infoOrder: visible.filter(o => !(PRODUCT_EXTRA_BLOCKS as readonly string[]).includes(o.type)).map(o => o.type as ProductInfoBlock),
     infoItems: visible.map(o => ({ type: o.type as ProductInfoItem['type'], settings: o.settings, key: o.key })),
   };

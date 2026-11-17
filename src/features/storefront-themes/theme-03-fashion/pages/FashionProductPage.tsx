@@ -26,7 +26,14 @@ import { BundleIncludes } from '../../core/merchandising/BundleIncludes';
 import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale';
 import { Link as WholesaleLink } from 'react-router-dom';
 import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
-import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
+import { stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
+import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
+import { buildOptionValues } from '../../core/product/variantOptions';
+import { ProductTrustBadges } from '../../core/product/trustBadges';
+import type { Section } from '@/api/services/storefrontTypes';
+import { ProductQuestions } from '../../core/product/ProductQuestions';
+import { FrequentlyBought } from '../../core/product/FrequentlyBought';
+import { PhotoStack } from '../../core/product/PhotoStack';
 import { SpecsTabTable, ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton, ProductWishlistHeart } from '../components/product/ProductParts';
 import { specRows } from '../../specsLook';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
@@ -57,7 +64,13 @@ export function FashionProductPage() {
   return <ProductPageInner key={slug} slug={slug} />;
 }
 
-function ProductPageInner({ slug }: { slug: string }) {
+/** The Customize editor's preview of the Main Product card: the REAL product page body for the picked product, drawn from the seller's draft
+ *  `product_main` section. Nothing is recorded, nothing is added to a cart and the tab title / meta tags are left alone. */
+export function FashionProductMainPreview({ slug, section }: { slug: string; section?: Section }) {
+  return <ProductPageInner key={slug} slug={slug} embedded draftMain={section} />;
+}
+
+function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string; embedded?: boolean; draftMain?: Section }) {
   const { store } = useStorefront();
   const navigate = useNavigate();
   const { t: tr } = useTranslation('storefront');
@@ -69,11 +82,12 @@ function ProductPageInner({ slug }: { slug: string }) {
   const product = detail ? localize.product(detail.product) : null;
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
-  useRecordProductView(detail?.product._id);
+  useRecordProductView(embedded ? undefined : detail?.product._id);
   const viewedId = detail?.product._id;
-  useEffect(() => { if (viewedId) recordRecentlyViewed(store.storeId, viewedId); }, [store.storeId, viewedId]);
+  useEffect(() => { if (viewedId && !embedded) recordRecentlyViewed(store.storeId, viewedId); }, [store.storeId, viewedId, embedded]);
 
-  const sections = useTemplateSections(store.storeId, 'product', detail?.product.templateKey || 'default');
+  const fetchedSections = useTemplateSections(embedded ? undefined : store.storeId, 'product', detail?.product.templateKey || 'default');
+  const sections = useMemo(() => (embedded ? (draftMain ? [draftMain] : []) : fetchedSections), [embedded, draftMain, fetchedSections]);
   const { before, after } = splitProductTemplateSections(sections);
   const layout = useMemo(() => resolveProductMainLayout(sections.find(s => s.type === 'product_main')), [sections]);
 
@@ -142,15 +156,15 @@ function ProductPageInner({ slug }: { slug: string }) {
     });
   }, [images]);
 
-  useStorefrontSeo({ title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
+  useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
   const { origin, pathname } = window.location;
   const pageUrl = `${origin}${pathname}`;
-  useJsonLd('product', product && variant ? productJsonLd({
+  useJsonLd('product', !embedded && product && variant ? productJsonLd({
     name: product.name, description: product.description, images, sku: variant.sku, vendor: detail?.product.vendor,
     price: variant.price, currency: String(variant.currency ?? store.baseCurrency ?? ''), inStock: variantCanBuy(variant, isDigital),
     url: pageUrl, origin, rating: reviews ? { value: reviews.stats.averageRating, count: reviews.stats.totalReviews } : null,
   }) : null);
-  useJsonLd('breadcrumb', product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
+  useJsonLd('breadcrumb', !embedded && product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
 
   // "Additional information": the product's specs as a table tab, when the seller turned "Show as a tab" on for the Specifications block.
   const specsItem = layout.infoItems.find(i => i.type === 'product_specs');
@@ -193,6 +207,7 @@ function ProductPageInner({ slug }: { slug: string }) {
   const reviewCount = reviews?.stats.totalReviews ?? detail.product.totalRatings ?? 0;
 
   const add = async (goCheckout = false) => {
+    if (embedded) return; // the editor preview never touches a real cart
     const ok = await addToCart(detail.product._id, variant._id, isDigital ? 'digital' : 'physical', safeQty);
     if (!ok) return;
     if (goCheckout) navigate('/checkout'); else if (drawerMounted) openDrawer();
@@ -222,37 +237,13 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_description: s => descriptionTabs.length > 0 ? <ProductDescriptionTabs tabs={descriptionTabs} heading={typeof s.heading === 'string' ? s.heading : undefined} /> : null,
     product_variant_picker: s => optionNames.length === 0 ? null : (
       <div className="flex flex-col gap-5">
-        {optionNames.map(name => {
-          const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
-          const current = variant.options?.find(o => o.name === name)?.value;
-          if (s.pickerStyle === 'dropdown') {
-            return (
-              <label key={name} className="flex flex-col gap-2 text-sm font-medium">
-                {name}
-                <select value={current ?? ''} onChange={e => setPicked(p => ({ ...p, [name]: e.target.value }))}
-                  className="cursor-pointer bg-transparent px-4 py-3 text-sm font-normal" style={{ borderRadius: 9999, border: `1px solid ${t.colors.border}`, color: t.colors.ink }}>
-                  {values.map(v => <option key={v} value={v}>{v}{optionValueAvailable(variants, variant, name, v, isDigital) ? '' : ` — ${tr('product.soldOut', 'Sold out')}`}</option>)}
-                </select>
-              </label>
-            );
-          }
-          return (
-            <fieldset key={name} className="m-0 border-0 p-0">
-              <legend className="mb-3 p-0 text-sm font-medium">{name}: <span style={{ color: t.colors.inkMuted }}>{current}</span></legend>
-              <div className="flex flex-wrap gap-2">
-                {values.map(v => {
-                  const on = current === v;
-                  const ok = optionValueAvailable(variants, variant, name, v, isDigital);
-                  return (
-                    <button key={v} type="button" aria-pressed={on} onClick={() => setPicked(p => ({ ...p, [name]: v }))}
-                      className="min-w-12 cursor-pointer px-4 py-2.5 text-sm font-medium transition-colors"
-                      style={{ borderRadius: 9999, border: `1px solid ${on ? t.colors.selected : t.colors.border}`, background: on ? t.colors.selected : 'transparent', color: on ? t.colors.selectedInk : t.colors.ink, opacity: ok ? 1 : 0.45, textDecoration: ok ? undefined : 'line-through' }}>{v}</button>
-                  );
-                })}
-              </div>
-            </fieldset>
-          );
-        })}
+        {optionNames.map(name => (
+          <VariantOptionPicker key={name} name={name} current={variant.options?.find(o => o.name === name)?.value}
+            values={buildOptionValues(variants, variant, name, isDigital)} style={s.pickerStyle}
+            shape={s.swatchShape === 'square' ? 'square' : 'circle'} size={s.swatchSize === 'sm' || s.swatchSize === 'lg' ? s.swatchSize : 'md'}
+            tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, selected: t.colors.selected, selectedInk: t.colors.selectedInk, bg: t.colors.bg, radius: 9999, buttonLook: 'filled' }}
+            soldOutLabel={tr('product.soldOut', 'Sold out')} onPick={v => setPicked(p => ({ ...p, [name]: v }))} />
+        ))}
       </div>
     ),
     product_quantity: () => wholesale.locked ? null : (
@@ -304,6 +295,9 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_specs: () => specsAsTab ? null : <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
     product_collapsible_tab: s => s.showAsTab === true ? null : <ProductCollapsibleTab settings={s} />,
     product_size_chart: s => <ProductSizeChart settings={s} />,
+    product_questions: s => <ProductQuestions preview={embedded} storeId={store.storeId} productId={detail.product._id} settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: 16, accent: t.colors.accent, accentInk: t.colors.accentInk, fontBody: t.fonts.body }} />,
+    product_frequently_bought: s => <FrequentlyBought preview={embedded} storeId={store.storeId} settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: 16, accent: t.colors.accent, accentInk: t.colors.accentInk, fontBody: t.fonts.body }} main={{ productId: detail.product._id, variantId: variant._id, type: isDigital ? 'digital' : 'physical', name: product.name, image: images[0] ?? null, price: variant.price, currency: base, canBuy }} />,
+    product_trust_badges: s => <ProductTrustBadges settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: 16, fontBody: t.fonts.body }} />,
     product_pickup: s => <ProductPickup storeId={store.storeId} storeName={store.name} settings={s} available={canBuy && !isDigital} />,
     // An empty note renders nothing at all (a blank wrapper would still add a gap in the buy box).
     product_text: s => typeof s.text === 'string' && s.text.trim() ? <ProductTextBlock settings={s} /> : null,
@@ -319,8 +313,11 @@ function ProductPageInner({ slug }: { slug: string }) {
         <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
           {layout.mediaOn && (
             <div className="lg:sticky lg:top-24 lg:col-span-7">
-              {mediaCount === 0 ? <div style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }} /> : (
-                <div className="flex flex-col gap-4 md:flex-row-reverse">
+              {(layout.media.layout === 'grid' || layout.media.layout === 'stacked') && !video && images.length > 0 ? (
+                <PhotoStack images={images} columns={layout.media.layout === 'grid' ? 2 : 1} aspect={layout.media.aspect ?? '4 / 5'} radius={24} background={t.colors.bgAlt} alt={product.name}
+                  imgAttrs={(src, i) => imgProps(src, [480, 768, 1024], i === 0 ? '(min-width: 1024px) 58vw, 100vw' : '(min-width: 1024px) 29vw, 50vw')} onZoom={layout.media.zoom ? i => { setImageIndex(mediaOfPhoto(i)); setZoom(true); } : undefined} />
+              ) : mediaCount === 0 ? <div style={{ aspectRatio: layout.media.aspect ?? '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }} /> : (
+                <div className={layout.media.layout === 'thumbs_bottom' ? 'flex flex-col gap-4' : 'flex flex-col gap-4 md:flex-row-reverse'}>
                   {videoActive && video ? (
                     <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: '4 / 5', background: '#000', borderRadius: 24 }}>
                       {video.kind === 'file'
@@ -336,7 +333,7 @@ function ProductPageInner({ slug }: { slug: string }) {
                     </div>
                   ) : (
                     <div className="relative flex-1">
-                    <button type="button" onClick={() => setZoom(true)} aria-label={tr('product.zoomImage', 'Zoom image')} className="group relative w-full cursor-zoom-in overflow-hidden border-0 p-0" style={{ aspectRatio: '4 / 5', background: t.colors.bgAlt, borderRadius: 24 }}>
+                    <button type="button" onClick={layout.media.zoom ? () => setZoom(true) : undefined} aria-label={layout.media.zoom ? tr('product.zoomImage', 'Zoom image') : product.name} className={`group relative w-full overflow-hidden border-0 p-0 ${layout.media.zoom ? 'cursor-zoom-in' : 'cursor-default'}`} style={{ aspectRatio: layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '4 / 5'), background: t.colors.bgAlt, borderRadius: 24 }}>
                       <img key={images[photoIndex] ?? images[0]} {...imgProps(images[photoIndex] ?? images[0], [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw')} alt={product.name} className="fx-fade size-full object-cover" fetchPriority="high" />
                       <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bg }}><ZoomIn size={18} /></span>
                     </button>
@@ -344,7 +341,7 @@ function ProductPageInner({ slug }: { slug: string }) {
                     </div>
                   )}
                   {mediaCount > 1 && (
-                    <div className="fx-hide-scroll flex gap-3 overflow-x-auto md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden" style={{ maxHeight: 'min(640px, 70vh)' }}>
+                    <div className={`fx-hide-scroll flex gap-3 overflow-x-auto ${layout.media.layout === 'thumbs_bottom' ? '' : 'md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden'}`} style={{ maxHeight: 'min(640px, 70vh)' }}>
                       {Array.from({ length: mediaCount }, (_, i) => {
                         const isVideo = i === videoAt;
                         const photo = video && i > videoAt ? i - 1 : i;
@@ -373,7 +370,7 @@ function ProductPageInner({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {t.showReviews && <section id="fx-reviews" style={{ background: t.colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+      {t.showReviews && !embedded && <section id="fx-reviews" style={{ background: t.colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
         <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <h2 className="m-0 text-[clamp(24px,3vw,36px)] font-semibold tracking-tight">{tr('reviews.title', 'Customer reviews')}</h2>
@@ -413,7 +410,7 @@ function ProductPageInner({ slug }: { slug: string }) {
       </section>}
 
       {after.length > 0 && <FashionSectionRenderer sections={after} />}
-      {t.stickyBuyBar && <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : tr('product.addToCart', 'Add to cart')} />}
+      {t.stickyBuyBar && !embedded && <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : tr('product.addToCart', 'Add to cart')} />}
       {writingReview && (
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
           onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />

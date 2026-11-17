@@ -86,6 +86,8 @@ export const SECTION_TYPES = [
   'page_content',
   // Carrier for a section the active theme declares in its own manifest (settings.sectionKey picks which).
   'theme_section',
+  // A pointer to one entry of the store's saved-sections library (see `savedSectionsResolve.ts`).
+  'saved_section',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 
@@ -105,6 +107,8 @@ export interface CoreSectionPreviewContext {
   articleExcerpt?: string;
   /** Product template: the product picked in the editor top bar (formatted prices). */
   product?: {
+    /** Lets the Main Product card draw the real product page for this product. */
+    slug?: string;
     name: string;
     price?: string;
     compareAtPrice?: string;
@@ -147,4 +151,6 @@ export interface Section {
    *  theme's own colors" (default, byte-identical to before this field
    *  existed). See `resolveSectionColors()`. */
   colorSchemeId?: string | null;
+  /** The seller's own lock: the editor will not remove, move, hide or edit it until it is unlocked. */
+  locked?: boolean;
 }

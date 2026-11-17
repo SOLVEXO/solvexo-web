@@ -248,13 +248,18 @@ export function customSectionsOf(themeDefinitionId: string | null | undefined, f
 }
 
 /** A saved `theme_section`'s definition, found by its `sectionKey` across every registered theme. */
+/** Sections the SELLER built in the Section builder (`my.*`), set by `useStoreSectionDefs` once the store's list is loaded. */
+let storeCustomSections: ThemeCustomSectionDef[] = [];
+export function setStoreCustomSections(defs: ThemeCustomSectionDef[]): void { storeCustomSections = defs; }
+export function getStoreCustomSections(): ThemeCustomSectionDef[] { return storeCustomSections; }
+
 export function findCustomSectionDef(sectionKey: unknown): ThemeCustomSectionDef | undefined {
   if (typeof sectionKey !== 'string') return undefined;
   for (const m of Object.values(THEME_MANIFESTS)) {
     const hit = m.customSections?.find(d => d.key === sectionKey);
     if (hit) return hit;
   }
-  return undefined;
+  return storeCustomSections.find(d => d.key === sectionKey);
 }
 
 /** A saved `theme_block`'s definition, found by its `blockKey` (`<sectionKey>.<block key>`). */
@@ -263,6 +268,7 @@ export function findCustomBlockDef(blockKey: unknown): ThemeCustomBlockDef | und
   for (const m of Object.values(THEME_MANIFESTS)) {
     for (const d of m.customSections ?? []) if (d.block && `${d.key}.${d.block.key}` === blockKey) return d.block;
   }
+  for (const d of storeCustomSections) if (d.block && `${d.key}.${d.block.key}` === blockKey) return d.block;
   return undefined;
 }
 

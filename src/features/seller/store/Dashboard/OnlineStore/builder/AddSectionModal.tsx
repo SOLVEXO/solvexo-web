@@ -9,6 +9,11 @@ import type { ThemeCustomSectionPreset } from '@/features/storefront-themes/them
 import { metaForCustomDef, newCustomSection } from './themeSectionMeta';
 import { SECTION_PRESETS, PRESET_CATEGORIES, PAGE_LAYOUTS, type PresetCategory, type PresetMock } from './sectionPresets';
 import type { SectionType } from '@/api/services/storefrontTypes';
+import type { SavedSectionEntry } from '@/api/services/savedSections';
+import type { StoreSectionDef } from '@/api/services/storeSectionDefs';
+import { storeDefToThemeDef } from '@/features/storefront-themes/storeSections/storeDefToThemeDef';
+import { SavedSectionsPicker } from './SavedSectionParts';
+import type { SavedSectionLibrary } from './useSavedSectionLibrary';
 
 export interface PickedSection { type: SectionType; settings: Record<string, unknown>; blocks: { type: string; settings: Record<string, unknown> }[] }
 
@@ -52,8 +57,14 @@ function Mock({ kind }: { kind: PresetMock }) {
 }
 
 export function AddSectionModal({
-  onPick, onClose, supportedTypes, layoutThemeId, layoutScope,
+  onPick, onClose, supportedTypes, layoutThemeId, layoutScope, library, onPickSaved, storeSections, builderPath,
 }: {
+  /** Sections the seller designed in the Section builder; offered as their own tab. `builderPath` links to where they are made. */
+  storeSections?: StoreSectionDef[] | null;
+  builderPath?: string;
+  /** The store's saved (global) sections: offered as their own tab; picking one places a reference to it. */
+  library?: SavedSectionLibrary;
+  onPickSaved?: (entry: SavedSectionEntry) => void;
   /** Active theme id and template scope: theme-specific whole-page layouts are offered only to their own theme/template. */
   layoutThemeId?: string;
   layoutScope?: string;
@@ -64,7 +75,7 @@ export function AddSectionModal({
    *  renderer actually has registered (a type the theme can't draw would otherwise render as nothing). */
   supportedTypes?: SectionType[];
 }) {
-  const [tab, setTab] = useState<'designs' | 'layouts' | 'all'>('designs');
+  const [tab, setTab] = useState<'designs' | 'layouts' | 'all' | 'saved' | 'mine'>('designs');
   const [category, setCategory] = useState<PresetCategory | 'all'>('all');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
@@ -93,7 +104,7 @@ export function AddSectionModal({
     onPick(ids.map(buildPreset).filter((s): s is PickedSection => !!s));
     onClose();
   };
-  const tabBtn = (id: 'designs' | 'layouts' | 'all', label: string) => (
+  const tabBtn = (id: 'designs' | 'layouts' | 'all' | 'saved' | 'mine', label: string) => (
     <button type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
       className="px-3 py-2 text-[13px] font-semibold bg-transparent border-0 border-b-2 cursor-pointer"
       style={{ borderColor: tab === id ? ACCENT : 'transparent', color: tab === id ? '#161412' : '#77736b' }}>{label}</button>
@@ -105,17 +116,42 @@ export function AddSectionModal({
         {tabBtn('designs', 'Ready designs')}
         {tabBtn('layouts', 'Whole page layouts')}
         {tabBtn('all', 'All section types')}
+        {storeSections && tabBtn('mine', 'My sections')}
+        {library && onPickSaved && tabBtn('saved', 'Saved sections')}
       </div>
       <div className="relative mb-3">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate" aria-hidden />
         <input
           type="search" value={query} onChange={e => setQuery(e.target.value)}
-          aria-label="Search sections" placeholder={tab === 'designs' ? 'Search designs' : 'Search sections'}
+          aria-label="Search sections" placeholder={tab === 'designs' ? 'Search designs' : tab === 'saved' ? 'Search saved sections' : tab === 'mine' ? 'Search my sections' : 'Search sections'}
           className="w-full pl-9 pr-3 py-2 rounded-lg border border-bone text-[13px] bg-white"
         />
       </div>
 
-      {tab === 'designs' ? (
+      {tab === 'mine' && storeSections ? (
+        storeSections.length === 0 ? (
+          <p role="status" className="text-[13px] text-slate py-8 text-center max-w-[440px] mx-auto leading-relaxed">
+            You have not designed any sections yet. {builderPath ? <>Open the <a href={builderPath} className="text-brand-orange font-semibold hover:underline">Section builder</a> to make one without code.</> : 'Use the Section builder to make one without code.'}
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {storeSections.filter(d => !q || d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)).map(def => (
+              <button key={def._id} type="button" onClick={() => { onPick([newCustomSection(storeDefToThemeDef(def))]); onClose(); }}
+                className="flex items-start gap-3 p-3.5 rounded-xl border border-bone bg-white text-left cursor-pointer transition-colors hover:border-brand-orange/50">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${def.color ?? '#0D9488'}18` }}>
+                  <span className="text-[16px]" style={{ color: def.color ?? '#0D9488' }} aria-hidden>▦</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-bold text-charcoal truncate">{def.name}</p>
+                  <p className="text-[11.5px] text-slate leading-snug mt-[2px]">{def.description || 'Your own section'}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )
+      ) : tab === 'saved' && library && onPickSaved ? (
+        <SavedSectionsPicker library={library} supportedTypes={supportedTypes} query={query} onPick={entry => { onPickSaved(entry); onClose(); }} />
+      ) : tab === 'designs' ? (
         <>
           <div className="flex gap-1.5 flex-wrap mb-3">
             {[{ id: 'all' as const, label: 'All' }, ...PRESET_CATEGORIES].map(c => (

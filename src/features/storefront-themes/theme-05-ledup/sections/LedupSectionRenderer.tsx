@@ -5,6 +5,9 @@ import { useExperimentSections } from '../../core/experiments/useExperimentSecti
 import { localizeSections } from '@/utils/storeText';
 import { resolveSectionColors, baseTypographyCss, baseTheme } from '../theme.base';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
+import { SectionRulesGate, SectionVideoBg } from '../../sectionDesignRuntime';
+import { useSectionReveal } from '../../useSectionReveal';
+import { useResolvedSavedSections } from '../../useSavedSections';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
 import { useEffect, useRef } from 'react';
@@ -59,12 +62,15 @@ export function LedupSectionRenderer({
   previewContext,
   onEditText,
 }: Props) {
-  const { theme } = useStorefront();
+  const { theme, store } = useStorefront();
+  // Saved (global) sections: a reference on the page is drawn from the store's library.
+  const authoredResolved = useResolvedSavedSections(authored, store?.storeId);
   const textIndex = useStoreTextIndex();
   // A/B tests: the visitor's variant of an experiment section (never in the editor).
-  const sections = useExperimentSections(selectable ? authored : localizeSections(authored, textIndex), !selectable);
+  const sections = useExperimentSections(selectable ? authoredResolved : localizeSections(authoredResolved, textIndex), !selectable);
   const schemes = theme?.theme?.colorSchemes;
   const dynamic = dynamicSourceValues ?? {};
+  useSectionReveal(!selectable, sections.map(sec => String(sec._id ?? '')).join(','));
 
   return (
     <>
@@ -86,10 +92,13 @@ export function LedupSectionRenderer({
           const reveal = ledupTheme.reveal && i > 0 && section.type !== 'hero';
           const Box = reveal ? RevealBox : 'div';
           return (
-            <Box key={key} {...common} className={`${spacing.className} ${reveal ? 'ld-rv' : ''}`}>
+            <SectionRulesGate key={key} settings={section.settings}>
+            <Box {...common} className={`${spacing.className} ${reveal ? 'ld-rv' : ''}`}>
+              <SectionVideoBg settings={section.settings} />
               {scoped && <style>{scoped}</style>}
               {render(section, blocks, colors, dynamic, previewContext)}
             </Box>
+          </SectionRulesGate>
           );
         }
         const on = selectedSectionId === key;
@@ -107,6 +116,7 @@ export function LedupSectionRenderer({
               else onSelectSection?.(key);
             }}
           >
+            <SectionVideoBg settings={section.settings} />
             {scoped && <style>{scoped}</style>}
             <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
               {onEditText ? (

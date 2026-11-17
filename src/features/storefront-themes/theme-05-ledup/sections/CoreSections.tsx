@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { lazy, Suspense } from 'react';
 import { ts } from '@/utils/tStatic';
 import { baseTheme as t } from '../theme.base';
 import { registerLedupSection } from './ledupSectionRegistry';
@@ -18,8 +19,12 @@ function Placeholder({ title, note, colors }: { title: string; note: string; col
   );
 }
 
+/** Loaded on demand: the real product page is big, and importing it here would make the page and its section renderer import each other. */
+const LedupProductMainPreview = lazy(() => import('../pages/LedupProductPage').then(m => ({ default: m.LedupProductMainPreview })));
+
 registerLedupSection('product_main', (_s, _b, colors, _d, ctx) => {
   const p = ctx?.product;
+  if (p?.slug) return <Suspense fallback={<div style={{ minHeight: 320 }} aria-busy="true" />}><LedupProductMainPreview slug={p.slug} /></Suspense>;
   return (
     <SectionShell colors={colors}>
       <div className="grid gap-8 lg:grid-cols-12">

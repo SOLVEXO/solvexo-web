@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { EditableText } from '../../../inlineEdit';
+import { EditableText, useInlineEditActive } from '../../../inlineEdit';
 import { useTranslation } from 'react-i18next';
 import { Fragment, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -9,6 +9,10 @@ import { localizeMenuItemLabel } from '@/utils/localize';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import type { Block } from '@/api/services/storefrontTypes';
 import { NavAnchor } from '../../../navigation/NavAnchor';
+import { NavBadge } from '../../../navigation/NavBadge';
+import { normalizeBadge } from '../../../navigation/megaNav';
+import { useNavRuleContext } from '../../../navigation/useNavRuleContext';
+import { sectionAllowed } from '../../../sectionRules';
 import { socialHref, hasSocialTarget } from '../../../navigation/socialLinks';
 import { readFooterOptions, visibleFooterBlocks, footerColumnFlex, FOOTER_COLUMN_TYPES } from '../../../navigation/headerOptions';
 import { SocialIcon, FooterContact, socialBrandColor } from './FooterParts';
@@ -151,6 +155,8 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
   const { store, theme, resolveLink } = useStorefront();
   const { t: tr } = useTranslation('storefront');
   const locale = useContentLocale();
+  const ruleCtx = useNavRuleContext(false);
+  const editing = useInlineEditActive();
   const [openCols, setOpenCols] = useState<string[]>([]);
   const footer = theme?.footer;
   const opts = readFooterOptions(footer, k.blogLabel);
@@ -214,8 +220,8 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
           </>
         );
       case 'footer_column':
-        return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, linkList((s.links ?? []).map((l: StorefrontLinkSettings & { label: string; labelTranslations?: Record<string, string | undefined> | null }, j: number) => (
-          <NavAnchor key={j} link={resolveLink(l)} className={linkCls} style={link}>{localizeMenuItemLabel(l, locale)}</NavAnchor>
+        return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, linkList((s.links ?? []).filter((l: Record<string, unknown>) => editing || sectionAllowed(l, ruleCtx)).map((l: StorefrontLinkSettings & { label: string; labelTranslations?: Record<string, string | undefined> | null }, j: number) => (
+          <NavAnchor key={j} link={resolveLink(l)} className={linkCls} style={link}>{localizeMenuItemLabel(l, locale)}<NavBadge badge={normalizeBadge(l as never)} fallbackBg={k.fg} fallbackInk={k.heading.color as string ?? '#ffffff'} /></NavAnchor>
         ))));
       case 'footer_text':
         return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, <p style={{ ...body, whiteSpace: 'pre-line' }}>{s.text}</p>);
