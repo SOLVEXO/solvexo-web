@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { healEntities } from '@/utils/healEntities';
 import { Bold, Heading2, Heading3, Italic, Link2, List, ListOrdered, Pilcrow, Plus, Trash2, Unlink } from 'lucide-react';
 
 export interface ProductTabInput { title: string; content: string }
@@ -16,10 +17,13 @@ const TOOLS = [
 ];
 
 const HAS_HTML = /<\/?[a-z][\s\S]*>/i;
+/** The editor itself writes entities such as &nbsp; (a typed space at the end of a line) with no tags around them: that is still HTML, not plain text. */
+const HAS_ENTITY = /&(?:[a-z]+|#\d+|#x[0-9a-f]+);/i;
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 /** Older descriptions are plain text: keep their line breaks when they open in the editor. */
 export function toEditorHtml(value: string): string {
-  return HAS_HTML.test(value) ? value : escapeHtml(value).replace(/\r?\n/g, '<br>');
+  const v = healEntities(value);
+  return HAS_HTML.test(v) || HAS_ENTITY.test(v) ? v : escapeHtml(v).replace(/\r?\n/g, '<br>');
 }
 
 const PASTE_KEEP: Record<string, string> = { P: 'p', H1: 'h2', H2: 'h2', H3: 'h3', H4: 'h3', H5: 'h3', H6: 'h3', UL: 'ul', OL: 'ol', LI: 'li', STRONG: 'strong', B: 'strong', EM: 'em', I: 'em', BR: 'br', A: 'a' };
@@ -52,7 +56,12 @@ const CONTENT = 'overflow-y-auto px-3 py-2 text-[13px] text-charcoal outline-non
 /** Rich text field (headings, bold, italic, lists, links). The storefront sanitises the HTML again when it draws it. */
 export function ProductRichEditor({ value, onChange, placeholder, minHeight = 160, label }: { value: string; onChange: (html: string) => void; placeholder?: string; minHeight?: number; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  // What the editor itself last reported. Writing it back into the field would re-parse it (it used to escape "&nbsp;" into
+  // "&amp;nbsp;" on every keystroke) and would move the caret; only text that comes from OUTSIDE is loaded into the field.
+  const lastEmitted = useRef<string | null>(null);
+  const emit = (html: string) => { lastEmitted.current = html; onChange(html); };
   useEffect(() => {
+    if (value === lastEmitted.current) return;
     const el = ref.current;
     const next = toEditorHtml(value);
     if (el && el.innerHTML !== next) el.innerHTML = next;
@@ -68,9 +77,9 @@ export function ProductRichEditor({ value, onChange, placeholder, minHeight = 16
     const el = ref.current;
     el?.focus();
     document.execCommand(command, false, a);
-    if (el) onChange(el.innerHTML);
+    if (el) emit(el.innerHTML);
   };
-  const read = () => { const el = ref.current; if (!el) return; onChange(el.textContent?.trim() || el.querySelector('img') ? el.innerHTML : ''); };
+  const read = () => { const el = ref.current; if (!el) return; emit(el.textContent?.trim() || el.querySelector('img') ? el.innerHTML : ''); };
   // Enter makes a new <p> (not a <div>), like a normal document.
   const onFocus = () => { try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch { /* old browser: keeps <div> */ } };
   const onPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {

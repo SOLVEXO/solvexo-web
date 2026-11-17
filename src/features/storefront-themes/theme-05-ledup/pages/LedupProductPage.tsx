@@ -17,6 +17,7 @@ import { baseTheme } from '../theme.base';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
 import { useLocalize } from '@/hooks/useLocalize';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
+import { LedupProductTabs } from '../components/LedupProductTabs';
 import { displayMoney, saleInfo } from '../../core/money';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
@@ -255,6 +256,7 @@ function Inner({ slug }: { slug: string }) {
               </LedupButton>
             </div>}
 
+            <LedupProductTabs tabs={detail.product.tabs} />
           </div>
         </div>
       </LedupBox>

@@ -2,6 +2,7 @@ import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
+import { healEntities, looksLikeHtml } from '@/utils/healEntities';
 import { fashionTheme as t } from '../../theme.config';
 
 export interface DescriptionTab { key: string; title: string; content: string; html: boolean; node?: ReactNode }
@@ -19,9 +20,10 @@ const RICH_CSS = `
 `;
 
 /** Seller-written text: HTML from the rich editor is cleaned first; older plain text keeps its line breaks. */
-function Body({ content, html, node }: { content: string; html: boolean; node?: ReactNode }): ReactNode {
+function Body({ content: raw, html, node }: { content: string; html: boolean; node?: ReactNode }): ReactNode {
   if (node) return <>{node}</>;
-  if (html && HAS_HTML.test(content)) return <div className="fx-rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />;
+  const content = html ? healEntities(raw) : raw; // text saved while the editor escaped it again on every keystroke
+  if (html && (HAS_HTML.test(content) || looksLikeHtml(content))) return <div className="fx-rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />;
   if (html) return <div className="fx-rich">{renderRichText(content)}</div>;
   return <div className="fx-rich" style={{ whiteSpace: 'pre-line' }}>{content}</div>;
 }
