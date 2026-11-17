@@ -292,7 +292,7 @@ export function StoreProfileTab() {
         >
           <div className="-my-1 divide-y divide-fog">
             {([
-              { label: 'Store URL',   value: storeUrl ? storeUrl.replace(/^https?:///, '') : '—', href: storeUrl ?? undefined, hint: 'The URL slug cannot be changed.' },
+              { label: 'Store URL',   value: storeUrl ? storeUrl.replace(/^https?:\/\//, '') : '—', href: storeUrl ?? undefined, hint: 'The URL slug cannot be changed.' },
               { label: 'Plan',        value: store?.plan ?? '—',                   hint: 'Upgrade or switch it under Billing.' },
               { label: 'Status',      value: store?.status ?? '—' },
               { label: 'Seller type', value: store?.sellerType ?? '—' },

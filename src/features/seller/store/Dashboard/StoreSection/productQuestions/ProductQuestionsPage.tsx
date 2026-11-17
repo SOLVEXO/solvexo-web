@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, MessageCircleQuestion } from 'lucide-react';
 import { errorMessage } from '@/api/errorMessage';
 import type { StaffPermission } from '@/api/services/staff';
 import { can } from '@/hooks/auth/useCan';
@@ -47,7 +47,7 @@ export default function ProductQuestionsPage() {
           <>
             <TabBar tabs={[{ id: 'pending', label: pendingLabel }, { id: 'published', label: 'Shown on site' }, { id: 'hidden', label: 'Hidden' }, { id: 'all', label: 'All' }]} active={tab} onChange={setTab} />
             {error && <p role="alert" className="m-0 text-[13px] text-error">{error} <button type="button" className="underline" onClick={() => void load()}>Try again</button></p>}
-            {!error && data && data.items.length === 0 && <EmptyState title="No questions here" description="When a shopper asks a question on a product page it will show up here. Add the Questions & answers block to your product page to let them ask." />}
+            {!error && data && data.items.length === 0 && <EmptyState icon={<MessageCircleQuestion size={22} />} title="No questions here" description="When a shopper asks a question on a product page it will show up here. Add the Questions & answers block to your product page to let them ask." />}
             {(data?.items ?? []).map((q: SellerQuestion) => (
               <Card key={q.id} padding="md">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
