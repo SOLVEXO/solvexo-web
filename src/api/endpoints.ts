@@ -227,7 +227,6 @@ export const ENDPOINTS = {
     DOMAIN_GUIDE:    (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}/guide`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     PUBLIC_BOOTSTRAP: '/api/store/public/bootstrap',
-    WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,
     PRIVACY_REQUEST_SUBMIT:   (storeId: string) => `/api/store/public/${storeId}/privacy-requests`,
     PRIVACY_REQUEST_COMPLETE: (storeId: string, requestId: string) => `/api/store/${storeId}/privacy-requests/${requestId}/complete`,

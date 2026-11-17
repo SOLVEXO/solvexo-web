@@ -161,7 +161,7 @@ export type HeaderOptionKey =
 export type FooterOptionKey =
   | 'layout' | 'spacing' | 'alignment' | 'newsletterTop' | 'mobileAccordion' | 'colours' | 'backgroundImage'
   | 'headings' | 'socialStyle' | 'socialColour' | 'socialSize' | 'policyLinks' | 'currency' | 'backToTop' | 'logo' | 'defaultColumns'
-  | 'shape' | 'wordmark' | 'bottomLayout';
+  | 'shape' | 'wordmark' | 'bottomLayout' | 'poweredBy';
 
 /** One choice a theme offers for a header option (shown in the Header panel in this order). */
 export interface HeaderChoice {

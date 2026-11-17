@@ -47,7 +47,7 @@ export const fashionThemeManifest: ThemeManifest = {
   },
   supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'button', 'topBar', 'colours'],
   // Maison's footer is a dark rounded panel: it has no background photo and no "compact" layout, so those two are not offered.
-  supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns', 'shape', 'wordmark', 'bottomLayout'],
+  supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns', 'shape', 'wordmark', 'bottomLayout', 'poweredBy'],
   defaultSettings: DEFAULTS,
   styles: STYLES,
 

@@ -447,11 +447,6 @@ export function apiUpdateStoreRobotsTxt(storeId: string, robotsTxtOverride: stri
   return client.patch<never, ApiResponse<{ robotsTxtOverride: string | null }>>(ENDPOINTS.STORE.ROBOTS_TXT(storeId), { robotsTxtOverride });
 }
 
-/** PATCH /api/store/:storeId/white-label */
-export function apiSetWhiteLabel(storeId: string, enabled: boolean) {
-  return client.patch<never, ApiResponse<{ whiteLabelEnabled: boolean }>>(ENDPOINTS.STORE.WHITE_LABEL(storeId), { enabled });
-}
-
 export interface PosAppInfo {
   /** Google Play listing URL for Solvexo POS — null until an admin sets
    *  POS_APP_ANDROID_URL. */

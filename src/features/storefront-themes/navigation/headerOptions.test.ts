@@ -62,7 +62,7 @@ describe('readFooterOptions / expandCopyright', () => {
       bgColor: null, textColor: null, padding: { columns: 56, compact: 32 }, bgImageUrl: null, bgOverlay: 50, align: 'left',
       headingUppercase: true, socialStyle: null, socialColor: null, socialCustomColor: null, socialFilled: false, socialSize: null,
       newsletterTop: false, mobileAccordion: true, showPolicyLinks: true,
-      showCurrency: false, showBackToTop: false,
+      showCurrency: false, showBackToTop: false, showPoweredBy: true, poweredByText: null, poweredByUrl: null,
       footerShape: null, wordmarkSource: 'none', wordmarkUrl: null, wordmarkWidth: 60, bottomLayout: 'classic',
     });
   });

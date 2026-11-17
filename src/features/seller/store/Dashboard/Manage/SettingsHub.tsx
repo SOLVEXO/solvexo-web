@@ -3,7 +3,7 @@ import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
   Package, Wallet, Globe, ShieldCheck, Bell, Languages, FileText, Scale, BadgeCheck,
-  Truck, ListChecks, ShieldAlert, Webhook, Landmark, Palette, MapPin, Gift, Lock, UserCheck,
+  Truck, ListChecks, ShieldAlert, Webhook, Landmark, MapPin, Gift, Lock, UserCheck,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -13,7 +13,7 @@ import { apiGetStoreInventory } from '@/api/services/product';
 import { apiSellerAnalyticsOverview } from '@/api/services/analytics/analytics';
 import { formatMoneyCompact } from '@/utils/currency';
 
-import { StoreProfileTab, ProductTypesTab, PaymentMethodsTab, DomainSettingsTab, PrivacyTab, TaxesTab, BrandTab, CustomerAccountsTab } from './StoreSettings';
+import { StoreProfileTab, ProductTypesTab, PaymentMethodsTab, DomainSettingsTab, PrivacyTab, TaxesTab, CustomerAccountsTab } from './StoreSettings';
 import { GiftCardSettingsCard } from './StoreGiftCards';
 import { LocationsPanel } from '../Operations/inventory/LocationsPanel';
 import SecurityPage from '../StoreSection/security/SecurityPage';
@@ -36,7 +36,7 @@ import { planGateFor } from '@/components/layouts/planGate';
 import { PlanUpgradeNeeded } from '@/components/layouts/PlanUpgradeNeeded';
 
 // Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
-const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', activity: 'activity-log' };
+const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', brand: 'profile', activity: 'activity-log' };
 
 // The hub's own navigation, grouped for the desktop rail (each group gets an
 // eyebrow, each row a one-line hint). Mobile flattens this back into the single
@@ -46,7 +46,6 @@ const NAV_GROUPS: SettingsNavGroup[] = [
     label: 'Store',
     items: [
       { id: 'profile',       label: 'Store Profile',  icon: <Store size={13} />,       hint: 'Name, contact, country, language' },
-      { id: 'brand',         label: 'Brand',          icon: <Palette size={13} />,     hint: 'Logo, favicon, Solvexo badge' },
       { id: 'locations',     label: 'Locations',      icon: <MapPin size={13} />,      hint: 'Branches, warehouses, bins' },
       { id: 'product-types', label: 'Product Types',  icon: <Package size={13} />,     hint: 'What this store can sell' },
       { id: 'privacy',       label: 'Privacy',        icon: <ShieldCheck size={13} />, hint: 'Visibility, consent, data requests' },
@@ -207,7 +206,7 @@ const TAB_PERMS: Record<string, string[]> = {
   verification: [],
   shipping: ['settings.shipping.manage'], checkout: ['checkout_rules.view', 'checkout_rules.manage'],
   'cod-protection': ['settings.payments.manage'], developers: ['settings.general.manage'],
-  taxes: ['settings.taxes.manage'], brand: ['settings.general.manage'], 'customer-accounts': ['settings.general.manage'],
+  taxes: ['settings.taxes.manage'], 'customer-accounts': ['settings.general.manage'],
   locations: ['settings.locations.manage'], 'gift-cards': ['giftcards.view', 'giftcards.manage'],
 };
 
@@ -331,7 +330,6 @@ export default function SettingsHub() {
         )}
         {isVisited('shipping')         && <div className={paneClassName('shipping')}><SellerShipping embedded /></div>}
         {isVisited('checkout')         && <div className={paneClassName('checkout')}><CheckoutRulesHub embedded /></div>}
-        {isVisited('brand')            && <div className={paneClassName('brand')}><BrandTab /></div>}
         {isVisited('taxes')            && <div className={paneClassName('taxes')}><TaxesTab /></div>}
         {isVisited('customer-accounts') && <div className={paneClassName('customer-accounts')}><CustomerAccountsTab /></div>}
         {isVisited('locations') && (

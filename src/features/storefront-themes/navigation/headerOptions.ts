@@ -164,6 +164,10 @@ export interface FooterOptions {
   showPolicyLinks: boolean;
   showCurrency: boolean;
   showBackToTop: boolean;
+  /** 'Powered by Solvexo' link in the bottom bar; on unless the seller turns it off. */
+  showPoweredBy: boolean;
+  poweredByText: string | null;
+  poweredByUrl: string | null;
   /** null = the theme's own shape. */
   footerShape: 'panel' | 'full' | null;
   wordmarkSource: 'none' | 'store' | 'custom';
@@ -217,6 +221,9 @@ export function readFooterOptions(footer: Partial<StorefrontFooter> | null | und
     showPolicyLinks: f.showPolicyLinks !== false,
     showCurrency: f.showCurrency === true,
     showBackToTop: f.showBackToTop === true,
+    showPoweredBy: f.showPoweredBy !== false,
+    poweredByText: optional(f.poweredByText),
+    poweredByUrl: typeof f.poweredByUrl === 'string' && /^https:\/\//i.test(f.poweredByUrl.trim()) ? f.poweredByUrl.trim() : null,
     footerShape: f.footerShape === 'panel' || f.footerShape === 'full' ? f.footerShape : null,
     wordmarkSource: f.wordmarkSource === 'store' || f.wordmarkSource === 'custom' ? f.wordmarkSource : 'none',
     wordmarkUrl: typeof f.wordmarkUrl === 'string' && /^https:\/\//i.test(f.wordmarkUrl) ? f.wordmarkUrl : null,
