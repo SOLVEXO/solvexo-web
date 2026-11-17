@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
+import { PoweredBySolvexo } from '../../PoweredBySolvexo';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
 import { hasSocialTarget } from '../../navigation/socialLinks';
 import { fashionTheme as t } from '../theme.config';
@@ -75,6 +76,7 @@ export function FashionFooter() {
                 <nav className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label={ts('pg.legal', 'Legal')}>
                   {opts.showCurrency && <FashionLocaleControls />}
                   {legalLinks}
+                  <PoweredBySolvexo show={opts.showPoweredBy} text={opts.poweredByText} url={opts.poweredByUrl} />
                   {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
                 </nav>
                 {paymentNode}
@@ -89,6 +91,7 @@ export function FashionFooter() {
               {paymentNode}
               <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
                 {legalLinks}
+                <PoweredBySolvexo show={opts.showPoweredBy} text={opts.poweredByText} url={opts.poweredByUrl} />
                 {opts.showCurrency && <FashionLocaleControls />}
                 {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
               </nav>

@@ -49,7 +49,7 @@ export const baseManifest: ThemeManifest = {
   },
   supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'button', 'topBar', 'colours'],
   // Maison's footer is a dark rounded panel: it has no background photo and no "compact" layout, so those two are not offered.
-  supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns'],
+  supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns', 'poweredBy'],
   defaultSettings: DEFAULTS,
   styles: STYLES,
 
@@ -114,7 +114,9 @@ export const baseManifest: ThemeManifest = {
     { key: 'colorSwatches', label: 'Colour swatches', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Shows the available colours on product cards; hovering one previews its photo.' },
     { key: 'soldOutBadge', label: 'Sold out badge', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show a Sold out badge on unavailable products.' },
     { key: 'cardRating', label: 'Star rating', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show stars on product cards.' },
-    { key: 'cardTag', label: 'Vendor', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show the vendor name on product cards.' },
+    { key: 'cardTag', label: 'Info line above the name', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show a small line (vendor or category) above the product name.' },
+    { key: 'cardInfoLine', label: 'Info line shows', group: 'Product cards', control: { kind: 'select', options: [{ value: 'vendor', label: 'Vendor' }, { value: 'category', label: 'Category' }, { value: 'subcategory', label: 'Sub-category' }, { value: 'subcategory_category', label: 'Sub-category · Category' }, { value: 'category_subcategory', label: 'Category · Sub-category' }] }, helpText: 'What the small line above the product name says.' },
+    { key: 'cardBadgePosition', label: 'Product badge position', group: 'Product cards', control: { kind: 'select', options: [{ value: 'top-left', label: 'Top left' }, { value: 'top-right', label: 'Top right' }, { value: 'bottom-left', label: 'Bottom left' }, { value: 'bottom-right', label: 'Bottom right' }] }, helpText: 'Where your own badge (set on each product, e.g. New or Grade-3) sits on the photo.' },
     { key: 'cardButton', label: 'Add to cart button', group: 'Product cards', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Hide it for a cleaner, image-led grid.' },
     { key: 'badgeStyle', label: 'Badge shape', group: 'Product cards', control: { kind: 'select', options: [{ value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }] }, helpText: 'Shape of Sale and Sold out badges.' },
     { key: 'inputRadius', label: 'Form field corners', group: 'Buttons', control: { kind: 'select', options: RADIUS }, helpText: 'Corners of form fields (checkout, login, search).' },

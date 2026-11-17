@@ -5,6 +5,7 @@ import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
+import { PoweredBySolvexo } from '../../PoweredBySolvexo';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
 import { FooterColumns, FooterNewsletterStrip, SocialRow, type FooterColumnTokens } from './nav/FooterColumns';
 import { PaymentBadges } from './nav/FooterParts';
@@ -65,6 +66,7 @@ export function TechFooter() {
                 <nav className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label={ts('pg.legal', 'Legal')}>
                   {opts.showCurrency && <TechLocaleControls />}
                   {legalLinks}
+                  <PoweredBySolvexo show={opts.showPoweredBy} text={opts.poweredByText} url={opts.poweredByUrl} />
                   {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
                 </nav>
                 {paymentNode}
@@ -78,6 +80,7 @@ export function TechFooter() {
               {paymentNode}
               <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
                 {legalLinks}
+                <PoweredBySolvexo show={opts.showPoweredBy} text={opts.poweredByText} url={opts.poweredByUrl} />
                 {opts.showCurrency && <TechLocaleControls />}
                 {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
               </nav>

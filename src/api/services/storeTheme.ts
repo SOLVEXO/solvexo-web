@@ -47,6 +47,10 @@ export interface StorefrontColors {
   badgeStyle?:      'pill' | 'square';
   cardRating?:      'show' | 'hide';
   cardTag?:         'show' | 'hide';
+  /** What the small line above the product name shows. */
+  cardInfoLine?:    'vendor' | 'category' | 'subcategory' | 'subcategory_category' | 'category_subcategory';
+  /** Where the seller's own product badge sits on the card photo. */
+  cardBadgePosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   cardButton?:      'show' | 'hide';
   headingScale?: 'small' | 'medium' | 'large' | 'xlarge';
   bodyScale?: 'small' | 'medium' | 'large';
@@ -274,6 +278,10 @@ export interface StorefrontFooter {
   showPolicyLinks?:      boolean;
   showCurrency?:         boolean;
   showBackToTop?:        boolean;
+  showPoweredBy?:        boolean;
+  /** Own wording / https link for the credit; null = 'Powered by Solvexo' and the Solvexo site. */
+  poweredByText?:        string | null;
+  poweredByUrl?:         string | null;
   /** 'panel' = rounded panel inside the page width, 'full' = edge to edge; null = theme default. */
   footerShape?:          'panel' | 'full' | null;
   /** A big logo/wordmark across the very bottom: 'store' = the store logo, 'custom' = `wordmarkUrl`. */
@@ -290,7 +298,7 @@ export interface StorefrontFooter {
 export type FooterSettingsPatch = Partial<Pick<StorefrontFooter,
   'logoSource' | 'logoUrl' | 'logoLink' | 'logoWidth' | 'showNewsletter' | 'newsletterHeading' | 'newsletterText' |
   'showDefaultColumns' | 'shopColumnHeading' | 'accountColumnHeading' | 'blogLinkLabel' | 'bgColor' | 'textColor' | 'blockLayout' | 'paddingY' | 'bgImageUrl' | 'bgOverlay' | 'align' | 'headingUppercase' | 'socialStyle' | 'socialColor' | 'socialCustomColor' | 'socialFilled' | 'socialSize' |
-  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'footerShape' | 'wordmarkSource' | 'wordmarkUrl' | 'wordmarkWidth' | 'bottomLayout' | 'preset' | 'sections'>>;
+  'newsletterTop' | 'mobileAccordion' | 'showPolicyLinks' | 'showCurrency' | 'showBackToTop' | 'showPoweredBy' | 'poweredByText' | 'poweredByUrl' | 'footerShape' | 'wordmarkSource' | 'wordmarkUrl' | 'wordmarkWidth' | 'bottomLayout' | 'preset' | 'sections'>>;
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
 

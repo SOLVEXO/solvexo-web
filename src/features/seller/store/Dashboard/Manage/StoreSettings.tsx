@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Store, Loader2, CreditCard, Globe, Lock, Clock, EyeOff, ShieldCheck, MapPin, Languages, Landmark, Boxes, Info } from 'lucide-react';
+import { Store, CreditCard, Globe, Lock, Clock, EyeOff, ShieldCheck, MapPin, Languages, Landmark, Boxes, Info, Palette } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetWhiteLabel, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
+import { apiUpdateStore, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
 import { LANGUAGE_OPTIONS } from '@/utils/languages';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { isStaffSession } from '@/hooks/auth/useCan';
-import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { CustomerAccountsSection } from './CustomerAccountsSection';
@@ -99,11 +97,15 @@ export function StoreProfileTab() {
   const [country, setCountry] = useState('');
   const [currencyDisplay, setCurrencyDisplay] = useState<CurrencyDisplay>('symbol');
   const [defaultLanguage, setDefaultLanguage] = useState('en');
+  const [logo, setLogo] = useState('');
+  const [faviconUrl, setFaviconUrl] = useState('');
   const [saving, setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     if (!store) return;
+    setLogo(store.logo ?? '');
+    setFaviconUrl(store.faviconUrl ?? '');
     setName(store.name);
     setDescription(store.description ?? '');
     setTagline(store.tagline ?? '');
@@ -122,7 +124,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, reviewModerationEnabled, lowStockThreshold });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, reviewModerationEnabled, lowStockThreshold, logo, faviconUrl: faviconUrl || null });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -135,6 +137,8 @@ export function StoreProfileTab() {
   const isDirty =
     !!store &&
     (name !== store.name ||
+      logo !== (store.logo ?? '') ||
+      faviconUrl !== (store.faviconUrl ?? '') ||
       description !== (store.description ?? '') ||
       tagline !== (store.tagline ?? '') ||
       contactEmail !== (store.contactEmail ?? '') ||
@@ -154,6 +158,30 @@ export function StoreProfileTab() {
           readability limit from the tab panel beside it. */}
       <div className="flex flex-col gap-5">
 
+        {/* ── Brand (was its own tab) ── */}
+        <SettingsCard
+          title="Logo & favicon"
+          icon={<Palette size={14} />}
+          description="Your mark on the storefront header, emails, invoices and the browser tab."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
+              <p className="text-[13px] font-semibold text-charcoal">Store logo</p>
+              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Header, emails &amp; invoices</p>
+              <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+              <p className="mt-3 text-[11px] leading-snug text-slate">PNG, JPG or WebP. A transparent background looks best.</p>
+            </div>
+
+            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
+              <p className="text-[13px] font-semibold text-charcoal">Favicon</p>
+              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Browser tab icon</p>
+              <ImageUpload value={faviconUrl ? [faviconUrl] : []} onChange={urls => setFaviconUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
+              <p className="mt-3 text-[11px] leading-snug text-slate">Square image, at least 32 × 32 px. Without one, your store's tab shows no icon.</p>
+            </div>
+          </div>
+        </SettingsCard>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <SettingsCard
           title="Store identity"
           icon={<Store size={14} />}
@@ -203,7 +231,9 @@ export function StoreProfileTab() {
             <p className="text-[11px] text-slate mt-1">Analytics days, "Today" and report dates use this time zone.</p>
           </Field>
         </SettingsCard>
+        </div>
 
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <SettingsCard
           title="Language &amp; prices"
           icon={<Languages size={14} />}
@@ -245,6 +275,7 @@ export function StoreProfileTab() {
             <Toggle checked={reviewModerationEnabled} onChange={setReviewModerationEnabled} ariaLabel="Require review approval" />
           </SettingsRow>
         </SettingsCard>
+        </div>
 
         {/* ── Read-only identity (was a pile of disabled inputs) ── */}
         <SettingsCard
@@ -444,74 +475,6 @@ export function TaxesTab() {
 
           <TaxOverridesEditor storeId={storeId} value={taxOverrides} onChange={setTaxOverrides} />
         </SettingsCard>
-      </div>
-
-      <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
-    </div>
-  );
-}
-
-// ── Brand — logo, favicon and the "Powered by" badge (own Settings tab) ──
-export function BrandTab() {
-  const { store, storeId, loading, refetch } = useStoreWorkspace();
-  const [logo, setLogo] = useState('');
-  const [faviconUrl, setFaviconUrl] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  useEffect(() => {
-    if (!store) return;
-    setLogo(store.logo ?? '');
-    setFaviconUrl(store.faviconUrl ?? '');
-  }, [store]);
-
-  const handleSave = async () => {
-    if (!storeId || saving) return;
-    setSaving(true);
-    setSaveMsg(null);
-    try {
-      await apiUpdateStore({ storeId, logo, faviconUrl: faviconUrl || null });
-      refetch();
-      setSaveMsg({ ok: true, text: 'Brand updated successfully.' });
-    } catch (err) {
-      setSaveMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update brand.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const isDirty = !!store && (logo !== (store.logo ?? '') || faviconUrl !== (store.faviconUrl ?? ''));
-
-  if (loading) return null;
-
-  return (
-    <div className="px-4 lg:px-7 py-6">
-      <div className="flex flex-col gap-5">
-        <SettingsCard
-          title="Logo & favicon"
-          icon={<Store size={14} />}
-          description="Your mark on the storefront header, emails, invoices and the browser tab."
-        >
-          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
-              <p className="text-[13px] font-semibold text-charcoal">Store logo</p>
-              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Header, emails &amp; invoices</p>
-              <ImageUpload value={logo ? [logo] : []} onChange={urls => setLogo(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-              <p className="mt-3 text-[11px] leading-snug text-slate">PNG, JPG or WebP. A transparent background looks best.</p>
-            </div>
-
-            <div className="min-w-0 rounded-xl border border-bone bg-cream/50 p-4">
-              <p className="text-[13px] font-semibold text-charcoal">Favicon</p>
-              <p className="mb-3 mt-0.5 text-[11.5px] text-slate">Browser tab icon</p>
-              <ImageUpload value={faviconUrl ? [faviconUrl] : []} onChange={urls => setFaviconUrl(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
-              <p className="mt-3 text-[11px] leading-snug text-slate">Square image, at least 32 × 32 px. Without one, your store's tab shows no icon.</p>
-            </div>
-          </div>
-        </SettingsCard>
-
-        {storeId && (
-          <RemoveBrandingCard storeId={storeId} store={store ? { whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />
-        )}
       </div>
 
       <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />
@@ -780,71 +743,11 @@ export function PaymentMethodsTab() {
   );
 }
 
-// ── Remove Solvexo branding (shown at the bottom of Store Profile; custom domains live in `DomainsSection.tsx`) ──
+// ── Custom domains live in `DomainsSection.tsx` ──
 // (Stripe Connect's "Payment Gateway" card used to live here — moved to the
 // Integrations page, where a seller now manages every payment gateway,
 // Stripe included, in one place. See StripeConnectSection in
 // `features/seller/store/Dashboard/Operations/integrations/Integrations.tsx`.)
-
-function RemoveBrandingCard({ storeId, store, refetch }: {
-  storeId: string;
-  store: { whiteLabelEnabled: boolean } | null;
-  refetch: () => void;
-}) {
-  const navigate = useNavigate();
-  const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
-  const [savingWhiteLabel, setSavingWhiteLabel] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  useEffect(() => {
-    apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {});
-  }, [storeId]);
-
-  const whiteLabelFeature = entitlements?.whiteLabelAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
-  const locked = !!whiteLabelFeature && !whiteLabelFeature.allowed;
-  const enabled = !!store?.whiteLabelEnabled;
-
-  async function toggleWhiteLabel() {
-    setSavingWhiteLabel(true); setMsg(null);
-    try {
-      await apiSetWhiteLabel(storeId, !enabled);
-      refetch();
-      setMsg({ ok: true, text: !enabled ? 'Solvexo branding is now hidden.' : 'Solvexo branding is visible again.' });
-    } catch (err) {
-      setMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update this setting.' });
-    } finally {
-      setSavingWhiteLabel(false);
-    }
-  }
-
-  return (
-    <SettingsCard
-      title="Remove Solvexo branding"
-      icon={locked ? <Lock size={14} /> : <EyeOff size={14} />}
-      description="Applies to the public storefront straight away — no Save needed."
-    >
-      <div className="-mx-5 border-y border-fog px-5">
-        <SettingsRow
-          label="Hide the 'Powered by Solvexo' badge"
-          description={locked ? `Available on the ${whiteLabelFeature?.requiredPlan ?? 'Advanced'} plan.` : undefined}
-        >
-          <div className="flex items-center gap-2">
-            {savingWhiteLabel && <Loader2 size={14} className="animate-spin text-slate" />}
-            {locked ? (
-              <Button size="sm" onClick={() => navigate(`/store/${storeId}/settings?tab=billing`)} className="min-h-[36px]">Upgrade plan</Button>
-            ) : (
-              <Toggle checked={enabled} onChange={() => { void toggleWhiteLabel(); }} disabled={savingWhiteLabel || !store} ariaLabel="Remove Solvexo branding" />
-            )}
-          </div>
-        </SettingsRow>
-      </div>
-
-      {msg && (
-        <p role={msg.ok ? 'status' : 'alert'} className={`mt-3 text-[12px] ${msg.ok ? 'text-success' : 'text-error'}`}>{msg.text}</p>
-      )}
-    </SettingsCard>
-  );
-}
 
 /** Settings Hub's "Domains" tab — thin wrapper resolving `useStoreWorkspace()`
  *  for the card above (which stays store-agnostic/props-driven so it could

@@ -65,7 +65,7 @@ function CustomerPicker({ customerId, customerName, customerEmail, customerPhone
         </div>
         <div className="flex items-start gap-1.5 text-[11px] text-slate bg-cream rounded-lg px-2.5 py-2">
           <AlertTriangle size={12} className="mt-[1px] shrink-0" />
-          A guest draft can be priced and saved, but needs a registered customer account attached before it can be completed into a real order.
+          A guest draft can be priced, saved and invoiced by email (the customer account is created when they pay). You can also complete it yourself — it needs an email so the customer account can be created.
         </div>
         <button type="button" onClick={() => setGuestMode(false)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">
           Search for a registered customer instead
@@ -253,6 +253,21 @@ export default function DraftOrderForm() {
     paymentTerms: paymentTerms || undefined,
   });
 
+  /** Saves what is on screen (an existing draft only) so Send Invoice / Complete Order never act on stale saved data.
+   *  Returns false (after showing why) when it could not be saved. */
+  const persistEdits = async (): Promise<boolean> => {
+    if (!draftId || !isEditable) return true;
+    if (!customerName.trim()) { toast.error('Enter a customer name.'); return false; }
+    if (items.length === 0) { toast.error('Add at least one item.'); return false; }
+    try {
+      await apiUpdateDraftOrder(storeId, draftId, buildPayload());
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save draft order.');
+      return false;
+    }
+  };
+
   const handleSave = async () => {
     if (!customerName.trim()) { toast.error('Enter a customer name.'); return; }
     if (items.length === 0) { toast.error('Add at least one item.'); return; }
@@ -313,6 +328,7 @@ export default function DraftOrderForm() {
     if (!draftId) return;
     setSendingInvoice(true);
     try {
+      if (!(await persistEdits())) return;
       await apiSendDraftOrderInvoice(storeId, draftId);
       toast.success(`Invoice sent to ${customerEmail}.`);
       loadDraft();
@@ -341,6 +357,7 @@ export default function DraftOrderForm() {
     if (!draftId) return;
     setCompleting(true);
     try {
+      if (!(await persistEdits())) return;
       const res = await apiCompleteDraftOrder(storeId, draftId);
       toast.success(`Order ${res.data.orderNumber} created.`);
       navigate(`/store/${storeId}/orders/detail/${res.data.orderId}`);
@@ -367,7 +384,7 @@ export default function DraftOrderForm() {
             {!isNew && canManage && draft?.status !== 'completed' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(true)} className="!text-error !border-error/30 hover:!bg-error-bg">Delete</Button>
             )}
-            {!isNew && canManage && draft?.status === 'open' && customerId && customerEmail && (
+            {!isNew && canManage && draft?.status === 'open' && customerEmail.trim() && (
               <Button variant="outline" size="sm" loading={sendingInvoice} onClick={handleSendInvoice}>
                 {draft.invoiceSentAt ? 'Resend Invoice' : 'Send Invoice'}
               </Button>

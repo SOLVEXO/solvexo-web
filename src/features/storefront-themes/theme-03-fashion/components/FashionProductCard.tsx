@@ -12,6 +12,7 @@ import { displayMoney, saleInfo } from '../../core/money';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { fashionTheme as t } from '../theme.config';
 import { FashionProductCardView } from './FashionProductCardView';
+import { cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { parseProductVideo } from '@/utils/productVideo';
 import { FashionQuickView } from './product/FashionQuickView';
 
@@ -77,8 +78,9 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
       onSwatch={setHoverImage}
       secondImage={t.productImageHover === 'second-image' ? product.images?.[1] : undefined}
       hoverVideo={previewVideoSrc(product.videoUrl)}
-      tag={product.vendor}
-      tagHref={product.vendor ? vendorPath(product.vendor) : undefined}
+      tag={cardInfoText(product, t.cardInfoLine)}
+      badge={cardBadgeOf(product, { bg: t.colors.accent, ink: t.colors.accentInk })}
+      tagHref={t.cardInfoLine === 'vendor' && product.vendor ? vendorPath(product.vendor) : undefined}
       rating={product.averageRating ?? 0}
       price={!priceLocked && price != null ? show(price) : undefined}
       comparePrice={!priceLocked && sale.onSale ? show(sale.compareAmount, true) : undefined}

@@ -5,6 +5,7 @@ import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
+import { PoweredBySolvexo } from '../../PoweredBySolvexo';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
 import { BackToTop } from '../../navigation/HeaderExtras';
 import { hasSocialTarget } from '../../navigation/socialLinks';
@@ -61,6 +62,7 @@ export function LedupFooter() {
               {paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />}
               <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
                 {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
+                <PoweredBySolvexo show={opts.showPoweredBy} text={opts.poweredByText} url={opts.poweredByUrl} />
                 {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
               </nav>
             </div>

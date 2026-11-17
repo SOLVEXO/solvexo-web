@@ -2,6 +2,7 @@
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 import { FEATURE_ICON_OPTIONS } from '@/features/storefront-themes/featureIcons';
+import { COLLECTION_ICON_OPTIONS } from '@/features/storefront-themes/collectionIcons';
 import { legacyContactFields } from '@/features/storefront-themes/core/forms/contactFormFields';
 
 export interface SectionMeta {
@@ -347,11 +348,14 @@ export const SECTION_META: SectionMeta[] = [
     type: 'collection_list', label: 'Collection List', description: 'Tiles for your collections — a "shop by collection" grid linking to each collection page.',
     Icon: LayoutGrid, color: '#0EA5E9',
     defaultSettings: { heading: 'Shop by collection', columns: 3, limit: 6, imageRatio: 'default', showDescription: false },
-    allowedBlockTypes: [], blockLabel: '',
-    defaultBlockSettings: {},
+    // Add tiles to pick collections by hand (and rename, re-describe, add an icon/image or a button). With no tiles it lists your collections automatically.
+    allowedBlockTypes: ['collection_item'], blockLabel: 'Tile',
+    defaultBlockSettings: { title: '', description: '', ctaText: '' },
     settingsSchema: withHeading([
       { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
-      { key: 'limit', kind: 'number', label: 'How many collections', min: 1, max: 24, step: 1 },
+      { key: 'limit', kind: 'number', label: 'How many collections', min: 1, max: 24, step: 1, hint: 'Only for the automatic list. Once you add tiles, exactly your tiles are shown.' },
+      { key: 'cardStyle', kind: 'select', label: 'Card around each tile', options: [{ value: 'none', label: 'No card' }, { value: 'bordered', label: 'Thin border' }, { value: 'filled', label: 'Filled background' }] },
+      { key: 'buttonStyle', kind: 'select', label: 'Tile button look', options: [{ value: 'solid', label: 'Solid' }, { value: 'outline', label: 'Outline' }, { value: 'link', label: 'Text link' }] },
       { key: 'imageRatio', kind: 'select', label: 'Image ratio', options: [{ value: 'default', label: 'Default' }, { value: 'adapt', label: 'Adapt to image' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }] },
       { key: 'showDescription', kind: 'checkbox', label: 'Show each collection\'s description', defaultOff: true },
       { key: 'tileStyle', kind: 'select', label: 'Tile style', options: [{ value: 'card', label: 'Image with arrow button' }, { value: 'simple', label: 'Image with name below' }] },
@@ -782,6 +786,15 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     ] },
   ],
   divider: [],
+  collection_item: [
+    { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', hint: 'Its name, description, image and link are used unless you type your own below.' },
+    { key: 'title', kind: 'text', label: 'Title (optional)', maxLength: 120, hint: 'Leave empty to use the collection name.' },
+    { key: 'description', kind: 'textarea', label: 'Description (optional)', maxLength: 400, rows: 3, hint: 'Leave empty to use the collection description (if "Show description" is on).' },
+    { key: 'icon', kind: 'select', label: 'Icon (optional)', options: COLLECTION_ICON_OPTIONS, hint: 'Shown above the title. Ignored when an image is set.' },
+    { key: 'imageUrl', kind: 'image', label: 'Image (optional)', hint: 'Leave empty to use the collection image.' },
+    { key: 'ctaText', kind: 'text', label: 'Button text (optional)', maxLength: 40, placeholder: 'Shop now →' },
+    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText, hint: 'Leave on the default to open the collection.' },
+  ],
   multicolumn_column: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },

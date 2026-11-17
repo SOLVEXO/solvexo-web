@@ -8,6 +8,7 @@ import { setVendorPrefix } from '../core/VendorLink';
 import { readProductsPerPage } from '../themeManifest';
 import { DEFAULT_SPECS_LOOK, readSpecsLook, type SpecsLook } from '../specsLook';
 import { readCardBorder, readPageBg, pageBackgroundCss, DEFAULT_PAGE_BG, type PageBg } from '../pageBackground';
+import { asCardBadgePosition, asCardInfoLine } from '../productCardExtras';
 
 const STATIC_DEFAULTS = {
   id: 'theme-03-fashion',
@@ -37,6 +38,8 @@ const STATIC_DEFAULTS = {
   badgeStyle: 'pill' as 'pill' | 'square',
   cardRating: true,
   cardTag: true,
+  cardInfoLine: 'vendor' as 'vendor' | 'category' | 'subcategory' | 'subcategory_category' | 'category_subcategory',
+  cardBadgePosition: 'top-left' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
   cardButton: true,
   cardHover: 'shadow' as 'shadow' | 'lift' | 'none',
   cardTextAlign: 'left' as 'left' | 'center',
@@ -192,7 +195,7 @@ export interface FashionMerchantColors {
   bodyScale?: 'small' | 'medium' | 'large'; linkUnderline?: 'auto' | 'always' | 'never'; linkColor?: string | null;
   buttonCase?: 'normal' | 'uppercase'; buttonSize?: 'sm' | 'md' | 'lg'; buttonHover?: 'fade' | 'lift' | 'grow'; buttonShadow?: 'none' | 'soft'; buttonTextColor?: string | null;
   sectionRadius?: Radius; inputRadius?: Radius; badgeStyle?: 'pill' | 'square';
-  cardRating?: Show; cardTag?: Show; cardButton?: Show; cardHover?: 'shadow' | 'lift' | 'none'; cardTextAlign?: 'left' | 'center'; cardBgColor?: string | null;
+  cardRating?: Show; cardTag?: Show; cardInfoLine?: string; cardBadgePosition?: string; cardButton?: Show; cardHover?: 'shadow' | 'lift' | 'none'; cardTextAlign?: 'left' | 'center'; cardBgColor?: string | null;
   priceColor?: string | null; starColor?: string | null; successColor?: string | null;
   gridGap?: 'tight' | 'standard' | 'airy'; pagePadding?: 'narrow' | 'standard' | 'wide';
   showBreadcrumbs?: Show; showStockStatus?: Show; showVendor?: Show; showReviews?: Show; stickyBuyBar?: Show;
@@ -274,6 +277,8 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
   fashionTheme.badgeStyle = c?.badgeStyle === 'square' ? 'square' : 'pill';
   fashionTheme.cardRating = c?.cardRating !== 'hide';
   fashionTheme.cardTag = c?.cardTag !== 'hide';
+  fashionTheme.cardInfoLine = asCardInfoLine(c?.cardInfoLine);
+  fashionTheme.cardBadgePosition = asCardBadgePosition(c?.cardBadgePosition);
   fashionTheme.cardButton = c?.cardButton !== 'hide';
   fashionTheme.cardHover = c?.cardHover ?? 'shadow';
   fashionTheme.cardTextAlign = c?.cardTextAlign ?? 'left';

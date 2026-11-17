@@ -447,11 +447,6 @@ export function apiUpdateStoreRobotsTxt(storeId: string, robotsTxtOverride: stri
   return client.patch<never, ApiResponse<{ robotsTxtOverride: string | null }>>(ENDPOINTS.STORE.ROBOTS_TXT(storeId), { robotsTxtOverride });
 }
 
-/** PATCH /api/store/:storeId/white-label */
-export function apiSetWhiteLabel(storeId: string, enabled: boolean) {
-  return client.patch<never, ApiResponse<{ whiteLabelEnabled: boolean }>>(ENDPOINTS.STORE.WHITE_LABEL(storeId), { enabled });
-}
-
 export interface PosAppInfo {
   /** Google Play listing URL for Solvexo POS — null until an admin sets
    *  POS_APP_ANDROID_URL. */
@@ -645,6 +640,8 @@ export interface PublicStoreFacets {
   price: { min: number | null; max: number | null; currency: string | null };
   productTypes: { value: string; count: number }[];
   tags: { value: string; count: number }[];
+  /** Brand / author names with their product counts. */
+  vendors?: { value: string; count: number }[];
   options: { name: string; values: { value: string; count: number }[] }[];
 }
 
@@ -655,6 +652,12 @@ export interface PublicStoreProduct {
   slug:        string;
   name:        string;
   vendor?:     string;
+  /** Names for the card's info line (filled by the public product list). */
+  categoryName?:    string;
+  subCategoryName?: string;
+  /** The seller's own card badge ("New", "Grade-3"). Empty = none. */
+  cardBadgeText?:   string;
+  cardBadgeColor?:  string;
   images?:     string[];
   videoUrl?:         string;
   type?:       'physical' | 'digital';

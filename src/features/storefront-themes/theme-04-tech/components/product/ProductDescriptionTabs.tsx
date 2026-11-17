@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
+import { healEntities, looksLikeHtml } from '@/utils/healEntities';
 import { baseTheme as t } from '../../theme.base';
 import { techTheme } from '../../theme.config';
 
@@ -21,9 +22,10 @@ const RICH_CSS = `
 `;
 
 /** Seller-written text: HTML from the rich editor is cleaned first; older plain text keeps its line breaks. */
-function Body({ content, html, node }: { content: string; html: boolean; node?: ReactNode }): ReactNode {
+function Body({ content: raw, html, node }: { content: string; html: boolean; node?: ReactNode }): ReactNode {
   if (node) return <>{node}</>;
-  if (html && HAS_HTML.test(content)) return <div className="tx-rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />;
+  const content = html ? healEntities(raw) : raw; // text saved while the editor escaped it again on every keystroke
+  if (html && (HAS_HTML.test(content) || looksLikeHtml(content))) return <div className="tx-rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />;
   if (html) return <div className="tx-rich">{renderRichText(content)}</div>;
   return <div className="tx-rich" style={{ whiteSpace: 'pre-line' }}>{content}</div>;
 }

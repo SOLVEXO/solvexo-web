@@ -227,7 +227,6 @@ export const ENDPOINTS = {
     DOMAIN_GUIDE:    (storeId: string, domain: string) => `/api/store/${storeId}/domains/${encodeURIComponent(domain)}/guide`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     PUBLIC_BOOTSTRAP: '/api/store/public/bootstrap',
-    WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,
     PRIVACY_REQUEST_SUBMIT:   (storeId: string) => `/api/store/public/${storeId}/privacy-requests`,
     PRIVACY_REQUEST_COMPLETE: (storeId: string, requestId: string) => `/api/store/${storeId}/privacy-requests/${requestId}/complete`,
@@ -1447,6 +1446,8 @@ export const ENDPOINTS = {
 
       CONTENT: {
         CATEGORIES:  (storeId: string) => `/api/store/${storeId}/seo/content/categories`,
+        COLLECTIONS: (storeId: string) => `/api/store/${storeId}/seo/content/collections`,
+        UPDATE_COLLECTION: (storeId: string, collectionId: string) => `/api/store/${storeId}/seo/content/collections/${collectionId}`,
         GET_PAGE:    (storeId: string, pageId: string) => `/api/store/${storeId}/seo/content/pages/${pageId}`,
         UPDATE_PAGE: (storeId: string, pageId: string) => `/api/store/${storeId}/seo/content/pages/${pageId}`,
       },
@@ -1467,6 +1468,7 @@ export const ENDPOINTS = {
         GENERATE_BULK: (storeId: string) => `/api/store/${storeId}/seo/ai/generate-bulk`,
         ACCEPT:        (storeId: string) => `/api/store/${storeId}/seo/ai/accept`,
         SUGGESTIONS:   (storeId: string) => `/api/store/${storeId}/seo/ai/suggestions`,
+        STATUS:        (storeId: string) => `/api/store/${storeId}/seo/ai/status`,
       },
 
       REDIRECTS: {

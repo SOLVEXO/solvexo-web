@@ -274,7 +274,7 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
   const source = footer.logoSource ?? 'none';
   const can = (k: FooterOptionKey) => !supports || supports.includes(k);
   const anyLayout = can('layout') || can('shape') || can('spacing') || can('alignment') || can('newsletterTop') || can('mobileAccordion');
-  const anyBottom = can('policyLinks') || can('currency') || can('backToTop') || can('bottomLayout');
+  const anyBottom = can('policyLinks') || can('currency') || can('backToTop') || can('bottomLayout') || can('poweredBy');
   const wordmark = footer.wordmarkSource ?? 'none';
   return (
     <>
@@ -403,6 +403,15 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
         )}
         {can('currency') && <SwitchRow label="Country / currency selector" hint="Shows only when you have 2 or more countries in Markets. The currency follows the country." checked={footer.showCurrency === true} onChange={v => set({ showCurrency: v })} />}
         {can('backToTop') && <SwitchRow label="“Back to top” link" checked={footer.showBackToTop === true} onChange={v => set({ showBackToTop: v })} />}
+        {can('poweredBy') && <SwitchRow label="“Powered by Solvexo” link" hint="Shown in the bottom bar. Turn it off to hide it — on every plan." checked={footer.showPoweredBy !== false} onChange={v => set({ showPoweredBy: v })} />}
+        {can('poweredBy') && footer.showPoweredBy !== false && (
+          <>
+            <TextField label="Credit text" value={footer.poweredByText} maxLength={1000} placeholder="Powered by Solvexo" onChange={v => set({ poweredByText: v })} />
+            <TextField label="Credit link (https://…)" value={footer.poweredByUrl} maxLength={2048} placeholder="https://www.solvexo.store/" onChange={v => set({ poweredByUrl: v })} />
+            {!!footer.poweredByUrl && !/^https:\/\//i.test(footer.poweredByUrl.trim()) && <p className="text-[10.5px] text-error">The link must start with https:// — until then the Solvexo link is used.</p>}
+            <p className="text-[10.5px] text-slate">Leave both empty to keep “Powered by Solvexo”.</p>
+          </>
+        )}
         {can('bottomLayout') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Bottom bar layout</span>
