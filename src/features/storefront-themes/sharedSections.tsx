@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
-import { handleOf } from '@/utils/activeStoreText';
+import { useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { tt, ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { apiSubmitContactMessage } from '@/api/services/storeContact';
 import type { PublicStoreProduct } from '@/api/services/store';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
@@ -15,6 +13,7 @@ import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { PreviewBlock } from './previewInspector';
 import { imageFit, focalOf } from './imageFit';
 import { copyText } from './sectionCopy';
+import { CollectionTileCard, tileOptions, useCollectionTiles } from './collectionTiles';
 
 // Theme-agnostic implementations of the Shopify-parity section library
 // (multicolumn, logo_list, marquee, custom_html, image_banner). Each theme
@@ -199,44 +198,18 @@ export function ImageBannerSection({ section, colors, theme }: Props) {
 }
 
 // ── Collection list ("shop by collection") ──────────────────────────────────
-function CollectionTile({ c, colors, theme, ratio, showDescription }: {
-  c: PublicCollectionSummary; colors: SharedColors; theme: SharedThemeTokens; ratio: unknown; showDescription: boolean;
-}) {
-  const [errored, setErrored] = useState(false);
-  const fit = imageFit(ratio, '4 / 3');
-  return (
-    <Link to={`/collections/${handleOf(c)}`} className="no-underline block" style={{ color: colors.ink }}>
-      <div style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', marginBottom: '14px', display: c.image && !errored ? undefined : 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {c.image && !errored
-          ? <img src={c.image} alt={c.name} loading="lazy" onError={() => setErrored(true)} style={fit.img} />
-          : <span style={{ fontFamily: theme.fonts.display, fontSize: '20px', color: colors.inkMuted, padding: '12px', textAlign: 'center' }}>{c.name}</span>}
-      </div>
-      <h3 style={{ fontFamily: theme.fonts.display, fontSize: '18px', fontWeight: 600, color: colors.ink, margin: 0 }}>{c.name}</h3>
-      {showDescription && c.description && (
-        <p className="line-clamp-2" style={{ fontFamily: theme.fonts.body, fontSize: '13.5px', color: colors.inkMuted, lineHeight: 1.6, margin: '6px 0 0' }}>{c.description}</p>
-      )}
-    </Link>
-  );
-}
-
-export function CollectionListSection({ section, colors, theme }: Props) {
-  const { store } = useStorefront();
-  const [items, setItems] = useState<PublicCollectionSummary[] | null>(null);
-  useEffect(() => {
-    let off = false;
-    apiGetPublicCollections(store.storeId).then(r => { if (!off) setItems(r.data ?? []); }).catch(() => { if (!off) setItems([]); });
-    return () => { off = true; };
-  }, [store.storeId]);
-  if (!items || items.length === 0) return null;
+export function CollectionListSection({ section, blocks, colors, theme }: Props) {
+  const tiles = useCollectionTiles(section, blocks);
+  if (!tiles || tiles.length === 0) return null;
   const cols = columnCount(section.settings.columns, 3);
-  const limit = Math.min(24, Math.max(1, Number(section.settings.limit) || 6));
+  const opts = tileOptions(section.settings);
   return (
     <div style={{ padding: `${theme.layout.sectionPadY} ${theme.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
         <Heading text={section.settings.heading} theme={theme} colors={colors} />
         <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
-          {items.slice(0, limit).map(c => (
-            <CollectionTile key={c._id} c={c} colors={colors} theme={theme} ratio={section.settings.imageRatio} showDescription={section.settings.showDescription === true} />
+          {tiles.map(c => (
+            <CollectionTileCard key={c.key} tile={c} colors={colors} fonts={theme.fonts} imageRadius={theme.imageRadiusPx} buttonRadius={theme.imageRadiusPx} opts={{ ...opts, simple: true }} />
           ))}
         </div>
       </div>

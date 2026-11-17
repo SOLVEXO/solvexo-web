@@ -102,6 +102,12 @@ export const SECTION_PRESETS: SectionPreset[] = [
   // ── Collections ──
   { id: 'collections-grid', type: 'collection_list', category: 'collections', name: 'Shop by collection', description: 'Image tiles for your collections', mock: 'tiles',
     build: only({ heading: 'Shop by collection', columns: 3, limit: 6, imageRatio: 'portrait', showDescription: false }) },
+  { id: 'collections-cards', type: 'collection_list', category: 'collections', name: 'Collection cards with buttons', description: 'Hand-picked cards: emoji or image, title, text and a button each', mock: 'columns',
+    build: () => ({ settings: { heading: 'Explore our collections', columns: 3, cardStyle: 'bordered', buttonStyle: 'solid', tileStyle: 'simple' }, blocks: [
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: 'Shop now →' } },
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: 'Shop now →' } },
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: 'Shop now →' } },
+    ] }) },
   { id: 'categories-grid', type: 'featured_category_grid', category: 'collections', name: 'Shop by category', description: 'Square tiles for your categories', mock: 'tiles',
     build: only({ heading: 'Shop by category', categoryIds: [], columns: 4, imageRatio: 'square' }) },
 
