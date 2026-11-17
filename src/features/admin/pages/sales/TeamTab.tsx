@@ -59,7 +59,7 @@ export function TeamTab({ isManager, owners }: { isManager: boolean; owners: Sal
             <thead><tr className="text-left text-[11px] uppercase tracking-wide text-slate border-b border-bone">
               <th className="px-3 py-2 font-semibold w-8">#</th><th className="px-3 py-2 font-semibold">Name</th>
               <th className="px-3 py-2 font-semibold">Value won</th><th className="px-3 py-2 font-semibold">Deals won</th>
-              <th className="px-3 py-2 font-semibold">Activities</th><th className="px-3 py-2 font-semibold text-right">Demos</th>
+              <th className="px-3 py-2 font-semibold">Activities</th><th className="px-3 py-2 font-semibold">Visits</th><th className="px-3 py-2 font-semibold text-right">Demos</th>
               <th className="px-3 py-2 font-semibold text-right">New leads</th><th className="px-3 py-2 font-semibold text-right">Win rate</th>
               <th className="px-3 py-2 font-semibold text-right">Open pipeline</th><th className="px-3 py-2 font-semibold text-right">Overdue</th>
             </tr></thead>
@@ -71,6 +71,7 @@ export function TeamTab({ isManager, owners }: { isManager: boolean; owners: Sal
                   <td className="px-3 py-2.5"><Goal value={r.wonValuePKR} target={r.target?.wonValuePKR} pct={r.progress.wonValuePKR} format={formatPKR} /></td>
                   <td className="px-3 py-2.5"><Goal value={r.won} target={r.target?.wonDeals} pct={r.progress.wonDeals} /></td>
                   <td className="px-3 py-2.5"><Goal value={r.activities} target={r.target?.activities} pct={r.progress.activities} /></td>
+                  <td className="px-3 py-2.5"><Goal value={r.visits ?? 0} target={r.target?.visits} pct={r.progress.visits ?? null} /></td>
                   <td className="px-3 py-2.5 text-right tabular-nums">{r.demos}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums">{r.newLeads}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums">{r.winRate === null ? '—' : `${r.winRate}%`}</td>
@@ -82,7 +83,7 @@ export function TeamTab({ isManager, owners }: { isManager: boolean; owners: Sal
           </table>
         </div>
       )}
-      <p className="text-[11.5px] text-slate">Activities are calls, WhatsApps, meetings and emails logged that month. Value won is the deal value of leads marked Won that month. Months follow Pakistan time.</p>
+      <p className="text-[11.5px] text-slate">Activities are calls, WhatsApps, meetings and emails logged that month. Visits are field visits saved from the visit form. Value won is the deal value of leads marked Won that month. Months follow Pakistan time.</p>
 
       {isManager && <AutoAssignCard owners={owners} />}
       {editing && data && (
@@ -97,25 +98,26 @@ function TargetsModal({ month, reps, onClose, onSave }: { month: string; reps: L
   const [rows, setRows] = useState(() => reps.map(r => ({
     adminId: r.adminId, name: r.name,
     wonDeals: r.target?.wonDeals?.toString() ?? '', wonValuePKR: r.target?.wonValuePKR?.toString() ?? '', activities: r.target?.activities?.toString() ?? '',
+    visits: r.target?.visits?.toString() ?? '',
   })));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const num = (s: string) => (s.trim() === '' ? null : Number(s.replace(/,/g, '')));
-  const set = (i: number, k: 'wonDeals' | 'wonValuePKR' | 'activities', v: string) => setRows(rs => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+  const set = (i: number, k: 'wonDeals' | 'wonValuePKR' | 'activities' | 'visits', v: string) => setRows(rs => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
 
   const save = async () => {
-    const out = rows.map(r => ({ adminId: r.adminId, wonDeals: num(r.wonDeals), wonValuePKR: num(r.wonValuePKR), activities: num(r.activities) }));
-    if (out.some(t => [t.wonDeals, t.wonValuePKR, t.activities].some(v => v !== null && (!Number.isFinite(v) || v < 0)))) { setError('Targets must be numbers.'); return; }
+    const out = rows.map(r => ({ adminId: r.adminId, wonDeals: num(r.wonDeals), wonValuePKR: num(r.wonValuePKR), activities: num(r.activities), visits: num(r.visits) }));
+    if (out.some(t => [t.wonDeals, t.wonValuePKR, t.activities, t.visits].some(v => v !== null && (!Number.isFinite(v) || v < 0)))) { setError('Targets must be numbers.'); return; }
     setBusy(true); setError('');
     try { await onSave(out); } catch (e) { setError(errMsg(e, 'Could not save targets.')); setBusy(false); }
   };
 
   return (
-    <Modal title={`Targets for ${monthLabel(month)}`} onClose={onClose} width={640}
+    <Modal title={`Targets for ${monthLabel(month)}`} onClose={onClose} width={720}
       footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save targets</Button></div>}>
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
-          <thead><tr className="text-left text-[11px] uppercase tracking-wide text-slate"><th className="py-1.5 pr-2 font-semibold">Name</th><th className="py-1.5 px-1 font-semibold">Deals won</th><th className="py-1.5 px-1 font-semibold">Value won (PKR)</th><th className="py-1.5 px-1 font-semibold">Activities</th></tr></thead>
+          <thead><tr className="text-left text-[11px] uppercase tracking-wide text-slate"><th className="py-1.5 pr-2 font-semibold">Name</th><th className="py-1.5 px-1 font-semibold">Deals won</th><th className="py-1.5 px-1 font-semibold">Value won (PKR)</th><th className="py-1.5 px-1 font-semibold">Activities</th><th className="py-1.5 px-1 font-semibold">Visits</th></tr></thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.adminId}>
@@ -123,6 +125,7 @@ function TargetsModal({ month, reps, onClose, onSave }: { month: string; reps: L
                 <td className="py-1.5 px-1"><Input aria-label={`Deals won target for ${r.name}`} inputMode="numeric" value={r.wonDeals} onChange={e => set(i, 'wonDeals', e.target.value)} /></td>
                 <td className="py-1.5 px-1"><Input aria-label={`Value won target for ${r.name}`} inputMode="numeric" value={r.wonValuePKR} onChange={e => set(i, 'wonValuePKR', e.target.value)} /></td>
                 <td className="py-1.5 px-1"><Input aria-label={`Activities target for ${r.name}`} inputMode="numeric" value={r.activities} onChange={e => set(i, 'activities', e.target.value)} /></td>
+                <td className="py-1.5 px-1"><Input aria-label={`Visits target for ${r.name}`} inputMode="numeric" value={r.visits} onChange={e => set(i, 'visits', e.target.value)} /></td>
               </tr>
             ))}
           </tbody>

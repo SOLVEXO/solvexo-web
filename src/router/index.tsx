@@ -187,6 +187,7 @@ const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics'
 const AdminSalesOps = lazy(() => import('@/features/admin/pages/sales/AdminSalesOps').then(m => ({ default: m.AdminSalesOps })));
 const MyEarnings = lazy(() => import('@/features/admin/pages/sales/MyEarnings').then(m => ({ default: m.MyEarnings })));
 const SalesLeadDetail = lazy(() => import('@/features/admin/pages/sales/SalesLeadDetail').then(m => ({ default: m.SalesLeadDetail })));
+const VisitFormPage = lazy(() => import('@/features/admin/pages/sales/visits/VisitFormPage').then(m => ({ default: m.VisitFormPage })));
 const AdminSaasMetrics = lazy(() => import('@/features/admin/pages/AdminSaasMetrics').then(m => ({ default: m.AdminSaasMetrics })));
 const AdminClients = lazy(() => import('@/features/admin/pages/AdminClients').then(m => ({ default: m.AdminClients })));
 const AdminClientDetail = lazy(() => import('@/features/admin/pages/AdminClientDetail').then(m => ({ default: m.AdminClientDetail })));
@@ -589,6 +590,7 @@ const mainRouter = createBrowserRouter([
           { path: 'visitors',     element: <RequireRole role="admin"><AdminVisitors /></RequireRole> },
           { path: 'sales',        element: <RequireRole role="admin"><AdminSalesOps /></RequireRole> },
           { path: 'sales/leads/:id', element: <RequireRole role="admin"><SalesLeadDetail /></RequireRole> },
+          { path: 'sales/visits/new', element: <RequireRole role="admin"><VisitFormPage /></RequireRole> },
           { path: 'earnings',     element: <RequireRole role="admin"><MyEarnings /></RequireRole> },
           // "Users & Sellers" is now the "Clients" workspace — same seller
           // data, opening into a full per-client workspace instead of a

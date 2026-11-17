@@ -19,10 +19,10 @@ import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
   note: NotebookPen, call: Phone, whatsapp: MessageCircle, meeting: Users, email: Mail,
-  stage_change: ArrowRightLeft, owner_change: ArrowRightLeft, system: Bot,
+  stage_change: ArrowRightLeft, owner_change: ArrowRightLeft, system: Bot, visit: Store,
 };
 const ACTIVITY_LABEL: Record<string, string> = {
-  note: 'Note', call: 'Call', whatsapp: 'WhatsApp', meeting: 'Meeting', email: 'Email sent', stage_change: 'Stage', owner_change: 'Owner', system: 'Update',
+  note: 'Note', call: 'Call', whatsapp: 'WhatsApp', meeting: 'Meeting', email: 'Email sent', visit: 'Field visit', stage_change: 'Stage', owner_change: 'Owner', system: 'Update',
 };
 const LOG_OUTCOMES: Record<Exclude<LogType, 'note'>, string[]> = {
   call: ['Talked', 'No answer', 'Busy', 'Call back later', 'Wrong number'],
