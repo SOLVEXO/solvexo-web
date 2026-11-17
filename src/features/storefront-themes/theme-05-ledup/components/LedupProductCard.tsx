@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
@@ -55,6 +56,9 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
   const pct = product.compareAtPrice && price && product.compareAtPrice > price ? Math.round((1 - price / product.compareAtPrice) * 100) : 0;
   const chip = { padding: '3px 10px', fontSize: 11, fontWeight: 600, color: '#fff', borderRadius: b.badgeStyle === 'square' ? 6 : 999 } as const;
 
+  const infoText = cardInfoText(product, b.cardInfoLine);
+  const ownBadge = cardBadgeOf(product, { bg: t.colors.accent, ink: '#FFFFFF' });
+
   const wished = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const heart = async (e: MouseEvent) => {
     e.preventDefault();
@@ -78,6 +82,9 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
         {!inStock && b.soldOutBadge && <span style={{ ...chip, background: '#4b423b' }}>{ts('product.soldOut', 'Sold out')}</span>}
         {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...chip, background: t.colors.danger }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
       </div>
+      {ownBadge && (
+        <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 12, b.cardBadgePosition === 'top-left' && ((!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0)) ? 28 : b.cardBadgePosition === 'top-right' && b.cardWishlist && product.variantId ? 38 : 0), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
+      )}
       {b.cardWishlist && product.variantId && (
         <button type="button" onClick={heart} aria-pressed={wished}
           aria-label={wished ? ts('pg.remove_from_wishlist', 'Remove from wishlist') : ts('pg.add_to_wishlist', 'Add to wishlist')}
@@ -105,7 +112,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
           <h3 className="m-0 line-clamp-2 break-words text-[17px] font-medium leading-snug text-[#4b423b]" title={p.name}>
             <Link to={to} className="text-inherit no-underline">{p.name}</Link>
           </h3>
-          {b.cardTag && product.vendor && <p className="mt-1 truncate text-[11px] text-[#a1948c]"><VendorLink name={product.vendor} plain /></p>}
+          {b.cardTag && infoText && <p className="mt-1 truncate text-[11px] text-[#a1948c]">{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
           {b.cardRating && rating > 0 && (
             <p className="m-0 mt-1.5 flex items-center gap-1 text-[12px] text-[#4b423b]" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: rating })} style={center ? { justifyContent: 'center' } : undefined}>
               <Star size={12} fill="#FB923C" stroke="#FB923C" aria-hidden /> <bdi>{(product.averageRating ?? 0).toFixed(1)}</bdi>

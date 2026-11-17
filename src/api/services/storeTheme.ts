@@ -47,6 +47,10 @@ export interface StorefrontColors {
   badgeStyle?:      'pill' | 'square';
   cardRating?:      'show' | 'hide';
   cardTag?:         'show' | 'hide';
+  /** What the small line above the product name shows. */
+  cardInfoLine?:    'vendor' | 'category' | 'subcategory' | 'subcategory_category' | 'category_subcategory';
+  /** Where the seller's own product badge sits on the card photo. */
+  cardBadgePosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   cardButton?:      'show' | 'hide';
   headingScale?: 'small' | 'medium' | 'large' | 'xlarge';
   bodyScale?: 'small' | 'medium' | 'large';

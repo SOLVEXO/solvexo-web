@@ -6,6 +6,7 @@ import { ArrowUpRight, Heart, Star } from 'lucide-react';
 import { PRODUCT_CARD_RATIO } from '../../imageFit';
 import { fashionTheme as t } from '../theme.config';
 import { buttonLook } from './buttonLook';
+import { cardBadgeBox } from '../../productCardExtras';
 
 export interface ProductCardViewProps {
   to: string;
@@ -15,6 +16,8 @@ export interface ProductCardViewProps {
   tag?: string;
   /** Where the tag leads (e.g. the vendor's products); the tag is plain text when omitted. */
   tagHref?: string;
+  /** The seller's own per-product badge (text + resolved colours). */
+  badge?: { text: string; bg: string; ink: string } | null;
   rating?: number;
   price?: string;
   comparePrice?: string;
@@ -38,7 +41,7 @@ export interface ProductCardViewProps {
 const BORDER: Record<string, string> = { theme: '1px solid var(--fx-b)', flat: 'none', outlined: '1px solid var(--fx-b)', elevated: 'none' };
 
 /** Presentational product card shared by the live storefront and the Theme Library demo (no store/cart context needed). */
-export function FashionProductCardView({ to, name, image, secondImage, tag, tagHref, rating = 0, price, comparePrice, percentOff = 0, soldOut, wished = null, onWish, onAdd, adding, onQuickView, swatches, onSwatch, hoverVideo }: ProductCardViewProps) {
+export function FashionProductCardView({ to, name, image, secondImage, tag, tagHref, badge, rating = 0, price, comparePrice, percentOff = 0, soldOut, wished = null, onWish, onAdd, adding, onQuickView, swatches, onSwatch, hoverVideo }: ProductCardViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onSale = t.saleBadge && !!comparePrice && percentOff > 0;
   const stars = Math.round(rating);
@@ -61,6 +64,11 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, tagH
           {soldOut && t.soldOutBadge && <Chip tone="dark">{ts('product.soldOut', 'Sold out')}</Chip>}
           {!soldOut && onSale && <Chip tone="sale">{t.saleBadgeText === 'label' ? ts('product.sale', 'Sale') : `-${percentOff}%`}</Chip>}
         </div>
+        {badge && (
+          <div style={cardBadgeBox(t.cardBadgePosition, 16, t.cardBadgePosition === 'top-left' ? ((soldOut && t.soldOutBadge) || (!soldOut && onSale) ? 30 : 0) : (wished !== null && t.cardWishlist ? 44 : 0))}>
+            <span data-card-badge className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={{ background: badge.bg, color: badge.ink }}>{badge.text}</span>
+          </div>
+        )}
         {onQuickView && !soldOut && (
           <button type="button" onClick={onQuickView} className="fx-pill absolute inset-x-4 bottom-4 translate-y-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100" style={{ ...buttonLook('outline'), background: t.colors.bg, height: 40 }}>{ts('pg.quick_view', 'Quick view')}</button>
         )}

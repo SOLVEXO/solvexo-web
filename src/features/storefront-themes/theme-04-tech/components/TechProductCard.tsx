@@ -1,5 +1,6 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
+import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Link } from 'react-router-dom';
 import { BarChart3, Eye, Heart, ShoppingCart } from 'lucide-react';
@@ -82,10 +83,16 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
 
   const pct = product.compareAtPrice && price && product.compareAtPrice > price ? Math.round((1 - price / product.compareAtPrice) * 100) : 0;
   const badgeBase = { position: 'absolute', top: 8, left: 8, padding: '3px 8px', fontSize: 11, fontWeight: 700, lineHeight: 1.3, borderRadius: b.badgeStyle === 'square' ? t.badgeRadiusPx : '9999px' } as const;
+  const infoText = cardInfoText(product, b.cardInfoLine);
+  const ownBadge = cardBadgeOf(product, { bg: t.colors.accent, ink: t.colors.accentInk ?? '#fff' });
+  const hasChip = (!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0);
   const badges = (
     <>
       {!inStock && b.soldOutBadge && <span style={{ ...badgeBase, background: t.colors.ink, color: t.colors.bg }}>{ts('product.soldOut', 'Sold out')}</span>}
       {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...badgeBase, background: t.colors.danger, color: '#fff' }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
+      {ownBadge && (
+        <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 8, b.cardBadgePosition === 'top-left' && hasChip ? 28 : 0), padding: '3px 8px', fontSize: 11, fontWeight: 700, lineHeight: 1.3, borderRadius: b.badgeStyle === 'square' ? t.badgeRadiusPx : '9999px', background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
+      )}
     </>
   );
   // "Adapt to image": the photo sets the box height itself (it must stay in the normal flow, otherwise the box is 0 px tall and nothing shows).
@@ -139,7 +146,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         {imageBox}
         <div className="flex min-w-0 flex-col gap-2">
           <TechStock inStock={inStock} />
-          {b.cardTag && product.vendor && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}><VendorLink name={product.vendor} plain /></p>}
+          {b.cardTag && infoText && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
           <Link to={to} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
           {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
           {swatchRow}
@@ -162,7 +169,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         {(quickBtn || heartBtn || compareBtn) && <div className="tx-card-actions">{quickBtn}{heartBtn}{compareBtn}</div>}
       </div>
       {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
-      {b.cardTag && product.vendor && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}><VendorLink name={product.vendor} plain /></p>}
+      {b.cardTag && infoText && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
       <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
       <div className="mt-auto flex flex-col gap-3 pt-1">
         {swatchRow}

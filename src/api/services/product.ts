@@ -125,6 +125,10 @@ export interface VariantInput {
 /** Vendor label + order quantity rules + pre-order (physical products). */
 export interface ProductSellingOptions {
   vendor?: string;
+  /** The seller's own label on this product's card ("New", "Grade-3"). Empty = none. */
+  cardBadgeText?: string;
+  /** A preset name (accent / dark / green / red / blue / amber) or #RRGGBB. Empty = theme accent. */
+  cardBadgeColor?: string;
   orderMinQuantity?: number;
   orderMaxQuantity?: number | null;
   orderQuantityStep?: number;
