@@ -65,7 +65,7 @@ function CustomerPicker({ customerId, customerName, customerEmail, customerPhone
         </div>
         <div className="flex items-start gap-1.5 text-[11px] text-slate bg-cream rounded-lg px-2.5 py-2">
           <AlertTriangle size={12} className="mt-[1px] shrink-0" />
-          A guest draft can be priced and saved, but needs a registered customer account attached before it can be completed into a real order.
+          A guest draft can be priced, saved and invoiced by email (the customer account is created when they pay). To complete it yourself without a payment link, attach a registered customer first.
         </div>
         <button type="button" onClick={() => setGuestMode(false)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer text-left">
           Search for a registered customer instead
@@ -367,7 +367,7 @@ export default function DraftOrderForm() {
             {!isNew && canManage && draft?.status !== 'completed' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(true)} className="!text-error !border-error/30 hover:!bg-error-bg">Delete</Button>
             )}
-            {!isNew && canManage && draft?.status === 'open' && customerId && customerEmail && (
+            {!isNew && canManage && draft?.status === 'open' && customerEmail.trim() && (
               <Button variant="outline" size="sm" loading={sendingInvoice} onClick={handleSendInvoice}>
                 {draft.invoiceSentAt ? 'Resend Invoice' : 'Send Invoice'}
               </Button>
