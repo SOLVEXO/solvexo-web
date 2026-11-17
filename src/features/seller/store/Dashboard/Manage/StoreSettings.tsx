@@ -5,6 +5,7 @@ import { apiUpdateStore, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGe
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
 import { LANGUAGE_OPTIONS } from '@/utils/languages';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { isStaffSession } from '@/hooks/auth/useCan';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
@@ -150,6 +151,11 @@ export function StoreProfileTab() {
       reviewModerationEnabled !== !!store.reviewModerationEnabled ||
       lowStockThreshold !== (store.lowStockThreshold ?? 10));
 
+  // The real storefront address: a verified custom domain (primary first), otherwise the store's subdomain.
+  const verifiedDomains = (store?.customDomains ?? []).filter(d => d.status === 'verified');
+  const liveDomain = verifiedDomains.find(d => d.isPrimary)?.domain ?? verifiedDomains[0]?.domain ?? (store?.customDomainStatus === 'verified' ? store.customDomain : null);
+  const storeUrl = liveDomain ? `https://${liveDomain}` : store?.slug ? getStorefrontUrl(store.slug) : null;
+
   if (loading) return null;
 
   return (
@@ -263,7 +269,7 @@ export function StoreProfileTab() {
           description="When a product counts as running low, and whether a review publishes on its own."
         >
           <Field label="Low stock threshold">
-            <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={`${inputCls} max-w-[140px]`} />
+            <input type="number" min={1} value={lowStockThreshold} onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
             <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
           </Field>
 
@@ -286,14 +292,15 @@ export function StoreProfileTab() {
         >
           <div className="-my-1 divide-y divide-fog">
             {([
-              { label: 'Store URL',   value: store?.slug ? `/${store.slug}` : '—', hint: 'The URL slug cannot be changed.' },
+              { label: 'Store URL',   value: storeUrl ? storeUrl.replace(/^https?:///, '') : '—', href: storeUrl ?? undefined, hint: 'The URL slug cannot be changed.' },
               { label: 'Plan',        value: store?.plan ?? '—',                   hint: 'Upgrade or switch it under Billing.' },
               { label: 'Status',      value: store?.status ?? '—' },
               { label: 'Seller type', value: store?.sellerType ?? '—' },
-              { label: 'AI credits',  value: String(store?.aiCredits ?? 0) },
-            ] as { label: string; value: string; hint?: string }[]).map(r => (
+            ] as { label: string; value: string; href?: string; hint?: string }[]).map(r => (
               <SettingsRow key={r.label} label={r.label} description={r.hint}>
-                <span className="text-[12.5px] font-semibold text-charcoal">{r.value}</span>
+                {r.href
+                  ? <a href={r.href} target="_blank" rel="noopener noreferrer" className="text-[12.5px] font-semibold text-brand-deep-orange no-underline hover:underline break-all">{r.value}</a>
+                  : <span className="text-[12.5px] font-semibold text-charcoal">{r.value}</span>}
               </SettingsRow>
             ))}
           </div>

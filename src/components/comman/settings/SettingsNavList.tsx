@@ -115,11 +115,8 @@ export function SettingsNavPanel({
   }, [groups, query]);
 
   return (
-    // The bound has to live on this box, not on the sticky wrapper: `max-h-full`
-    // here could never resolve (the wrapper's own height is auto), so the panel
-    // grew past the viewport and `overflow-hidden` cut the last rows off — the
-    // inner scroll never engaged. A viewport calc needs no definite parent.
-    <div className={clsx('flex flex-col min-h-0 max-h-[calc(100dvh-116px)] bg-white border border-bone rounded-2xl overflow-hidden', className)}>
+    // The whole list is shown at its natural height and scrolls with the page (no inner scroll bar).
+    <div className={clsx('flex flex-col bg-white border border-bone rounded-2xl overflow-hidden', className)}>
       {searchable && (
         <div className="shrink-0 p-3 border-b border-fog">
           <div className="relative">
@@ -136,7 +133,7 @@ export function SettingsNavPanel({
         </div>
       )}
 
-      <nav className="flex-1 min-h-0 overflow-y-auto p-2">
+      <nav className="p-2">
         {visible.map(group => (
           <div key={group.label} className="mb-1 last:mb-0">
             <p className="px-2.5 pt-2.5 pb-1 text-[10px] font-bold text-slate uppercase tracking-[0.08em]">

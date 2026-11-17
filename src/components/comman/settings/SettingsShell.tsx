@@ -85,7 +85,7 @@ export function SettingsShell({
 
         <aside
           data-lenis-prevent
-          className="hidden lg:block lg:sticky lg:top-[72px] lg:py-6 lg:pr-7"
+          className="hidden lg:block lg:py-6 lg:pr-7"
         >
           <SettingsNavPanel
             groups={groups}
