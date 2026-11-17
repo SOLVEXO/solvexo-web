@@ -90,3 +90,8 @@ export function apiGenerateSeoAiSuggestionBulk(storeId: string, payload: Generat
 export function apiGetSeoAiSuggestionHistory(storeId: string, params: SeoAiSuggestionsParams = {}) {
   return client.get<never, ApiResponse<SeoAiSuggestionsData>>(`${ENDPOINTS.SEO.SELLER.AI.SUGGESTIONS(storeId)}${qs(params)}`);
 }
+
+/** Is AI switched on for this server? (The SEO Center hides the AI tab until it is.) */
+export function apiGetAiSeoStatus(storeId: string) {
+  return client.get<never, ApiResponse<{ available: boolean }>>(ENDPOINTS.SEO.SELLER.AI.STATUS(storeId));
+}

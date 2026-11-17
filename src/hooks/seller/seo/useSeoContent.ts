@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   apiListStoreCategoriesSeo,
+  apiListStoreCollectionsSeo,
   apiGetPageSeo,
   apiUpdatePageSeo,
   type UpdatePageSeoPayload,
@@ -47,4 +48,11 @@ export function useUpdatePageSeo() {
   }, []);
 
   return { updatePageSeo, submitting, error };
+}
+
+export function useStoreCollectionsSeo(storeId: string) {
+  return useAnalyticsQuery(
+    (p: { storeId: string }) => apiListStoreCollectionsSeo(p.storeId),
+    { storeId },
+  );
 }

@@ -7,6 +7,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { PlanFeatureLock, type PlanFeatureFlag } from '@/components/comman/ui';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
+import { apiGetAiSeoStatus } from '@/api/services/seo/seller/ai.service';
 import { useRouteTabs } from '@/hooks/useRouteTabs';
 import { Navigate } from 'react-router-dom';
 
@@ -14,7 +15,7 @@ import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
 import { OverviewTab } from './tabs/OverviewTab';
 import { AuditTab } from './tabs/AuditTab';
 import { ProductsTab } from './tabs/ProductsTab';
-import { CategoriesTab } from './tabs/CategoriesTab';
+import { CollectionsTab } from './tabs/CollectionsTab';
 import { StoreTab } from './tabs/StoreTab';
 import { PagesTab } from './tabs/PagesTab';
 import { RedirectsTab } from './tabs/RedirectsTab';
@@ -28,7 +29,7 @@ const TABS: Tab[] = [
   { id: 'overview',   label: 'Overview',       icon: <LayoutDashboard size={13} /> },
   { id: 'audit',      label: 'SEO Audit',      icon: <ClipboardCheck size={13} /> },
   { id: 'products',   label: 'Product SEO',    icon: <Package size={13} /> },
-  { id: 'categories', label: 'Category SEO',   icon: <FolderTree size={13} /> },
+  { id: 'collections', label: 'Collection SEO', icon: <FolderTree size={13} /> },
   { id: 'store',      label: 'Store SEO',      icon: <StoreIcon size={13} /> },
   { id: 'pages',      label: 'Pages SEO',      icon: <FileText size={13} /> },
   { id: 'redirects',  label: 'Redirects',      icon: <ArrowRightLeft size={13} /> },
@@ -42,8 +43,15 @@ const TABS: Tab[] = [
 export function StoreSEO() {
   const { storeId, store } = useStoreWorkspace();
   const SEO_PERM = ['seo.view', 'seo.manage'];
+  // SEO never depends on AI: the AI tab only exists once the server has AI switched on (otherwise the seller never sees it).
+  const [aiAvailable, setAiAvailable] = useState(false);
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetAiSeoStatus(storeId).then(res => setAiAvailable(!!res.data?.available)).catch(() => setAiAvailable(false));
+  }, [storeId]);
+  const tabs = aiAvailable ? TABS : TABS.filter(t => t.id !== 'ai');
   const { visibleTabs, activeTab, openTab: setActiveTab, isVisited, paneClassName, redirectTo, blocked } = useRouteTabs({
-    tabs: TABS, base: 'seo', permissions: Object.fromEntries(TABS.map(t => [t.id, SEO_PERM])),
+    tabs, base: 'seo', permissions: Object.fromEntries(tabs.map(t => [t.id, SEO_PERM])),
   });
 
   // 4 of these 12 tabs are gated by a real PlatformPlan entitlement — locked
@@ -87,7 +95,7 @@ export function StoreSEO() {
           </div>
         )}
         {isVisited('products')   && <div className={paneClassName('products')}><ProductsTab storeId={storeId} storeSlug={store?.slug} /></div>}
-        {isVisited('categories') && <div className={paneClassName('categories')}><CategoriesTab storeId={storeId} /></div>}
+        {isVisited('collections') && <div className={paneClassName('collections')}><CollectionsTab storeId={storeId} /></div>}
         {isVisited('store')      && <div className={paneClassName('store')}><StoreTab storeId={storeId} storeSlug={store?.slug} /></div>}
         {isVisited('pages')      && <div className={paneClassName('pages')}><PagesTab storeId={storeId} /></div>}
         {isVisited('redirects') && (
@@ -113,7 +121,7 @@ export function StoreSEO() {
           </div>
         )}
         {isVisited('analytics')  && <div className={paneClassName('analytics')}><AnalyticsTab storeId={storeId} /></div>}
-        {isVisited('ai') && (
+        {aiAvailable && isVisited('ai') && (
           <div className={paneClassName('ai')}>
             {aiFeature && !aiFeature.allowed
               ? <PlanFeatureLock label="AI SEO Suggestions" description="Get AI-generated title/description/keyword suggestions for your products and pages." requiredPlan={aiFeature.requiredPlan} />

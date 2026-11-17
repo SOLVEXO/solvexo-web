@@ -1447,6 +1447,8 @@ export const ENDPOINTS = {
 
       CONTENT: {
         CATEGORIES:  (storeId: string) => `/api/store/${storeId}/seo/content/categories`,
+        COLLECTIONS: (storeId: string) => `/api/store/${storeId}/seo/content/collections`,
+        UPDATE_COLLECTION: (storeId: string, collectionId: string) => `/api/store/${storeId}/seo/content/collections/${collectionId}`,
         GET_PAGE:    (storeId: string, pageId: string) => `/api/store/${storeId}/seo/content/pages/${pageId}`,
         UPDATE_PAGE: (storeId: string, pageId: string) => `/api/store/${storeId}/seo/content/pages/${pageId}`,
       },
@@ -1467,6 +1469,7 @@ export const ENDPOINTS = {
         GENERATE_BULK: (storeId: string) => `/api/store/${storeId}/seo/ai/generate-bulk`,
         ACCEPT:        (storeId: string) => `/api/store/${storeId}/seo/ai/accept`,
         SUGGESTIONS:   (storeId: string) => `/api/store/${storeId}/seo/ai/suggestions`,
+        STATUS:        (storeId: string) => `/api/store/${storeId}/seo/ai/status`,
       },
 
       REDIRECTS: {
