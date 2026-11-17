@@ -15,6 +15,10 @@ describe('sectionSpacing', () => {
     expect(r.style).not.toHaveProperty('paddingTop');
   });
 
+  it('space above/below may be negative (a margin that pulls the section closer)', () => {
+    expect(sectionSpacing({ spacingTop: -40, spacingBottom: -8 }).style).toMatchObject({ marginTop: -40, marginBottom: -8 });
+  });
+
   it('inner padding replaces the own padding of the section through CSS variables', () => {
     const r = sectionSpacing({ paddingTop: 12, paddingBottom: 0 });
     expect(r.className.split(' ').sort()).toEqual(['sx-pad-b', 'sx-pad-t']);

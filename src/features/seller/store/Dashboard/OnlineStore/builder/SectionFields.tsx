@@ -10,8 +10,8 @@ import type { PageOption } from './BlockFields';
 /** Settings every (non-core) section has, Shopify-style — rendered by each
  *  theme's section wrapper (`storefront-themes/sectionSpacing.ts`). */
 const COMMON_SECTION_SCHEMA: FieldSchema[] = [
-  { key: 'spacingTop', kind: 'number', label: 'Space above (px)', min: 0, max: 160, step: 4, half: true },
-  { key: 'spacingBottom', kind: 'number', label: 'Space below (px)', min: 0, max: 160, step: 4, half: true },
+  { key: 'spacingTop', kind: 'number', label: 'Space above (px)', min: -160, max: 160, step: 4, half: true, hint: 'A minus number pulls the section closer to (or over) the one above.' },
+  { key: 'spacingBottom', kind: 'number', label: 'Space below (px)', min: -160, max: 160, step: 4, half: true },
   { key: 'paddingTop', kind: 'number', label: 'Inner space top (px)', min: 0, max: 160, step: 4, half: true },
   { key: 'paddingBottom', kind: 'number', label: 'Inner space bottom (px)', min: 0, max: 160, step: 4, half: true },
   {
