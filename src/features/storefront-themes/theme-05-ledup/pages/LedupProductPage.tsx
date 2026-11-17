@@ -10,7 +10,8 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
-import { useLoad } from '../../core/pageHooks';
+import { useLoad, useTemplateSections } from '../../core/pageHooks';
+import { resolveProductMainLayout } from '../../productPageLayout';
 import { SpecsTable } from '../../ProductPageParts';
 import { specRows } from '../../specsLook';
 import { baseTheme } from '../theme.base';
@@ -52,6 +53,11 @@ function Inner({ slug }: { slug: string }) {
   // The seller's own specs (Brand, Capacity ...) join the technical characteristics list.
   const specProductId = detail?.product._id;
   const { data: specEntries } = useLoad(() => (specProductId ? apiGetPublicMetafieldValues(store.storeId, 'product', specProductId).then(r => r.data ?? []) : Promise.resolve([])), [specProductId, store.storeId]);
+  // Tabs the seller set once for the whole store (Customize → Product page → Collapsible tab); LedUp shows them under the buy box.
+  const templateSections = useTemplateSections(store.storeId, 'product', detail?.product.templateKey || 'default');
+  const storeTabs = useMemo(() => resolveProductMainLayout(templateSections.find(s => s.type === 'product_main')).infoItems
+    .filter(i => i.type === 'product_collapsible_tab' && typeof i.settings.title === 'string' && i.settings.title.trim() && typeof i.settings.content === 'string' && i.settings.content.trim())
+    .map(i => ({ key: i.key, title: String(i.settings.title), content: String(i.settings.content), open: i.settings.openByDefault === true })), [templateSections]);
   const product = detail ? localize.product(detail.product) : null;
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
@@ -256,7 +262,7 @@ function Inner({ slug }: { slug: string }) {
               </LedupButton>
             </div>}
 
-            <LedupProductTabs tabs={detail.product.tabs} />
+            <LedupProductTabs tabs={detail.product.tabs} shared={storeTabs} />
           </div>
         </div>
       </LedupBox>

@@ -44,7 +44,12 @@ export interface ContractLine {
   name: string; slug: string | null; image: string | null; variantLabel: string | null; sku: string | null;
   /** false = the product was deleted or archived since the customer subscribed. */
   available: boolean;
+  /** The price a renewal uses (before the plan discount): locked when the customer subscribed. */
   listPrice: number | null; unitPrice: number | null; lineTotal: number | null;
+  priceLocked?: boolean;
+  /** What the variant costs today, and whether that differs from the locked price. */
+  todayPrice?: number | null;
+  priceChanged?: boolean;
 }
 export interface ContractOrder { cycleNo: number; orderId: string; orderNumber: string | null; amount: number; isPaid: boolean; paymentStatus: string | null; orderStatus: string | null; placedAt: string | null }
 export interface ContractDetail extends ContractRow { history: ContractOrder[] }
@@ -60,7 +65,7 @@ export const apiUpcomingRenewals = (storeId: string, days = 14) => client.get(`$
 export const apiPlanReport = (storeId: string) => client.get(`${base(storeId)}/report`) as Promise<PlanReport>;
 export const apiGetContract = (storeId: string, id: string) => client.get(`${base(storeId)}/contracts/${id}`) as Promise<ContractDetail>;
 /** `reason` is only used by pause (the customer sees it). */
-export const apiContractAction = (storeId: string, id: string, action: 'pause' | 'resume' | 'cancel' | 'skip', body: { reason?: string } = {}) => client.post(`${base(storeId)}/contracts/${id}/${action}`, body) as Promise<ContractRow>;
+export const apiContractAction = (storeId: string, id: string, action: 'pause' | 'resume' | 'cancel' | 'skip' | 'reprice', body: { reason?: string } = {}) => client.post(`${base(storeId)}/contracts/${id}/${action}`, body) as Promise<ContractRow>;
 
 // ── storefront (buyer) ──
 export interface StorefrontPlanOption { optionId: string; label: string; unit: PlanUnit; count: number; discountPercent: number; unitPrice: number | null }

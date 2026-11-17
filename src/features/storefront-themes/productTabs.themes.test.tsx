@@ -37,6 +37,32 @@ describe('the seller\'s own product tabs show on every theme', () => {
     expect(details[1].textContent).not.toContain('&');
   });
 
+  it('LedUp: the store-wide tabs (set once in Customize) come after the product own ones, as plain text', () => {
+    const { container } = render(<LedupProductTabs tabs={[{ title: 'Features', content: '<p>Fast</p>' }]} shared={[
+      { key: 'a', title: 'Delivery', content: 'Ships in 2 days. Free over Rs 3000.', open: false },
+      { key: 'b', title: 'Returns', content: '7-day returns', open: true },
+    ]} />);
+    const titles = Array.from(container.querySelectorAll('summary')).map(x => x.textContent);
+    expect(titles).toEqual(['Features', 'Delivery', 'Returns']);
+    const details = container.querySelectorAll('details');
+    expect((details[0] as HTMLDetailsElement).open).toBe(true);
+    expect((details[1] as HTMLDetailsElement).open).toBe(false);
+    expect((details[2] as HTMLDetailsElement).open).toBe(true); // "open by default" is respected
+    expect(details[1].textContent).toContain('Ships in 2 days.');
+  });
+
+  it('LedUp: a product with no tabs of its own still shows the store-wide ones (first one open)', () => {
+    const { container } = render(<LedupProductTabs shared={[{ key: 'a', title: 'Delivery', content: 'Ships in 2 days.' }, { key: 'b', title: 'Returns', content: 'x' }]} />);
+    const details = container.querySelectorAll('details');
+    expect(details.length).toBe(2);
+    expect((details[0] as HTMLDetailsElement).open).toBe(true);
+    expect((details[1] as HTMLDetailsElement).open).toBe(false);
+  });
+
+  it('LedUp: store-wide tabs without a title or text are skipped', () => {
+    expect(render(<LedupProductTabs shared={[{ key: 'a', title: '', content: 'x' }, { key: 'b', title: 'T', content: '  ' }]} />).container.innerHTML).toBe('');
+  });
+
   it('LedUp: nothing at all when the product has no tabs, or only empty ones', () => {
     expect(render(<LedupProductTabs tabs={[]} />).container.innerHTML).toBe('');
     expect(render(<LedupProductTabs />).container.innerHTML).toBe('');

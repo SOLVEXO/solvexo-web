@@ -23,7 +23,7 @@ const contract = {
   items: [{ productId: 'p', variantId: 'v', quantity: 2 }], customerName: 'Ali', customerEmail: 'a@x.com', status: 'active', nextBillingAt: '2026-12-01T00:00:00Z', cyclesDone: 3, lastOrderId: 'o1', pausedReason: null, createdAt: '2026-10-01T00:00:00Z',
   shippingAddress: { recipientName: 'Ali Khan', addressLine1: '12 Mall Road', city: 'Lahore', phoneNumber: '0300111' },
   currency: 'USD', estimatedTotal: 18, estimatedShipping: 0, estimatedTax: 0,
-  lines: [{ productId: 'p', variantId: 'v', quantity: 2, name: 'Dark Roast Beans', slug: 'beans', image: null, variantLabel: '1 kg', sku: 'B1', available: true, listPrice: 10, unitPrice: 9, lineTotal: 18 }],
+  lines: [{ productId: 'p', variantId: 'v', quantity: 2, name: 'Dark Roast Beans', slug: 'beans', image: null, variantLabel: '1 kg', sku: 'B1', available: true, listPrice: 10, unitPrice: 9, lineTotal: 18, priceLocked: true, todayPrice: 12, priceChanged: true }],
 };
 const detail = { ...contract, history: [{ cycleNo: 3, orderId: 'ord3', orderNumber: 'ORD-77', amount: 18, isPaid: false, paymentStatus: 'pending_verification', orderStatus: 'processing', placedAt: '2026-11-01T00:00:00Z' }, { cycleNo: 2, orderId: 'ord2', orderNumber: 'ORD-66', amount: 18, isPaid: true, paymentStatus: 'paid', orderStatus: 'delivered', placedAt: '2026-10-01T00:00:00Z' }] };
 const plan = { _id: 'g1', name: 'Coffee plan', options: [{ id: 'o1', label: 'Every month', unit: 'month', count: 1, discountPercent: 10 }], trialDays: 0, maxCycles: null, productIds: ['p'], variantIds: [], shippingAmount: 0, taxPercent: 0, status: 'active' };
@@ -56,6 +56,16 @@ describe('SubscriptionsHub', () => {
     expect(screen.getByText(/1 kg · Qty 2 ×/)).toBeTruthy();
     expect(screen.getByText('Next renewal')).toBeTruthy();
     expect(screen.getByText('Orders so far')).toBeTruthy();
+  });
+
+  it('flags a line whose price changed since the customer subscribed, and lets the seller update it', async () => {
+    post.mockResolvedValue({});
+    render(<MemoryRouter><SubscriptionsHub /></MemoryRouter>);
+    expect(await screen.findByText(/Today's price/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'View details' }));
+    expect(await screen.findByText(/Prices are locked at what the customer agreed/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: "Update to today's prices" }));
+    await waitFor(() => expect(post.mock.calls[0][0]).toBe('/api/selling-plans/s1/contracts/c1/reprice'));
   });
 
   it('Skip next moves the renewal on without asking', async () => {

@@ -87,6 +87,7 @@ export default function SubscriptionsHub() {
     onSkip: (c) => void run(`s${c._id}`, () => apiContractAction(storeId, c._id, 'skip'), 'Skipped - the next renewal moved one cycle on'),
     onCancel: (c) => setConfirmCancel(c),
     onDetails: (c) => setDetails(c),
+    onReprice: (c) => { setDetails(null); void run(`x${c._id}`, () => apiContractAction(storeId, c._id, 'reprice'), "Prices updated to today's prices"); },
   };
   const contractList = (list: ContractRow[]) => (
     <ul className="flex flex-col gap-3 list-none p-0 m-0">

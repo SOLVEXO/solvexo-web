@@ -30,6 +30,7 @@ export function LineRow({ line, currency }: { line: ContractLine; currency?: str
           {line.variantLabel ? `${line.variantLabel} · ` : ''}Qty {line.quantity}{line.unitPrice != null ? ` × ${money(line.unitPrice, currency)}` : ''}
         </p>
         {!line.available && line.name !== GONE && <Badge color="red" size="sm">No longer available</Badge>}
+        {line.available && line.priceChanged && <Badge color="yellow" size="sm">Today's price {money(line.todayPrice, currency)}</Badge>}
       </div>
       <p className="m-0 shrink-0 text-[13px] font-semibold tabular-nums text-charcoal">{money(line.lineTotal, currency)}</p>
     </div>
@@ -59,6 +60,8 @@ export interface CardActions {
   onSkip: (c: ContractRow) => void;
   onCancel: (c: ContractRow) => void;
   onDetails: (c: ContractRow) => void;
+  /** Moves the locked prices to today's prices (only offered in the details panel when a price changed). */
+  onReprice?: (c: ContractRow) => void;
 }
 
 /** A subscription as a card: who, what they get, when it renews, and the things a seller can do. */
@@ -157,7 +160,10 @@ export function ContractDetailModal({ storeId, contract, currency, a, onClose }:
               <div className="flex justify-between"><span>Shipping</span><span className="tabular-nums">{money(c.estimatedShipping ?? 0, cur)}</span></div>
               {!!c.estimatedTax && <div className="flex justify-between"><span>Tax</span><span className="tabular-nums">{money(c.estimatedTax, cur)}</span></div>}
               <div className="mt-1 flex justify-between text-[13.5px] font-semibold text-charcoal"><span>Each renewal</span><span className="tabular-nums">{money(c.estimatedTotal, cur)}</span></div>
-              <p className="m-0 mt-1 text-[11.5px]">Calculated from today's prices.</p>
+              <p className="m-0 mt-1 text-[11.5px]">{c.lines?.some((l) => l.priceLocked) ? 'Prices are locked at what the customer agreed when they subscribed.' : "Calculated from today's prices."}</p>
+              {a.canManage && a.onReprice && (c.status === 'active' || c.status === 'paused') && c.lines?.some((l) => l.priceChanged) && (
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => a.onReprice?.(c)}>Update to today's prices</Button>
+              )}
             </div>
           )}
         </section>
