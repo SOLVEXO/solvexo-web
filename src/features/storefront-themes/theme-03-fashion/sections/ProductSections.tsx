@@ -135,8 +135,8 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
 
 function ProductCatalog({ settings: s, colors, sort }: { settings: Record<string, any>; colors: FashionColors; sort?: string }) {
   return (
-    <SectionShell colors={colors} padY={false}>
-      <div style={{ padding: `${t.layout.sectionPadY} 0` }} id="shop">
+    <SectionShell colors={colors}>
+      <div id="shop">
         <FashionProductBrowser renderCard={(p, currency) => <FashionProductCard product={p} currency={currency} />}
           heading={s.heading} eyebrow={showEyebrow(s) && typeof s.eyebrow === 'string' && s.eyebrow.trim() ? s.eyebrow : undefined} categoryId={s.categoryId || undefined} collectionId={s.collectionId || undefined}
           defaultSort={(sort ?? s.defaultSort) as never} columns={s.columns ? columnCount(s.columns, 4) : undefined} showFilters={s.showFilters !== false} />

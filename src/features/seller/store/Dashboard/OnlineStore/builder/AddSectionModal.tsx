@@ -44,6 +44,7 @@ function Mock({ kind }: { kind: PresetMock }) {
       case 'marquee': return box(22, <span className="flex gap-3">{[0, 1, 2].map(i => <span key={i}>{bar(28, 3, '#fff')}</span>)}</span>, INK);
       case 'faq': return <span className="flex flex-col gap-1.5 w-full">{bar(44)}{[0, 1, 2].map(i => <span key={i} className="flex items-center justify-between pb-1" style={{ borderBottom: `1px solid ${SOFT}` }}>{bar('60%', 3, INK, 0.65)}<span className="text-[8px]" style={{ color: INK }}>+</span></span>)}</span>;
       case 'blog': return <span className="grid grid-cols-3 gap-1.5 w-full">{[0, 1, 2].map(i => <span key={i} className="flex flex-col gap-1">{box(26)}{bar('85%', 3)}{bar('50%', 2, INK, 0.4)}</span>)}</span>;
+      case 'form': return <span className="flex flex-col gap-1.5 w-full">{bar(40, 5)}<span className="grid grid-cols-2 gap-1.5">{[0, 1].map(i => <span key={i} className="block rounded-sm bg-white" style={{ height: 11, border: `1px solid ${SOFT}` }} />)}</span><span className="block rounded-sm bg-white" style={{ height: 22, border: `1px solid ${SOFT}` }} /><span className="block rounded-full" style={{ width: 34, height: 8, background: INK }} /></span>;
       case 'video': return box(56, <span className="flex items-center justify-center rounded-full" style={{ width: 18, height: 18, background: '#fff' }}><span style={{ width: 0, height: 0, borderLeft: `6px solid ${INK}`, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', marginLeft: 2 }} /></span>, '#4a4743');
     }
   })();

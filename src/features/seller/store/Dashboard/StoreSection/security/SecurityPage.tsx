@@ -15,7 +15,7 @@ interface Setup { data: { secret: string; otpauthUri: string } }
 const M = ENDPOINTS.MEMBER_TWO_FACTOR;
 
 /** Your own two-factor sign-in (authenticator app + recovery codes). The owner can also ask staff to use it. */
-export default function SecurityPage() {
+export default function SecurityPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const toast = useToast();
   const status = useApi<Status>(M.ME);
@@ -49,7 +49,7 @@ export default function SecurityPage() {
 
   return (
     <>
-      <StorePageHeader title="Security" subtitle="Two-factor sign-in" />
+      {!embedded && <StorePageHeader title="Security" subtitle="Two-factor sign-in" />}
       <div className="flex w-full flex-col gap-4 px-4 pb-8 pt-5 lg:px-7">
         {status.error ? <ErrorLine message={errorMessage(status.error)} onRetry={status.reload} /> : (
           <Card padding="md">

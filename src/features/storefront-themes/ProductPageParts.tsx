@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, Heart, Share2 } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import type { MetafieldValueEntry } from '@/api/services/metafields';
+import { DEFAULT_SPECS_LOOK, type SpecsLook } from './specsLook';
 
 export interface PartTokens {
   fonts: { body: string; display: string };
@@ -64,6 +65,32 @@ function displayValue(entry: MetafieldValueEntry): string {
   if (entry.type === 'boolean') return entry.value === 'true' ? tt('product.yes', "Yes") : tt('product.no', "No");
   return entry.value;
 }
+
+/** Name / value table of a product's specs (the "Additional information" tab and the Specifications block). Colours and fonts come from the theme's tokens unless the seller set their own in `look`. */
+export function SpecsTable({ rows, tokens, look = DEFAULT_SPECS_LOOK }: { rows: MetafieldValueEntry[]; tokens: PartTokens; look?: SpecsLook }) {
+  const boxed = look.style === 'boxed';
+  const line = look.lineColor ?? tokens.colors.border;
+  const stripe = look.stripeColor ?? tokens.colors.bgAlt;
+  const css = (look.hoverColor ? `.sx-specs-row:hover{background:${look.hoverColor}!important}` : '')
+    + (look.stackOnMobile ? '@media (max-width:560px){.sx-specs-row{grid-template-columns:1fr!important;gap:2px!important}}' : '');
+  return (
+    <dl style={{ margin: 0, borderTop: boxed ? undefined : `1px solid ${line}`, border: boxed ? `1px solid ${line}` : undefined, borderRadius: boxed ? look.radius : undefined, overflow: 'hidden' }}>
+      {css && <style>{css}</style>}
+      {rows.map((r, i) => (
+        <div key={r.definitionId} className="sx-specs-row grid" style={{
+          gridTemplateColumns: `minmax(90px, ${look.labelWidth}%) 1fr`, gap: '16px', padding: `${look.rowSpace}px 14px`,
+          borderBottom: i === rows.length - 1 && boxed ? undefined : `1px solid ${line}`,
+          background: look.style === 'striped' && i % 2 === 0 ? stripe : undefined,
+          transition: 'background-color .15s ease',
+        }}>
+          <dt style={{ fontFamily: tokens.fonts.body, fontSize: look.fontSize, fontWeight: look.labelBold ? 600 : 400, color: look.labelColor ?? tokens.colors.ink }}>{r.name}</dt>
+          <dd style={{ fontFamily: tokens.fonts.body, fontSize: look.fontSize, color: look.valueColor ?? tokens.colors.inkMuted, margin: 0, whiteSpace: 'pre-line', overflowWrap: 'anywhere', textAlign: look.alignRight ? 'right' : undefined }}>{displayValue(r)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 
 /** The product's own details (its storefront-visible custom fields) as a name / value table. Empty fields and raw JSON are skipped. */
 export function ProductSpecs({ entries, tokens }: { entries: MetafieldValueEntry[]; tokens: PartTokens }) {

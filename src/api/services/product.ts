@@ -804,7 +804,7 @@ export interface GetSellerOrdersData {
 
 export function apiGetSellerOrders(
   storeId: string, page = 1, limit = 10, userId?: string,
-  filters?: { status?: string; type?: string; q?: string; preorder?: boolean; localDelivery?: boolean },
+  filters?: { status?: string; type?: string; q?: string; preorder?: boolean; localDelivery?: boolean; view?: string },
 ) {
   const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
   // status / type / search run on the SERVER over the whole order history, not on the loaded page.
@@ -812,6 +812,7 @@ export function apiGetSellerOrders(
     (filters?.status ? `&status=${encodeURIComponent(filters.status)}` : '') +
     (filters?.type ? `&type=${encodeURIComponent(filters.type)}` : '') +
     (filters?.q ? `&q=${encodeURIComponent(filters.q)}` : '') +
+    (filters?.view ? `&view=${encodeURIComponent(filters.view)}` : '') +
     (filters?.preorder ? '&preorder=true' : '') +
     (filters?.localDelivery ? '&localDelivery=true' : '');
   return client.get<never, ApiResponse<GetSellerOrdersData>>(

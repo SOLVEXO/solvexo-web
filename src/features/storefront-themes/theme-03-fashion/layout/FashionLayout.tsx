@@ -5,7 +5,9 @@ import { FashionAnnouncementBar } from '../components/FashionAnnouncementBar';
 import { FashionNavbar } from '../components/FashionNavbar';
 import { FashionFooter } from '../components/FashionFooter';
 import { FashionToaster } from '../components/FashionToaster';
-import { fashionTheme as t, applyMerchantThemeOverrides, fashionTypographyCss } from '../theme.config';
+import { cardBorderCss } from '../../pageBackground';
+import { PageBgLayer } from '../../PageBgLayer';
+import { fashionTheme as t, applyMerchantThemeOverrides, fashionTypographyCss, pageBackgroundStyle } from '../theme.config';
 import '../fashion.css';
 
 /** Root chrome for stores running the Fashion theme: announcement bar, header, page, footer, cart drawer, toasts. */
@@ -18,8 +20,9 @@ export function FashionLayout({ children }: { children: ReactNode }) {
   const announcement = bar?.message ? <FashionAnnouncementBar {...bar} storeId={store.storeId} /> : null;
   return (
     <FashionCartDrawerProvider>
-      <div className="fx-root flex min-h-screen flex-col" style={{ background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body }}>
-        <style>{fashionTypographyCss('main')}</style>
+      <div className="fx-root flex min-h-screen flex-col" style={{ ...pageBackgroundStyle(), color: t.colors.ink, fontFamily: t.fonts.body }}>
+        <PageBgLayer bg={t.colors.bg} p={t.pageBg} />
+        <style>{fashionTypographyCss('main')}{cardBorderCss('[data-fx-card]', t.cardBorder, t.colors.border)}</style>
         {above && announcement}
         <FashionNavbar />
         {!above && announcement}

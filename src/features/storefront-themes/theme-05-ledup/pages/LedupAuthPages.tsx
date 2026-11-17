@@ -191,9 +191,9 @@ function ForgotContent() {
         {forgot.error && <div className="mb-4"><Notice tone="error">{forgot.error}</Notice></div>}
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field label={ts('auth.email', 'Email')} required>{p => <TextInput {...p} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />}</Field>
-          <div className="flex flex-wrap items-center gap-5">
-            <PillButton type="submit" loading={forgot.loading}>{ts('pg.send_reset_code', 'Send reset code')}</PillButton>
-            <Link to="/login" className="text-sm font-medium no-underline hover:underline" style={linkStyle}>{ts('auth.backToSignIn', 'Back to sign in')}</Link>
+          <div className="flex flex-col items-center gap-4">
+            <PillButton type="submit" full loading={forgot.loading}>{ts('pg.send_reset_code', 'Send reset code')}</PillButton>
+            <Link to="/login" className="text-sm no-underline hover:underline" style={{ color: '#8c847e' }}>← {ts('auth.backToSignIn', 'Back to sign in')}</Link>
           </div>
         </form>
       </LedupPanel>

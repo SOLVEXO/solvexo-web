@@ -305,7 +305,7 @@ function LessonCard({ storeId, courseId, lesson, onChange }: { storeId: string; 
       <div className="flex items-center gap-2"><p className="m-0 text-base font-semibold lb-bidi">{lesson.title}</p>{lesson.completed && <StatusPill tone="good">{lesson.score != null ? ts('dg.done_score', 'Done · {{score}}%', { score: lesson.score }) : ts('dg.done', 'Done')}</StatusPill>}</div>
       {error && <Notice tone="error">{error}</Notice>}
       {lesson.type === 'text' && <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed lb-bidi">{lesson.text}</p>}
-      {lesson.type === 'video' && (media ? <video src={media} controls controlsList="nodownload" className="w-full" style={{ borderRadius: t.fieldRadiusPx }} onContextMenu={(e) => e.preventDefault()} />
+      {lesson.type === 'video' && (media ? <video src={media} controls controlsList="nodownload" className="w-full" style={{ borderRadius: 18 }} onContextMenu={(e) => e.preventDefault()} />
         : <PillButton variant="outline" disabled={busy} onClick={() => void run(async () => setMedia((await apiLessonMedia(storeId, courseId, lesson.id)).url))}><Play size={15} aria-hidden /> {ts('dg.play_video', 'Play video')}</PillButton>)}
       {lesson.type === 'file' && <PillButton variant="outline" disabled={busy} onClick={() => void run(async () => { window.open((await apiLessonMedia(storeId, courseId, lesson.id)).url, '_blank', 'noopener'); })}><Download size={15} aria-hidden /> <bdi>{lesson.fileName}</bdi></PillButton>}
       {lesson.type === 'quiz' && lesson.quiz && (

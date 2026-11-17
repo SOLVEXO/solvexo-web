@@ -13,6 +13,14 @@ export type ProductType = 'physical_products' | 'digital_downloads' | 'education
 // currency list (apiGetEnabledCurrencies below), never a fixed compile-time set.
 export type SupportedCurrency = string;
 
+/** Floating contact bar shown on every storefront theme (see FloatingContactBar). */
+export interface FloatingContactConfig {
+  enabled: boolean; position: 'right' | 'left'; vertical: 'top' | 'middle' | 'bottom'; size: 'sm' | 'md' | 'lg';
+  style: 'brand' | 'theme'; showLabels: boolean; device: 'all' | 'desktop' | 'mobile';
+  phone: string; phoneLabel: string; whatsapp: string; whatsappMessage: string; whatsappLabel: string; email: string; emailLabel: string;
+  facebook: string; instagram: string; tiktok: string; youtube: string; x: string; snapchat: string; linkedin: string;
+}
+
 export interface EnabledCurrency {
   code: string;
   sanityBandMin: number | null;
@@ -145,6 +153,7 @@ export interface UpdateStorePayload {
   cookieBannerPosition?: 'bottom_bar' | 'bottom_corner';
   cookieBannerColorMode?: 'dark' | 'light' | 'brand';
   showDoNotSellLink?: boolean;
+  floatingContact?: FloatingContactConfig;
 }
 
 export interface StoreData {
@@ -243,6 +252,7 @@ export interface StoreData {
    *  logic. Both default to the original fixed look (`'bottom_bar'`/`'dark'`). */
   cookieBannerPosition: 'bottom_bar' | 'bottom_corner';
   cookieBannerColorMode: 'dark' | 'light' | 'brand';
+  floatingContact?: FloatingContactConfig | null;
   /** Real Shopify "data sale opt-out requests" — submitted via the
    *  storefront's "Do Not Sell My Personal Information" dialog, reviewed/
    *  resolved here. Genuinely tiny in practice for most stores. */
@@ -589,6 +599,7 @@ export interface PublicStoreData {
   cookieBannerPosition: 'bottom_bar' | 'bottom_corner';
   cookieBannerColorMode: 'dark' | 'light' | 'brand';
   showDoNotSellLink: boolean;
+  floatingContact?: FloatingContactConfig | null;
   /** Shopify "Customer accounts" setting: true unless the store requires accounts. */
   guestCheckoutEnabled: boolean;
   /** Only approved wholesale (B2B) buyers may buy; everyone else sees no prices or buy buttons. */

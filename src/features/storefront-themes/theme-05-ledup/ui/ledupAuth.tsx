@@ -6,6 +6,7 @@ import { ts } from '@/utils/tStatic';
 import { apiForgotPassword, apiResendOtp } from '@/api/services/auth';
 import type { SocialProviderKey } from '@/api/services/customerSocialLogin';
 import { useToast } from '@/contexts/ToastContext';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { OTP_LENGTH } from '../../core/auth/authLinks';
 import { ledupTheme as t } from '../theme.config';
 import { Field, TextInput } from './ledupForm';
@@ -14,11 +15,24 @@ import { LedupBox, LedupBreadcrumbs } from './ledupUiPort';
 
 /** Page frame for the customer pages: breadcrumb, big title, then the panels. */
 export function LedupPageFrame({ crumb, title, children, narrow }: { crumb: string; title: string; children: ReactNode; narrow?: boolean }) {
+  const { store } = useStorefront();
+  // Short account steps (forgot / verify / new password) are ONE centred card with the store wordmark, like ledup.pt "Recuperar Password".
+  if (narrow) {
+    return (
+      <LedupBox>
+        <div className="mx-auto w-full max-w-[480px] rounded-3xl border border-[#ebe8e5] bg-white px-6 py-9 text-center sm:px-9" style={{ color: '#4b423b' }}>
+          <p className="m-0 text-[17px] font-bold uppercase" style={{ letterSpacing: '.22em' }}><bdi>{store.name}</bdi></p>
+          <h1 className="m-0 mt-4 text-[24px] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{title}</h1>
+          <div className="ld-flat mt-5 text-start">{children}</div>
+        </div>
+      </LedupBox>
+    );
+  }
   return (
     <LedupBox narrow={narrow}>
-      <div className="ld-copper-gradient mb-6 rounded-[28px] px-6 py-8 md:px-10 md:py-10">
+      <div className="ld-copper-gradient mb-8 rounded-[28px] px-6 py-9 md:rounded-[50px] md:px-12 md:py-12">
         <LedupBreadcrumbs onDark items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: crumb }]} />
-        <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-semibold leading-tight text-white" style={{ fontFamily: t.fonts.display }}>{title}</h1>
+        <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-light leading-tight text-white" style={{ fontFamily: t.fonts.display }}>{title}</h1>
       </div>
       {children}
     </LedupBox>
@@ -28,9 +42,9 @@ export function LedupPageFrame({ crumb, title, children, narrow }: { crumb: stri
 /** Soft-blue panel with its own heading, as in the design's login page. */
 export function LedupPanel({ heading, intro, children, className = '' }: { heading?: string; intro?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`p-6 md:p-9 ${className}`} style={{ background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
-      {heading && <h2 className="m-0 text-xl font-semibold" style={{ fontFamily: t.fonts.display }}>{heading}</h2>}
-      {intro && <p className="m-0 mt-3 text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>{intro}</p>}
+    <section className={`p-6 md:p-10 ${className}`} style={{ background: '#fff', borderRadius: 24, boxShadow: '0 8px 40px rgba(75,66,59,.06)' }}>
+      {heading && <h2 className="m-0 text-[24px] font-semibold" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{heading}</h2>}
+      {intro && <p className="m-0 mt-3 text-sm leading-relaxed" style={{ color: '#8c847e' }}>{intro}</p>}
       <div className={heading || intro ? 'mt-6' : ''}>{children}</div>
     </section>
   );

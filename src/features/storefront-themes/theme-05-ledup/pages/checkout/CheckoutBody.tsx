@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { CheckoutBrandBar, CheckoutBrandFooter } from '../../../core/checkout/CheckoutBranding';
 import { ts } from '@/utils/tStatic';
@@ -8,7 +9,7 @@ import type { CartItem } from '@/api/services/cart';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { trackPixelEvent } from '@/utils/trackingPixels';
 import { ledupTheme as t } from '../../theme.config';
-import { Card, Notice, Page, PageTitle } from '../../ui/ledupForm';
+import { Card, Notice, Page } from '../../ui/ledupForm';
 import { useStoreCredit } from '../../../useStoreCredit';
 import { useGuestContact } from '../../../useGuestContact';
 import { useLoad } from '../../../core/pageHooks';
@@ -163,10 +164,23 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
   const paymentStep = step;
 
   return (
+    <div style={{ background: '#f6f6f6' }}>
     <Page>
-      <div className="sx-checkout-brand">
+      <div className="sx-checkout-brand mx-auto w-full max-w-[1100px] rounded-[28px] bg-white px-5 py-8 sm:rounded-[50px] sm:px-11 sm:py-10">
       <CheckoutBrandBar tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border }} />
-      <PageTitle actions={<Link to="/cart" className="text-sm font-medium text-white underline">{ts('checkout.backToCart', 'Back to cart')}</Link>}>{ts('h.secure_checkout', 'Secure *checkout*')}</PageTitle>
+      <h1 className="m-0 mb-6 text-center text-[28px] font-semibold" style={{ color: '#3b352f' }}>{ts('h.secure_checkout', 'Secure *checkout*').replace(/\*/g, '')}</h1>
+      {/* Real progress: Cart is done once you are here; Details until address + delivery (+ contact for a guest) are ready; then Payment. */}
+      <ol className="m-0 mb-8 flex list-none items-center justify-center gap-4 p-0" aria-label={ts('checkout.stepsAria', 'Checkout steps')}>
+        {[ts('checkout.stepCart', 'Cart'), ts('checkout.stepDetails', 'Details'), ts('checkout.stepPayment', 'Payment')].map((l, i) => {
+          const current = (checkout && ready ? 2 : 1) === i;
+          const done = i < (checkout && ready ? 2 : 1);
+          return (
+            <li key={i} aria-current={current ? 'step' : undefined} className="flex items-center gap-2 text-sm" style={{ color: current || done ? '#3b352f' : '#a69d98' }}>
+              <span className="inline-flex size-9 items-center justify-center rounded-full text-sm font-medium" style={{ background: current ? '#4b423b' : done ? '#8c7b70' : '#f1efed', color: current || done ? '#fff' : '#8c847e' }}>{done ? <Check size={16} aria-hidden /> : i + 1}</span>{l}
+            </li>
+          );
+        })}
+      </ol>
       <div className={`grid items-start gap-6 lg:gap-10 ${t.checkoutSummary === 'left' ? 'lg:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_400px]'}`}>
         <div className={`order-2 flex min-w-0 flex-col gap-5 ${t.checkoutSummary === 'left' ? 'lg:order-2' : 'lg:order-1'}`}>
           {checkout && checkout.currency !== displayCurrency && (
@@ -211,6 +225,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
       <CheckoutBrandFooter tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border }} />
       </div>
     </Page>
+    </div>
   );
 }
 

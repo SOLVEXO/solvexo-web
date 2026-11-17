@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCheckoutSession } from '../../useGuestContact';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
-import { ledupTheme as t } from '../theme.config';
-import { EmptyState, ErrorState, Page } from '../ui/ledupForm';
+import { ErrorState, Page } from '../ui/ledupForm';
 import type { PlacedLike } from '../../core/checkout/checkoutApi';
 import { parseBuyNow } from '../../core/checkout/checkoutMath';
 import { CheckoutBody } from './checkout/CheckoutBody';
@@ -59,12 +57,15 @@ function LedupCheckoutPageContent() {
   if (error && !cart) return <Page><ErrorState message={error} onRetry={refetch} /></Page>;
   if (!cart || items.length === 0) {
     return (
-      <Page narrow>
-        <EmptyState
-          icon={<ShoppingBag size={24} aria-hidden />} title={ts('cart.cartEmpty', 'Your cart is empty')} text={ts('checkout.cartEmptyBefore', 'Add something to your cart before checking out.')}
-          action={<Link to="/search" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.startShopping', 'Start shopping')}</Link>}
-        />
-      </Page>
+      <div style={{ background: '#f6f6f6' }}>
+        <Page>
+          <div className="mx-auto w-full max-w-[1100px] rounded-[28px] bg-white px-5 py-10 text-center sm:rounded-[50px] sm:px-11 sm:py-14">
+            <h1 className="m-0 mb-4 text-[28px] font-semibold" style={{ color: '#3b352f' }}>{ts('checkout.title', 'Checkout')}</h1>
+            <p className="m-0 mb-6 text-[15px]" style={{ color: '#8c847e' }}>{ts('checkout.cartEmptyBefore', 'Add something to your cart before checking out.')}</p>
+            <Link to="/search" className="inline-block no-underline" style={{ background: '#4b423b', color: '#fff', borderRadius: 12, padding: '10px 24px', fontSize: 13, fontWeight: 500 }}>{ts('cart.startShopping', 'Start shopping')}</Link>
+          </div>
+        </Page>
+      </div>
     );
   }
 

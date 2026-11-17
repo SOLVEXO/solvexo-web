@@ -35,8 +35,8 @@ export function LedupFooter() {
 
   const tokens: FooterColumnTokens = {
     fontBody: t.fonts.body, fontDisplay: t.fonts.display, fg, muted,
-    heading: { fontFamily: t.fonts.body, fontSize: '14px', fontWeight: 600, color: fg, marginBottom: 14 },
-    linkSize: '14px', brandWeight: 600,
+    heading: { fontFamily: t.fonts.body, fontSize: '16px', fontWeight: 600, color: fg, marginBottom: 10 },
+    linkSize: '16px', brandWeight: 600,
     input: { fontFamily: t.fonts.body, fontSize: 14, color: fg, border: `1px solid ${line}`, padding: '12px 18px', borderRadius: 9999, background: 'transparent' },
     button: { fontFamily: t.fonts.body, fontSize: 14, fontWeight: 500, background: t.colors.accent, color: t.colors.accentInk, padding: '12px 24px', borderRadius: 9999 },
     doneColor: '#86EFAC', errorColor: '#FCA5A5', idPrefix: 'ld',
@@ -49,20 +49,20 @@ export function LedupFooter() {
       <footer className="w-full pt-16" style={{ fontFamily: t.fonts.body }}>
         <div className="ld-footer-wrapper" data-ld-dark style={{ color: fg, ...(opts.bgColor ? { background: opts.bgColor } : {}) }}>
           {t.footerVideo && <video src={t.footerVideo} autoPlay muted loop playsInline aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-70" />}
-          <div className="relative mx-auto max-w-7xl px-6 pb-6 pt-16 sm:px-10 lg:px-16 lg:pt-24">
-            {!blocks.some(b => b.type === 'footer_brand') && <h2 className="ld-footer-title m-0 mb-12 text-[clamp(28px,4.5vw,58px)] font-light leading-tight"><bdi>{store.name}</bdi></h2>}
+          <div className="relative mx-auto max-w-[1440px] px-6 pb-6 pt-16 sm:px-10 lg:px-[115px] lg:pt-[110px]">
+            {!blocks.some(b => b.type === 'footer_brand') && <h2 className="ld-footer-title m-0 mb-[72px] text-[clamp(30px,4vw,56px)] font-light leading-[1.15]"><bdi>{store.tagline?.trim() || store.name}</bdi></h2>}
             <FooterNewsletterStrip tokens={tokens} maxWidth="100%" padX="0px" line={line} />
             <div className="flex flex-wrap gap-x-12 gap-y-10 pb-14 pt-8">
               <FooterColumns tokens={tokens} />
             </div>
-            <div className="flex flex-col items-center justify-between gap-4 pt-6 text-xs md:flex-row" style={{ borderTop: `1px solid ${line}`, color: muted }}>
+            <div className="flex flex-col items-start gap-3 pt-6 text-[13px] font-medium md:flex-row md:items-center md:justify-start md:gap-10" style={{ borderTop: `1px solid ${line}`, color: fg }}>
+              <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}<VerifiedBusinessBadge badges={store.badges} className="ms-2" /></p>
               {bottomSocials.length > 0 && <div className="[&>div]:mt-0"><SocialRow socials={bottomSocials} k={{ fg, muted }} look={opts.socialStyle} color={opts.socialColor} customColor={opts.socialCustomColor} filled={opts.socialFilled} size={opts.socialSize} /></div>}
               {paymentIcons.length > 0 && <PaymentBadges icons={[...new Set(paymentIcons)]} tokens={{ fontFamily: t.fonts.body, color: fg, muted, fontSize: '12px' }} border={line} />}
               <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label={ts('pg.legal', 'Legal')}>
                 {legal.map(p => <Link key={p._id} to={`/${handleOf(p)}`} className="no-underline hover:underline" style={{ color: muted }}>{p.title}</Link>)}
                 {opts.showBackToTop && <BackToTop color={muted} fontFamily={t.fonts.body} />}
               </nav>
-              <p className="m-0">{copyright ? expandCopyright(copyright) : tsNodes('pg.year_store_all_rights_reserved', '© {{year}} {{store}}. All rights reserved.', { store: <bdi>{store.name}</bdi> }, { year: new Date().getFullYear() })}<VerifiedBusinessBadge badges={store.badges} className="ms-2" /></p>
             </div>
           </div>
         </div>

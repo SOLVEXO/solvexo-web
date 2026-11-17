@@ -17,5 +17,6 @@ export function ledupCssVars(): CSSProperties {
 
 /** Shared look of text inputs, selects and textareas (also used by the phone field). */
 export function ledupControlStyle(invalid?: boolean): CSSProperties {
-  return { width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: t.fieldRadiusPx, background: t.colors.bg, color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 14, outline: 'none', border: `1px solid ${invalid ? t.colors.danger : t.colors.borderStrong}` };
+  // ledup.pt forms: soft grey field, hairline border, 12 px corners (never a pill).
+  return { width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: 12, background: '#f7f6f5', color: '#4b423b', fontFamily: t.fonts.body, fontSize: 14, outline: 'none', border: `1px solid ${invalid ? t.colors.danger : '#ebe8e5'}` };
 }

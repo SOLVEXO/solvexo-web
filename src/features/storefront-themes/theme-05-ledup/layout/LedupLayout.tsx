@@ -1,6 +1,8 @@
 import { useEffect, type ReactNode } from 'react';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { baseTypographyCss } from '../theme.base';
+import { baseTypographyCss, baseTheme } from '../theme.base';
+import { pageBackgroundCss, cardBorderCss } from '../../pageBackground';
+import { PageBgLayer } from '../../PageBgLayer';
 import { LedupNavbar } from '../components/LedupNavbar';
 import { LedupFooter } from '../components/LedupFooter';
 import { LedupCartProvider } from '../components/LedupCart';
@@ -11,6 +13,7 @@ import { ledupCssVars } from '../ui/ledupStyle';
 import '../ledup.css';
 import { ledupCssVars as txCssVars } from '../ui/ledupStylePort';
 import '../ledup-base.css';
+import '../ledup-signature.css';
 
 export function LedupLayout({ children }: { children: ReactNode }) {
   const { theme } = useStorefront();
@@ -32,12 +35,13 @@ export function LedupLayout({ children }: { children: ReactNode }) {
         style={{
           ...ledupCssVars(),
           ...txCssVars(),
-          background: t.colors.bg,
+          ...pageBackgroundCss(t.colors.bg, baseTheme.pageBg),
           color: t.colors.ink,
           fontFamily: t.fonts.body,
         }}
       >
-        <style>{baseTypographyCss('main')}</style>
+        <PageBgLayer bg={t.colors.bg} p={baseTheme.pageBg} />
+        <style>{baseTypographyCss('main')}{cardBorderCss('.ld-product-card', baseTheme.cardBorder, t.colors.border)}</style>
         <LedupPreloader />
         <LedupNavbar />
         <main className="flex-1 w-full">{children}</main>

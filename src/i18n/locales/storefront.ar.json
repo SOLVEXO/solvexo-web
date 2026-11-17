@@ -419,7 +419,11 @@
     "subtotalItems_many": "المجموع الفرعي ({{count}} عنصرًا)",
     "subtotalItems_other": "المجموع الفرعي ({{count}} عنصر)",
     "storeCreditAppliedAmount": "تم تطبيق رصيد المتجر {{amount}}",
-    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}."
+    "confirmationSentToEmail": "تم إرسال تأكيد إلى {{email}}.",
+    "stepCart": "السلة",
+    "stepDetails": "التفاصيل",
+    "stepPayment": "الدفع",
+    "stepsAria": "خطوات الدفع"
   },
   "collection": {
     "notFound": "المجموعة غير موجودة",
@@ -622,6 +626,12 @@
     "loadError": "تعذّر تحميل الأسئلة الآن. يرجى المحاولة لاحقًا.",
     "none": "لم تتم إضافة أسئلة بعد.",
     "title": "الأسئلة الشائعة"
+  },
+  "fc": {
+    "aria": "تواصل معنا",
+    "call": "اتصل بنا",
+    "email": "راسلنا عبر البريد",
+    "whatsapp": "تحدث عبر واتساب"
   },
   "footer": {
     "allProducts": "كل المنتجات",
@@ -1496,6 +1506,7 @@
     "soldOutLower": "نفد من المخزون",
     "soldOutOrUnavailable": "{{val}} — نفد من المخزون أو غير متاح",
     "specifications": "المواصفات",
+    "additionalInfo": "معلومات إضافية",
     "stepQty": "يُباع بمضاعفات {{count}}",
     "tags": "الوسوم",
     "unavailable": "هذا المنتج غير متاح.",
@@ -1583,7 +1594,26 @@
     "slideshow": "عرض الشرائح",
     "viewProduct": "عرض المنتج",
     "contactError": "تعذّر إرسال رسالتك. يُرجى المحاولة مرة أخرى.",
-    "contactThanks": "شكرًا لك، وصلتنا رسالتك وسنرد عليك قريبًا."
+    "contactThanks": "شكرًا لك، وصلتنا رسالتك وسنرد عليك قريبًا.",
+    "contactBack": "رجوع",
+    "contactChoose": "اختر...",
+    "contactFileFailed": "تعذّر رفع الملف.",
+    "contactFileSize": "الملف أكبر من {{mb}} MB.",
+    "contactFileType": "نوع الملف هذا غير مقبول.",
+    "contactNext": "التالي",
+    "contactTooManyFiles": "يمكنك إرفاق {{n}} ملفات كحد أقصى.",
+    "contactCaptcha": "يرجى تأكيد أنك لست روبوتًا.",
+    "contactSigned": "تمت إضافة التوقيع",
+    "contactSignHere": "وقّع هنا بإصبعك أو بالفأرة",
+    "contactClear": "مسح",
+    "contactUseSignature": "استخدم هذا التوقيع",
+    "contactRedirecting": "شكرًا لك! جارٍ تحويلك...",
+    "contactRemoveFile": "إزالة {{name}}",
+    "contactRequired": "يرجى إكمال الحقول المطلوبة.",
+    "contactStars": "{{n}} من 5 نجوم",
+    "contactStepOf": "الخطوة {{n}} من {{total}}",
+    "contactUploading": "جارٍ الرفع...",
+    "contactWaitFile": "يرجى الانتظار حتى ينتهي رفع الملف."
   },
   "wishlist": {
     "addAria": "أضف إلى قائمة الأمنيات",

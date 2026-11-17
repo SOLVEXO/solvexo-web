@@ -38,8 +38,8 @@ function StoreCredit() {
         <div className="flex flex-col gap-6">
           <div className="grid items-stretch gap-0 overflow-hidden md:grid-cols-[1fr_auto]" style={{ background: t.colors.dark, color: t.colors.darkInk, borderRadius: t.cardRadiusPx }}>
             <div className="p-6 md:p-8">
-              <p className="m-0 text-xs font-bold uppercase" style={{ letterSpacing: '.08em', opacity: 0.7 }}>{ts('credit.available', 'Available balance')}</p>
-              <p className="m-0 mt-2 text-[clamp(34px,6vw,52px)] font-bold leading-none" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
+              <p className="m-0 text-[13px] font-normal" style={{ opacity: 0.75 }}>{ts('credit.available', 'Available balance')}</p>
+              <p className="m-0 mt-2 text-[clamp(34px,6vw,52px)] font-light leading-none" aria-live="polite">{money(data?.balance ?? 0, from)}</p>
               {data?.nextExpiry && <p className="m-0 mt-3 text-sm" style={{ opacity: 0.75 }}>{ts('pg.amount_expires_on_date', '{{amount}} expires on {{date}}', { amount: money(data.nextExpiry.amount, from), date: formatStoreCreditDate(data.nextExpiry.expiresAt) })}</p>}
             </div>
             <div className="flex items-center p-6 md:p-8" style={{ background: t.colors.accent, color: t.colors.accentInk }}>

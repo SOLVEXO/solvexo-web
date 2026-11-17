@@ -346,6 +346,7 @@ export function StoreOrderDetail() {
   const actions: DetailAction[] = ([
     { key: 'print-slip', label: 'Print packing slip', icon: <Printer size={13} />, onClick: () => void handlePrint('slip'), disabled: busy },
     { key: 'print-invoice', label: 'Print invoice', icon: <Printer size={13} />, onClick: () => void handlePrint('invoice'), disabled: busy },
+    canEditOrder && isEditWindow && { key: 'edit-order', label: 'Edit order', icon: <Pencil size={13} />, onClick: () => setShowEditOrder(true), disabled: busy },
     detail.paymentStatus === 'authorized' && { key: 'capture', label: 'Capture Payment', icon: <CreditCard size={13} />, onClick: openCaptureModal, disabled: busy, solid: true },
     !detail.isPaid && detail.paymentStatus !== 'authorized' && { key: 'mark-paid', label: 'Mark as Paid (full amount)', icon: <CheckCheck size={13} />, onClick: handleMarkPaid, loading: busyAction === 'paid', disabled: busy && busyAction !== 'paid' },
     !detail.isPaid && detail.paymentStatus !== 'authorized' && { key: 'record-payment', label: 'Record a Payment', icon: <CreditCard size={13} />, onClick: () => { setPaymentAmount(''); setPaymentMethod('cash'); setPaymentReference(''); setPaymentNote(''); setPaymentError(''); setShowRecordPaymentModal(true); }, disabled: busy },

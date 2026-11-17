@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this file registers renderers, it exports none */
-import { useRef, useState } from 'react';
-import { Download, Power } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
@@ -12,6 +12,8 @@ import { LedupHeroCategoryBanner } from '../components/LedupHeroCategoryBanner';
 import { LedupBox } from '../ui/ledupUi';
 import { baseTheme as t } from '../theme.base';
 import { registerLedupSection } from './ledupSectionRegistry';
+import { Bento, LinkOrDiv, Projects, Simulation, Stacked, Statement } from './ledupSignature';
+import { Collage, ContactReveal, Districts, Mission, TimelineCarousel } from './ledupSignature2';
 
 const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : '');
 
@@ -97,283 +99,100 @@ function FeatureList({ settings, blocks }: { settings: Record<string, any>; bloc
   );
 }
 
-// ── Bento grid (ledup.pt "Destaques"): photo tiles of different sizes with a round arrow ──
-const BENTO_SPAN: Record<string, string> = { wide: 'md:col-span-6', tall: 'md:col-span-3 md:row-span-2', small: 'md:col-span-2', normal: 'md:col-span-3' };
-function Bento({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
-  const { resolveLink } = useStorefront();
-  if (blocks.length === 0) return null;
-  const heading = text(settings.heading);
-  const eyebrow = text(settings.eyebrow);
-  return (
-    <section className="py-16">
-      <LedupBox padY={false}>
-        {(heading || eyebrow) && (
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            {eyebrow && <p className="m-0 mb-1 text-xs text-[#a69d98]">{eyebrow}</p>}
-            {heading && <h2 className="m-0 text-2xl font-normal tracking-tight md:text-4xl" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{heading}</h2>}
-            {text(settings.text) && <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-[#736c67]">{text(settings.text)}</p>}
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-4 auto-rows-[190px] md:grid-cols-12 md:auto-rows-[230px] md:gap-5">
-          {blocks.map((b, i) => {
-            const s = (b.settings ?? {}) as Record<string, any>;
-            const id = String(b._id ?? i);
-            const img = text(s.imageUrl);
-            const stat = s.tone === 'stat';
-            const light = s.tone === 'light' || (!img && !stat);
-            const target = s.link ? resolveLink(s.link) : null;
-            const inner = stat ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-4 text-center">
-                <span className="text-4xl font-light md:text-5xl"><bdi>{text(s.title)}</bdi></span>
-                <span className="text-[11px] font-medium leading-tight opacity-90">{text(s.caption)}</span>
-              </div>
-            ) : (
-              <>
-                {img && <img src={img} alt="" loading="lazy" className={`absolute inset-0 h-full w-full transition duration-700 group-hover:scale-105 ${light ? 'object-contain p-6' : 'object-cover'}`} />}
-                {!light && <div aria-hidden className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(40,32,26,.78) 0%, rgba(40,32,26,0) 62%)' }} />}
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
-                  <span className={`text-sm font-medium ${light ? 'text-[var(--ld-accent)]' : 'text-white'}`}>{text(s.title)}</span>
-                  {target && <span aria-hidden className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition duration-300 group-hover:bg-white group-hover:text-[var(--ld-accent)] ${light ? 'border-[var(--ld-accent)] text-[var(--ld-accent)]' : 'border-white/70 text-white'}`}><ArrowUpRight size={18} /></span>}
-                </div>
-              </>
-            );
-            const cls = `group relative overflow-hidden rounded-3xl bg-white no-underline ${stat ? 'ld-stat-tile ' : ''}${BENTO_SPAN[String(s.size)] ?? BENTO_SPAN.normal} ${s.size === 'wide' ? 'col-span-2' : ''}`;
-            return (
-              <PreviewBlock key={id} blockId={id}>
-                {target?.to ? <Link to={target.to} className={cls}>{inner}</Link>
-                  : target?.href ? <a href={target.href} className={cls} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{inner}</a>
-                  : <div className={cls}>{inner}</div>}
-              </PreviewBlock>
-            );
-          })}
-        </div>
-      </LedupBox>
-    </section>
-  );
-}
-
-// ── Projects carousel ──
-function Projects({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
-  const row = useRef<HTMLDivElement>(null);
-  if (blocks.length === 0) return null;
-  const nudge = (d: 1 | -1) => row.current?.scrollBy({ left: d * Math.max(280, (row.current?.clientWidth ?? 600) * 0.7), behavior: 'smooth' });
-  return (
-    <section className="py-10">
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-8">
-        <div className="grid items-center gap-8 rounded-[2.5rem] bg-white px-6 py-12 md:grid-cols-[minmax(0,1fr)_1.7fr] md:px-12">
-          <div>
-            {text(settings.eyebrow) && <p className="m-0 mb-2 text-xs text-[#a69d98]">{text(settings.eyebrow)}</p>}
-            {text(settings.heading) && <h2 className="m-0 text-[clamp(24px,3vw,38px)] font-medium leading-tight" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{text(settings.heading)}</h2>}
-            {text(settings.text) && <p className="mt-4 max-w-md text-sm leading-relaxed text-[#736c67]">{text(settings.text)}</p>}
-            {blocks.length > 1 && (
-              <div className="mt-6 flex gap-2">
-                <button type="button" aria-label="Previous" onClick={() => nudge(-1)} className="ld-iconbtn"><span aria-hidden>‹</span></button>
-                <button type="button" aria-label="Next" onClick={() => nudge(1)} className="ld-iconbtn"><span aria-hidden>›</span></button>
-              </div>
-            )}
-          </div>
-          <div ref={row} className="ld-hide-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth">
-            {blocks.map((b, i) => {
-              const s = (b.settings ?? {}) as Record<string, any>;
-              const id = String(b._id ?? i);
-              return (
-                <PreviewBlock key={id} blockId={id}>
-                  <figure className="m-0 w-[min(78vw,440px)] shrink-0 snap-start">
-                    <div className="aspect-[4/3] overflow-hidden rounded-3xl bg-[#f1efed]">
-                      {text(s.imageUrl) && <img src={text(s.imageUrl)} alt={text(s.title)} loading="lazy" className="h-full w-full object-cover transition duration-700 hover:scale-105" />}
-                    </div>
-                    {text(s.title) && <figcaption className="mt-2 text-xs text-[#736c67]">{text(s.title)}</figcaption>}
-                  </figure>
-                </PreviewBlock>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Photo switcher ("Interruptores") ──
+// ── Photo switcher: one big photo with toggle buttons ──
 function Switcher({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
   const [on, setOn] = useState(0);
   if (blocks.length === 0) return null;
   const cur = Math.min(on, blocks.length - 1);
   return (
-    <section className="py-10">
-      <div className="mx-auto max-w-[1440px] px-0 sm:px-8">
-        <div className="overflow-hidden bg-[#e4e0dc] sm:rounded-[2.5rem]">
-          <div className="relative aspect-[16/8] w-full bg-[#d9d4cf]">
-            {blocks.map((b, i) => {
-              const img = text(((b.settings ?? {}) as Record<string, any>).imageUrl);
-              return img ? <img key={String(b._id ?? i)} src={img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ opacity: i === cur ? 1 : 0, transition: 'opacity .7s ease' }} /> : null;
-            })}
-          </div>
-          <div className="px-4 py-5 text-center">
-            {text(settings.label) && <p className="m-0 mb-3 text-[11px] text-[#8c847e]">{text(settings.label)}</p>}
-            <div className="flex flex-wrap justify-center gap-3">
-              {blocks.map((b, i) => {
+    <section className="lds" style={{ padding: '40px 0' }}>
+      <div className="lds-sim-frame" style={{ borderRadius: 50 }}>
+        <div className="lds-sim-scene" style={{ width: '100%', borderRadius: 0, aspectRatio: '16 / 8' }}>
+          {blocks.map((b, i) => {
+            const img = text(((b.settings ?? {}) as Record<string, any>).imageUrl);
+            return img ? <img key={String(b._id ?? i)} src={img} alt="" loading="lazy" style={{ opacity: i === cur ? 1 : 0, transition: 'opacity .7s ease' }} /> : null;
+          })}
+        </div>
+        {text(settings.label) && <p className="lds-sim-label">{text(settings.label)}</p>}
+        <div className="lds-sim-row">
+          {blocks.map((b, i) => {
+            const s = (b.settings ?? {}) as Record<string, any>;
+            const id = String(b._id ?? i);
+            return (
+              <PreviewBlock key={id} blockId={id}>
+                <button type="button" aria-pressed={i === cur} onClick={() => setOn(i)} className="lds-pill" style={i === cur ? { background: '#4b423b', color: '#fff' } : undefined}>{text(s.title) || String(i + 1)}</button>
+              </PreviewBlock>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Documents: brochure cards (photo + circle arrow) and a searchable datasheet table ──
+function Documents({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
+  const { resolveLink } = useStorefront();
+  const [q, setQ] = useState('');
+  if (blocks.length === 0) return null;
+  const cards = blocks.filter(b => text((b.settings as any)?.imageUrl));
+  const rows = blocks.filter(b => !text((b.settings as any)?.imageUrl)).filter(b => {
+    const s = (b.settings ?? {}) as Record<string, any>;
+    return `${text(s.title)} ${text(s.kind)}`.toLowerCase().includes(q.trim().toLowerCase());
+  });
+  const hrefOf = (s: Record<string, any>) => { const target = s.link ? resolveLink(s.link) : null; return { href: target?.href ?? target?.to ?? '#', blank: target?.newTab !== false }; };
+  return (
+    <section className="lds" style={{ padding: '110px 0 40px' }}>
+      <div className="lds-wrap" style={{ maxWidth: 1430 }}>
+        <div style={{ background: '#fff', borderRadius: 50, padding: '40px 44px 56px' }}>
+          {text(settings.heading) && <h2 className="lds-h2" style={{ marginBottom: 40 }}>{text(settings.heading)}</h2>}
+          {cards.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))', gap: 28 }}>
+              {cards.map((b, i) => {
                 const s = (b.settings ?? {}) as Record<string, any>;
                 const id = String(b._id ?? i);
                 return (
                   <PreviewBlock key={id} blockId={id}>
-                    <button type="button" aria-pressed={i === cur} onClick={() => setOn(i)} className="min-w-[4.6rem] cursor-pointer rounded-full border-0 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-white transition duration-300"
-                      style={{ background: i === cur ? 'var(--ld-accent)' : 'color-mix(in srgb, var(--ld-accent) 55%, transparent)', boxShadow: i === cur ? '0 0 0 3px rgba(255,255,255,.55)' : 'none' }}>
-                      {text(s.title) || String(i + 1)}
-                    </button>
+                    <LinkOrDiv link={s.link} className="lds-tile lds-tile--photo" style={{ height: 260, gridColumn: 'auto' }}>
+                      <img src={text(s.imageUrl)} alt="" loading="lazy" />
+                      <div className="lds-tile-foot"><span className="lds-tile-title" style={{ fontSize: 18 }}>{text(s.title)}</span><span className="lds-circ" aria-hidden><ArrowUpRight size={22} strokeWidth={1.4} /></span></div>
+                    </LinkOrDiv>
                   </PreviewBlock>
                 );
               })}
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Dark stacked card ──
-function Stacked({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
-  const img1 = text(settings.imageUrl);
-  const img2 = text(settings.imageUrl2);
-  if (!text(settings.heading) && blocks.length === 0) return null;
-  return (
-    <section className="py-10" data-ld-dark>
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-8">
-        <div className="relative overflow-hidden rounded-[2.5rem] text-white" style={{ background: 'var(--ld-accent)' }}>
-          <div className="grid gap-8 px-6 pb-0 pt-12 md:grid-cols-[1.2fr_1fr] md:px-12">
-            <div className="pb-8">
-              {text(settings.heading) && <h2 className="m-0 text-[clamp(24px,3vw,36px)] font-medium leading-tight" style={{ fontFamily: t.fonts.display }}>{text(settings.heading)}</h2>}
-              {text(settings.text) && <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80">{text(settings.text)}</p>}
+          )}
+          {blocks.length > cards.length && (
+            <div style={{ marginTop: cards.length ? 64 : 0 }}>
+              <label className="lds-search" style={{ marginBottom: 28 }}>
+                <input value={q} onChange={e => setQ(e.target.value)} placeholder={text(settings.searchPlaceholder) || 'Search by name or reference'} aria-label={text(settings.searchPlaceholder) || 'Search by name or reference'} />
+                <Search size={18} color="#8c847e" aria-hidden />
+              </label>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <thead><tr style={{ textAlign: 'left', color: '#4b423b' }}><th style={{ padding: '14px 8px', fontWeight: 400, background: 'transparent' }}>{text(settings.nameLabel) || 'Name'}</th><th style={{ padding: '14px 8px', fontWeight: 400, background: 'transparent', textAlign: 'center' }}>{text(settings.refLabel) || 'Reference'}</th><th style={{ background: 'transparent' }} /></tr></thead>
+                <tbody>
+                  {rows.map((b, i) => {
+                    const s = (b.settings ?? {}) as Record<string, any>;
+                    const id = String(b._id ?? i);
+                    const h = hrefOf(s);
+                    return (
+                      <PreviewBlock key={id} blockId={id}>
+                        <tr style={{ borderTop: '1px solid #4b423b' }}>
+                          <td style={{ padding: '14px 8px' }}>{text(s.title)}</td>
+                          <td style={{ padding: '14px 8px', textAlign: 'center' }}><bdi>{text(s.kind)}</bdi></td>
+                          <td style={{ padding: '10px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <a href={h.href} {...(h.blank ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="lds-pill lds-pill--solid" style={{ padding: '6px 18px', marginRight: 8 }}>Download <Download size={14} aria-hidden /></a>
+                          </td>
+                        </tr>
+                      </PreviewBlock>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            {(img1 || img2) && (
-              <div className="relative hidden min-h-[240px] md:block">
-                {img1 && <img src={img1} alt="" loading="lazy" className="absolute end-0 top-0 h-[190px] w-[62%] rounded-2xl object-cover shadow-xl" />}
-                {img2 && <img src={img2} alt="" loading="lazy" className="absolute bottom-0 start-0 h-[170px] w-[52%] rounded-2xl object-cover shadow-xl" />}
-              </div>
-            )}
-          </div>
-          <ol className="m-0 list-none p-0">
-            {blocks.map((b, i) => {
-              const s = (b.settings ?? {}) as Record<string, any>;
-              const id = String(b._id ?? i);
-              return (
-                <PreviewBlock key={id} blockId={id}>
-                  <li className="-mt-4 flex items-center gap-3 rounded-b-[1.6rem] px-6 pb-4 pt-8 text-xs font-medium uppercase tracking-wide md:px-12"
-                    style={{ background: `color-mix(in srgb, var(--ld-accent) ${Math.max(55, 100 - i * 9)}%, #fff)` }}>
-                    <span className="opacity-70">{String(i + 1).padStart(2, '0')}.</span>{text(s.title)}
-                  </li>
-                </PreviewBlock>
-              );
-            })}
-          </ol>
+          )}
         </div>
       </div>
-    </section>
-  );
-}
-
-// ── Lighting simulation (ledup.pt "Interruptores"): switches turn zones of a scene on and off ──
-function Simulation({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
-  const [on, setOn] = useState<Record<string, boolean>>({});
-  if (blocks.length === 0) return null;
-  const base = text(settings.baseImage);
-  return (
-    <section className="py-6" data-ld-dark>
-      <div className="ld-sim mx-auto max-w-[1440px]">
-        <div className="ld-sim-scene">
-          {base && <img src={base} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />}
-          {blocks.map((b, i) => {
-            const s = (b.settings ?? {}) as Record<string, any>;
-            const id = String(b._id ?? i);
-            const img = text(s.imageUrl);
-            const gx = `${Math.round(((i + 0.5) / blocks.length) * 100)}%`;
-            return img
-              ? <img key={id} src={img} alt="" loading="lazy" className={`ld-sim-layer ${on[id] ? 'is-on' : ''}`} />
-              : <div key={id} className={`ld-sim-glow ${on[id] ? 'is-on' : ''}`} style={{ ['--gx' as string]: gx }} />;
-          })}
-        </div>
-        <div className="px-4 pb-6 pt-5 text-center">
-          {text(settings.label) && <p className="m-0 mb-3 text-xs text-[#8c847e]">{text(settings.label)}</p>}
-          <div className="flex flex-wrap items-start justify-center gap-5 sm:gap-7">
-            {blocks.map((b, i) => {
-              const s = (b.settings ?? {}) as Record<string, any>;
-              const id = String(b._id ?? i);
-              return (
-                <PreviewBlock key={id} blockId={id}>
-                  <div className="flex flex-col items-center gap-2">
-                    <button type="button" className="ld-sim-switch" aria-pressed={!!on[id]} aria-label={text(s.title)} onClick={() => setOn(p => ({ ...p, [id]: !p[id] }))}><i /></button>
-                    <span className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-[#8c847e]"><Power size={11} aria-hidden />{text(s.title)}</span>
-                  </div>
-                </PreviewBlock>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Timeline (about page): year + text ──
-function Timeline({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
-  if (blocks.length === 0) return null;
-  return (
-    <section className="py-14">
-      <LedupBox padY={false}>
-        {text(settings.heading) && <h2 className="m-0 mb-10 text-center text-2xl font-normal md:text-4xl" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{text(settings.heading)}</h2>}
-        <ol className="m-0 mx-auto flex max-w-3xl list-none flex-col gap-0 p-0">
-          {blocks.map((b, i) => {
-            const s = (b.settings ?? {}) as Record<string, any>;
-            const id = String(b._id ?? i);
-            return (
-              <PreviewBlock key={id} blockId={id}>
-                <li className="grid grid-cols-[84px_1fr] gap-6 border-t border-[#e2dedb] py-6">
-                  <span className="text-3xl font-light" style={{ color: 'var(--ld-accent)' }}><bdi>{text(s.year)}</bdi></span>
-                  <div>
-                    <h3 className="m-0 text-base font-medium">{text(s.title)}</h3>
-                    {text(s.text) && <p className="mt-1 text-sm leading-relaxed text-[#736c67]">{text(s.text)}</p>}
-                  </div>
-                </li>
-              </PreviewBlock>
-            );
-          })}
-        </ol>
-      </LedupBox>
-    </section>
-  );
-}
-
-// ── Documents list (datasheets / catalogues / brochures): one row per file with a download pill ──
-function Documents({ settings, blocks }: { settings: Record<string, any>; blocks: Block[] }) {
-  const { resolveLink } = useStorefront();
-  if (blocks.length === 0) return null;
-  return (
-    <section className="py-14">
-      <LedupBox padY={false}>
-        {text(settings.heading) && <h2 className="m-0 mb-8 text-2xl font-normal md:text-4xl" style={{ fontFamily: t.fonts.display, color: 'var(--ld-accent)' }}>{text(settings.heading)}</h2>}
-        <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-          {blocks.map((b, i) => {
-            const s = (b.settings ?? {}) as Record<string, any>;
-            const id = String(b._id ?? i);
-            const target = s.link ? resolveLink(s.link) : null;
-            const href = target?.href ?? target?.to ?? '#';
-            return (
-              <PreviewBlock key={id} blockId={id}>
-                <li className="flex items-center justify-between gap-4 rounded-3xl bg-white p-5">
-                  <div className="min-w-0">
-                    <p className="m-0 truncate text-sm font-medium">{text(s.title)}</p>
-                    {text(s.kind) && <p className="m-0 mt-0.5 text-xs text-[#8c847e]">{text(s.kind)}</p>}
-                  </div>
-                  <a href={href} {...(target?.newTab !== false ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="ld-pillbtn shrink-0" aria-label={text(s.title)}>
-                    <Download size={14} aria-hidden />
-                  </a>
-                </li>
-              </PreviewBlock>
-            );
-          })}
-        </ul>
-      </LedupBox>
     </section>
   );
 }
@@ -392,10 +211,17 @@ registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {
   if (key === 'ledup.stacked') return <Stacked settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.bento') return <Bento settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.simulation') return <Simulation settings={sec.settings} blocks={blocks} />;
-  if (key === 'ledup.timeline') return <Timeline settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.timeline') return <TimelineCarousel settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.documents') return <Documents settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.highlights') return <FeatureList settings={sec.settings} blocks={blocks} />;
-  if (key === 'ledup.statement') return <RichText settings={sec.settings} blocks={blocks} dynamic={dynamic} />;
-  void col;
+  if (key === 'ledup.statement') return <Statement settings={sec.settings} />;
+  if (key === 'ledup.collage') return <Collage settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.mission') return <Mission settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.districts') return <Districts settings={sec.settings} blocks={blocks} />;
+  if (key === 'ledup.contact') return <ContactReveal section={sec} />;
+  void col; void dynamic;
   return null;
 });
+
+// kept for sections that still render rich text through this module
+export { RichText };

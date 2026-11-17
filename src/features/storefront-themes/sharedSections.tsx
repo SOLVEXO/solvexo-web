@@ -331,9 +331,15 @@ export function ContactFormSection({ section, colors, theme }: Props) {
     setStatus('sending');
     setError('');
     try {
+      // Legacy fixed form: the same ids the API gives a section that has no field list of its own.
       await apiSubmitContactMessage(store.storeId, {
-        name: values.name.trim(), email: values.email.trim(), message: values.message.trim(),
-        ...(values.phone.trim() ? { phone: values.phone.trim() } : {}), website: values.website,
+        sectionId: section._id,
+        answers: [
+          { fieldId: 'name', value: values.name.trim() }, { fieldId: 'email', value: values.email.trim() },
+          ...(values.phone.trim() ? [{ fieldId: 'phone', value: values.phone.trim() }] : []),
+          { fieldId: 'message', value: values.message.trim() },
+        ],
+        website: values.website,
       });
       setStatus('done');
     } catch (err) {

@@ -29,7 +29,7 @@ import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { EntityPickerField } from '@/features/seller/store/Dashboard/OnlineStore/builder/SchemaForm';
-import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
+import { ProductSpecsEditor } from './ProductSpecsEditor';
 import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled' | 'inactive';
@@ -956,7 +956,7 @@ export default function StoreEditProduct() {
             </div>
           </Card>
 
-          <MetafieldsEditor storeId={storeId} ownerResource="product" ownerId={productId} />
+          <ProductSpecsEditor storeId={storeId} productId={productId} />
 
           {/* Action buttons */}
           <div className="flex flex-col gap-2 max-sm:fixed max-sm:left-0 max-sm:right-0 max-sm:bottom-[calc(var(--store-tabbar-h,0px)+env(safe-area-inset-bottom))] max-sm:z-[999] max-sm:flex-row max-sm:items-center max-sm:bg-white max-sm:border-t max-sm:border-bone max-sm:px-4 max-sm:py-3 max-sm:shadow-[0_-6px_18px_rgba(20,15,10,0.10)]">

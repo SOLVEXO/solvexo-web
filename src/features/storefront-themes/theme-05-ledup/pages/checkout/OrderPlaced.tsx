@@ -23,10 +23,10 @@ export function OrderPlaced({ orders, storeName, guestEmail, paymentConfirmed }:
   const cashOnly = unpaid && orders.filter(o => o.isPaid === false).every(o => o.paymentMethod === 'cash_on_delivery');
   const unpaidNote = cashOnly ? ` ${ts('checkout.payCashOnArrival', 'Pay in cash when it arrives.')}` : ` ${ts('checkout.confirmedOnPayment', 'It will be confirmed once the store receives your payment.')}`;
   return (
-    <Page narrow>
+    <div style={{ background: "#f6f6f6" }}><Page><div className="mx-auto w-full max-w-[760px] rounded-[28px] bg-white px-5 py-10 sm:rounded-[50px] sm:px-11 sm:py-14">
       <div role="status" className="flex flex-col items-center gap-3 text-center">
         <span className="grid size-16 place-items-center rounded-full" style={{ background: `color-mix(in srgb, ${t.colors.success} 14%, transparent)`, color: t.colors.success }}><Check size={30} aria-hidden /></span>
-        <h1 className="m-0 text-[clamp(28px,4vw,44px)] font-medium leading-[1.1] tracking-tight"><AccentText text={ts('h.thank_you_order', 'Thank you for your *order*')} size="1em" /></h1>
+        <h1 className="m-0 text-[clamp(26px,3.4vw,36px)] font-medium leading-[1.15]"><AccentText text={ts('h.thank_you_order', 'Thank you for your *order*')} size="1em" /></h1>
         <p className="m-0 max-w-[460px] text-base" style={{ color: t.colors.inkMuted }}>
           {paymentConfirmed ? ts('checkout.placedPaid', 'Your payment was confirmed and your order at {{store}} has been placed.', { store: storeName }) : ts('checkout.placed', 'Your order at {{store}} has been placed.', { store: storeName })}
           {unpaid ? unpaidNote : ''}
@@ -60,6 +60,6 @@ export function OrderPlaced({ orders, storeName, guestEmail, paymentConfirmed }:
         <OrderPlacedActions orderId={orders[0]?.orderId} guestEmail={guestEmail} />
         <Link to="/" className="lb-btn" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: t.buttonRadiusPx }}>{ts('cart.continueShoppingLower', 'Continue shopping')}</Link>
       </div>
-    </Page>
+    </div></Page></div>
   );
 }

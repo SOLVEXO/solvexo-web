@@ -6,6 +6,8 @@ import { tt } from '@/utils/tStatic';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { apiGetPublicMetafieldValues, type MetafieldValueEntry } from '@/api/services/metafields';
 import { useLoad } from '../../../core/pageHooks';
+import { SpecsTable, type PartTokens } from '../../../ProductPageParts';
+import { specRows } from '../../../specsLook';
 import { fashionTheme as t } from '../../theme.config';
 
 const chip = (): CSSProperties => ({
@@ -115,8 +117,23 @@ export function ProductSpecs({ entries }: { entries: MetafieldValueEntry[] }) {
   );
 }
 
+const SPEC_TOKENS: PartTokens = { fonts: { body: t.fonts.body, display: t.fonts.display }, colors: { ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, accent: t.colors.accent, bgAlt: t.colors.bgAlt }, buttonRadius: '9999px' };
+
+/** The specs as a plain table (no card, no heading) for the "Additional information" tab. Nothing while empty. */
+export function SpecsTabTable({ entries }: { entries: MetafieldValueEntry[] }) {
+  const rows = specRows(entries);
+  return rows.length === 0 ? null : <SpecsTable rows={rows} tokens={SPEC_TOKENS} look={t.specs} />;
+}
+
 /** `product_specs` block: loads the product's public custom fields and shows them as a specifications table (nothing while empty/failed). */
 export function ProductSpecsBlock({ storeId, productId }: { storeId: string; productId: string }) {
   const { data } = useLoad(() => apiGetPublicMetafieldValues(storeId, 'product', productId).then(r => r.data ?? []), [storeId, productId]);
-  return data ? <ProductSpecs entries={data} /> : null;
+  const rows = data ? specRows(data) : [];
+  if (rows.length === 0) return null;
+  return (
+    <div>
+      <p className="m-0 mb-2.5 text-sm font-semibold" style={{ fontFamily: t.fonts.body, color: t.colors.ink }}>{tt('product.specifications', 'Specifications')}</p>
+      <SpecsTable rows={rows} tokens={SPEC_TOKENS} look={t.specs} />
+    </div>
+  );
 }

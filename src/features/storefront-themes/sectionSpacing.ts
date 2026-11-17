@@ -15,9 +15,11 @@ import type { CSSProperties } from 'react';
  *  Every option is optional; unset = the theme's own look. */
 export const SECTION_SPACING_CSS =
   // (a section's own <style> may come first, so also match the element after it)
+  '.sx-own-bg>*,.sx-own-bg>[data-editor-block-id]>*{background-color:transparent!important}' +
   '.sx-pad-t>:first-child,.sx-pad-t>style:first-child+*,.sx-pad-t>[data-editor-block-id]:first-child>:first-child,.sx-pad-t>style:first-child+[data-editor-block-id]>:first-child{padding-top:var(--sx-pt)!important}' +
   '.sx-pad-b>:last-child,.sx-pad-b>[data-editor-block-id]:last-child>:last-child{padding-bottom:var(--sx-pb)!important}' +
   '.sx-full>*>.mx-auto,.sx-full>.mx-auto,.sx-full>[data-editor-block-id]>*>.mx-auto{max-width:none!important}' +
+  '[data-hero-drag]{cursor:grab;user-select:none}[data-hero-drag]:active{cursor:grabbing}' +
   '@media (max-width:749px){.sx-hide-m{display:none!important}}' +
   '@media (min-width:750px){.sx-hide-d{display:none!important}}' +
   // tablet = 750-1023px, wide = 1024px and up ("Show on" options tablet / large screens / mobile and tablet)
@@ -41,6 +43,13 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
   const bottom = typeof settings?.spacingBottom === 'number' ? settings.spacingBottom : undefined;
   const padTop = typeof settings?.paddingTop === 'number' ? settings.paddingTop : undefined;
   const padBottom = typeof settings?.paddingBottom === 'number' ? settings.paddingBottom : undefined;
+  const hex = (v: unknown) => (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : undefined);
+  const num = (v: unknown, max: number) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(v, max) : undefined);
+  const ownBg = hex(settings?.sectionBgColor);
+  const borderW = num(settings?.borderWidth, 8);
+  const borderColor = hex(settings?.borderColor);
+  const radius = num(settings?.borderRadius, 80);
+  const shadow = ({ soft: '0 2px 10px rgba(0,0,0,.08)', medium: '0 8px 24px rgba(0,0,0,.14)', strong: '0 16px 44px rgba(0,0,0,.25)' } as Record<string, string>)[String(settings?.shadow)];
   const visibility = settings?.visibility;
   const bgImage = typeof settings?.backgroundImageUrl === 'string' && /^https:\/\//i.test(settings.backgroundImageUrl)
     ? settings.backgroundImageUrl.replace(/["\\\n\r()]/g, '')
@@ -48,6 +57,7 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
   const overlay = typeof settings?.backgroundOverlay === 'number' ? Math.min(80, Math.max(0, settings.backgroundOverlay)) / 100 : 0;
   return {
     className: [
+      ownBg ? 'sx-own-bg' : '',
       padTop !== undefined ? 'sx-pad-t' : '',
       padBottom !== undefined ? 'sx-pad-b' : '',
       settings?.fullWidth === true ? 'sx-full' : '',
@@ -56,6 +66,10 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
     style: {
       marginTop: top,
       marginBottom: bottom,
+      ...(ownBg ? { backgroundColor: ownBg } : {}),
+      ...(borderW ? { borderWidth: borderW, borderStyle: 'solid', borderColor: borderColor ?? 'currentColor' } : {}),
+      ...(radius ? { borderRadius: radius, overflow: 'hidden' } : {}),
+      ...(shadow ? { boxShadow: shadow } : {}),
       ...(padTop !== undefined ? { '--sx-pt': `${padTop}px` } : {}),
       ...(padBottom !== undefined ? { '--sx-pb': `${padBottom}px` } : {}),
       ...(bgImage ? {

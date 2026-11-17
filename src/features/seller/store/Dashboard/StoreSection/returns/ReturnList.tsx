@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -89,11 +89,31 @@ export function StoreReturnList() {
     return true;
   });
 
+  const rowActions = (r: SellerReturnItem, close?: () => void) => {
+    const mode = primaryReturnMode(r.returnStatus);
+    const canClose = r.returnStatus === 'approved' || r.returnStatus === 'received';
+    const go = (fn: () => void) => () => { close?.(); fn(); };
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {mode && <button onClick={go(() => setActing({ mode, item: r }))} className={rowBtn}>{PRIMARY_RETURN_LABEL[mode]}</button>}
+        {canClose && <button onClick={go(() => setActing({ mode: 'close', item: r }))} className={rowBtn}>Close</button>}
+        {canExchangePerm && ['requested', 'approved', 'received'].includes(r.returnStatus) && !r.exchangeOrderId && r.itemType !== 'digital' && (
+          <button onClick={go(() => openExchange(r))} disabled={exchangeLoading === r.itemId} className={rowBtn}>
+            {exchangeLoading === r.itemId ? 'Loading...' : 'Exchange'}
+          </button>
+        )}
+        <button onClick={go(() => navigate(`/store/${storeId}/orders/detail/${r.orderId}`))} className={rowBtn}>
+          {mode ? 'Order / label' : 'Order'}
+        </button>
+      </div>
+    );
+  };
+
   const columns: TableColumn<SellerReturnItem>[] = [
     { key: 'orderNumber', header: 'Order', render: r => <span className="font-bold text-brand-deep-orange whitespace-nowrap">{r.orderNumber}</span> },
     { key: 'customer', header: 'Customer', render: r => <span className="text-graphite whitespace-nowrap">{r.customer.name}</span> },
     { key: 'productName', header: 'Product', render: r => <span className="text-graphite max-w-[180px] truncate block">{r.productName}</span> },
-    { key: 'returnReason', header: 'Reason', render: r => <span className="text-slate max-w-[180px] truncate block">{r.returnReason}</span> },
+    { key: 'returnReason', header: 'Reason', defaultHidden: true, render: r => <span className="text-slate max-w-[180px] truncate block">{r.returnReason}</span> },
     { key: 'amount', header: 'Amount', render: r => <span className="font-semibold text-carbon whitespace-nowrap">{currencySymbol(store?.baseCurrency)}{' '}{r.amount.toLocaleString()}</span> },
     {
       key: 'returnStatus', header: 'Status',
@@ -109,25 +129,19 @@ export function StoreReturnList() {
     { key: 'returnRequestedAt', header: 'Requested', render: r => <span className="text-xs text-slate whitespace-nowrap">{new Date(r.returnRequestedAt).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })}</span> },
     {
       key: 'actions', header: 'Actions',
-      render: r => {
-        const mode = primaryReturnMode(r.returnStatus);
-        const canClose = r.returnStatus === 'approved' || r.returnStatus === 'received';
-        return (
-          <div className="flex items-center gap-1.5">
-            {mode && <button onClick={() => setActing({ mode, item: r })} className={rowBtn}>{PRIMARY_RETURN_LABEL[mode]}</button>}
-            {canClose && <button onClick={() => setActing({ mode: 'close', item: r })} className={rowBtn}>Close</button>}
-            {canExchangePerm && ['requested', 'approved', 'received'].includes(r.returnStatus) && !r.exchangeOrderId && r.itemType !== 'digital' && (
-              <button onClick={() => openExchange(r)} disabled={exchangeLoading === r.itemId} className={rowBtn}>
-                {exchangeLoading === r.itemId ? 'Loading...' : 'Exchange'}
-              </button>
-            )}
-            <button onClick={() => navigate(`/store/${storeId}/orders/detail/${r.orderId}`)} className={rowBtn}>
-              {mode ? 'Order / label' : 'Order'}
-            </button>
-          </div>
-        );
-      },
+      render: r => rowActions(r),
     },
+  ];
+
+  const detailRows = (r: SellerReturnItem): [string, ReactNode][] => [
+    ['Order', <span key="o" className="font-bold text-brand-deep-orange">{r.orderNumber}</span>],
+    ['Customer', r.customer.name],
+    ['Product', r.productName],
+    ['Quantity', String(r.quantity)],
+    ['Reason', r.returnReason || '-'],
+    ['Amount', `${currencySymbol(store?.baseCurrency)} ${r.amount.toLocaleString()}`],
+    ['Status', returnStatusLabel(r.returnStatus)],
+    ['Requested', new Date(r.returnRequestedAt).toLocaleDateString('en-PK', { year: 'numeric', month: 'short', day: 'numeric' })],
   ];
 
   return (
@@ -227,6 +241,21 @@ export function StoreReturnList() {
               columns={columns}
               data={filtered}
               keyExtractor={r => r.itemId}
+              columnsKey="seller-returns"
+              detailTitle={r => `Return ${r.orderNumber}`}
+              renderDetail={(r, close) => (
+                <div className="flex flex-col gap-4">
+                  <dl className="m-0 flex flex-col gap-3">
+                    {detailRows(r).map(([k, v]) => (
+                      <div key={k} className="flex items-start justify-between gap-4 border-b border-[#f0eee6] pb-2.5 text-[13.5px]">
+                        <dt className="shrink-0 text-slate">{k}</dt>
+                        <dd className="m-0 min-w-0 break-words text-right font-medium text-carbon">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {rowActions(r, close)}
+                </div>
+              )}
               loading={loading}
               emptyState={{ title: 'No returns match your filters.' }}
             />

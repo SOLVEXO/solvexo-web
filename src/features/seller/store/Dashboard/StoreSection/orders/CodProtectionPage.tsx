@@ -22,7 +22,7 @@ const toForm = (s: CodSettings): Form => ({
 const lines = (v: string) => v.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
 const numOrNull = (v: string) => (v.trim() === '' ? null : Number(v));
 
-export default function CodProtectionPage() {
+export default function CodProtectionPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
   const toast = useToast();
   const canEdit = can('settings.payments.manage');
@@ -57,7 +57,7 @@ export default function CodProtectionPage() {
 
   return (
     <>
-      <StorePageHeader title="COD protection" subtitle="Cut fake and undeliverable cash-on-delivery orders" />
+      {!embedded && <StorePageHeader title="COD protection" subtitle="Cut fake and undeliverable cash-on-delivery orders" />}
       <div className="flex w-full flex-col gap-4 px-4 pb-8 pt-5 lg:px-7">
         {!canEdit ? <EmptyState icon={<Lock size={22} />} title="No access" description="Your role cannot change payment settings." />
           : error ? (

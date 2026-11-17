@@ -27,7 +27,9 @@ import { useWholesaleGate, useWholesalePrice } from '../../core/b2b/useWholesale
 import { Link as WholesaleLink } from 'react-router-dom';
 import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { optionValueAvailable, stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
-import { ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton, ProductWishlistHeart } from '../components/product/ProductParts';
+import { SpecsTabTable, ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton, ProductWishlistHeart } from '../components/product/ProductParts';
+import { specRows } from '../../specsLook';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { ProductBuyNowButton, ProductCollapsibleTab, ProductSizeChart, ProductTextBlock, ProductPickup } from '../components/product/ProductExtraBlocks';
 import { ProductDescriptionTabs, type DescriptionTab } from '../components/product/ProductDescriptionTabs';
 import { FashionImageLightbox } from '../components/product/FashionImageLightbox';
@@ -42,7 +44,7 @@ import { breadcrumbJsonLd, pageUrlBuilder, productJsonLd } from '../../core/seo/
 import { fashionTheme as t } from '../theme.config';
 import { FashionNotFoundPage } from './FashionNotFoundPage';
 import { ErrorBlock, PageSkeleton } from './pageParts';
-import { useTemplateSections } from '../../core/pageHooks';
+import { useLoad, useTemplateSections } from '../../core/pageHooks';
 
 const stars = (n: number, size = 15) => (
   <span className="inline-flex" aria-hidden>{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={size} fill={i < Math.round(n) ? t.colors.star : 'none'} stroke="#FB923C" />)}</span>
@@ -150,6 +152,16 @@ function ProductPageInner({ slug }: { slug: string }) {
   }) : null);
   useJsonLd('breadcrumb', product ? breadcrumbJsonLd([{ name: store.name, url: pageUrlBuilder(origin, pathname)('/') }, { name: product.name, url: pageUrl }]) : null);
 
+  // "Additional information": the product's specs as a table tab, when the seller turned "Show as a tab" on for the Specifications block.
+  const specsItem = layout.infoItems.find(i => i.type === 'product_specs');
+  const specsAsTab = specsItem?.settings.showAsTab === true;
+  const specsProductId = detail?.product._id;
+  const { data: specEntries } = useLoad(
+    () => (specsAsTab && specsProductId ? apiGetPublicMetafieldValues(store.storeId, 'product', specsProductId).then(r => r.data ?? []) : Promise.resolve([])),
+    [specsAsTab, specsProductId, store.storeId],
+  );
+  const specsTitle = typeof specsItem?.settings.title === 'string' && specsItem.settings.title.trim() ? specsItem.settings.title.trim() : tr('product.additionalInfo', 'Additional information');
+
   // Description first, then this product's own tabs, then the store-wide "Show as a tab" blocks.
   const descriptionTabs = useMemo<DescriptionTab[]>(() => {
     if (!product) return [];
@@ -157,8 +169,10 @@ function ProductPageInner({ slug }: { slug: string }) {
     const shared = layout.infoItems.filter(i => i.type === 'product_collapsible_tab' && i.settings.showAsTab === true && typeof i.settings.title === 'string' && typeof i.settings.content === 'string' && i.settings.content.trim())
       .map(i => ({ key: `store-${i.key}`, title: String(i.settings.title), content: String(i.settings.content), html: false }));
     const main: DescriptionTab[] = product.description ? [{ key: 'description', title: tr('product.description', 'Description'), content: product.description, html: true }] : [];
-    return [...main, ...own, ...shared];
-  }, [product, detail?.product.tabs, layout.infoItems, tr]);
+    const specs: DescriptionTab[] = specsAsTab && specEntries && specRows(specEntries).length > 0
+      ? [{ key: 'specs', title: specsTitle, content: '', html: false, node: <SpecsTabTable entries={specEntries} /> }] : [];
+    return [...main, ...specs, ...own, ...shared];
+  }, [product, detail?.product.tabs, layout.infoItems, tr, specsAsTab, specEntries, specsTitle]);
 
   if (loading) return <PageSkeleton />;
   if (error && !detail) return /not found|404/i.test(error) ? <FashionNotFoundPage /> : <ErrorBlock message={tr('product.loadError', "We couldn't load this product.")} onRetry={refetch} />;
@@ -287,7 +301,7 @@ function ProductPageInner({ slug }: { slug: string }) {
     product_wishlist: () => <ProductWishlistButton productId={detail.product._id} variantId={variant._id} />,
     product_share: s => <ProductShareButton settings={s} title={product.name} image={product.images?.[0]} variantId={variants.length > 1 ? variant._id : undefined} />,
     product_sku: () => <ProductSku sku={variant.sku} />,
-    product_specs: () => <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
+    product_specs: () => specsAsTab ? null : <ProductSpecsBlock storeId={store.storeId} productId={detail.product._id} />,
     product_collapsible_tab: s => s.showAsTab === true ? null : <ProductCollapsibleTab settings={s} />,
     product_size_chart: s => <ProductSizeChart settings={s} />,
     product_pickup: s => <ProductPickup storeId={store.storeId} storeName={store.name} settings={s} available={canBuy && !isDigital} />,

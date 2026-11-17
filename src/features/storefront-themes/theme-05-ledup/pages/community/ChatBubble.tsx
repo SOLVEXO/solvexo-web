@@ -30,13 +30,13 @@ function Attachments({ message, onAccent }: { message: Message; onAccent: boolea
         if (!url) return null;
         if (message.type === 'image') return (
           <a key={i} href={url} target="_blank" rel="noopener noreferrer" aria-label={ts('pg.open_name', 'Open {{name}}', { name: a.fileName || ts('pg.word_photo', 'photo') })}>
-            <img src={safeUrl(a.thumbnailUrl) ?? url} alt={a.fileName || ts('pg.photo_sent_in_chat', 'Photo sent in chat')} loading="lazy" className="block max-h-72 min-h-[80px] w-auto max-w-full object-contain" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.bgAlt }} />
+            <img src={safeUrl(a.thumbnailUrl) ?? url} alt={a.fileName || ts('pg.photo_sent_in_chat', 'Photo sent in chat')} loading="lazy" className="block max-h-72 min-h-[80px] w-auto max-w-full object-contain" style={{ borderRadius: '18px', background: t.colors.bgAlt }} />
           </a>
         );
-        if (message.type === 'video') return <video key={i} src={url} controls preload="metadata" className="max-h-72 max-w-full" style={{ borderRadius: t.fieldRadiusPx }} aria-label={a.fileName || ts('pg.word_video', 'Video')}><track kind="captions" /></video>;
+        if (message.type === 'video') return <video key={i} src={url} controls preload="metadata" className="max-h-72 max-w-full" style={{ borderRadius: '18px' }} aria-label={a.fileName || ts('pg.word_video', 'Video')}><track kind="captions" /></video>;
         if (message.type === 'voice') return <VoicePlayer key={i} url={url} label={a.fileName || ts('pg.voice_message', 'Voice message')} color={t.colors.accent} track="rgba(11,20,26,.15)" />;
         return (
-          <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 no-underline" style={{ padding: '8px 12px', borderRadius: t.fieldRadiusPx, background: onAccent ? 'rgba(255,255,255,.14)' : t.colors.bg, color: 'inherit' }}>
+          <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 no-underline" style={{ padding: '8px 12px', borderRadius: '18px', background: onAccent ? 'rgba(255,255,255,.14)' : t.colors.bg, color: 'inherit' }}>
             <FileText size={18} aria-hidden />
             <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{a.fileName || ts('pg.download_file', 'Download file')}</span>{a.fileSize > 0 && <span className="block text-xs opacity-70">{formatBytes(a.fileSize)}</span>}</span>
           </a>
@@ -49,8 +49,8 @@ function Attachments({ message, onAccent }: { message: Message; onAccent: boolea
 function ProductShareCard({ share }: { share: NonNullable<Message['productShare']> }) {
   const { money } = useMoney();
   return (
-    <Link to={`/product/${share.slug || share.productId}`} className="flex w-[240px] max-w-full items-center gap-3 no-underline" style={{ padding: 8, borderRadius: t.fieldRadiusPx, background: t.colors.bg, color: t.colors.ink, border: `1px solid ${t.colors.border}` }}>
-      <span className="grid shrink-0 place-items-center overflow-hidden" style={{ width: 56, height: 56, borderRadius: t.fieldRadiusPx, background: t.colors.bgAlt }}>
+    <Link to={`/product/${share.slug || share.productId}`} className="flex w-[240px] max-w-full items-center gap-3 no-underline" style={{ padding: 8, borderRadius: '18px', background: t.colors.bg, color: t.colors.ink, border: `1px solid ${t.colors.border}` }}>
+      <span className="grid shrink-0 place-items-center overflow-hidden" style={{ width: 56, height: 56, borderRadius: '18px', background: t.colors.bgAlt }}>
         {share.image ? <img src={share.image} alt="" loading="lazy" className="size-full object-cover" /> : <ImageOff size={18} aria-hidden style={{ color: t.colors.inkMuted }} />}
       </span>
       <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{share.title ?? ts('pg.word_product', 'Product')}</span>{share.price != null && <span className="block text-[13px]" style={{ color: t.colors.inkMuted }}>{money(share.price)}</span>}</span>
@@ -62,8 +62,8 @@ function ProductShareCard({ share }: { share: NonNullable<Message['productShare'
 export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit, onDelete, onRetry, onReact }: Props) {
   const [open, setOpen] = useState(false);
   const menuBtn = useRef<HTMLButtonElement>(null);
-  const bg = mine ? t.colors.accent : t.colors.bgAlt;
-  const fg = mine ? t.colors.accentInk : t.colors.ink;
+  const bg = mine ? `color-mix(in srgb, ${t.colors.accent} 16%, #fff)` : t.colors.bgAlt;
+  const fg = t.colors.ink;
   const seen = mine && m.seenBy?.some(s => s.userId !== myId);
   const link = safeUrl(m.linkPreview?.url);
   const canAct = !m.isDeleted && !m._pending && !m._failed;
@@ -73,10 +73,10 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
   return (
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
       <div className={`group flex max-w-[85%] items-start gap-1 sm:max-w-[65%] ${mine ? 'flex-row-reverse' : ''}`}>
-        <div className="min-w-0" style={{ background: bg, color: fg, padding: '8px 12px 6px', borderRadius: t.fieldRadiusPx, opacity: m._pending ? 0.6 : 1 }}>
+        <div className="min-w-0" style={{ background: bg, color: fg, padding: '8px 12px 6px', borderRadius: '18px', opacity: m._pending ? 0.6 : 1 }}>
           {!mine && <p className="m-0 mb-0.5 text-[11px] font-bold uppercase" style={{ color: t.colors.accent, letterSpacing: '.06em' }}>{storeName}</p>}
           {m.replyTo && (
-            <div className="mb-2 text-[13px]" style={{ padding: '6px 10px', borderRadius: t.fieldRadiusPx, borderLeft: `4px solid ${t.colors.accent}`, background: 'rgba(11,20,26,.06)' }}>
+            <div className="mb-2 text-[13px]" style={{ padding: '6px 10px', borderRadius: '18px', borderLeft: `4px solid ${t.colors.accent}`, background: 'rgba(11,20,26,.06)' }}>
               <span className="block truncate opacity-80">{m.replyTo.text || messagePreview({ type: m.replyTo.type ?? 'text', text: m.replyTo.text ?? null, isDeleted: false })}</span>
             </div>
           )}
@@ -88,7 +88,7 @@ export function ChatBubble({ message: m, mine, myId, storeName, onReply, onEdit,
               {m.attachments?.length > 0 && m.type !== 'text' && <Attachments message={m} onAccent={false} />}
               {m.text && <p className="m-0 whitespace-pre-wrap break-words text-[14.5px] leading-[1.4]">{m.text}</p>}
               {link && m.linkPreview && (
-                <a href={link} target="_blank" rel="noopener noreferrer" className="block no-underline" style={{ padding: '8px 12px', borderRadius: t.fieldRadiusPx, background: 'rgba(11,20,26,.06)', color: 'inherit' }}>
+                <a href={link} target="_blank" rel="noopener noreferrer" className="block no-underline" style={{ padding: '8px 12px', borderRadius: '18px', background: 'rgba(11,20,26,.06)', color: 'inherit' }}>
                   {m.linkPreview.title && <span className="block truncate text-[13px] font-medium">{m.linkPreview.title}</span>}
                   <span className="block truncate text-xs opacity-70">{m.linkPreview.siteName || link}</span>
                 </a>

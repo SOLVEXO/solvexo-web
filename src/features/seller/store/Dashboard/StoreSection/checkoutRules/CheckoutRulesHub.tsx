@@ -69,7 +69,7 @@ const summary = (r: CheckoutRuleRow) => {
   return `Block checkout: "${a.message}"`;
 };
 
-export default function CheckoutRulesHub() {
+export default function CheckoutRulesHub({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId, store } = useStoreWorkspace();
   const toast = useToast();
   const user = TokenStorage.getUser<{ role?: 'admin' | 'seller' | 'staff' | 'user'; permissions?: string[] }>();
@@ -119,9 +119,14 @@ export default function CheckoutRulesHub() {
 
   return (
     <>
-      <StorePageHeader title="Checkout rules" subtitle="Your own rules for discounts, payment methods, delivery options and order limits. They run on the server at checkout."
-        actions={canManage && tab === 'rules' ? <Button size="sm" icon={<Plus size={14} />} onClick={() => open('new')}>New rule</Button> : undefined} />
+      {!embedded && (
+        <StorePageHeader title="Checkout rules" subtitle="Your own rules for discounts, payment methods, delivery options and order limits. They run on the server at checkout."
+          actions={canManage && tab === 'rules' ? <Button size="sm" icon={<Plus size={14} />} onClick={() => open('new')}>New rule</Button> : undefined} />
+      )}
       <div className="px-4 lg:px-7 pt-5 pb-10 w-full flex flex-col gap-5">
+        {embedded && canManage && tab === 'rules' && (
+          <div className="flex justify-end"><Button size="sm" icon={<Plus size={14} />} onClick={() => open('new')}>New rule</Button></div>
+        )}
         <TabBar tabs={TABS} active={tab} onChange={setTab} />
         {error ? <EmptyState icon={<ListChecks size={22} />} title="Could not load" description={error} action={{ label: 'Retry', onClick: load }} /> : tab === 'rules' ? (
           loading && !rules.length ? <SkeletonBox className="h-24 w-full" /> : rules.length === 0 ? (

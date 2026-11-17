@@ -114,7 +114,7 @@ export function LedupBox({
 
 export function LedupBreadcrumbs({ items }: { items: { label: string; to?: string }[] }) {
   return (
-    <nav aria-label={ts('pg.breadcrumb', 'Breadcrumb')} className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
+    <nav aria-label={ts('pg.breadcrumb', 'Breadcrumb')} className="mb-4 flex flex-wrap items-center gap-2 text-[15px] text-[#4b423b]">
       {items.map((it, i) => (
         <span key={`${it.label}-${i}`} className="inline-flex items-center gap-1.5">
           {it.to ? (

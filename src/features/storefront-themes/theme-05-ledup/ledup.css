@@ -267,9 +267,10 @@
 .ld-root .ld-product-card { background: #fff; border: 0; border-radius: 1.5rem; box-shadow: none; transition: transform .4s ease, box-shadow .4s ease; }
 .ld-root .ld-product-card:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -18px rgba(75,66,59,.35); }
 .ld-root .ld-search-input, .ld-root .ld-search-input:focus { border: 0 !important; border-bottom: 1px solid #a1948c !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
-.ld-banner-wrap { margin-top: -5.25rem; padding: 0 1rem; }
+.ld-banner-wrap { margin-top: -3.05rem; padding: 0 1rem; }
 @media (min-width: 640px) { .ld-banner-wrap { padding: 0 2.75rem; } }
-.ld-banner { position: relative; border-radius: 2rem; padding-top: 8.5rem; overflow: hidden; }
+.ld-banner { position: relative; border-radius: 2rem; padding-top: 12.1rem; overflow: hidden; }
+@media (min-width: 1024px) { .ld-banner { border-radius: 3.125rem; } .ld-banner-wrap { padding: 0 2.2rem; } }
 .ld-sortpop { position: absolute; top: calc(100% + .5rem); inset-inline-end: 0; z-index: 30; min-width: 11rem; padding: .5rem; border-radius: 1.1rem; background: #fff; box-shadow: 0 12px 40px -12px rgba(0,0,0,.25); }
 .ld-sortpop button { display: block; width: 100%; text-align: start; padding: .6rem .9rem; border: 0; border-radius: .7rem; background: transparent; font-size: .9rem; color: var(--ld-accent); cursor: pointer; }
 .ld-sortpop button:hover, .ld-sortpop button[aria-selected="true"] { background: #f4f2f0; }

@@ -11,6 +11,8 @@ import { focalOf, mobileHeightOf, type HeightPreset } from '../../imageFit';
 import { fashionTheme as t } from '../theme.config';
 import { registerFashionSection } from './sectionRegistry';
 import { LinkButton } from './SectionShell';
+import { HeroSlideLink } from '../../HeroSlideLink';
+import { heroNavLook, useHeroDrag } from '../../heroSlider';
 import { EditableText, useInlineEditActive } from '../../inlineEdit';
 
 const HEIGHT: Record<Exclude<HeightPreset, 'adapt' | 'custom'>, string> = { small: 'clamp(320px, 46vh, 460px)', medium: 'clamp(420px, 68vh, 680px)', large: 'clamp(520px, 88vh, 900px)' };
@@ -31,7 +33,7 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
     <div className={`${onImage ? 'fx-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
       {s.heading && <h1 className="fx-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
       {s.subheading && <p className="fx-up fx-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
-      <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} />
+      <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} style={{ position: 'relative', zIndex: 2 }} />
     </div>
   );
 }
@@ -61,6 +63,7 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
           </div>
         </div>
       )}
+      <HeroSlideLink settings={s} label={s.heading} focusable={active} />
     </div>
   );
 }
@@ -87,6 +90,10 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
     return () => window.clearInterval(id);
   }, [auto, n, seconds]);
 
+  const go = (d: number) => setI(v => (v + d + n) % n);
+  const nav = heroNavLook(settings, 'center');
+  const drag = useHeroDrag(go, dx => swipeStep(dx, rtl), n > 1);
+
   if (n === 0) return null;
   const desk = (settings.heightPreset ?? 'medium') as HeightPreset;
   const mob = mobileHeightOf(desk, settings.mobileHeightPreset);
@@ -100,7 +107,6 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const hm = heightOf(mob, settings.mobileCustomHeight ?? settings.customHeight);
   const whole = settings.imageFit === 'whole';
   const maxW = typeof settings.maxWidth === 'number' && settings.maxWidth >= 320 ? Math.min(2400, settings.maxWidth) : null;
-  const go = (d: number) => setI(v => (v + d + n) % n);
   const pagination = settings.pagination ?? 'dots';
   const below = settings.mobileTextLayout === 'below';
   // One slide = the image box + (phones, "Below image" only) its text underneath.
@@ -116,7 +122,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   );
 
   return (
-    <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: `12px ${t.layout.containerPadX} 0` }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+    <section aria-roledescription="carousel" aria-label={ts('browse.sort.featured', 'Featured')} className="relative" style={{ padding: `12px ${t.layout.containerPadX} 0` }} {...drag} onMouseEnter={() => settings.pauseOnHover !== false && setHover(true)} onMouseLeave={() => setHover(false)}
       onTouchStart={e => { touch.current = e.touches[0].clientX; }}
       onTouchEnd={e => { if (touch.current != null) { const d = e.changedTouches[0].clientX - touch.current; const s = swipeStep(d, rtl); if (s) go(s); touch.current = null; } }}>
       <style>{`.fx-hero{--h:${hm ?? 'auto'}}@media(min-width:768px){.fx-hero{--h:${hd ?? 'auto'}}}.fx-hero .fx-h{height:var(--h)!important}`}</style>
@@ -142,15 +148,15 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
 
       {n > 1 && settings.showArrows === true && (
         <>
-          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className="absolute start-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronLeft size={20} className="fx-flip-rtl" /></button>
-          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className="absolute end-8 top-1/2 hidden size-11 md:flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-white/90 text-black"><ChevronRight size={20} className="fx-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.prevSlide', 'Previous slide')} onClick={() => go(-1)} className={`absolute start-8 top-1/2 ${nav.arrowShow} size-11 -translate-y-1/2 cursor-pointer items-center justify-center border-0 ${nav.arrowShape}`}><ChevronLeft size={20} className="fx-flip-rtl" /></button>
+          <button type="button" aria-label={ts('sections.nextSlide', 'Next slide')} onClick={() => go(1)} className={`absolute end-8 top-1/2 ${nav.arrowShow} size-11 -translate-y-1/2 cursor-pointer items-center justify-center border-0 ${nav.arrowShape}`}><ChevronRight size={20} className="fx-flip-rtl" /></button>
         </>
       )}
 
       {n > 1 && pagination !== 'none' && (
-        <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">
+        <div className={`absolute inset-x-0 bottom-5 flex items-center gap-3 ${nav.paginationPos}`}>
           {pagination === 'counter'
-            ? <span className="text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
+            ? <span className="rounded-full bg-black/45 px-3 py-1 text-xs font-medium tracking-widest text-white">{cur + 1} / {n}</span>
             : slides.map((_, k) => (
               <button key={k} type="button" aria-label={ts('sections.goToSlide', 'Go to slide {{n}}', { n: k + 1 })} aria-current={k === cur} onClick={() => setI(k)} className="h-[3px] cursor-pointer border-0 p-0 transition-all"
                 style={{ width: k === cur ? 36 : 20, background: k === cur ? '#fff' : 'rgba(255,255,255,.5)' }} />

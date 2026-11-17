@@ -2,6 +2,7 @@
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 import { FEATURE_ICON_OPTIONS } from '@/features/storefront-themes/featureIcons';
+import { legacyContactFields } from '@/features/storefront-themes/core/forms/contactFormFields';
 
 export interface SectionMeta {
   type:               SectionType;
@@ -86,9 +87,17 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'autoplaySeconds', kind: 'number', label: 'Change slides every (seconds)', min: 3, max: 10, step: 1, showIf: s => s.autoplay !== false },
       { key: 'showArrows', kind: 'checkbox', label: 'Show navigation arrows', defaultOff: true },
       { key: 'showPauseButton', kind: 'checkbox', label: 'Show pause / play button', defaultOff: true, showIf: s => s.autoplay !== false },
+      { key: 'arrowStyle', kind: 'select', label: 'Arrow style', showIf: s => s.showArrows === true, options: [
+        { value: 'circle', label: 'Round' }, { value: 'square', label: 'Square' }, { value: 'plain', label: 'Plain (no background)' },
+      ] },
+      { key: 'arrowsOnPhone', kind: 'checkbox', label: 'Show arrows on phones', defaultOff: true, showIf: s => s.showArrows === true },
       { key: 'pagination', kind: 'select', label: 'Pagination', options: [
         { value: 'dots', label: 'Dots' }, { value: 'counter', label: 'Counter (1 / 3)' }, { value: 'none', label: 'None' },
       ] },
+      { key: 'paginationPosition', kind: 'select', label: 'Pagination position', showIf: s => s.pagination !== 'none', options: [
+        { value: 'auto', label: 'Theme default' }, { value: 'left', label: 'Left' }, { value: 'center', label: 'Centre' }, { value: 'right', label: 'Right' },
+      ] },
+      { key: 'pauseOnHover', kind: 'checkbox', label: 'Pause when the mouse is over it', showIf: s => s.autoplay !== false },
     ],
   },
   {
@@ -419,20 +428,29 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
-    type: 'contact_form', label: 'Contact Form', description: 'A form visitors use to message you. Messages arrive under Online Store → Contact Messages (and by email).',
+    type: 'contact_form', label: 'Form', description: 'Any form you design: contact, quote, sign-up, survey, application. Answers arrive under Online Store → Contact Messages (and by email).',
     Icon: MailIcon, color: '#0D9488',
-    defaultSettings: { heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.', showPhone: true },
+    defaultSettings: {
+      heading: 'Send us a message', intro: '', buttonLabel: 'Send message', successMessage: 'Thanks — we got your message and will reply soon.',
+      // The seller edits this list (add, remove, reorder, required...); it starts as the classic Name / Email / Phone / Message form.
+      fields: legacyContactFields({}),
+    },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: withHeading([
       { key: 'intro', kind: 'textarea', label: 'Text above the form', rows: 2, maxLength: 300 },
       { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30 },
       { key: 'successMessage', kind: 'text', label: 'Message shown after sending', maxLength: 200 },
-      { key: 'showPhone', kind: 'checkbox', label: 'Ask for a phone number' },
-      { key: 'nameLabel', kind: 'text', label: 'Name field label', maxLength: 40, placeholder: 'Name', half: true },
-      { key: 'emailLabel', kind: 'text', label: 'Email field label', maxLength: 40, placeholder: 'Email', half: true },
-      { key: 'phoneLabel', kind: 'text', label: 'Phone field label', maxLength: 40, placeholder: 'Phone (optional)', half: true, showIf: s => s.showPhone !== false },
-      { key: 'messageLabel', kind: 'text', label: 'Message field label', maxLength: 40, placeholder: 'Message', half: true },
+      { key: 'fields', kind: 'formFields', label: 'Form fields', hint: 'Choose what visitors fill in. Add any field you need (name, phone, order number, a dropdown...). Answers arrive in Contact Messages.' },
+      { key: 'formName', kind: 'text', label: 'Form name', maxLength: 60, placeholder: 'e.g. Wholesale request', hint: 'Shown in your Contact Messages so answers of different forms can be told apart.' },
+      { key: 'display', kind: 'select', label: 'Show the form', options: [{ value: 'inline', label: 'On the page' }, { value: 'popup', label: 'In a pop-up opened by a button' }], hint: 'Pop-up: only a button shows on the page and the form opens above it.' },
+      { key: 'popupButtonLabel', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'e.g. Request a quote', showIf: s => s.display === 'popup' },
+      { key: 'successAction', kind: 'select', label: 'After sending', options: [{ value: 'message', label: 'Show the thank-you message' }, { value: 'redirect', label: 'Send the visitor to another page' }] },
+      { key: 'redirectUrl', kind: 'text', label: 'Send the visitor to', maxLength: 300, placeholder: 'https://… or /pages/thank-you', hint: 'An https:// link or a page on your store, starting with /.', showIf: s => s.successAction === 'redirect' },
+      { key: 'notifyEmails', kind: 'text', label: 'Email every answer to', maxLength: 600, placeholder: 'you@shop.com, team@shop.com', hint: 'Up to 5 addresses, separated by commas. Every new message is also in Contact Messages.' },
+      { key: 'autoReplyEnabled', kind: 'checkbox', label: 'Send the visitor an automatic reply', defaultOff: true },
+      { key: 'autoReplySubject', kind: 'text', label: 'Reply subject', maxLength: 120, placeholder: 'We got your message', showIf: s => s.autoReplyEnabled === true },
+      { key: 'autoReplyBody', kind: 'textarea', label: 'Reply text', rows: 5, maxLength: 2000, placeholder: 'Hi {{name}},\n\nThanks for contacting {{store}}. We received your message and will get back to you soon.', hint: 'Plain text. You can use {{name}}, {{store}} and {{form}}. Needs an Email field. Each address gets at most one automatic reply a day.', showIf: s => s.autoReplyEnabled === true },
     ]),
   },
   {
@@ -640,6 +658,10 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   product_buy_now: [
     { key: 'label', kind: 'text', label: 'Button text', maxLength: 40, placeholder: 'Buy it now', hint: 'Adds the item and goes straight to checkout. Shown only when Buy buttons are on.' },
   ],
+  product_specs: [
+    { key: 'showAsTab', kind: 'checkbox', label: 'Show as a tab next to Description', defaultOff: true },
+    { key: 'title', kind: 'text', label: 'Tab name', maxLength: 40, placeholder: 'Additional information', showIf: s => s.showAsTab === true },
+  ],
   product_collapsible_tab: [
     { key: 'title', kind: 'text', label: 'Heading', required: true, maxLength: 80, placeholder: 'Materials & care' },
     { key: 'content', kind: 'textarea', label: 'Content', rows: 5, maxLength: 5000 },
@@ -709,7 +731,9 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped (small screens, fixed heights).' },
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'subheading', kind: 'text', label: 'Subheading' },
-    { key: 'ctaText', kind: 'text', label: 'Button text' },
+    { key: 'slideLinkOn', kind: 'checkbox', label: 'Make the whole slide a link', defaultOff: true },
+    { key: 'slideLink', kind: 'link', label: 'Slide link', showIf: s => s.slideLinkOn === true },
+    { key: 'ctaText', kind: 'text', label: 'Button text', hint: 'Leave empty for no button.' },
     { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
     // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (another theme); Maison's split layout ignores it.
     { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [

@@ -46,42 +46,35 @@ export function LedupAccountLayout({ title, crumb, subtitle, actions, children }
   const logout = useLogout();
   const groups = buildGroups(!!store.sellsDigital);
   const flat = groups.flat();
-  const linkBase = 'block whitespace-nowrap px-4 py-2.5 text-sm no-underline';
   return (
+    <div style={{ background: '#f6f6f6' }}>
     <LedupBox>
       <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: crumb ?? title }]} />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="m-0 text-[clamp(26px,3.6vw,40px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{title}</h1>
-          {subtitle && <p className="m-0 mt-2 max-w-[620px] text-sm" style={{ color: t.colors.inkMuted }}>{subtitle}</p>}
-        </div>
-        {actions}
-      </div>
-      <div className="grid items-start gap-6 lg:grid-cols-[280px_1fr] lg:gap-10">
-        <nav aria-label={ts('nav.account', 'Account')} className="lg:sticky lg:top-24">
-          <ul className="lb-hide-scroll m-0 flex list-none gap-1 overflow-x-auto p-0 lg:hidden">
-            {flat.map(i => (
-              <li key={i.to} className="shrink-0"><NavLink to={i.to} end={i.end} className={`${linkBase}`} style={({ isActive }) => ({ background: isActive ? t.colors.accent : t.colors.bgAlt, color: isActive ? t.colors.accentInk : t.colors.ink, borderRadius: t.fieldRadiusPx })}>{i.label}</NavLink></li>
-            ))}
-          </ul>
-          <div className="hidden p-3 lg:block" style={{ background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
-            {groups.map((g, gi) => (
-              <ul key={gi} className="m-0 list-none p-0" style={gi > 0 ? { borderTop: `1px solid ${t.colors.border}`, marginTop: 8, paddingTop: 8 } : undefined}>
-                {g.map(i => (
-                  <li key={i.to}>
-                    <NavLink to={i.to} end={i.end} className={linkBase} style={({ isActive }) => ({ color: isActive ? t.colors.ink : t.colors.inkMuted, fontWeight: isActive ? 600 : 400, borderInlineStart: `3px solid ${isActive ? t.colors.accent : 'transparent'}` })}>{i.label}</NavLink>
-                  </li>
-                ))}
-              </ul>
-            ))}
-            <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${t.colors.border}` }}>
-              <button type="button" onClick={() => void logout('/')} className="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2.5 text-start text-sm" style={{ color: t.colors.inkMuted }}><LogOut size={15} aria-hidden />{ts('account.logout', 'Log out')}</button>
-            </div>
+      {/* ledup.pt /account: one white card (radius 50), 28px/600 title, underline tab strip, content below. */}
+      <div className="mx-auto w-full max-w-[1100px] rounded-[28px] bg-white px-5 py-8 sm:rounded-[50px] sm:px-11 sm:py-10">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="m-0 text-[28px] font-semibold leading-tight" style={{ fontFamily: t.fonts.display, color: '#3b352f' }}>{title}</h1>
+            {subtitle && <p className="m-0 mt-2 max-w-[620px] text-sm" style={{ color: t.colors.inkMuted }}>{subtitle}</p>}
           </div>
+          {actions}
+        </div>
+        <nav aria-label={ts('nav.account', 'Account')} className="mb-8">
+          <ul className="lb-hide-scroll m-0 flex list-none gap-6 overflow-x-auto p-0" style={{ borderBottom: '1px solid #ebe8e5' }}>
+            {flat.map(i => (
+              <li key={i.to} className="shrink-0">
+                <NavLink to={i.to} end={i.end} className="block whitespace-nowrap px-0.5 pb-3 text-sm no-underline" style={({ isActive }) => ({ color: isActive ? '#3b352f' : '#8c847e', fontWeight: isActive ? 600 : 400, borderBottom: `2px solid ${isActive ? '#4b423b' : 'transparent'}`, marginBottom: -1 })}>{i.label}</NavLink>
+              </li>
+            ))}
+            <li className="ms-auto shrink-0">
+              <button type="button" onClick={() => void logout('/')} className="flex cursor-pointer items-center gap-2 border-0 bg-transparent px-0.5 pb-3 text-sm" style={{ color: '#a69d98' }}><LogOut size={14} aria-hidden />{ts('account.logout', 'Log out')}</button>
+            </li>
+          </ul>
         </nav>
         <div className="min-w-0">{children}</div>
       </div>
     </LedupBox>
+    </div>
   );
 }
 
@@ -89,8 +82,8 @@ export function LedupAccountLayout({ title, crumb, subtitle, actions, children }
 export function LedupSection({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <section className="mb-9">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3 pb-3" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
-        <h2 className="m-0 text-lg font-semibold" style={{ fontFamily: t.fonts.display }}>{title}</h2>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3 pb-3" style={{ borderBottom: '1px solid #4b423b33' }}>
+        <h2 className="m-0 text-[22px] font-medium" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{title}</h2>
         {aside}
       </div>
       {children}

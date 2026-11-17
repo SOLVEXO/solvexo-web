@@ -48,7 +48,7 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
   return (
     <li className="flex list-none flex-col gap-4 p-4 sm:p-5" style={{ border: `1px solid ${t.colors.border}`, borderRadius: t.cardRadiusPx, background: t.colors.bg }}>
       <div className="flex gap-4">
-        <Link to={href} aria-label={product.name} className="grid shrink-0 place-items-center overflow-hidden" style={{ width: 104, height: 130, borderRadius: t.fieldRadiusPx, background: t.colors.bgAlt }}>
+        <Link to={href} aria-label={product.name} className="grid shrink-0 place-items-center overflow-hidden" style={{ width: 104, height: 130, borderRadius: 20, background: t.colors.bgAlt }}>
           {image ? <img src={image} alt="" loading="lazy" decoding="async" className="size-full object-contain p-2" /> : <ImageOff size={22} aria-hidden style={{ color: t.colors.inkMuted }} />}
         </Link>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -74,7 +74,7 @@ export function WishlistItemCard({ item }: { item: WishlistListItem }) {
       <span className="sr-only" role="status">{added ? ts('pg.name_added_to_your_cart', '{{name}} added to your cart', { name: product.name }) : ''}</span>
 
       {back.show && (
-        <form onSubmit={back.submit} className="flex flex-col gap-2 p-3" style={{ borderRadius: t.fieldRadiusPx, background: t.colors.bgAlt }}>
+        <form onSubmit={back.submit} className="flex flex-col gap-2 p-3" style={{ borderRadius: 18, background: t.colors.bgAlt }}>
           <label htmlFor={`bis-${variant._id}`} className="flex items-center gap-2 text-[13px] font-medium"><Bell size={14} aria-hidden />{ts('pg.email_me_when_it_is_back', 'Email me when it is back')}</label>
           {back.status !== 'done' && back.status !== 'available' && (
             <div className="flex flex-wrap gap-2">

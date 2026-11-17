@@ -1,6 +1,6 @@
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { resolveSectionColors, fashionTypographyCss } from '../theme.config';
+import { resolveSectionColors, fashionTypographyCss, fashionTheme } from '../theme.config';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { registry } from './sectionRegistry';
@@ -59,7 +59,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
         const spacing = sectionSpacing(section.settings);
         const key = String(section._id ?? i);
         const scoped = sectionScopedCss(section.settings, key);
-        const common = { id: sectionAnchorId(section.settings), 'data-sx': key, style: { backgroundColor: colors.bg, color: colors.ink, ...spacing.style } };
+        const common = { id: sectionAnchorId(section.settings), 'data-sx': key, style: { backgroundColor: fashionTheme.pageBg.image && colors === fashionTheme.colors ? 'transparent' : colors.bg, color: colors.ink, ...spacing.style } };
 
         if (!selectable) {
           return (
