@@ -125,7 +125,7 @@ export function CollectionTileCard({ tile, colors, fonts, imageRadius, buttonRad
       {!opts.simple && tile.to && arrow}
     </div>
   ) : Icon ? (
-    <div aria-hidden style={{ width: 56, height: 56, display: 'grid', placeItems: 'center', borderRadius: imageRadius, background: colors.bgAlt, color: colors.accent }}><Icon size={28} /></div>
+    <div aria-hidden style={{ width: 56, height: 56, display: 'grid', placeItems: 'center', borderRadius: imageRadius, background: colors.bgAlt, color: colors.accent, marginInline: opts.center ? 'auto' : undefined }}><Icon size={28} /></div>
   ) : tile.blockId ? null : (
     <div className="relative overflow-hidden" style={{ ...fit.box, width: '100%', background: colors.bgAlt, borderRadius: imageRadius, display: 'grid', placeItems: 'center' }}>
       <span className={`${fallbackClass ?? ''} p-4 text-center text-2xl`} style={{ color: colors.inkMuted }}>{tile.name}</span>

@@ -58,6 +58,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
 
   const infoText = cardInfoText(product, b.cardInfoLine);
   const ownBadge = cardBadgeOf(product, { bg: t.colors.accent, ink: '#FFFFFF' });
+  const badgeOnPhoto = b.cardBadgePosition.startsWith('bottom');
 
   const wished = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const heart = async (e: MouseEvent) => {
@@ -82,7 +83,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
         {!inStock && b.soldOutBadge && <span style={{ ...chip, background: '#4b423b' }}>{ts('product.soldOut', 'Sold out')}</span>}
         {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...chip, background: t.colors.danger }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
       </div>
-      {ownBadge && (
+      {ownBadge && !badgeOnPhoto && (
         <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 12, b.cardBadgePosition === 'top-left' && ((!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0)) ? 28 : b.cardBadgePosition === 'top-right' && b.cardWishlist && product.variantId ? 38 : 0), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
       )}
       {b.cardWishlist && product.variantId && (
@@ -104,6 +105,9 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
           <div className="flex h-full w-full items-center justify-center text-stone-300">
             <span className="text-xs">{ts('ld.noImage', 'No image')}</span>
           </div>
+        )}
+        {ownBadge && badgeOnPhoto && (
+          <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 4), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
         )}
       </Link>
 
