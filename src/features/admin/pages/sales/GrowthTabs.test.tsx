@@ -75,8 +75,8 @@ describe('TeamTab', () => {
     fireEvent.change(screen.getByLabelText('Value won target for Sana'), { target: { value: '100,000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save targets' }));
     await waitFor(() => expect(api.apiSaveTargets).toHaveBeenCalledWith(expect.stringMatching(/^\d{4}-\d{2}$/), [
-      { adminId: 'Bilal', wonDeals: 4, wonValuePKR: null, activities: null },
-      { adminId: 'Sana', wonDeals: null, wonValuePKR: 100000, activities: null },
+      { adminId: 'Bilal', wonDeals: 4, wonValuePKR: null, activities: null, visits: null },
+      { adminId: 'Sana', wonDeals: null, wonValuePKR: 100000, activities: null, visits: null },
     ]));
 
     const sw = await screen.findByRole('switch', { name: 'Share out new leads automatically' });

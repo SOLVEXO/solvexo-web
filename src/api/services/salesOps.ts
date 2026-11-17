@@ -9,11 +9,11 @@ export const STAGE_LABELS: Record<LeadStage, string> = {
   new: 'New', contacted: 'Contacted', demo: 'Demo', trial: 'Trial', won: 'Won', lost: 'Lost',
 };
 
-export const LEAD_SOURCES = ['website_form', 'website_chat', 'contact_message', 'manual', 'import', 'stalled_signup', 'whatsapp', 'social', 'referral', 'event', 'other'] as const;
+export const LEAD_SOURCES = ['website_form', 'website_chat', 'contact_message', 'manual', 'import', 'stalled_signup', 'whatsapp', 'social', 'referral', 'event', 'field_visit', 'other'] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 export const SOURCE_LABELS: Record<LeadSource, string> = {
   website_form: 'Book-a-demo form', website_chat: 'Website chat', contact_message: 'Contact message', manual: 'Added by hand', import: 'Import',
-  stalled_signup: 'Stalled sign-up', whatsapp: 'WhatsApp', social: 'Social media', referral: 'Referral', event: 'Event', other: 'Other',
+  stalled_signup: 'Stalled sign-up', whatsapp: 'WhatsApp', social: 'Social media', referral: 'Referral', event: 'Event', field_visit: 'Field visit', other: 'Other',
 };
 
 export const LOST_REASONS = ['price', 'chose_competitor', 'no_response', 'not_a_fit', 'timing', 'other'] as const;
@@ -159,11 +159,11 @@ export const apiAddSpend = (id: string, body: { date: string; amountPKR: number;
   client.post<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns/${id}/spend`, body);
 export const apiRemoveSpend = (id: string, spendId: string) => client.delete<never, ApiResponse<CampaignDetail>>(`${BASE}/campaigns/${id}/spend/${spendId}`);
 
-export interface Target { adminId: string; wonDeals: number | null; wonValuePKR: number | null; activities: number | null }
+export interface Target { adminId: string; wonDeals: number | null; wonValuePKR: number | null; activities: number | null; visits?: number | null }
 export interface LeaderRow {
-  adminId: string; name: string; newLeads: number; activities: number; demos: number; won: number; wonValuePKR: number; lost: number;
+  adminId: string; name: string; newLeads: number; activities: number; demos: number; visits?: number; won: number; wonValuePKR: number; lost: number;
   winRate: number | null; openLeads: number; openValuePKR: number; overdue: number; target: Target | null;
-  progress: { wonDeals: number | null; wonValuePKR: number | null; activities: number | null };
+  progress: { wonDeals: number | null; wonValuePKR: number | null; activities: number | null; visits?: number | null };
 }
 export interface TeamReport { month: string; reps: LeaderRow[]; unassignedOpen: number }
 export interface SalesSettings { autoAssign: boolean; assigneeIds: string[] }
