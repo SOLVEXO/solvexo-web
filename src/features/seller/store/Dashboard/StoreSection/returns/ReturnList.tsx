@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, Download, RefreshCw } from 'lucide-react';
+import { useToast } from '@/contexts/ToastContext';
+import { downloadTextFile } from '@/utils/csvFile';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { Table, Pagination, type TableColumn } from '@/components/comman/ui';
+import { Table, Pagination, Button, ActionMenu, type ActionMenuItem, type TableColumn } from '@/components/comman/ui';
 import { apiGetSellerReturns, type SellerReturnItem } from '@/api/services/orders';
 import { apiGetSellerOrderDetail } from '@/api/services/product';
 import type { SellerOrderDetailItem } from '@/api/services/product';
@@ -10,6 +12,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { ExchangeModal } from '../orders/ExchangeModal';
 import { currencySymbol } from '@/utils/currency';
 import { ReturnWorkflowModal } from './ReturnWorkflowModal';
+import { matchesReturnSearch, returnsToCsv } from './returnsCsv';
 import {
   PRIMARY_RETURN_LABEL, RETURN_STATUS_STYLE, primaryReturnMode, returnStatusLabel, type ReturnWorkflowMode,
 } from './returnStatus';
@@ -31,6 +34,8 @@ const rowBtn = 'px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text
 export function StoreReturnList() {
   const { storeId, store } = useStoreWorkspace();
   const navigate = useNavigate();
+  const toast = useToast();
+  const [exporting, setExporting] = useState(false);
 
   const [returns, setReturns] = useState<SellerReturnItem[]>([]);
   const [stats, setStats]     = useState<{ openRequests: number; returnRate: string; totalRefunded: number } | null>(null);
@@ -83,11 +88,45 @@ export function StoreReturnList() {
     return () => { cancelled = true; };
   }, [storeId, status, page, refreshKey]);
 
-  const filtered = returns.filter(r => {
-    const q = search.toLowerCase();
-    if (q && !r.orderNumber.toLowerCase().includes(q) && !r.customer.name.toLowerCase().includes(q) && !r.productName.toLowerCase().includes(q)) return false;
-    return true;
-  });
+  const filtered = returns.filter(r => matchesReturnSearch(r, search));
+
+  // Export: every page of the list the seller is looking at (same status filter, same search), not just the 10 on screen.
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const all: SellerReturnItem[] = [];
+      let p = 1;
+      let totalPages = 1;
+      do {
+        const res = await apiGetSellerReturns({ storeId, status: status || undefined, page: p });
+        all.push(...(res.data.returns ?? []));
+        totalPages = res.data.pagination.totalPages || 1;
+        p += 1;
+      } while (p <= totalPages && p <= 200);
+      const rows = all.filter(r => matchesReturnSearch(r, search));
+      if (rows.length === 0) { toast.error('There are no returns to export for this filter.'); return; }
+      downloadTextFile(`returns-${status || 'all'}-${new Date().toISOString().slice(0, 10)}.csv`, returnsToCsv(rows));
+      toast.success(`Exported ${rows.length} return${rows.length === 1 ? '' : 's'}.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not export the returns.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  /** The row's actions as a menu (the ⋮ button). The first item is the next step in the return. */
+  const menuItems = (r: SellerReturnItem): ActionMenuItem[] => {
+    const mode = primaryReturnMode(r.returnStatus);
+    const canClose = r.returnStatus === 'approved' || r.returnStatus === 'received';
+    const items: ActionMenuItem[] = [];
+    if (mode) items.push({ label: PRIMARY_RETURN_LABEL[mode], onClick: () => setActing({ mode, item: r }) });
+    if (canClose) items.push({ label: 'Close', onClick: () => setActing({ mode: 'close', item: r }) });
+    if (canExchangePerm && ['requested', 'approved', 'received'].includes(r.returnStatus) && !r.exchangeOrderId && r.itemType !== 'digital') {
+      items.push({ label: exchangeLoading === r.itemId ? 'Loading...' : 'Exchange', onClick: () => openExchange(r), disabled: exchangeLoading === r.itemId });
+    }
+    items.push({ label: mode ? 'Open order / label' : 'Open order', onClick: () => navigate(`/store/${storeId}/orders/detail/${r.orderId}`) });
+    return items;
+  };
 
   const rowActions = (r: SellerReturnItem, close?: () => void) => {
     const mode = primaryReturnMode(r.returnStatus);
@@ -129,7 +168,7 @@ export function StoreReturnList() {
     { key: 'returnRequestedAt', header: 'Requested', render: r => <span className="text-xs text-slate whitespace-nowrap">{new Date(r.returnRequestedAt).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })}</span> },
     {
       key: 'actions', header: 'Actions',
-      render: r => rowActions(r),
+      render: r => <ActionMenu items={menuItems(r)} ariaLabel={`Actions for ${r.orderNumber}`} />,
     },
   ];
 
@@ -231,7 +270,9 @@ export function StoreReturnList() {
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
 
-              <button onClick={refetch} className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[7px] transition-colors duration-150 hover:bg-bone shrink-0 ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
+              <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting} className="ml-auto shrink-0"><Download size={13} className="mr-1" /> Export CSV</Button>
+
+              <button onClick={refetch} className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[7px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                 <RefreshCw size={11} /> Refresh
               </button>
             </div>
